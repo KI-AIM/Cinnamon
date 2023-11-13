@@ -1,0 +1,1 @@
+The assets folder is generated for us by the Angular CLI with the ng new command, and is the perfect place for storing all our media files. Using it in combination with a PathLocationStrategy gives easily referable files across the app. This folder persists at build time.

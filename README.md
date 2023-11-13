@@ -1,4 +1,4 @@
-# About
+# KI-AIM-Platform
 
 This is the main application for the KI-AIM platform. 
 
@@ -9,7 +9,7 @@ It contains all the code for:
 - The angular frontend
 
 
-# Requirements
+## Requirements
 The project has been created with Spring Boot 3.1.5. It has been tested with the following software: 
 
 - Java 17 (LTS)
@@ -18,7 +18,7 @@ The project has been created with Spring Boot 3.1.5. It has been tested with the
 - NPM 10.2.3 (Latest)
 - Angluar CLI 17.0.0 (Latest)
 
-# Build & Run 
+## Build & Run 
 
 To build this project simply run
 
@@ -42,6 +42,6 @@ inside the `/ki-aim-frontend` directory.
 For this, a local version of node, npm and the angluar cli has to be installed. The build process however should work without any additional installations. 
 
 
-# Angular Frontend
+## Angular Frontend
 The angular frontend is structured to comply to best practices. This means that under `ki-aim-frontend/src/app` several folders were created to structure the application. To find out, what every subdirectory should be used for and how the components inside should be designed, refer to the `ABOUT` documents inside the folders.
 

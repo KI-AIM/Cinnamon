@@ -7,6 +7,8 @@ import { NavigationComponent } from './core/components/navigation/navigation.com
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { StartpageComponent } from './features/start/pages/startpage/startpage.component';
 import { UploadFileComponent } from './features/data-upload/pages/upload-file/upload-file.component';
+import { TitleService } from './core/services/title-service.service';
+import { StateManagementService } from './core/services/state-management.service';
 
 @NgModule({
   declarations: [
@@ -20,7 +22,10 @@ import { UploadFileComponent } from './features/data-upload/pages/upload-file/up
     AppRoutingModule,
     NgbModule
   ],
-  providers: [],
+  providers: [
+    TitleService,
+    StateManagementService,
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

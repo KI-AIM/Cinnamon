@@ -74,8 +74,8 @@
 				</executions>
 				<configuration>
 					<workingDirectory>ki-aim-frontend</workingDirectory>
-					<nodeVersion>v18.18.0</nodeVersion>
-					<npmVersion>10.1.0</npmVersion>
+					<nodeVersion>v20.9.0</nodeVersion>
+					<npmVersion>10.2.3</npmVersion>
 				</configuration>
 			</plugin>
 

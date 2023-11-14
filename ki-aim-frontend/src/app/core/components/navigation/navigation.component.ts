@@ -4,16 +4,14 @@ import { Steps } from '../../enums/steps';
 import { StateManagementService } from '../../services/state-management.service';
 
 @Component({
-  selector: 'app-navigation',
-  templateUrl: './navigation.component.html',
-  styleUrls: ['./navigation.component.less']
+    selector: 'app-navigation',
+    templateUrl: './navigation.component.html',
+    styleUrls: ['./navigation.component.less'],
 })
+
 export class NavigationComponent {
-  Mode = Mode; 
-  Steps = Steps; 
+    Mode = Mode;
+    Steps = Steps;
 
-  constructor(public stateManagement: StateManagementService) {
-
-  }
-
+    constructor(public stateManagement: StateManagementService) {}
 }

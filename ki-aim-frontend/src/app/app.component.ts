@@ -4,17 +4,17 @@ import { TitleService } from './core/services/title-service.service';
 import { StateManagementService } from './core/services/state-management.service';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.less'],
-  providers: []
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.less'],
+    providers: [],
 })
 export class AppComponent {
+    title = "ki-aim-frontend"
+    constructor(private titleService: TitleService, stateManagement: StateManagementService) {
+    }
 
-  constructor(private titleService: TitleService, stateManagement: StateManagementService) {
-  }
-
-  getTitle(): String {
-    return this.titleService.getPageTitle(); 
-  }
+    getTitle(): String {
+        return this.titleService.getPageTitle();
+    }
 }

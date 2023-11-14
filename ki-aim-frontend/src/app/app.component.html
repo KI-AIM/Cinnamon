@@ -1,17 +1,14 @@
-
 <div class="main-wrapper">
-  <div class="content-left">
-    <app-navigation></app-navigation>
-  </div>
+    <div class="content-left">
+        <app-navigation></app-navigation>
+    </div>
 
-  <div class="content-right">
-    <div class="title-wrapper">
-      {{getTitle()}}
+    <div class="content-right">
+        <div class="title-wrapper">
+            {{getTitle()}}
+        </div>
+        <div class="page-content">
+            <router-outlet></router-outlet>
+        </div>
     </div>
-    <div class="page-content">
-      <router-outlet></router-outlet>
-    </div>
-  </div>
 </div>
-
-

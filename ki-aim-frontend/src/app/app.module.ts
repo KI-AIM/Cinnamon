@@ -11,21 +11,21 @@ import { TitleService } from './core/services/title-service.service';
 import { StateManagementService } from './core/services/state-management.service';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    NavigationComponent,
-    StartpageComponent,
-    UploadFileComponent,
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    NgbModule
-  ],
-  providers: [
-    TitleService,
-    StateManagementService,
-  ],
-  bootstrap: [AppComponent]
+    declarations: [
+        AppComponent,
+        NavigationComponent,
+        StartpageComponent,
+        UploadFileComponent,
+    ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        NgbModule
+    ],
+    providers: [
+        TitleService,
+        StateManagementService,
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule { }

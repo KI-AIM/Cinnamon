@@ -1,0 +1,26 @@
+@import "sizes";
+
+
+// Make the transition for smooth animations the same on the whole page
+@transition-time: 0.25s; //Just the time to use in other expressions
+@transition-value: @transition-time ease-in-out; //As complete transition expression 
+
+@box-shadow-material-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+@box-shadow-material-md: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+@box-shadow-material-lg: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+@box-shadow-material-xl: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+@box-shadow-material-xxl: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+
+@bs-border-radius: 0.375rem;
+@border-radius: 10px; // Large border radius for background elements like the content card
+@border-radius-sm: 5px; // Smaller border radius for interactive elements
+@border-radius-pill: 500000px; //extremely large radius to force rounded sides on all elements
+@border-width: 0; // Standard value for borders
+
+//Change to auto adjust the breakpoint at which all elements get smaller
+@element-breakpoint: @b5-screen-md-min;
+@phone-breakpoint: 500px; // Additional breakpoint for small phone displays to prevent elements from overlapping
+
+//This is the font size for elements of the ui
+@ui-font-size: 150%; 
+@ui-font-size-sm: 110%; 

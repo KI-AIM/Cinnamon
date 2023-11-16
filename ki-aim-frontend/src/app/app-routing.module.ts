@@ -4,13 +4,15 @@ import { StartpageComponent } from './features/start/pages/startpage/startpage.c
 import { UploadFileComponent } from './features/data-upload/pages/upload-file/upload-file.component';
 
 const routes: Routes = [
-  {path: '', redirectTo: '/start', pathMatch: 'full'},
-  {path: 'start', component: StartpageComponent},
-  {path: 'upload', component: UploadFileComponent}
+    {path: '', redirectTo: '/start', pathMatch: 'full'},
+    {path: 'start', component: StartpageComponent},
+    {path: 'upload', component: UploadFileComponent}
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+    imports: [RouterModule.forRoot(routes)],
+    exports: [RouterModule]
 })
-export class AppRoutingModule { }
+export class AppRoutingModule { 
+    
+}

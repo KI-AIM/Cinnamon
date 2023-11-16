@@ -1,0 +1,34 @@
+@import '../../../styles/colors'; 
+@import '../../../styles/variables';
+
+.nav-link {
+    display: flex; 
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1.25rem; 
+
+    transition: @transition-value;
+
+    color: @color-white; 
+
+    &:hover {
+        background-color: @mdc-dark-blue-grey-600;
+    }
+}
+
+.active {
+    color: @mdc-grey-200; 
+    font-weight: 700;
+    background-color: @mdc-dark-blue-grey-800;
+}
+
+.completed {
+    color: @mdc-green-300; 
+    font-weight: 900;
+
+    &::after {
+        font-family: "bootstrap-icons";
+        content: "\F26C";
+        margin-left: 5px; 
+    }
+}

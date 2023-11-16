@@ -6,5 +6,5 @@ public enum DataType {
 	DECIMAL,
 	INTEGER,
 	STRING,
-	TIME,
+	DATE,
 }

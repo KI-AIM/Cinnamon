@@ -12,6 +12,6 @@ public class DateData extends Data {
 	private final LocalDate value;
 
 	@Override public DataType getDataType() {
-		return DataType.TIME;
+		return DataType.DATE;
 	}
 }

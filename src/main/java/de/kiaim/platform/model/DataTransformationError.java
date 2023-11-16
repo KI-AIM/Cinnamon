@@ -16,7 +16,7 @@ public class DataTransformationError {
 	private final int index;
 
 	/**
-	 * Message describing the error.
+	 * Type of the error.
 	 */
-	private final String errorMessage;
+	private final TransformationErrorType errorType;
 }

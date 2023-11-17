@@ -13,4 +13,23 @@ public class IntegerData extends Data {
 	public DataType getDataType() {
 		return DataType.INTEGER;
 	}
+
+
+	public static class IntegerDataBuilder {
+		private int value;
+
+		public IntegerDataBuilder setValue(String value) throws Exception {
+			//TODO: Add validation and return custom errors here
+			try {
+				this.value = Integer.parseInt(value);
+				return this;
+			} catch(Exception e) {
+				throw new Exception("Could not parse int", e);
+			}
+		}
+
+		public IntegerData build() {
+			return new IntegerData(this.value);
+		}
+	}
 }

@@ -8,8 +8,6 @@ import org.springframework.stereotype.Service;
 public class DataschemeGenerator {
 
 	public String createSchema(final DataConfiguration dataConfiguration, final String tableName) {
-
-
 		String query = "CREATE TABLE " + tableName +
 		               "(" +
 		               "%s" +
@@ -48,13 +46,6 @@ public class DataschemeGenerator {
 
 	private String createColumnString(final String columnName, final String dataType) {
 		return columnName + " " + dataType + " NOT NULL";
-	}
-
-	private String crateTableString(final long id) {
-		return "CREATE TABLE data_set_" + id +
-		       "(" +
-		       "%s" +
-		       ")";
 	}
 
 }

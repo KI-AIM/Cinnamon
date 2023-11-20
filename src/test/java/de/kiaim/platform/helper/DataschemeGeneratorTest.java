@@ -21,8 +21,9 @@ class DataschemeGeneratorTest {
 		                                         DataType.DECIMAL,
 		                                         DataType.INTEGER,
 		                                         DataType.STRING);
-		final DataConfiguration dataConfiguration = new DataConfiguration(dataTypes);
-		final String query = dataschemeGenerator.createSchema(dataConfiguration, 1);
+		final DataConfiguration dataConfiguration = new DataConfiguration();
+		dataConfiguration.setDataTypes(dataTypes);
+		final String query = dataschemeGenerator.createSchema(dataConfiguration, "data_set_1");
 
 		final String expected = "CREATE TABLE data_set_1(" +
 		                        " boolean NOT NULL," +
@@ -30,7 +31,7 @@ class DataschemeGeneratorTest {
 		                        " timestamp NOT NULL," +
 		                        " numeric NOT NULL," +
 		                        " integer NOT NULL," +
-		                        " character varying NOT NULL," +
+		                        " character varying NOT NULL" +
 		                        ");";
 
 		assertEquals(expected, query);

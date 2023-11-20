@@ -1,5 +1,6 @@
 package de.kiaim.platform.model.data;
 
+import de.kiaim.platform.model.DataConfiguration;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -17,7 +18,7 @@ public class DecimalData extends Data {
 	public static class DecimalDataBuilder {
 		private float value;
 
-		public DecimalDataBuilder setValue(String value) throws Exception {
+		public DecimalDataBuilder setValue(String value, DataConfiguration configuration) throws Exception {
 			//TODO: Add validation and return custom errors here
 			try {
 				this.value = Float.parseFloat(value);

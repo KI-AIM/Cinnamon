@@ -69,7 +69,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
                 DataType type = config.getDataTypes().get(colIndex);
 
                 try {
-                    Data transformedData = dataHelper.transformData(col, type);
+                    Data transformedData = dataHelper.transformData(col, type, config);
                     transformedCol.add(transformedData);
                 } catch (Exception e) {
                     // Transformation error that was thrown inside the Data builders

@@ -1,6 +1,8 @@
 package de.kiaim.platform.model.data;
 
-import de.kiaim.platform.model.DataConfiguration;
+import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
+import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.data.exception.IntFormatException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -19,13 +21,12 @@ public class IntegerData extends Data {
 	public static class IntegerDataBuilder {
 		private int value;
 
-		public IntegerDataBuilder setValue(String value, DataConfiguration configuration) throws Exception {
-			//TODO: Add validation and return custom errors here
+		public IntegerDataBuilder setValue(String value, ColumnConfiguration configuration) throws Exception {
 			try {
 				this.value = Integer.parseInt(value);
 				return this;
 			} catch(Exception e) {
-				throw new Exception("Could not parse int", e);
+				throw new IntFormatException();
 			}
 		}
 

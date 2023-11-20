@@ -1,12 +1,14 @@
 package de.kiaim.platform.model.data;
 
-import de.kiaim.platform.model.DataConfiguration;
+import de.kiaim.platform.model.data.configuration.*;
+import de.kiaim.platform.model.data.exception.DateTimeFormatException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Getter
 @AllArgsConstructor
@@ -23,24 +25,34 @@ public class DateTimeData extends Data {
 	public static class DateTimeDataBuilder {
 		private LocalDateTime value;
 
-		private final DateTimeFormatter standardFormat = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+		private DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-		public DateTimeDataBuilder setValue(String value, DataConfiguration configuration) throws Exception {
-			//TODO: Add validation and return custom errors here
+		public DateTimeDataBuilder setValue(String value, ColumnConfiguration columnConfiguration) throws Exception {
+			processConfigurations(columnConfiguration.getConfigurations());
+
 			try {
-				if (configuration.getDateTimeFormatter() != null) {
-					this.value = LocalDateTime.parse(value, configuration.getDateTimeFormatter());
-				} else {
-					this.value = LocalDateTime.parse(value, standardFormat);
-				}
+				this.value = LocalDateTime.parse(value, formatter);
 				return this;
 			} catch(Exception e) {
-				throw new Exception("Could not parse date time", e);
+				throw new DateTimeFormatException();
 			}
+
 		}
 
 		public DateTimeData build() {
 			return new DateTimeData(this.value);
+		}
+
+		private void processConfigurations(List<Configuration> configurationList) {
+			for (Configuration configuration : configurationList) {
+				if (configuration instanceof DateTimeFormatConfiguration) {
+					processDateTimeFormatConfiguration((DateTimeFormatConfiguration) configuration);
+				}
+			}
+		}
+
+		private void processDateTimeFormatConfiguration(DateTimeFormatConfiguration configuration) {
+			this.formatter = configuration.getDateTimeFormatter();
 		}
 	}
 }

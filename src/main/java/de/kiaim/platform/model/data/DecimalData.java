@@ -1,6 +1,8 @@
 package de.kiaim.platform.model.data;
 
-import de.kiaim.platform.model.DataConfiguration;
+import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
+import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.data.exception.FloatFormatException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -18,13 +20,12 @@ public class DecimalData extends Data {
 	public static class DecimalDataBuilder {
 		private float value;
 
-		public DecimalDataBuilder setValue(String value, DataConfiguration configuration) throws Exception {
-			//TODO: Add validation and return custom errors here
+		public DecimalDataBuilder setValue(String value, ColumnConfiguration configuration) throws Exception {
 			try {
 				this.value = Float.parseFloat(value);
 				return this;
 			} catch (Exception e) {
-				throw new Exception("Could not parse float", e);
+				throw new FloatFormatException();
 			}
 		}
 

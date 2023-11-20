@@ -1,12 +1,14 @@
 package de.kiaim.platform.helper;
 
-import de.kiaim.platform.model.DataConfiguration;
+import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.*;
 
-public class DataHelper {
+public class DataTransformationHelper {
 
-    public Data transformData(String value, DataType type, DataConfiguration configuration) throws Exception {
-        return switch (type) {
+
+
+    public Data transformData(String value, ColumnConfiguration configuration) throws Exception {
+        return switch (configuration.getType()) {
             case BOOLEAN -> new BooleanData.BooleanDataBuilder().setValue(value, configuration).build();
             case DATE -> new DateData.DateDataBuilder().setValue(value, configuration).build();
             case DATE_TIME -> new DateTimeData.DateTimeDataBuilder().setValue(value, configuration).build();

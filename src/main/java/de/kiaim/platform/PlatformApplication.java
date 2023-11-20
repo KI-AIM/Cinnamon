@@ -10,12 +10,12 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @ComponentScan(
 		basePackages = {
-				"de.kiaim.controller",
-				"de.kiaim.helper",
-				"de.kiaim.model",
-				"de.kiaim.processor",
-				"de.kiaim.reader",
-				"de.kiaim.service"
+				"de.kiaim.platform.controller",
+				"de.kiaim.platform.helper",
+				"de.kiaim.platform.model",
+				"de.kiaim.platform.processor",
+				"de.kiaim.platform.reader",
+				"de.kiaim.platform.service"
 		}
 )
 @EnableAutoConfiguration

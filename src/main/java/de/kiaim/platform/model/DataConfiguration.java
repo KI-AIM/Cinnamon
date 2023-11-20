@@ -1,17 +1,29 @@
 package de.kiaim.platform.model;
 
 import de.kiaim.platform.model.data.DataType;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Getter
-@AllArgsConstructor
+@Setter
 public class DataConfiguration {
 
 	/**
 	 * Datatype and their order of all objects inside a DataRow.
 	 */
-	final List<DataType> dataTypes;
+	List<DataType> dataTypes;
+
+	/**
+	 * The Formatter for all DateTime columns
+	 */
+	DateTimeFormatter dateTimeFormatter;
+
+	/**
+	 * The Formatter for all Date columns
+	 */
+	DateTimeFormatter dateFormatter;
+
 }

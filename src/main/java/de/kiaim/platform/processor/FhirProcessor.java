@@ -4,7 +4,6 @@ import de.kiaim.platform.model.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 
 import java.io.InputStream;
-import java.util.Base64;
 
 public class FhirProcessor implements DataProcessor{
     @Override

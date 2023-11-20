@@ -12,4 +12,15 @@ public enum TransformationErrorType {
 	 * The value is not in the specified format.
 	 */
 	FORMAT_ERROR,
+
+	/**
+	 * Error for faulty configurations
+	 */
+
+	CONFIG_ERROR,
+
+	/**
+	 * For every error that is not resolved
+	 */
+	OTHER
 }

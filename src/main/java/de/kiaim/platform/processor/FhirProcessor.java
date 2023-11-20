@@ -3,16 +3,17 @@ package de.kiaim.platform.processor;
 import de.kiaim.platform.model.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 
+import java.io.InputStream;
 import java.util.Base64;
 
 public class FhirProcessor implements DataProcessor{
     @Override
-    public TransformationResult read(Base64 data) {
+    public TransformationResult read(InputStream data) {
         return null;
     }
 
     @Override
-    public DataConfiguration estimateDatatypes(Base64 data) {
+    public DataConfiguration estimateDatatypes(InputStream data) {
         return null;
     }
 }

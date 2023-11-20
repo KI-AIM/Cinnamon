@@ -8,9 +8,9 @@ import de.kiaim.platform.model.data.DataType;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 
 @Getter
@@ -22,9 +22,9 @@ public abstract class CommonDataProcessor implements DataProcessor {
     @Setter
     private String lineSeparator = "\n";
 
-    abstract public TransformationResult read(Base64 data);
+    abstract public TransformationResult read(InputStream data);
 
-    abstract public DataConfiguration estimateDatatypes(Base64 data);
+    abstract public DataConfiguration estimateDatatypes(InputStream data);
 
     /**
      * Transforms a two-dimensional string dataset into the internal

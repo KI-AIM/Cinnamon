@@ -55,6 +55,7 @@ public class DatabaseService {
 				insertStatement.execute("INSERT INTO " + tableName + " VALUES (" + values + ")");
 			}
 		} catch (SQLException e) {
+			delete(dataSetId);
 			throw new RuntimeException(e);
 		}
 

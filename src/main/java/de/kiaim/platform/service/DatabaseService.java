@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.format.DateTimeFormatter;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,12 +30,11 @@ public class DatabaseService {
 	}
 
 	public String getTableName(final long dataSetId) {
-		return "data_set_" + dataSetId;
+		return "data_set_" + String.format("%08d", dataSetId);
 	}
 
 	public long store(final DataSet dataSet) {
-		// TODO fetch next id from database
-		long dataSetId = 1;
+		long dataSetId = new Random().nextLong(99999999);
 		final String tableName = getTableName(dataSetId);
 
 		// Create table

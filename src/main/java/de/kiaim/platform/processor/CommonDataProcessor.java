@@ -62,6 +62,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
             boolean errorInRow = false;
             String row = rows.get(rowIndex);
 
+            // Split row to get list with different columns
             List<String> cols = new ArrayList<>(Arrays.asList(row.split(columnSeparator)));
 
             List<Data> transformedCol = new ArrayList<>();
@@ -87,10 +88,13 @@ public abstract class CommonDataProcessor implements DataProcessor {
                     // Transformation error that was thrown inside the Data builders
                     DataRowTransformationError newError = new DataRowTransformationError(rowIndex, cols);
 
+                    //Resolve to error type, to easier parse information to frontend
                     TransformationErrorType errorType = exceptionToTransformationErrorMapper.mapException(e);
                     newError.addError(new DataTransformationError(colIndex, errorType));
 
+                    //Add error to errorList
                     errors.add(newError);
+                    // set flag to not add row to DataSet
                     errorInRow = true;
                 }
             }

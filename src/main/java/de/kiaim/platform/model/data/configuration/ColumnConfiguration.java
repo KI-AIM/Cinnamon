@@ -6,6 +6,11 @@ import lombok.Getter;
 
 import java.util.List;
 
+/**
+ * Every column stores its own configuration
+ * to allow for dynamically constructed data
+ * configurations
+ */
 @AllArgsConstructor
 @Getter
 public class ColumnConfiguration {

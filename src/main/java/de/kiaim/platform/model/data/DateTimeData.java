@@ -22,13 +22,25 @@ public class DateTimeData extends Data {
 	}
 
 
+	/**
+	 * Builder pattern to set and validate a value.
+	 * Performs validation based on the different configurations
+	 * that were parsed for the column by the frontend
+	 */
 	public static class DateTimeDataBuilder {
 		private LocalDateTime value;
 
 		private DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-		public DateTimeDataBuilder setValue(String value, ColumnConfiguration columnConfiguration) throws Exception {
-			processConfigurations(columnConfiguration.getConfigurations());
+		/**
+		 * Sets the value of the resulting DateTime Object
+		 * @param value The String value to be set
+		 * @param configuration The ColumnConfiguration object for the column
+		 * @return DateTimeDataBuilder (this)
+		 * @throws Exception if validation is failed
+		 */
+		public DateTimeDataBuilder setValue(String value, ColumnConfiguration configuration) throws Exception {
+			processConfigurations(configuration.getConfigurations());
 
 			try {
 				this.value = LocalDateTime.parse(value, formatter);
@@ -39,10 +51,19 @@ public class DateTimeData extends Data {
 
 		}
 
+		/**
+		 * Builds the DateTimeData Object.
+		 * Only to be called after setValue()
+		 * @return new DateTimeData object
+		 */
 		public DateTimeData build() {
 			return new DateTimeData(this.value);
 		}
 
+		/**
+		 * Processes the parsed configurations one by one for validation
+		 * @param configurationList A List of different Configuration objects
+		 */
 		private void processConfigurations(List<Configuration> configurationList) {
 			for (Configuration configuration : configurationList) {
 				if (configuration instanceof DateTimeFormatConfiguration) {
@@ -51,6 +72,13 @@ public class DateTimeData extends Data {
 			}
 		}
 
+		/**
+		 * Process the DateTimeFormatConfiguration that sets a date-time
+		 * format that a String should match.
+		 * The configuration changes the internal formatter
+		 * used to parse a String
+		 * @param configuration The DateTimeFormatConfiguration object
+		 */
 		private void processDateTimeFormatConfiguration(DateTimeFormatConfiguration configuration) {
 			this.formatter = configuration.getDateTimeFormatter();
 		}

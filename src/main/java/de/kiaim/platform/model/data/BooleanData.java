@@ -17,10 +17,25 @@ public class BooleanData extends Data {
 		return DataType.BOOLEAN;
 	}
 
+	/**
+	 * Builder pattern to set and validate a value.
+	 * Performs validation based on the different configurations
+	 * that were parsed for the column by the frontend
+	 */
 	public static class BooleanDataBuilder{
 
 		private boolean value;
 
+		/**
+		 * Sets the value of the resulting Boolean Object
+		 * The value is only set, if it is a valid Boolean
+		 * format:
+		 * "yes" or "no", "1" or "0", "true" or "false"
+		 * @param value The String value to be set
+		 * @param configuration The ColumnConfiguration object for the column
+		 * @return BooleanDataBuilder (this)
+		 * @throws Exception if value does match the Boolean pattern
+		 */
 		public BooleanDataBuilder setValue(String value, ColumnConfiguration configuration) throws Exception {
 			if (value.equalsIgnoreCase("yes") || value.equals("1") || value.equalsIgnoreCase("true")) {
 				this.value = true;
@@ -32,6 +47,11 @@ public class BooleanData extends Data {
 			return this;
 		}
 
+		/**
+		 * Builds the BooleanData Object.
+		 * Only to be called after setValue()
+		 * @return new BooleanData object
+		 */
 		public BooleanData build() {
 			return new BooleanData(this.value);
 		}

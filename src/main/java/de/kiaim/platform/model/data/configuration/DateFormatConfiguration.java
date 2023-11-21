@@ -13,6 +13,9 @@ import java.time.format.DateTimeFormatter;
 @NoArgsConstructor
 public class DateFormatConfiguration implements Configuration{
 
+    /**
+     * The DateFormatter to be used for parsing a Date String
+     */
     DateTimeFormatter dateFormatter;
 
 }

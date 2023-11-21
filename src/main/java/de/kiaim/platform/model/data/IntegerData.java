@@ -18,9 +18,21 @@ public class IntegerData extends Data {
 	}
 
 
+	/**
+	 * Builder pattern to set and validate a value.
+	 * Performs validation based on the different configurations
+	 * that were parsed for the column by the frontend
+	 */
 	public static class IntegerDataBuilder {
 		private int value;
 
+		/**
+		 * Sets the value of the resulting Integer Object
+		 * @param value The String value to be set
+		 * @param configuration The ColumnConfiguration object for the column
+		 * @return IntegerDataBuilder (this)
+		 * @throws Exception if validation is failed
+		 */
 		public IntegerDataBuilder setValue(String value, ColumnConfiguration configuration) throws Exception {
 			try {
 				this.value = Integer.parseInt(value);
@@ -30,6 +42,11 @@ public class IntegerData extends Data {
 			}
 		}
 
+		/**
+		 * Builds the IntegerData Object.
+		 * Only to be called after setValue()
+		 * @return new IntegerData object
+		 */
 		public IntegerData build() {
 			return new IntegerData(this.value);
 		}

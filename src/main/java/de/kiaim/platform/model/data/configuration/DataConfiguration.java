@@ -6,6 +6,11 @@ import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * The complete data configuration that
+ * stores global information as well as
+ * all the ColumnConfiguration objects
+ */
 @Getter
 @Setter
 public class DataConfiguration {
@@ -20,6 +25,11 @@ public class DataConfiguration {
 	 */
 	List <ColumnConfiguration> configurations;
 
+	/**
+	 * Adds a ColumnConfiguration to the list
+	 * of configurations
+	 * @param columnConfiguration A ColumnConfiguration object
+	 */
 	public void addColumnConfiguration(ColumnConfiguration columnConfiguration) {
 		this.configurations.add(columnConfiguration);
 	}

@@ -11,6 +11,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class StringPatternConfiguration implements Configuration {
 
+    /**
+     * The Regex that a string should match
+     */
     String pattern;
 
 }

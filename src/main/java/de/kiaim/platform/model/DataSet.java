@@ -1,6 +1,7 @@
 package de.kiaim.platform.model;
 
 import de.kiaim.platform.model.data.DataRow;
+import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

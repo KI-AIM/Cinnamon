@@ -1,10 +1,12 @@
 package de.kiaim.platform.processor;
 
-import de.kiaim.platform.helper.DataHelper;
+import de.kiaim.platform.helper.DataTransformationHelper;
+import de.kiaim.platform.helper.ExceptionToTransformationErrorMapper;
 import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.Data;
 import de.kiaim.platform.model.data.DataRow;
-import de.kiaim.platform.model.data.DataType;
+import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
+import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -45,7 +47,8 @@ public abstract class CommonDataProcessor implements DataProcessor {
             String data,
             DataConfiguration config
     ) {
-        DataHelper dataHelper = new DataHelper();
+        DataTransformationHelper dataHelper = new DataTransformationHelper();
+        ExceptionToTransformationErrorMapper exceptionToTransformationErrorMapper = new ExceptionToTransformationErrorMapper();
 
         //Create objects to store results
         List<DataRow> dataRows = new ArrayList<>();
@@ -59,6 +62,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
             boolean errorInRow = false;
             String row = rows.get(rowIndex);
 
+            // Split row to get list with different columns
             List<String> cols = new ArrayList<>(Arrays.asList(row.split(columnSeparator)));
 
             List<Data> transformedCol = new ArrayList<>();
@@ -66,19 +70,31 @@ public abstract class CommonDataProcessor implements DataProcessor {
             for (int colIndex = 0; colIndex < cols.size(); colIndex++) {
                 // Process every column in a row
                 String col = cols.get(colIndex);
-                DataType type = config.getDataTypes().get(colIndex);
+                int finalColIndex = colIndex; //Variable in lambda expression must be effectively final
+
+                List<ColumnConfiguration> matchingColumnConfigurations = config.getConfigurations()
+                        .stream()
+                        .filter(it -> it.getIndex() == finalColIndex)
+                        .toList();
+
+                // Every index should appear exactly once
+                assert !matchingColumnConfigurations.isEmpty();
+                ColumnConfiguration columnConfiguration = matchingColumnConfigurations.get(0);
 
                 try {
-                    Data transformedData = dataHelper.transformData(col, type, config);
+                    Data transformedData = dataHelper.transformData(col, columnConfiguration);
                     transformedCol.add(transformedData);
                 } catch (Exception e) {
                     // Transformation error that was thrown inside the Data builders
                     DataRowTransformationError newError = new DataRowTransformationError(rowIndex, cols);
 
-                    //TODO: Add method to resolve TransformationErrorType from Exception and add them to the DataRowTransformationError
-                    newError.addError(new DataTransformationError(colIndex, TransformationErrorType.FORMAT_ERROR));
+                    //Resolve to error type, to easier parse information to frontend
+                    TransformationErrorType errorType = exceptionToTransformationErrorMapper.mapException(e);
+                    newError.addError(new DataTransformationError(colIndex, errorType));
 
+                    //Add error to errorList
                     errors.add(newError);
+                    // set flag to not add row to DataSet
                     errorInRow = true;
                 }
             }

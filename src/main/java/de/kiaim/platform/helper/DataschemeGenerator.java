@@ -1,7 +1,8 @@
 package de.kiaim.platform.helper;
 
-import de.kiaim.platform.model.DataConfiguration;
 import de.kiaim.platform.model.data.DataType;
+import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
+import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,29 +15,29 @@ public class DataschemeGenerator {
 		               ")";
 		StringBuilder columns = new StringBuilder();
 
-		for (int i = 0; i < dataConfiguration.getDataTypes().size(); ++i) {
-			final DataType dataType = dataConfiguration.getDataTypes().get(i);
-			switch (dataType) {
+		for (int i = 0; i < dataConfiguration.getConfigurations().size(); ++i) {
+			final ColumnConfiguration columnConfiguration = dataConfiguration.getConfigurations().get(i);
+			switch (columnConfiguration.getType()) {
 				case BOOLEAN -> {
-					columns.append(createColumnString("a", "boolean"));
+					columns.append(createColumnString(columnConfiguration.getName(), "boolean"));
 				}
 				case DATE -> {
-					columns.append(createColumnString("f", "date"));
+					columns.append(createColumnString(columnConfiguration.getName(), "date"));
 				}
 				case DATE_TIME -> {
-					columns.append(createColumnString("b", "timestamp"));
+					columns.append(createColumnString(columnConfiguration.getName(), "timestamp"));
 				}
 				case DECIMAL -> {
-					columns.append(createColumnString("c", "numeric"));
+					columns.append(createColumnString(columnConfiguration.getName(), "numeric"));
 				}
 				case INTEGER -> {
-					columns.append(createColumnString("d", "integer"));
+					columns.append(createColumnString(columnConfiguration.getName(), "integer"));
 				}
 				case STRING -> {
-					columns.append(createColumnString("e", "character varying(255)"));
+					columns.append(createColumnString(columnConfiguration.getName(), "character varying(255)"));
 				}
 			}
-			if (i < dataConfiguration.getDataTypes().size() - 1) {
+			if (i < dataConfiguration.getConfigurations().size() - 1) {
 				columns.append(",");
 			}
 

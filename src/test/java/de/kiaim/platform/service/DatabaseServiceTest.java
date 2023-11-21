@@ -1,9 +1,10 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.platform.PlatformApplication;
-import de.kiaim.platform.model.DataConfiguration;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.data.*;
+import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
+import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +20,7 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,14 +40,15 @@ class DatabaseServiceTest {
 
 	@Test
 	void store() {
-		final List<DataType> dataTypes = List.of(DataType.BOOLEAN,
-		                                         DataType.DATE,
-		                                         DataType.DATE_TIME,
-		                                         DataType.DECIMAL,
-		                                         DataType.INTEGER,
-		                                         DataType.STRING);
 		final DataConfiguration dataConfiguration = new DataConfiguration();
-		dataConfiguration.setDataTypes(dataTypes);
+		final List<ColumnConfiguration> columnConfigurations = List.of(
+				new ColumnConfiguration(0, "0_boolean", DataType.BOOLEAN, new ArrayList<>()),
+				new ColumnConfiguration(1, "1_date", DataType.DATE, new ArrayList<>()),
+				new ColumnConfiguration(2, "2_data-time", DataType.DATE_TIME, new ArrayList<>()),
+				new ColumnConfiguration(3, "3_decimal", DataType.DECIMAL, new ArrayList<>()),
+				new ColumnConfiguration(4, "4_integer", DataType.INTEGER, new ArrayList<>()),
+				new ColumnConfiguration(5, "5_string", DataType.STRING, new ArrayList<>()));
+		dataConfiguration.setConfigurations(columnConfigurations);
 
 		final List<Data> data1 = List.of(new BooleanData(true),
 		                                 new DateData(LocalDate.of(2023, 11, 20)),

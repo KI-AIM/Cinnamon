@@ -269,5 +269,4 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
         return resultingConfiguration;
     }
-
 }

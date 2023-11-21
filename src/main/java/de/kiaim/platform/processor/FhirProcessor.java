@@ -6,11 +6,17 @@ import de.kiaim.platform.model.TransformationResult;
 import java.io.InputStream;
 
 public class FhirProcessor implements DataProcessor{
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public TransformationResult read(InputStream data) {
+    public TransformationResult read(InputStream data, DataConfiguration configuration) {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public DataConfiguration estimateDatatypes(InputStream data) {
         return null;

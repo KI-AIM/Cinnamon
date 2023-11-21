@@ -1,6 +1,6 @@
 package de.kiaim.platform.processor;
 
-import de.kiaim.platform.model.DataConfiguration;
+import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 
 import java.io.InputStream;

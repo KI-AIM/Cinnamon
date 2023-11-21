@@ -24,18 +24,19 @@ public class StringData extends Data {
 	 * Performs validation based on the different configurations
 	 * that were parsed for the column by the frontend
 	 */
-	public static class StringDataBuilder {
+	public static class StringDataBuilder implements DataBuilder {
 		private String value;
 
 		/**
 		 * Sets the value of the resulting StringData Object
 		 * @param value The value to be set
-		 * @param configuration The ColumnConfiguration object for the column
+		 * @param configuration The List of Configuration objects for the column
 		 * @return StringDataBuilder (this)
 		 * @throws Exception if validation is failed
 		 */
-		public StringDataBuilder setValue(String value, ColumnConfiguration configuration) throws Exception {
-			processConfigurations(value, configuration.getConfigurations());
+		@Override
+		public StringDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+			processConfigurations(value, configuration);
 
 			this.value = value;
 			return this;
@@ -46,6 +47,7 @@ public class StringData extends Data {
 		 * Only to be called after setValue()
 		 * @return new StringData object
 		 */
+		@Override
 		public StringData build() {
 			return new StringData(this.value);
 		}

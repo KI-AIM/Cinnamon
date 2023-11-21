@@ -44,7 +44,8 @@ public abstract class CommonDataProcessor implements DataProcessor {
             DataConfiguration config
     ) {
         DataTransformationHelper dataHelper = new DataTransformationHelper();
-        ExceptionToTransformationErrorMapper exceptionToTransformationErrorMapper = new ExceptionToTransformationErrorMapper();
+        ExceptionToTransformationErrorMapper exceptionToTransformationErrorMapper =
+                new ExceptionToTransformationErrorMapper();
 
         //Create objects to store results
         List<DataRow> dataRows = new ArrayList<>();
@@ -64,14 +65,11 @@ public abstract class CommonDataProcessor implements DataProcessor {
             List<Data> transformedCol = new ArrayList<>();
 
             for (int colIndex = 0; colIndex < cols.size(); colIndex++) {
-                // Process every column in a row
+                // Process every column value in a row
                 String col = cols.get(colIndex);
-                int finalColIndex = colIndex; //Variable in lambda expression must be effectively final
 
-                List<ColumnConfiguration> matchingColumnConfigurations = config.getConfigurations()
-                        .stream()
-                        .filter(it -> it.getIndex() == finalColIndex)
-                        .toList();
+                List<ColumnConfiguration> matchingColumnConfigurations =
+                        getColumnConfigurationForIndex(config.getConfigurations(), colIndex);
 
                 // Every index should appear exactly once
                 assert !matchingColumnConfigurations.isEmpty();
@@ -103,6 +101,16 @@ public abstract class CommonDataProcessor implements DataProcessor {
         }
 
         return new TransformationResult(new DataSet(dataRows, config), errors);
+    }
+
+    private List<ColumnConfiguration> getColumnConfigurationForIndex(
+            List<ColumnConfiguration> configurations,
+            int index
+    ) {
+        return configurations
+                .stream()
+                .filter(it -> it.getIndex() == index)
+                .toList();
     }
 
     /**

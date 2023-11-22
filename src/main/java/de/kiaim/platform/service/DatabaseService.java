@@ -29,10 +29,24 @@ public class DatabaseService {
 		this.dataschemeGenerator = dataschemeGenerator;
 	}
 
+	/**
+	 * Returns the table name for a corresponding DataSet with the given id.
+	 *
+	 * @param dataSetId ID of the DataSet.
+	 * @return Name of the corresponding table.
+	 */
 	public String getTableName(final long dataSetId) {
 		return "data_set_" + String.format("%08d", dataSetId);
 	}
 
+	/**
+	 * Stores the given DataSet into the database.
+	 * Creates a random generated ID for retrieving the data.
+	 * The table will be generated automatically.
+	 *
+	 * @param dataSet DataSet to store.
+	 * @return The generated ID of the DataSet
+	 */
 	public long store(final DataSet dataSet) {
 		long dataSetId = new Random().nextLong(99999999);
 		final String tableName = getTableName(dataSetId);
@@ -62,9 +76,14 @@ public class DatabaseService {
 		return dataSetId;
 	}
 
+	/**
+	 * Removes a DataSet from the database and deletes the corresponding table.
+	 *
+	 * @param dataSetId ID of the DataSet.
+	 */
 	public void delete(final long dataSetId) {
 		try (final Statement statement = connection.createStatement()) {
-			statement.execute("DROP TABLE " + getTableName(dataSetId) + ";");
+			statement.execute("DROP TABLE IF EXISTS" + getTableName(dataSetId) + ";");
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}

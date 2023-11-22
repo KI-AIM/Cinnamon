@@ -7,6 +7,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class DataschemeGenerator {
 
+	/**
+	 * Creates a statement to create a table with the given name in the database based on the given DataConfiguration.
+	 * @param dataConfiguration DataConfiguration for creating the schema.
+	 * @param tableName Name of the table.
+	 * @return Query in the form of a String.
+	 */
 	public String createSchema(final DataConfiguration dataConfiguration, final String tableName) {
 		String query = "CREATE TABLE " + tableName +
 		               "(" +

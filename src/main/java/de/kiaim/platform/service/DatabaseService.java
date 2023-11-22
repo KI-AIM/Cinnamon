@@ -64,7 +64,7 @@ public class DatabaseService {
 
 	public void delete(final long dataSetId) {
 		try (final Statement statement = connection.createStatement()) {
-			statement.execute("DROP TABLE " + getTableName(dataSetId));
+			statement.execute("DROP TABLE " + getTableName(dataSetId) + ";");
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}

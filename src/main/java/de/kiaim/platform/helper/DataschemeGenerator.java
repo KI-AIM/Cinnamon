@@ -1,6 +1,5 @@
 package de.kiaim.platform.helper;
 
-import de.kiaim.platform.model.data.DataType;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.springframework.stereotype.Service;
@@ -12,7 +11,7 @@ public class DataschemeGenerator {
 		String query = "CREATE TABLE " + tableName +
 		               "(" +
 		               "%s" +
-		               ")";
+		               ");";
 		StringBuilder columns = new StringBuilder();
 
 		for (int i = 0; i < dataConfiguration.getConfigurations().size(); ++i) {
@@ -34,7 +33,7 @@ public class DataschemeGenerator {
 					columns.append(createColumnString(columnConfiguration.getName(), "integer"));
 				}
 				case STRING -> {
-					columns.append(createColumnString(columnConfiguration.getName(), "character varying(255)"));
+					columns.append(createColumnString(columnConfiguration.getName(), "character varying"));
 				}
 			}
 			if (i < dataConfiguration.getConfigurations().size() - 1) {

@@ -11,9 +11,9 @@ import lombok.Setter;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Getter
 public abstract class CommonDataProcessor implements DataProcessor {
@@ -193,6 +193,118 @@ public abstract class CommonDataProcessor implements DataProcessor {
         return result;
 
     }
+
+    /**
+     * Performs datatype estimation on multiple rows.
+     * The datatype estimation is performed for each row
+     * individually. Afterwards the different results are
+     * counted for every column and the datatype
+     * with the most results is used as the estimation
+     * for the row.
+     * @param rows The line split rows
+     * @return List of datatype estimations
+     */
+    public List<DataType> estimateDatatypesForMultipleRows(List<String> rows) {
+        List<List<DataType>> datatypesForRows = new ArrayList<>();
+        List<DataType> resultList = new ArrayList<>();
+
+        for (String rowString : rows) {
+            List<String> splittedRow = Arrays.asList(rowString.split(getColumnSeparator()));
+
+            datatypesForRows.add(estimateDatatypesFromRow(splittedRow));
+        }
+
+        List<Map<DataType, Integer>> countedEstimatedDatatypes = countEstimatedDatatypesForRows(datatypesForRows);
+
+        for (Map<DataType, Integer> countedMapForColumn : countedEstimatedDatatypes) {
+            resultList.add(getMostEstimatedDatatypeFromCountMap(countedMapForColumn));
+        }
+
+        return resultList;
+    }
+
+    /**
+     * Performs the counting for the Collection of datatype
+     * estimations for every row.
+     * @param datatypesForRows two-dimensional matrix; First dimension are the rows, second dimension the columns
+     * @return A List of Count-Maps. For every Column a new Map entry is created
+     */
+    private List<Map<DataType, Integer>> countEstimatedDatatypesForRows(List<List<DataType>> datatypesForRows) {
+        List<List<DataType>> transposedList = transpose(datatypesForRows);
+        List<Map<DataType, Integer>> countedMapsForColumns = new ArrayList<>();
+
+        for (List<DataType> columnResults : transposedList) {
+            countedMapsForColumns.add(countEstimatedDatatypesForColumn(columnResults));
+        }
+
+        return countedMapsForColumns;
+    }
+
+    /**
+     * Counts the number of DataType occurences for a single column.
+     * @param column List of datatype estimations for a column
+     * @return Count Map Map<DataType, Integer>
+     */
+    private Map<DataType, Integer> countEstimatedDatatypesForColumn(List<DataType> column) {
+        Map<DataType, Integer> resultMap = initializeDatatypeCountMap();
+
+        for (DataType columnEstimation : column) {
+            resultMap.compute(columnEstimation, (key, value) -> value == null ? 1 : value + 1);
+        }
+
+        return resultMap;
+    }
+
+    /**
+     * Initializes a count map with the DataTypes and the value 0
+     * @return Count Map Map<DataType, Integer>
+     */
+    private Map<DataType, Integer> initializeDatatypeCountMap() {
+        Map<DataType, Integer> resultMap = new HashMap<>();
+
+        resultMap.put(DataType.BOOLEAN, 0);
+        resultMap.put(DataType.DATE, 0);
+        resultMap.put(DataType.DATE_TIME, 0);
+        resultMap.put(DataType.DECIMAL, 0);
+        resultMap.put(DataType.INTEGER, 0);
+        resultMap.put(DataType.STRING, 0);
+        resultMap.put(DataType.UNDEFINED, 0);
+
+        return resultMap;
+    }
+
+    /**
+     * Filters the count maps and returns the DataType for the
+     * largest value. If two values are identical the first
+     * result in the map is returned
+     * @param countMap The filled out count map Map<DataType, Integer>
+     * @return DataType
+     */
+    private DataType getMostEstimatedDatatypeFromCountMap(Map<DataType, Integer> countMap) {
+        return Collections.max(countMap.entrySet(), Map.Entry.comparingByValue()).getKey();
+    }
+
+    /**
+     * Transposes a given List<List<*>> structure.
+     * That means that rows will be converted to
+     * columns and columns to rows.
+     *
+     * @param list the 2d matrix to transpose
+     * @return transposed matrix <List<List<*>>
+     * @param <T> the Type of the object
+     */
+    public static <T> List<List<T>> transpose(List<List<T>> list) {
+        final int N = list.stream().mapToInt(List::size).max().orElse(-1);
+        List<Iterator<T>> iterList = list.stream().map(List::iterator).toList();
+        return IntStream.range(0, N)
+                .mapToObj(n -> iterList.stream()
+                        .filter(Iterator::hasNext)
+                        .map(Iterator::next)
+                        .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+    }
+
+
 
     /**
      * Method that tries to convert a value for a given DataBuilder

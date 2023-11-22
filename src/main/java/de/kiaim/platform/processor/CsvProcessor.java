@@ -28,12 +28,12 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
         String csvString = getStringFromInputStream(data);
 
         if (!csvString.isEmpty()) {
-            List<String> firstValidRow = getFirstValidRowFromCSV(csvString);
+            List<String> validRows = getSubsetOfCompleteRows(csvString, 10);
             List<String> firstRow = getFirstRowFromCSV(csvString);
 
             List<DataType> estimatedDatatypes;
-            if (!firstValidRow.isEmpty()) {
-                estimatedDatatypes = estimateDatatypesFromRow(firstValidRow);
+            if (!validRows.isEmpty()) {
+                estimatedDatatypes = estimateDatatypesForMultipleRows(validRows);
             } else {
                 estimatedDatatypes = getUndefinedDatatypesList(firstRow.size());
             }
@@ -45,28 +45,40 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
         }
     }
 
-    private List<String> getFirstValidRowFromCSV(String csvString) {
+
+    /**
+     * Function that returns a subset of complete rows for a csvString.
+     * Complete means that no missing value should be present in a row.
+     * The amount of rows is limited by the parameter maxNumberOfRows.
+     * @param csvString The csv String
+     * @param maxNumberOfRows the maximum number of rows
+     * @return A List<String> of split rows
+     */
+    private List<String> getSubsetOfCompleteRows(String csvString, int maxNumberOfRows) {
         List<String> rows = Arrays.asList(csvString.split(getLineSeparator()));
-        List<String> firstValidRow = new ArrayList<>();
+        List<String> validRows = new ArrayList<>();
 
         int i = 0;
-        boolean foundValidRow = false;
 
-        while (i < rows.size() && !foundValidRow) {
+        while (i < rows.size() && validRows.size() < maxNumberOfRows) {
             String row = rows.get(i);
 
             List<String> columns = Arrays.asList(row.split(getColumnSeparator()));
 
             if (isColumnListComplete(columns)) {
-                foundValidRow = true;
-                firstValidRow = columns;
+                validRows.add(row);
             }
             i++;
         }
 
-        return firstValidRow;
+        return validRows;
     }
 
+    /**
+     * Returns the first row of a csv string as a split List
+     * @param csvString the csv String
+     * @return A List<String> with the column values
+     */
     private List<String> getFirstRowFromCSV(String csvString) {
         return Arrays.asList(
                 Arrays.asList(
@@ -75,4 +87,5 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
         );
 
     }
+
 }

@@ -1,6 +1,7 @@
 package de.kiaim.platform.model;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -11,7 +12,14 @@ import java.util.List;
  */
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode
 public class DataRowTransformationError {
+
+	public DataRowTransformationError(int index, List<String> rawValues) {
+		this.index = index;
+		this.rawValues = rawValues;
+		this.dataTransformationErrors = new ArrayList<>();
+	}
 
 	/**
 	 * Original index of the row in the input data.
@@ -26,7 +34,7 @@ public class DataRowTransformationError {
 	/**
 	 * List of errors that occurred during the transformation.
 	 */
-	private final List<DataTransformationError> dataTransformationErrors = new ArrayList<>();
+	private final List<DataTransformationError> dataTransformationErrors;
 
 	/**
 	 * Adds a new error to list of errors.

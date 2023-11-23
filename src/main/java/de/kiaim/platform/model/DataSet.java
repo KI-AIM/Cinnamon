@@ -6,12 +6,14 @@ import de.kiaim.platform.model.data.Data;
 import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.List;
 
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode
 public class DataSet {
 
 	@JsonIgnore

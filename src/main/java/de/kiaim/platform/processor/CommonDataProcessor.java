@@ -8,6 +8,7 @@ import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -24,11 +25,11 @@ public abstract class CommonDataProcessor implements DataProcessor {
     @Setter
     private String lineSeparator = "\n";
 
+    @Autowired
     DataTransformationHelper dataTransformationHelper;
 
-    public CommonDataProcessor() {
-        this.dataTransformationHelper = new DataTransformationHelper();
-    }
+    @Autowired
+    ExceptionToTransformationErrorMapper exceptionToTransformationErrorMapper;
 
     /**
      * Transforms a two-dimensional string dataset into the internal
@@ -49,10 +50,6 @@ public abstract class CommonDataProcessor implements DataProcessor {
             String data,
             DataConfiguration config
     ) {
-        DataTransformationHelper dataHelper = new DataTransformationHelper();
-        ExceptionToTransformationErrorMapper exceptionToTransformationErrorMapper =
-                new ExceptionToTransformationErrorMapper();
-
         //Create objects to store results
         List<DataRow> dataRows = new ArrayList<>();
         List<DataRowTransformationError> errors = new ArrayList<>();
@@ -82,14 +79,14 @@ public abstract class CommonDataProcessor implements DataProcessor {
                 ColumnConfiguration columnConfiguration = matchingColumnConfigurations.get(0);
 
                 try {
-                    Data transformedData = dataHelper.transformData(col, columnConfiguration);
+                    Data transformedData = this.dataTransformationHelper.transformData(col, columnConfiguration);
                     transformedCol.add(transformedData);
                 } catch (Exception e) {
                     // Transformation error that was thrown inside the Data builders
                     DataRowTransformationError newError = new DataRowTransformationError(rowIndex, cols);
 
                     //Resolve to error type, to easier parse information to frontend
-                    TransformationErrorType errorType = exceptionToTransformationErrorMapper.mapException(e);
+                    TransformationErrorType errorType = this.exceptionToTransformationErrorMapper.mapException(e);
                     newError.addError(new DataTransformationError(colIndex, errorType));
 
                     //Add error to errorList

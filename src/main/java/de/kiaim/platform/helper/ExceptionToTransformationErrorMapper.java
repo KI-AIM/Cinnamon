@@ -1,9 +1,10 @@
 package de.kiaim.platform.helper;
 
 import de.kiaim.platform.model.TransformationErrorType;
-import de.kiaim.platform.model.data.configuration.DateTimeFormatConfiguration;
 import de.kiaim.platform.model.data.exception.*;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ExceptionToTransformationErrorMapper {
 
     public TransformationErrorType mapException(Exception e) {

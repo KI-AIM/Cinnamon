@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
  * when transforming string data to the internal
  * data-scheme
  */
+@Component
 public class DataTransformationHelper {
 
     /**

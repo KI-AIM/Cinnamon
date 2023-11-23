@@ -142,7 +142,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
     public boolean isColumnListComplete(List<String> column) {
         boolean columnIsValid = true;
         for (String columnValue : column) {
-            if (!isValueNotEmpty(columnValue)) {
+            if (isValueEmpty(columnValue)) {
                 columnIsValid = false;
             }
         }
@@ -151,15 +151,25 @@ public abstract class CommonDataProcessor implements DataProcessor {
     }
 
     /**
-     * Checks whether a value is not empty
+     * Checks whether a value is empty
+     * @param value to be checked
+     * @return true if value is empty; false otherwise
+     */
+    private boolean isValueEmpty(String value) {
+        return value.isEmpty() ||
+                value.equals("N/A") ||
+                value.equals("NaN") ||
+                value.equals("null");
+    }
+
+    /**
+     * Inverse result of isValueEmpty.
+     * Can be used to improve readability
      * @param value to be checked
      * @return true if value is not empty; false otherwise
      */
     private boolean isValueNotEmpty(String value) {
-        return !value.isEmpty() &&
-                !value.equals("N/A") &&
-                !value.equals("NaN") &&
-                !value.equals("null");
+        return !isValueEmpty(value);
     }
 
     /**

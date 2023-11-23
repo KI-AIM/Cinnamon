@@ -2,22 +2,14 @@ package de.kiaim.platform.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.platform.ContextRequiredTest;
 import de.kiaim.platform.TestModelHelper;
-import de.kiaim.platform.model.data.*;
-import de.kiaim.platform.model.data.configuration.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
-public class TransformationResultTest {
+public class TransformationResultTest extends ContextRequiredTest {
 
 	@Autowired
 	ObjectMapper objectMapper;

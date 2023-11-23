@@ -1,16 +1,12 @@
 package de.kiaim.platform.service;
 
-import de.kiaim.platform.PlatformApplication;
+import de.kiaim.platform.ContextRequiredTest;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.DataSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.sql.DataSource;
 
@@ -19,11 +15,8 @@ import java.sql.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = PlatformApplication.class)
-@ActiveProfiles("test")
 //@Transactional // Will block the DROP TABLE statement
-class DatabaseServiceTest {
+class DatabaseServiceTest extends ContextRequiredTest {
 
 	@Autowired
 	DataSource dataSource;

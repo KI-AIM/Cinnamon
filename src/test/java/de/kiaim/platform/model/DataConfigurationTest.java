@@ -2,16 +2,15 @@ package de.kiaim.platform.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.platform.ContextRequiredTest;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
-public class DataConfigurationTest {
+public class DataConfigurationTest extends ContextRequiredTest {
 
 	@Autowired
 	ObjectMapper objectMapper;

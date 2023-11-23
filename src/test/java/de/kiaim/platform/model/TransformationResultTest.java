@@ -24,12 +24,14 @@ public class TransformationResultTest {
 	@Test
 	public void serializationTest() throws JsonProcessingException {
 		final TransformationResult transformationResult = generateTransformationResult();
-
 		final String json = objectMapper.writeValueAsString(transformationResult);
-		final String expected = """
-				{"dataSet":{"dataConfiguration":{"dataTypes":["BOOLEAN","DATE","DATE_TIME","DECIMAL","INTEGER","STRING"],"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","configurations":[{"dateFormatter":"yyyy-MM-dd","name":"DateFormatConfiguration"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","configurations":[{"dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSXXX","name":"DateTimeFormatConfiguration"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","configurations":[]},{"index":5,"name":"column5_string","type":"STRING","configurations":[{"pattern":".*","name":"StringPatternConfiguration"}]}]},"data":[[true,"2023-11-20","2023-11-20T12:50:27.123456789",4.2,42,"Hello World!"],[false,"2023-11-20","2023-11-20T12:50:27.123456789",2.4,24,"Bye World!"]]},"transformationErrors":[{"index":2,"rawValues":["true","2023-11-20","","4.2","42","Hello World!"],"dataTransformationErrors":[{"index":2,"errorType":"MISSING_VALUE"}]}]}""";
-
+		final String expected = generateTransformationResultAsJson();
 		assertEquals(expected, json);
+	}
+
+	private static String generateTransformationResultAsJson() {
+		return """
+				{"dataSet":{"dataConfiguration":{"dataTypes":["BOOLEAN","DATE","DATE_TIME","DECIMAL","INTEGER","STRING"],"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","configurations":[{"name":"DateFormatConfiguration","dateFormatter":"yyyy-MM-dd"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","configurations":[{"name":"DateTimeFormatConfiguration","dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","configurations":[]},{"index":5,"name":"column5_string","type":"STRING","configurations":[{"name":"StringPatternConfiguration","pattern":".*"}]}]},"data":[[true,"2023-11-20","2023-11-20T12:50:27.123456789",4.2,42,"Hello World!"],[false,"2023-11-20","2023-11-20T12:50:27.123456789",2.4,24,"Bye World!"]]},"transformationErrors":[{"index":2,"rawValues":["true","2023-11-20","","4.2","42","Hello World!"],"dataTransformationErrors":[{"index":2,"errorType":"MISSING_VALUE"}]}]}""";
 	}
 
 	// TODO replace with TestModelHelper
@@ -88,6 +90,5 @@ public class TransformationResultTest {
 
 		return new TransformationResult(generateDataSet(), dataRowTransformationErrors);
 	}
-
 
 }

@@ -6,6 +6,11 @@ import de.kiaim.platform.model.TransformationResult;
 import java.io.InputStream;
 
 public class FhirProcessor implements DataProcessor{
+
+    public FhirProcessor() {
+        super();
+    }
+
     /**
      * {@inheritDoc}
      */

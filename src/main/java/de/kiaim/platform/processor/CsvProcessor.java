@@ -10,6 +10,10 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
+    public CsvProcessor() {
+        super();
+    }
+
     /**
      * {@inheritDoc}
      */

@@ -7,4 +7,5 @@ public enum DataType {
 	INTEGER,
 	STRING,
 	DATE,
+	UNDEFINED
 }

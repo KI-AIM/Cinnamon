@@ -1,10 +1,13 @@
 package de.kiaim.platform.model.data;
 
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
+import de.kiaim.platform.model.data.configuration.Configuration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.data.exception.FloatFormatException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import java.util.List;
 
 @Getter
 @AllArgsConstructor
@@ -22,17 +25,18 @@ public class DecimalData extends Data {
 	 * Performs validation based on the different configurations
 	 * that were parsed for the column by the frontend
 	 */
-	public static class DecimalDataBuilder {
+	public static class DecimalDataBuilder implements DataBuilder {
 		private float value;
 
 		/**
 		 * Sets the value of the resulting Decimal Object
 		 * @param value The String value to be set
-		 * @param configuration The ColumnConfiguration object for the column
+		 * @param configuration The List of Configuration objects for the column
 		 * @return DecimalDataBuilder (this)
 		 * @throws Exception if validation is failed
 		 */
-		public DecimalDataBuilder setValue(String value, ColumnConfiguration configuration) throws Exception {
+		@Override
+		public DecimalDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
 			try {
 				this.value = Float.parseFloat(value);
 				return this;
@@ -46,6 +50,7 @@ public class DecimalData extends Data {
 		 * Only to be called after setValue()
 		 * @return new DecimalData object
 		 */
+		@Override
 		public DecimalData build() {
 			return new DecimalData(this.value);
 		}

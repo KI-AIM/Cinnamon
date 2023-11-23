@@ -1,10 +1,13 @@
 package de.kiaim.platform.model.data;
 
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
+import de.kiaim.platform.model.data.configuration.Configuration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.data.exception.BooleanFormatException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import java.util.List;
 
 @Getter
 @AllArgsConstructor
@@ -22,7 +25,7 @@ public class BooleanData extends Data {
 	 * Performs validation based on the different configurations
 	 * that were parsed for the column by the frontend
 	 */
-	public static class BooleanDataBuilder{
+	public static class BooleanDataBuilder implements DataBuilder{
 
 		private boolean value;
 
@@ -32,11 +35,12 @@ public class BooleanData extends Data {
 		 * format:
 		 * "yes" or "no", "1" or "0", "true" or "false"
 		 * @param value The String value to be set
-		 * @param configuration The ColumnConfiguration object for the column
+		 * @param configuration The List of Configuration objects for the column
 		 * @return BooleanDataBuilder (this)
 		 * @throws Exception if value does match the Boolean pattern
 		 */
-		public BooleanDataBuilder setValue(String value, ColumnConfiguration configuration) throws Exception {
+		@Override
+		public BooleanDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
 			if (value.equalsIgnoreCase("yes") || value.equals("1") || value.equalsIgnoreCase("true")) {
 				this.value = true;
 			} else if (value.equalsIgnoreCase("no") || value.equalsIgnoreCase("0") || value.equalsIgnoreCase("false")) {
@@ -52,6 +56,7 @@ public class BooleanData extends Data {
 		 * Only to be called after setValue()
 		 * @return new BooleanData object
 		 */
+		@Override
 		public BooleanData build() {
 			return new BooleanData(this.value);
 		}

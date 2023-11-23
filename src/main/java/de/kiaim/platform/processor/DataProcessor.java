@@ -7,6 +7,8 @@ import java.io.InputStream;
 
 public interface DataProcessor {
 
+
+
     /**
      * Receives data from frontend, converts it to
      * the corresponding filetype and performs the
@@ -15,7 +17,7 @@ public interface DataProcessor {
      * @param data the raw data InputStream
      * @return TransformationResult
      */
-    TransformationResult read(InputStream data);
+    TransformationResult read(InputStream data, DataConfiguration configuration);
 
     /**
      * Receives data from frontend, converts it to

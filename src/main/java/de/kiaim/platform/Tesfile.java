@@ -9,6 +9,9 @@ import de.kiaim.platform.model.data.configuration.StringPatternConfiguration;
 import de.kiaim.platform.processor.CommonDataProcessor;
 import de.kiaim.platform.processor.CsvProcessor;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,8 +23,8 @@ public class Tesfile {
 
         String csvData =
                 """
-               208589,Wilson Maggio,28.02.1994,no,23623.18 €
                650390,Tonisha Swift,1975-05-08,no,303.23 €
+               208589,Wilson Maggio,28.02.1994,no,23623.18 €
                452159,Bill Hintz,1987-05-172421,no,38.41 €
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,N/A,158.79 €
@@ -88,6 +91,14 @@ public class Tesfile {
         config.setConfigurations(List.of(column1, column2, column3, column4, column5));
 
         TransformationResult result = processor.transformTwoDimensionalDataToDataSetAndValidate(csvData, config);
+
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+        TransformationResult readResult = processor.read(stream, config);
+
+        stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        DataConfiguration typeEstimate = processor.estimateDatatypes(stream);
 
         System.out.println("debug");
     }

@@ -28,7 +28,7 @@ public class DateData extends Data {
 	 * Performs validation based on the different configurations
 	 * that were parsed for the column by the frontend
 	 */
-	public static class DateDataBuilder {
+	public static class DateDataBuilder implements DataBuilder {
 		private LocalDate value;
 
 		private DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
@@ -36,12 +36,13 @@ public class DateData extends Data {
 		/**
 		 * Sets the value of the resulting Date Object
 		 * @param value The String value to be set
-		 * @param configuration The ColumnConfiguration object for the column
+		 * @param configuration The List of Configuration objects for the column
 		 * @return DateDataBuilder (this)
 		 * @throws Exception if validation is failed
 		 */
-		public DateDataBuilder setValue(String value, ColumnConfiguration configuration) throws Exception {
-			processConfigurations(configuration.getConfigurations());
+		@Override
+		public DateDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+			processConfigurations(configuration);
 
 			try {
 				this.value = LocalDate.parse(value, formatter);
@@ -57,6 +58,7 @@ public class DateData extends Data {
 		 * Only to be called after setValue()
 		 * @return new DateData object
 		 */
+		@Override
 		public DateData build() {
 			return new DateData(this.value);
 		}

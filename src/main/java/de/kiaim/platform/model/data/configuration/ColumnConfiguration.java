@@ -4,6 +4,7 @@ import de.kiaim.platform.model.data.DataType;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -15,6 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @EqualsAndHashCode
+@ToString
 public class ColumnConfiguration {
 
     /**

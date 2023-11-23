@@ -4,6 +4,7 @@ import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.data.Data;
 import de.kiaim.platform.model.data.DataRow;
+import de.kiaim.platform.model.data.exception.DataSetPersistanceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
@@ -13,8 +14,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 @Service
 public class DatabaseService {
@@ -47,7 +49,7 @@ public class DatabaseService {
 	 * @param dataSet DataSet to store.
 	 * @return The generated ID of the DataSet
 	 */
-	public long store(final DataSet dataSet) {
+	public long store(final DataSet dataSet) throws DataSetPersistanceException {
 		long dataSetId = new Random().nextLong(99999999);
 		final String tableName = getTableName(dataSetId);
 
@@ -56,21 +58,22 @@ public class DatabaseService {
 		try (final Statement tableStatement = connection.createStatement()) {
 			tableStatement.execute(tableQuery);
 		} catch (SQLException e) {
-			throw new RuntimeException(e);
+			throw new DataSetPersistanceException("The Table for the DataSet could not be created!", e);
 		}
 
 		// Insert data
 		try (final Statement insertStatement = connection.createStatement()) {
 			for (final DataRow dataRow : dataSet.getDataRows()) {
-				String values = dataRow.getData()
-				                       .stream()
-				                       .map(this::convertDataToString)
-				                       .collect(Collectors.joining(","));
+				final List<String> stringRow = new ArrayList<>();
+				for (final Data data : dataRow.getData()) {
+					stringRow.add(convertDataToString(data));
+				}
+				final String values = String.join(",", stringRow);
 				insertStatement.execute("INSERT INTO " + tableName + " VALUES (" + values + ")");
 			}
 		} catch (SQLException e) {
 			delete(dataSetId);
-			throw new RuntimeException(e);
+			throw new DataSetPersistanceException("The DataSet could not be persisted!", e);
 		}
 
 		return dataSetId;
@@ -81,15 +84,15 @@ public class DatabaseService {
 	 *
 	 * @param dataSetId ID of the DataSet.
 	 */
-	public void delete(final long dataSetId) {
+	public void delete(final long dataSetId) throws DataSetPersistanceException {
 		try (final Statement statement = connection.createStatement()) {
-			statement.execute("DROP TABLE IF EXISTS" + getTableName(dataSetId) + ";");
+			statement.execute("DROP TABLE IF EXISTS " + getTableName(dataSetId) + ";");
 		} catch (SQLException e) {
-			throw new RuntimeException(e);
+			throw new DataSetPersistanceException("The DataSet could not be deleted!", e);
 		}
 	}
 
-	private String convertDataToString(final Data data) {
+	private String convertDataToString(final Data data) throws DataSetPersistanceException {
 		return switch (data.getDataType()) {
 			case BOOLEAN -> data.getValue().toString();
 			case DATE -> "'" + data.getValue() + "'";
@@ -97,6 +100,7 @@ public class DatabaseService {
 			case DECIMAL -> data.getValue().toString();
 			case INTEGER -> data.getValue().toString();
 			case STRING -> "'" + data.getValue() + "'";
+			case UNDEFINED -> throw new DataSetPersistanceException("Undefined data type can not be persisted");
 		};
 	}
 }

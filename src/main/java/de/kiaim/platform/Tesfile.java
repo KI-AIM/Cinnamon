@@ -12,7 +12,6 @@ import de.kiaim.platform.processor.CsvProcessor;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -64,7 +63,7 @@ public class Tesfile {
         );
 
         DateFormatConfiguration dateFormatConfiguration = new DateFormatConfiguration();
-        dateFormatConfiguration.setDateFormatter(DateTimeFormatter.ISO_LOCAL_DATE);
+        dateFormatConfiguration.setDateFormatter("yyyy-MM-dd");
 
         StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration();
         stringPatternConfiguration.setPattern("[1-9][0-9]{1,9}[.][0-9]{2} [€]");

@@ -8,6 +8,7 @@ import de.kiaim.platform.model.data.exception.DateFormatException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -82,7 +83,7 @@ public class DateData extends Data {
 		 * @param configuration The DateFormatConfiguration object
 		 */
 		private void processDateFormatConfiguration(DateFormatConfiguration configuration) {
-			this.formatter = configuration.getDateFormatter();
+			this.formatter = DateTimeFormatter.ofPattern(configuration.getDateFormatter());
 		}
 	}
 }

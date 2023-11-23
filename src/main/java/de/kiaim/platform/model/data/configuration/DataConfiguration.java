@@ -4,6 +4,7 @@ import de.kiaim.platform.model.data.DataType;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -14,6 +15,9 @@ import java.util.List;
 @Getter
 @Setter
 public class DataConfiguration {
+	public DataConfiguration() {
+		this.configurations = new ArrayList<>();
+	}
 
 	/**
 	 * Datatype and their order of all objects inside a DataRow.

@@ -24,6 +24,12 @@ public abstract class CommonDataProcessor implements DataProcessor {
     @Setter
     private String lineSeparator = "\n";
 
+    DataTransformationHelper dataTransformationHelper;
+
+    public CommonDataProcessor() {
+        this.dataTransformationHelper = new DataTransformationHelper();
+    }
+
     /**
      * Transforms a two-dimensional string dataset into the internal
      * DataSet object.
@@ -142,34 +148,12 @@ public abstract class CommonDataProcessor implements DataProcessor {
     public boolean isColumnListComplete(List<String> column) {
         boolean columnIsValid = true;
         for (String columnValue : column) {
-            if (isValueEmpty(columnValue)) {
+            if (dataTransformationHelper.isValueEmpty(columnValue)) {
                 columnIsValid = false;
             }
         }
 
         return columnIsValid;
-    }
-
-    /**
-     * Checks whether a value is empty
-     * @param value to be checked
-     * @return true if value is empty; false otherwise
-     */
-    private boolean isValueEmpty(String value) {
-        return value.isEmpty() ||
-                value.equals("N/A") ||
-                value.equals("NaN") ||
-                value.equals("null");
-    }
-
-    /**
-     * Inverse result of isValueEmpty.
-     * Can be used to improve readability
-     * @param value to be checked
-     * @return true if value is not empty; false otherwise
-     */
-    private boolean isValueNotEmpty(String value) {
-        return !isValueEmpty(value);
     }
 
     /**

@@ -21,6 +21,8 @@ public class ExceptionToTransformationErrorMapper {
             return TransformationErrorType.FORMAT_ERROR;
         } else if (e instanceof StringPatternException) {
             return TransformationErrorType.FORMAT_ERROR;
+        } else if (e instanceof MissingValueException) {
+            return TransformationErrorType.MISSING_VALUE;
         } else {
             return TransformationErrorType.OTHER;
         }

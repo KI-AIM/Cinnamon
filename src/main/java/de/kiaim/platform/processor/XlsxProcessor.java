@@ -6,6 +6,11 @@ import de.kiaim.platform.model.TransformationResult;
 import java.io.InputStream;
 
 public class XlsxProcessor implements DataProcessor{
+
+    public XlsxProcessor() {
+        super();
+    }
+
     /**
      * {@inheritDoc}
      */

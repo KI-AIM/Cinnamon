@@ -1,6 +1,7 @@
 package de.kiaim.platform.model.data.configuration;
 
 import de.kiaim.platform.model.data.DataType;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,6 +15,7 @@ import java.util.List;
  */
 @Getter
 @Setter
+@EqualsAndHashCode
 public class DataConfiguration {
 	public DataConfiguration() {
 		this.configurations = new ArrayList<>();

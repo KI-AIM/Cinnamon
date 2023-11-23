@@ -7,6 +7,11 @@ package de.kiaim.platform.model.data.configuration;
  */
 public interface Configuration {
 
-
-
+	/**
+	 * Returns the name of the concrete implementation.
+	 * Used for Jackson serialization.
+	 *
+	 * @return Name of the Configuration.
+	 */
+	String getName();
 }

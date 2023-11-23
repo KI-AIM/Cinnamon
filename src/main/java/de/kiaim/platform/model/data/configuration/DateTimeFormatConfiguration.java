@@ -1,5 +1,6 @@
 package de.kiaim.platform.model.data.configuration;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,4 +17,12 @@ public class DateTimeFormatConfiguration implements Configuration{
      */
     String dateTimeFormatter;
 
+    /**
+     * {@inheritDoc}
+     */
+    @JsonProperty("name")
+    @Override
+    public String getName() {
+        return DateTimeFormatConfiguration.class.getSimpleName();
+    }
 }

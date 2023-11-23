@@ -3,6 +3,7 @@ package de.kiaim.platform.service;
 import de.kiaim.platform.ContextRequiredTest;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.DataSet;
+import de.kiaim.platform.repository.DataConfigurationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,20 +24,24 @@ class DatabaseServiceTest extends ContextRequiredTest {
 	Connection connection;
 
 	@Autowired
+	DataConfigurationRepository dataConfigurationRepository;
+	@Autowired
 	DatabaseService databaseService;
 
 	@Test
-	void store() {
+	void storeAndDelete() {
 		final DataSet dataSet = TestModelHelper.generateDataSet();
 
 		long id = assertDoesNotThrow(() -> databaseService.store(dataSet));
 
 		assertTrue(existsTable(id), "Table could not be found!");
 		assertEquals(2, countEntries(id), "Number of entries wrong!");
+		assertTrue(dataConfigurationRepository.existsById(id), "Configuration has not been persisted!");
 
 		assertDoesNotThrow(() -> databaseService.delete(id));
 
 		assertFalse(existsTable(id), "Table should be deleted!");
+		assertFalse(dataConfigurationRepository.existsById(id), "Configuration has not been deleted!");
 	}
 
 	@BeforeEach

@@ -1,17 +1,18 @@
 package de.kiaim.platform.model.data.configuration;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 /**
  * Empty interface that all Data configurations
  * should implement in order to be dynamically
  * processed
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "name")
+@JsonSubTypes({
+		@JsonSubTypes.Type(DateFormatConfiguration.class),
+		@JsonSubTypes.Type(DateTimeFormatConfiguration.class),
+		@JsonSubTypes.Type(StringPatternConfiguration.class),
+})
 public interface Configuration {
-
-	/**
-	 * Returns the name of the concrete implementation.
-	 * Used for Jackson serialization.
-	 *
-	 * @return Name of the Configuration.
-	 */
-	String getName();
 }

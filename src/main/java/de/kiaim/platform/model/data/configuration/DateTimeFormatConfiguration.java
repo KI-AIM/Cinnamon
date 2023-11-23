@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.format.DateTimeFormatter;
-
 @Getter
 @Setter
 @AllArgsConstructor
@@ -16,6 +14,6 @@ public class DateTimeFormatConfiguration implements Configuration{
     /**
      * The DateTimeFormatter to be used for parsing a date-time String
      */
-    DateTimeFormatter dateTimeFormatter;
+    String dateTimeFormatter;
 
 }

@@ -80,7 +80,7 @@ public class DateTimeData extends Data {
 		 * @param configuration The DateTimeFormatConfiguration object
 		 */
 		private void processDateTimeFormatConfiguration(DateTimeFormatConfiguration configuration) {
-			this.formatter = configuration.getDateTimeFormatter();
+			this.formatter = DateTimeFormatter.ofPattern(configuration.getDateTimeFormatter());
 		}
 	}
 }

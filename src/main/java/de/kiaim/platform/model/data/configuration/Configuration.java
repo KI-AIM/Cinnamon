@@ -2,6 +2,7 @@ package de.kiaim.platform.model.data.configuration;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.EqualsAndHashCode;
 
 /**
  * Empty interface that all Data configurations

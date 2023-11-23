@@ -2,23 +2,22 @@ package de.kiaim.platform.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.platform.ContextRequiredTest;
+import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
-public class DataConfigurationTest {
+public class DataConfigurationTest extends ContextRequiredTest {
 
 	@Autowired
 	ObjectMapper objectMapper;
 
 	@Test
 	public void serializationTest() throws JsonProcessingException {
-		// TODO replace with TestModelHelper
-		final DataConfiguration dataConfiguration = TransformationResultTest.generateDataConfiguration();
+		final DataConfiguration dataConfiguration = TestModelHelper.generateDataConfiguration();
 		final String json = objectMapper.writeValueAsString(dataConfiguration);
 		final String expected = generateDataConfigurationAsJson();
 		assertEquals(expected, json);
@@ -28,8 +27,7 @@ public class DataConfigurationTest {
 	public void deserializationTest() throws JsonProcessingException {
 		final String json = generateDataConfigurationAsJson();
 		final DataConfiguration dataConfiguration = objectMapper.readValue(json, DataConfiguration.class);
-		// TODO replace with TestModelHelper
-		final DataConfiguration expected = TransformationResultTest.generateDataConfiguration();
+		final DataConfiguration expected = TestModelHelper.generateDataConfiguration();
 		assertEquals(expected, dataConfiguration);
 	}
 

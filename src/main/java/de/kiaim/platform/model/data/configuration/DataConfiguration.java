@@ -5,6 +5,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,6 +17,9 @@ import java.util.List;
 @Setter
 @EqualsAndHashCode
 public class DataConfiguration {
+	public DataConfiguration() {
+		this.configurations = new ArrayList<>();
+	}
 
 	/**
 	 * Datatype and their order of all objects inside a DataRow.
@@ -36,4 +40,17 @@ public class DataConfiguration {
 		this.configurations.add(columnConfiguration);
 	}
 
+	public List<DataType> getDataTypes() {
+		if (this.dataTypes != null && !this.dataTypes.isEmpty()) {
+			return this.dataTypes;
+		} else {
+			List<DataType> result = new ArrayList<>();
+
+			for (ColumnConfiguration columnConfiguration : this.configurations) {
+				result.add(columnConfiguration.getType());
+			}
+
+			return result;
+		}
+	}
 }

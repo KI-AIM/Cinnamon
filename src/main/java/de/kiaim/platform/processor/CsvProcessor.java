@@ -3,16 +3,15 @@ package de.kiaim.platform.processor;
 import de.kiaim.platform.model.data.DataType;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@Service
 public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
-    public CsvProcessor() {
-        super();
-    }
 
     /**
      * {@inheritDoc}

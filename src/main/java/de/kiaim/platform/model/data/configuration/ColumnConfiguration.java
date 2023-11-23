@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,6 +17,9 @@ import java.util.List;
 @Getter
 @EqualsAndHashCode
 public class ColumnConfiguration {
+    public ColumnConfiguration() {
+        this.configurations = new ArrayList<>();
+    }
 
     /**
      * The index of the column
@@ -36,4 +40,13 @@ public class ColumnConfiguration {
      * A list of configurations for the column
      */
     List<Configuration> configurations;
+
+
+    /**
+     * Adds a new configuration to the column configuration
+     * @param configuration to add
+     */
+    public void addConfiguration(Configuration configuration) {
+        this.configurations.add(configuration);
+    }
 }

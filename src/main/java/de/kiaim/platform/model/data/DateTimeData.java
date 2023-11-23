@@ -27,7 +27,7 @@ public class DateTimeData extends Data {
 	 * Performs validation based on the different configurations
 	 * that were parsed for the column by the frontend
 	 */
-	public static class DateTimeDataBuilder {
+	public static class DateTimeDataBuilder implements DataBuilder {
 		private LocalDateTime value;
 
 		private DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
@@ -35,12 +35,13 @@ public class DateTimeData extends Data {
 		/**
 		 * Sets the value of the resulting DateTime Object
 		 * @param value The String value to be set
-		 * @param configuration The ColumnConfiguration object for the column
+		 * @param configuration The List of Configuration objects for the column
 		 * @return DateTimeDataBuilder (this)
 		 * @throws Exception if validation is failed
 		 */
-		public DateTimeDataBuilder setValue(String value, ColumnConfiguration configuration) throws Exception {
-			processConfigurations(configuration.getConfigurations());
+		@Override
+		public DateTimeDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+			processConfigurations(configuration);
 
 			try {
 				this.value = LocalDateTime.parse(value, formatter);
@@ -56,6 +57,7 @@ public class DateTimeData extends Data {
 		 * Only to be called after setValue()
 		 * @return new DateTimeData object
 		 */
+		@Override
 		public DateTimeData build() {
 			return new DateTimeData(this.value);
 		}
@@ -80,7 +82,7 @@ public class DateTimeData extends Data {
 		 * @param configuration The DateTimeFormatConfiguration object
 		 */
 		private void processDateTimeFormatConfiguration(DateTimeFormatConfiguration configuration) {
-			this.formatter = configuration.getDateTimeFormatter();
+			this.formatter = DateTimeFormatter.ofPattern(configuration.getDateTimeFormatter());
 		}
 	}
 }

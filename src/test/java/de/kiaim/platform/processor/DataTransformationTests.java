@@ -1,0 +1,523 @@
+package de.kiaim.platform.processor;
+
+import de.kiaim.platform.PlatformApplication;
+import de.kiaim.platform.model.*;
+import de.kiaim.platform.model.data.*;
+import de.kiaim.platform.model.data.configuration.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = PlatformApplication.class)
+@ActiveProfiles("test")
+public class DataTransformationTests {
+    @Autowired
+    CsvProcessor csvProcessor;
+
+    @Test
+    void testDataProcessingAndFindMissingValues() {
+        String csvData = """
+                Hello,1
+                This,2
+                is,3
+                N/A,4
+                a,5
+                null,6
+                test,7
+                for,8
+                NaN,9
+                missing,10
+                values,11
+                ,12
+                """;
+
+        DataConfiguration config = new DataConfiguration();
+
+        config.setConfigurations(
+                List.of(
+                    new ColumnConfiguration(
+                            0, "test", DataType.STRING, new ArrayList<>()
+                    ),
+                    new ColumnConfiguration(
+                            1, "index", DataType.INTEGER, new ArrayList<>()
+                    )
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = csvProcessor.read(stream, config);
+
+        TransformationResult expectedResult = testDataProcessingAndFindMissingValues_expectedTransformationResult();
+
+        assertEquals(actualResult, expectedResult);
+
+    }
+
+    private TransformationResult testDataProcessingAndFindMissingValues_expectedTransformationResult() {
+        List<DataRow> dataRows =
+                List.of(
+                        new DataRow(List.of(
+                                new StringData("Hello"),
+                                new IntegerData(1)
+                        )),
+                        new DataRow(List.of(
+                                new StringData("This"),
+                                new IntegerData(2)
+                        )),
+                        new DataRow(List.of(
+                                new StringData("is"),
+                                new IntegerData(3)
+                        )),
+                        new DataRow(List.of(
+                                new StringData("a"),
+                                new IntegerData(5)
+                        )),
+                        new DataRow(List.of(
+                                new StringData("test"),
+                                new IntegerData(7)
+                        )),
+                        new DataRow(List.of(
+                                new StringData("for"),
+                                new IntegerData(8)
+                        )),
+                        new DataRow(List.of(
+                                new StringData("missing"),
+                                new IntegerData(10)
+                        )),
+                        new DataRow(List.of(
+                                new StringData("values"),
+                                new IntegerData(11)
+                        ))
+                );
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+        dataConfiguration.setConfigurations(List.of(
+            new ColumnConfiguration(0, "test", DataType.STRING, new ArrayList<>()),
+            new ColumnConfiguration(1, "index", DataType.INTEGER, new ArrayList<>())
+        ));
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+            List.of(
+                    new DataRowTransformationError(
+                            3,
+                            List.of("N/A", "4"),
+                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE))
+                    ),
+                    new DataRowTransformationError(
+                            5,
+                            List.of("null", "6"),
+                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE))
+                    ),
+                    new DataRowTransformationError(
+                            8,
+                            List.of("NaN", "9"),
+                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE))
+                    ),
+                    new DataRowTransformationError(
+                            11,
+                            List.of("", "12"),
+                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE))
+                    )
+            );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+
+    @Test
+    void testDataProcessingAndDateFormatter() {
+        String csvData =
+                """
+               1975-05-08
+               1994-02-28
+               28.03.1239
+               1959-02-03
+               1982-02-20
+                """.trim();
+
+        DateFormatConfiguration dateFormatConfiguration = new DateFormatConfiguration();
+        dateFormatConfiguration.setDateFormatter("yyyy-MM-dd");
+
+        DataConfiguration config = new DataConfiguration();
+
+        config.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "date", DataType.DATE, List.of(dateFormatConfiguration)
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult expectedResult = testDataProcessingAndDateFormatter_expectedResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
+    private TransformationResult testDataProcessingAndDateFormatter_expectedResult() {
+        List<DataRow> dataRows =
+                List.of(
+                        new DataRow(List.of(
+                                new DateData(LocalDate.parse("1975-05-08"))
+                        )),
+                        new DataRow(List.of(
+                                new DateData(LocalDate.parse("1994-02-28"))
+                        )),
+                        new DataRow(List.of(
+                                new DateData(LocalDate.parse("1959-02-03"))
+                        )),
+                        new DataRow(List.of(
+                                new DateData(LocalDate.parse("1982-02-20"))
+                        ))
+                );
+
+        DateFormatConfiguration dateFormatConfiguration = new DateFormatConfiguration();
+        dateFormatConfiguration.setDateFormatter("yyyy-MM-dd");
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+        dataConfiguration.setConfigurations(List.of(
+                new ColumnConfiguration(0, "date", DataType.DATE, List.of(dateFormatConfiguration))
+        ));
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+                List.of(
+                        new DataRowTransformationError(
+                                2,
+                                List.of("28.03.1239"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                        )
+                );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+
+    @Test
+    void testDataProcessingAndDateTimeFormatter() {
+        String csvData =
+                """
+               1975-05-08T02:32:23
+               1994-02-28T12:42:42
+               1239-03-28T05:23:42
+               1959-02-03T13:01:52
+               1982-02-20T2321:24:34018
+                """.trim();
+
+        DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss");
+
+        DataConfiguration config = new DataConfiguration();
+
+        config.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "date-time", DataType.DATE_TIME, List.of(dateTimeFormatConfiguration)
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult expectedResult = testDataProcessingAndDateTimeFormatter_expectedResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
+    private TransformationResult testDataProcessingAndDateTimeFormatter_expectedResult() {
+        List<DataRow> dataRows =
+                List.of(
+                        new DataRow(List.of(
+                                new DateTimeData(LocalDateTime.parse("1975-05-08T02:32:23"))
+                        )),
+                        new DataRow(List.of(
+                                new DateTimeData(LocalDateTime.parse("1994-02-28T12:42:42"))
+                        )),
+                        new DataRow(List.of(
+                                new DateTimeData(LocalDateTime.parse("1239-03-28T05:23:42"))
+                        )),
+                        new DataRow(List.of(
+                                new DateTimeData(LocalDateTime.parse("1959-02-03T13:01:52"))
+                        ))
+                );
+
+        DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration();
+        dateTimeFormatConfiguration.setDateTimeFormatter("yyyy-MM-dd'T'HH:mm:ss");
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+        dataConfiguration.setConfigurations(List.of(
+                new ColumnConfiguration(0, "date-time", DataType.DATE_TIME, List.of(dateTimeFormatConfiguration))
+        ));
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+                List.of(
+                        new DataRowTransformationError(
+                                4,
+                                List.of("1982-02-20T2321:24:34018"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                        )
+                );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+
+    @Test
+    void testDataProcessingAndStringPattern() {
+        String csvData =
+                """
+                A124.21
+                V321.23
+                X421.23
+                C531.12
+                Wrong pattern
+                """.trim();
+
+        DataConfiguration config = new DataConfiguration();
+        StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration("[A-Z]\\d{3}[.]\\d{2}");
+
+        config.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "string-pattern", DataType.STRING, List.of(stringPatternConfiguration)
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult expectedResult = testDataProcessingAndStringPattern_expectedResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
+    private TransformationResult testDataProcessingAndStringPattern_expectedResult() {
+        List<DataRow> dataRows =
+                List.of(
+                        new DataRow(List.of(
+                                new StringData("A124.21")
+                        )),
+                        new DataRow(List.of(
+                                new StringData("V321.23")
+                        )),
+                        new DataRow(List.of(
+                                new StringData("X421.23")
+                        )),
+                        new DataRow(List.of(
+                                new StringData("C531.12")
+                        ))
+                );
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+        StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration("[A-Z]\\d{3}[.]\\d{2}");
+
+        dataConfiguration.setConfigurations(List.of(
+                new ColumnConfiguration(0, "string-pattern", DataType.STRING, List.of(stringPatternConfiguration))
+        ));
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+                List.of(
+                        new DataRowTransformationError(
+                                4,
+                                List.of("Wrong pattern"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                        )
+                );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+
+    @Test
+    void testDataProcessingAndBooleanFormats() {
+        String csvData =
+                """
+               yes
+               no
+               1
+               0
+               No boolean value
+                """.trim();
+
+        DataConfiguration config = new DataConfiguration();
+
+        config.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "boolean", DataType.BOOLEAN, new ArrayList<>()
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult expectedResult = testDataProcessingAndBooleanFormats_expectedResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
+    private TransformationResult testDataProcessingAndBooleanFormats_expectedResult() {
+        List<DataRow> dataRows =
+                List.of(
+                        new DataRow(List.of(
+                                new BooleanData(true)
+                        )),
+                        new DataRow(List.of(
+                                new BooleanData(false)
+                        )),
+                        new DataRow(List.of(
+                                new BooleanData(true)
+                        )),
+                        new DataRow(List.of(
+                                new BooleanData(false)
+                        ))
+                );
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+
+        dataConfiguration.setConfigurations(List.of(
+                new ColumnConfiguration(0, "boolean", DataType.BOOLEAN, List.of())
+        ));
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+                List.of(
+                        new DataRowTransformationError(
+                                4,
+                                List.of("No boolean value"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                        )
+                );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+
+    @Test
+    void testDataProcessingAndFloatFormat() {
+        String csvData =
+                """
+               1.23
+               3.242
+               4.534
+               5.7664
+               No float value
+                """.trim();
+
+        DataConfiguration config = new DataConfiguration();
+
+        config.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "float", DataType.DECIMAL, new ArrayList<>()
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult expectedResult = testDataProcessingAndFloatFormat_expectedResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
+    private TransformationResult testDataProcessingAndFloatFormat_expectedResult() {
+        List<DataRow> dataRows =
+                List.of(
+                        new DataRow(List.of(
+                                new DecimalData(1.23f)
+                        )),
+                        new DataRow(List.of(
+                                new DecimalData(3.242f)
+                        )),
+                        new DataRow(List.of(
+                                new DecimalData(4.534f)
+                        )),
+                        new DataRow(List.of(
+                                new DecimalData(5.7664f)
+                        ))
+                );
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+
+        dataConfiguration.setConfigurations(List.of(
+                new ColumnConfiguration(0, "float", DataType.DECIMAL, List.of())
+        ));
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+                List.of(
+                        new DataRowTransformationError(
+                                4,
+                                List.of("No float value"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                        )
+                );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+
+    @Test
+    void testDataProcessingAndIntegerFormat() {
+        String csvData =
+                """
+               1
+               2
+               3
+               4
+               No int value
+                """.trim();
+
+        DataConfiguration config = new DataConfiguration();
+
+        config.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "int", DataType.INTEGER, new ArrayList<>()
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult expectedResult = testDataProcessingAndIntegerFormat_expectedResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
+    private TransformationResult testDataProcessingAndIntegerFormat_expectedResult() {
+        List<DataRow> dataRows =
+                List.of(
+                        new DataRow(List.of(
+                                new IntegerData(1)
+                        )),
+                        new DataRow(List.of(
+                                new IntegerData(2)
+                        )),
+                        new DataRow(List.of(
+                                new IntegerData(3)
+                        )),
+                        new DataRow(List.of(
+                                new IntegerData(4)
+                        ))
+                );
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+
+        dataConfiguration.setConfigurations(List.of(
+                new ColumnConfiguration(0, "int", DataType.INTEGER, List.of())
+        ));
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+                List.of(
+                        new DataRowTransformationError(
+                                4,
+                                List.of("No int value"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                        )
+                );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+}

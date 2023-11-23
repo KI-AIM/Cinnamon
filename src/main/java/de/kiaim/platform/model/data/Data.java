@@ -1,7 +1,10 @@
 package de.kiaim.platform.model.data;
 
+import lombok.EqualsAndHashCode;
+
 import java.time.LocalDateTime;
 
+@EqualsAndHashCode
 public abstract class Data {
 
 	public abstract DataType getDataType();

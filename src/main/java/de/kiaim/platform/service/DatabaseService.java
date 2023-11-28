@@ -10,6 +10,7 @@ import de.kiaim.platform.repository.DataConfigurationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -53,6 +54,7 @@ public class DatabaseService {
 	 * @param dataSet DataSet to store.
 	 * @return The generated ID of the DataSet
 	 */
+	@Transactional
 	public long store(final DataSet dataSet) throws DataSetPersistanceException {
 		// Store configuration
 		final DataConfigurationEntity dataConfigurationEntity = new DataConfigurationEntity();
@@ -94,6 +96,7 @@ public class DatabaseService {
 	 *
 	 * @param dataSetId ID of the DataSet.
 	 */
+	@Transactional
 	public void delete(final long dataSetId) throws DataSetPersistanceException {
 		// Delete the table and its data
 		try (final Statement statement = connection.createStatement()) {
@@ -104,6 +107,15 @@ public class DatabaseService {
 
 		// Delete the configuration
 		dataConfigurationRepository.deleteById(dataSetId);
+	}
+
+	@Transactional
+	public void executeStatement(final String query) throws SQLException {
+		try (final Statement statement = connection.createStatement()) {
+			statement.execute(query);
+		} catch (SQLException e) {
+			throw e;
+		}
 	}
 
 	private String convertDataToString(final Data data) throws DataSetPersistanceException {

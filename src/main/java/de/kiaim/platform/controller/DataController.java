@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
-import de.kiaim.platform.model.data.configuration.StringPatternConfiguration;
+import de.kiaim.platform.model.data.exception.BadConfigurationException;
 import de.kiaim.platform.model.data.exception.BadFileException;
 import de.kiaim.platform.model.data.exception.DataSetPersistanceException;
 import de.kiaim.platform.processor.CsvProcessor;
@@ -47,16 +47,14 @@ public class DataController {
 	@PostMapping(value = "/validation", produces = MediaType.APPLICATION_JSON_VALUE,
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Object> readAndValidateData(@RequestPart MultipartFile file,
-	                                                  @RequestParam String configuration) throws JsonProcessingException {
-		final DataConfiguration dataConfiguration = objectMapper.readValue(configuration, DataConfiguration.class);
-		return handleRequest(RequestType.VALIDATE, file, dataConfiguration, null);
+	                                                  @RequestParam String configuration) {
+		return handleRequest(RequestType.VALIDATE, file, configuration, null);
 	}
 
 	@PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeData(@RequestPart MultipartFile file,
-	                                        @RequestParam String configuration) throws JsonProcessingException {
-		final DataConfiguration dataConfiguration = objectMapper.readValue(configuration, DataConfiguration.class);
-		return handleRequest(RequestType.STORE, file, dataConfiguration, null);
+	                                        @RequestParam String configuration) {
+		return handleRequest(RequestType.STORE, file, configuration, null);
 	}
 
 	// TODO what to load
@@ -82,12 +80,12 @@ public class DataController {
 	private ResponseEntity<Object> handleRequest(
 			final RequestType requestType,
 			@Nullable final MultipartFile file,
-			@Nullable final DataConfiguration configuration,
+			@Nullable final String configuration,
 			@Nullable final Long dataSetId
 	) {
 		try {
 			return doHandleRequest(requestType, file, configuration, dataSetId);
-		} catch (BadFileException e) {
+		} catch (BadConfigurationException | BadFileException e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (DataSetPersistanceException e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -97,21 +95,14 @@ public class DataController {
 	private ResponseEntity<Object> doHandleRequest(
 			final RequestType requestType,
 			final MultipartFile file,
-			final DataConfiguration configuration,
+			final String configuration,
 			final Long dataSetId
-	) throws BadFileException, DataSetPersistanceException {
-		final DataProcessor dataProcessor = getDataProcessor(file);
-
-		final InputStream inputStream;
-		try {
-			inputStream = file.getInputStream();
-		} catch (IOException e) {
-			throw new BadFileException("Could not read file");
-		}
-
+	) throws BadFileException, DataSetPersistanceException, BadConfigurationException {
 		final Object result;
 		switch (requestType) {
 			case DATA_TYPES -> {
+				final DataProcessor dataProcessor = getDataProcessor(file);
+				final InputStream inputStream = getInputStream(file);
 				result = dataProcessor.estimateDatatypes(inputStream);
 			}
 			case DELETE -> {
@@ -119,11 +110,17 @@ public class DataController {
 				result = null;
 			}
 			case STORE -> {
-				final TransformationResult transformationResult = dataProcessor.read(inputStream, configuration);
+				final DataProcessor dataProcessor = getDataProcessor(file);
+				final InputStream inputStream = getInputStream(file);
+				final DataConfiguration dataConfiguration = getDataConfiguration(configuration);
+				final TransformationResult transformationResult = dataProcessor.read(inputStream, dataConfiguration);
 				result = databaseService.store(transformationResult.getDataSet());
 			}
 			case VALIDATE -> {
-				result = dataProcessor.read(inputStream, configuration);
+				final DataProcessor dataProcessor = getDataProcessor(file);
+				final InputStream inputStream = getInputStream(file);
+				final DataConfiguration dataConfiguration = getDataConfiguration(configuration);
+				result = dataProcessor.read(inputStream, dataConfiguration);
 			}
 			default -> {
 				return new ResponseEntity<>("Missing handling for request type '" + requestType.name() + "'",
@@ -131,6 +128,14 @@ public class DataController {
 			}
 		}
 		return new ResponseEntity<>(result, HttpStatus.OK);
+	}
+
+	private DataConfiguration getDataConfiguration(final String configuration) throws BadConfigurationException {
+		try {
+			return objectMapper.readValue(configuration, DataConfiguration.class);
+		} catch (JsonProcessingException e) {
+			throw new BadConfigurationException("Invalid format of the configuration", e);
+		}
 	}
 
 	private DataProcessor getDataProcessor(final MultipartFile file) throws BadFileException {
@@ -141,6 +146,14 @@ public class DataController {
 				return csvProcessor;
 			default:
 				throw new BadFileException("Unsupported file type: '" + fileExtension + "'");
+		}
+	}
+
+	private InputStream getInputStream(final MultipartFile file) throws BadFileException {
+		try {
+			return file.getInputStream();
+		} catch (IOException e) {
+			throw new BadFileException("Could not read file");
 		}
 	}
 

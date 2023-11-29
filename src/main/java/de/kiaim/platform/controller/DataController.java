@@ -1,7 +1,9 @@
 package de.kiaim.platform.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.data.exception.BadConfigurationException;
@@ -11,10 +13,13 @@ import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.DatabaseService;
 import jakarta.annotation.Nullable;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -47,13 +52,13 @@ public class DataController {
 	@PostMapping(value = "/validation", produces = MediaType.APPLICATION_JSON_VALUE,
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Object> readAndValidateData(@RequestPart MultipartFile file,
-	                                                  @RequestParam String configuration) {
+	                                                  @RequestParam DataConfiguration configuration) {
 		return handleRequest(RequestType.VALIDATE, file, configuration, null);
 	}
 
 	@PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeData(@RequestPart MultipartFile file,
-	                                        @RequestParam String configuration) {
+	                                        @RequestParam DataConfiguration configuration) {
 		return handleRequest(RequestType.STORE, file, configuration, null);
 	}
 
@@ -80,7 +85,7 @@ public class DataController {
 	private ResponseEntity<Object> handleRequest(
 			final RequestType requestType,
 			@Nullable final MultipartFile file,
-			@Nullable final String configuration,
+			@Nullable final DataConfiguration configuration,
 			@Nullable final Long dataSetId
 	) {
 		try {
@@ -95,7 +100,7 @@ public class DataController {
 	private ResponseEntity<Object> doHandleRequest(
 			final RequestType requestType,
 			final MultipartFile file,
-			final String configuration,
+			final DataConfiguration configuration,
 			final Long dataSetId
 	) throws BadFileException, DataSetPersistanceException, BadConfigurationException {
 		final Object result;
@@ -112,15 +117,13 @@ public class DataController {
 			case STORE -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
-				final DataConfiguration dataConfiguration = getDataConfiguration(configuration);
-				final TransformationResult transformationResult = dataProcessor.read(inputStream, dataConfiguration);
+				final TransformationResult transformationResult = dataProcessor.read(inputStream, configuration);
 				result = databaseService.store(transformationResult.getDataSet());
 			}
 			case VALIDATE -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
-				final DataConfiguration dataConfiguration = getDataConfiguration(configuration);
-				result = dataProcessor.read(inputStream, dataConfiguration);
+				result = dataProcessor.read(inputStream, configuration);
 			}
 			default -> {
 				return new ResponseEntity<>("Missing handling for request type '" + requestType.name() + "'",

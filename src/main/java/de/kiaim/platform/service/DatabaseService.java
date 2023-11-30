@@ -55,7 +55,8 @@ public class DatabaseService {
 	 * Returns an ID to access the data.
 	 *
 	 * @param dataSet DataSet to store.
-	 * @return The generated ID of the DataSet
+	 * @return The generated ID of the DataSet.
+	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
 	 */
 	@Transactional
 	public long store(final DataSet dataSet) throws InternalDataSetPersistenceException {
@@ -97,12 +98,27 @@ public class DatabaseService {
 		return dataSetId;
 	}
 
+	/**
+	 * Exports the configuration of a given data set.
+	 *
+	 * @param dataSetId ID of the data set.
+	 * @return The configuration.
+	 * @throws BadDataSetIdException If no data set with the given ID exists.
+	 */
 	@Transactional
 	public DataConfiguration exportDataConfiguration(final long dataSetId) throws BadDataSetIdException {
 		existsOrThrow(dataSetId);
 		return dataConfigurationRepository.findById(dataSetId).get().getDataConfiguration();
 	}
 
+	/**
+	 * Exports the DataSet with the given data set ID.
+	 *
+	 * @param dataSetId ID of the data set to be exported.
+	 * @return The DataSet.
+	 * @throws BadDataSetIdException If no data set with the given ID exists.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 */
 	@Transactional
 	public DataSet exportDataSet(final long dataSetId) throws BadDataSetIdException, InternalDataSetPersistenceException {
 		final DataConfiguration dataConfiguration = exportDataConfiguration(dataSetId);
@@ -133,6 +149,8 @@ public class DatabaseService {
 	 * Removes a DataSet ant the DataConfiguration from the database and deletes the corresponding table.
 	 *
 	 * @param dataSetId ID of the DataSet.
+	 * @throws BadDataSetIdException If no data set with the given ID exists.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 */
 	@Transactional
 	public void delete(final long dataSetId) throws BadDataSetIdException, InternalDataSetPersistenceException {

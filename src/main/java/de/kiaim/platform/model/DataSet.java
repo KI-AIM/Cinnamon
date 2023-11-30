@@ -22,7 +22,7 @@ public class DataSet {
 	final DataConfiguration dataConfiguration;
 
 	@JsonProperty("data")
-	final List<List<Object>> getData() {
+	public final List<List<Object>> getData() {
 		return dataRows.stream()
 		               .map(dataRow -> dataRow.getData()
 		                                      .stream()

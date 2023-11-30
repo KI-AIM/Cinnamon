@@ -138,7 +138,7 @@ class DataControllerTest extends DatabaseTest {
 	}
 
 	@Test
-	void exportAll() throws Exception {
+	void loadConfig() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
@@ -150,7 +150,48 @@ class DataControllerTest extends DatabaseTest {
 		                       .andReturn().getResponse().getContentAsString();
 
 		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
-		assertTrue(existsTable(dataSetId), "Table could not be found!");
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
+		                                      .param("dataSetId", String.valueOf(dataSetId)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataConfiguration())));
+	}
+
+	@Test
+	void loadData() throws Exception {
+		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+
+		String result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data")
+		                                                      .file(file)
+		                                                      .param("configuration",
+		                                                             objectMapper.writeValueAsString(configuration)))
+		                       .andExpect(status().isOk())
+		                       .andReturn().getResponse().getContentAsString();
+
+		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .param("dataSetId", String.valueOf(dataSetId)))
+		       .andExpect(status().isOk())
+		       .andExpect(
+				       content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataSet().getData())));
+	}
+
+
+	@Test
+	void loadDataSet() throws Exception {
+		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+
+		String result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data")
+		                                                      .file(file)
+		                                                      .param("configuration",
+		                                                             objectMapper.writeValueAsString(configuration)))
+		                       .andExpect(status().isOk())
+		                       .andReturn().getResponse().getContentAsString();
+
+		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
 		                                      .param("dataSetId", String.valueOf(dataSetId)))
@@ -159,14 +200,14 @@ class DataControllerTest extends DatabaseTest {
 	}
 
 	@Test
-	void exportAllMissingDataSetId() throws Exception {
+	void loadDataSetMissingDataSetId() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("Missing parameter: 'dataSetId'"));
 	}
 
 	@Test
-	void exportAllInvalidDataSetId() throws Exception {
+	void loadDataSetInvalidDataSetId() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
 		                                      .param("dataSetId", "invalid"))
 		       .andExpect(status().isBadRequest())
@@ -174,7 +215,7 @@ class DataControllerTest extends DatabaseTest {
 	}
 
 	@Test
-	void exportAllWrongDataSetId() throws Exception {
+	void loadDataSetWrongDataSetId() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
 		                                      .param("dataSetId", String.valueOf(0L)))
 		       .andExpect(status().isBadRequest())

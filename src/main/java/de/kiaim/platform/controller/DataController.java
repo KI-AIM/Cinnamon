@@ -1,6 +1,7 @@
 package de.kiaim.platform.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.data.exception.BadDataSetIdException;
@@ -56,9 +57,19 @@ public class DataController {
 		return handleRequest(RequestType.STORE, file, configuration, null);
 	}
 
-	@GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/configuration", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Object> loadConfig(@RequestParam Long dataSetId) {
+		return handleRequest(RequestType.LOAD_CONFIG, null, null , dataSetId);
+	}
+
+	@GetMapping(value = "/data", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadData(@RequestParam Long dataSetId) {
-		return handleRequest(RequestType.LOAD, null, null , dataSetId);
+		return handleRequest(RequestType.LOAD_DATA, null, null , dataSetId);
+	}
+
+	@GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Object> loadDataSet(@RequestParam Long dataSetId) {
+		return handleRequest(RequestType.LOAD_DATA_SET, null, null , dataSetId);
 	}
 
 	@DeleteMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -109,8 +120,15 @@ public class DataController {
 				databaseService.delete(dataSetId);
 				result = null;
 			}
-			case LOAD -> {
-				result = databaseService.exportAll(dataSetId);
+			case LOAD_CONFIG -> {
+				result = databaseService.exportDataConfiguration(dataSetId);
+			}
+			case LOAD_DATA -> {
+				final DataSet dataSet = databaseService.exportDataSet(dataSetId);
+				result = dataSet.getData();
+			}
+			case LOAD_DATA_SET -> {
+				result = databaseService.exportDataSet(dataSetId);
 			}
 			case STORE -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
@@ -171,7 +189,9 @@ public class DataController {
 	private enum RequestType {
 		DATA_TYPES,
 		DELETE,
-		LOAD,
+		LOAD_CONFIG,
+		LOAD_DATA,
+		LOAD_DATA_SET,
 		STORE,
 		VALIDATE;
 	}

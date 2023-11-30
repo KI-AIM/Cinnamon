@@ -22,7 +22,6 @@ import java.sql.Statement;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class DatabaseService {
@@ -99,12 +98,14 @@ public class DatabaseService {
 	}
 
 	@Transactional
-	public DataSet exportAll(final long dataSetId) throws BadDataSetIdException, InternalDataSetPersistenceException {
-		// Check if the dataSetId is valid
+	public DataConfiguration exportDataConfiguration(final long dataSetId) throws BadDataSetIdException {
 		existsOrThrow(dataSetId);
+		return dataConfigurationRepository.findById(dataSetId).get().getDataConfiguration();
+	}
 
-		final Optional<DataConfigurationEntity> configurationEntity = dataConfigurationRepository.findById(dataSetId);
-		final DataConfiguration dataConfiguration = configurationEntity.get().getDataConfiguration();
+	@Transactional
+	public DataSet exportDataSet(final long dataSetId) throws BadDataSetIdException, InternalDataSetPersistenceException {
+		final DataConfiguration dataConfiguration = exportDataConfiguration(dataSetId);
 
 		final List<DataRow> dataRows = new ArrayList<>();
 		try (final Statement exportStatement = connection.createStatement()) {

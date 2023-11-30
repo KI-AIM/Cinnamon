@@ -102,12 +102,12 @@ class DataControllerTest extends DatabaseTest {
 		                                      .file(file)
 		                                      .param("configuration", "invalid"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Invalid format of the configuration"));
+		       .andExpect(content().string("Invalid parameter: 'configuration'"));
 		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data/validation")
 		                                      .file(file)
 		                                      .param("configuration", "\"invalid\""))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Invalid format of the configuration"));
+		       .andExpect(content().string("Invalid parameter: 'configuration'"));
 	}
 
 	@Test

@@ -1,25 +1,18 @@
 package de.kiaim.platform.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
-import de.kiaim.platform.model.data.exception.BadConfigurationException;
 import de.kiaim.platform.model.data.exception.BadFileException;
 import de.kiaim.platform.model.data.exception.DataSetPersistanceException;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.DatabaseService;
 import jakarta.annotation.Nullable;
-import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -90,7 +83,7 @@ public class DataController {
 	) {
 		try {
 			return doHandleRequest(requestType, file, configuration, dataSetId);
-		} catch (BadConfigurationException | BadFileException e) {
+		} catch (BadFileException e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (DataSetPersistanceException e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -102,7 +95,7 @@ public class DataController {
 			final MultipartFile file,
 			final DataConfiguration configuration,
 			final Long dataSetId
-	) throws BadFileException, DataSetPersistanceException, BadConfigurationException {
+	) throws BadFileException, DataSetPersistanceException {
 		final Object result;
 		switch (requestType) {
 			case DATA_TYPES -> {
@@ -131,14 +124,6 @@ public class DataController {
 			}
 		}
 		return new ResponseEntity<>(result, HttpStatus.OK);
-	}
-
-	private DataConfiguration getDataConfiguration(final String configuration) throws BadConfigurationException {
-		try {
-			return objectMapper.readValue(configuration, DataConfiguration.class);
-		} catch (JsonProcessingException e) {
-			throw new BadConfigurationException("Invalid format of the configuration", e);
-		}
 	}
 
 	private DataProcessor getDataProcessor(final MultipartFile file) throws BadFileException {

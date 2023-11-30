@@ -3,8 +3,10 @@ package de.kiaim.platform.service;
 import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.DataConfigurationEntity;
 import de.kiaim.platform.model.DataSet;
-import de.kiaim.platform.model.data.Data;
-import de.kiaim.platform.model.data.DataRow;
+import de.kiaim.platform.model.data.*;
+import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
+import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.data.exception.BadDataSetIdException;
 import de.kiaim.platform.model.data.exception.DataSetPersistanceException;
 import de.kiaim.platform.repository.DataConfigurationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,11 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class DatabaseService {
@@ -84,11 +88,44 @@ public class DatabaseService {
 				insertStatement.execute("INSERT INTO " + tableName + " VALUES (" + values + ")");
 			}
 		} catch (SQLException e) {
-			delete(dataSetId);
+			try {
+				delete(dataSetId);
+			} catch (BadDataSetIdException ignored) {
+			}
 			throw new DataSetPersistanceException("The DataSet could not be persisted!", e);
 		}
 
 		return dataSetId;
+	}
+
+	@Transactional
+	public DataSet exportAll(final long dataSetId) throws BadDataSetIdException, DataSetPersistanceException {
+		// Check if the dataSetId is valid
+		existsOrThrow(dataSetId);
+
+		final Optional<DataConfigurationEntity> configurationEntity = dataConfigurationRepository.findById(dataSetId);
+		final DataConfiguration dataConfiguration = configurationEntity.get().getDataConfiguration();
+
+		final List<DataRow> dataRows = new ArrayList<>();
+		try (final Statement exportStatement = connection.createStatement()) {
+			final String exportQuery = "SELECT * FROM " + getTableName(dataSetId) + ";";
+			try (final ResultSet resultSet = exportStatement.executeQuery(exportQuery)) {
+				while (resultSet.next()) {
+					final List<Data> data = new ArrayList<>();
+					for (int columnIndex = 0;
+					     columnIndex < dataConfiguration.getConfigurations().size(); ++columnIndex) {
+						final ColumnConfiguration columnConfiguration = dataConfiguration.getConfigurations()
+						                                                                 .get(columnIndex);
+						data.add(convertResultToData(resultSet, columnIndex + 1, columnConfiguration.getType()));
+					}
+					dataRows.add(new DataRow(data));
+				}
+			}
+		} catch (SQLException e) {
+			throw new DataSetPersistanceException("The DataSet could not be exported!", e);
+		}
+
+		return new DataSet(dataRows, dataConfiguration);
 	}
 
 	/**
@@ -97,7 +134,10 @@ public class DatabaseService {
 	 * @param dataSetId ID of the DataSet.
 	 */
 	@Transactional
-	public void delete(final long dataSetId) throws DataSetPersistanceException {
+	public void delete(final long dataSetId) throws BadDataSetIdException, DataSetPersistanceException {
+		// Check if the dataSetId is valid
+		existsOrThrow(dataSetId);
+
 		// Delete the table and its data
 		try (final Statement statement = connection.createStatement()) {
 			statement.execute("DROP TABLE IF EXISTS " + getTableName(dataSetId) + ";");
@@ -122,11 +162,58 @@ public class DatabaseService {
 		return switch (data.getDataType()) {
 			case BOOLEAN -> data.getValue().toString();
 			case DATE -> "'" + data.getValue() + "'";
-			case DATE_TIME -> "'" + data.asDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")) + "'";
+			case DATE_TIME ->
+					"'" + data.asDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")) + "'";
 			case DECIMAL -> data.getValue().toString();
 			case INTEGER -> data.getValue().toString();
 			case STRING -> "'" + data.getValue() + "'";
-			case UNDEFINED -> throw new DataSetPersistanceException("Undefined data type can not be persisted");
+			case UNDEFINED -> throw new DataSetPersistanceException("Undefined data type can not be persisted!");
 		};
+	}
+
+	private void existsOrThrow(final long dataSetId) throws BadDataSetIdException {
+		final boolean exists = dataConfigurationRepository.existsById(dataSetId);
+		if (!exists) {
+			throw new BadDataSetIdException("No DataSet with the given ID '" + dataSetId + "' found!");
+		}
+	}
+
+	private Data convertResultToData(final ResultSet resultSet, final int columnIndex,
+	                                 final DataType dataType) throws DataSetPersistanceException {
+		try {
+			switch (dataType) {
+				case BOOLEAN -> {
+					return new BooleanData(resultSet.getBoolean(columnIndex));
+				}
+				case DATE_TIME -> {
+					return new DateTimeData(resultSet.getTimestamp(columnIndex).toLocalDateTime());
+				}
+				case DECIMAL -> {
+					return new DecimalData(resultSet.getFloat(columnIndex));
+				}
+				case INTEGER -> {
+					return new IntegerData(resultSet.getInt(columnIndex));
+				}
+				case STRING -> {
+					return new StringData(resultSet.getString(columnIndex));
+				}
+				case DATE -> {
+					return new DateData(resultSet.getDate(columnIndex).toLocalDate());
+				}
+				case UNDEFINED -> {
+					throw new DataSetPersistanceException("Undefined data type can not be exported!");
+				}
+				default -> throw new IllegalStateException("Unexpected value: " + dataType);
+			}
+		} catch (SQLException e) {
+			try {
+				throw new DataSetPersistanceException(
+						"Failed to convert value " + resultSet.getString(columnIndex) + " to the given DataType '" +
+						dataType.name() + "'!");
+			} catch (SQLException ex) {
+				throw new DataSetPersistanceException(
+						"Failed to convert value to the given DataType '" + dataType.name() + "'!");
+			}
+		}
 	}
 }

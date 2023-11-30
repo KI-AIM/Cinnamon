@@ -122,10 +122,11 @@ class DataControllerTest extends DatabaseTest {
 		                       .andExpect(status().isOk())
 		                       .andReturn().getResponse().getContentAsString();
 
-		final long dataSetId =  assertDoesNotThrow(() -> Long.parseLong(result));
+		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
 		assertEquals(2, dataSetId, "Wrong dataSetId!");
 
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
+		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
@@ -137,18 +138,70 @@ class DataControllerTest extends DatabaseTest {
 	}
 
 	@Test
-	void DeleteDataMissingDataSetId() throws Exception {
+	void exportAll() throws Exception {
+		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+
+		String result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data")
+		                                                      .file(file)
+		                                                      .param("configuration",
+		                                                             objectMapper.writeValueAsString(configuration)))
+		                       .andExpect(status().isOk())
+		                       .andReturn().getResponse().getContentAsString();
+
+		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
+		assertTrue(existsTable(dataSetId), "Table could not be found!");
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .param("dataSetId", String.valueOf(dataSetId)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataSet())));
+	}
+
+	@Test
+	void exportAllMissingDataSetId() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(content().string("Missing parameter: 'dataSetId'"));
+	}
+
+	@Test
+	void exportAllInvalidDataSetId() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .param("dataSetId", "invalid"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(content().string("Invalid parameter: 'dataSetId'"));
+	}
+
+	@Test
+	void exportAllWrongDataSetId() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .param("dataSetId", String.valueOf(0L)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(content().string("No DataSet with the given ID '0' found!"));
+	}
+
+	@Test
+	void deleteDataMissingDataSetId() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("Missing parameter: 'dataSetId'"));
 	}
 
 	@Test
-	void DeleteDataInvalidDataSetId() throws Exception {
+	void deleteDataInvalidDataSetId() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
-				                .param("dataSetId", "invalid"))
+		                                      .param("dataSetId", "invalid"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("Invalid parameter: 'dataSetId'"));
+	}
+
+	@Test
+	void deleteDataWrongDataSetId() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		                                      .param("dataSetId", String.valueOf(0L)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(content().string("No DataSet with the given ID '0' found!"));
 	}
 
 }

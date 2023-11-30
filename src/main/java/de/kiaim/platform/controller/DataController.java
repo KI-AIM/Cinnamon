@@ -3,6 +3,7 @@ package de.kiaim.platform.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.data.exception.BadDataSetIdException;
 import de.kiaim.platform.model.data.exception.BadFileException;
 import de.kiaim.platform.model.data.exception.DataSetPersistanceException;
 import de.kiaim.platform.processor.CsvProcessor;
@@ -55,8 +56,9 @@ public class DataController {
 		return handleRequest(RequestType.STORE, file, configuration, null);
 	}
 
-	// TODO what to load
-	public void loadData() {
+	@GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Object> loadData(@RequestParam Long dataSetId) {
+		return handleRequest(RequestType.LOAD, null, null , dataSetId);
 	}
 
 	@DeleteMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -83,7 +85,7 @@ public class DataController {
 	) {
 		try {
 			return doHandleRequest(requestType, file, configuration, dataSetId);
-		} catch (BadFileException e) {
+		} catch (BadDataSetIdException | BadFileException e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (DataSetPersistanceException e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -95,7 +97,7 @@ public class DataController {
 			final MultipartFile file,
 			final DataConfiguration configuration,
 			final Long dataSetId
-	) throws BadFileException, DataSetPersistanceException {
+	) throws BadDataSetIdException, BadFileException, DataSetPersistanceException {
 		final Object result;
 		switch (requestType) {
 			case DATA_TYPES -> {
@@ -106,6 +108,9 @@ public class DataController {
 			case DELETE -> {
 				databaseService.delete(dataSetId);
 				result = null;
+			}
+			case LOAD -> {
+				result = databaseService.exportAll(dataSetId);
 			}
 			case STORE -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
@@ -166,6 +171,7 @@ public class DataController {
 	private enum RequestType {
 		DATA_TYPES,
 		DELETE,
+		LOAD,
 		STORE,
 		VALIDATE;
 	}

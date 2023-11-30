@@ -16,7 +16,6 @@ class DatabaseServiceTest extends DatabaseTest {
 
 	@Test
 	void storeAndDelete() {
-		cleanDatabase();
 		final DataSet dataSet = TestModelHelper.generateDataSet();
 
 		long id = assertDoesNotThrow(() -> databaseService.store(dataSet));

@@ -13,7 +13,7 @@ import java.sql.*;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-@Transactional // Will block the DROP TABLE statement
+//@Transactional // Will block the DROP TABLE statement
 public class DatabaseTest extends ContextRequiredTest {
 
 	@Autowired
@@ -34,8 +34,16 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	@AfterEach
+	void close() {
+		DataSourceUtils.releaseConnection(connection, dataSource);
+		connection = null;
+	}
+
+	@AfterEach
+	@Transactional
 	protected void cleanDatabase() {
 		try {
+			dataConfigurationRepository.deleteAll();
 			databaseService.executeStatement("SELECT setval('data_configuration_entity_seq', 1, true)");
 			databaseService.executeStatement(
 					"""
@@ -55,7 +63,6 @@ public class DatabaseTest extends ContextRequiredTest {
 							END
 							$do$;
 							""");
-			dataConfigurationRepository.deleteAll();
 		} catch (SQLException ignored) {
 		}
 	}

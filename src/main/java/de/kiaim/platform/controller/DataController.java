@@ -5,7 +5,7 @@ import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.data.exception.BadDataSetIdException;
 import de.kiaim.platform.model.data.exception.BadFileException;
-import de.kiaim.platform.model.data.exception.DataSetPersistanceException;
+import de.kiaim.platform.model.data.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.DatabaseService;
@@ -87,7 +87,7 @@ public class DataController {
 			return doHandleRequest(requestType, file, configuration, dataSetId);
 		} catch (BadDataSetIdException | BadFileException e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-		} catch (DataSetPersistanceException e) {
+		} catch (InternalDataSetPersistenceException e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -97,7 +97,7 @@ public class DataController {
 			final MultipartFile file,
 			final DataConfiguration configuration,
 			final Long dataSetId
-	) throws BadDataSetIdException, BadFileException, DataSetPersistanceException {
+	) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
 		final Object result;
 		switch (requestType) {
 			case DATA_TYPES -> {

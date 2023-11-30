@@ -7,7 +7,7 @@ import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.data.exception.BadDataSetIdException;
-import de.kiaim.platform.model.data.exception.DataSetPersistanceException;
+import de.kiaim.platform.model.data.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.repository.DataConfigurationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -59,7 +59,7 @@ public class DatabaseService {
 	 * @return The generated ID of the DataSet
 	 */
 	@Transactional
-	public long store(final DataSet dataSet) throws DataSetPersistanceException {
+	public long store(final DataSet dataSet) throws InternalDataSetPersistenceException {
 		// Store configuration
 		final DataConfigurationEntity dataConfigurationEntity = new DataConfigurationEntity();
 		dataConfigurationEntity.setDataConfiguration(dataSet.getDataConfiguration());
@@ -74,7 +74,7 @@ public class DatabaseService {
 		try (final Statement tableStatement = connection.createStatement()) {
 			tableStatement.execute(tableQuery);
 		} catch (SQLException e) {
-			throw new DataSetPersistanceException("The Table for the DataSet could not be created!", e);
+			throw new InternalDataSetPersistenceException("The Table for the DataSet could not be created!", e);
 		}
 
 		// Insert data
@@ -92,14 +92,14 @@ public class DatabaseService {
 				delete(dataSetId);
 			} catch (BadDataSetIdException ignored) {
 			}
-			throw new DataSetPersistanceException("The DataSet could not be persisted!", e);
+			throw new InternalDataSetPersistenceException("The DataSet could not be persisted!", e);
 		}
 
 		return dataSetId;
 	}
 
 	@Transactional
-	public DataSet exportAll(final long dataSetId) throws BadDataSetIdException, DataSetPersistanceException {
+	public DataSet exportAll(final long dataSetId) throws BadDataSetIdException, InternalDataSetPersistenceException {
 		// Check if the dataSetId is valid
 		existsOrThrow(dataSetId);
 
@@ -122,7 +122,7 @@ public class DatabaseService {
 				}
 			}
 		} catch (SQLException e) {
-			throw new DataSetPersistanceException("The DataSet could not be exported!", e);
+			throw new InternalDataSetPersistenceException("The DataSet could not be exported!", e);
 		}
 
 		return new DataSet(dataRows, dataConfiguration);
@@ -134,7 +134,7 @@ public class DatabaseService {
 	 * @param dataSetId ID of the DataSet.
 	 */
 	@Transactional
-	public void delete(final long dataSetId) throws BadDataSetIdException, DataSetPersistanceException {
+	public void delete(final long dataSetId) throws BadDataSetIdException, InternalDataSetPersistenceException {
 		// Check if the dataSetId is valid
 		existsOrThrow(dataSetId);
 
@@ -142,7 +142,7 @@ public class DatabaseService {
 		try (final Statement statement = connection.createStatement()) {
 			statement.execute("DROP TABLE IF EXISTS " + getTableName(dataSetId) + ";");
 		} catch (SQLException e) {
-			throw new DataSetPersistanceException("The DataSet could not be deleted!", e);
+			throw new InternalDataSetPersistenceException("The DataSet could not be deleted!", e);
 		}
 
 		// Delete the configuration
@@ -158,7 +158,7 @@ public class DatabaseService {
 		}
 	}
 
-	private String convertDataToString(final Data data) throws DataSetPersistanceException {
+	private String convertDataToString(final Data data) throws InternalDataSetPersistenceException {
 		return switch (data.getDataType()) {
 			case BOOLEAN -> data.getValue().toString();
 			case DATE -> "'" + data.getValue() + "'";
@@ -167,7 +167,7 @@ public class DatabaseService {
 			case DECIMAL -> data.getValue().toString();
 			case INTEGER -> data.getValue().toString();
 			case STRING -> "'" + data.getValue() + "'";
-			case UNDEFINED -> throw new DataSetPersistanceException("Undefined data type can not be persisted!");
+			case UNDEFINED -> throw new InternalDataSetPersistenceException("Undefined data type can not be persisted!");
 		};
 	}
 
@@ -179,7 +179,7 @@ public class DatabaseService {
 	}
 
 	private Data convertResultToData(final ResultSet resultSet, final int columnIndex,
-	                                 final DataType dataType) throws DataSetPersistanceException {
+	                                 final DataType dataType) throws InternalDataSetPersistenceException {
 		try {
 			switch (dataType) {
 				case BOOLEAN -> {
@@ -201,17 +201,17 @@ public class DatabaseService {
 					return new DateData(resultSet.getDate(columnIndex).toLocalDate());
 				}
 				case UNDEFINED -> {
-					throw new DataSetPersistanceException("Undefined data type can not be exported!");
+					throw new InternalDataSetPersistenceException("Undefined data type can not be exported!");
 				}
 				default -> throw new IllegalStateException("Unexpected value: " + dataType);
 			}
 		} catch (SQLException e) {
 			try {
-				throw new DataSetPersistanceException(
+				throw new InternalDataSetPersistenceException(
 						"Failed to convert value " + resultSet.getString(columnIndex) + " to the given DataType '" +
 						dataType.name() + "'!");
 			} catch (SQLException ex) {
-				throw new DataSetPersistanceException(
+				throw new InternalDataSetPersistenceException(
 						"Failed to convert value to the given DataType '" + dataType.name() + "'!");
 			}
 		}

@@ -3,6 +3,7 @@ package de.kiaim.platform.model.data;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Schema(anyOf = {Boolean.class, LocalDate.class, LocalDateTime.class, Float.class, Integer.class, String.class},
@@ -18,6 +19,10 @@ public abstract class Data {
 
 	public Boolean asBoolean() {
 		return (Boolean) getValue();
+	}
+
+	public LocalDate asDate() {
+		return (LocalDate) getValue();
 	}
 
 	public LocalDateTime asDateTime() {

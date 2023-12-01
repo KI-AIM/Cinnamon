@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.Date;
@@ -26,6 +27,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			MissingServletRequestParameterException ex, HttpHeaders headers, HttpStatusCode status,
 			WebRequest request) {
 		return new ResponseEntity<>("Missing parameter: '" + ex.getParameterName() + "'", HttpStatus.BAD_REQUEST);
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleMissingServletRequestPart(
+			MissingServletRequestPartException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		return new ResponseEntity<>("Missing part: '" + ex.getRequestPartName() + "'", HttpStatus.BAD_REQUEST);
 	}
 
 	@Override

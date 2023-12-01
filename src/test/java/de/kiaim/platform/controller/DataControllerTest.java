@@ -8,6 +8,7 @@ import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -46,7 +47,7 @@ class DataControllerTest extends DatabaseTest {
 	void estimateDatatypesMissingFile() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data/datatypes"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Missing file"));
+		       .andExpect(content().string("Missing part: 'file'"));
 	}
 
 	@Test
@@ -130,6 +131,7 @@ class DataControllerTest extends DatabaseTest {
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
 		                                      .param("dataSetId", String.valueOf(dataSetId)))
 		       .andExpect(status().isOk());
 
@@ -152,6 +154,7 @@ class DataControllerTest extends DatabaseTest {
 		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
 		                                      .param("dataSetId", String.valueOf(dataSetId)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataConfiguration())));
@@ -172,6 +175,7 @@ class DataControllerTest extends DatabaseTest {
 		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
 		                                      .param("dataSetId", String.valueOf(dataSetId)))
 		       .andExpect(status().isOk())
 		       .andExpect(
@@ -194,6 +198,7 @@ class DataControllerTest extends DatabaseTest {
 		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
 		                                      .param("dataSetId", String.valueOf(dataSetId)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataSet())));
@@ -201,7 +206,8 @@ class DataControllerTest extends DatabaseTest {
 
 	@Test
 	void loadDataSetMissingDataSetId() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("Missing parameter: 'dataSetId'"));
 	}
@@ -209,6 +215,7 @@ class DataControllerTest extends DatabaseTest {
 	@Test
 	void loadDataSetInvalidDataSetId() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
 		                                      .param("dataSetId", "invalid"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("Invalid parameter: 'dataSetId'"));
@@ -217,6 +224,7 @@ class DataControllerTest extends DatabaseTest {
 	@Test
 	void loadDataSetWrongDataSetId() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
 		                                      .param("dataSetId", String.valueOf(0L)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("No DataSet with the given ID '0' found!"));
@@ -224,7 +232,8 @@ class DataControllerTest extends DatabaseTest {
 
 	@Test
 	void deleteDataMissingDataSetId() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data"))
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("Missing parameter: 'dataSetId'"));
 	}
@@ -232,6 +241,7 @@ class DataControllerTest extends DatabaseTest {
 	@Test
 	void deleteDataInvalidDataSetId() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
 		                                      .param("dataSetId", "invalid"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("Invalid parameter: 'dataSetId'"));
@@ -240,6 +250,7 @@ class DataControllerTest extends DatabaseTest {
 	@Test
 	void deleteDataWrongDataSetId() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
 		                                      .param("dataSetId", String.valueOf(0L)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("No DataSet with the given ID '0' found!"));

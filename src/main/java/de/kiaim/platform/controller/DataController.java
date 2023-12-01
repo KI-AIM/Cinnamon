@@ -47,7 +47,6 @@ public class DataController {
 		this.databaseService = databaseService;
 	}
 
-	@PostMapping(value = "/datatypes", produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Estimates the data types of a given data set.",
 	           description = "Estimates the data types of a given data set.")
 	@ApiResponses(value = {
@@ -62,6 +61,9 @@ public class DataController {
 			             description = "An internal error occurred.",
 			             content = @Content)
 	})
+	@PostMapping(value = "/datatypes",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> estimateDatatpes(
 			@Parameter(description = "File containing the data.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -70,8 +72,6 @@ public class DataController {
 		return handleRequest(RequestType.DATA_TYPES, file, null, null);
 	}
 
-	@PostMapping(value = "/validation", produces = MediaType.APPLICATION_JSON_VALUE,
-	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@Operation(summary = "Converts and validates the uploaded file into a tabular representation.",
 	           description = "Converts and validates the uploaded file into a tabular representation.")
 	@ApiResponses(value = {
@@ -86,6 +86,9 @@ public class DataController {
 			             description = "An internal error occurred.",
 			             content = @Content)
 	})
+	@PostMapping(value = "/validation",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> readAndValidateData(
 			@Parameter(description = "File containing the data.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -98,7 +101,6 @@ public class DataController {
 		return handleRequest(RequestType.VALIDATE, file, configuration, null);
 	}
 
-	@PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Stores the given data into the internal database for further processing.",
 	           description = "Stores the given data into the internal database for further processing.")
 	@ApiResponses(value = {
@@ -113,6 +115,9 @@ public class DataController {
 			             description = "An internal error occurred.",
 			             content = @Content)
 	})
+	@PostMapping(value = "",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeData(
 			@Parameter(description = "File containing the data to be stored.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -125,7 +130,6 @@ public class DataController {
 		return handleRequest(RequestType.STORE, file, configuration, null);
 	}
 
-	@GetMapping(value = "/configuration", produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Returns the configuration of the data set with the given ID.",
 	           description = "Returns the configuration of the data set with the given ID.")
 	@ApiResponses(value = {
@@ -140,6 +144,9 @@ public class DataController {
 			             description = "An internal error occurred.",
 			             content = @Content)
 	})
+	@GetMapping(value = "/configuration",
+	            consumes = MediaType.APPLICATION_JSON_VALUE,
+	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadConfig(
 			@Parameter(description = "ID of the data set.",
 			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -149,7 +156,6 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_CONFIG, null, null, dataSetId);
 	}
 
-	@GetMapping(value = "/data", produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Returns the data of the data set with the given ID.",
 	           description = "Returns the data of the data set with the given ID.")
 	@ApiResponses(value = {
@@ -169,6 +175,9 @@ public class DataController {
 			             description = "An internal error occurred.",
 			             content = @Content)
 	})
+	@GetMapping(value = "/data",
+	            consumes = MediaType.APPLICATION_JSON_VALUE,
+	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadData(
 			@Parameter(description = "ID of the data set.",
 			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -178,7 +187,6 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_DATA, null, null, dataSetId);
 	}
 
-	@GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Returns the data set with the given ID.",
 	           description = "Returns the data set with the given ID.")
 	@ApiResponses(value = {
@@ -193,6 +201,9 @@ public class DataController {
 			             description = "An internal error occurred.",
 			             content = @Content)
 	})
+	@GetMapping(value = "",
+	            consumes = MediaType.APPLICATION_JSON_VALUE,
+	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadDataSet(
 			@Parameter(description = "ID of the data set to be returned.",
 			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -202,7 +213,6 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_DATA_SET, null, null, dataSetId);
 	}
 
-	@DeleteMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
 	@Operation(summary = "Deletes the data set with the given ID from the internal data base.",
 	           description = "Deletes the data set with the given ID from the internal data base.")
 	@ApiResponses(value = {
@@ -216,6 +226,9 @@ public class DataController {
 			             description = "An internal error occurred.",
 			             content = @Content)
 	})
+	@DeleteMapping(value = "",
+	               consumes = MediaType.APPLICATION_JSON_VALUE,
+	               produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> deleteData(
 			@Parameter(description = "ID of the data set to be deleted.",
 			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -226,15 +239,23 @@ public class DataController {
 	}
 
 	/**
-	 * For each RequestTypes requires different attributes to be not null:
+	 * Handles a request of the given type.
+	 * For each RequestType, different attributes must not be null:
 	 * <ul>
 	 *     <li>{@link RequestType#DATA_TYPES}: file</li>
 	 *     <li>{@link RequestType#DELETE}: dataSetId</li>
+	 *     <li>{@link RequestType#LOAD_CONFIG}: dataSetId</li>
+	 *     <li>{@link RequestType#LOAD_DATA}: dataSetId</li>
+	 *     <li>{@link RequestType#LOAD_DATA_SET}: dataSetId</li>
 	 *     <li>{@link RequestType#STORE}: file, configuration</li>
 	 *     <li>{@link RequestType#VALIDATE}: file, configuration</li>
 	 * </ul>
 	 *
-	 *
+	 * @param requestType   Type of the request.
+	 * @param file          File containing the source data.
+	 * @param configuration Configuration describing the source data.
+	 * @param dataSetId     ID of the data set.
+	 * @return Response entity containing the response based on the request type or an error description.
 	 */
 	private ResponseEntity<Object> handleRequest(
 			final RequestType requestType,

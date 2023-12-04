@@ -9,34 +9,34 @@ import { List } from '../utils/list';
 export class StateManagementService {
 
     private mode: Mode
-    private completedSteps: List<Steps>; 
+    private completedSteps: List<Steps>;
 
     constructor() {
-        this.mode = Mode.UNSET; 
-        this.completedSteps = new List(); 
+        this.mode = Mode.UNSET;
+        this.completedSteps = new List();
     }
 
     getMode(): Mode {
-        return this.mode; 
+        return this.mode;
     }
 
     setMode(mode: Mode) {
-        this.mode = mode; 
+        this.mode = mode;
     }
 
     getCompletedSteps(): List<Steps> {
-        return this.completedSteps; 
+        return this.completedSteps;
     }
 
     addCompletedStep(step: Steps): void {
         if (!this.completedSteps.contains(step)) {
-        this.completedSteps.add(step); 
+            this.completedSteps.add(step);
         }
     }
-    
+
     removeCompletedStep(step: Steps): void {
         if (this.completedSteps.contains(step)) {
-
+            this.completedSteps.remove(step);
         }
     }
 }

@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { List } from 'src/app/core/utils/list';
+import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataScale } from 'src/app/shared/model/data-scale';
 import { DataType } from 'src/app/shared/model/data-type';
 
@@ -10,14 +11,11 @@ import { DataType } from 'src/app/shared/model/data-type';
 })
 export class AttributeConfigurationComponent {
     @Input() attrNumber: String; 
-    @Input() columnType: DataType;
-    @Input() dataScale: DataScale
-    @Input() columnName: String; 
+    @Input() column: ColumnConfiguration; 
     
 
     constructor() {
     }
-
 
 
     getDataTypes(): List<String> {

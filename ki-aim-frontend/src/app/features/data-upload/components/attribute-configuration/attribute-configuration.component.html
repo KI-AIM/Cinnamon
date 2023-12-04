@@ -1,19 +1,19 @@
 <div class="d-flex flex-row mb-2">
     <div class="d-flex flex-column px-2">
         <label class="form-label" [for]="'name_' + attrNumber">Column name: </label>
-        <input class="form-control" [id]="'name_' + attrNumber" [(ngModel)]="columnName" />
+        <input class="form-control" [id]="'name_' + attrNumber" [(ngModel)]="column.name" />
     </div>
 
     <div class="d-flex flex-column px-2">
         <label class="form-label" [for]="'type_' + attrNumber">Column type: </label>
-        <select class="form-control form-select" [id]="'type_' + attrNumber" [(ngModel)]="columnType">
+        <select class="form-control form-select" [id]="'type_' + attrNumber" [(ngModel)]="column.type">
             <option *ngFor="let type of getDataTypes().getAll()" [value]="type">{{type}}</option>
         </select>
     </div>
 
     <div class="d-flex flex-column px-2">
         <label class="form-label" [for]="'scale' + attrNumber">Column scale: </label>
-        <select class="form-control form-select" [id]="'scale' + attrNumber" [(ngModel)]="dataScale">
+        <select class="form-control form-select" [id]="'scale' + attrNumber">
             <option *ngFor="let scale of getDataScales().getAll()" [value]="scale">{{scale}}</option>
         </select>
     </div>

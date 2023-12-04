@@ -1,0 +1,38 @@
+<a class="btn-outline-secondary bi-gear-fill" title="Additional Settings" data-bs-toggle="modal"
+    [attr.data-bs-target]="'#additionalSettings_' + attrNumber"></a>
+
+<div class="modal fade" [id]="'additionalSettings_' + attrNumber" data-backdrop="static" data-keyboard="false"
+    tabindex="-1" aria-labelledby="staticBackdrop" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <label class="form-label" [for]="'additionalSettingsConfigurations_' + attrNumber">Configuration: </label>
+                <select class="form-select" [id]="'additionalSettingsConfigurations_' + attrNumber">
+                    <option selected>Select a configuration to add...</option>
+                    <option>conf_1</option>
+                    <option>conf_2</option>
+                    <option>conf_3</option>
+                    <option>conf_4</option>
+                    <option>conf_5</option>
+                </select>
+            </div>
+            <div class="modal-body">
+                <h1>Configuration Settings</h1>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ok</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<div id="{'additionalSettings_' + attrNumber}">
+    <div class="modal-header">
+
+    </div>
+    <div class="modal-body">
+    </div>
+
+</div>

@@ -3,7 +3,7 @@ export enum Steps {
     UPLOAD,
     DATA_CONFIG,
     VALIDATION,
-    PERSISTING
+    PERSISTING,
 }
 
 export const StepConfiguration = {

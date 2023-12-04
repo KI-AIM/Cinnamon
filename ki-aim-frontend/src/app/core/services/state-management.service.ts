@@ -24,7 +24,7 @@ export class StateManagementService {
         this.mode = mode;
     }
 
-    getCompletedSteps(): List<Steps> {
+    getCompletedSteps(): List<Object> {
         return this.completedSteps;
     }
 

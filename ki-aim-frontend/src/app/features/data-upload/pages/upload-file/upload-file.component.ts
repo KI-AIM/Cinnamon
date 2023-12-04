@@ -9,6 +9,7 @@ import { DataConfigurationService } from 'src/app/shared/services/data-configura
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NgbModal, NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
+import { FileService } from '../../services/file.service';
 
 @Component({
     selector: 'app-upload-file',
@@ -30,6 +31,7 @@ export class UploadFileComponent {
         public dataConfigurationService: DataConfigurationService,
         private router: Router, 
         private modalService: NgbModal,
+        private fileService: FileService
     ) {
         this.titleService.setPageTitle("Upload data"); 
     }
@@ -37,6 +39,8 @@ export class UploadFileComponent {
     uploadFile(event: any) {
         const file:File = event.target.files[0];
         if (file) {
+            this.fileService.setFile(file);
+            
             this.dataService.estimateData(file).subscribe({
                 next: (d) => this.handleUpload(d),
                 error: (e) => this.handleError(e),
@@ -57,7 +61,6 @@ export class UploadFileComponent {
     
     private showErrorModal(error: HttpErrorResponse) {
 		this.modalService.open(this.errorModal, { ariaLabelledBy: 'modal-basic-title', backdrop: "static" })
-
     }
 
     closeErrorModal() {

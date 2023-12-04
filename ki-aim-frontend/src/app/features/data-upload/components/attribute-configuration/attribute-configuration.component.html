@@ -1,0 +1,27 @@
+<div class="d-flex flex-row mb-2">
+    <div class="d-flex flex-column px-2">
+        <label class="form-label" [for]="'name_' + attrNumber">Column name: </label>
+        <input class="form-control" [id]="'name_' + attrNumber" [(ngModel)]="columnName" />
+    </div>
+
+    <div class="d-flex flex-column px-2">
+        <label class="form-label" [for]="'type_' + attrNumber">Column type: </label>
+        <select class="form-control form-select" [id]="'type_' + attrNumber" [(ngModel)]="columnType">
+            <option *ngFor="let type of getDataTypes().getAll()" [value]="type">{{type}}</option>
+        </select>
+    </div>
+
+    <div class="d-flex flex-column px-2">
+        <label class="form-label" [for]="'scale' + attrNumber">Column scale: </label>
+        <select class="form-control form-select" [id]="'scale' + attrNumber" [(ngModel)]="dataScale">
+            <option *ngFor="let scale of getDataScales().getAll()" [value]="scale">{{scale}}</option>
+        </select>
+    </div>
+
+    <div class="d-flex flex-column px-2">
+        <label class="form-label" >&nbsp;</label>
+        <div class="h-100 d-flex justify-content-center align-items-center">
+            <app-additional-configuration [attrNumber]="parseInt(attrNumber)"></app-additional-configuration>
+        </div>
+    </div>
+</div>

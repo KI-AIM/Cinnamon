@@ -1,0 +1,9 @@
+export enum DataType {
+    BOOLEAN,
+	DATE_TIME,
+	DECIMAL,
+	INTEGER,
+	STRING,
+	DATE,
+	UNDEFINED
+}

@@ -5,26 +5,34 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { NavigationComponent } from './core/components/navigation/navigation.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { StartpageComponent } from './features/start/pages/startpage/startpage.component';
-import { UploadFileComponent } from './features/data-upload/pages/upload-file/upload-file.component';
 import { TitleService } from './core/services/title-service.service';
 import { StateManagementService } from './core/services/state-management.service';
+import { HttpClientModule } from '@angular/common/http';
+import { DataService } from './shared/services/data.service';
+import { DataConfigurationService } from './shared/services/data-configuration.service';
+import { FormsModule } from '@angular/forms';
+import { DataUploadModule } from './features/data-upload/data-upload.module';
+import { StartModule } from './features/start/start.module';
 
 @NgModule({
     declarations: [
         AppComponent,
         NavigationComponent,
-        StartpageComponent,
-        UploadFileComponent,
     ],
     imports: [
         BrowserModule,
         AppRoutingModule,
+        StartModule,
+        DataUploadModule,
+        HttpClientModule,
+        FormsModule,
         NgbModule
     ],
     providers: [
         TitleService,
         StateManagementService,
+        DataService,
+        DataConfigurationService
     ],
     bootstrap: [AppComponent]
 })

@@ -1,1 +1,76 @@
-<p>upload-file works!</p>
+<p>
+    This page allows you to easily upload files to our system. Multiple file types are supported by the application.
+</p>
+<input 
+    class="form-control form-control-lg mb-3" 
+    type="file" 
+    #fileForm 
+    (change)="uploadFile($event)">
+
+<div id="accordion">
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between" id="headingOne" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true">
+            <span class="h4 mb-0">More information</span>
+            <i class="bi bi-caret-down-fill"></i>
+        </div>
+
+        <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
+            <div class="card-body">
+                <p>
+                    <b>Upload:</b>
+                    <br />
+                    Use the "Browse" button to open your file explorer and select the file(s) you want to upload.
+                    Alternatively, drag and drop your files directly into the designated area.
+                    <br /><br />
+                    <b>Supported File Types:</b>
+                    <br />
+                    Ensure your files are in a supported format. You'll be notified if the file type is not accepted.
+                    <br />
+                    Supported file types are:
+                </p>
+            
+                <ul>
+                    <li>CSV Files</li>
+                    <li>XLSX Files</li>
+                    <li>FHIR Bundles</li>
+                </ul>
+            
+                <p>
+                    <b>File Size Limit:</b>
+                    <br />
+                    Please note that there is a limit on the size of each file you can upload. Most algroithms by this application
+                    take a long time to process. To ensure that processing times are somewhat reasonable, we have to limit the
+                    dataset size.
+                    <br /><br />
+                    <b>Upload Progress:</b>
+                    <br />
+                    Once you've selected your file, the upload process will begin. You will see a loading screen. Before saving the
+                    data, the application will transform and validate it. The validation results will be shown after the process is
+                    finished.
+                    <br /><br />
+                    <b>Security:</b>
+                    Your files are transmitted securely using encryption protocols to protect your data. The data never leaves the
+                    system where the KI-AIM application is installed. The processed data will also only be accessable to the user
+                    that uploaded the data and will be deleted after the process was finished.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<ng-template #uploadErrorModal >
+    <div class="modal-header">
+        <h5 class="modal-title" id="uploadErrorModalLabel">Something went wrong</h5>
+    </div>
+    <div class="modal-body">
+        <p>The file you uploaded could not be processed. This is the reason: </p>
+        <pre>{{errorMessage}}</pre>
+        <p>
+            Please try again with a different file. 
+        </p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="closeErrorModal()">Ok</button>
+    </div>
+</ng-template>
+    

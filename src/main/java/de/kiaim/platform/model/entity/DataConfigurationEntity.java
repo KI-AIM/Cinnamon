@@ -1,4 +1,4 @@
-package de.kiaim.platform.model;
+package de.kiaim.platform.model.entity;
 
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import io.hypersistence.utils.hibernate.type.json.JsonType;

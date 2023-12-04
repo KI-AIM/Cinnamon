@@ -1,7 +1,7 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.platform.helper.DataschemeGenerator;
-import de.kiaim.platform.model.DataConfigurationEntity;
+import de.kiaim.platform.model.entity.DataConfigurationEntity;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;

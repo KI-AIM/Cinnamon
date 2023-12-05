@@ -15,4 +15,11 @@ export class ColumnConfiguration {
         this.configurations.push(configuration); 
     }
 
+    removeConfiguration(configuration: Configuration) {
+        var index = this.configurations.indexOf(configuration, 0);
+        if (index > -1) {
+            this.configurations.splice(index, 1);
+        }
+    }
+
 }

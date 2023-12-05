@@ -1,15 +1,18 @@
 package de.kiaim.platform.controller;
 
+import de.kiaim.platform.exception.ApiException;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
-import de.kiaim.platform.model.data.exception.BadDataSetIdException;
-import de.kiaim.platform.model.data.exception.BadFileException;
-import de.kiaim.platform.model.data.exception.InternalDataSetPersistenceException;
+import de.kiaim.platform.exception.BadDataSetIdException;
+import de.kiaim.platform.exception.BadFileException;
+import de.kiaim.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.DatabaseService;
+import de.kiaim.platform.service.ResponseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -31,7 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 // TODO Support different languages
-// TODO Error codes?
 @RestController
 @RequestMapping("/api/data")
 @Tag(name = "/api/data", description = "API for managing data sets. Supports CSV files.")
@@ -40,11 +42,14 @@ public class DataController {
 	// TODO Find Processor dynamically
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
+	private final ResponseService responseService;
 
 	@Autowired
-	public DataController(final CsvProcessor csvProcessor, DatabaseService databaseService) {
+	public DataController(final CsvProcessor csvProcessor, DatabaseService databaseService,
+	                      ResponseService responseService) {
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
+		this.responseService = responseService;
 	}
 
 	@Operation(summary = "Estimates the data types of a given data set.",
@@ -56,10 +61,12 @@ public class DataController {
 			                                 schema = @Schema(implementation = DataConfiguration.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The file is not supported or could not be read.",
-			             content = @Content),
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
-			             content = @Content)
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@PostMapping(value = "/datatypes",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
@@ -81,10 +88,12 @@ public class DataController {
 			                                 schema = @Schema(implementation = TransformationResult.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The file is not supported or could not be read. The configuration is not valid.",
-			             content = @Content),
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
-			             content = @Content)
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@PostMapping(value = "/validation",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
@@ -110,10 +119,12 @@ public class DataController {
 			                                 schema = @Schema(implementation = Long.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The file is not supported or could not be read. The configuration is not valid.",
-			             content = @Content),
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
-			             content = @Content)
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@PostMapping(value = "",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
@@ -139,10 +150,12 @@ public class DataController {
 			                                 schema = @Schema(implementation = DataConfiguration.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The data set ID is malformed. No data set with the given ID exists.",
-			             content = @Content),
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
-			             content = @Content)
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "/configuration",
 	            consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -170,10 +183,12 @@ public class DataController {
 			             }),
 			@ApiResponse(responseCode = "400",
 			             description = "The data set ID is malformed. No data set with the given ID exists.",
-			             content = @Content),
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
-			             content = @Content)
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "/data",
 	            consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -196,10 +211,12 @@ public class DataController {
 			                                 schema = @Schema(implementation = DataSet.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The data set ID is malformed. No data set with the given ID exists.",
-			             content = @Content),
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
-			             content = @Content)
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "",
 	            consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -221,10 +238,12 @@ public class DataController {
 			             content = @Content),
 			@ApiResponse(responseCode = "400",
 			             description = "The data set ID is malformed. No data set with the given ID exists.",
-			             content = @Content),
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
-			             content = @Content)
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@DeleteMapping(value = "",
 	               consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -265,10 +284,8 @@ public class DataController {
 	) {
 		try {
 			return doHandleRequest(requestType, file, configuration, dataSetId);
-		} catch (BadDataSetIdException | BadFileException e) {
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-		} catch (InternalDataSetPersistenceException e) {
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		} catch (ApiException e) {
+			return responseService.prepareErrorResponseEntity(e);
 		}
 	}
 
@@ -311,8 +328,9 @@ public class DataController {
 				result = dataProcessor.read(inputStream, configuration);
 			}
 			default -> {
-				return new ResponseEntity<>("Missing handling for request type '" + requestType.name() + "'",
-				                            HttpStatus.INTERNAL_SERVER_ERROR);
+				return responseService.prepareErrorResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR,
+				                                                  "Missing handling for request type '" +
+				                                                  requestType.name() + "'");
 			}
 		}
 		return new ResponseEntity<>(result, HttpStatus.OK);

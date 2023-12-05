@@ -51,9 +51,11 @@ class DataControllerTest extends ControllerTest {
 		MockMultipartFile file = new MockMultipartFile("file", null, null,
 		                                               classLoader.getResourceAsStream("test.csv"));
 
-		mockMvc.perform(multipart("/api/data/datatypes").file(file))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Missing filename"));
+		String result = mockMvc.perform(multipart("/api/data/datatypes").file(file))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Missing filename");
 	}
 
 	@Test
@@ -62,9 +64,11 @@ class DataControllerTest extends ControllerTest {
 		MockMultipartFile file = new MockMultipartFile("file", "file", null,
 		                                               classLoader.getResourceAsStream("test.csv"));
 
-		mockMvc.perform(multipart("/api/data/datatypes").file(file))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Missing file extension"));
+		String result = mockMvc.perform(multipart("/api/data/datatypes").file(file))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Missing file extension");
 	}
 
 	@Test
@@ -229,11 +233,13 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadDataSetWrongDataSetId() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
-		                                      .param("dataSetId", String.valueOf(0L)))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("No DataSet with the given ID '0' found!"));
+		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
+		                                                      .param("dataSetId", String.valueOf(0L)))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "No DataSet with the given ID '0' found!");
 	}
 
 	@Test
@@ -259,11 +265,13 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void deleteDataWrongDataSetId() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
-		                                      .param("dataSetId", String.valueOf(0L)))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("No DataSet with the given ID '0' found!"));
+		String result = mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		                                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
+		                                                      .param("dataSetId", String.valueOf(0L)))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "No DataSet with the given ID '0' found!");
 	}
 
 }

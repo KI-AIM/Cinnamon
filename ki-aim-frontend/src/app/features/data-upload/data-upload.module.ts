@@ -8,6 +8,10 @@ import { UploadFileComponent } from './pages/upload-file/upload-file.component';
 import { RouterModule } from '@angular/router';
 import { FileService } from './services/file.service';
 import { DataValidationComponent } from './pages/data-validation/data-validation.component';
+import { DateformatComponent } from './components/configurationSettings/dateformat/dateformat.component';
+import { DatetimeformatComponent } from './components/configurationSettings/datetimeformat/datetimeformat.component';
+import { StringpatternComponent } from './components/configurationSettings/stringpattern/stringpattern.component';
+import { AddedConfigurationListComponent } from './components/added-configuration-list/added-configuration-list.component';
 
 @NgModule({
     declarations: [
@@ -16,6 +20,10 @@ import { DataValidationComponent } from './pages/data-validation/data-validation
         DataConfigurationComponent,
         UploadFileComponent,
         DataValidationComponent,
+        DateformatComponent,
+        DatetimeformatComponent,
+        StringpatternComponent,
+        AddedConfigurationListComponent,
     ],
     imports: [
         CommonModule, 

@@ -23,6 +23,7 @@ public class DataConfigurationEntity {
 	@Setter
 	private DataConfiguration dataConfiguration;
 
-	@OneToOne(mappedBy = "dataConfiguration", optional = false, fetch = FetchType.LAZY, orphanRemoval = false, cascade = CascadeType.PERSIST)
+	@OneToOne(mappedBy = "dataConfiguration", optional = false, fetch = FetchType.LAZY, orphanRemoval = false,
+	          cascade = CascadeType.PERSIST)
 	private UserEntity user;
 }

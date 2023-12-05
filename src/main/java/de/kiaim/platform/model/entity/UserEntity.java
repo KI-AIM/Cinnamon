@@ -2,6 +2,7 @@ package de.kiaim.platform.model.entity;
 
 import de.kiaim.platform.model.UserRole;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,6 +18,7 @@ import java.util.Collections;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class UserEntity implements UserDetails {
 
 	@Id
@@ -24,11 +26,11 @@ public class UserEntity implements UserDetails {
 
 	private String password;
 
-	private final UserRole userRole = UserRole.USER;
+	private final UserRole userRole = UserRole.ROLE_USER;
 
 	@Nullable
 	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = false, cascade = CascadeType.ALL)
-	@JoinColumn(name = "data_configuration_id", referencedColumnName = "email")
+	@JoinColumn(name = "data_configuration_id", referencedColumnName = "id")
 	private DataConfigurationEntity dataConfiguration = null;
 
 	//==============================

@@ -1,30 +1,22 @@
 package de.kiaim.platform.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.kiaim.platform.DatabaseTest;
+import de.kiaim.platform.ControllerTest;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@AutoConfigureMockMvc
-class DataControllerTest extends DatabaseTest {
-
-	@Autowired
-	MockMvc mockMvc;
-
-	@Autowired
-	ObjectMapper objectMapper;
+@WithMockUser(roles = "USER")
+class DataControllerTest extends ControllerTest {
 
 	@Test
 	void estimateDatatypes() throws Exception {
@@ -32,7 +24,8 @@ class DataControllerTest extends DatabaseTest {
 		MockMultipartFile file = new MockMultipartFile("file", "data.csv", null,
 		                                               classLoader.getResourceAsStream("test.csv"));
 
-		final String result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data/datatypes").file(file))
+		final String result = mockMvc.perform(multipart("/api/data/datatypes")
+				                                      .file(file))
 		                             .andExpect(status().isOk())
 		                             .andReturn().getResponse().getContentAsString();
 
@@ -45,9 +38,11 @@ class DataControllerTest extends DatabaseTest {
 
 	@Test
 	void estimateDatatypesMissingFile() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data/datatypes"))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Missing part: 'file'"));
+		String result = mockMvc.perform(multipart("/api/data/datatypes"))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Missing part: 'file'");
 	}
 
 	@Test
@@ -56,7 +51,7 @@ class DataControllerTest extends DatabaseTest {
 		MockMultipartFile file = new MockMultipartFile("file", null, null,
 		                                               classLoader.getResourceAsStream("test.csv"));
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data/datatypes").file(file))
+		mockMvc.perform(multipart("/api/data/datatypes").file(file))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("Missing filename"));
 	}
@@ -67,7 +62,7 @@ class DataControllerTest extends DatabaseTest {
 		MockMultipartFile file = new MockMultipartFile("file", "file", null,
 		                                               classLoader.getResourceAsStream("test.csv"));
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data/datatypes").file(file))
+		mockMvc.perform(multipart("/api/data/datatypes").file(file))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(content().string("Missing file extension"));
 	}
@@ -78,9 +73,9 @@ class DataControllerTest extends DatabaseTest {
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 		final TransformationResult expected = TestModelHelper.generateTransformationResult(false);
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data/validation")
-		                                      .file(file)
-		                                      .param("configuration", objectMapper.writeValueAsString(configuration)))
+		mockMvc.perform(multipart("/api/data/validation")
+				                .file(file)
+				                .param("configuration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(objectMapper.writeValueAsString(expected)));
 	}
@@ -89,26 +84,32 @@ class DataControllerTest extends DatabaseTest {
 	void readAndValidateDataMissingConfiguration() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data/validation")
-		                                      .file(file))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Missing parameter: 'configuration'"));
+		String result = mockMvc.perform(multipart("/api/data/validation")
+				                                .file(file))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Missing parameter: 'configuration'");
 	}
 
 	@Test
 	void readAndValidateDataInvalidConfiguration() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data/validation")
-		                                      .file(file)
-		                                      .param("configuration", "invalid"))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Invalid parameter: 'configuration'"));
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data/validation")
-		                                      .file(file)
-		                                      .param("configuration", "\"invalid\""))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Invalid parameter: 'configuration'"));
+		String result = mockMvc.perform(multipart("/api/data/validation")
+				                                .file(file)
+				                                .param("configuration", "invalid"))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+		testErrorMessage(result, "Invalid parameter: 'configuration'");
+
+		result = mockMvc.perform(multipart("/api/data/validation")
+				                         .file(file)
+				                         .param("configuration", "\"invalid\""))
+		                .andExpect(status().isBadRequest())
+		                .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Invalid parameter: 'configuration'");
 	}
 
 	@Test
@@ -116,10 +117,10 @@ class DataControllerTest extends DatabaseTest {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
-		String result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data")
-		                                                      .file(file)
-		                                                      .param("configuration",
-		                                                             objectMapper.writeValueAsString(configuration)))
+		String result = mockMvc.perform(multipart("/api/data")
+				                                .file(file)
+				                                .param("configuration",
+				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())
 		                       .andReturn().getResponse().getContentAsString();
 
@@ -144,10 +145,10 @@ class DataControllerTest extends DatabaseTest {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
-		String result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data")
-		                                                      .file(file)
-		                                                      .param("configuration",
-		                                                             objectMapper.writeValueAsString(configuration)))
+		String result = mockMvc.perform(multipart("/api/data")
+				                                .file(file)
+				                                .param("configuration",
+				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())
 		                       .andReturn().getResponse().getContentAsString();
 
@@ -157,7 +158,8 @@ class DataControllerTest extends DatabaseTest {
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
 		                                      .param("dataSetId", String.valueOf(dataSetId)))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataConfiguration())));
+		       .andExpect(
+				       content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataConfiguration())));
 	}
 
 	@Test
@@ -165,10 +167,10 @@ class DataControllerTest extends DatabaseTest {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
-		String result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data")
-		                                                      .file(file)
-		                                                      .param("configuration",
-		                                                             objectMapper.writeValueAsString(configuration)))
+		String result = mockMvc.perform(multipart("/api/data")
+				                                .file(file)
+				                                .param("configuration",
+				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())
 		                       .andReturn().getResponse().getContentAsString();
 
@@ -188,10 +190,10 @@ class DataControllerTest extends DatabaseTest {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
-		String result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/data")
-		                                                      .file(file)
-		                                                      .param("configuration",
-		                                                             objectMapper.writeValueAsString(configuration)))
+		String result = mockMvc.perform(multipart("/api/data")
+				                                .file(file)
+				                                .param("configuration",
+				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())
 		                       .andReturn().getResponse().getContentAsString();
 
@@ -206,19 +208,23 @@ class DataControllerTest extends DatabaseTest {
 
 	@Test
 	void loadDataSetMissingDataSetId() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Missing parameter: 'dataSetId'"));
+		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Missing parameter: 'dataSetId'");
 	}
 
 	@Test
 	void loadDataSetInvalidDataSetId() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
-		                                      .param("dataSetId", "invalid"))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Invalid parameter: 'dataSetId'"));
+		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
+		                                                      .param("dataSetId", "invalid"))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Invalid parameter: 'dataSetId'");
 	}
 
 	@Test
@@ -232,19 +238,23 @@ class DataControllerTest extends DatabaseTest {
 
 	@Test
 	void deleteDataMissingDataSetId() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Missing parameter: 'dataSetId'"));
+		String result = mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		                                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Missing parameter: 'dataSetId'");
 	}
 
 	@Test
 	void deleteDataInvalidDataSetId() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
-		                                      .param("dataSetId", "invalid"))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(content().string("Invalid parameter: 'dataSetId'"));
+		String result = mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		                                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
+		                                                      .param("dataSetId", "invalid"))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Invalid parameter: 'dataSetId'");
 	}
 
 	@Test

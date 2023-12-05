@@ -1,6 +1,8 @@
 package de.kiaim.platform;
 
+import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.DataConfigurationRepository;
+import de.kiaim.platform.repository.UserRepository;
 import de.kiaim.platform.service.DatabaseService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,17 +28,18 @@ public class DatabaseTest extends ContextRequiredTest {
 	@Autowired
 	DataConfigurationRepository dataConfigurationRepository;
 
+	@Autowired
+	UserRepository userRepository;
+
+	protected UserEntity user = null;
+
 	@BeforeEach
 	void setUp() {
 		if (connection == null) {
 			connection = DataSourceUtils.getConnection(dataSource);
 		}
-	}
-
-	@AfterEach
-	void close() {
-		DataSourceUtils.releaseConnection(connection, dataSource);
-		connection = null;
+		user = new UserEntity("test_user", "$2a$10$4E6UaYF0Jpt1XK3jTc1OI.6Phyaf6bCxoNlS/gF.7hzYc1mISo6Im", null); // password
+		userRepository.save(user);
 	}
 
 	@AfterEach
@@ -44,6 +47,7 @@ public class DatabaseTest extends ContextRequiredTest {
 	protected void cleanDatabase() {
 		try {
 			dataConfigurationRepository.deleteAll();
+			userRepository.deleteAll();
 			databaseService.executeStatement("SELECT setval('data_configuration_entity_seq', 1, true)");
 			databaseService.executeStatement(
 					"""
@@ -65,6 +69,9 @@ public class DatabaseTest extends ContextRequiredTest {
 							""");
 		} catch (SQLException ignored) {
 		}
+
+		DataSourceUtils.releaseConnection(connection, dataSource);
+		connection = null;
 	}
 
 	protected boolean existsDataConfigration(final long dataSetId) {

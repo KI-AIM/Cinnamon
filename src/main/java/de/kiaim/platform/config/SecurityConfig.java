@@ -1,5 +1,6 @@
 package de.kiaim.platform.config;
 
+import de.kiaim.platform.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,8 +9,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
@@ -17,35 +17,32 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 @EnableWebSecurity
 public class SecurityConfig {
 
-	 private final UserDetailsService userDetailsService;
+	private final PasswordEncoder passwordEncoder;
+	private final UserService userService;
 
 	@Autowired
-	public SecurityConfig(UserDetailsService userDetailsService) {
-		this.userDetailsService = userDetailsService;
+	public SecurityConfig(final PasswordEncoder passwordEncoder, final UserService userService) {
+		this.passwordEncoder = passwordEncoder;
+		this.userService = userService;
 	}
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-		httpSecurity.csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer
-				            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+		httpSecurity.csrf(AbstractHttpConfigurer::disable)
 		            .authorizeHttpRequests(authz -> authz
 				            .requestMatchers("/", "/api/user/login", "/api/user/register").permitAll()
+				            .requestMatchers("/**").hasRole("USER")
 				            .anyRequest().authenticated())
 		            .httpBasic(Customizer.withDefaults())
-		            .authenticationProvider(daoAuthenticationProvider());
+                    .authenticationProvider(daoAuthenticationProvider());
 		return httpSecurity.build();
 	}
 
 	@Bean
 	public DaoAuthenticationProvider daoAuthenticationProvider() {
 		DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-		provider.setPasswordEncoder(passwordEncoder());
-		provider.setUserDetailsService(userDetailsService);
+		provider.setPasswordEncoder(passwordEncoder);
+		provider.setUserDetailsService(userService);
 		return provider;
-	}
-
-	@Bean
-	public BCryptPasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
 	}
 }

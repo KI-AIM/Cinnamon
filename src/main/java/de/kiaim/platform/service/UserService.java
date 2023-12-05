@@ -39,6 +39,7 @@ public class UserService implements UserDetailsService {
 		}
 		userEntity.setEmail(email);
 		userEntity.setPassword(passwordEncoder.encode(rawPassword));
+		userRepository.save(userEntity);
 	}
 
 	//==============================
@@ -46,7 +47,7 @@ public class UserService implements UserDetailsService {
 	//==============================
 
 	@Override
-	public UserDetails loadUserByUsername(final String email) throws UsernameNotFoundException {
+	public UserEntity loadUserByUsername(final String email) throws UsernameNotFoundException {
 		return userRepository.findById(email).orElseThrow(
 				() -> new UsernameNotFoundException("User with email" + email + "not found!"));
 	}

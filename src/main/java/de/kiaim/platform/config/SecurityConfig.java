@@ -11,7 +11,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -30,8 +31,13 @@ public class SecurityConfig {
 	public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
 		httpSecurity.csrf(AbstractHttpConfigurer::disable)
 		            .authorizeHttpRequests(authz -> authz
-				            .requestMatchers("/", "/api/user/login", "/api/user/register").permitAll()
-				            .requestMatchers("/**").hasRole("USER")
+				            .requestMatchers(antMatcher("/"),
+				                             antMatcher("/api/doc"),
+				                             antMatcher("/api-docs/**"),
+				                             antMatcher("/api/swagger-ui/**"),
+				                             antMatcher("/api/user/register"))
+				            .permitAll()
+				            .requestMatchers(antMatcher("/**")).hasRole("USER")
 				            .anyRequest().authenticated())
 		            .httpBasic(Customizer.withDefaults())
                     .authenticationProvider(daoAuthenticationProvider());

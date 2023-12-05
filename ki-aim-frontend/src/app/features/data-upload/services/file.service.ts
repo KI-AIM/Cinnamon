@@ -1,15 +1,13 @@
 export class FileService {
-    file: File ;
+	file: File;
 
-    constructor() {
-    }
+	constructor() {}
 
-    public getFile(): File {
-        return this.file;
-    }
+	public getFile(): File {
+		return this.file;
+	}
 
-    public setFile(value: File) {
-        this.file = value;
-    }
-
+	public setFile(value: File) {
+		this.file = value;
+	}
 }

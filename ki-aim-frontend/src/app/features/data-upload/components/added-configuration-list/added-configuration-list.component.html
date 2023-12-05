@@ -1,0 +1,9 @@
+<h1>Added configurations: </h1>
+<div class="d-flex flex-column">
+    <i class="w-100" *ngIf="!hasConfiguration()">No configurations added yet</i>
+    <div class="d-flex justify-content-between align-items-center"
+        *ngFor="let configuration of column.configurations">
+        <span>{{configAsString(configuration)}}</span>
+        <a class="bi bi-x-lg" title="Remove configuration" (click)="removeConfiguration(configuration)"></a>
+    </div>
+</div>

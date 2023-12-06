@@ -24,8 +24,10 @@ public class UserEntity implements UserDetails {
 	@Id
 	private String email;
 
+	@Column(nullable = false)
 	private String password;
 
+	@Column(nullable = false)
 	private final UserRole userRole = UserRole.ROLE_USER;
 
 	@Nullable

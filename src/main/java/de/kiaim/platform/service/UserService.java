@@ -1,9 +1,9 @@
 package de.kiaim.platform.service;
 
+import de.kiaim.platform.model.entity.DataConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,6 +26,16 @@ public class UserService implements UserDetailsService {
 
 	public boolean doesUserWithEmailExist(final String email) {
 		return userRepository.existsById(email);
+	}
+
+	public void setConfigurationToUser(DataConfigurationEntity dataConfigurationEntity, UserEntity user) {
+		user.setDataConfiguration(dataConfigurationEntity);
+		userRepository.save(user);
+	}
+
+	public void removeConfigurationFromUser(UserEntity user) {
+		user.setDataConfiguration(null);
+		userRepository.save(user);
 	}
 
 	public void save(final String email, final String rawPassword) {

@@ -1,5 +1,6 @@
 package de.kiaim.platform;
 
+import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.DataConfigurationRepository;
 import de.kiaim.platform.repository.UserRepository;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -31,23 +33,30 @@ public class DatabaseTest extends ContextRequiredTest {
 	@Autowired
 	UserRepository userRepository;
 
-	protected UserEntity user = null;
+	protected UserEntity getTestUser() {
+		Optional<UserEntity> userOptional = userRepository.findById("test_user");
+		if (userOptional.isEmpty()) {
+			fail("Set up failed. Could not find 'test_user'!");
+		}
+		return userOptional.get();
+	}
 
 	@BeforeEach
 	void setUp() {
 		if (connection == null) {
 			connection = DataSourceUtils.getConnection(dataSource);
 		}
-		user = new UserEntity("test_user", "$2a$10$4E6UaYF0Jpt1XK3jTc1OI.6Phyaf6bCxoNlS/gF.7hzYc1mISo6Im", null); // password
-		userRepository.save(user);
 	}
 
 	@AfterEach
 	@Transactional
 	protected void cleanDatabase() {
 		try {
+			final UserEntity testUser = getTestUser();
+			testUser.setDataConfiguration(null);
+			userRepository.save(testUser);
+
 			dataConfigurationRepository.deleteAll();
-			userRepository.deleteAll();
 			databaseService.executeStatement("SELECT setval('data_configuration_entity_seq', 1, true)");
 			databaseService.executeStatement(
 					"""
@@ -79,13 +88,9 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	protected boolean existsTable(final long dataSetId) {
-		final String existsQuery = "SELECT 1 FROM pg_class WHERE relname = ? AND relkind = 'r'";
-		try (final PreparedStatement existTableQuery = connection.prepareStatement(existsQuery)) {
-			existTableQuery.setString(1, databaseService.getTableName(dataSetId));
-			try (final ResultSet resultSet = existTableQuery.executeQuery()) {
-				return resultSet.next();
-			}
-		} catch (SQLException e) {
+		try {
+			return databaseService.existsTable(dataSetId);
+		} catch (InternalDataSetPersistenceException e) {
 			fail(e);
 			return false;
 		}

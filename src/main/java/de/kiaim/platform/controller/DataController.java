@@ -9,6 +9,7 @@ import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.exception.BadFileException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.dto.ErrorResponse;
+import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.DatabaseService;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,7 +38,9 @@ import java.io.InputStream;
 // TODO Support different languages
 @RestController
 @RequestMapping("/api/data")
-@Tag(name = "/api/data", description = "API for managing data sets. Supports CSV files.")
+@Tag(name = "/api/data", description = "API for managing data sets. " +
+                                       "Supports CSV files. " +
+                                       "Data Sets are associated with the user of the request.")
 public class DataController {
 
 	// TODO Find Processor dynamically
@@ -74,9 +78,10 @@ public class DataController {
 	public ResponseEntity<Object> estimateDatatpes(
 			@Parameter(description = "File containing the data.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-			@RequestPart(value = "file") MultipartFile file
+			@RequestPart(value = "file") MultipartFile file,
+			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.DATA_TYPES, file, null, null);
+		return handleRequest(RequestType.DATA_TYPES, file, null, user);
 	}
 
 	@Operation(summary = "Converts and validates the uploaded file into a tabular representation.",
@@ -105,10 +110,41 @@ public class DataController {
 			@Parameter(description = "Metadata describing the format of the data.",
 			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                              schema = @Schema(implementation = DataConfiguration.class)))
-			@RequestParam(value = "configuration") DataConfiguration configuration
+			@RequestParam(value = "configuration") DataConfiguration configuration,
+			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.VALIDATE, file, configuration, null);
+		return handleRequest(RequestType.VALIDATE, file, configuration, user);
 	}
+
+	@Operation(summary = "Stores or updates the given configuration.",
+	           description = "Stores or updates the given configuration.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully stored the configuration. Returns the id of the data set.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = Long.class))}),
+			@ApiResponse(responseCode = "400",
+			             description = "The file is not supported or could not be read. The configuration is not valid. The data has already been stored.",
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500",
+			             description = "An internal error occurred.",
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class)))
+	})
+	@PostMapping(value = "/configuration",
+	             consumes = MediaType.APPLICATION_JSON_VALUE,
+	             produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Object> storeConfig(
+			@Parameter(description = "Metadata describing the format of the data.",
+			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                              schema = @Schema(implementation = DataConfiguration.class)))
+			@RequestParam(value = "configuration") DataConfiguration configuration,
+			@AuthenticationPrincipal UserEntity user
+	) {
+		return handleRequest(RequestType.STORE_CONFIG, null, configuration, user);
+	}
+
 
 	@Operation(summary = "Stores the given data into the internal database for further processing.",
 	           description = "Stores the given data into the internal database for further processing.")
@@ -118,7 +154,7 @@ public class DataController {
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = Long.class))}),
 			@ApiResponse(responseCode = "400",
-			             description = "The file is not supported or could not be read. The configuration is not valid.",
+			             description = "The file is not supported or could not be read. The configuration is not valid. The data has already been stored.",
 			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
@@ -136,20 +172,21 @@ public class DataController {
 			@Parameter(description = "Metadata describing the format of the data.",
 			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                              schema = @Schema(implementation = DataConfiguration.class)))
-			@RequestParam(value = "configuration") DataConfiguration configuration
+			@RequestParam(value = "configuration") DataConfiguration configuration,
+			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.STORE, file, configuration, null);
+		return handleRequest(RequestType.STORE_DATE_SET, file, configuration, user);
 	}
 
-	@Operation(summary = "Returns the configuration of the data set with the given ID.",
-	           description = "Returns the configuration of the data set with the given ID.")
+	@Operation(summary = "Returns the configuration of the data set.",
+	           description = "Returns the configuration of the data set.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully found the configuration. Returns the configuration of the data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = DataConfiguration.class))}),
 			@ApiResponse(responseCode = "400",
-			             description = "The data set ID is malformed. No data set with the given ID exists.",
+			             description = "The user has no stored configuration.",
 			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
@@ -161,16 +198,13 @@ public class DataController {
 	            consumes = MediaType.APPLICATION_JSON_VALUE,
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadConfig(
-			@Parameter(description = "ID of the data set.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = Long.class)))
-			@RequestParam("dataSetId") Long dataSetId
+			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.LOAD_CONFIG, null, null, dataSetId);
+		return handleRequest(RequestType.LOAD_CONFIG, null, null, user);
 	}
 
-	@Operation(summary = "Returns the data of the data set with the given ID.",
-	           description = "Returns the data of the data set with the given ID.")
+	@Operation(summary = "Returns the data of the data set.",
+	           description = "Returns the data of the data.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully found the data and returns the data.",
@@ -182,7 +216,7 @@ public class DataController {
 			                                 })
 			             }),
 			@ApiResponse(responseCode = "400",
-			             description = "The data set ID is malformed. No data set with the given ID exists.",
+			             description = "The user has no stored data.",
 			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
@@ -194,23 +228,20 @@ public class DataController {
 	            consumes = MediaType.APPLICATION_JSON_VALUE,
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadData(
-			@Parameter(description = "ID of the data set.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = Long.class)))
-			@RequestParam("dataSetId") Long dataSetId
+			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.LOAD_DATA, null, null, dataSetId);
+		return handleRequest(RequestType.LOAD_DATA, null, null, user);
 	}
 
-	@Operation(summary = "Returns the data set with the given ID.",
-	           description = "Returns the data set with the given ID.")
+	@Operation(summary = "Returns the data set.",
+	           description = "Returns the data set.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully found the data set. Returns the data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = DataSet.class))}),
 			@ApiResponse(responseCode = "400",
-			             description = "The data set ID is malformed. No data set with the given ID exists.",
+			             description = "The user has no stored data set.",
 			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
@@ -222,22 +253,19 @@ public class DataController {
 	            consumes = MediaType.APPLICATION_JSON_VALUE,
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadDataSet(
-			@Parameter(description = "ID of the data set to be returned.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = Long.class)))
-			@RequestParam("dataSetId") Long dataSetId
+			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.LOAD_DATA_SET, null, null, dataSetId);
+		return handleRequest(RequestType.LOAD_DATA_SET, null, null, user);
 	}
 
-	@Operation(summary = "Deletes the data set with the given ID from the internal data base.",
-	           description = "Deletes the data set with the given ID from the internal data base.")
+	@Operation(summary = "Deletes the data set from the internal data base.",
+	           description = "Deletes the data set from the internal data base.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully deleted the data set.",
 			             content = @Content),
 			@ApiResponse(responseCode = "400",
-			             description = "The data set ID is malformed. No data set with the given ID exists.",
+			             description = "The user has no stored data set.",
 			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
@@ -249,12 +277,9 @@ public class DataController {
 	               consumes = MediaType.APPLICATION_JSON_VALUE,
 	               produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> deleteData(
-			@Parameter(description = "ID of the data set to be deleted.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = Long.class)))
-			@RequestParam("dataSetId") Long dataSetId
+			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.DELETE, null, null, dataSetId);
+		return handleRequest(RequestType.DELETE, null, null, user);
 	}
 
 	/**
@@ -262,28 +287,29 @@ public class DataController {
 	 * For each RequestType, different attributes must not be null:
 	 * <ul>
 	 *     <li>{@link RequestType#DATA_TYPES}: file</li>
-	 *     <li>{@link RequestType#DELETE}: dataSetId</li>
-	 *     <li>{@link RequestType#LOAD_CONFIG}: dataSetId</li>
-	 *     <li>{@link RequestType#LOAD_DATA}: dataSetId</li>
-	 *     <li>{@link RequestType#LOAD_DATA_SET}: dataSetId</li>
-	 *     <li>{@link RequestType#STORE}: file, configuration</li>
+	 *     <li>{@link RequestType#DELETE}: user</li>
+	 *     <li>{@link RequestType#LOAD_CONFIG}: user</li>
+	 *     <li>{@link RequestType#LOAD_DATA}: user</li>
+	 *     <li>{@link RequestType#LOAD_DATA_SET}: user</li>
+	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, user</li>
+	 *     <li>{@link RequestType#STORE_DATE_SET}: file, configuration, user</li>
 	 *     <li>{@link RequestType#VALIDATE}: file, configuration</li>
 	 * </ul>
 	 *
 	 * @param requestType   Type of the request.
 	 * @param file          File containing the source data.
 	 * @param configuration Configuration describing the source data.
-	 * @param dataSetId     ID of the data set.
+	 * @param user          User of the request.
 	 * @return Response entity containing the response based on the request type or an error description.
 	 */
 	private ResponseEntity<Object> handleRequest(
 			final RequestType requestType,
 			@Nullable final MultipartFile file,
 			@Nullable final DataConfiguration configuration,
-			@Nullable final Long dataSetId
+			final UserEntity user
 	) {
 		try {
-			return doHandleRequest(requestType, file, configuration, dataSetId);
+			return doHandleRequest(requestType, file, configuration, user);
 		} catch (ApiException e) {
 			return responseService.prepareErrorResponseEntity(e);
 		}
@@ -293,7 +319,7 @@ public class DataController {
 			final RequestType requestType,
 			final MultipartFile file,
 			final DataConfiguration configuration,
-			final Long dataSetId
+			final UserEntity user
 	) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
 		final Object result;
 		switch (requestType) {
@@ -303,24 +329,27 @@ public class DataController {
 				result = dataProcessor.estimateDatatypes(inputStream);
 			}
 			case DELETE -> {
-				databaseService.delete(dataSetId);
+				databaseService.delete(user);
 				result = null;
 			}
 			case LOAD_CONFIG -> {
-				result = databaseService.exportDataConfiguration(dataSetId);
+				result = databaseService.exportDataConfiguration(user);
 			}
 			case LOAD_DATA -> {
-				final DataSet dataSet = databaseService.exportDataSet(dataSetId);
+				final DataSet dataSet = databaseService.exportDataSet(user);
 				result = dataSet.getData();
 			}
 			case LOAD_DATA_SET -> {
-				result = databaseService.exportDataSet(dataSetId);
+				result = databaseService.exportDataSet(user);
 			}
-			case STORE -> {
+			case STORE_CONFIG -> {
+				result = databaseService.store(configuration, user);
+			}
+			case STORE_DATE_SET -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				final TransformationResult transformationResult = dataProcessor.read(inputStream, configuration);
-				result = databaseService.store(transformationResult.getDataSet());
+				result = databaseService.store(transformationResult.getDataSet(), user);
 			}
 			case VALIDATE -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
@@ -379,7 +408,8 @@ public class DataController {
 		LOAD_CONFIG,
 		LOAD_DATA,
 		LOAD_DATA_SET,
-		STORE,
+		STORE_CONFIG,
+		STORE_DATE_SET,
 		VALIDATE;
 	}
 

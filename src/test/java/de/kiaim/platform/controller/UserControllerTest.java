@@ -7,11 +7,13 @@ import de.kiaim.platform.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Transactional
 public class UserControllerTest extends ControllerTest {
 
 	@Autowired
@@ -19,7 +21,7 @@ public class UserControllerTest extends ControllerTest {
 
 	@Test
 	public void register() throws Exception {
-		String mail = "new_" + user.getUsername();
+		String mail = "new_" + getTestUser().getUsername();
 		String password = "password";
 
 		mockMvc.perform(post("/api/user/register")
@@ -35,7 +37,7 @@ public class UserControllerTest extends ControllerTest {
 
 	@Test
 	public void registerExisting() throws Exception {
-		String mail = user.getUsername();
+		String mail = getTestUser().getUsername();
 		String password = "password";
 
 		final String response = mockMvc.perform(post("/api/user/register")
@@ -49,7 +51,7 @@ public class UserControllerTest extends ControllerTest {
 
 	@Test
 	public void registerMatchingPassword() throws Exception {
-		String mail = "new_" + user.getUsername();
+		String mail = "new_" + getTestUser().getUsername();
 		String password = "password";
 
 		final String response = mockMvc.perform(post("/api/user/register")

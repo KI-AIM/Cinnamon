@@ -7,6 +7,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { StateManagementService } from 'src/app/core/services/state-management.service';
 import { Steps } from 'src/app/core/enums/steps';
+import { plainToClass } from 'class-transformer';
+import { DataSet } from 'src/app/shared/model/data-set';
+import { TransformationService } from '../../services/transformation.service';
+import { TransformationResult } from 'src/app/shared/model/transformation-result';
 
 @Component({
     selector: 'app-data-configuration',
@@ -22,7 +26,7 @@ export class DataConfigurationComponent {
         private fileService: FileService,
         private router: Router,
         private stateManagement: StateManagementService,
-        
+        private transformationService: TransformationService,
     ) {
         this.titleService.setPageTitle("Data configuration"); 
     }
@@ -35,6 +39,7 @@ export class DataConfigurationComponent {
     }
 
     private handleUpload(data: Object) {
+        this.transformationService.setTransformationResult(plainToClass(TransformationResult, data)); 
         this.router.navigateByUrl("/dataValidation");
         this.stateManagement.addCompletedStep(Steps.DATA_CONFIG); 
     }

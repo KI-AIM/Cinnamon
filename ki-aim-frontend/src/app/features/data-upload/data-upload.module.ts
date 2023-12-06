@@ -12,6 +12,10 @@ import { DateformatComponent } from './components/configurationSettings/dateform
 import { DatetimeformatComponent } from './components/configurationSettings/datetimeformat/datetimeformat.component';
 import { StringpatternComponent } from './components/configurationSettings/stringpattern/stringpattern.component';
 import { AddedConfigurationListComponent } from './components/added-configuration-list/added-configuration-list.component';
+import { DataTableComponent } from './components/data-table/data-table.component';
+import { TransformationService } from './services/transformation.service';
+import { MatTableModule } from '@angular/material/table'
+import { CdkColumnDef } from '@angular/cdk/table';
 
 @NgModule({
     declarations: [
@@ -24,11 +28,13 @@ import { AddedConfigurationListComponent } from './components/added-configuratio
         DatetimeformatComponent,
         StringpatternComponent,
         AddedConfigurationListComponent,
+        DataTableComponent,
     ],
     imports: [
         CommonModule, 
         FormsModule,
         RouterModule,
+        MatTableModule,
     ],
     exports: [
         AdditionalConfigurationComponent,
@@ -38,6 +44,8 @@ import { AddedConfigurationListComponent } from './components/added-configuratio
     ],
     providers: [
         FileService,
+        TransformationService,
+        CdkColumnDef
     ]
 })
 export class DataUploadModule {}

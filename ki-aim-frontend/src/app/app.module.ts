@@ -13,7 +13,7 @@ import { DataConfigurationService } from './shared/services/data-configuration.s
 import { FormsModule } from '@angular/forms';
 import { DataUploadModule } from './features/data-upload/data-upload.module';
 import { StartModule } from './features/start/start.module';
-import { FileService } from './features/data-upload/services/file.service';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
     declarations: [
@@ -27,7 +27,8 @@ import { FileService } from './features/data-upload/services/file.service';
         DataUploadModule,
         HttpClientModule,
         FormsModule,
-        NgbModule
+        NgbModule,
+        BrowserAnimationsModule,
     ],
     providers: [
         TitleService,

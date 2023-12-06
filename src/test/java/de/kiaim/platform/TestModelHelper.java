@@ -3,11 +3,15 @@ package de.kiaim.platform;
 import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.*;
+import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestModelHelper {
 
@@ -15,7 +19,7 @@ public class TestModelHelper {
 		final DataConfiguration dataConfiguration = new DataConfiguration();
 		final StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration(".*");
 		final DateFormatConfiguration dateFormatConfiguration = new DateFormatConfiguration("yyyy-MM-dd");
-		final DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+		final DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
 		final List<ColumnConfiguration> columnConfigurations = List.of(
 				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, new ArrayList<>()),
 				new ColumnConfiguration(1, "column1_date", DataType.DATE, List.of(dateFormatConfiguration)),
@@ -34,16 +38,29 @@ public class TestModelHelper {
 		return dataConfiguration;
 	}
 
+	public static DataConfiguration generateEstimatedConfiguration() {
+		final DataConfiguration configuration = new DataConfiguration();
+		final List<ColumnConfiguration> columnConfigurations = List.of(
+				new ColumnConfiguration(0, "", DataType.BOOLEAN, new ArrayList<>()),
+				new ColumnConfiguration(1, "", DataType.DATE, new ArrayList<>()),
+				new ColumnConfiguration(2, "", DataType.DATE_TIME, new ArrayList<>()),
+				new ColumnConfiguration(3, "", DataType.DECIMAL, new ArrayList<>()),
+				new ColumnConfiguration(4, "", DataType.INTEGER, new ArrayList<>()),
+				new ColumnConfiguration(5, "", DataType.STRING, new ArrayList<>()));
+		configuration.setConfigurations(columnConfigurations);
+		return configuration;
+	}
+
 	public static List<DataRow> generateDataRows() {
 		final List<Data> data1 = List.of(new BooleanData(true),
 		                                 new DateData(LocalDate.of(2023, 11, 20)),
-		                                 new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456789)),
+		                                 new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456000)),
 		                                 new DecimalData(4.2f),
 		                                 new IntegerData(42),
 		                                 new StringData("Hello World!"));
 		final List<Data> data2 = List.of(new BooleanData(false),
 		                                 new DateData(LocalDate.of(2023, 11, 20)),
-		                                 new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456789)),
+		                                 new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456000)),
 		                                 new DecimalData(2.4f),
 		                                 new IntegerData(24),
 		                                 new StringData("Bye World!"));
@@ -56,14 +73,42 @@ public class TestModelHelper {
 		return new DataSet(generateDataRows(), generateDataConfiguration());
 	}
 
-	public static TransformationResult generateTransformationResult() {
-		final List<String> rawValues = List.of("true", "2023-11-20", "", "4.2", "42", "Hello World!");
-		final DataRowTransformationError dataRowTransformationError = new DataRowTransformationError(2, rawValues);
-		final DataTransformationError dataTransformationError = new DataTransformationError(2,
-		                                                                                    TransformationErrorType.MISSING_VALUE);
-		dataRowTransformationError.addError(dataTransformationError);
-		final List<DataRowTransformationError> dataRowTransformationErrors = List.of(dataRowTransformationError);
+	public static TransformationResult generateTransformationResult(final boolean withErrors) {
 
-		return new TransformationResult(generateDataSet(), dataRowTransformationErrors);
+		if (withErrors) {
+			final List<String> rawValues = List.of("true", "2023-11-20", "", "4.2", "42", "Hello World!");
+			final DataRowTransformationError dataRowTransformationError = new DataRowTransformationError(2, rawValues);
+			final DataTransformationError dataTransformationError = new DataTransformationError(2,
+			                                                                                    TransformationErrorType.MISSING_VALUE);
+			dataRowTransformationError.addError(dataTransformationError);
+			final List<DataRowTransformationError> dataRowTransformationErrors = List.of(dataRowTransformationError);
+			return new TransformationResult(generateDataSet(), dataRowTransformationErrors);
+		} else {
+			return new TransformationResult(generateDataSet(), new ArrayList<>());
+		}
+	}
+
+	public static String generateTransformationResultAsJson() {
+		return
+				"""
+						{"dataSet":{"dataConfiguration":""" + generateDataConfigurationAsJson() +
+				"""
+						,"data":[[true,"2023-11-20","2023-11-20T12:50:27.123456",4.2,42,"Hello World!"],[false,"2023-11-20","2023-11-20T12:50:27.123456",2.4,24,"Bye World!"]]},"transformationErrors":[{"index":2,"rawValues":["true","2023-11-20","","4.2","42","Hello World!"],"dataTransformationErrors":[{"index":2,"errorType":"MISSING_VALUE"}]}]}""";
+	}
+
+	public static String generateDataConfigurationAsJson() {
+		return """
+				{"dataTypes":["BOOLEAN","DATE","DATE_TIME","DECIMAL","INTEGER","STRING"],"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","configurations":[{"name":"DateFormatConfiguration","dateFormatter":"yyyy-MM-dd"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","configurations":[{"name":"DateTimeFormatConfiguration","dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSSSS"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","configurations":[]},{"index":5,"name":"column5_string","type":"STRING","configurations":[{"name":"StringPatternConfiguration","pattern":".*"}]}]}""";
+	}
+
+	public static MockMultipartFile loadCsvFile() {
+		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
+		try {
+			return new MockMultipartFile("file", "file.csv", null,
+			                             classLoader.getResourceAsStream("test.csv"));
+		} catch (IOException e) {
+			fail(e);
+			return null;
+		}
 	}
 }

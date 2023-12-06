@@ -2,13 +2,15 @@ package de.kiaim.platform.model.data.configuration;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.EqualsAndHashCode;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Empty interface that all Data configurations
  * should implement in order to be dynamically
  * processed
  */
+@Schema(description = "Interface for different configurations.",
+        anyOf = {DateFormatConfiguration.class, DateTimeFormatConfiguration.class, StringPatternConfiguration.class})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "name")
 @JsonSubTypes({
 		@JsonSubTypes.Type(DateFormatConfiguration.class),

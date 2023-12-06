@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import de.kiaim.platform.model.data.Data;
 import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -19,10 +21,12 @@ public class DataSet {
 	@JsonIgnore
 	final List<DataRow> dataRows;
 
+	@Schema(description = "Metadata of the data")
 	final DataConfiguration dataConfiguration;
 
+	@ArraySchema(schema = @Schema(description = "Row of the data set.", implementation = DataRow.class))
 	@JsonProperty("data")
-	final List<List<Object>> getData() {
+	public final List<List<Object>> getData() {
 		return dataRows.stream()
 		               .map(dataRow -> dataRow.getData()
 		                                      .stream()

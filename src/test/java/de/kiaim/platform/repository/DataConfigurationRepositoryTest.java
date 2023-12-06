@@ -1,6 +1,6 @@
 package de.kiaim.platform.repository;
 
-import de.kiaim.platform.ContextRequiredTest;
+import de.kiaim.platform.DatabaseTest;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.DataConfigurationEntity;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
@@ -13,7 +13,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
-class DataConfigurationRepositoryTest extends ContextRequiredTest {
+class DataConfigurationRepositoryTest extends DatabaseTest {
 
 	@Autowired
 	DataConfigurationRepository repository;

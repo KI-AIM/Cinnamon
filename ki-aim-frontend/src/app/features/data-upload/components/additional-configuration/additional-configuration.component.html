@@ -6,10 +6,6 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-body">
-                <app-added-configuration-list [column]="column"></app-added-configuration-list>
-
-                <hr />
-
                 <h1>Add new configuration</h1>
                 <div class="d-flex flex-column">
                     <label class="form-label" [for]="'additionalSettingsConfigurations_' + attrNumber">Configuration:
@@ -45,6 +41,10 @@
                     (click)="addConfiguration()">
                     Add Configuration
                 </button>
+
+                <hr />
+
+                <app-added-configuration-list [column]="column"></app-added-configuration-list>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ok</button>

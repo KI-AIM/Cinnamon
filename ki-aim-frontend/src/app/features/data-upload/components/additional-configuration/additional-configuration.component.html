@@ -11,7 +11,8 @@
                     <label class="form-label" [for]="'additionalSettingsConfigurations_' + attrNumber">Configuration:
                     </label>
                     <select class="form-select" [id]="'additionalSettingsConfigurations_' + attrNumber"
-                        (change)="changeConfigurationSelection($event)">
+                        (change)="changeConfigurationSelection($event)" 
+                        [attr.disabled]="!areConfigurationAvailable(column.type.toString()) ? 'disabled' : null">
                         <option selected disabled *ngIf="!areConfigurationAvailable(column.type.toString())">No
                             configurations available</option>
                         <option selected disabled *ngIf="areConfigurationAvailable(column.type.toString())">Select a
@@ -47,7 +48,7 @@
                 <app-added-configuration-list [column]="column"></app-added-configuration-list>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ok</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
 
         </div>

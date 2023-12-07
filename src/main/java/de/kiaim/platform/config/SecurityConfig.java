@@ -31,13 +31,11 @@ public class SecurityConfig {
 	public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
 		httpSecurity.csrf(AbstractHttpConfigurer::disable)
 		            .authorizeHttpRequests(authz -> authz
-				            .requestMatchers(antMatcher("/"),
-				                             antMatcher("/api/doc"),
-				                             antMatcher("/api-docs/**"),
+				            .requestMatchers(antMatcher("/api/doc"),
 				                             antMatcher("/api/swagger-ui/**"),
-				                             antMatcher("/api/user/register"))
-				            .permitAll()
-				            .requestMatchers(antMatcher("/**")).hasRole("USER")
+				                             antMatcher("/api/user/register")).permitAll()
+				            .requestMatchers(antMatcher("/api/**")).hasRole("USER")
+				            .requestMatchers(antMatcher("/**")).permitAll()
 				            .anyRequest().authenticated())
 		            .httpBasic(Customizer.withDefaults())
                     .authenticationProvider(daoAuthenticationProvider());

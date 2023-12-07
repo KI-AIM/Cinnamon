@@ -15,6 +15,9 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -33,10 +36,17 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
 	                                                              HttpHeaders headers, HttpStatusCode status,
 	                                                              WebRequest request) {
-		Map<String, String> errors = ex.getBindingResult()
-		                               .getFieldErrors()
-		                               .stream()
-		                               .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage));
+		Map<String, List<String>> errors = new HashMap<>();
+		for (final FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+			if (errors.containsKey(fieldError.getField())) {
+				errors.get(fieldError.getField()).add(fieldError.getDefaultMessage());
+			} else {
+				List<String> fieldErrors = new ArrayList<>();
+				fieldErrors.add(fieldError.getDefaultMessage());
+				errors.put(fieldError.getField(), fieldErrors);
+			}
+		}
+
 		return responseService.prepareErrorResponseEntity(headers, status, errors);
 	}
 

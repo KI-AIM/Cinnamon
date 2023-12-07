@@ -10,15 +10,23 @@ import { StateManagementService } from './core/services/state-management.service
 import { HttpClientModule } from '@angular/common/http';
 import { DataService } from './shared/services/data.service';
 import { DataConfigurationService } from './shared/services/data-configuration.service';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DataUploadModule } from './features/data-upload/data-upload.module';
 import { StartModule } from './features/start/start.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { LoginComponent } from './core/components/login/login.component';
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatButtonModule } from "@angular/material/button";
+import { RegisterComponent } from './core/components/register/register.component';
+import { MatCardModule } from "@angular/material/card";
 
 @NgModule({
     declarations: [
         AppComponent,
         NavigationComponent,
+        LoginComponent,
+        RegisterComponent,
     ],
     imports: [
         BrowserModule,
@@ -29,6 +37,11 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
         FormsModule,
         NgbModule,
         BrowserAnimationsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        ReactiveFormsModule,
+        MatCardModule,
     ],
     providers: [
         TitleService,

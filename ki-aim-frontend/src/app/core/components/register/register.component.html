@@ -1,0 +1,25 @@
+<mat-card [hidden]="registerError.length === 0" class="mb-2">
+    <mat-card-content>
+        <div>
+            <div *ngFor="let e of registerError">{{ e }}</div>
+        </div>
+    </mat-card-content>
+</mat-card>
+
+<div class="bg-white p-5 rounded border">
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
+        <mat-form-field>
+            <mat-label>Email</mat-label>
+            <input type="text" formControlName="email" matInput>
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Password</mat-label>
+            <input type="password" formControlName="password" matInput>
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Repeat Password</mat-label>
+            <input type="password" formControlName="passwordRepeated" matInput>
+        </mat-form-field>
+        <button type="submit" [disabled]="!registerForm.valid" mat-button color="warn">Register</button>
+    </form>
+</div>

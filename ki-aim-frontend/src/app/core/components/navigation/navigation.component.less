@@ -1,6 +1,11 @@
 @import '../../../styles/colors'; 
 @import '../../../styles/variables';
 
+.navbar-side {
+    position: fixed;
+    width: 25%; 
+}
+
 .nav-link {
     display: flex; 
     align-items: center;
@@ -31,4 +36,8 @@
         content: "\F26C";
         margin-left: 5px; 
     }
+}
+
+.disabled {
+    color: @mdc-grey-500;
 }

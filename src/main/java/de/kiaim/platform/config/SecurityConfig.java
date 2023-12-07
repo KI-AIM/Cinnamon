@@ -33,6 +33,7 @@ public class SecurityConfig {
 		            .authorizeHttpRequests(authz -> authz
 				            .requestMatchers(antMatcher("/api/doc"),
 				                             antMatcher("/api/swagger-ui/**"),
+				                             antMatcher("/api/user"),
 				                             antMatcher("/api/user/register")).permitAll()
 				            .requestMatchers(antMatcher("/api/**")).hasRole("USER")
 				            .requestMatchers(antMatcher("/**")).permitAll()

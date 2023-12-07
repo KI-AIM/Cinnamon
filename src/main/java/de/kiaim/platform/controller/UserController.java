@@ -17,6 +17,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+
 @RestController
 @RequestMapping("/api/user")
 @Tag(name = "/api/user", description = "API for managing users.")
@@ -27,6 +29,11 @@ public class UserController {
 	@Autowired
 	public UserController(UserService userService) {
 		this.userService = userService;
+	}
+
+	@GetMapping("/")
+	public Principal user(final Principal user) {
+		return user;
 	}
 
 	@Operation(summary = "Registers a new user.",

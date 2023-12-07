@@ -8,7 +8,6 @@ import { Router } from '@angular/router';
 import { StateManagementService } from 'src/app/core/services/state-management.service';
 import { Steps } from 'src/app/core/enums/steps';
 import { plainToClass } from 'class-transformer';
-import { DataSet } from 'src/app/shared/model/data-set';
 import { TransformationService } from '../../services/transformation.service';
 import { TransformationResult } from 'src/app/shared/model/transformation-result';
 
@@ -31,11 +30,23 @@ export class DataConfigurationComponent {
         this.titleService.setPageTitle("Data configuration"); 
     }
 
+	ngAfterViewInit() {
+        this.setEmptyColumnNames(); 
+    }
+
     confirmConfiguration() {
         this.dataService.readAndValidateData(this.fileService.getFile(), this.configuration.getDataConfiguration()).subscribe({
             next: (d) => this.handleUpload(d),
             error: (e) => this.handleError(e),
         });
+    }
+
+    private setEmptyColumnNames() {
+        this.configuration.getDataConfiguration().configurations.forEach((column, index) => {
+            if (column.name == undefined || column.name == null || column.name == "") {
+                column.name = 'column_' + index;  
+            }
+        }); 
     }
 
     private handleUpload(data: Object) {

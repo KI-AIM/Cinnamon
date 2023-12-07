@@ -1,5 +1,7 @@
-<a class="btn-outline-secondary bi-gear-fill" title="Additional Settings" data-bs-toggle="modal"
-    [attr.data-bs-target]="'#additionalSettings_' + attrNumber"></a>
+<a title="Additional Settings" data-bs-toggle="modal"
+    [attr.data-bs-target]="'#additionalSettings_' + attrNumber">
+    <mat-icon fontIcon="settings"></mat-icon>
+</a>
 
 <div class="modal modal-xl fade" [id]="'additionalSettings_' + attrNumber" data-backdrop="static" data-keyboard="false"
     tabindex="-1" aria-labelledby="staticBackdrop" aria-hidden="true">

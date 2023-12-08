@@ -1,4 +1,7 @@
 export class User {
-    email: string;
-    authenticated: boolean;
+    constructor(
+    public authenticated: boolean,
+    public email: string,
+    public token: string,
+    ){}
 }

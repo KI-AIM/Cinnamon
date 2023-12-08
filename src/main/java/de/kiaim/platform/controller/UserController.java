@@ -31,7 +31,7 @@ public class UserController {
 		this.userService = userService;
 	}
 
-	@GetMapping("/")
+	@GetMapping("")
 	public Principal user(final Principal user) {
 		return user;
 	}

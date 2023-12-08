@@ -53,7 +53,7 @@ export class RegisterComponent {
         result.subscribe({
             next: (d) => this.handleRegisterSuccess(d),
             error: (e) => this.handleRegisterFailed(e),
-        })
+        });
     }
 
     handleRegisterSuccess(data: any) {
@@ -64,12 +64,9 @@ export class RegisterComponent {
     handleRegisterFailed(error: HttpErrorResponse) {
         this.registerError = [];
         for (const field in error.error.errors) {
-            console.log(field)
             for (const fieldError of error.error.errors[field]) {
-                console.log(fieldError)
                 this.registerError.push(fieldError);
             }
         }
-        console.log(this.registerError);
     }
 }

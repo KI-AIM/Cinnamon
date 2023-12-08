@@ -7,7 +7,7 @@ import { NavigationComponent } from './core/components/navigation/navigation.com
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { TitleService } from './core/services/title-service.service';
 import { StateManagementService } from './core/services/state-management.service';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { DataService } from './shared/services/data.service';
 import { DataConfigurationService } from './shared/services/data-configuration.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -20,6 +20,8 @@ import { MatInputModule } from "@angular/material/input";
 import { MatButtonModule } from "@angular/material/button";
 import { RegisterComponent } from './core/components/register/register.component';
 import { MatCardModule } from "@angular/material/card";
+import { UserService } from './shared/services/user.service';
+import { XhrInterceptor } from './core/interceptor/xhr.interceptor';
 
 @NgModule({
     declarations: [
@@ -46,8 +48,10 @@ import { MatCardModule } from "@angular/material/card";
     providers: [
         TitleService,
         StateManagementService,
+        UserService,
         DataService,
         DataConfigurationService,
+        {provide: HTTP_INTERCEPTORS, useClass: XhrInterceptor, multi: true},
     ],
     bootstrap: [AppComponent]
 })

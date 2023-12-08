@@ -1,12 +1,12 @@
 <div class="bg-white p-5 rounded border">
-    <form role="form" class="d-flex flex-column mb-3">
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
         <mat-form-field>
             <mat-label>Email</mat-label>
-            <input matInput>
+            <input type="text" formControlName="email" matInput>
         </mat-form-field>
         <mat-form-field>
             <mat-label>Password</mat-label>
-            <input matInput>
+            <input type="password" formControlName="password" matInput>
         </mat-form-field>
         <button mat-button color="warn">Login</button>
     </form>
@@ -14,8 +14,4 @@
        routerLink="/register">
         Register
     </a>
-
 </div>
-
-
-

@@ -1,58 +1,57 @@
-<a title="Additional Settings" data-bs-toggle="modal"
-    [attr.data-bs-target]="'#additionalSettings_' + attrNumber">
+<a title="Additional Settings" (click)="openDialog(additionalSettings)">
     <mat-icon fontIcon="settings"></mat-icon>
 </a>
 
-<div class="modal modal-xl fade" [id]="'additionalSettings_' + attrNumber" data-backdrop="static" data-keyboard="false"
-    tabindex="-1" aria-labelledby="staticBackdrop" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-body">
-                <h1>Add new configuration</h1>
-                <div class="d-flex flex-column">
-                    <label class="form-label" [for]="'additionalSettingsConfigurations_' + attrNumber">Configuration:
-                    </label>
-                    <select class="form-select" [id]="'additionalSettingsConfigurations_' + attrNumber"
-                        (change)="changeConfigurationSelection($event)" 
-                        [attr.disabled]="!areConfigurationAvailable(column.type.toString()) ? 'disabled' : null">
-                        <option selected disabled *ngIf="!areConfigurationAvailable(column.type.toString())">No
-                            configurations available</option>
-                        <option selected disabled *ngIf="areConfigurationAvailable(column.type.toString())">Select a
-                            configuration to add...</option>
-                        <option
+<ng-template #additionalSettings>
+    <mat-dialog-content class="mat-typography">
+        <div>
+            <h1>Add new configuration</h1>
+            <div class="d-flex flex-column">
+                <mat-form-field>
+                    <mat-label>Configuration</mat-label>
+                    <mat-select [id]="'additionalSettingsConfigurations_' + attrNumber"
+                        (selectionChange)="changeConfigurationSelection($event)"
+                        [disabled]="!areConfigurationAvailable(column.type.toString()) ? 'disabled' : null"
+                        [(value)]="selected">
+                        <mat-option selected disabled *ngIf="!areConfigurationAvailable(column.type.toString())"
+                            value="standardSelection">No
+                            configurations available</mat-option>
+                        <mat-option selected disabled *ngIf="areConfigurationAvailable(column.type.toString())"
+                            value="standardSelection">Select a
+                            configuration to add...</mat-option>
+                        <mat-option
                             *ngFor="let configurationType of getConfigurationsForDatatype(column.type.toString()).getAll()"
-                            [value]="configurationType">{{getConfigurationTypeForIndex(configurationType)}}</option>
-                    </select>
-                </div>
-
-                <hr />
-
-                <h1>Configuration Settings</h1>
-
-                <div *ngIf="currentConfigurationSelection == undefined">
-                    <i>No configuration selected yet</i>
-                </div>
-
-                <app-dateformat #dateFormat
-                    *ngIf="currentConfigurationSelection == ConfigurationType.DATEFORMAT"></app-dateformat>
-                <app-datetimeformat #dateTimeFormat
-                    *ngIf="currentConfigurationSelection == ConfigurationType.DATETIMEFORMAT"></app-datetimeformat>
-                <app-stringpattern #stringPattern
-                    *ngIf="currentConfigurationSelection == ConfigurationType.STRINGPATTERN"></app-stringpattern>
-
-                <button class="btn btn-primary mt-3" *ngIf="currentConfigurationSelection != undefined"
-                    (click)="addConfiguration()">
-                    Add Configuration
-                </button>
-
-                <hr />
-
-                <app-added-configuration-list [column]="column"></app-added-configuration-list>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            [value]="configurationType">{{getConfigurationTypeForIndex(configurationType)}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
             </div>
 
+            <hr />
+
+            <h1>Configuration Settings</h1>
+
+            <div *ngIf="currentConfigurationSelection == undefined">
+                <i>No configuration selected yet</i>
+            </div>
+
+            <app-dateformat #dateFormat
+                *ngIf="currentConfigurationSelection == ConfigurationType.DATEFORMAT"></app-dateformat>
+            <app-datetimeformat #dateTimeFormat
+                *ngIf="currentConfigurationSelection == ConfigurationType.DATETIMEFORMAT"></app-datetimeformat>
+            <app-stringpattern #stringPattern
+                *ngIf="currentConfigurationSelection == ConfigurationType.STRINGPATTERN"></app-stringpattern>
+
+            <button mat-raised-button color="primary" class="mt-3" *ngIf="currentConfigurationSelection != undefined"
+                (click)="addConfiguration()">
+                Add Configuration
+            </button>
+
+            <hr />
+
+            <app-added-configuration-list [column]="column"></app-added-configuration-list>
         </div>
-    </div>
-</div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

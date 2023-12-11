@@ -1,4 +1,4 @@
-<div class="bg-white p-5 rounded border">
+<div class="p-5">
     <div class="d-flex flex-column mb-3">
         <div *ngFor="let column of configuration.getColumnConfigurations().getAll(), index as i">
             <app-attribute-configuration [attrNumber]="i.toString()" [column]="column">

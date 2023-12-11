@@ -1,4 +1,6 @@
 <div class="d-flex flex-column w-100">
-    <label class="form-label" for="dateformat">Date format: </label>
-    <input class="form-control" #dateformat [(ngModel)]="dateformatConfiguration.dateFormatter" />
+    <mat-form-field>
+        <mat-label>Date format</mat-label>
+        <input matInput #dateformat [(ngModel)]="dateformatConfiguration.dateFormatter" />
+    </mat-form-field>
 </div>

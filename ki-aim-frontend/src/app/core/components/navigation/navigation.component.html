@@ -1,4 +1,4 @@
-<div class="d-flex flex-column justify-content-center navbar-side">
+<div class="d-flex flex-column navbar-side">
     <h1 class="align-self-center">KI-AIM</h1>
 
     <ul class="nav flex-column justify-content-start">
@@ -13,4 +13,10 @@
             </a>
         </li>
     </ul>
+    <div [hidden]="!userService.isAuthenticated()" class="logout">
+        <a (click)="onLogout()">
+            <mat-icon>logout</mat-icon>
+            <span style="position: absolute;">Logout</span>
+        </a>
+    </div>
 </div>

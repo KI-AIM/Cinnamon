@@ -1,10 +1,6 @@
-<mat-card [hidden]="registerError.length === 0" class="mb-2">
-    <mat-card-content>
-        <div>
-            <div *ngFor="let e of registerError">{{ e }}</div>
-        </div>
-    </mat-card-content>
-</mat-card>
+<app-info-card [hidden]="registerError.length === 0" typeClass="card-warn">
+    <div *ngFor="let line of registerError">{{ line }}</div>
+</app-info-card>
 
 <div class="bg-white p-5 rounded border">
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
@@ -20,6 +16,10 @@
             <mat-label>Repeat Password</mat-label>
             <input type="password" formControlName="passwordRepeated" matInput>
         </mat-form-field>
-        <button type="submit" [disabled]="!registerForm.valid" mat-button color="warn">Register</button>
+        <button type="submit" [disabled]="!registerForm.valid" mat-raised-button color="primary">Register</button>
     </form>
+    <div style="display: flex; flex-direction: column;">
+        <div style="margin: auto;">Already have an Account?</div>
+        <button mat-raised-button color="primary" routerLink="/login">Go To Login</button>
+    </div>
 </div>

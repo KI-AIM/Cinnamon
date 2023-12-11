@@ -1,9 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { TitleService } from '../../services/title-service.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TitleService } from '../../../../core/services/title-service.service';
 import { UserService } from 'src/app/shared/services/user.service';
-import { HttpErrorResponse } from '@angular/common/http';
 
 interface LoginForm {
   email: FormControl<string>;
@@ -15,10 +14,13 @@ interface LoginForm {
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.less']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   loginForm: FormGroup<LoginForm>;
+  mode: string;
+  infoText: string;
 
   constructor(
+    private readonly activateRoute: ActivatedRoute,
     private readonly router: Router,
     private readonly titleService: TitleService,
     private readonly userService: UserService,
@@ -36,12 +38,22 @@ export class LoginComponent {
     this.titleService.setPageTitle('Login');
   }
 
+  ngOnInit() {
+    this.activateRoute.params.subscribe(params => {
+      if (params['mode']) {
+        this.mode = params['mode'];
+      } else {
+        this.mode = '';
+      }
+    });
+  }
+
   onSubmit() {
     this.userService.login(this.loginForm.value as { email: string, password: string }, error => {
       if (error === '') {
-        this.router.navigateByUrl("/start")
+        this.router.navigateByUrl("/start");
       } else {
-        // TODO handle
+        this.router.navigate(['/login', {mode: 'fail'}]);
       }
     });
   }

@@ -1,9 +1,9 @@
 import {Component} from '@angular/core';
 import {FormControl, FormGroup, Validators} from "@angular/forms";
-import {UserService} from "../../../shared/services/user.service";
+import {UserService} from "../../../../shared/services/user.service";
 import {HttpErrorResponse} from "@angular/common/http";
 import {Router} from "@angular/router";
-import {TitleService} from "../../services/title-service.service";
+import {TitleService} from "../../../../core/services/title-service.service";
 
 interface RegisterForm {
     email: FormControl<string>;
@@ -57,7 +57,7 @@ export class RegisterComponent {
     }
 
     handleRegisterSuccess(data: any) {
-        this.router.navigateByUrl('/login').then(r => {
+        this.router.navigate(['/login', { mode: 'register' }]).then(r => {
         });
     }
 

@@ -8,19 +8,19 @@ import { User } from '../model/user';
   providedIn: 'root'
 })
 export class UserService {
+  private readonly USER_KEY = 'user';
   private user: User;
 
   constructor(
     private readonly http: HttpClient,
     private readonly router: Router,
   ) {
-    const storedUser = sessionStorage.getItem("user");
+    const storedUser = sessionStorage.getItem(this.USER_KEY);
     if (storedUser !== null) {
       this.user = JSON.parse(storedUser);
     } else {
       this.user = new User(false, "", "");
     }
-    console.log(this.user);
   }
 
   getUser(): User {
@@ -45,7 +45,7 @@ export class UserService {
         console.log(data);
         if (data['name']) {
           this.user = new User(true, credentials.email, token);
-          sessionStorage.setItem("user", JSON.stringify(this.user));
+          sessionStorage.setItem(this.USER_KEY, JSON.stringify(this.user));
         }
         return callback && callback("");
       },
@@ -56,15 +56,14 @@ export class UserService {
   }
 
   logout() {
-    this.http.post('logout', {})
-      .pipe(finalize(() => this.router.navigateByUrl("")))
-      .subscribe();
+    this.user = new User(false, "", "");
+    this.router.navigate(['login', { mode: 'logout' }]);
+    sessionStorage.removeItem(this.USER_KEY)
   }
 
   register(request: {
     email: string, password: string, passwordRepeated: string
   }): Observable<any> {
-    console.log(request);
     return this.http.post('api/user/register', request);
   }
 }

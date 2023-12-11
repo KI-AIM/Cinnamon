@@ -14,36 +14,32 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DataUploadModule } from './features/data-upload/data-upload.module';
 import { StartModule } from './features/start/start.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { LoginComponent } from './core/components/login/login.component';
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatButtonModule } from "@angular/material/button";
-import { RegisterComponent } from './core/components/register/register.component';
 import { MatCardModule } from "@angular/material/card";
 import { UserService } from './shared/services/user.service';
 import { XhrInterceptor } from './core/interceptor/xhr.interceptor';
+import { MatIconModule } from '@angular/material/icon';
+import { SharedModule } from './shared/shared.module';
+import { AuthModule } from './features/auth/auth.module';
 
 @NgModule({
     declarations: [
         AppComponent,
         NavigationComponent,
-        LoginComponent,
-        RegisterComponent,
     ],
     imports: [
         BrowserModule,
+        SharedModule,
         AppRoutingModule,
+        AuthModule,
         StartModule,
         DataUploadModule,
         HttpClientModule,
-        FormsModule,
         NgbModule,
         BrowserAnimationsModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatButtonModule,
-        ReactiveFormsModule,
-        MatCardModule,
+        MatIconModule,
     ],
     providers: [
         TitleService,

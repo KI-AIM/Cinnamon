@@ -1,9 +1,9 @@
-<div class="d-flex align-items-center">
-    <div class="mat-elevation-z8">
-        <mat-paginator [pageSizeOptions]="[50, 100, 1000]" showFirstLastButtons
+<div id="flexWrap" class="d-flex align-items-center">
+    <div id="tableWrapper" class="mat-elevation-z8">
+        <mat-paginator id="tableHeader" [pageSizeOptions]="[50, 100, 1000]" showFirstLastButtons
             aria-label="Select page of periodic elements">
         </mat-paginator>
-        <table mat-table [dataSource]="dataSource">
+        <table id="tableContent" mat-table [dataSource]="dataSource">
             <ng-container
                 *ngFor="let column of transformationService.getTransformationResult().dataSet.dataConfiguration.configurations"
                 [matColumnDef]="column.name.toString()">

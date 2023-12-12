@@ -11,13 +11,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
 public class TestModelHelper {
 
-	public static DataConfiguration generateDataConfiguration() {
+	public static DataConfiguration generateDataConfiguration(final String stringPattern) {
 		final DataConfiguration dataConfiguration = new DataConfiguration();
-		final StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration(".*");
+		final StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration(stringPattern);
 		final DateFormatConfiguration dateFormatConfiguration = new DateFormatConfiguration("yyyy-MM-dd");
 		final DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
 		final List<ColumnConfiguration> columnConfigurations = List.of(
@@ -36,6 +34,10 @@ public class TestModelHelper {
 		                                         DataType.STRING);
 		dataConfiguration.setDataTypes(dataTypes);
 		return dataConfiguration;
+	}
+
+	public static DataConfiguration generateDataConfiguration() {
+		return generateDataConfiguration(".*");
 	}
 
 	public static DataConfiguration generateEstimatedConfiguration() {
@@ -101,14 +103,9 @@ public class TestModelHelper {
 				{"dataTypes":["BOOLEAN","DATE","DATE_TIME","DECIMAL","INTEGER","STRING"],"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","configurations":[{"name":"DateFormatConfiguration","dateFormatter":"yyyy-MM-dd"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","configurations":[{"name":"DateTimeFormatConfiguration","dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSSSS"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","configurations":[]},{"index":5,"name":"column5_string","type":"STRING","configurations":[{"name":"StringPatternConfiguration","pattern":".*"}]}]}""";
 	}
 
-	public static MockMultipartFile loadCsvFile() {
+	public static MockMultipartFile loadCsvFile() throws IOException {
 		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
-		try {
-			return new MockMultipartFile("file", "file.csv", null,
-			                             classLoader.getResourceAsStream("test.csv"));
-		} catch (IOException e) {
-			fail(e);
-			return null;
-		}
+		return new MockMultipartFile("file", "file.csv", null,
+		                             classLoader.getResourceAsStream("test.csv"));
 	}
 }

@@ -1,23 +1,22 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { DataConfigurationComponent } from './data-configuration.component';
+import { DataConfigurationComponent } from "./data-configuration.component";
 
-describe('DataConfigurationComponent', () => {
-  let component: DataConfigurationComponent;
-  let fixture: ComponentFixture<DataConfigurationComponent>;
+describe("DataConfigurationComponent", () => {
+	let component: DataConfigurationComponent;
+	let fixture: ComponentFixture<DataConfigurationComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ DataConfigurationComponent ]
-    })
-    .compileComponents();
+	beforeEach(async () => {
+		await TestBed.configureTestingModule({
+			declarations: [DataConfigurationComponent],
+		}).compileComponents();
 
-    fixture = TestBed.createComponent(DataConfigurationComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+		fixture = TestBed.createComponent(DataConfigurationComponent);
+		component = fixture.componentInstance;
+		fixture.detectChanges();
+	});
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+	it("should create", () => {
+		expect(component).toBeTruthy();
+	});
 });

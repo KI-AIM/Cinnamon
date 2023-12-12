@@ -56,7 +56,7 @@ public class UserController {
 			           schema = @Schema(implementation = RegisterRequest.class))
 			final @RequestBody @Valid RegisterRequest registerRequest
 	) {
-		userService.save(registerRequest.getEmail(), registerRequest.getEmail());
+		userService.save(registerRequest.getEmail(), registerRequest.getPassword());
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 }

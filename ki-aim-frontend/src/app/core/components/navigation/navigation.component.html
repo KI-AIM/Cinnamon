@@ -13,10 +13,8 @@
             </a>
         </li>
     </ul>
-    <div [hidden]="!userService.isAuthenticated()" class="logout">
-        <a (click)="onLogout()">
-            <mat-icon>logout</mat-icon>
-            <span style="position: absolute;">Logout</span>
-        </a>
+    <div [hidden]="!userService.isAuthenticated()" class="logout" (click)="onLogout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
     </div>
 </div>

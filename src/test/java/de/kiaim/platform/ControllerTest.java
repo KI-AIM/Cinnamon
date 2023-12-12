@@ -7,10 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @AutoConfigureMockMvc
 public class ControllerTest extends DatabaseTest {
@@ -23,11 +24,13 @@ public class ControllerTest extends DatabaseTest {
 
 	protected void testValidationError(String response, String key, String expectedError)
 			throws JsonProcessingException {
+		final List<String> expectedErrors = new ArrayList<>();
+		expectedErrors.add(expectedError);
 		final ErrorResponse errorResponse = objectMapper.readValue(response, ErrorResponse.class);
-		final LinkedHashMap<String, String> errors = (LinkedHashMap) errorResponse.getErrors();
+		final LinkedHashMap<String, List<String>> errors = (LinkedHashMap) errorResponse.getErrors();
 		assertEquals(1, errors.size(), "Number of errors not correct!");
 		assertTrue(errors.containsKey(key), "No error for '" + key + "' present!");
-		assertEquals(expectedError, errors.get(key), "Unexpected message!");
+		assertEquals(expectedErrors, errors.get(key), "Unexpected message!");
 	}
 
 	protected void testErrorMessage(String response, String expectedError) throws JsonProcessingException {

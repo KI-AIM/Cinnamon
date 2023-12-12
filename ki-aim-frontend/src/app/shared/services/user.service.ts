@@ -56,9 +56,10 @@ export class UserService {
   }
 
   logout() {
-    this.user = new User(false, "", "");
-    this.router.navigate(['login', { mode: 'logout' }]);
     sessionStorage.removeItem(this.USER_KEY)
+    this.router.navigate(['login', { mode: 'logout' }]).then(
+      () => window.location.reload()
+    );
   }
 
   register(request: {

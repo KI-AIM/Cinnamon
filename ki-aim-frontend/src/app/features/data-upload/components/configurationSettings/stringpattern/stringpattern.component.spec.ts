@@ -1,23 +1,22 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { StringpatternComponent } from './stringpattern.component';
+import { StringpatternComponent } from "./stringpattern.component";
 
-describe('StringpatternComponent', () => {
-  let component: StringpatternComponent;
-  let fixture: ComponentFixture<StringpatternComponent>;
+describe("StringpatternComponent", () => {
+	let component: StringpatternComponent;
+	let fixture: ComponentFixture<StringpatternComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ StringpatternComponent ]
-    })
-    .compileComponents();
+	beforeEach(async () => {
+		await TestBed.configureTestingModule({
+			declarations: [StringpatternComponent],
+		}).compileComponents();
 
-    fixture = TestBed.createComponent(StringpatternComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+		fixture = TestBed.createComponent(StringpatternComponent);
+		component = fixture.componentInstance;
+		fixture.detectChanges();
+	});
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+	it("should create", () => {
+		expect(component).toBeTruthy();
+	});
 });

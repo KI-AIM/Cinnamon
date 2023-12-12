@@ -1,16 +1,16 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed } from "@angular/core/testing";
 
-import { DataConfigurationService } from './data-configuration.service';
+import { DataConfigurationService } from "./data-configuration.service";
 
-describe('DataConfigurationService', () => {
-  let service: DataConfigurationService;
+describe("DataConfigurationService", () => {
+	let service: DataConfigurationService;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(DataConfigurationService);
-  });
+	beforeEach(() => {
+		TestBed.configureTestingModule({});
+		service = TestBed.inject(DataConfigurationService);
+	});
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
-  });
+	it("should be created", () => {
+		expect(service).toBeTruthy();
+	});
 });

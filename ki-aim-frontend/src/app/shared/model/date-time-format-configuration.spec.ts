@@ -1,7 +1,7 @@
-import { DateTimeFormatConfiguration } from './date-time-format-configuration';
+import { DateTimeFormatConfiguration } from "./date-time-format-configuration";
 
-describe('DateTimeFormatConfiguration', () => {
-  it('should create an instance', () => {
-    expect(new DateTimeFormatConfiguration()).toBeTruthy();
-  });
+describe("DateTimeFormatConfiguration", () => {
+	it("should create an instance", () => {
+		expect(new DateTimeFormatConfiguration()).toBeTruthy();
+	});
 });

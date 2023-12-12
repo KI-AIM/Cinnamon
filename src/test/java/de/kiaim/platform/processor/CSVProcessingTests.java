@@ -1,7 +1,9 @@
 package de.kiaim.platform.processor;
 
 import de.kiaim.platform.PlatformApplication;
+import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.DataSet;
+import de.kiaim.platform.model.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
@@ -42,11 +44,12 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
         DataConfiguration config = getDataConfiguration();
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
 
         TransformationResult expectedResult = testReadMethodOfCsvProcessor_getExpectedTransformationResult();
 
@@ -111,10 +114,11 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream);
+        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration);
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
 

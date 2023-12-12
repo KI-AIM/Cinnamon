@@ -13,6 +13,10 @@ import java.util.List;
 
 public class TestModelHelper {
 
+	public static FileConfiguration generateFileConfigurationCsv() {
+		return new FileConfiguration(FileType.CSV, ",", "\n", false);
+	}
+
 	public static DataConfiguration generateDataConfiguration(final String stringPattern) {
 		final DataConfiguration dataConfiguration = new DataConfiguration();
 		final StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration(stringPattern);

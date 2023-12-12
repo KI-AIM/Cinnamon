@@ -2,6 +2,7 @@ package de.kiaim.platform.controller;
 
 import de.kiaim.platform.ControllerTest;
 import de.kiaim.platform.TestModelHelper;
+import de.kiaim.platform.model.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.data.configuration.StringPatternConfiguration;
@@ -25,12 +26,13 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void estimateDatatypes() throws Exception {
-		ClassLoader classLoader = getClass().getClassLoader();
-		MockMultipartFile file = new MockMultipartFile("file", "data.csv", null,
-		                                               classLoader.getResourceAsStream("test.csv"));
+		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
 		final String result = mockMvc.perform(multipart("/api/data/datatypes")
-				                                      .file(file))
+				                                      .file(file)
+				                                      .param("fileConfiguration",
+				                                             objectMapper.writeValueAsString(fileConfiguration)))
 		                             .andExpect(status().isOk())
 		                             .andReturn().getResponse().getContentAsString();
 
@@ -55,8 +57,12 @@ class DataControllerTest extends ControllerTest {
 		ClassLoader classLoader = getClass().getClassLoader();
 		MockMultipartFile file = new MockMultipartFile("file", null, null,
 		                                               classLoader.getResourceAsStream("test.csv"));
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
-		String result = mockMvc.perform(multipart("/api/data/datatypes").file(file))
+		String result = mockMvc.perform(multipart("/api/data/datatypes")
+				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration)))
 		                       .andExpect(status().isBadRequest())
 		                       .andReturn().getResponse().getContentAsString();
 
@@ -68,8 +74,12 @@ class DataControllerTest extends ControllerTest {
 		ClassLoader classLoader = getClass().getClassLoader();
 		MockMultipartFile file = new MockMultipartFile("file", "file", null,
 		                                               classLoader.getResourceAsStream("test.csv"));
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
-		String result = mockMvc.perform(multipart("/api/data/datatypes").file(file))
+		String result = mockMvc.perform(multipart("/api/data/datatypes")
+				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration)))
 		                       .andExpect(status().isBadRequest())
 		                       .andReturn().getResponse().getContentAsString();
 
@@ -79,11 +89,13 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void readAndValidateData() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 		final TransformationResult expected = TestModelHelper.generateTransformationResult(false);
 
 		mockMvc.perform(multipart("/api/data/validation")
 				                .file(file)
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(objectMapper.writeValueAsString(expected)));
@@ -92,9 +104,12 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void readAndValidateDataMissingConfiguration() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
 		String result = mockMvc.perform(multipart("/api/data/validation")
-				                                .file(file))
+				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration)))
 		                       .andExpect(status().isBadRequest())
 		                       .andReturn().getResponse().getContentAsString();
 
@@ -104,9 +119,12 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void readAndValidateDataInvalidConfiguration() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
 		String result = mockMvc.perform(multipart("/api/data/validation")
 				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration))
 				                                .param("configuration", "invalid"))
 		                       .andExpect(status().isBadRequest())
 		                       .andReturn().getResponse().getContentAsString();
@@ -114,6 +132,8 @@ class DataControllerTest extends ControllerTest {
 
 		result = mockMvc.perform(multipart("/api/data/validation")
 				                         .file(file)
+				                         .param("fileConfiguration",
+				                                objectMapper.writeValueAsString(fileConfiguration))
 				                         .param("configuration", "\"invalid\""))
 		                .andExpect(status().isBadRequest())
 		                .andReturn().getResponse().getContentAsString();
@@ -176,10 +196,13 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void storeDataAndDeleteData() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
 		String result = mockMvc.perform(multipart("/api/data")
 				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration))
 				                                .param("configuration",
 				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())
@@ -208,10 +231,13 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void storeDataAndUpdateConfig() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
 		mockMvc.perform(multipart("/api/data")
 				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration",
 				                       objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk());
@@ -232,10 +258,13 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void loadConfig() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
 		String result = mockMvc.perform(multipart("/api/data")
 				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration))
 				                                .param("configuration",
 				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())
@@ -254,10 +283,13 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void loadData() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
 		String result = mockMvc.perform(multipart("/api/data")
 				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration))
 				                                .param("configuration",
 				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())
@@ -277,10 +309,13 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void loadDataSet() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
 		String result = mockMvc.perform(multipart("/api/data")
 				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration))
 				                                .param("configuration",
 				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())

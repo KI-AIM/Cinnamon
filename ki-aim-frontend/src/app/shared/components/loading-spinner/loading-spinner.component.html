@@ -1,0 +1,8 @@
+<div class="spinner-wrapper" *ngIf="loadingService.loading">
+    <div class="spinner-center">
+        <div class="d-flex flex-column align-items-center justify-content-center">
+            <mat-spinner [diameter]="100"></mat-spinner>
+            <span class="mt-5 loading-text">Loading...</span>
+        </div>
+    </div>
+</div>

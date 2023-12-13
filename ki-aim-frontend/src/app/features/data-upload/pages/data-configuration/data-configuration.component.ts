@@ -10,6 +10,7 @@ import { Steps } from 'src/app/core/enums/steps';
 import { plainToClass } from 'class-transformer';
 import { TransformationService } from '../../services/transformation.service';
 import { TransformationResult } from 'src/app/shared/model/transformation-result';
+import { LoadingService } from 'src/app/shared/services/loading.service';
 
 @Component({
     selector: 'app-data-configuration',
@@ -26,6 +27,7 @@ export class DataConfigurationComponent {
         private router: Router,
         private stateManagement: StateManagementService,
         private transformationService: TransformationService,
+        public loadingService: LoadingService,
     ) {
         this.titleService.setPageTitle("Data configuration"); 
     }
@@ -35,6 +37,8 @@ export class DataConfigurationComponent {
     }
 
     confirmConfiguration() {
+        this.loadingService.setLoadingStatus(true);
+
         this.dataService.readAndValidateData(this.fileService.getFile(), this.configuration.getDataConfiguration()).subscribe({
             next: (d) => this.handleUpload(d),
             error: (e) => this.handleError(e),
@@ -50,12 +54,16 @@ export class DataConfigurationComponent {
     }
 
     private handleUpload(data: Object) {
+        this.loadingService.setLoadingStatus(false);
+
         this.transformationService.setTransformationResult(plainToClass(TransformationResult, data)); 
         this.router.navigateByUrl("/dataValidation");
         this.stateManagement.addCompletedStep(Steps.DATA_CONFIG); 
     }
 
     private handleError(error: HttpErrorResponse) {
+        this.loadingService.setLoadingStatus(false); 
+
         //TODO implement me
     }
     

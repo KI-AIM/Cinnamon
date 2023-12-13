@@ -4,6 +4,10 @@
 
 <input type="file" #fileForm (change)="uploadFile($event)">
 
+<a title="Additional Settings" (click)="openDialog(fileConfiguration)">
+    <mat-icon fontIcon="settings"></mat-icon>
+</a>
+
 <h3>More Information</h3>
 
 <p>
@@ -41,3 +45,32 @@
     is installed. The processed data will also only be accessable to the user that uploaded the data and
     will be deleted after the process was finished.
 </p>
+
+
+<ng-template #fileConfiguration>
+    <mat-dialog-content class="mat-typography">
+        <h1>Configure the file</h1>
+        <mat-form-field>
+            <mat-label>Column Separator</mat-label>
+            <mat-select>
+                <mat-option *ngFor="let delimiter of delimiters" [value]="delimiter">
+                    {{ delimiterLabels[delimiter] }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Line break</mat-label>
+            <mat-select>
+                <mat-option *ngFor="let lineEnd of lineEndings" [value]="lineEnd">
+                    {{ lineEndingLabels[lineEnd] }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <mat-checkbox color="primary">
+            Has Header
+        </mat-checkbox>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

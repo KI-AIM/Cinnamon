@@ -2,7 +2,7 @@ import { NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { AdditionalConfigurationComponent } from "./components/additional-configuration/additional-configuration.component";
 import { AttributeConfigurationComponent } from "./components/attribute-configuration/attribute-configuration.component";
-import { FormsModule } from "@angular/forms";
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { DataConfigurationComponent } from "./pages/data-configuration/data-configuration.component";
 import { UploadFileComponent } from "./pages/upload-file/upload-file.component";
 import { RouterModule } from "@angular/router";
@@ -25,6 +25,7 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatIconModule } from "@angular/material/icon";
 import { MatSelectModule } from "@angular/material/select";
+import { MatCheckboxModule } from "@angular/material/checkbox";
 
 @NgModule({
 	declarations: [
@@ -39,21 +40,23 @@ import { MatSelectModule } from "@angular/material/select";
 		AddedConfigurationListComponent,
 		DataTableComponent,
 	],
-	imports: [
-		CommonModule,
-		FormsModule,
-		RouterModule,
-		SharedModule,
-		MatTableModule,
-		MatPaginatorModule,
-		MatDialogModule,
-		MatButtonModule,
-		MatExpansionModule,
-		MatFormFieldModule,
-		MatInputModule,
-		MatIconModule,
-		MatSelectModule,
-	],
+    imports: [
+        CommonModule,
+        FormsModule,
+        RouterModule,
+        SharedModule,
+        MatTableModule,
+        MatPaginatorModule,
+        MatDialogModule,
+        MatButtonModule,
+        MatExpansionModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatIconModule,
+        MatSelectModule,
+        ReactiveFormsModule,
+        MatCheckboxModule,
+    ],
 	exports: [
 		AdditionalConfigurationComponent,
 		AttributeConfigurationComponent,

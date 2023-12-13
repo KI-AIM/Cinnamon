@@ -1,4 +1,5 @@
-<div class="spinner-wrapper" *ngIf="loadingService.loading">
+<div class="spinner-wrapper" [style.visibility]="loadingService.loading ? 'visible' : 'hidden'"
+    [style.opacity]="loadingService.loading ? '1' : '0'">
     <div class="spinner-center">
         <div class="d-flex flex-column align-items-center justify-content-center">
             <mat-spinner [diameter]="100"></mat-spinner>

@@ -1,7 +1,7 @@
 package de.kiaim.platform.converter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.kiaim.platform.model.FileConfiguration;
+import de.kiaim.platform.model.file.FileConfiguration;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.converter.Converter;

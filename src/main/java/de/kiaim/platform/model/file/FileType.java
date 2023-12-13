@@ -1,4 +1,4 @@
-package de.kiaim.platform.model;
+package de.kiaim.platform.model.file;
 
 public enum FileType {
 	CSV,

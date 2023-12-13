@@ -5,6 +5,7 @@ import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.*;
+import de.kiaim.platform.model.file.FileConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;

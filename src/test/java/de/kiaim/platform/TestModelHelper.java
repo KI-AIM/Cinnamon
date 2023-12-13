@@ -3,6 +3,8 @@ package de.kiaim.platform;
 import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.*;
+import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.model.file.FileType;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;

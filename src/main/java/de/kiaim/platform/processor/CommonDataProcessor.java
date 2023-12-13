@@ -6,6 +6,7 @@ import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.file.FileConfiguration;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 

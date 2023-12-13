@@ -2,7 +2,7 @@ package de.kiaim.platform.controller;
 
 import de.kiaim.platform.ControllerTest;
 import de.kiaim.platform.TestModelHelper;
-import de.kiaim.platform.model.FileConfiguration;
+import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.data.configuration.StringPatternConfiguration;

@@ -43,13 +43,33 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
                 estimatedDatatypes = getUndefinedDatatypesList(firstRow.size());
             }
 
-            return buildConfigurationForDataTypes(estimatedDatatypes);
+            List<String> columnNames = readColumnNames(csvString, fileConfiguration);
+
+            return buildConfigurationForDataTypes(estimatedDatatypes, columnNames);
 
         } else {
             return new DataConfiguration();
         }
     }
 
+    /**
+     * Reads the column names of a csv file in the form of a string.
+     * If the csv file does not contain a header column, returns a list with empty strings.
+     *
+     * @param csvString The raw csv file.
+     * @param fileConfiguration Configuration describing the file.
+     * @return List with the column names or empty strings.
+     */
+    private List<String> readColumnNames(String csvString, FileConfiguration fileConfiguration) {
+        String firstRow = csvString.split(fileConfiguration.getLineSeparator())[0];
+        String[] values = firstRow.split(fileConfiguration.getColumnSeparator());
+
+        if (!fileConfiguration.isHasHeader()) {
+            Arrays.fill(values, "");
+        }
+
+        return Arrays.asList(values);
+    }
 
     /**
      * Function that returns a subset of complete rows for a csvString.

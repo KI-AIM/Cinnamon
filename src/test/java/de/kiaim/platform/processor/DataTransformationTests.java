@@ -45,7 +45,7 @@ public class DataTransformationTests {
                 values,11
                 ,12
                 """;
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = new DataConfiguration();
 
@@ -150,7 +150,7 @@ public class DataTransformationTests {
                1959-02-03
                1982-02-20
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DateFormatConfiguration dateFormatConfiguration = new DateFormatConfiguration();
         dateFormatConfiguration.setDateFormatter("yyyy-MM-dd");
@@ -218,7 +218,7 @@ public class DataTransformationTests {
                1959-02-03T13:01:52
                1982-02-20T2321:24:34018
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss");
 
@@ -285,7 +285,7 @@ public class DataTransformationTests {
                 C531.12
                 Wrong pattern
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = new DataConfiguration();
         StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration("[A-Z]\\d{3}[.]\\d{2}");
@@ -350,7 +350,7 @@ public class DataTransformationTests {
                0
                No boolean value
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = new DataConfiguration();
 
@@ -413,7 +413,7 @@ public class DataTransformationTests {
                5.7664
                No float value
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = new DataConfiguration();
 
@@ -476,7 +476,7 @@ public class DataTransformationTests {
                4
                No int value
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = new DataConfiguration();
 

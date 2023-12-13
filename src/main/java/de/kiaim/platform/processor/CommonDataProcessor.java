@@ -52,7 +52,8 @@ public abstract class CommonDataProcessor implements DataProcessor {
         //Split Strings at the line separator to receive a list with the row-strings
         List<String> rows = new ArrayList<>(Arrays.asList(data.split(fileConfiguration.getLineSeparator())));
 
-        for (int rowIndex = 0; rowIndex < rows.size(); rowIndex ++) {
+        int startRow = fileConfiguration.isHasHeader() ? 1 : 0;
+        for (int rowIndex = startRow; rowIndex < rows.size(); rowIndex ++) {
             // Process every row
             boolean errorInRow = false;
             String row = rows.get(rowIndex);
@@ -350,17 +351,19 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * ColumnConfigurations where only the DataType contains relevant
      * information
      * @param dataTypes list of datatypes to be processed
+     * @param columnNames list containing the column names
      * @return new DataConfiguration object
      */
-    public DataConfiguration buildConfigurationForDataTypes(List<DataType> dataTypes) {
+    public DataConfiguration buildConfigurationForDataTypes(List<DataType> dataTypes, List<String> columnNames) {
         DataConfiguration resultingConfiguration = new DataConfiguration();
         List<ColumnConfiguration> resultingColumnConfigurations = new ArrayList<>();
 
         for (int i = 0; i < dataTypes.size(); i++) {
             DataType type = dataTypes.get(i);
+            String columnName = columnNames.get(i);
 
             ColumnConfiguration newColumnConfiguration = new ColumnConfiguration(
-                    i, "", type, new ArrayList<>()
+                    i, columnName, type, new ArrayList<>()
             );
             resultingColumnConfigurations.add(newColumnConfiguration);
         }

@@ -87,6 +87,20 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void estimateDatatypesMissingFileConfiguration() throws Exception {
+		ClassLoader classLoader = getClass().getClassLoader();
+		MockMultipartFile file = new MockMultipartFile("file", "file", null,
+		                                               classLoader.getResourceAsStream("test.csv"));
+
+		String result = mockMvc.perform(multipart("/api/data/datatypes")
+				                                .file(file))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Missing parameter: 'fileConfiguration'");
+	}
+
+	@Test
 	void readAndValidateData() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();

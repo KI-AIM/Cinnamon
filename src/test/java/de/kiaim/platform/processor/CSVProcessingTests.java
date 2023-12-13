@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = PlatformApplication.class)
@@ -44,7 +43,7 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = getDataConfiguration();
 
@@ -55,6 +54,31 @@ public class CSVProcessingTests {
 
         assertEquals(actualResult, expectedResult);
     }
+
+    @Test
+    void testReadMethodOfCsvProcessorWithHeader() {
+        String csvData =
+                """
+               id,name,birthdate,smoker,price
+               650390,Tonisha Swift,1975-05-08,no,303.23 €
+               208589,Wilson Maggio,1994-02-28,no,23623.18 €
+               452159,Bill Hintz,1987-05-17,no,38.41 €
+               730160,Nelia Heathcote,1959-02-03,yes,21.01 €
+               614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
+                """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        fileConfiguration.setHasHeader(true);
+
+        DataConfiguration config = getDataConfiguration();
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+
+        TransformationResult expectedResult = testReadMethodOfCsvProcessor_getExpectedTransformationResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
 
     private TransformationResult testReadMethodOfCsvProcessor_getExpectedTransformationResult() {
         List<DataRow> dataRows =
@@ -114,7 +138,7 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
@@ -127,6 +151,32 @@ public class CSVProcessingTests {
 
         assertEquals(expectedDatatypes, actualDatatypes);
     }
+
+    @Test
+    void testEstimationHeaders() {
+        String csvData =
+                """
+               id,name,birthdate,smoker,price
+               650390,Tonisha Swift,1975-05-08,no,303.23 €
+               208589,Wilson Maggio,1994-02-28,no,23623.18 €
+               452159,Bill Hintz,1987-05-17,no,38.41 €
+               730160,Nelia Heathcote,1959-02-03,yes,21.01 €
+               614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
+                """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        fileConfiguration.setHasHeader(true);
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration);
+
+        DataConfiguration expectedConfiguration = getDataConfiguration();
+
+        List<DataType> expectedDatatypes = expectedConfiguration.getDataTypes();
+        List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
+
+        assertEquals(expectedConfiguration, actualConfiguration);
+    }
+
 
 
     private static DataConfiguration getDataConfiguration() {

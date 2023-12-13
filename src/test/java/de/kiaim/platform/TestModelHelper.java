@@ -3,6 +3,7 @@ package de.kiaim.platform;
 import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.*;
+import de.kiaim.platform.model.file.CsvFileConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.file.FileType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -19,7 +20,7 @@ public class TestModelHelper {
 	}
 
 	public static FileConfiguration generateFileConfigurationCsv(final boolean hasHeader) {
-		return new FileConfiguration(FileType.CSV, ",", "\n", hasHeader);
+		return new FileConfiguration(FileType.CSV, new CsvFileConfiguration(",", "\n", hasHeader));
 	}
 
 	public static DataConfiguration generateDataConfiguration(final String stringPattern) {

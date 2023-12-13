@@ -67,7 +67,6 @@ public class CSVProcessingTests {
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
         FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
-        fileConfiguration.setHasHeader(true);
 
         DataConfiguration config = getDataConfiguration();
 
@@ -164,15 +163,11 @@ public class CSVProcessingTests {
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
         FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
-        fileConfiguration.setHasHeader(true);
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
         DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration);
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
-
-        List<DataType> expectedDatatypes = expectedConfiguration.getDataTypes();
-        List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
 
         assertEquals(expectedConfiguration, actualConfiguration);
     }

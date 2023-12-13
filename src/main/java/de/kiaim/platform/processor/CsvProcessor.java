@@ -1,5 +1,6 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.platform.model.file.CsvFileConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.data.DataType;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
@@ -22,7 +23,9 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
                                      DataConfiguration configuration) {
         String csvString = getStringFromInputStream(data);
 
-        return this.transformTwoDimensionalDataToDataSetAndValidate(csvString, fileConfiguration, configuration);
+        return this.transformTwoDimensionalDataToDataSetAndValidate(csvString,
+                                                                    fileConfiguration.getCsvFileConfiguration(),
+                                                                    configuration);
     }
 
     /**
@@ -33,17 +36,20 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
         String csvString = getStringFromInputStream(data);
 
         if (!csvString.isEmpty()) {
-            List<String> validRows = getSubsetOfCompleteRows(csvString, fileConfiguration, 10);
-            List<String> firstRow = getFirstRowFromCSV(csvString, fileConfiguration);
+            CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
+
+            List<String> validRows = getSubsetOfCompleteRows(csvString, csvFileConfiguration, 10);
+            List<String> firstRow = getFirstRowFromCSV(csvString, csvFileConfiguration);
 
             List<DataType> estimatedDatatypes;
             if (!validRows.isEmpty()) {
-                estimatedDatatypes = estimateDatatypesForMultipleRows(validRows, fileConfiguration);
+                estimatedDatatypes = estimateDatatypesForMultipleRows(validRows,
+                                                                      csvFileConfiguration.getColumnSeparator());
             } else {
                 estimatedDatatypes = getUndefinedDatatypesList(firstRow.size());
             }
 
-            List<String> columnNames = readColumnNames(csvString, fileConfiguration);
+            List<String> columnNames = readColumnNames(csvString, csvFileConfiguration);
 
             return buildConfigurationForDataTypes(estimatedDatatypes, columnNames);
 
@@ -60,7 +66,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
      * @param fileConfiguration Configuration describing the file.
      * @return List with the column names or empty strings.
      */
-    private List<String> readColumnNames(String csvString, FileConfiguration fileConfiguration) {
+    private List<String> readColumnNames(String csvString, CsvFileConfiguration fileConfiguration) {
         String firstRow = csvString.split(fileConfiguration.getLineSeparator())[0];
         String[] values = firstRow.split(fileConfiguration.getColumnSeparator());
 
@@ -80,7 +86,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
      * @param maxNumberOfRows the maximum number of rows
      * @return A List<String> of split rows
      */
-    private List<String> getSubsetOfCompleteRows(String csvString, FileConfiguration fileConfiguration,
+    private List<String> getSubsetOfCompleteRows(String csvString, CsvFileConfiguration fileConfiguration,
                                                  int maxNumberOfRows) {
         List<String> rows = Arrays.asList(csvString.split(fileConfiguration.getLineSeparator()));
         List<String> validRows = new ArrayList<>();
@@ -107,7 +113,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
      * @param fileConfiguration Configuration describing the csv string.
      * @return A List<String> with the column values
      */
-    private List<String> getFirstRowFromCSV(String csvString, FileConfiguration fileConfiguration) {
+    private List<String> getFirstRowFromCSV(String csvString, CsvFileConfiguration fileConfiguration) {
         int firstRowIndex = fileConfiguration.isHasHeader() ? 1 : 0;
         return Arrays.asList(
                 Arrays.asList(

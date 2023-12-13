@@ -6,7 +6,7 @@ import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
-import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.model.file.CsvFileConfiguration;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -43,7 +43,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
      */
     public TransformationResult transformTwoDimensionalDataToDataSetAndValidate(
             String data,
-            FileConfiguration fileConfiguration,
+            CsvFileConfiguration fileConfiguration,
             DataConfiguration config
     ) {
         //Create objects to store results
@@ -190,15 +190,15 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * with the most results is used as the estimation
      * for the row.
      * @param rows The line split rows
-     * @param fileConfiguration Configuration describing the rows.
+     * @param columnSeparator Character separating the columns
      * @return List of datatype estimations
      */
-    public List<DataType> estimateDatatypesForMultipleRows(List<String> rows, FileConfiguration fileConfiguration) {
+    public List<DataType> estimateDatatypesForMultipleRows(List<String> rows, String columnSeparator) {
         List<List<DataType>> datatypesForRows = new ArrayList<>();
         List<DataType> resultList = new ArrayList<>();
 
         for (String rowString : rows) {
-            List<String> splittedRow = Arrays.asList(rowString.split(fileConfiguration.getColumnSeparator()));
+            List<String> splittedRow = Arrays.asList(rowString.split(columnSeparator));
 
             datatypesForRows.add(estimateDatatypesFromRow(splittedRow));
         }

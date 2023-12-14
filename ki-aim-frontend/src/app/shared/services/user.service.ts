@@ -17,7 +17,7 @@ export class UserService {
 
 	constructor(
 		private readonly http: HttpClient,
-		private readonly router: Router
+		private readonly router: Router,
 	) {
 		const storedUser = sessionStorage.getItem(this.USER_KEY);
 		if (storedUser !== null) {

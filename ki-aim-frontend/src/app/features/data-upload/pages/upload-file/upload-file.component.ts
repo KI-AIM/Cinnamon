@@ -12,17 +12,8 @@ import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { FileService } from "../../services/file.service";
 import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
-
-enum LineEnding {
-    CR = "\r",
-    CRLF = "\r\n",
-    LF = "\n",
-}
-
-enum Delimiter {
-    COMMA = ",",
-    SEMICOLON = ";",
-}
+import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
+import { CsvFileConfiguration, Delimiter, LineEnding } from "src/app/shared/model/csv-file-configuration";
 
 @Component({
 	selector: "app-upload-file",
@@ -31,6 +22,7 @@ enum Delimiter {
 })
 export class UploadFileComponent {
 	Steps = Steps;
+	public fileConfiguration: FileConfiguration;
 
 	@ViewChild("uploadErrorModal") errorModal: TemplateRef<NgbModal>;
 	@ViewChild("fileForm") fileInput: ElementRef;
@@ -59,12 +51,14 @@ export class UploadFileComponent {
 		public dialog: MatDialog
 	) {
 		this.titleService.setPageTitle("Upload data");
+		this.fileConfiguration = fileService.getFileConfiguration();
 	}
 
 	uploadFile(event: any) {
 		const file: File = event.target.files[0];
 		if (file) {
 			this.fileService.setFile(file);
+			this.fileService.setFileConfiguration(this.fileConfiguration)
 
 			this.dataService.estimateData(file, this.fileService.getFileConfiguration()).subscribe({
 				next: (d) => this.handleUpload(d),

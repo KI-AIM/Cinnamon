@@ -1,8 +1,18 @@
-<div id="flexWrap" class="d-flex align-items-center">
-    <div id="tableWrapper" class="mat-elevation-z8">
+<div class="d-flex align-items-center flex-column mat-elevation-z8">
+    <div class="d-flex justify-content-between align-items-center bg-white w-100 p-2">
         <mat-paginator id="tableHeader" [pageSizeOptions]="[50, 100, 1000]" showFirstLastButtons
             aria-label="Select page of periodic elements">
         </mat-paginator>
+        <mat-form-field>
+            <mat-label>Filter data</mat-label>
+            <mat-select (selectionChange)="applyFilter($event)" [value]="filterCriteria">
+                <mat-option value="ALL">All</mat-option>
+                <mat-option value="VALID">Valid</mat-option>
+                <mat-option value="ERRORS">Errors</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+    <div id="tableWrapper">
         <table id="tableContent" mat-table [dataSource]="dataSource">
             <ng-container
                 *ngFor="let column of transformationService.getTransformationResult().dataSet.dataConfiguration.configurations; let columnIndex = index"
@@ -22,5 +32,4 @@
             </tr>
         </table>
     </div>
-
 </div>

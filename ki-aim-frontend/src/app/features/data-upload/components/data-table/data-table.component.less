@@ -1,20 +1,9 @@
 @import '../../../../styles/colors.less'; 
 
-#flexWrap {
-    display: flex; 
-    min-width: 100%; 
-}
-
 #tableWrapper {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-}
-
-#tableHeader,
-#tableContent {
-    flex: 1;
-    max-width: 100%;
+    width: 100%; 
+    max-height:50vh; 
+    overflow: scroll; 
 }
 
 .errorRow {
@@ -24,4 +13,3 @@
 .errorColumn {
     background-color: @mdc-red-200;
 }
-  

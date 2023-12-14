@@ -1,4 +1,4 @@
-import { Component, ViewChild } from "@angular/core";
+import { Component, TemplateRef, ViewChild } from "@angular/core";
 import { TransformationService } from "../../services/transformation.service";
 import { DataSet } from "src/app/shared/model/data-set";
 import { MatTableDataSource } from "@angular/material/table";
@@ -23,9 +23,12 @@ export class DataTableComponent {
 		)
 	);
 	@ViewChild(MatPaginator) paginator: MatPaginator;
-
-	constructor(public transformationService: TransformationService) {
-		console.log(this.dataSource); 
+	filterCriteria = "ALL"; 
+	
+	
+	constructor(
+		public transformationService: TransformationService,
+	) {
 	}
 
 	ngAfterViewInit() {
@@ -147,6 +150,32 @@ export class DataTableComponent {
 	 */
 	rowHasErrors(errorArray: Array<any>): boolean {
 		return errorArray.length > 0; 
+	}
+
+	/**
+	 * Applies a filter to the table based on the select menu in frontend
+	 * Shows different data depending on the number of errors in a row. 
+	 * @param $event the selectionChange event
+	 */
+	applyFilter($event: any) {
+		this.filterCriteria = $event.value;
+		switch (this.filterCriteria) {
+			case "ALL": {
+				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0 && data.errorsInRow.length <= 0; 
+				this.dataSource.filter = this.filterCriteria; 
+				break; 
+			}
+			case "VALID": {
+				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length == 0; 
+				this.dataSource.filter = this.filterCriteria; 
+				break;
+			}
+			case "ERRORS": {
+				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0; 
+				this.dataSource.filter = this.filterCriteria; 
+				break; 
+			}
+		}
 	}
 }
 

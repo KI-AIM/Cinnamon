@@ -2,11 +2,16 @@
     This page allows you to easily upload files to our system. Multiple file types are supported by the application.
 </p>
 
-<input type="file" #fileForm (change)="uploadFile($event)">
+<div>
+    <input type="file" #fileForm (input)="onFileInput($event)">
+    <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)" style="vertical-align: middle;">
+        <mat-icon fontIcon="settings"></mat-icon>
+    </a>
+</div>
 
-<a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)">
-    <mat-icon fontIcon="settings"></mat-icon>
-</a>
+<div class="py-2">
+    <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="!this.file">Confirm file and start configuration</button>
+</div>
 
 <h3>More Information</h3>
 

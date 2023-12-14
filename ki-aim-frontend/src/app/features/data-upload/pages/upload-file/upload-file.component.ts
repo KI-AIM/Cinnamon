@@ -23,6 +23,7 @@ import { LoadingService } from "src/app/shared/services/loading.service";
 })
 export class UploadFileComponent {
 	Steps = Steps;
+	file: File | null;
 	public fileConfiguration: FileConfiguration;
 
 	@ViewChild("uploadErrorModal") errorModal: TemplateRef<NgbModal>;
@@ -56,15 +57,22 @@ export class UploadFileComponent {
 		this.fileConfiguration = fileService.getFileConfiguration();
 	}
 
-	uploadFile(event: any) {
+	onFileInput(event: Event) {
+		const files = (event.target as HTMLInputElement)?.files;
+
+		if (files) {
+			this.file = files[0];
+		}
+	}
+
+	uploadFile() {
 		this.loadingService.setLoadingStatus(true); 
 
-		const file: File = event.target.files[0];
-		if (file) {
-			this.fileService.setFile(file);
+		if (this.file) {
+			this.fileService.setFile(this.file);
 			this.fileService.setFileConfiguration(this.fileConfiguration)
 
-			this.dataService.estimateData(file, this.fileService.getFileConfiguration()).subscribe({
+			this.dataService.estimateData(this.file, this.fileService.getFileConfiguration()).subscribe({
 				next: (d) => this.handleUpload(d),
 				error: (e) => this.handleError(e),
 			});

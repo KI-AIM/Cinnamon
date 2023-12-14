@@ -23,6 +23,7 @@ export class DataTableComponent {
 		)
 	);
 	@ViewChild(MatPaginator) paginator: MatPaginator;
+	displayedColumns: string[] = ['position'].concat(this.getColumnNames(this.transformationService.getTransformationResult().dataSet));
 	filterCriteria = "ALL"; 
 	
 	
@@ -45,8 +46,8 @@ export class DataTableComponent {
 	transformDataSet(dataSet: DataSet): TableElement[] {
 		const transformedData: TableElement[] = [];
 
-		dataSet.data.forEach((dataRow) => {
-			const transformedRow: TableElement = {errorsInRow: []};
+		dataSet.data.forEach((dataRow, index) => {
+			const transformedRow: TableElement = {position: index, errorsInRow: []};
 			dataRow.forEach((dataItem, index) => {
 				const columnName =
 					dataSet.dataConfiguration.configurations[index].name;
@@ -185,6 +186,7 @@ export class DataTableComponent {
  * This format is needed by the Material Table
  */
 interface TableElement {
+	position: number;
 	[key: string]: any;
 	errorsInRow: Array<any>; 
 }

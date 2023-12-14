@@ -31,4 +31,15 @@ export class DataService {
 
         return this.httpClient.post(this.baseUrl + "/validation", formData);
     }
+
+    storeData(file: File, config: DataConfiguration): Observable<Object> {
+        const formData = new FormData(); 
+
+        formData.append("file", file); 
+
+        var configString = JSON.stringify(instanceToPlain(config)); 
+        formData.append("configuration", configString); 
+
+        return this.httpClient.post(this.baseUrl.toString(), formData);
+    }
 }

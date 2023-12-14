@@ -1,1 +1,29 @@
+<p>
+    The transformation of the data for your configuration was successful. You can inspect the result below. <br /><br />
+
+    Lines that are marked in red will be removed from your dataset, as they could not be transformed with your
+    configuration. The faulty column was marked in a deeper tone of red. <br />
+
+    This application does not offer any mechanism to fix your data. You can however continue with the number of valid
+    rows. <br />
+
+    If you want to change anything, please adjust your data manually and start again. By clicking "Continue" below, you
+    accept that the data will be stored locally in the processing database of the application. The data will be deleted
+    after a certain amount of time. You can also delete it manually at any point in time.
+</p>
+
+<p class="mt-5">
+    <span class="h2">Valid rows after transformation:
+        {{transformationService.getTransformationResult().dataSet.data.length}} rows
+    </span>
+</p>
+
+<div class="d-flex align-items-center justify-content-start my-2">
+    <button mat-raised-button color="primary"
+        (click)="uploadData()">
+        Continue and upload data
+        <mat-icon>arrow_forward</mat-icon>
+    </button>
+</div>
+
 <app-data-table></app-data-table>

@@ -14,6 +14,7 @@ import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
 import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
 import { CsvFileConfiguration, Delimiter, LineEnding } from "src/app/shared/model/csv-file-configuration";
+import { LoadingService } from "src/app/shared/services/loading.service";
 
 @Component({
 	selector: "app-upload-file",
@@ -48,13 +49,16 @@ export class UploadFileComponent {
 		private router: Router,
 		private modalService: NgbModal,
 		private fileService: FileService,
-		public dialog: MatDialog
+		public dialog: MatDialog,
+		public loadingService: LoadingService
 	) {
 		this.titleService.setPageTitle("Upload data");
 		this.fileConfiguration = fileService.getFileConfiguration();
 	}
 
 	uploadFile(event: any) {
+		this.loadingService.setLoadingStatus(true); 
+
 		const file: File = event.target.files[0];
 		if (file) {
 			this.fileService.setFile(file);
@@ -74,6 +78,7 @@ export class UploadFileComponent {
     }
 
 	private handleUpload(data: Object) {
+		this.loadingService.setLoadingStatus(false); 
 		this.dataConfigurationService.setDataConfiguration(
 			plainToClass(DataConfiguration, data)
 		);
@@ -82,6 +87,7 @@ export class UploadFileComponent {
 	}
 
 	private handleError(error: HttpErrorResponse) {
+		this.loadingService.setLoadingStatus(false); 
 		this.showErrorDialog(error);
 	}
 

@@ -162,7 +162,7 @@ export class DataTableComponent {
 		this.filterCriteria = $event.value;
 		switch (this.filterCriteria) {
 			case "ALL": {
-				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0 && data.errorsInRow.length <= 0; 
+				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0 || data.errorsInRow.length <= 0; 
 				this.dataSource.filter = this.filterCriteria; 
 				break; 
 			}

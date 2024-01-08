@@ -1,6 +1,15 @@
 @import '../../../styles/colors'; 
 @import '../../../styles/variables';
 
+.navbar-side {
+    height: 100%;
+    margin-top: 0;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    position: fixed;
+    width: 25vw;
+}
+
 .nav-link {
     display: flex; 
     align-items: center;
@@ -30,5 +39,25 @@
         font-family: "bootstrap-icons";
         content: "\F26C";
         margin-left: 5px; 
+    }
+}
+
+.disabled {
+    color: @mdc-grey-500;
+}
+
+.logout {
+    padding-left: 20px;
+    margin-top: auto;
+    padding-top: 6px;
+    cursor: pointer;
+    color: @color-white;
+    transition: @transition-value;
+        
+    &:hover {
+        background-color: @mdc-dark-blue-grey-600;
+    }
+    span {
+        position: absolute;
     }
 }

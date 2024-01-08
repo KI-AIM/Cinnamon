@@ -1,43 +1,52 @@
-<h3>Welcome to the KI-AIM platform. This tool is designed to anonymize your data by providing methods both for direct anonymization as well as data generation with synthetic methods. </h3>
+<h3>Welcome to the KI-AIM platform. This tool is designed to anonymize your data by providing methods both for direct
+    anonymization as well as data generation with synthetic methods. </h3>
 
-<br/>
-<p>The application will guide you through the different steps, that are shown on the left side of the screen. Completed steps will be marked accordingly. It is possible to always switch back to completed steps, to adjust the configuration. Elements will be marked by <i class="bi bi-info-circle-fill"></i> if they have an explanation attatched to them. </p>
+<br />
+<p>The application will guide you through the different steps, that are shown on the left side of the screen. Completed
+    steps will be marked accordingly. It is possible to always switch back to completed steps, to adjust the
+    configuration. Elements will be marked by <mat-icon fontIcon="info"></mat-icon> if they have an explanation
+    attatched to them. </p>
+
 
 <h3 class="mb-5">Please choose your desired mode: </h3>
 
 
-<div class="d-flex flex-row me-3">
-    <div class="card">
-        <div class="card-title align-self-center">
-            <h3>Standard mode</h3>
-        </div>
-        <div class="card-body">
-            <p>The standard mode is designed for inexperienced users. It will provide some automatic suggestions for useful configuration of the platform. It will also provide a guided setup and more detailed description of every component. This however comes with a tradeoff, that the different methods might not be as customizable resulting in worse anonymization results.</p>
-        </div>
-        <div class="card-footer d-flex justify-content-center align-content-center">
-            <a class="btn btn-primary"
-            (click)="stateManagement.setMode(Mode.STANDARD);
-            stateManagement.addCompletedStep(Steps.WELCOME)"
-            routerLink="/upload">
+<div class="d-flex justify-content-between">
+    <mat-card class="me-2">
+        <mat-card-header>
+            <mat-card-title>Standard mode</mat-card-title>
+        </mat-card-header>
+        <mat-divider></mat-divider>
+        <mat-card-content>
+            <p>The standard mode is designed for inexperienced users. It will provide some automatic suggestions for
+                useful configuration of the platform. It will also provide a guided setup and more detailed description
+                of every component. This however comes with a tradeoff, that the different methods might not be as
+                customizable resulting in worse anonymization results.</p>
+        </mat-card-content>
+        <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
+            <button mat-raised-button color="primary" (click)="stateManagement.setMode(Mode.STANDARD);
+            stateManagement.addCompletedStep(Steps.WELCOME)" routerLink="/upload">
                 Use standard mode
-            </a>
-        </div>
-    </div>
+            </button>
+        </mat-card-actions>
+    </mat-card>
 
-    <div class="card ms-3">
-        <div class="card-title align-self-center">
-            <h3>Expert mode</h3>
-        </div>
-        <div class="card-body">
-            <p>The expert mode is designed for experienced users that know much about anonymization and synthetization methods. This mode offers a more sophisticated interface to configure every component of the platform. Not much guidance is provided in this mode, but fine tuning ever method will likely result in better anonymization results.</p>
-        </div>
-        <div class="card-footer d-flex justify-content-center align-content-center">
-            <a class="btn btn-primary"
-            (click)="stateManagement.setMode(Mode.EXPERT); 
-            stateManagement.addCompletedStep(Steps.WELCOME)"
-            routerLink="/upload">
+    <mat-card class="ms-2">
+        <mat-card-header>
+            <mat-card-title>Expert mode</mat-card-title>
+        </mat-card-header>
+        <mat-divider></mat-divider>
+        <mat-card-content>
+            <p>The expert mode is designed for experienced users that know much about anonymization and synthetization
+                methods. This mode offers a more sophisticated interface to configure every component of the platform.
+                Not much guidance is provided in this mode, but fine tuning ever method will likely result in better
+                anonymization results.</p>
+        </mat-card-content>
+        <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
+            <button mat-raised-button color="primary" (click)="stateManagement.setMode(Mode.EXPERT); 
+            stateManagement.addCompletedStep(Steps.WELCOME)" routerLink="/upload">
                 Use expert mode
-            </a>
-        </div>
-    </div>
+            </button>
+        </mat-card-actions>
+    </mat-card>
 </div>

@@ -3,5 +3,4 @@ export enum DataScale {
     ORDINAL,
     INTERVAL,
     RATIO,
-    CROSSSECTIONAL
 }

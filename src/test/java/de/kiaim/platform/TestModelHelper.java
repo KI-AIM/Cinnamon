@@ -29,12 +29,12 @@ public class TestModelHelper {
 		final DateFormatConfiguration dateFormatConfiguration = new DateFormatConfiguration("yyyy-MM-dd");
 		final DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
 		final List<ColumnConfiguration> columnConfigurations = List.of(
-				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, new ArrayList<>()),
-				new ColumnConfiguration(1, "column1_date", DataType.DATE, List.of(dateFormatConfiguration)),
-				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, List.of(dateTimeFormatConfiguration)),
-				new ColumnConfiguration(3, "column3_decimal", DataType.DECIMAL, new ArrayList<>()),
-				new ColumnConfiguration(4, "column4_integer", DataType.INTEGER, new ArrayList<>()),
-				new ColumnConfiguration(5, "column5_string", DataType.STRING, List.of(stringPatternConfiguration)));
+				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, DataScale.NOMINAL ,new ArrayList<>()),
+				new ColumnConfiguration(1, "column1_date", DataType.DATE, DataScale.INTERVAL, List.of(dateFormatConfiguration)),
+				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, DataScale.INTERVAL, List.of(dateTimeFormatConfiguration)),
+				new ColumnConfiguration(3, "column3_decimal", DataType.DECIMAL, DataScale.RATIO, new ArrayList<>()),
+				new ColumnConfiguration(4, "column4_integer", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()),
+				new ColumnConfiguration(5, "column5_string", DataType.STRING, DataScale.NOMINAL, List.of(stringPatternConfiguration)));
 		dataConfiguration.setConfigurations(columnConfigurations);
 		final List<DataType> dataTypes = List.of(DataType.BOOLEAN,
 		                                         DataType.DATE,
@@ -53,13 +53,22 @@ public class TestModelHelper {
 	public static DataConfiguration generateEstimatedConfiguration() {
 		final DataConfiguration configuration = new DataConfiguration();
 		final List<ColumnConfiguration> columnConfigurations = List.of(
-				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, new ArrayList<>()),
-				new ColumnConfiguration(1, "column1_date", DataType.DATE, new ArrayList<>()),
-				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, new ArrayList<>()),
-				new ColumnConfiguration(3, "column3_decimal", DataType.DECIMAL, new ArrayList<>()),
-				new ColumnConfiguration(4, "column4_integer", DataType.INTEGER, new ArrayList<>()),
-				new ColumnConfiguration(5, "column5_string", DataType.STRING, new ArrayList<>()));
+				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, DataScale.NOMINAL ,new ArrayList<>()),
+				new ColumnConfiguration(1, "column1_date", DataType.DATE, DataScale.INTERVAL, new ArrayList<>()),
+				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, DataScale.INTERVAL, new ArrayList<>()),
+				new ColumnConfiguration(3, "column3_decimal", DataType.DECIMAL, DataScale.RATIO, new ArrayList<>()),
+				new ColumnConfiguration(4, "column4_integer", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()),
+				new ColumnConfiguration(5, "column5_string", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()));
 		configuration.setConfigurations(columnConfigurations);
+
+		final List<DataType> dataTypes = List.of(DataType.BOOLEAN,
+		                                         DataType.DATE,
+		                                         DataType.DATE_TIME,
+		                                         DataType.DECIMAL,
+		                                         DataType.INTEGER,
+		                                         DataType.STRING);
+		configuration.setDataTypes(dataTypes);
+
 		return configuration;
 	}
 
@@ -110,7 +119,7 @@ public class TestModelHelper {
 
 	public static String generateDataConfigurationAsJson() {
 		return """
-				{"dataTypes":["BOOLEAN","DATE","DATE_TIME","DECIMAL","INTEGER","STRING"],"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","configurations":[{"name":"DateFormatConfiguration","dateFormatter":"yyyy-MM-dd"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","configurations":[{"name":"DateTimeFormatConfiguration","dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSSSS"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","configurations":[]},{"index":5,"name":"column5_string","type":"STRING","configurations":[{"name":"StringPatternConfiguration","pattern":".*"}]}]}""";
+				{"dataTypes":["BOOLEAN","DATE","DATE_TIME","DECIMAL","INTEGER","STRING"],"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","scale":"NOMINAL","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","scale":"INTERVAL","configurations":[{"name":"DateFormatConfiguration","dateFormatter":"yyyy-MM-dd"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","scale":"INTERVAL","configurations":[{"name":"DateTimeFormatConfiguration","dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSSSS"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","scale":"RATIO","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","scale":"INTERVAL","configurations":[]},{"index":5,"name":"column5_string","type":"STRING","scale":"NOMINAL","configurations":[{"name":"StringPatternConfiguration","pattern":".*"}]}]}""";
 	}
 
 	public static MockMultipartFile loadCsvFile() throws IOException {

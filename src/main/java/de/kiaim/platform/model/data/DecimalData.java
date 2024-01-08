@@ -1,9 +1,9 @@
 package de.kiaim.platform.model.data;
 
-import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.Configuration;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.data.configuration.RangeConfiguration;
 import de.kiaim.platform.model.data.exception.FloatFormatException;
+import de.kiaim.platform.model.data.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -28,6 +28,9 @@ public class DecimalData extends Data {
 	public static class DecimalDataBuilder implements DataBuilder {
 		private float value;
 
+		private float minValue = Float.MIN_VALUE;
+		private float maxValue = Float.MAX_VALUE;
+
 		/**
 		 * Sets the value of the resulting Decimal Object
 		 * @param value The String value to be set
@@ -37,12 +40,17 @@ public class DecimalData extends Data {
 		 */
 		@Override
 		public DecimalDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+			final float parsedValue;
 			try {
-				this.value = Float.parseFloat(value);
-				return this;
+				parsedValue = Float.parseFloat(value);
 			} catch (Exception e) {
 				throw new FloatFormatException();
 			}
+
+			processConfigurations(parsedValue, configuration);
+
+			this.value = parsedValue;
+			return this;
 		}
 
 		/**
@@ -53,6 +61,20 @@ public class DecimalData extends Data {
 		@Override
 		public DecimalData build() {
 			return new DecimalData(this.value);
+		}
+
+		private void processConfigurations(float value, List<Configuration> configurationList) throws Exception {
+			for (Configuration configuration : configurationList) {
+				if (configuration instanceof RangeConfiguration) {
+					processRangeConfiguration(value, (RangeConfiguration) configuration);
+				}
+			}
+		}
+
+		private void processRangeConfiguration(float value, RangeConfiguration rangeConfiguration) throws ValueNotInRangeException {
+			if (value < rangeConfiguration.getMinValue().asDecimal() || value > rangeConfiguration.getMaxValue().asDecimal()) {
+				throw new ValueNotInRangeException();
+			}
 		}
 	}
 }

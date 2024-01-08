@@ -2,6 +2,7 @@ package de.kiaim.platform.model.data;
 
 import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.exception.DateTimeFormatException;
+import de.kiaim.platform.model.data.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -31,6 +32,8 @@ public class DateTimeData extends Data {
 		private LocalDateTime value;
 
 		private DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+		private LocalDateTime minValue;
+		private LocalDateTime maxValue;
 
 		/**
 		 * Sets the value of the resulting DateTime Object
@@ -45,11 +48,15 @@ public class DateTimeData extends Data {
 
 			try {
 				this.value = LocalDateTime.parse(value, formatter);
-				return this;
 			} catch(Exception e) {
 				throw new DateTimeFormatException();
 			}
 
+			if (this.value.isBefore(minValue) || this.value.isAfter(maxValue)) {
+				throw new ValueNotInRangeException();
+			}
+
+			return this;
 		}
 
 		/**
@@ -83,6 +90,11 @@ public class DateTimeData extends Data {
 		 */
 		private void processDateTimeFormatConfiguration(DateTimeFormatConfiguration configuration) {
 			this.formatter = DateTimeFormatter.ofPattern(configuration.getDateTimeFormatter());
+		}
+
+		private void processRangeConfiguration(RangeConfiguration rangeConfiguration) {
+			this.minValue = rangeConfiguration.getMinValue().asDateTime();
+			this.maxValue = rangeConfiguration.getMaxValue().asDateTime();
 		}
 	}
 }

@@ -1,9 +1,8 @@
 package de.kiaim.platform.model.data;
 
-import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
-import de.kiaim.platform.model.data.configuration.Configuration;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.exception.IntFormatException;
+import de.kiaim.platform.model.data.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -29,6 +28,9 @@ public class IntegerData extends Data {
 	public static class IntegerDataBuilder implements DataBuilder {
 		private int value;
 
+		private int minValue = Integer.MIN_VALUE;
+		private int maxValue = Integer.MAX_VALUE;
+
 		/**
 		 * Sets the value of the resulting Integer Object
 		 * @param value The String value to be set
@@ -38,12 +40,21 @@ public class IntegerData extends Data {
 		 */
 		@Override
 		public IntegerDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+			processConfigurations(configuration);
+
+			final int parsedValue;
 			try {
-				this.value = Integer.parseInt(value);
-				return this;
+				parsedValue = Integer.parseInt(value);
 			} catch(Exception e) {
 				throw new IntFormatException();
 			}
+
+			if (parsedValue < minValue || parsedValue > maxValue) {
+				throw new ValueNotInRangeException();
+			}
+
+			this.value = parsedValue;
+			return this;
 		}
 
 		/**
@@ -54,6 +65,19 @@ public class IntegerData extends Data {
 		@Override
 		public IntegerData build() {
 			return new IntegerData(this.value);
+		}
+
+		private void processConfigurations(List<Configuration> configurationList) {
+			for (Configuration configuration : configurationList) {
+				if (configuration instanceof RangeConfiguration) {
+					processRangeConfiguration((RangeConfiguration) configuration);
+				}
+			}
+		}
+
+		private void processRangeConfiguration(RangeConfiguration rangeConfiguration) {
+			minValue = rangeConfiguration.getMinValue().asInteger();
+			maxValue = rangeConfiguration.getMaxValue().asInteger();
 		}
 	}
 }

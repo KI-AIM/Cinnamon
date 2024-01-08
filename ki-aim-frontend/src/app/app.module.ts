@@ -23,11 +23,13 @@ import { XhrInterceptor } from './core/interceptor/xhr.interceptor';
 import { MatIconModule } from '@angular/material/icon';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './features/auth/auth.module';
+import { AnonymizationConfigurationComponent } from './features/anonymization/anonymization-configuration/anonymization-configuration.component';
 
 @NgModule({
     declarations: [
         AppComponent,
         NavigationComponent,
+        AnonymizationConfigurationComponent,
     ],
     imports: [
         BrowserModule,

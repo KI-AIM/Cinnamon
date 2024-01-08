@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, ViewChild } from "@angular/core";
+import { Component, ElementRef, Input, TemplateRef, ViewChild } from "@angular/core";
 import {
 	ConfigurationType,
 	getConfigurationForConfigurationType,
@@ -11,6 +11,7 @@ import { List } from "src/app/core/utils/list";
 import { DateformatComponent } from "../configurationSettings/dateformat/dateformat.component";
 import { DatetimeformatComponent } from "../configurationSettings/datetimeformat/datetimeformat.component";
 import { StringpatternComponent } from "../configurationSettings/stringpattern/stringpattern.component";
+import { MatDialog } from "@angular/material/dialog";
 
 @Component({
 	selector: "app-additional-configuration",
@@ -30,8 +31,20 @@ export class AdditionalConfigurationComponent {
 
 	currentConfigurationSelection: ConfigurationType | undefined;
 
+    selected = "standardSelection";
+
+    constructor(public dialog: MatDialog) {
+        
+    }
+
+    openDialog(templateRef: TemplateRef<any>) {
+        this.dialog.open(templateRef, {
+            width: '60%'
+        }); 
+    }
+
 	changeConfigurationSelection(event: any) {
-		this.currentConfigurationSelection = event.target.value;
+		this.currentConfigurationSelection = event.value;
 	}
 
     areConfigurationAvailable(type: String): boolean {
@@ -78,6 +91,7 @@ export class AdditionalConfigurationComponent {
                         this.dateFormatComponent.getDateFormatConfiguration()
                     );
                     this.currentConfigurationSelection = undefined;
+                    this.selected = "standardSelection"; 
                     break;
                 }
                 case ConfigurationType.DATETIMEFORMAT: {
@@ -85,6 +99,7 @@ export class AdditionalConfigurationComponent {
                         this.dateTimeFormatComponent.getDateTimeFormatConfiguration()
                     );
                     this.currentConfigurationSelection = undefined;
+                    this.selected = "standardSelection"; 
                     break;
                 }
                 case ConfigurationType.STRINGPATTERN: {
@@ -92,6 +107,7 @@ export class AdditionalConfigurationComponent {
                         this.stringPatternComponent.getStringPatternConfiguration()
                     );
                     this.currentConfigurationSelection = undefined;
+                    this.selected = "standardSelection"; 
                     break;
                 }
             }

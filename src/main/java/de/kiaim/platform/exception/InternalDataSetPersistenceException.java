@@ -1,6 +1,6 @@
-package de.kiaim.platform.model.data.exception;
+package de.kiaim.platform.exception;
 
-public class InternalDataSetPersistenceException extends Exception {
+public class InternalDataSetPersistenceException extends InternalException {
 	public InternalDataSetPersistenceException(final String message) {
 		super(message);
 	}

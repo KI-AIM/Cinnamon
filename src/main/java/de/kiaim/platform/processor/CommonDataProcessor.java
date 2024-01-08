@@ -67,6 +67,9 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
             List<Data> transformedCol = new ArrayList<>();
 
+            // Transformation error that was thrown inside the Data builders
+            DataRowTransformationError newError = new DataRowTransformationError(rowIndex, cols);
+
             for (int colIndex = 0; colIndex < cols.size(); colIndex++) {
                 // Process every column value in a row
                 String col = cols.get(colIndex);
@@ -78,19 +81,16 @@ public abstract class CommonDataProcessor implements DataProcessor {
                 assert !matchingColumnConfigurations.isEmpty();
                 ColumnConfiguration columnConfiguration = matchingColumnConfigurations.get(0);
 
+
+
                 try {
                     Data transformedData = this.dataTransformationHelper.transformData(col, columnConfiguration);
                     transformedCol.add(transformedData);
                 } catch (Exception e) {
-                    // Transformation error that was thrown inside the Data builders
-                    DataRowTransformationError newError = new DataRowTransformationError(rowIndex, cols);
-
                     //Resolve to error type, to easier parse information to frontend
                     TransformationErrorType errorType = this.exceptionToTransformationErrorMapper.mapException(e);
                     newError.addError(new DataTransformationError(colIndex, errorType));
 
-                    //Add error to errorList
-                    errors.add(newError);
                     // set flag to not add row to DataSet
                     errorInRow = true;
                 }
@@ -99,6 +99,9 @@ public abstract class CommonDataProcessor implements DataProcessor {
             // If no error was found, add result to DataRows
             if (!errorInRow) {
                 dataRows.add(new DataRow(transformedCol));
+            } else {
+                //Add error to errorList
+                errors.add(newError);
             }
 
         }

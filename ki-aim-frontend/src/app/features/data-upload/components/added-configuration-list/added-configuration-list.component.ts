@@ -1,4 +1,5 @@
-import { Component, Input } from "@angular/core";
+import { Component, Input, TemplateRef } from "@angular/core";
+import { MatDialog } from "@angular/material/dialog";
 import { instanceToPlain } from "class-transformer";
 import { ColumnConfiguration } from "src/app/shared/model/column-configuration";
 import { Configuration } from "src/app/shared/model/configuration";
@@ -13,6 +14,10 @@ export class AddedConfigurationListComponent {
 
     instanceToPlain = instanceToPlain;
 
+    constructor(public dialog: MatDialog) {
+
+    }
+
     configAsString(config: any): String {
         return JSON.stringify(this.instanceToPlain(config));
     }
@@ -23,5 +28,11 @@ export class AddedConfigurationListComponent {
 
     hasConfiguration(): boolean {
         return this.column.configurations.length > 0; 
+    }
+
+    showRemovalDialog(templateRef: TemplateRef<any>) {
+        this.dialog.open(templateRef, {
+            width: '55%'
+        }); 
     }
 }

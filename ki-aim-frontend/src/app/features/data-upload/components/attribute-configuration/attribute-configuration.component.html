@@ -1,27 +1,34 @@
-<div class="d-flex flex-row mb-2">
-    <div class="d-flex flex-column px-2">
-        <label class="form-label" [for]="'name_' + attrNumber">Column name: </label>
-        <input class="form-control" [id]="'name_' + attrNumber" [(ngModel)]="column.name" />
+<div class="d-flex flex-row mb-2 justify-content-between">
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Column name</mat-label>
+            <input type="text" matInput [id]="'name_' + attrNumber" [(ngModel)]="column.name" />
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Column type</mat-label>
+            <mat-select [id]="'type_' + attrNumber" [(ngModel)]="column.type">
+                <mat-option *ngFor="let type of getDataTypes().getAll()" [value]="type">{{type}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+        
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Column scale</mat-label>
+            <mat-select [id]="'scale' + attrNumber">
+                <mat-option *ngFor="let scale of getDataScales().getAll()" [value]="scale">{{scale}}</mat-option>
+            </mat-select>
+        </mat-form-field>
     </div>
 
     <div class="d-flex flex-column px-2">
-        <label class="form-label" [for]="'type_' + attrNumber">Column type: </label>
-        <select class="form-control form-select" [id]="'type_' + attrNumber" [(ngModel)]="column.type">
-            <option *ngFor="let type of getDataTypes().getAll()" [value]="type">{{type}}</option>
-        </select>
-    </div>
-
-    <div class="d-flex flex-column px-2">
-        <label class="form-label" [for]="'scale' + attrNumber">Column scale: </label>
-        <select class="form-control form-select" [id]="'scale' + attrNumber">
-            <option *ngFor="let scale of getDataScales().getAll()" [value]="scale">{{scale}}</option>
-        </select>
-    </div>
-
-    <div class="d-flex flex-column px-2">
-        <label class="form-label" >&nbsp;</label>
         <div class="h-100 d-flex justify-content-center align-items-center">
-            <app-additional-configuration [attrNumber]="parseInt(attrNumber)" [column]="column"></app-additional-configuration>
+            <app-additional-configuration [attrNumber]="parseInt(attrNumber)"
+                [column]="column"></app-additional-configuration>
         </div>
     </div>
 </div>

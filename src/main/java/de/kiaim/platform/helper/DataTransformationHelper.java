@@ -3,6 +3,7 @@ package de.kiaim.platform.helper;
 import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.exception.MissingValueException;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,13 +27,22 @@ public class DataTransformationHelper {
             throw new MissingValueException();
         }
 
-        return switch (configuration.getType()) {
-            case BOOLEAN -> new BooleanData.BooleanDataBuilder().setValue(value, configuration.getConfigurations()).build();
-            case DATE -> new DateData.DateDataBuilder().setValue(value, configuration.getConfigurations()).build();
-            case DATE_TIME -> new DateTimeData.DateTimeDataBuilder().setValue(value, configuration.getConfigurations()).build();
-            case DECIMAL -> new DecimalData.DecimalDataBuilder().setValue(value, configuration.getConfigurations()).build();
-            case INTEGER -> new IntegerData.IntegerDataBuilder().setValue(value, configuration.getConfigurations()).build();
-            case STRING -> new StringData.StringDataBuilder().setValue(value, configuration.getConfigurations()).build();
+        if (configuration.getType() == DataType.UNDEFINED) {
+            return null;
+        }
+
+        return getDataBuilder(configuration.getType()).setValue(value, configuration.getConfigurations()).build();
+    }
+
+    @Nullable
+    public DataBuilder getDataBuilder(DataType dataType) {
+        return switch (dataType) {
+            case BOOLEAN -> new BooleanData.BooleanDataBuilder();
+            case DATE -> new DateData.DateDataBuilder();
+            case DATE_TIME -> new DateTimeData.DateTimeDataBuilder();
+            case DECIMAL -> new DecimalData.DecimalDataBuilder();
+            case INTEGER -> new IntegerData.IntegerDataBuilder();
+            case STRING -> new StringData.StringDataBuilder();
             case UNDEFINED -> null;
         };
     }

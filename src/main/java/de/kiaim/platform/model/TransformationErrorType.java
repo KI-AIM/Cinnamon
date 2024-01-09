@@ -4,20 +4,26 @@ package de.kiaim.platform.model;
  * Enum of errors that can occur during the transformation into a DataSet.
  */
 public enum TransformationErrorType {
+
 	/**
-	 * The value is missing.
+	 * Error for faulty configurations
 	 */
-	MISSING_VALUE,
+	CONFIG_ERROR,
+
 	/**
 	 * The value is not in the specified format.
 	 */
 	FORMAT_ERROR,
 
 	/**
-	 * Error for faulty configurations
+	 * The value is missing.
 	 */
+	MISSING_VALUE,
 
-	CONFIG_ERROR,
+	/**
+	 * The value is not inside the specified range.
+	 */
+	VALUE_NOT_IN_RANGE,
 
 	/**
 	 * For every error that is not resolved

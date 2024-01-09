@@ -24,6 +24,8 @@ public class ExceptionToTransformationErrorMapper {
             return TransformationErrorType.FORMAT_ERROR;
         } else if (e instanceof MissingValueException) {
             return TransformationErrorType.MISSING_VALUE;
+        } else if (e instanceof ValueNotInRangeException) {
+            return TransformationErrorType.VALUE_NOT_IN_RANGE;
         } else {
             return TransformationErrorType.OTHER;
         }

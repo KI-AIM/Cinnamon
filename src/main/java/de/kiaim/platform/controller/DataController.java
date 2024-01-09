@@ -2,6 +2,7 @@ package de.kiaim.platform.controller;
 
 import de.kiaim.platform.exception.ApiException;
 import de.kiaim.platform.model.DataSet;
+import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
@@ -75,13 +76,17 @@ public class DataController {
 	@PostMapping(value = "/datatypes",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Object> estimateDatatpes(
+	public ResponseEntity<Object> estimateDatatypes(
 			@Parameter(description = "File containing the data.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
 			@RequestPart(value = "file") MultipartFile file,
+			@Parameter(description = "Configuration for the file.",
+			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                              schema = @Schema(implementation = FileConfiguration.class)))
+			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.DATA_TYPES, file, null, user);
+		return handleRequest(RequestType.DATA_TYPES, file, fileConfiguration ,null, user);
 	}
 
 	@Operation(summary = "Converts and validates the uploaded file into a tabular representation.",
@@ -107,13 +112,17 @@ public class DataController {
 			@Parameter(description = "File containing the data.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
 			@RequestPart(value = "file") MultipartFile file,
+			@Parameter(description = "Configuration for the file.",
+			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                              schema = @Schema(implementation = FileConfiguration.class)))
+			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
 			@Parameter(description = "Metadata describing the format of the data.",
 			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                              schema = @Schema(implementation = DataConfiguration.class)))
 			@RequestParam(value = "configuration") DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.VALIDATE, file, configuration, user);
+		return handleRequest(RequestType.VALIDATE, file, fileConfiguration, configuration, user);
 	}
 
 	@Operation(summary = "Stores or updates the given configuration.",
@@ -142,7 +151,7 @@ public class DataController {
 			@RequestParam(value = "configuration") DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.STORE_CONFIG, null, configuration, user);
+		return handleRequest(RequestType.STORE_CONFIG, null, null, configuration, user);
 	}
 
 
@@ -169,13 +178,17 @@ public class DataController {
 			@Parameter(description = "File containing the data to be stored.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
 			@RequestPart(value = "file") MultipartFile file,
+			@Parameter(description = "Configuration for the file.",
+			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                              schema = @Schema(implementation = FileConfiguration.class)))
+			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
 			@Parameter(description = "Metadata describing the format of the data.",
 			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                              schema = @Schema(implementation = DataConfiguration.class)))
 			@RequestParam(value = "configuration") DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.STORE_DATE_SET, file, configuration, user);
+		return handleRequest(RequestType.STORE_DATE_SET, file, fileConfiguration, configuration, user);
 	}
 
 	@Operation(summary = "Returns the configuration of the data set.",
@@ -200,7 +213,7 @@ public class DataController {
 	public ResponseEntity<Object> loadConfig(
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.LOAD_CONFIG, null, null, user);
+		return handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
 	}
 
 	@Operation(summary = "Returns the data of the data set.",
@@ -230,7 +243,7 @@ public class DataController {
 	public ResponseEntity<Object> loadData(
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.LOAD_DATA, null, null, user);
+		return handleRequest(RequestType.LOAD_DATA, null, null, null, user);
 	}
 
 	@Operation(summary = "Returns the data set.",
@@ -255,7 +268,7 @@ public class DataController {
 	public ResponseEntity<Object> loadDataSet(
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.LOAD_DATA_SET, null, null, user);
+		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, user);
 	}
 
 	@Operation(summary = "Deletes the data set from the internal data base.",
@@ -279,37 +292,39 @@ public class DataController {
 	public ResponseEntity<Object> deleteData(
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.DELETE, null, null, user);
+		return handleRequest(RequestType.DELETE, null, null, null, user);
 	}
 
 	/**
 	 * Handles a request of the given type.
 	 * For each RequestType, different attributes must not be null:
 	 * <ul>
-	 *     <li>{@link RequestType#DATA_TYPES}: file</li>
+	 *     <li>{@link RequestType#DATA_TYPES}: file, fileConfiguration</li>
 	 *     <li>{@link RequestType#DELETE}: user</li>
 	 *     <li>{@link RequestType#LOAD_CONFIG}: user</li>
 	 *     <li>{@link RequestType#LOAD_DATA}: user</li>
 	 *     <li>{@link RequestType#LOAD_DATA_SET}: user</li>
 	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, user</li>
-	 *     <li>{@link RequestType#STORE_DATE_SET}: file, configuration, user</li>
-	 *     <li>{@link RequestType#VALIDATE}: file, configuration</li>
+	 *     <li>{@link RequestType#STORE_DATE_SET}: file, fileConfiguration, configuration, user</li>
+	 *     <li>{@link RequestType#VALIDATE}: file, fileConfiguration, configuration</li>
 	 * </ul>
 	 *
-	 * @param requestType   Type of the request.
-	 * @param file          File containing the source data.
-	 * @param configuration Configuration describing the source data.
-	 * @param user          User of the request.
+	 * @param requestType       Type of the request.
+	 * @param file              File containing the source data.
+	 * @param fileConfiguration Configuration describing the file.
+	 * @param configuration     Configuration describing the source data.
+	 * @param user              User of the request.
 	 * @return Response entity containing the response based on the request type or an error description.
 	 */
 	private ResponseEntity<Object> handleRequest(
 			final RequestType requestType,
 			@Nullable final MultipartFile file,
+			@Nullable final FileConfiguration fileConfiguration,
 			@Nullable final DataConfiguration configuration,
 			final UserEntity user
 	) {
 		try {
-			return doHandleRequest(requestType, file, configuration, user);
+			return doHandleRequest(requestType, file, fileConfiguration, configuration, user);
 		} catch (ApiException e) {
 			return responseService.prepareErrorResponseEntity(e);
 		}
@@ -318,6 +333,7 @@ public class DataController {
 	private ResponseEntity<Object> doHandleRequest(
 			final RequestType requestType,
 			final MultipartFile file,
+			final FileConfiguration fileConfiguration,
 			final DataConfiguration configuration,
 			final UserEntity user
 	) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
@@ -326,7 +342,7 @@ public class DataController {
 			case DATA_TYPES -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
-				result = dataProcessor.estimateDatatypes(inputStream);
+				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration);
 			}
 			case DELETE -> {
 				databaseService.delete(user);
@@ -348,13 +364,13 @@ public class DataController {
 			case STORE_DATE_SET -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
-				final TransformationResult transformationResult = dataProcessor.read(inputStream, configuration);
+				final TransformationResult transformationResult = dataProcessor.read(inputStream, fileConfiguration, configuration);
 				result = databaseService.store(transformationResult.getDataSet(), user);
 			}
 			case VALIDATE -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
-				result = dataProcessor.read(inputStream, configuration);
+				result = dataProcessor.read(inputStream, fileConfiguration, configuration);
 			}
 			default -> {
 				return responseService.prepareErrorResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR,

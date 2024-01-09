@@ -1,7 +1,9 @@
 package de.kiaim.platform.processor;
 
 import de.kiaim.platform.PlatformApplication;
+import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.DataSet;
+import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
@@ -21,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = PlatformApplication.class)
@@ -42,16 +43,41 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = getDataConfiguration();
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
 
         TransformationResult expectedResult = testReadMethodOfCsvProcessor_getExpectedTransformationResult();
 
         assertEquals(actualResult, expectedResult);
     }
+
+    @Test
+    void testReadMethodOfCsvProcessorWithHeader() {
+        String csvData =
+                """
+               id,name,birthdate,smoker,price
+               650390,Tonisha Swift,1975-05-08,no,303.23 €
+               208589,Wilson Maggio,1994-02-28,no,23623.18 €
+               452159,Bill Hintz,1987-05-17,no,38.41 €
+               730160,Nelia Heathcote,1959-02-03,yes,21.01 €
+               614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
+                """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+
+        DataConfiguration config = getDataConfiguration();
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+
+        TransformationResult expectedResult = testReadMethodOfCsvProcessor_getExpectedTransformationResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
 
     private TransformationResult testReadMethodOfCsvProcessor_getExpectedTransformationResult() {
         List<DataRow> dataRows =
@@ -111,10 +137,11 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream);
+        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration);
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
 
@@ -123,6 +150,28 @@ public class CSVProcessingTests {
 
         assertEquals(expectedDatatypes, actualDatatypes);
     }
+
+    @Test
+    void testEstimationHeaders() {
+        String csvData =
+                """
+               id,name,birthdate,smoker,price
+               650390,Tonisha Swift,1975-05-08,no,303.23 €
+               208589,Wilson Maggio,1994-02-28,no,23623.18 €
+               452159,Bill Hintz,1987-05-17,no,38.41 €
+               730160,Nelia Heathcote,1959-02-03,yes,21.01 €
+               614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
+                """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration);
+
+        DataConfiguration expectedConfiguration = getDataConfiguration();
+
+        assertEquals(expectedConfiguration, actualConfiguration);
+    }
+
 
 
     private static DataConfiguration getDataConfiguration() {

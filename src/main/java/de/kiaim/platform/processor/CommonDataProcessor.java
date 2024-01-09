@@ -6,8 +6,8 @@ import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.file.CsvFileConfiguration;
 import lombok.Getter;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.*;
@@ -18,12 +18,6 @@ import java.util.stream.IntStream;
 
 @Getter
 public abstract class CommonDataProcessor implements DataProcessor {
-
-    //TODO: Fetch information from Frontend (?)
-    @Setter
-    private String columnSeparator = ",";
-    @Setter
-    private String lineSeparator = "\n";
 
     @Autowired
     DataTransformationHelper dataTransformationHelper;
@@ -43,11 +37,13 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * The transformed DataSet and the errors are added to a TransformationResult
      * and returned.
      * @param data the raw data string for two-dimensional data (CSV-separated)
+     * @param fileConfiguration The config that specifies the format of the data string.
      * @param config The data config that specifies the DataTypes (input from frontend)
      * @return TransformationResult with DataSet and errors
      */
     public TransformationResult transformTwoDimensionalDataToDataSetAndValidate(
             String data,
+            CsvFileConfiguration fileConfiguration,
             DataConfiguration config
     ) {
         //Create objects to store results
@@ -55,15 +51,16 @@ public abstract class CommonDataProcessor implements DataProcessor {
         List<DataRowTransformationError> errors = new ArrayList<>();
 
         //Split Strings at the line separator to receive a list with the row-strings
-        List<String> rows = new ArrayList<>(Arrays.asList(data.split(getLineSeparator())));
+        List<String> rows = new ArrayList<>(Arrays.asList(data.split(fileConfiguration.getLineSeparator())));
 
-        for (int rowIndex = 0; rowIndex < rows.size(); rowIndex ++) {
+        int startRow = fileConfiguration.isHasHeader() ? 1 : 0;
+        for (int rowIndex = startRow; rowIndex < rows.size(); rowIndex ++) {
             // Process every row
             boolean errorInRow = false;
             String row = rows.get(rowIndex);
 
             // Split row to get list with different columns
-            List<String> cols = new ArrayList<>(Arrays.asList(row.split(getColumnSeparator())));
+            List<String> cols = new ArrayList<>(Arrays.asList(row.split(fileConfiguration.getColumnSeparator())));
 
             List<Data> transformedCol = new ArrayList<>();
 
@@ -196,14 +193,15 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * with the most results is used as the estimation
      * for the row.
      * @param rows The line split rows
+     * @param columnSeparator Character separating the columns
      * @return List of datatype estimations
      */
-    public List<DataType> estimateDatatypesForMultipleRows(List<String> rows) {
+    public List<DataType> estimateDatatypesForMultipleRows(List<String> rows, String columnSeparator) {
         List<List<DataType>> datatypesForRows = new ArrayList<>();
         List<DataType> resultList = new ArrayList<>();
 
         for (String rowString : rows) {
-            List<String> splittedRow = Arrays.asList(rowString.split(getColumnSeparator()));
+            List<String> splittedRow = Arrays.asList(rowString.split(columnSeparator));
 
             datatypesForRows.add(estimateDatatypesFromRow(splittedRow));
         }
@@ -357,17 +355,19 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * ColumnConfigurations where only the DataType contains relevant
      * information
      * @param dataTypes list of datatypes to be processed
+     * @param columnNames list containing the column names
      * @return new DataConfiguration object
      */
-    public DataConfiguration buildConfigurationForDataTypes(List<DataType> dataTypes) {
+    public DataConfiguration buildConfigurationForDataTypes(List<DataType> dataTypes, List<String> columnNames) {
         DataConfiguration resultingConfiguration = new DataConfiguration();
         List<ColumnConfiguration> resultingColumnConfigurations = new ArrayList<>();
 
         for (int i = 0; i < dataTypes.size(); i++) {
             DataType type = dataTypes.get(i);
+            String columnName = columnNames.get(i);
 
             ColumnConfiguration newColumnConfiguration = new ColumnConfiguration(
-                    i, "", type, new ArrayList<>()
+                    i, columnName, type, new ArrayList<>()
             );
             resultingColumnConfigurations.add(newColumnConfiguration);
         }

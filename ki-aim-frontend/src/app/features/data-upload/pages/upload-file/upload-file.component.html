@@ -2,7 +2,16 @@
     This page allows you to easily upload files to our system. Multiple file types are supported by the application.
 </p>
 
-<input type="file" #fileForm (change)="uploadFile($event)">
+<div>
+    <input type="file" #fileForm (input)="onFileInput($event)">
+    <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)" style="vertical-align: middle;">
+        <mat-icon fontIcon="settings"></mat-icon>
+    </a>
+</div>
+
+<div class="py-2">
+    <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="!this.file">Confirm file and start configuration</button>
+</div>
 
 <h3>More Information</h3>
 
@@ -41,3 +50,38 @@
     is installed. The processed data will also only be accessable to the user that uploaded the data and
     will be deleted after the process was finished.
 </p>
+
+
+<ng-template #fileConfigurationDialog>
+    <mat-dialog-content class="mat-typography">
+        <h1>Configure the file</h1>
+        <div class="display-flex flex-column">
+            <mat-form-field class="d-block">
+                <mat-label>Column Separator</mat-label>
+                <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.columnSeparator">
+                    <mat-option *ngFor="let delimiter of delimiters" [value]="delimiter">
+                        {{ delimiterLabels[delimiter] }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <div>
+            <mat-form-field class="d-block">
+                <mat-label>Line break</mat-label>
+                <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.lineSeparator">
+                    <mat-option *ngFor="let lineEnd of lineEndings" [value]="lineEnd">
+                        {{ lineEndingLabels[lineEnd] }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <div>
+            <mat-checkbox [(ngModel)]="this.fileConfiguration.csvFileConfiguration.hasHeader" color="primary">
+                Use first row as header
+            </mat-checkbox>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

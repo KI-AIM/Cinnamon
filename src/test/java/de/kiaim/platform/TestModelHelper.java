@@ -3,6 +3,9 @@ package de.kiaim.platform;
 import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.*;
+import de.kiaim.platform.model.file.CsvFileConfiguration;
+import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.model.file.FileType;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
@@ -12,6 +15,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestModelHelper {
+	public static FileConfiguration generateFileConfigurationCsv() {
+		return generateFileConfigurationCsv(true);
+	}
+
+	public static FileConfiguration generateFileConfigurationCsv(final boolean hasHeader) {
+		return new FileConfiguration(FileType.CSV, new CsvFileConfiguration(",", "\n", hasHeader));
+	}
 
 	public static DataConfiguration generateDataConfiguration(final String stringPattern) {
 		final DataConfiguration dataConfiguration = new DataConfiguration();
@@ -43,12 +53,12 @@ public class TestModelHelper {
 	public static DataConfiguration generateEstimatedConfiguration() {
 		final DataConfiguration configuration = new DataConfiguration();
 		final List<ColumnConfiguration> columnConfigurations = List.of(
-				new ColumnConfiguration(0, "", DataType.BOOLEAN, new ArrayList<>()),
-				new ColumnConfiguration(1, "", DataType.DATE, new ArrayList<>()),
-				new ColumnConfiguration(2, "", DataType.DATE_TIME, new ArrayList<>()),
-				new ColumnConfiguration(3, "", DataType.DECIMAL, new ArrayList<>()),
-				new ColumnConfiguration(4, "", DataType.INTEGER, new ArrayList<>()),
-				new ColumnConfiguration(5, "", DataType.STRING, new ArrayList<>()));
+				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, new ArrayList<>()),
+				new ColumnConfiguration(1, "column1_date", DataType.DATE, new ArrayList<>()),
+				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, new ArrayList<>()),
+				new ColumnConfiguration(3, "column3_decimal", DataType.DECIMAL, new ArrayList<>()),
+				new ColumnConfiguration(4, "column4_integer", DataType.INTEGER, new ArrayList<>()),
+				new ColumnConfiguration(5, "column5_string", DataType.STRING, new ArrayList<>()));
 		configuration.setConfigurations(columnConfigurations);
 		return configuration;
 	}

@@ -1,6 +1,5 @@
 package de.kiaim.platform.controller;
 
-import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.service.ResponseService;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +18,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ControllerAdvice

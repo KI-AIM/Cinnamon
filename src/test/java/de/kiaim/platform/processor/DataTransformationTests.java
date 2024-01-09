@@ -1,9 +1,11 @@
 package de.kiaim.platform.processor;
 
 import de.kiaim.platform.PlatformApplication;
+import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.*;
+import de.kiaim.platform.model.file.FileConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +46,7 @@ public class DataTransformationTests {
                 values,11
                 ,12
                 """;
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = new DataConfiguration();
 
@@ -59,7 +62,7 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
 
         TransformationResult expectedResult = testDataProcessingAndFindMissingValues_expectedTransformationResult();
 
@@ -148,6 +151,7 @@ public class DataTransformationTests {
                1959-02-03
                1982-02-20
                 """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DateFormatConfiguration dateFormatConfiguration = new DateFormatConfiguration();
         dateFormatConfiguration.setDateFormatter("yyyy-MM-dd");
@@ -161,7 +165,7 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
         TransformationResult expectedResult = testDataProcessingAndDateFormatter_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -215,6 +219,7 @@ public class DataTransformationTests {
                1959-02-03T13:01:52
                1982-02-20T2321:24:34018
                 """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss");
 
@@ -227,7 +232,7 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
         TransformationResult expectedResult = testDataProcessingAndDateTimeFormatter_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -281,6 +286,7 @@ public class DataTransformationTests {
                 C531.12
                 Wrong pattern
                 """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = new DataConfiguration();
         StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration("[A-Z]\\d{3}[.]\\d{2}");
@@ -292,7 +298,7 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
         TransformationResult expectedResult = testDataProcessingAndStringPattern_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -345,6 +351,7 @@ public class DataTransformationTests {
                0
                No boolean value
                 """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = new DataConfiguration();
 
@@ -355,7 +362,7 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
         TransformationResult expectedResult = testDataProcessingAndBooleanFormats_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -407,6 +414,7 @@ public class DataTransformationTests {
                5.7664
                No float value
                 """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = new DataConfiguration();
 
@@ -417,7 +425,7 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
         TransformationResult expectedResult = testDataProcessingAndFloatFormat_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -469,6 +477,7 @@ public class DataTransformationTests {
                4
                No int value
                 """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
 
         DataConfiguration config = new DataConfiguration();
 
@@ -479,7 +488,7 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, config);
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
         TransformationResult expectedResult = testDataProcessingAndIntegerFormat_expectedResult();
 
         assertEquals(actualResult, expectedResult);

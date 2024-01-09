@@ -21,25 +21,28 @@ export class DataConfigurationComponent {
 
     constructor(
         public configuration: DataConfigurationService,
-        public dataService: DataService, 
-        private titleService: TitleService, 
+        public dataService: DataService,
+        private titleService: TitleService,
         private fileService: FileService,
         private router: Router,
         private stateManagement: StateManagementService,
         private transformationService: TransformationService,
         public loadingService: LoadingService,
     ) {
-        this.titleService.setPageTitle("Data configuration"); 
+        this.titleService.setPageTitle("Data configuration");
     }
 
 	ngAfterViewInit() {
-        this.setEmptyColumnNames(); 
+        this.setEmptyColumnNames();
     }
 
     confirmConfiguration() {
         this.loadingService.setLoadingStatus(true);
 
-        this.dataService.readAndValidateData(this.fileService.getFile(), this.configuration.getDataConfiguration()).subscribe({
+        this.dataService.readAndValidateData(this.fileService.getFile(),
+            this.fileService.getFileConfiguration(),
+            this.configuration.getDataConfiguration()
+        ).subscribe({
             next: (d) => this.handleUpload(d),
             error: (e) => this.handleError(e),
         });
@@ -48,17 +51,17 @@ export class DataConfigurationComponent {
     private setEmptyColumnNames() {
         this.configuration.getDataConfiguration().configurations.forEach((column, index) => {
             if (column.name == undefined || column.name == null || column.name == "") {
-                column.name = 'column_' + index;  
+                column.name = 'column_' + index;
             }
-        }); 
+        });
     }
 
     private handleUpload(data: Object) {
+        this.transformationService.setTransformationResult(plainToClass(TransformationResult, data));
         this.loadingService.setLoadingStatus(false);
 
-        this.transformationService.setTransformationResult(plainToClass(TransformationResult, data)); 
         this.router.navigateByUrl("/dataValidation");
-        this.stateManagement.addCompletedStep(Steps.DATA_CONFIG); 
+        this.stateManagement.addCompletedStep(Steps.DATA_CONFIG);
     }
 
     private handleError(error: HttpErrorResponse) {
@@ -66,5 +69,5 @@ export class DataConfigurationComponent {
 
         //TODO implement me
     }
-    
+
 }

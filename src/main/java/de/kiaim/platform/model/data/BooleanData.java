@@ -1,16 +1,18 @@
 package de.kiaim.platform.model.data;
 
-import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.Configuration;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.data.exception.BooleanFormatException;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class BooleanData extends Data {
 
 	private final Boolean value;

@@ -5,12 +5,16 @@ import de.kiaim.platform.model.data.configuration.RangeConfiguration;
 import de.kiaim.platform.model.data.exception.FloatFormatException;
 import de.kiaim.platform.model.data.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class DecimalData extends Data {
 
 	private final Float value;
@@ -40,6 +44,8 @@ public class DecimalData extends Data {
 		 */
 		@Override
 		public DecimalDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+			processConfigurations(configuration);
+
 			final float parsedValue;
 			try {
 				parsedValue = Float.parseFloat(value);
@@ -47,7 +53,9 @@ public class DecimalData extends Data {
 				throw new FloatFormatException();
 			}
 
-			processConfigurations(parsedValue, configuration);
+			if (parsedValue < minValue || parsedValue > maxValue) {
+				throw new ValueNotInRangeException();
+			}
 
 			this.value = parsedValue;
 			return this;
@@ -63,18 +71,17 @@ public class DecimalData extends Data {
 			return new DecimalData(this.value);
 		}
 
-		private void processConfigurations(float value, List<Configuration> configurationList) throws Exception {
+		private void processConfigurations(List<Configuration> configurationList) {
 			for (Configuration configuration : configurationList) {
 				if (configuration instanceof RangeConfiguration) {
-					processRangeConfiguration(value, (RangeConfiguration) configuration);
+					processRangeConfiguration((RangeConfiguration) configuration);
 				}
 			}
 		}
 
-		private void processRangeConfiguration(float value, RangeConfiguration rangeConfiguration) throws ValueNotInRangeException {
-			if (value < rangeConfiguration.getMinValue().asDecimal() || value > rangeConfiguration.getMaxValue().asDecimal()) {
-				throw new ValueNotInRangeException();
-			}
+		private void processRangeConfiguration(RangeConfiguration rangeConfiguration) {
+			minValue = rangeConfiguration.getMinValue().asDecimal();
+			maxValue = rangeConfiguration.getMaxValue().asDecimal();
 		}
 	}
 }

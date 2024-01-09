@@ -4,7 +4,9 @@ import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.exception.DateTimeFormatException;
 import de.kiaim.platform.model.data.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,6 +15,8 @@ import java.util.List;
 
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class DateTimeData extends Data {
 
 	private final LocalDateTime value;
@@ -32,8 +36,8 @@ public class DateTimeData extends Data {
 		private LocalDateTime value;
 
 		private DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-		private LocalDateTime minValue;
-		private LocalDateTime maxValue;
+		private LocalDateTime minValue = LocalDateTime.MIN;
+		private LocalDateTime maxValue = LocalDateTime.MAX;
 
 		/**
 		 * Sets the value of the resulting DateTime Object
@@ -77,6 +81,8 @@ public class DateTimeData extends Data {
 			for (Configuration configuration : configurationList) {
 				if (configuration instanceof DateTimeFormatConfiguration) {
 					processDateTimeFormatConfiguration((DateTimeFormatConfiguration) configuration);
+				} else if (configuration instanceof RangeConfiguration) {
+					processRangeConfiguration((RangeConfiguration) configuration);
 				}
 			}
 		}

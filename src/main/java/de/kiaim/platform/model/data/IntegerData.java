@@ -4,12 +4,16 @@ import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.exception.IntFormatException;
 import de.kiaim.platform.model.data.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class IntegerData extends Data {
 
 	private final Integer value;

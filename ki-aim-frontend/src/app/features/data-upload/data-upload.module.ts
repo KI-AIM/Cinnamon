@@ -26,6 +26,7 @@ import { MatInputModule } from "@angular/material/input";
 import { MatIconModule } from "@angular/material/icon";
 import { MatSelectModule } from "@angular/material/select";
 import { MatCheckboxModule } from "@angular/material/checkbox";
+import { RangeComponent } from './components/configurationSettings/range/range.component';
 
 @NgModule({
 	declarations: [
@@ -39,6 +40,7 @@ import { MatCheckboxModule } from "@angular/material/checkbox";
 		StringpatternComponent,
 		AddedConfigurationListComponent,
 		DataTableComponent,
+  RangeComponent,
 	],
     imports: [
         CommonModule,

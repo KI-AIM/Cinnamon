@@ -106,6 +106,61 @@ public abstract class CommonDataProcessor implements DataProcessor {
         return new TransformationResult(new DataSet(dataRows, config), errors);
     }
 
+    /**
+     * Transforms a row into a DataRow and appends it to the given list of data rows.
+     * If an error occurs, the error is appended to errors instead.
+     *
+     * @param row Input: Row to transform
+     * @param rowIndex Input index of the row
+     * @param configuration Configuration of the data.
+     * @param dataRows List containing valid rows
+     * @param errors List of errors
+     */
+    public void transformRow(List<String> row, int rowIndex, DataConfiguration configuration,
+                             List<DataRow> dataRows, List<DataRowTransformationError> errors) {
+        // Process every row
+        boolean errorInRow = false;
+
+        List<Data> transformedCol = new ArrayList<>();
+
+        // Transformation error that was thrown inside the Data builders
+        DataRowTransformationError newError = new DataRowTransformationError(rowIndex, row);
+
+        for (int colIndex = 0; colIndex < row.size(); colIndex++) {
+            // Process every column value in a row
+            String col = row.get(colIndex);
+
+            List<ColumnConfiguration> matchingColumnConfigurations =
+                    getColumnConfigurationForIndex(configuration.getConfigurations(), colIndex);
+
+            // Every index should appear exactly once
+            assert !matchingColumnConfigurations.isEmpty();
+            ColumnConfiguration columnConfiguration = matchingColumnConfigurations.get(0);
+
+
+
+            try {
+                Data transformedData = this.dataTransformationHelper.transformData(col, columnConfiguration);
+                transformedCol.add(transformedData);
+            } catch (Exception e) {
+                //Resolve to error type, to easier parse information to frontend
+                TransformationErrorType errorType = this.exceptionToTransformationErrorMapper.mapException(e);
+                newError.addError(new DataTransformationError(colIndex, errorType));
+
+                // set flag to not add row to DataSet
+                errorInRow = true;
+            }
+        }
+
+        // If no error was found, add result to DataRows
+        if (!errorInRow) {
+            dataRows.add(new DataRow(transformedCol));
+        } else {
+            //Add error to errorList
+            errors.add(newError);
+        }
+    }
+
     private List<ColumnConfiguration> getColumnConfigurationForIndex(
             List<ColumnConfiguration> configurations,
             int index
@@ -117,32 +172,12 @@ public abstract class CommonDataProcessor implements DataProcessor {
     }
 
     /**
-     * Transforms an InputStream to a processable String
-     * @param inputStream to be processed
-     * @return String representation
-     */
-    public String getStringFromInputStream(InputStream inputStream) {
-        StringBuilder textBuilder = new StringBuilder();
-        try (Reader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            int c;
-            while ((c = reader.read()) != -1) {
-                textBuilder.append((char) c);
-            }
-        } catch (IOException e) {
-            //TODO Catch error
-            throw new RuntimeException(e);
-        }
-
-        return textBuilder.toString();
-    }
-
-    /**
-     * Check whether every value of a column, stored in a list,
+     * Check whether every value of a column, stored in an array,
      * is valid and not empty
-     * @param column List to be processed
+     * @param column Array to be processed
      * @return true, if column is complete; false otherwise
      */
-    public boolean isColumnListComplete(List<String> column) {
+    public boolean isColumnListComplete(String[] column) {
         boolean columnIsValid = true;
         for (String columnValue : column) {
             if (dataTransformationHelper.isValueEmpty(columnValue)) {
@@ -155,12 +190,12 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
     /**
      * Processes every entry of a row and tries to convert it to one of the
-     * available datatypes. The first valid transformation determines the datatype
-     * estimation
-     * @param row represented by a List with separated column values
+     * available data types.
+     * The first valid transformation determines the datatype estimation
+     * @param row represented by an array with separated column values
      * @return List of DataTypes for every column
      */
-    public List<DataType> estimateDatatypesFromRow(List<String> row) {
+    public List<DataType> estimateDatatypesFromRow(String[] row) {
         List<DataType> result = new ArrayList<>();
 
         for (String column : row) {
@@ -192,18 +227,15 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * counted for every column and the datatype
      * with the most results is used as the estimation
      * for the row.
-     * @param rows The line split rows
-     * @param columnSeparator Character separating the columns
+     * @param rows List containing the rows as String[]
      * @return List of datatype estimations
      */
-    public List<DataType> estimateDatatypesForMultipleRows(List<String> rows, String columnSeparator) {
+    public List<DataType> estimateDatatypesForMultipleRows(List<String[]> rows) {
         List<List<DataType>> datatypesForRows = new ArrayList<>();
         List<DataType> resultList = new ArrayList<>();
 
-        for (String rowString : rows) {
-            List<String> splittedRow = Arrays.asList(rowString.split(columnSeparator));
-
-            datatypesForRows.add(estimateDatatypesFromRow(splittedRow));
+        for (String[] row : rows) {
+            datatypesForRows.add(estimateDatatypesFromRow(row));
         }
 
         List<Map<DataType, Integer>> countedEstimatedDatatypes = countEstimatedDatatypesForRows(datatypesForRows);

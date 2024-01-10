@@ -1,126 +1,128 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.platform.model.DataRowTransformationError;
+import de.kiaim.platform.model.DataSet;
+import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.file.CsvFileConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.data.DataType;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 @Service
-public class CsvProcessor extends CommonDataProcessor implements DataProcessor{
+public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public TransformationResult read(InputStream data, FileConfiguration fileConfiguration,
-                                     DataConfiguration configuration) {
-        String csvString = getStringFromInputStream(data);
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public TransformationResult read(InputStream data, FileConfiguration fileConfiguration,
+	                                 DataConfiguration configuration) {
+		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
+		final CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+		                                             .setDelimiter(csvFileConfiguration.getColumnSeparator())
+		                                             .setRecordSeparator(csvFileConfiguration.getLineSeparator())
+		                                             .build();
+		final Iterable<CSVRecord> records;
+		try {
+			records = csvFormat.parse(new InputStreamReader(data));
+		} catch (IOException e) {
+			// TODO catch Error
+			throw new RuntimeException(e);
+		}
 
-        return this.transformTwoDimensionalDataToDataSetAndValidate(csvString,
-                                                                    fileConfiguration.getCsvFileConfiguration(),
-                                                                    configuration);
-    }
+		final Iterator<CSVRecord> recordIterator = records.iterator();
+		if (recordIterator.hasNext() && csvFileConfiguration.isHasHeader()) {
+			recordIterator.next();
+		}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration) {
-        String csvString = getStringFromInputStream(data);
+		final List<DataRow> dataRows = new ArrayList<>();
+		final List<DataRowTransformationError> errors = new ArrayList<>();
+		int rowIndex = 0;
+		while (recordIterator.hasNext()) {
+			transformRow(Arrays.asList(recordIterator.next().values()), rowIndex, configuration, dataRows, errors);
+			rowIndex += 1;
+		}
 
-        if (!csvString.isEmpty()) {
-            CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
+		return new TransformationResult(new DataSet(dataRows, configuration), errors);
+	}
 
-            List<String> validRows = getSubsetOfCompleteRows(csvString, csvFileConfiguration, 10);
-            List<String> firstRow = getFirstRowFromCSV(csvString, csvFileConfiguration);
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration) {
+		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
+		CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+		                                       .setDelimiter(csvFileConfiguration.getColumnSeparator())
+		                                       .setRecordSeparator(csvFileConfiguration.getLineSeparator())
+		                                       .build();
 
-            List<DataType> estimatedDatatypes;
-            if (!validRows.isEmpty()) {
-                estimatedDatatypes = estimateDatatypesForMultipleRows(validRows,
-                                                                      csvFileConfiguration.getColumnSeparator());
-            } else {
-                estimatedDatatypes = getUndefinedDatatypesList(firstRow.size());
-            }
+		final Iterable<CSVRecord> records;
+		try {
+			records = csvFormat.parse(new InputStreamReader(data));
+		} catch (IOException e) {
+			// TODO catch Error
+			throw new RuntimeException(e);
+		}
 
-            List<String> columnNames = readColumnNames(csvString, csvFileConfiguration);
+		final Iterator<CSVRecord> recordIterator = records.iterator();
+		if (!recordIterator.hasNext()) {
+			return new DataConfiguration();
+		}
 
-            return buildConfigurationForDataTypes(estimatedDatatypes, columnNames);
+		String[] columnNames =  null;
+		if (csvFileConfiguration.isHasHeader()) {
+			columnNames = records.iterator().next().values();
+		}
 
-        } else {
-            return new DataConfiguration();
-        }
-    }
+		List<String[]> validRows = getSubsetOfCompleteRows(recordIterator, 10);
 
-    /**
-     * Reads the column names of a csv file in the form of a string.
-     * If the csv file does not contain a header column, returns a list with empty strings.
-     *
-     * @param csvString The raw csv file.
-     * @param fileConfiguration Configuration describing the file.
-     * @return List with the column names or empty strings.
-     */
-    private List<String> readColumnNames(String csvString, CsvFileConfiguration fileConfiguration) {
-        String firstRow = csvString.split(fileConfiguration.getLineSeparator())[0];
-        String[] values = firstRow.split(fileConfiguration.getColumnSeparator());
+		if (!csvFileConfiguration.isHasHeader()) {
+			columnNames = new String[validRows.get(0).length];
+			Arrays.fill(columnNames, "");
+		}
 
-        if (!fileConfiguration.isHasHeader()) {
-            Arrays.fill(values, "");
-        }
+		final List<DataType> estimatedDataTypes;
+		if (validRows.isEmpty()) {
+			estimatedDataTypes = getUndefinedDatatypesList(columnNames.length);
+		} else {
+			estimatedDataTypes = estimateDatatypesForMultipleRows(validRows);
+		}
 
-        return Arrays.asList(values);
-    }
+		return buildConfigurationForDataTypes(estimatedDataTypes, Arrays.asList(columnNames));
+	}
 
-    /**
-     * Function that returns a subset of complete rows for a csvString.
-     * Complete means that no missing value should be present in a row.
-     * The amount of rows is limited by the parameter maxNumberOfRows.
-     * @param csvString The csv String
-     * @param fileConfiguration Configuration describing the csv string.
-     * @param maxNumberOfRows the maximum number of rows
-     * @return A List<String> of split rows
-     */
-    private List<String> getSubsetOfCompleteRows(String csvString, CsvFileConfiguration fileConfiguration,
-                                                 int maxNumberOfRows) {
-        List<String> rows = Arrays.asList(csvString.split(fileConfiguration.getLineSeparator()));
-        List<String> validRows = new ArrayList<>();
+	/**
+	 * Function that returns a subset of complete rows for csv records.
+	 * Complete means that no missing value should be present in a row.
+	 * The amount of rows is limited by the parameter maxNumberOfRows.
+	 *
+	 * @param recordIterator Iterator of csv records
+	 * @param maxNumberOfRows the maximum number of rows
+	 * @return A List<String[]> of split rows
+	 */
+	private List<String[]> getSubsetOfCompleteRows(Iterator<CSVRecord> recordIterator, int maxNumberOfRows) {
+		List<String[]> validRows = new ArrayList<>();
 
-        int i = fileConfiguration.isHasHeader() ? 1 : 0;
+		while (recordIterator.hasNext() && validRows.size() < maxNumberOfRows) {
+			CSVRecord record = recordIterator.next();
+			String[] row = record.values();
 
-        while (i < rows.size() && validRows.size() < maxNumberOfRows) {
-            String row = rows.get(i);
+			if (isColumnListComplete(row)) {
+				validRows.add(row);
+			}
+		}
 
-            List<String> columns = Arrays.asList(row.split(fileConfiguration.getColumnSeparator()));
-
-            if (isColumnListComplete(columns)) {
-                validRows.add(row);
-            }
-            i++;
-        }
-
-        return validRows;
-    }
-
-    /**
-     * Returns the first row of a csv string as a split List
-     * @param csvString the csv String
-     * @param fileConfiguration Configuration describing the csv string.
-     * @return A List<String> with the column values
-     */
-    private List<String> getFirstRowFromCSV(String csvString, CsvFileConfiguration fileConfiguration) {
-        int firstRowIndex = fileConfiguration.isHasHeader() ? 1 : 0;
-        return Arrays.asList(
-                Arrays.asList(
-                        csvString.split(fileConfiguration.getLineSeparator())
-                ).get(firstRowIndex).split(fileConfiguration.getColumnSeparator())
-        );
-
-    }
-
+		return validRows;
+	}
 }

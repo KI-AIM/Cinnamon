@@ -6,12 +6,9 @@ import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
-import de.kiaim.platform.model.file.CsvFileConfiguration;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -26,89 +23,13 @@ public abstract class CommonDataProcessor implements DataProcessor {
     ExceptionToTransformationErrorMapper exceptionToTransformationErrorMapper;
 
     /**
-     * Transforms a two-dimensional string dataset into the internal
-     * DataSet object.
-     * Upon transformation each value is validated. If a fault has been detected
+     * Transforms a row into a DataRow and appends it to the given list of data rows.
+     * Upon transformation, each value is validated.
+     * If a fault has been detected,
      * the error will be added to the DataRowTransformationError list with the
      * corresponding raw row string and the row index.
      * If an error was detected for any value in a row, the complete row will
-     * not be added to the DataSet.
-     *
-     * The transformed DataSet and the errors are added to a TransformationResult
-     * and returned.
-     * @param data the raw data string for two-dimensional data (CSV-separated)
-     * @param fileConfiguration The config that specifies the format of the data string.
-     * @param config The data config that specifies the DataTypes (input from frontend)
-     * @return TransformationResult with DataSet and errors
-     */
-    public TransformationResult transformTwoDimensionalDataToDataSetAndValidate(
-            String data,
-            CsvFileConfiguration fileConfiguration,
-            DataConfiguration config
-    ) {
-        //Create objects to store results
-        List<DataRow> dataRows = new ArrayList<>();
-        List<DataRowTransformationError> errors = new ArrayList<>();
-
-        //Split Strings at the line separator to receive a list with the row-strings
-        List<String> rows = new ArrayList<>(Arrays.asList(data.split(fileConfiguration.getLineSeparator())));
-
-        int startRow = fileConfiguration.isHasHeader() ? 1 : 0;
-        for (int rowIndex = startRow; rowIndex < rows.size(); rowIndex ++) {
-            // Process every row
-            boolean errorInRow = false;
-            String row = rows.get(rowIndex);
-
-            // Split row to get list with different columns
-            List<String> cols = new ArrayList<>(Arrays.asList(row.split(fileConfiguration.getColumnSeparator())));
-
-            List<Data> transformedCol = new ArrayList<>();
-
-            // Transformation error that was thrown inside the Data builders
-            DataRowTransformationError newError = new DataRowTransformationError(rowIndex, cols);
-
-            for (int colIndex = 0; colIndex < cols.size(); colIndex++) {
-                // Process every column value in a row
-                String col = cols.get(colIndex);
-
-                List<ColumnConfiguration> matchingColumnConfigurations =
-                        getColumnConfigurationForIndex(config.getConfigurations(), colIndex);
-
-                // Every index should appear exactly once
-                assert !matchingColumnConfigurations.isEmpty();
-                ColumnConfiguration columnConfiguration = matchingColumnConfigurations.get(0);
-
-
-
-                try {
-                    Data transformedData = this.dataTransformationHelper.transformData(col, columnConfiguration);
-                    transformedCol.add(transformedData);
-                } catch (Exception e) {
-                    //Resolve to error type, to easier parse information to frontend
-                    TransformationErrorType errorType = this.exceptionToTransformationErrorMapper.mapException(e);
-                    newError.addError(new DataTransformationError(colIndex, errorType));
-
-                    // set flag to not add row to DataSet
-                    errorInRow = true;
-                }
-            }
-
-            // If no error was found, add result to DataRows
-            if (!errorInRow) {
-                dataRows.add(new DataRow(transformedCol));
-            } else {
-                //Add error to errorList
-                errors.add(newError);
-            }
-
-        }
-
-        return new TransformationResult(new DataSet(dataRows, config), errors);
-    }
-
-    /**
-     * Transforms a row into a DataRow and appends it to the given list of data rows.
-     * If an error occurs, the error is appended to errors instead.
+     * not be added to the list of DataRows.
      *
      * @param row Input: Row to transform
      * @param rowIndex Input index of the row

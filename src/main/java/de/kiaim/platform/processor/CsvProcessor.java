@@ -121,6 +121,12 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		return validRows;
 	}
 
+	/**
+	 * Builds a CSVFormat form Apache Commons CSV based on the passed configurations of the CsvFileConfiguration.
+	 *
+	 * @param csvFileConfiguration Configuration to configure the CSVFormt
+	 * @return The configured CSVFormat
+	 */
 	private CSVFormat buildCsvFormat(final CsvFileConfiguration csvFileConfiguration) {
 		return CSVFormat.DEFAULT.builder()
 		                        .setDelimiter(csvFileConfiguration.getColumnSeparator())

@@ -38,7 +38,8 @@ export class DataValidationComponent {
 		this.dataService
 			.storeData(
 				this.fileService.getFile(),
-				this.configuration.getDataConfiguration()
+				this.configuration.getDataConfiguration(),
+				this.fileService.getFileConfiguration()
 			)
 			.subscribe({
 				next: (d) => this.handleUpload(d),

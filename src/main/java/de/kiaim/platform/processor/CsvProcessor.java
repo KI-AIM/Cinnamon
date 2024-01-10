@@ -1,5 +1,6 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.data.DataRow;
@@ -23,7 +24,9 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 */
 	@Override
 	public TransformationResult read(InputStream data, FileConfiguration fileConfiguration,
-	                                 DataConfiguration configuration) {
+	                                 DataConfiguration configuration) throws BadColumnNameException {
+		validateColumnNames(configuration.getColumnNames());
+
 		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 

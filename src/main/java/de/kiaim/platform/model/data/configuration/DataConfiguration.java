@@ -63,4 +63,8 @@ public class DataConfiguration {
 			return result;
 		}
 	}
+
+	public List<String> getColumnNames() {
+		return configurations.stream().map(ColumnConfiguration::getName).toList();
+	}
 }

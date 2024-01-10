@@ -1,5 +1,6 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.helper.DataTransformationHelper;
 import de.kiaim.platform.helper.ExceptionToTransformationErrorMapper;
 import de.kiaim.platform.model.*;
@@ -8,6 +9,7 @@ import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.parameters.P;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -170,6 +172,27 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
     public List<String> normalizeColumnNames(final String[] columnNames) {
         return Arrays.stream(columnNames).map(columnName -> columnName.replace(" ", "_")).toList();
+    }
+
+    public void validateColumnNames(final List<String> columnNames) throws BadColumnNameException {
+        final List<Pair<Integer, String>> invalidColumnNames = new ArrayList<>();
+        for (int columnIndex = 0; columnIndex < columnNames.size(); ++columnIndex) {
+            final String columnName = columnNames.get(columnIndex);
+            if (columnName.contains(" ")) {
+                invalidColumnNames.add(new Pair<>(columnIndex, columnName));
+            }
+        }
+        if (!invalidColumnNames.isEmpty()) {
+            StringBuilder message = new StringBuilder(
+                    "Column names must not contain spaces. Please corrects the following column names: ");
+            for (final Pair<Integer, String> invalidColumnName : invalidColumnNames) {
+                message.append(invalidColumnName.element0())
+                       .append(":\"")
+                       .append(invalidColumnName.element1())
+                       .append("\"");
+            }
+            throw new BadColumnNameException(message.toString());
+        }
     }
 
     /**

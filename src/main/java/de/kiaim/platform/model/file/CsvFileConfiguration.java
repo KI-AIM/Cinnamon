@@ -17,6 +17,9 @@ public class CsvFileConfiguration {
 	@Schema(description = "Character separating lines.", example = "\n")
 	private String lineSeparator = "\n";
 
+	@Schema(description = "Character used for escaping values.", example = "\"")
+	private char quoteChar = '"';
+
 	@Schema(description = "Whether the file contains a header row.", example = "true")
 	private boolean hasHeader = true;
 }

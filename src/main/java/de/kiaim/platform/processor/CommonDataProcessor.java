@@ -168,6 +168,10 @@ public abstract class CommonDataProcessor implements DataProcessor {
         return resultList;
     }
 
+    public List<String> normalizeColumnNames(final String[] columnNames) {
+        return Arrays.stream(columnNames).map(columnName -> columnName.replace(" ", "_")).toList();
+    }
+
     /**
      * Performs the counting for the Collection of datatype
      * estimations for every row.

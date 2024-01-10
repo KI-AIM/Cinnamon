@@ -13,10 +13,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
@@ -75,26 +72,29 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 			return new DataConfiguration();
 		}
 
-		String[] columnNames =  null;
+		int numberColumns = 0;
+		final List<String> columnNames;
 		if (csvFileConfiguration.isHasHeader()) {
-			columnNames = records.iterator().next().values();
+			columnNames = normalizeColumnNames(records.iterator().next().values());
+			numberColumns = columnNames.size();
+		} else {
+			for (final CSVRecord record : records) {
+				numberColumns = record.values().length;
+				break;
+			}
+			columnNames = Collections.nCopies(numberColumns, "");
 		}
 
 		List<String[]> validRows = getSubsetOfCompleteRows(recordIterator, 10);
 
-		if (!csvFileConfiguration.isHasHeader()) {
-			columnNames = new String[validRows.get(0).length];
-			Arrays.fill(columnNames, "");
-		}
-
 		final List<DataType> estimatedDataTypes;
 		if (validRows.isEmpty()) {
-			estimatedDataTypes = getUndefinedDatatypesList(columnNames.length);
+			estimatedDataTypes = getUndefinedDatatypesList(numberColumns);
 		} else {
 			estimatedDataTypes = estimateDatatypesForMultipleRows(validRows);
 		}
 
-		return buildConfigurationForDataTypes(estimatedDataTypes, Arrays.asList(columnNames));
+		return buildConfigurationForDataTypes(estimatedDataTypes, columnNames);
 	}
 
 	/**

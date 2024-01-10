@@ -28,10 +28,8 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	public TransformationResult read(InputStream data, FileConfiguration fileConfiguration,
 	                                 DataConfiguration configuration) {
 		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
-		final CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
-		                                             .setDelimiter(csvFileConfiguration.getColumnSeparator())
-		                                             .setRecordSeparator(csvFileConfiguration.getLineSeparator())
-		                                             .build();
+		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
+
 		final Iterable<CSVRecord> records;
 		try {
 			records = csvFormat.parse(new InputStreamReader(data));
@@ -62,10 +60,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	@Override
 	public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration) {
 		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
-		CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
-		                                       .setDelimiter(csvFileConfiguration.getColumnSeparator())
-		                                       .setRecordSeparator(csvFileConfiguration.getLineSeparator())
-		                                       .build();
+		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
 		final Iterable<CSVRecord> records;
 		try {
@@ -124,5 +119,13 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		}
 
 		return validRows;
+	}
+
+	private CSVFormat buildCsvFormat(final CsvFileConfiguration csvFileConfiguration) {
+		return CSVFormat.DEFAULT.builder()
+		                        .setDelimiter(csvFileConfiguration.getColumnSeparator())
+		                        .setRecordSeparator(csvFileConfiguration.getLineSeparator())
+		                        .setQuote(csvFileConfiguration.getQuoteChar())
+		                        .build();
 	}
 }

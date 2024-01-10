@@ -55,7 +55,7 @@
 <ng-template #fileConfigurationDialog>
     <mat-dialog-content class="mat-typography">
         <h1>Configure the file</h1>
-        <div class="display-flex flex-column">
+        <div>
             <mat-form-field class="d-block">
                 <mat-label>Column Separator</mat-label>
                 <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.columnSeparator">
@@ -71,6 +71,16 @@
                 <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.lineSeparator">
                     <mat-option *ngFor="let lineEnd of lineEndings" [value]="lineEnd">
                         {{ lineEndingLabels[lineEnd] }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <div>
+            <mat-form-field class="d-block">
+                <mat-label>Quote Char</mat-label>
+                <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.quoteChar">
+                    <mat-option *ngFor="let quoteChar of quoteChars" [value]="quoteChar">
+                        {{ quoteCharLabels[quoteChar] }}
                     </mat-option>
                 </mat-select>
             </mat-form-field>

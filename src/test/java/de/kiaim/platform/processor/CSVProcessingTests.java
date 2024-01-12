@@ -40,7 +40,7 @@ public class CSVProcessingTests {
                650390,Tonisha Swift,1975-05-08,no,303.23 €
                208589,Wilson Maggio,1994-02-28,no,23623.18 €
                452159,Bill Hintz,1987-05-17,no,38.41 €
-               730160,Nelia Heathcote,1959-02-03,yes,21.01 €
+               730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
         FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
@@ -63,7 +63,7 @@ public class CSVProcessingTests {
                650390,Tonisha Swift,1975-05-08,no,303.23 €
                208589,Wilson Maggio,1994-02-28,no,23623.18 €
                452159,Bill Hintz,1987-05-17,no,38.41 €
-               730160,Nelia Heathcote,1959-02-03,yes,21.01 €
+               730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
         FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
@@ -105,7 +105,7 @@ public class CSVProcessingTests {
                 )),
                 new DataRow(List.of(
                         new IntegerData(730160),
-                        new StringData("Nelia Heathcote"),
+                        new StringData("Heathcote, Nelia"),
                         new DateData(LocalDate.parse("1959-02-03")),
                         new BooleanData(true),
                         new StringData("21.01 €")

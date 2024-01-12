@@ -13,7 +13,7 @@ import { FileService } from "../../services/file.service";
 import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
 import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
-import { CsvFileConfiguration, Delimiter, LineEnding } from "src/app/shared/model/csv-file-configuration";
+import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
 import { LoadingService } from "src/app/shared/services/loading.service";
 
 @Component({
@@ -34,13 +34,19 @@ export class UploadFileComponent {
         [LineEnding.CR]: "CR (\\r)",
         [LineEnding.CRLF]: "CRLF (\\r\\n)",
         [LineEnding.LF]: "LF (\\n)",
-    }
+    };
 
     public delimiters = Object.values(Delimiter);
     public delimiterLabels: Record<Delimiter, string> = {
         [Delimiter.COMMA]: "Comma (,)",
         [Delimiter.SEMICOLON]: "Semicolon (;)",
-    }
+    };
+
+	public quoteChars = Object.values(QuoteChar);
+	public quoteCharLabels: Record<QuoteChar, string> = {
+		[QuoteChar.DOUBLE_QUOTE]: "Double Quote (\")",
+		[QuoteChar.SINGLE_QUOTE]: "Single Quote (')",
+	};
 
 	constructor(
 		private titleService: TitleService,

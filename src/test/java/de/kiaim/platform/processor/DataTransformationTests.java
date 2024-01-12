@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
@@ -62,7 +63,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
 
         TransformationResult expectedResult = testDataProcessingAndFindMissingValues_expectedTransformationResult();
 
@@ -165,7 +167,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndDateFormatter_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -232,7 +235,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndDateTimeFormatter_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -298,7 +302,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndStringPattern_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -362,7 +367,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndBooleanFormats_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -425,7 +431,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndFloatFormat_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -488,7 +495,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndIntegerFormat_expectedResult();
 
         assertEquals(actualResult, expectedResult);

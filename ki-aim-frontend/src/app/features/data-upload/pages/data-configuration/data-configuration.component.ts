@@ -18,6 +18,7 @@ import { LoadingService } from 'src/app/shared/services/loading.service';
     styleUrls: ['./data-configuration.component.less'],
 })
 export class DataConfigurationComponent {
+    error: string;
 
     constructor(
         public configuration: DataConfigurationService,
@@ -29,6 +30,7 @@ export class DataConfigurationComponent {
         private transformationService: TransformationService,
         public loadingService: LoadingService,
     ) {
+        this.error = "";
         this.titleService.setPageTitle("Data configuration");
     }
 
@@ -65,9 +67,10 @@ export class DataConfigurationComponent {
     }
 
     private handleError(error: HttpErrorResponse) {
-        this.loadingService.setLoadingStatus(false); 
+        this.loadingService.setLoadingStatus(false);
+        this.error = error.error.errors;
 
-        //TODO implement me
+        window.scroll(0, 0);
     }
 
 }

@@ -1,3 +1,7 @@
+<app-info-card [hidden]="error === ''" typeClass="card-failure">
+    <div>{{error}}</div>
+</app-info-card>
+
 <div class="p-5">
     <div class="d-flex flex-column mb-3">
         <div *ngFor="let column of configuration.getColumnConfigurations().getAll(), index as i">

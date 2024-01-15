@@ -8,6 +8,10 @@ export enum DataType {
 	UNDEFINED
 }
 
+export function dataTypeFromDataType(value: DataType) :DataType {
+	return dataTypeFromString(DataType[value]);
+}
+
 export function dataTypeFromString(value: String): DataType {
 	switch (value) {
 		case "BOOLEAN": return DataType.BOOLEAN

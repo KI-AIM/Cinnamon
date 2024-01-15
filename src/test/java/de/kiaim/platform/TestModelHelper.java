@@ -22,7 +22,7 @@ public class TestModelHelper {
 	}
 
 	public static FileConfiguration generateFileConfigurationCsv(final boolean hasHeader) {
-		return new FileConfiguration(FileType.CSV, new CsvFileConfiguration(",", "\n", hasHeader));
+		return new FileConfiguration(FileType.CSV, new CsvFileConfiguration(",", "\n", '"', hasHeader));
 	}
 
 	public static DataConfiguration generateDataConfiguration(final String stringPattern) {

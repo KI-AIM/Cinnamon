@@ -187,7 +187,7 @@ public class CSVProcessingTests {
         );
 
         ColumnConfiguration column3 = new ColumnConfiguration(
-                2, "birthdate", DataType.DATE, DataScale.INTERVAL, new ArrayList<>()
+                2, "birthdate", DataType.DATE, DataScale.DATE, new ArrayList<>()
         );
 
         ColumnConfiguration column4 = new ColumnConfiguration(

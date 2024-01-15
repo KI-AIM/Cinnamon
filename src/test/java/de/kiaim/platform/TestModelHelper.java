@@ -30,8 +30,8 @@ public class TestModelHelper {
 		final DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
 		final List<ColumnConfiguration> columnConfigurations = List.of(
 				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, DataScale.NOMINAL ,new ArrayList<>()),
-				new ColumnConfiguration(1, "column1_date", DataType.DATE, DataScale.INTERVAL, List.of(dateFormatConfiguration)),
-				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, DataScale.INTERVAL, List.of(dateTimeFormatConfiguration)),
+				new ColumnConfiguration(1, "column1_date", DataType.DATE, DataScale.DATE, List.of(dateFormatConfiguration)),
+				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, DataScale.DATE, List.of(dateTimeFormatConfiguration)),
 				new ColumnConfiguration(3, "column3_decimal", DataType.DECIMAL, DataScale.RATIO, new ArrayList<>()),
 				new ColumnConfiguration(4, "column4_integer", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()),
 				new ColumnConfiguration(5, "column5_string", DataType.STRING, DataScale.NOMINAL, List.of(stringPatternConfiguration)));
@@ -54,8 +54,8 @@ public class TestModelHelper {
 		final DataConfiguration configuration = new DataConfiguration();
 		final List<ColumnConfiguration> columnConfigurations = List.of(
 				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, DataScale.NOMINAL ,new ArrayList<>()),
-				new ColumnConfiguration(1, "column1_date", DataType.DATE, DataScale.INTERVAL, new ArrayList<>()),
-				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, DataScale.INTERVAL, new ArrayList<>()),
+				new ColumnConfiguration(1, "column1_date", DataType.DATE, DataScale.DATE, new ArrayList<>()),
+				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, DataScale.DATE, new ArrayList<>()),
 				new ColumnConfiguration(3, "column3_decimal", DataType.DECIMAL, DataScale.RATIO, new ArrayList<>()),
 				new ColumnConfiguration(4, "column4_integer", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()),
 				new ColumnConfiguration(5, "column5_string", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()));
@@ -119,7 +119,7 @@ public class TestModelHelper {
 
 	public static String generateDataConfigurationAsJson() {
 		return """
-				{"dataTypes":["BOOLEAN","DATE","DATE_TIME","DECIMAL","INTEGER","STRING"],"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","scale":"NOMINAL","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","scale":"INTERVAL","configurations":[{"name":"DateFormatConfiguration","dateFormatter":"yyyy-MM-dd"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","scale":"INTERVAL","configurations":[{"name":"DateTimeFormatConfiguration","dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSSSS"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","scale":"RATIO","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","scale":"INTERVAL","configurations":[]},{"index":5,"name":"column5_string","type":"STRING","scale":"NOMINAL","configurations":[{"name":"StringPatternConfiguration","pattern":".*"}]}]}""";
+				{"dataTypes":["BOOLEAN","DATE","DATE_TIME","DECIMAL","INTEGER","STRING"],"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","scale":"NOMINAL","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","scale":"DATE","configurations":[{"name":"DateFormatConfiguration","dateFormatter":"yyyy-MM-dd"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","scale":"DATE","configurations":[{"name":"DateTimeFormatConfiguration","dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSSSS"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","scale":"RATIO","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","scale":"INTERVAL","configurations":[]},{"index":5,"name":"column5_string","type":"STRING","scale":"NOMINAL","configurations":[{"name":"StringPatternConfiguration","pattern":".*"}]}]}""";
 	}
 
 	public static MockMultipartFile loadCsvFile() throws IOException {

@@ -160,7 +160,7 @@ public class DataTransformationTests {
 
         config.addColumnConfiguration(
                 new ColumnConfiguration(
-                        0, "date", DataType.DATE, DataScale.INTERVAL, List.of(dateFormatConfiguration)
+                        0, "date", DataType.DATE, DataScale.DATE, List.of(dateFormatConfiguration)
                 )
         );
 
@@ -193,7 +193,7 @@ public class DataTransformationTests {
 
         DataConfiguration dataConfiguration = new DataConfiguration();
         dataConfiguration.setConfigurations(List.of(
-                new ColumnConfiguration(0, "date", DataType.DATE, DataScale.INTERVAL, List.of(dateFormatConfiguration))
+                new ColumnConfiguration(0, "date", DataType.DATE, DataScale.DATE, List.of(dateFormatConfiguration))
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);
@@ -227,7 +227,7 @@ public class DataTransformationTests {
 
         config.addColumnConfiguration(
                 new ColumnConfiguration(
-                        0, "date-time", DataType.DATE_TIME, DataScale.INTERVAL, List.of(dateTimeFormatConfiguration)
+                        0, "date-time", DataType.DATE_TIME, DataScale.DATE, List.of(dateTimeFormatConfiguration)
                 )
         );
 
@@ -260,7 +260,7 @@ public class DataTransformationTests {
 
         DataConfiguration dataConfiguration = new DataConfiguration();
         dataConfiguration.setConfigurations(List.of(
-                new ColumnConfiguration(0, "date-time", DataType.DATE_TIME, DataScale.INTERVAL, List.of(dateTimeFormatConfiguration))
+                new ColumnConfiguration(0, "date-time", DataType.DATE_TIME, DataScale.DATE, List.of(dateTimeFormatConfiguration))
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);

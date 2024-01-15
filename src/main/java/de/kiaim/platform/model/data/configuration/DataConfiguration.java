@@ -1,5 +1,6 @@
 package de.kiaim.platform.model.data.configuration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.platform.model.data.DataType;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -64,6 +65,7 @@ public class DataConfiguration {
 		}
 	}
 
+	@JsonIgnore
 	public List<String> getColumnNames() {
 		return configurations.stream().map(ColumnConfiguration::getName).toList();
 	}

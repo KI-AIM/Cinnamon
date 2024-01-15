@@ -1,4 +1,4 @@
-import { Component, ViewChild } from "@angular/core";
+import { Component, TemplateRef, ViewChild } from "@angular/core";
 import { TransformationService } from "../../services/transformation.service";
 import { DataSet } from "src/app/shared/model/data-set";
 import { MatTableDataSource } from "@angular/material/table";
@@ -23,9 +23,13 @@ export class DataTableComponent {
 		)
 	);
 	@ViewChild(MatPaginator) paginator: MatPaginator;
-
-	constructor(public transformationService: TransformationService) {
-		console.log(this.dataSource); 
+	displayedColumns: string[] = ['position'].concat(this.getColumnNames(this.transformationService.getTransformationResult().dataSet));
+	filterCriteria = "ALL"; 
+	
+	
+	constructor(
+		public transformationService: TransformationService,
+	) {
 	}
 
 	ngAfterViewInit() {
@@ -42,8 +46,8 @@ export class DataTableComponent {
 	transformDataSet(dataSet: DataSet): TableElement[] {
 		const transformedData: TableElement[] = [];
 
-		dataSet.data.forEach((dataRow) => {
-			const transformedRow: TableElement = {errorsInRow: []};
+		dataSet.data.forEach((dataRow, index) => {
+			const transformedRow: TableElement = {position: index, errorsInRow: []};
 			dataRow.forEach((dataItem, index) => {
 				const columnName =
 					dataSet.dataConfiguration.configurations[index].name;
@@ -148,6 +152,32 @@ export class DataTableComponent {
 	rowHasErrors(errorArray: Array<any>): boolean {
 		return errorArray.length > 0; 
 	}
+
+	/**
+	 * Applies a filter to the table based on the select menu in frontend
+	 * Shows different data depending on the number of errors in a row. 
+	 * @param $event the selectionChange event
+	 */
+	applyFilter($event: any) {
+		this.filterCriteria = $event.value;
+		switch (this.filterCriteria) {
+			case "ALL": {
+				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0 || data.errorsInRow.length <= 0; 
+				this.dataSource.filter = this.filterCriteria; 
+				break; 
+			}
+			case "VALID": {
+				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length == 0; 
+				this.dataSource.filter = this.filterCriteria; 
+				break;
+			}
+			case "ERRORS": {
+				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0; 
+				this.dataSource.filter = this.filterCriteria; 
+				break; 
+			}
+		}
+	}
 }
 
 /**
@@ -156,6 +186,7 @@ export class DataTableComponent {
  * This format is needed by the Material Table
  */
 interface TableElement {
+	position: number;
 	[key: string]: any;
 	errorsInRow: Array<any>; 
 }

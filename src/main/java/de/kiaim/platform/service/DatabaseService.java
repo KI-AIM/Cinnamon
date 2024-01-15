@@ -259,7 +259,7 @@ public class DatabaseService {
 					"'" + data.asDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")) + "'";
 			case DECIMAL -> data.getValue().toString();
 			case INTEGER -> data.getValue().toString();
-			case STRING -> "'" + data.getValue() + "'";
+			case STRING -> "'" + data.getValue().toString().replace("'", "''") + "'";
 			case UNDEFINED -> throw new InternalDataSetPersistenceException("Undefined data type can not be persisted!");
 		};
 	}

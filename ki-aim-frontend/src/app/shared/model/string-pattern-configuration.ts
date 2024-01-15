@@ -1,6 +1,6 @@
 import { Configuration } from "./configuration";
 
 export class StringPatternConfiguration extends Configuration {
-    name: String = this.getName();
+    name: String = "StringPatternConfiguration";
     pattern: String
 }

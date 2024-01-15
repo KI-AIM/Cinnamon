@@ -10,7 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * processed
  */
 @Schema(description = "Interface for different configurations.",
-        anyOf = {DateFormatConfiguration.class, DateTimeFormatConfiguration.class, StringPatternConfiguration.class})
+        anyOf = {DateFormatConfiguration.class, DateTimeFormatConfiguration.class, RangeConfiguration.class,
+                 StringPatternConfiguration.class})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "name")
 @JsonSubTypes({
 		@JsonSubTypes.Type(DateFormatConfiguration.class),

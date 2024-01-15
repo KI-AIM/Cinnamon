@@ -183,14 +183,10 @@ public abstract class CommonDataProcessor implements DataProcessor {
             }
         }
         if (!invalidColumnNames.isEmpty()) {
-            StringBuilder message = new StringBuilder(
-                    "Column names must not contain spaces. Please corrects the following column names: ");
-            for (final Pair<Integer, String> invalidColumnName : invalidColumnNames) {
-                message.append(invalidColumnName.element0())
-                       .append(":\"")
-                       .append(invalidColumnName.element1())
-                       .append("\"");
-            }
+            String message = "Column names must not contain spaces. Please corrects the following column names: ";
+            message += String.join(", ", invalidColumnNames.stream()
+                                                           .map(pair -> pair.element0() + ":\"" + pair.element1() + "\"")
+                                                           .toList());
             throw new BadColumnNameException(message.toString());
         }
     }

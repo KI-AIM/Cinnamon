@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { DataType, dataTypeFromDataType } from 'src/app/shared/model/data-type';
+import { DataType } from 'src/app/shared/model/data-type';
 import { RangeConfiguration } from 'src/app/shared/model/range-configuration';
 
 @Component({

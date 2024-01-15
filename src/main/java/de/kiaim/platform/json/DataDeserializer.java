@@ -10,7 +10,6 @@ import de.kiaim.platform.model.data.Data;
 import de.kiaim.platform.model.data.DataBuilder;
 import de.kiaim.platform.model.data.DataType;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.ArrayList;

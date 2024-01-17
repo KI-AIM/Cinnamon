@@ -233,8 +233,7 @@ class DataControllerTest extends ControllerTest {
 		assertEquals(dataSetId, testUser.getDataConfiguration().getId(), "User has been associated with the wrong dataset!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
-		                                      .param("dataSetId", String.valueOf(dataSetId)))
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk());
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
@@ -271,27 +270,24 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadConfig() throws Exception {
-		MockMultipartFile file = TestModelHelper.loadCsvFile();
-		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
-		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
-
-		String result = mockMvc.perform(multipart("/api/data")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration))
-				                                .param("configuration",
-				                                       objectMapper.writeValueAsString(configuration)))
-		                       .andExpect(status().isOk())
-		                       .andReturn().getResponse().getContentAsString();
-
-		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
+		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
-		                                      .param("dataSetId", String.valueOf(dataSetId)))
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk())
 		       .andExpect(
 				       content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataConfiguration())));
+	}
+
+	@Test
+	void loadConfigYaml() throws Exception {
+		postData();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
+		                                      .param("format", "yaml"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(TestModelHelper.generateDataConfigurationAsYaml()));
 	}
 
 	@Test
@@ -309,11 +305,10 @@ class DataControllerTest extends ControllerTest {
 		                       .andExpect(status().isOk())
 		                       .andReturn().getResponse().getContentAsString();
 
-		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
+		assertDoesNotThrow(() -> Long.parseLong(result));
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
-		                                      .param("dataSetId", String.valueOf(dataSetId)))
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk())
 		       .andExpect(
 				       content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataSet().getData())));
@@ -369,6 +364,23 @@ class DataControllerTest extends ControllerTest {
 		                       .andReturn().getResponse().getContentAsString();
 
 		testErrorMessage(result, "User has no configuration!");
+	}
+
+	private void postData() throws Exception {
+		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+
+		String result = mockMvc.perform(multipart("/api/data")
+				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration))
+				                                .param("configuration",
+				                                       objectMapper.writeValueAsString(configuration)))
+		                       .andExpect(status().isOk())
+		                       .andReturn().getResponse().getContentAsString();
+
+		assertDoesNotThrow(() -> Long.parseLong(result));
 	}
 
 }

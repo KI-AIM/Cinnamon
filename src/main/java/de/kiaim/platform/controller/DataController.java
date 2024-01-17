@@ -1,5 +1,9 @@
 package de.kiaim.platform.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import de.kiaim.platform.exception.ApiException;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.file.FileConfiguration;
@@ -192,7 +196,7 @@ public class DataController {
 	}
 
 	@Operation(summary = "Returns the configuration of the data set.",
-	           description = "Returns the configuration of the data set.")
+	           description = "Returns the configuration of the data set. Available formats are JSON and YAML")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully found the configuration. Returns the configuration of the data set.",
@@ -211,9 +215,20 @@ public class DataController {
 	            consumes = MediaType.APPLICATION_JSON_VALUE,
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadConfig(
+			@Parameter(description = "Output format of the configuration. Allowed are 'json' and 'yaml'. If the value empty of invalid, json will be returned.",
+			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                              schema = @Schema(implementation = String.class)))
+			@RequestParam(defaultValue = "json") String format,
 			@AuthenticationPrincipal UserEntity user
-	) {
-		return handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
+	) throws JsonProcessingException {
+		ResponseEntity<Object> response = handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
+
+		if (response.getStatusCode().is2xxSuccessful() && format.equals("yaml")) {
+			response = new ResponseEntity<>(createYamlMapper()
+					                                .writeValueAsString(response.getBody()), response.getStatusCode());
+		}
+
+		return response;
 	}
 
 	@Operation(summary = "Returns the data of the data set.",
@@ -416,6 +431,12 @@ public class DataController {
 		}
 
 		return file.getOriginalFilename().substring(fileExtensionBegin);
+	}
+
+	private ObjectMapper createYamlMapper() {
+		final YAMLFactory yamlFactory = new YAMLFactory();
+		yamlFactory.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER);
+		return new ObjectMapper(yamlFactory);
 	}
 
 	private enum RequestType {

@@ -113,6 +113,49 @@ public class TestModelHelper {
 				{"dataTypes":["BOOLEAN","DATE","DATE_TIME","DECIMAL","INTEGER","STRING"],"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","configurations":[{"name":"DateFormatConfiguration","dateFormatter":"yyyy-MM-dd"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","configurations":[{"name":"DateTimeFormatConfiguration","dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSSSS"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","configurations":[]},{"index":5,"name":"column5_string","type":"STRING","configurations":[{"name":"StringPatternConfiguration","pattern":".*"}]}]}""";
 	}
 
+	public static String generateDataConfigurationAsYaml() {
+		return """
+				dataTypes:
+				- "BOOLEAN"
+				- "DATE"
+				- "DATE_TIME"
+				- "DECIMAL"
+				- "INTEGER"
+				- "STRING"
+				configurations:
+				- index: 0
+				  name: "column0_boolean"
+				  type: "BOOLEAN"
+				  configurations: []
+				- index: 1
+				  name: "column1_date"
+				  type: "DATE"
+				  configurations:
+				  - !<DateFormatConfiguration>
+				    dateFormatter: "yyyy-MM-dd"
+				- index: 2
+				  name: "column2_date_time"
+				  type: "DATE_TIME"
+				  configurations:
+				  - !<DateTimeFormatConfiguration>
+				    dateTimeFormatter: "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+				- index: 3
+				  name: "column3_decimal"
+				  type: "DECIMAL"
+				  configurations: []
+				- index: 4
+				  name: "column4_integer"
+				  type: "INTEGER"
+				  configurations: []
+				- index: 5
+				  name: "column5_string"
+				  type: "STRING"
+				  configurations:
+				  - !<StringPatternConfiguration>
+				    pattern: ".*"
+				    """;
+	}
+
 	public static MockMultipartFile loadCsvFile() throws IOException {
 		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
 		return new MockMultipartFile("file", "file.csv", null,

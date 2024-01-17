@@ -40,10 +40,12 @@ public class DecimalData extends Data {
 		 * @param value The String value to be set
 		 * @param configuration The List of Configuration objects for the column
 		 * @return DecimalDataBuilder (this)
-		 * @throws Exception if validation is failed
+		 * @throws FloatFormatException if the given value could not be transformed into a float.
+		 * @throws ValueNotInRangeException if the transformed float is not in the configured range.
 		 */
 		@Override
-		public DecimalDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+		public DecimalDataBuilder setValue(String value, List<Configuration> configuration)
+				throws FloatFormatException, ValueNotInRangeException {
 			processConfigurations(configuration);
 
 			final float parsedValue;

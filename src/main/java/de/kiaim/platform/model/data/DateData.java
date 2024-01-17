@@ -41,10 +41,12 @@ public class DateData extends Data {
 		 * @param value The String value to be set
 		 * @param configuration The List of Configuration objects for the column
 		 * @return DateDataBuilder (this)
-		 * @throws Exception if validation is failed
+		 * @throws DateFormatException if the given value could not be transformed into a date using the configured format.
+		 * @throws ValueNotInRangeException if the transformed date is not in the configured range.
 		 */
 		@Override
-		public DateDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+		public DateDataBuilder setValue(String value, List<Configuration> configuration)
+				throws DateFormatException, ValueNotInRangeException {
 			processConfigurations(configuration);
 
 			try {

@@ -8,7 +8,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -44,10 +43,12 @@ public class DateTimeData extends Data {
 		 * @param value The String value to be set
 		 * @param configuration The List of Configuration objects for the column
 		 * @return DateTimeDataBuilder (this)
-		 * @throws Exception if validation is failed
+		 * @throws DateTimeFormatException if the given value could not be transformed into a date time using the configured format.
+		 * @throws ValueNotInRangeException if the transformed date time is not in the configured range.
 		 */
 		@Override
-		public DateTimeDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+		public DateTimeDataBuilder setValue(String value, List<Configuration> configuration)
+				throws DateTimeFormatException, ValueNotInRangeException {
 			processConfigurations(configuration);
 
 			try {

@@ -1,7 +1,9 @@
 package de.kiaim.platform.helper;
 
+import de.kiaim.platform.exception.BadDataTypeException;
 import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.*;
+import de.kiaim.platform.model.data.exception.DataBuildingException;
 import de.kiaim.platform.model.data.exception.MissingValueException;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
@@ -20,18 +22,27 @@ public class DataTransformationHelper {
      * @param value the String value
      * @param configuration The ColumnConfiguration for the value
      * @return Instance of an Implementation of the Data Interface
-     * @throws Exception if anything is faulty when creating the object
+     * @throws DataBuildingException if anything is faulty when creating the object
      */
-    public Data transformData(String value, ColumnConfiguration configuration) throws Exception {
+    public Data transformData(String value, ColumnConfiguration configuration) throws DataBuildingException {
         if (isValueEmpty(value)) {
             throw new MissingValueException();
         }
 
-        if (configuration.getType() == DataType.UNDEFINED) {
+        final DataBuilder dataBuilder = getDataBuilder(configuration.getType());
+        if (dataBuilder == null) {
             return null;
         }
 
-        return getDataBuilder(configuration.getType()).setValue(value, configuration.getConfigurations()).build();
+        return dataBuilder.setValue(value, configuration.getConfigurations()).build();
+    }
+
+    public DataBuilder getDataBuilderOrThrow(DataType dataType) throws BadDataTypeException {
+        final DataBuilder dataBuilder = getDataBuilder(dataType);
+        if (dataBuilder == null) {
+            throw new BadDataTypeException("No builder for type 'UNDEFINED'!");
+        }
+        return dataBuilder;
     }
 
     @Nullable

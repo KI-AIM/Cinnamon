@@ -1,4 +1,10 @@
 package de.kiaim.platform.model.data.exception;
 
-public class ValueNotInRangeException extends Exception {
+import de.kiaim.platform.model.TransformationErrorType;
+
+public class ValueNotInRangeException extends DataBuildingException {
+	@Override
+	public TransformationErrorType getTransformationErrorType() {
+		return TransformationErrorType.VALUE_NOT_IN_RANGE;
+	}
 }

@@ -40,10 +40,12 @@ public class IntegerData extends Data {
 		 * @param value The String value to be set
 		 * @param configuration The List of Configuration objects for the column
 		 * @return IntegerDataBuilder (this)
-		 * @throws Exception if validation is failed
+		 * @throws IntFormatException if the given value could not be transformed into an integer.
+		 * @throws ValueNotInRangeException if the transformed integer is not in the configured range.
 		 */
 		@Override
-		public IntegerDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+		public IntegerDataBuilder setValue(String value, List<Configuration> configuration)
+				throws IntFormatException, ValueNotInRangeException {
 			processConfigurations(configuration);
 
 			final int parsedValue;

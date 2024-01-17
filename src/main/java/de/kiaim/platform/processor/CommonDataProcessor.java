@@ -1,11 +1,11 @@
 package de.kiaim.platform.processor;
 
 import de.kiaim.platform.helper.DataTransformationHelper;
-import de.kiaim.platform.helper.ExceptionToTransformationErrorMapper;
 import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.data.exception.DataBuildingException;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -18,9 +18,6 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
     @Autowired
     DataTransformationHelper dataTransformationHelper;
-
-    @Autowired
-    ExceptionToTransformationErrorMapper exceptionToTransformationErrorMapper;
 
     /**
      * Transforms a row into a DataRow and appends it to the given list of data rows.
@@ -63,10 +60,9 @@ public abstract class CommonDataProcessor implements DataProcessor {
             try {
                 Data transformedData = this.dataTransformationHelper.transformData(col, columnConfiguration);
                 transformedCol.add(transformedData);
-            } catch (Exception e) {
+            } catch (DataBuildingException e) {
                 //Resolve to error type, to easier parse information to frontend
-                TransformationErrorType errorType = this.exceptionToTransformationErrorMapper.mapException(e);
-                newError.addError(new DataTransformationError(colIndex, errorType));
+                newError.addError(new DataTransformationError(colIndex, e.getTransformationErrorType()));
 
                 // set flag to not add row to DataSet
                 errorInRow = true;

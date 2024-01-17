@@ -27,7 +27,7 @@ public class BooleanData extends Data {
 	 * Performs validation based on the different configurations
 	 * that were parsed for the column by the frontend
 	 */
-	public static class BooleanDataBuilder implements DataBuilder{
+	public static class BooleanDataBuilder implements DataBuilder {
 
 		private boolean value;
 
@@ -39,10 +39,10 @@ public class BooleanData extends Data {
 		 * @param value The String value to be set
 		 * @param configuration The List of Configuration objects for the column
 		 * @return BooleanDataBuilder (this)
-		 * @throws Exception if value does match the Boolean pattern
+		 * @throws BooleanFormatException if value does match the Boolean pattern
 		 */
 		@Override
-		public BooleanDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+		public BooleanDataBuilder setValue(String value, List<Configuration> configuration) throws BooleanFormatException {
 			if (value.equalsIgnoreCase("yes") || value.equals("1") || value.equalsIgnoreCase("true")) {
 				this.value = true;
 			} else if (value.equalsIgnoreCase("no") || value.equalsIgnoreCase("0") || value.equalsIgnoreCase("false")) {

@@ -4,6 +4,7 @@ import de.kiaim.platform.model.entity.DataConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,11 @@ public class UserService implements UserDetailsService {
 	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
+	}
+
+	@Nullable
+	public UserEntity getUserByEmail(final String email) {
+		return userRepository.findById(email).orElse(null);
 	}
 
 	public boolean doesUserWithEmailExist(final String email) {

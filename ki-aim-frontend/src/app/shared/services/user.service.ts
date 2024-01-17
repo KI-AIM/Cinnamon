@@ -47,11 +47,10 @@ export class UserService {
 		);
 
 		this.http
-			.get<any>("api/user", { headers: headers })
+			.get<any>("api/user/login", { headers: headers })
 			.subscribe({
 				next: (data: any) => {
-					console.log(data);
-					if (data["name"]) {
+					if (typeof data === "boolean" && data) {
 						this.user = new User(true, credentials.email, token);
 						sessionStorage.setItem(
 							this.USER_KEY,

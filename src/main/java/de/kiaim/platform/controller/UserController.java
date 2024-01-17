@@ -31,9 +31,9 @@ public class UserController {
 		this.userService = userService;
 	}
 
-	@GetMapping("")
-	public Principal user(final Principal user) {
-		return user;
+	@GetMapping("/login")
+	public boolean user(final Principal user) {
+		return true;
 	}
 
 	@Operation(summary = "Registers a new user.",

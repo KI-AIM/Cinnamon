@@ -2,7 +2,9 @@
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>Column name</mat-label>
-            <input type="text" matInput [id]="'name_' + attrNumber" [(ngModel)]="column.name" />
+            <input type="text" matInput [id]="'name_' + attrNumber" [(ngModel)]="column.name" required appNoSpaceValidator #name="ngModel"/>
+            <mat-error *ngIf="name.errors?.['required']">Name must not be blank</mat-error>
+            <mat-error *ngIf="name.errors?.['noSpace']">Name must not contain spaces</mat-error>
         </mat-form-field>
     </div>
 
@@ -13,7 +15,6 @@
                 <mat-option *ngFor="let type of getDataTypes().getAll()" [value]="type">{{type}}</mat-option>
             </mat-select>
         </mat-form-field>
-        
     </div>
 
     <div class="d-flex flex-column px-2 w-100">

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { TitleService } from 'src/app/core/services/title-service.service';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
 import { DataService } from 'src/app/shared/services/data.service';
@@ -11,6 +11,7 @@ import { plainToClass } from 'class-transformer';
 import { TransformationService } from '../../services/transformation.service';
 import { TransformationResult } from 'src/app/shared/model/transformation-result';
 import { LoadingService } from 'src/app/shared/services/loading.service';
+import { NgForm } from '@angular/forms';
 
 @Component({
     selector: 'app-data-configuration',
@@ -19,6 +20,7 @@ import { LoadingService } from 'src/app/shared/services/loading.service';
 })
 export class DataConfigurationComponent {
     error: string;
+    isValid: boolean;
 
     constructor(
         public configuration: DataConfigurationService,
@@ -31,6 +33,7 @@ export class DataConfigurationComponent {
         public loadingService: LoadingService,
     ) {
         this.error = "";
+        this.isValid = true;
         this.titleService.setPageTitle("Data configuration");
     }
 
@@ -48,6 +51,10 @@ export class DataConfigurationComponent {
             next: (d) => this.handleUpload(d),
             error: (e) => this.handleError(e),
         });
+    }
+
+    onValidation(isValid: boolean) {
+        this.isValid = isValid;
     }
 
     private setEmptyColumnNames() {

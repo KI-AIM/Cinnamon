@@ -3,6 +3,7 @@ package de.kiaim.platform.processor;
 import de.kiaim.platform.PlatformApplication;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.DataSet;
+import de.kiaim.platform.model.data.configuration.DataScale;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.*;
@@ -178,23 +179,23 @@ public class CSVProcessingTests {
         DataConfiguration config = new DataConfiguration();
 
         ColumnConfiguration column1 = new ColumnConfiguration(
-                0, "id", DataType.INTEGER, new ArrayList<>()
+                0, "id", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()
         );
 
         ColumnConfiguration column2 = new ColumnConfiguration(
-                1, "name", DataType.STRING, new ArrayList<>()
+                1, "name", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()
         );
 
         ColumnConfiguration column3 = new ColumnConfiguration(
-                2, "birthdate", DataType.DATE, new ArrayList<>()
+                2, "birthdate", DataType.DATE, DataScale.DATE, new ArrayList<>()
         );
 
         ColumnConfiguration column4 = new ColumnConfiguration(
-                3, "smoker", DataType.BOOLEAN, new ArrayList<>()
+                3, "smoker", DataType.BOOLEAN, DataScale.NOMINAL, new ArrayList<>()
         );
 
         ColumnConfiguration column5 = new ColumnConfiguration(
-                4, "price", DataType.STRING, new ArrayList<>()
+                4, "price", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()
         );
 
         config.setConfigurations(List.of(column1, column2, column3, column4, column5));

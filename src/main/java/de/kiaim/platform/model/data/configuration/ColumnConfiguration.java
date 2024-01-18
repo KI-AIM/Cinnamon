@@ -46,6 +46,12 @@ public class ColumnConfiguration {
     DataType type;
 
     /**
+     * The scale of the column
+     */
+    @Schema(description = "Data scale of the column.", example = "INTERVAL")
+    DataScale scale;
+
+    /**
      * A list of configurations for the column
      */
     @Schema(description = "List of different configurations depending on the data type.",

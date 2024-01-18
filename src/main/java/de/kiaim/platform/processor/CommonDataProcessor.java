@@ -320,7 +320,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
             String columnName = columnNames.get(i);
 
             ColumnConfiguration newColumnConfiguration = new ColumnConfiguration(
-                    i, columnName, type, new ArrayList<>()
+                    i, columnName, type, type.getDefaultScale(), new ArrayList<>()
             );
             resultingColumnConfigurations.add(newColumnConfiguration);
         }

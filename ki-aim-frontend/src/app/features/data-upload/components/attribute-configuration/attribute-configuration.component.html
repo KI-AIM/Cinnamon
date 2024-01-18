@@ -19,7 +19,7 @@
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>Column scale</mat-label>
-            <mat-select [id]="'scale' + attrNumber">
+            <mat-select [id]="'scale' + attrNumber" [(ngModel)]="column.scale">
                 <mat-option *ngFor="let scale of getDataScales().getAll()" [value]="scale">{{scale}}</mat-option>
             </mat-select>
         </mat-form-field>

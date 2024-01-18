@@ -54,10 +54,10 @@ public class DataTransformationTests {
         config.setConfigurations(
                 List.of(
                     new ColumnConfiguration(
-                            0, "test", DataType.STRING, new ArrayList<>()
+                            0, "test", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()
                     ),
                     new ColumnConfiguration(
-                            1, "index", DataType.INTEGER, new ArrayList<>()
+                            1, "index", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()
                     )
                 )
         );
@@ -111,8 +111,8 @@ public class DataTransformationTests {
 
         DataConfiguration dataConfiguration = new DataConfiguration();
         dataConfiguration.setConfigurations(List.of(
-            new ColumnConfiguration(0, "test", DataType.STRING, new ArrayList<>()),
-            new ColumnConfiguration(1, "index", DataType.INTEGER, new ArrayList<>())
+            new ColumnConfiguration(0, "test", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()),
+            new ColumnConfiguration(1, "index", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>())
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);
@@ -162,7 +162,7 @@ public class DataTransformationTests {
 
         config.addColumnConfiguration(
                 new ColumnConfiguration(
-                        0, "date", DataType.DATE, List.of(dateFormatConfiguration)
+                        0, "date", DataType.DATE, DataScale.DATE, List.of(dateFormatConfiguration)
                 )
         );
 
@@ -196,7 +196,7 @@ public class DataTransformationTests {
 
         DataConfiguration dataConfiguration = new DataConfiguration();
         dataConfiguration.setConfigurations(List.of(
-                new ColumnConfiguration(0, "date", DataType.DATE, List.of(dateFormatConfiguration))
+                new ColumnConfiguration(0, "date", DataType.DATE, DataScale.DATE, List.of(dateFormatConfiguration))
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);
@@ -230,7 +230,7 @@ public class DataTransformationTests {
 
         config.addColumnConfiguration(
                 new ColumnConfiguration(
-                        0, "date-time", DataType.DATE_TIME, List.of(dateTimeFormatConfiguration)
+                        0, "date-time", DataType.DATE_TIME, DataScale.DATE, List.of(dateTimeFormatConfiguration)
                 )
         );
 
@@ -264,7 +264,7 @@ public class DataTransformationTests {
 
         DataConfiguration dataConfiguration = new DataConfiguration();
         dataConfiguration.setConfigurations(List.of(
-                new ColumnConfiguration(0, "date-time", DataType.DATE_TIME, List.of(dateTimeFormatConfiguration))
+                new ColumnConfiguration(0, "date-time", DataType.DATE_TIME, DataScale.DATE, List.of(dateTimeFormatConfiguration))
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);
@@ -297,7 +297,7 @@ public class DataTransformationTests {
 
         config.addColumnConfiguration(
                 new ColumnConfiguration(
-                        0, "string-pattern", DataType.STRING, List.of(stringPatternConfiguration)
+                        0, "string-pattern", DataType.STRING, DataScale.NOMINAL, List.of(stringPatternConfiguration)
                 )
         );
 
@@ -330,7 +330,7 @@ public class DataTransformationTests {
         StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration("[A-Z]\\d{3}[.]\\d{2}");
 
         dataConfiguration.setConfigurations(List.of(
-                new ColumnConfiguration(0, "string-pattern", DataType.STRING, List.of(stringPatternConfiguration))
+                new ColumnConfiguration(0, "string-pattern", DataType.STRING, DataScale.NOMINAL, List.of(stringPatternConfiguration))
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);
@@ -362,7 +362,7 @@ public class DataTransformationTests {
 
         config.addColumnConfiguration(
                 new ColumnConfiguration(
-                        0, "boolean", DataType.BOOLEAN, new ArrayList<>()
+                        0, "boolean", DataType.BOOLEAN, DataScale.NOMINAL, new ArrayList<>()
                 )
         );
 
@@ -394,7 +394,7 @@ public class DataTransformationTests {
         DataConfiguration dataConfiguration = new DataConfiguration();
 
         dataConfiguration.setConfigurations(List.of(
-                new ColumnConfiguration(0, "boolean", DataType.BOOLEAN, List.of())
+                new ColumnConfiguration(0, "boolean", DataType.BOOLEAN, DataScale.NOMINAL, List.of())
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);
@@ -426,7 +426,7 @@ public class DataTransformationTests {
 
         config.addColumnConfiguration(
                 new ColumnConfiguration(
-                        0, "float", DataType.DECIMAL, new ArrayList<>()
+                        0, "float", DataType.DECIMAL, DataScale.RATIO, new ArrayList<>()
                 )
         );
 
@@ -458,7 +458,7 @@ public class DataTransformationTests {
         DataConfiguration dataConfiguration = new DataConfiguration();
 
         dataConfiguration.setConfigurations(List.of(
-                new ColumnConfiguration(0, "float", DataType.DECIMAL, List.of())
+                new ColumnConfiguration(0, "float", DataType.DECIMAL, DataScale.RATIO, List.of())
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);
@@ -490,7 +490,7 @@ public class DataTransformationTests {
 
         config.addColumnConfiguration(
                 new ColumnConfiguration(
-                        0, "int", DataType.INTEGER, new ArrayList<>()
+                        0, "int", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()
                 )
         );
 
@@ -522,7 +522,7 @@ public class DataTransformationTests {
         DataConfiguration dataConfiguration = new DataConfiguration();
 
         dataConfiguration.setConfigurations(List.of(
-                new ColumnConfiguration(0, "int", DataType.INTEGER, List.of())
+                new ColumnConfiguration(0, "int", DataType.INTEGER, DataScale.INTERVAL, List.of())
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);

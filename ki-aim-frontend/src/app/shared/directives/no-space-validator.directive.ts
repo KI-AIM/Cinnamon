@@ -3,7 +3,7 @@ import { AbstractControl, NG_VALIDATORS, ValidationErrors, Validator, ValidatorF
 
 export function noSpaceValidator(): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
-      return (typeof control.value === 'string') && control.value.includes(" ")
+      return (typeof control.value === 'string') && control.value.trim().includes(" ")
         ? { noSpace: { value: control.value } }
         : null
     }

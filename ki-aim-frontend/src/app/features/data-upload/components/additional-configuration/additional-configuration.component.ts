@@ -12,6 +12,7 @@ import { DateformatComponent } from "../configurationSettings/dateformat/datefor
 import { DatetimeformatComponent } from "../configurationSettings/datetimeformat/datetimeformat.component";
 import { StringpatternComponent } from "../configurationSettings/stringpattern/stringpattern.component";
 import { MatDialog } from "@angular/material/dialog";
+import { RangeComponent } from "../configurationSettings/range/range.component";
 
 @Component({
 	selector: "app-additional-configuration",
@@ -25,8 +26,8 @@ export class AdditionalConfigurationComponent {
 	@Input() column: ColumnConfiguration;
 
 	@ViewChild("dateFormat") dateFormatComponent: DateformatComponent;
-	@ViewChild("dateTimeFormat")
-	dateTimeFormatComponent: DatetimeformatComponent;
+	@ViewChild("dateTimeFormat") dateTimeFormatComponent: DatetimeformatComponent;
+	@ViewChild("range") rangeComponent: RangeComponent;
 	@ViewChild("stringPattern") stringPatternComponent: StringpatternComponent;
 
 	currentConfigurationSelection: ConfigurationType | undefined;
@@ -100,6 +101,14 @@ export class AdditionalConfigurationComponent {
                     );
                     this.currentConfigurationSelection = undefined;
                     this.selected = "standardSelection"; 
+                    break;
+                }
+                case ConfigurationType.RANGE: {
+                    this.column.addConfiguration(
+                        this.rangeComponent.getRangeConfiguration()
+                    );
+                    this.currentConfigurationSelection = undefined;
+                    this.selected = "standardSelection";
                     break;
                 }
                 case ConfigurationType.STRINGPATTERN: {

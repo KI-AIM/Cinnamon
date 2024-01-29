@@ -1,8 +1,11 @@
 package de.kiaim.platform.helper;
 
+import de.kiaim.platform.exception.BadDataTypeException;
 import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.*;
+import de.kiaim.platform.model.data.exception.DataBuildingException;
 import de.kiaim.platform.model.data.exception.MissingValueException;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,20 +22,38 @@ public class DataTransformationHelper {
      * @param value the String value
      * @param configuration The ColumnConfiguration for the value
      * @return Instance of an Implementation of the Data Interface
-     * @throws Exception if anything is faulty when creating the object
+     * @throws DataBuildingException if anything is faulty when creating the object
      */
-    public Data transformData(String value, ColumnConfiguration configuration) throws Exception {
+    public Data transformData(String value, ColumnConfiguration configuration) throws DataBuildingException {
         if (isValueEmpty(value)) {
             throw new MissingValueException();
         }
 
-        return switch (configuration.getType()) {
-            case BOOLEAN -> new BooleanData.BooleanDataBuilder().setValue(value, configuration.getConfigurations()).build();
-            case DATE -> new DateData.DateDataBuilder().setValue(value, configuration.getConfigurations()).build();
-            case DATE_TIME -> new DateTimeData.DateTimeDataBuilder().setValue(value, configuration.getConfigurations()).build();
-            case DECIMAL -> new DecimalData.DecimalDataBuilder().setValue(value, configuration.getConfigurations()).build();
-            case INTEGER -> new IntegerData.IntegerDataBuilder().setValue(value, configuration.getConfigurations()).build();
-            case STRING -> new StringData.StringDataBuilder().setValue(value, configuration.getConfigurations()).build();
+        final DataBuilder dataBuilder = getDataBuilder(configuration.getType());
+        if (dataBuilder == null) {
+            return null;
+        }
+
+        return dataBuilder.setValue(value, configuration.getConfigurations()).build();
+    }
+
+    public DataBuilder getDataBuilderOrThrow(DataType dataType) throws BadDataTypeException {
+        final DataBuilder dataBuilder = getDataBuilder(dataType);
+        if (dataBuilder == null) {
+            throw new BadDataTypeException("No builder for type 'UNDEFINED'!");
+        }
+        return dataBuilder;
+    }
+
+    @Nullable
+    public DataBuilder getDataBuilder(DataType dataType) {
+        return switch (dataType) {
+            case BOOLEAN -> new BooleanData.BooleanDataBuilder();
+            case DATE -> new DateData.DateDataBuilder();
+            case DATE_TIME -> new DateTimeData.DateTimeDataBuilder();
+            case DECIMAL -> new DecimalData.DecimalDataBuilder();
+            case INTEGER -> new IntegerData.IntegerDataBuilder();
+            case STRING -> new StringData.StringDataBuilder();
             case UNDEFINED -> null;
         };
     }

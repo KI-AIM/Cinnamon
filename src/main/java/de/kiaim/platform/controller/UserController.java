@@ -6,6 +6,7 @@ import de.kiaim.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -16,8 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/user")
@@ -31,9 +30,22 @@ public class UserController {
 		this.userService = userService;
 	}
 
-	@GetMapping("")
-	public Principal user(final Principal user) {
-		return user;
+	@Operation(summary = "Check if the user credentials belong to an authorized user.",
+	           description = "Check if the user credentials belong to an authorized user.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "User credential are correct.",
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = Boolean.class),
+			                                examples = {@ExampleObject("true")})),
+			@ApiResponse(responseCode = "500",
+			             description = "User is not authorized.",
+			             content = @Content),
+	})
+	@GetMapping(value = "/login",
+	            produces = MediaType.APPLICATION_JSON_VALUE)
+	public boolean login() {
+		return true;
 	}
 
 	@Operation(summary = "Registers a new user.",

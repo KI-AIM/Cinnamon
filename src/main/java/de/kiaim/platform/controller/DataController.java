@@ -202,8 +202,12 @@ public class DataController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully found the configuration. Returns the configuration of the data set.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = DataConfiguration.class))}),
+			             content = {
+					             @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+					                      schema = @Schema(implementation = DataConfiguration.class)),
+					             @Content(mediaType = "application/x-yaml",
+					                      schema = @Schema(implementation = DataConfiguration.class)),
+			             }),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored configuration.",
 			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,

@@ -18,7 +18,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -237,7 +236,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndDateRange_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -370,7 +370,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndDateTimeRange_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -630,7 +631,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndFloatRange_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -756,7 +758,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndIntegerRange_expectedResult();
 
         assertEquals(actualResult, expectedResult);

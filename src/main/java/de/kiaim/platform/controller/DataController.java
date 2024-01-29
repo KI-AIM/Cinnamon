@@ -2,8 +2,10 @@ package de.kiaim.platform.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.file.FileConfiguration;
@@ -28,7 +30,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -221,8 +222,6 @@ public class DataController {
 			@RequestParam(defaultValue = "json") String format,
 			@AuthenticationPrincipal UserEntity user
 	) throws JsonProcessingException {
-//		HttpHeaders jsonResponseHeader = new HttpHeaders();
-//		jsonResponseHeader.set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
 		ResponseEntity<Object> response = handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
 
 		if (response.getStatusCode().is2xxSuccessful() && format.equals("yaml")) {
@@ -438,7 +437,10 @@ public class DataController {
 	private ObjectMapper createYamlMapper() {
 		final YAMLFactory yamlFactory = new YAMLFactory();
 		yamlFactory.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER);
-		return new ObjectMapper(yamlFactory);
+		final ObjectMapper yamlMapper = new ObjectMapper(yamlFactory);
+		yamlMapper.registerModule(new JavaTimeModule());
+		yamlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		return yamlMapper;
 	}
 
 	private enum RequestType {

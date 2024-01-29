@@ -11,10 +11,12 @@
         </div>
 
     </div>
-    <div class="px-1">
-        <button mat-raised-button color="primary" (click)="confirmConfiguration()" [disabled]="!isValid">Confirm configuration and start validation</button>
-    </div>
-    <div class="px-2">
-        <button mat-raised-button color="primary" (click)="downloadConfiguration()">Download configuration as YAML</button>
+    <div class="btn-group">
+        <div class="px-1">
+            <button mat-raised-button color="primary" (click)="confirmConfiguration()" [disabled]="!isValid">Confirm configuration and start validation</button>
+        </div>
+        <div class="px-1">
+            <button mat-raised-button color="primary" (click)="downloadConfiguration()">Download configuration as YAML</button>
+        </div>
     </div>
 </div>

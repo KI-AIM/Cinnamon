@@ -36,13 +36,9 @@ export class DataConfigurationService {
         return this.httpClient.post<Number>("/api/data/configuration", formData);
     }
 
-    public downloadDataConfigurationAsYaml(): Observable<Object> {
+    public downloadDataConfigurationAsYaml(): Observable<Blob> {
         return this.postDataConfiguration().pipe(switchMap((response) => {
-            return this.httpClient.get<Object>("/api/data/configuration?format=yaml");
-        }),
-        catchError((error) => {
-            console.log(error);
-            return this.httpClient.get<Blob>("/api/data/configuration?format=yaml");
+            return this.httpClient.get<Blob>("/api/data/configuration?format=json", {responseType: 'text' as 'json'});
         }));
     }
 }

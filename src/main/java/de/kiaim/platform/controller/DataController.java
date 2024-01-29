@@ -4,21 +4,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import de.kiaim.platform.exception.ApiException;
+import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
-import de.kiaim.platform.exception.BadDataSetIdException;
-import de.kiaim.platform.exception.BadFileException;
-import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ResponseService;
+import de.kiaim.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -51,13 +49,15 @@ public class DataController {
 	// TODO Find Processor dynamically
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
+	private final UserService userService;
 	private final ResponseService responseService;
 
 	@Autowired
-	public DataController(final CsvProcessor csvProcessor, DatabaseService databaseService,
-	                      ResponseService responseService) {
+	public DataController(final CsvProcessor csvProcessor, final DatabaseService databaseService,
+						  final UserService userService, final ResponseService responseService) {
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
+		this.userService = userService;
 		this.responseService = responseService;
 	}
 
@@ -346,8 +346,9 @@ public class DataController {
 			final MultipartFile file,
 			final FileConfiguration fileConfiguration,
 			final DataConfiguration configuration,
-			final UserEntity user
-	) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
+			final UserEntity requestUser
+	) throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final Object result;
 		switch (requestType) {
 			case DATA_TYPES -> {

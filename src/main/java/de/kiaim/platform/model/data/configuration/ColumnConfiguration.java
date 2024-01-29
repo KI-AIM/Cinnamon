@@ -1,8 +1,8 @@
 package de.kiaim.platform.model.data.configuration;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import de.kiaim.platform.json.ColumnConfigurationDeserializer;
 import de.kiaim.platform.model.data.DataType;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -22,6 +22,7 @@ import java.util.List;
 @Getter
 @EqualsAndHashCode
 @ToString
+@JsonDeserialize(using = ColumnConfigurationDeserializer.class)
 public class ColumnConfiguration {
     public ColumnConfiguration() {
         this.configurations = new ArrayList<>();

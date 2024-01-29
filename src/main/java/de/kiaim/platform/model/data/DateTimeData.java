@@ -2,16 +2,20 @@ package de.kiaim.platform.model.data;
 
 import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.exception.DateTimeFormatException;
+import de.kiaim.platform.model.data.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class DateTimeData extends Data {
 
 	private final LocalDateTime value;
@@ -31,25 +35,33 @@ public class DateTimeData extends Data {
 		private LocalDateTime value;
 
 		private DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+		private LocalDateTime minValue = LocalDateTime.MIN;
+		private LocalDateTime maxValue = LocalDateTime.MAX;
 
 		/**
 		 * Sets the value of the resulting DateTime Object
 		 * @param value The String value to be set
 		 * @param configuration The List of Configuration objects for the column
 		 * @return DateTimeDataBuilder (this)
-		 * @throws Exception if validation is failed
+		 * @throws DateTimeFormatException if the given value could not be transformed into a date time using the configured format.
+		 * @throws ValueNotInRangeException if the transformed date time is not in the configured range.
 		 */
 		@Override
-		public DateTimeDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+		public DateTimeDataBuilder setValue(String value, List<Configuration> configuration)
+				throws DateTimeFormatException, ValueNotInRangeException {
 			processConfigurations(configuration);
 
 			try {
 				this.value = LocalDateTime.parse(value, formatter);
-				return this;
 			} catch(Exception e) {
 				throw new DateTimeFormatException();
 			}
 
+			if (this.value.isBefore(minValue) || this.value.isAfter(maxValue)) {
+				throw new ValueNotInRangeException();
+			}
+
+			return this;
 		}
 
 		/**
@@ -70,6 +82,8 @@ public class DateTimeData extends Data {
 			for (Configuration configuration : configurationList) {
 				if (configuration instanceof DateTimeFormatConfiguration) {
 					processDateTimeFormatConfiguration((DateTimeFormatConfiguration) configuration);
+				} else if (configuration instanceof RangeConfiguration) {
+					processRangeConfiguration((RangeConfiguration) configuration);
 				}
 			}
 		}
@@ -83,6 +97,11 @@ public class DateTimeData extends Data {
 		 */
 		private void processDateTimeFormatConfiguration(DateTimeFormatConfiguration configuration) {
 			this.formatter = DateTimeFormatter.ofPattern(configuration.getDateTimeFormatter());
+		}
+
+		private void processRangeConfiguration(RangeConfiguration rangeConfiguration) {
+			this.minValue = rangeConfiguration.getMinValue().asDateTime();
+			this.maxValue = rangeConfiguration.getMaxValue().asDateTime();
 		}
 	}
 }

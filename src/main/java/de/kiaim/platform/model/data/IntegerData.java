@@ -1,16 +1,19 @@
 package de.kiaim.platform.model.data;
 
-import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
-import de.kiaim.platform.model.data.configuration.Configuration;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.exception.IntFormatException;
+import de.kiaim.platform.model.data.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class IntegerData extends Data {
 
 	private final Integer value;
@@ -29,21 +32,35 @@ public class IntegerData extends Data {
 	public static class IntegerDataBuilder implements DataBuilder {
 		private int value;
 
+		private int minValue = Integer.MIN_VALUE;
+		private int maxValue = Integer.MAX_VALUE;
+
 		/**
 		 * Sets the value of the resulting Integer Object
 		 * @param value The String value to be set
 		 * @param configuration The List of Configuration objects for the column
 		 * @return IntegerDataBuilder (this)
-		 * @throws Exception if validation is failed
+		 * @throws IntFormatException if the given value could not be transformed into an integer.
+		 * @throws ValueNotInRangeException if the transformed integer is not in the configured range.
 		 */
 		@Override
-		public IntegerDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+		public IntegerDataBuilder setValue(String value, List<Configuration> configuration)
+				throws IntFormatException, ValueNotInRangeException {
+			processConfigurations(configuration);
+
+			final int parsedValue;
 			try {
-				this.value = Integer.parseInt(value);
-				return this;
+				parsedValue = Integer.parseInt(value);
 			} catch(Exception e) {
 				throw new IntFormatException();
 			}
+
+			if (parsedValue < minValue || parsedValue > maxValue) {
+				throw new ValueNotInRangeException();
+			}
+
+			this.value = parsedValue;
+			return this;
 		}
 
 		/**
@@ -54,6 +71,19 @@ public class IntegerData extends Data {
 		@Override
 		public IntegerData build() {
 			return new IntegerData(this.value);
+		}
+
+		private void processConfigurations(List<Configuration> configurationList) {
+			for (Configuration configuration : configurationList) {
+				if (configuration instanceof RangeConfiguration) {
+					processRangeConfiguration((RangeConfiguration) configuration);
+				}
+			}
+		}
+
+		private void processRangeConfiguration(RangeConfiguration rangeConfiguration) {
+			minValue = rangeConfiguration.getMinValue().asInteger();
+			maxValue = rangeConfiguration.getMaxValue().asInteger();
 		}
 	}
 }

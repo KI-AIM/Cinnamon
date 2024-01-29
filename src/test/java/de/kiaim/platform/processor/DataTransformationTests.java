@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
@@ -62,7 +63,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
 
         TransformationResult expectedResult = testDataProcessingAndFindMissingValues_expectedTransformationResult();
 
@@ -165,7 +167,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndDateFormatter_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -210,6 +213,74 @@ public class DataTransformationTests {
     }
 
     @Test
+    void testDataProcessingAndDateRange() {
+        String csvData =
+                """
+               2000-01-01
+               2000-01-02
+               2000-12-31
+               2001-01-01
+                """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
+
+        RangeConfiguration rangeConfiguration = new RangeConfiguration(new DateData(LocalDate.of(2000, 1, 2)),
+                                                                       new DateData(LocalDate.of(2000, 12, 31))
+        );
+
+        DataConfiguration config = new DataConfiguration();
+
+        config.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "date", DataType.DATE, DataScale.INTERVAL, List.of(rangeConfiguration)
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
+        TransformationResult expectedResult = testDataProcessingAndDateRange_expectedResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
+    private TransformationResult testDataProcessingAndDateRange_expectedResult() {
+        List<DataRow> dataRows = List.of(
+                new DataRow(List.of(
+                        new DateData(LocalDate.parse("2000-01-02"))
+                )),
+                new DataRow(List.of(
+                        new DateData(LocalDate.parse("2000-12-31"))
+                ))
+        );
+
+        RangeConfiguration rangeConfiguration = new RangeConfiguration(new DateData(LocalDate.of(2000, 1, 2)),
+                                                                       new DateData(LocalDate.of(2000, 12, 31))
+        );
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+        dataConfiguration.setConfigurations(List.of(
+                new ColumnConfiguration(0, "date", DataType.DATE, DataScale.INTERVAL, List.of(rangeConfiguration))
+        ));
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+                List.of(
+                        new DataRowTransformationError(
+                                0,
+                                List.of("2000-01-01"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                        ),
+                        new DataRowTransformationError(
+                                3,
+                                List.of("2001-01-01"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                        )
+                );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+
+    @Test
     void testDataProcessingAndDateTimeFormatter() {
         String csvData =
                 """
@@ -232,7 +303,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndDateTimeFormatter_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -277,6 +349,73 @@ public class DataTransformationTests {
     }
 
     @Test
+    void testDataProcessingAndDateTimeRange() {
+        String csvData =
+                """
+               2000-01-01T12:31:30
+               2000-01-01T12:31:31
+               2000-12-31T12:31:31
+               2000-12-31T12:31:32
+                """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
+
+        RangeConfiguration rangeConfiguration = new RangeConfiguration(new DateTimeData(LocalDateTime.of(2000, 1, 1, 12, 31, 31)), new DateTimeData(LocalDateTime.of(2000, 12, 31, 12, 31, 31)));
+
+        DataConfiguration config = new DataConfiguration();
+
+        config.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "date-time", DataType.DATE_TIME, DataScale.INTERVAL, List.of(rangeConfiguration)
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
+        TransformationResult expectedResult = testDataProcessingAndDateTimeRange_expectedResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
+    private TransformationResult testDataProcessingAndDateTimeRange_expectedResult() {
+        List<DataRow> dataRows = List.of(
+                new DataRow(List.of(
+                        new DateTimeData(LocalDateTime.parse("2000-01-01T12:31:31"))
+                )),
+                new DataRow(List.of(
+                        new DateTimeData(LocalDateTime.parse("2000-12-31T12:31:31"))
+                ))
+        );
+
+        RangeConfiguration rangeConfiguration = new RangeConfiguration(
+                new DateTimeData(LocalDateTime.of(2000, 1, 1, 12, 31, 31)),
+                new DateTimeData(LocalDateTime.of(2000, 12, 31, 12, 31, 31))
+        );
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+        dataConfiguration.setConfigurations(List.of(
+                new ColumnConfiguration(0, "date-time", DataType.DATE_TIME, DataScale.INTERVAL, List.of(rangeConfiguration))
+        ));
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+                List.of(
+                        new DataRowTransformationError(
+                                0,
+                                List.of("2000-01-01T12:31:30"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                        ),
+                        new DataRowTransformationError(
+                                3,
+                                List.of("2000-12-31T12:31:32"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                        )
+                );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+
+    @Test
     void testDataProcessingAndStringPattern() {
         String csvData =
                 """
@@ -298,7 +437,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndStringPattern_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -362,7 +502,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndBooleanFormats_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -425,7 +566,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndFloatFormat_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -468,6 +610,69 @@ public class DataTransformationTests {
     }
 
     @Test
+    void testDataProcessingAndFloatRange() {
+        String csvData =
+                """
+               0.9999
+               1.0
+               1.3
+               1.5
+               1.500001
+                """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
+
+        RangeConfiguration rangeConfiguration = new RangeConfiguration(new DecimalData(1f), new DecimalData(1.5f));
+
+        DataConfiguration config = new DataConfiguration();
+        config.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "decimal", DataType.DECIMAL, DataScale.RATIO, List.of(rangeConfiguration)
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
+        TransformationResult expectedResult = testDataProcessingAndFloatRange_expectedResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
+    private TransformationResult testDataProcessingAndFloatRange_expectedResult() {
+        List<DataRow> dataRows = List.of(
+                new DataRow(List.of(new DecimalData(1.0f))),
+                new DataRow(List.of(new DecimalData(1.3f))),
+                new DataRow(List.of(new DecimalData(1.5f)))
+        );
+
+        RangeConfiguration rangeConfiguration = new RangeConfiguration(new DecimalData(1f), new DecimalData(1.5f));
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+        dataConfiguration.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "decimal", DataType.DECIMAL, DataScale.RATIO, List.of(rangeConfiguration)
+                )
+        );
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+                List.of(
+                        new DataRowTransformationError(
+                                0,
+                                List.of("0.9999"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                        ),
+                        new DataRowTransformationError(
+                                4,
+                                List.of("1.500001"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                        )
+                );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+
+    @Test
     void testDataProcessingAndIntegerFormat() {
         String csvData =
                 """
@@ -488,7 +693,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndIntegerFormat_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -525,6 +731,69 @@ public class DataTransformationTests {
                                 4,
                                 List.of("No int value"),
                                 List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                        )
+                );
+        return new TransformationResult(dataSet, dataRowTransformationErrors);
+    }
+
+    @Test
+    void testDataProcessingAndIntegerRange() {
+        String csvData =
+                """
+                1
+                2
+                3
+                4
+                5
+                """.trim();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
+
+        RangeConfiguration rangeConfiguration = new RangeConfiguration(new IntegerData(2), new IntegerData(4));
+
+        DataConfiguration config = new DataConfiguration();
+        config.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "integer", DataType.INTEGER, DataScale.INTERVAL, List.of(rangeConfiguration)
+                )
+        );
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
+        TransformationResult expectedResult = testDataProcessingAndIntegerRange_expectedResult();
+
+        assertEquals(actualResult, expectedResult);
+    }
+
+    private TransformationResult testDataProcessingAndIntegerRange_expectedResult() {
+        List<DataRow> dataRows = List.of(
+                new DataRow(List.of(new IntegerData(2))),
+                new DataRow(List.of(new IntegerData(3))),
+                new DataRow(List.of(new IntegerData(4)))
+        );
+
+        RangeConfiguration rangeConfiguration = new RangeConfiguration(new IntegerData(2), new IntegerData(4));
+
+        DataConfiguration dataConfiguration = new DataConfiguration();
+        dataConfiguration.addColumnConfiguration(
+                new ColumnConfiguration(
+                        0, "integer", DataType.INTEGER, DataScale.INTERVAL, List.of(rangeConfiguration)
+                )
+        );
+
+        DataSet dataSet = new DataSet(dataRows, dataConfiguration);
+
+        List<DataRowTransformationError> dataRowTransformationErrors =
+                List.of(
+                        new DataRowTransformationError(
+                                0,
+                                List.of("1"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                        ),
+                        new DataRowTransformationError(
+                                4,
+                                List.of("5"),
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);

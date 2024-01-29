@@ -1,14 +1,18 @@
+<app-info-card [hidden]="error === ''" typeClass="card-failure">
+    <div>{{error}}</div>
+</app-info-card>
+
 <div class="p-5">
     <div class="d-flex flex-column mb-3">
         <div *ngFor="let column of configuration.getColumnConfigurations().getAll(), index as i">
-            <app-attribute-configuration [attrNumber]="i.toString()" [column]="column">
+            <app-attribute-configuration [attrNumber]="i.toString()" [column]="column" (onValidation)="onValidation($event)">
 
             </app-attribute-configuration>
         </div>
 
     </div>
-    <div class="px-2">
-        <button mat-raised-button color="primary" (click)="confirmConfiguration()">Confirm configuration and start validation</button>
+    <div class="px-1">
+        <button mat-raised-button color="primary" (click)="confirmConfiguration()" [disabled]="!isValid">Confirm configuration and start validation</button>
     </div>
     <div class="px-2">
         <button mat-raised-button color="primary" (click)="downloadConfiguration()">Download configuration as YAML</button>

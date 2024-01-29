@@ -1,20 +1,21 @@
 package de.kiaim.platform.model.data;
 
-import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
-import de.kiaim.platform.model.data.configuration.Configuration;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
-import de.kiaim.platform.model.data.configuration.DateFormatConfiguration;
+import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.exception.DateFormatException;
+import de.kiaim.platform.model.data.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class DateData extends Data {
 
 	private final LocalDate value;
@@ -32,25 +33,33 @@ public class DateData extends Data {
 		private LocalDate value;
 
 		private DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+		private LocalDate minValue = LocalDate.MIN;
+		private LocalDate maxValue = LocalDate.MAX;
 
 		/**
 		 * Sets the value of the resulting Date Object
 		 * @param value The String value to be set
 		 * @param configuration The List of Configuration objects for the column
 		 * @return DateDataBuilder (this)
-		 * @throws Exception if validation is failed
+		 * @throws DateFormatException if the given value could not be transformed into a date using the configured format.
+		 * @throws ValueNotInRangeException if the transformed date is not in the configured range.
 		 */
 		@Override
-		public DateDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+		public DateDataBuilder setValue(String value, List<Configuration> configuration)
+				throws DateFormatException, ValueNotInRangeException {
 			processConfigurations(configuration);
 
 			try {
 				this.value = LocalDate.parse(value, formatter);
-				return this;
 			} catch(Exception e) {
 				throw new DateFormatException();
 			}
 
+			if (this.value.isBefore(minValue) || this.value.isAfter(maxValue)) {
+				throw new ValueNotInRangeException();
+			}
+
+			return this;
 		}
 
 		/**
@@ -71,6 +80,8 @@ public class DateData extends Data {
 			for (Configuration configuration : configurationList) {
 				if (configuration instanceof DateFormatConfiguration) {
 					processDateFormatConfiguration((DateFormatConfiguration) configuration);
+				} else if (configuration instanceof RangeConfiguration) {
+					processRangeConfiguration((RangeConfiguration) configuration);
 				}
 			}
 		}
@@ -84,6 +95,11 @@ public class DateData extends Data {
 		 */
 		private void processDateFormatConfiguration(DateFormatConfiguration configuration) {
 			this.formatter = DateTimeFormatter.ofPattern(configuration.getDateFormatter());
+		}
+
+		private void processRangeConfiguration(RangeConfiguration rangeConfiguration) {
+			this.minValue = rangeConfiguration.getMinValue().asDate();
+			this.maxValue = rangeConfiguration.getMaxValue().asDate();
 		}
 	}
 }

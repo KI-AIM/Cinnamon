@@ -1,13 +1,15 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.helper.DataTransformationHelper;
-import de.kiaim.platform.helper.ExceptionToTransformationErrorMapper;
 import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.data.exception.DataBuildingException;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.parameters.P;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,9 +20,6 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
     @Autowired
     DataTransformationHelper dataTransformationHelper;
-
-    @Autowired
-    ExceptionToTransformationErrorMapper exceptionToTransformationErrorMapper;
 
     /**
      * Transforms a row into a DataRow and appends it to the given list of data rows.
@@ -63,10 +62,9 @@ public abstract class CommonDataProcessor implements DataProcessor {
             try {
                 Data transformedData = this.dataTransformationHelper.transformData(col, columnConfiguration);
                 transformedCol.add(transformedData);
-            } catch (Exception e) {
+            } catch (DataBuildingException e) {
                 //Resolve to error type, to easier parse information to frontend
-                TransformationErrorType errorType = this.exceptionToTransformationErrorMapper.mapException(e);
-                newError.addError(new DataTransformationError(colIndex, errorType));
+                newError.addError(new DataTransformationError(colIndex, e.getTransformationErrorType()));
 
                 // set flag to not add row to DataSet
                 errorInRow = true;
@@ -166,6 +164,27 @@ public abstract class CommonDataProcessor implements DataProcessor {
         }
 
         return resultList;
+    }
+
+    public List<String> normalizeColumnNames(final String[] columnNames) {
+        return Arrays.stream(columnNames).map(columnName -> columnName.replace(" ", "_")).toList();
+    }
+
+    public void validateColumnNames(final List<String> columnNames) throws BadColumnNameException {
+        final List<Pair<Integer, String>> invalidColumnNames = new ArrayList<>();
+        for (int columnIndex = 0; columnIndex < columnNames.size(); ++columnIndex) {
+            final String columnName = columnNames.get(columnIndex);
+            if (columnName.contains(" ")) {
+                invalidColumnNames.add(new Pair<>(columnIndex, columnName));
+            }
+        }
+        if (!invalidColumnNames.isEmpty()) {
+            String message = "Column names must not contain spaces. Please corrects the following column names: ";
+            message += String.join(", ", invalidColumnNames.stream()
+                                                           .map(pair -> pair.element0() + ":\"" + pair.element1() + "\"")
+                                                           .toList());
+            throw new BadColumnNameException(message.toString());
+        }
     }
 
     /**

@@ -1,6 +1,7 @@
 package de.kiaim.platform.model.data;
 
 import de.kiaim.platform.model.data.configuration.Configuration;
+import de.kiaim.platform.model.data.exception.DataBuildingException;
 import jakarta.annotation.Nullable;
 
 import java.util.List;
@@ -15,9 +16,9 @@ public interface DataBuilder {
      * @param value The String value to be set
      * @param configuration The List of Configuration objects for the column
      * @return DataBuilder (this)
-     * @throws Exception if value cannot be set and validated
+     * @throws DataBuildingException if value cannot be set and validated
      */
-    DataBuilder setValue(String value, List<Configuration> configuration) throws Exception;
+    DataBuilder setValue(String value, List<Configuration> configuration) throws DataBuildingException;
 
     /**
      * Builds the BooleanData Object.

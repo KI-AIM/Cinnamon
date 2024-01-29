@@ -3,12 +3,16 @@ package de.kiaim.platform.model.data;
 import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.exception.StringPatternException;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class StringData extends Data {
 
 	private final String value;
@@ -32,10 +36,10 @@ public class StringData extends Data {
 		 * @param value The value to be set
 		 * @param configuration The List of Configuration objects for the column
 		 * @return StringDataBuilder (this)
-		 * @throws Exception if validation is failed
+		 * @throws StringPatternException if validation is failed
 		 */
 		@Override
-		public StringDataBuilder setValue(String value, List<Configuration> configuration) throws Exception {
+		public StringDataBuilder setValue(String value, List<Configuration> configuration) throws StringPatternException {
 			processConfigurations(value, configuration);
 
 			this.value = value;
@@ -56,9 +60,9 @@ public class StringData extends Data {
 		 * Processes the parsed configurations one by one for validation
 		 * @param value The value that should be validated
 		 * @param configurationList A List of different Configuration objects
-		 * @throws Exception if validation fails
+		 * @throws StringPatternException if validation fails
 		 */
-		private void processConfigurations(String value, List<Configuration> configurationList) throws Exception {
+		private void processConfigurations(String value, List<Configuration> configurationList) throws StringPatternException {
 			for (Configuration configuration : configurationList) {
 				if (configuration instanceof StringPatternConfiguration) {
 					processStringPatternConfiguration(value, (StringPatternConfiguration) configuration);

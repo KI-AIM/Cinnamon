@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
@@ -49,7 +50,8 @@ public class CSVProcessingTests {
         DataConfiguration config = getDataConfiguration();
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
 
         TransformationResult expectedResult = testReadMethodOfCsvProcessor_getExpectedTransformationResult();
 
@@ -72,7 +74,8 @@ public class CSVProcessingTests {
         DataConfiguration config = getDataConfiguration();
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
 
         TransformationResult expectedResult = testReadMethodOfCsvProcessor_getExpectedTransformationResult();
 

@@ -11,6 +11,7 @@ import { plainToClass } from 'class-transformer';
 import { TransformationService } from '../../services/transformation.service';
 import { TransformationResult } from 'src/app/shared/model/transformation-result';
 import { LoadingService } from 'src/app/shared/services/loading.service';
+import { NgForm } from '@angular/forms';
 
 @Component({
     selector: 'app-data-configuration',
@@ -18,6 +19,8 @@ import { LoadingService } from 'src/app/shared/services/loading.service';
     styleUrls: ['./data-configuration.component.less'],
 })
 export class DataConfigurationComponent {
+    error: string;
+    isValid: boolean;
 
     constructor(
         public configuration: DataConfigurationService,
@@ -29,6 +32,8 @@ export class DataConfigurationComponent {
         private transformationService: TransformationService,
         public loadingService: LoadingService,
     ) {
+        this.error = "";
+        this.isValid = true;
         this.titleService.setPageTitle("Data configuration");
     }
 
@@ -61,6 +66,10 @@ export class DataConfigurationComponent {
         });
     }
 
+    onValidation(isValid: boolean) {
+        this.isValid = isValid;
+    }
+
     private setEmptyColumnNames() {
         this.configuration.getDataConfiguration().configurations.forEach((column, index) => {
             if (column.name == undefined || column.name == null || column.name == "") {
@@ -78,9 +87,10 @@ export class DataConfigurationComponent {
     }
 
     private handleError(error: HttpErrorResponse) {
-        this.loadingService.setLoadingStatus(false); 
+        this.loadingService.setLoadingStatus(false);
+        this.error = error.error.errors;
 
-        //TODO implement me
+        window.scroll(0, 0);
     }
 
     private saveFile(fileData: Blob, fileName: string) {

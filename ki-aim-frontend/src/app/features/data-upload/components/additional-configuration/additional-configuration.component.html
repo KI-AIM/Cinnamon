@@ -38,6 +38,8 @@
                 *ngIf="currentConfigurationSelection == ConfigurationType.DATEFORMAT"></app-dateformat>
             <app-datetimeformat #dateTimeFormat
                 *ngIf="currentConfigurationSelection == ConfigurationType.DATETIMEFORMAT"></app-datetimeformat>
+            <app-range #range [type]="column.type"
+                *ngIf="currentConfigurationSelection == ConfigurationType.RANGE"></app-range>
             <app-stringpattern #stringPattern
                 *ngIf="currentConfigurationSelection == ConfigurationType.STRINGPATTERN"></app-stringpattern>
 

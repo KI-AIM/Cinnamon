@@ -4,10 +4,12 @@ import { DateFormatConfiguration } from "./date-format-configuration";
 import { DateTimeFormatConfiguration } from "./date-time-format-configuration";
 import { StringPatternConfiguration } from "./string-pattern-configuration";
 import { dataTypeFromString } from "./data-type";
+import { RangeConfiguration } from "./range-configuration";
 
 export enum ConfigurationType {
 	DATEFORMAT,
 	DATETIMEFORMAT,
+	RANGE,
 	STRINGPATTERN,
 }
 
@@ -19,6 +21,8 @@ export function getConfigurationTypeForString(
 			return ConfigurationType.DATEFORMAT;
 		case "DATETIMEFORMAT":
 			return ConfigurationType.DATETIMEFORMAT;
+		case "RANGE":
+			return ConfigurationType.RANGE;
 		case "STRINGPATTERN":
 			return ConfigurationType.STRINGPATTERN;
 		default:
@@ -39,10 +43,10 @@ export const DataTypeToConfigurationTypeMapping: Record<
 	ConfigurationType[]
 > = {
 	[DataType.BOOLEAN]: [],
-	[DataType.DECIMAL]: [],
-	[DataType.INTEGER]: [],
-	[DataType.DATE]: [ConfigurationType.DATEFORMAT],
-	[DataType.DATE_TIME]: [ConfigurationType.DATETIMEFORMAT],
+	[DataType.DECIMAL]: [ConfigurationType.RANGE],
+	[DataType.INTEGER]: [ConfigurationType.RANGE],
+	[DataType.DATE]: [ConfigurationType.DATEFORMAT, ConfigurationType.RANGE],
+	[DataType.DATE_TIME]: [ConfigurationType.DATETIMEFORMAT, ConfigurationType.RANGE],
 	[DataType.STRING]: [ConfigurationType.STRINGPATTERN],
 	[DataType.UNDEFINED]: [],
 };
@@ -62,6 +66,8 @@ export function getConfigurationForConfigurationType(
 			return DateFormatConfiguration.name;
 		case ConfigurationType.DATETIMEFORMAT:
 			return DateTimeFormatConfiguration.name;
+		case ConfigurationType.RANGE:
+			return RangeConfiguration.name;
 		case ConfigurationType.STRINGPATTERN:
 			return StringPatternConfiguration.name;
 	}

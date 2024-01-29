@@ -272,8 +272,7 @@ class DataControllerTest extends ControllerTest {
 	void loadConfig() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration"))
 		       .andExpect(status().isOk())
 		       .andExpect(
 				       content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataConfiguration())));
@@ -284,7 +283,6 @@ class DataControllerTest extends ControllerTest {
 		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
 		                                      .param("format", "yaml"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(TestModelHelper.generateDataConfigurationAsYaml()));
@@ -307,8 +305,7 @@ class DataControllerTest extends ControllerTest {
 
 		assertDoesNotThrow(() -> Long.parseLong(result));
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
 		       .andExpect(status().isOk())
 		       .andExpect(
 				       content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataSet().getData())));
@@ -332,16 +329,14 @@ class DataControllerTest extends ControllerTest {
 
 		assertDoesNotThrow(() -> Long.parseLong(result));
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataSet())));
 	}
 
 	@Test
 	void loadDataSetNoDataSet() throws Exception {
-		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		                       .andExpect(status().isBadRequest())
 		                       .andReturn().getResponse().getContentAsString();
 
@@ -351,8 +346,7 @@ class DataControllerTest extends ControllerTest {
 	@WithAnonymousUser
 	@Test
 	void loadDataSetNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isUnauthorized());
 	}
 

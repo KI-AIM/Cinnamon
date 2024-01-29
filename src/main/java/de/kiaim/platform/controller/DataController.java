@@ -212,7 +212,6 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "/configuration",
-	            consumes = MediaType.APPLICATION_JSON_VALUE,
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadConfig(
 			@Parameter(description = "Output format of the configuration. Allowed are 'json' and 'yaml'. If the value empty of invalid, json will be returned.",
@@ -253,7 +252,6 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "/data",
-	            consumes = MediaType.APPLICATION_JSON_VALUE,
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadData(
 			@AuthenticationPrincipal UserEntity user
@@ -278,7 +276,6 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "",
-	            consumes = MediaType.APPLICATION_JSON_VALUE,
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadDataSet(
 			@AuthenticationPrincipal UserEntity user
@@ -302,7 +299,6 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@DeleteMapping(value = "",
-	               consumes = MediaType.APPLICATION_JSON_VALUE,
 	               produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> deleteData(
 			@AuthenticationPrincipal UserEntity user

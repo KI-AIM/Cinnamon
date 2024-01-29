@@ -135,30 +135,36 @@ public class TestModelHelper {
 				- index: 0
 				  name: "column0_boolean"
 				  type: "BOOLEAN"
+				  scale: "NOMINAL"
 				  configurations: []
 				- index: 1
 				  name: "column1_date"
 				  type: "DATE"
+				  scale: "DATE"
 				  configurations:
 				  - !<DateFormatConfiguration>
 				    dateFormatter: "yyyy-MM-dd"
 				- index: 2
 				  name: "column2_date_time"
 				  type: "DATE_TIME"
+				  scale: "DATE"
 				  configurations:
 				  - !<DateTimeFormatConfiguration>
 				    dateTimeFormatter: "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
 				- index: 3
 				  name: "column3_decimal"
 				  type: "DECIMAL"
+				  scale: "RATIO"
 				  configurations: []
 				- index: 4
 				  name: "column4_integer"
 				  type: "INTEGER"
+				  scale: "INTERVAL"
 				  configurations: []
 				- index: 5
 				  name: "column5_string"
 				  type: "STRING"
+				  scale: "NOMINAL"
 				  configurations:
 				  - !<StringPatternConfiguration>
 				    pattern: ".*"

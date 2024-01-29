@@ -54,14 +54,18 @@ export class DataConfigurationComponent {
     }
 
     downloadConfiguration() {
+        console.log("lets go");
         this.configuration.downloadDataConfigurationAsYaml().subscribe({
-            next: (data: Blob) => {
-                const blob = new Blob([data], { type: 'text/yaml' });
-                const fileName = this.fileService.getFile().name
-                this.saveFile(blob, fileName);
+            next: (data: Object) => {
+                console.log(data)
+                console.log("hi");
+                // const blob = new Blob([data], { type: 'text/yaml' });
+                // const fileName = this.fileService.getFile().name + "configuration.yaml"
+                // this.saveFile(blob, fileName);
             },
             error: (error) => {
-
+                console.log(error)
+                console.log("noooo");
             },
         });
     }
@@ -94,6 +98,9 @@ export class DataConfigurationComponent {
     }
 
     private saveFile(fileData: Blob, fileName: string) {
+                console.log(fileData)
+                console.log(fileName)
+
         const anchor = document.createElement('a');
         anchor.href = URL.createObjectURL(fileData);
         anchor.download = fileName;

@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -146,7 +147,7 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@PostMapping(value = "/configuration",
-	             consumes = MediaType.APPLICATION_JSON_VALUE,
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeConfig(
 			@Parameter(description = "Metadata describing the format of the data.",
@@ -212,7 +213,7 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "/configuration",
-	            produces = MediaType.APPLICATION_JSON_VALUE)
+	            produces = {MediaType.APPLICATION_JSON_VALUE, "application/x-yaml"})
 	public ResponseEntity<Object> loadConfig(
 			@Parameter(description = "Output format of the configuration. Allowed are 'json' and 'yaml'. If the value empty of invalid, json will be returned.",
 			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -220,11 +221,13 @@ public class DataController {
 			@RequestParam(defaultValue = "json") String format,
 			@AuthenticationPrincipal UserEntity user
 	) throws JsonProcessingException {
+//		HttpHeaders jsonResponseHeader = new HttpHeaders();
+//		jsonResponseHeader.set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
 		ResponseEntity<Object> response = handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
 
 		if (response.getStatusCode().is2xxSuccessful() && format.equals("yaml")) {
-			response = new ResponseEntity<>(createYamlMapper()
-					                                .writeValueAsString(response.getBody()), response.getStatusCode());
+			final String yaml = createYamlMapper().writeValueAsString(response.getBody());
+			response = ResponseEntity.ok().header("Content-Type", "application/x-yaml").body(yaml);
 		}
 
 		return response;

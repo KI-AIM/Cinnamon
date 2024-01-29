@@ -3,7 +3,7 @@ import { DataConfiguration } from '../model/data-configuration';
 import { ColumnConfiguration } from '../model/column-configuration';
 import { List } from 'src/app/core/utils/list';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, catchError, switchMap } from 'rxjs';
 import { instanceToPlain } from 'class-transformer';
 
 @Injectable({
@@ -36,13 +36,13 @@ export class DataConfigurationService {
         return this.httpClient.post<Number>("/api/data/configuration", formData);
     }
 
-    public downloadDataConfigurationAsYaml(): Observable<Blob> {
-        this.postDataConfiguration().subscribe({
-            next: (data: Number) => {
-            },
-            error: (error) => {
-            },
-        });
-        return this.httpClient.get<Blob>("/api/data/configuration?format=yaml");
+    public downloadDataConfigurationAsYaml(): Observable<Object> {
+        return this.postDataConfiguration().pipe(switchMap((response) => {
+            return this.httpClient.get<Object>("/api/data/configuration?format=yaml");
+        }),
+        catchError((error) => {
+            console.log(error);
+            return this.httpClient.get<Blob>("/api/data/configuration?format=yaml");
+        }));
     }
 }

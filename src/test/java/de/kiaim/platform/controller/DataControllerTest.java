@@ -161,8 +161,7 @@ class DataControllerTest extends ControllerTest {
 	void storeConfig() throws Exception {
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
-		final String result = mockMvc.perform(post("/api/data/configuration")
-				                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
+		final String result = mockMvc.perform(multipart("/api/data/configuration")
 				                                      .param("configuration",
 				                                             objectMapper.writeValueAsString(configuration)))
 		                             .andExpect(status().isOk())
@@ -184,8 +183,7 @@ class DataControllerTest extends ControllerTest {
 
 		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
 
-		final String resultUpdate = mockMvc.perform(post("/api/data/configuration")
-				                                            .contentType(MediaType.APPLICATION_JSON_VALUE)
+		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
 				                                            .param("configuration",
 				                                                   objectMapper.writeValueAsString(
 						                                                   configurationUpdate)))

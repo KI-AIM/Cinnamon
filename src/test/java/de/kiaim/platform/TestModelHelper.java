@@ -143,6 +143,9 @@ public class TestModelHelper {
 				  configurations:
 				  - !<DateFormatConfiguration>
 				    dateFormatter: "yyyy-MM-dd"
+				  - !<RangeConfiguration>
+				    minValue: "1970-01-01"
+				    maxValue: "2030-01-01"
 				- index: 2
 				  name: "column2_date_time"
 				  type: "DATE_TIME"
@@ -150,6 +153,9 @@ public class TestModelHelper {
 				  configurations:
 				  - !<DateTimeFormatConfiguration>
 				    dateTimeFormatter: "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+				  - !<RangeConfiguration>
+				    minValue: "1970-01-01T00:01:00"
+				    maxValue: "2030-01-01T23:59:00"
 				- index: 3
 				  name: "column3_decimal"
 				  type: "DECIMAL"
@@ -159,7 +165,10 @@ public class TestModelHelper {
 				  name: "column4_integer"
 				  type: "INTEGER"
 				  scale: "INTERVAL"
-				  configurations: []
+				  configurations:
+				  - !<RangeConfiguration>
+				    minValue: 0
+				    maxValue: 100
 				- index: 5
 				  name: "column5_string"
 				  type: "STRING"

@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -255,8 +254,7 @@ class DataControllerTest extends ControllerTest {
 
 		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
 
-		final String resultUpdate = mockMvc.perform(post("/api/data/configuration")
-				                                            .contentType(MediaType.APPLICATION_JSON_VALUE)
+		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
 				                                            .param("configuration",
 				                                                   objectMapper.writeValueAsString(
 						                                                   configurationUpdate)))

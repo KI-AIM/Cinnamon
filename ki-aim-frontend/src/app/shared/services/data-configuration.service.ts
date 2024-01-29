@@ -38,7 +38,7 @@ export class DataConfigurationService {
 
     public downloadDataConfigurationAsYaml(): Observable<Blob> {
         return this.postDataConfiguration().pipe(switchMap((response) => {
-            return this.httpClient.get<Blob>("/api/data/configuration?format=json", {responseType: 'text' as 'json'});
+            return this.httpClient.get<Blob>("/api/data/configuration?format=yaml", {responseType: 'text' as 'json'});
         }));
     }
 }

@@ -354,6 +354,7 @@ public class DataController {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration);
+				databaseService.store((DataConfiguration) result, user);
 			}
 			case DELETE -> {
 				databaseService.delete(user);
@@ -381,6 +382,7 @@ public class DataController {
 			case VALIDATE -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
+				databaseService.store(configuration, user);
 				result = dataProcessor.read(inputStream, fileConfiguration, configuration);
 			}
 			default -> {

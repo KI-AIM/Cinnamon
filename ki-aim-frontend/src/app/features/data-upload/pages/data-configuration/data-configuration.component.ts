@@ -48,6 +48,19 @@ export class DataConfigurationComponent {
         });
     }
 
+    downloadConfiguration() {
+        this.configuration.downloadDataConfigurationAsYaml().subscribe({
+            next: (data: Blob) => {
+                const blob = new Blob([data], { type: 'text/yaml' });
+                const fileName = this.fileService.getFile().name
+                this.saveFile(blob, fileName);
+            },
+            error: (error) => {
+
+            },
+        });
+    }
+
     private setEmptyColumnNames() {
         this.configuration.getDataConfiguration().configurations.forEach((column, index) => {
             if (column.name == undefined || column.name == null || column.name == "") {
@@ -70,4 +83,12 @@ export class DataConfigurationComponent {
         //TODO implement me
     }
 
+    private saveFile(fileData: Blob, fileName: string) {
+        const anchor = document.createElement('a');
+        anchor.href = URL.createObjectURL(fileData);
+        anchor.download = fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+    }
 }

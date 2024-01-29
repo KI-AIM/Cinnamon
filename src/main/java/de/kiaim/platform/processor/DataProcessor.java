@@ -1,5 +1,6 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
@@ -19,7 +20,8 @@ public interface DataProcessor {
      * @param fileConfiguration Configuration describing the format of the data.
      * @return TransformationResult
      */
-    TransformationResult read(InputStream data, FileConfiguration fileConfiguration, DataConfiguration configuration);
+    TransformationResult read(InputStream data, FileConfiguration fileConfiguration, DataConfiguration configuration)
+		    throws BadColumnNameException;
 
     /**
      * Receives data from frontend, converts it to

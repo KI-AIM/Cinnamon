@@ -17,12 +17,12 @@ class DataschemeGeneratorTest {
 		final String query = dataschemeGenerator.createSchema(dataConfiguration, "data_set_1");
 
 		final String expected = "CREATE TABLE data_set_1(" +
-		                        "column0_boolean boolean NOT NULL," +
-		                        "column1_date date NOT NULL," +
-		                        "column2_date_time timestamp NOT NULL," +
-		                        "column3_decimal numeric NOT NULL," +
-		                        "column4_integer integer NOT NULL," +
-		                        "column5_string character varying NOT NULL" +
+		                        "\"column0_boolean\" boolean NOT NULL," +
+		                        "\"column1_date\" date NOT NULL," +
+		                        "\"column2_date_time\" timestamp NOT NULL," +
+		                        "\"column3_decimal\" numeric NOT NULL," +
+		                        "\"column4_integer\" integer NOT NULL," +
+		                        "\"column5_string\" character varying NOT NULL" +
 		                        ");";
 
 		assertEquals(expected, query);

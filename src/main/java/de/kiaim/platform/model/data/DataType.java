@@ -6,11 +6,11 @@ import lombok.Getter;
 @Getter
 public enum DataType {
 	BOOLEAN(DataScale.NOMINAL),
-	DATE_TIME(DataScale.INTERVAL),
+	DATE_TIME(DataScale.DATE),
 	DECIMAL(DataScale.RATIO),
 	INTEGER(DataScale.INTERVAL),
 	STRING(DataScale.NOMINAL),
-	DATE(DataScale.INTERVAL),
+	DATE(DataScale.DATE),
 	UNDEFINED(DataScale.NOMINAL);
 
 	DataType(final DataScale defaultScale) {

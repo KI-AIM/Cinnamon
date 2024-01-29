@@ -1,14 +1,11 @@
 package de.kiaim.platform.controller;
 
-import de.kiaim.platform.exception.ApiException;
+import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
-import de.kiaim.platform.exception.BadDataSetIdException;
-import de.kiaim.platform.exception.BadFileException;
-import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.CsvProcessor;
@@ -339,7 +336,7 @@ public class DataController {
 			final FileConfiguration fileConfiguration,
 			final DataConfiguration configuration,
 			final UserEntity requestUser
-	) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
+	) throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final Object result;
 		switch (requestType) {

@@ -1,4 +1,5 @@
-import { Component, Input } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { NgModel } from '@angular/forms';
 import { List } from 'src/app/core/utils/list';
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataScale } from 'src/app/shared/model/data-scale';
@@ -9,14 +10,21 @@ import { DataType } from 'src/app/shared/model/data-type';
     templateUrl: './attribute-configuration.component.html',
     styleUrls: ['./attribute-configuration.component.less'],
 })
-export class AttributeConfigurationComponent {
+export class AttributeConfigurationComponent implements AfterViewInit {
     @Input() attrNumber: String; 
-    @Input() column: ColumnConfiguration; 
-    
+    @Input() column: ColumnConfiguration;
 
-    constructor() {
+    @Output() onValidation = new EventEmitter<boolean>();
+
+    @ViewChild("name") nameInput: NgModel;
+
+    constructor() { }
+
+    ngAfterViewInit(): void {
+        this.nameInput.statusChanges?.subscribe(() => {
+            this.onValidation.emit(this.nameInput.valid ?? true)
+        });
     }
-
 
     getDataTypes(): List<String> {
         const types = Object.keys(DataType).filter(x => !(parseInt(x) >= 0));

@@ -22,6 +22,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)
@@ -63,7 +64,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
 
         TransformationResult expectedResult = testDataProcessingAndFindMissingValues_expectedTransformationResult();
 
@@ -161,12 +163,13 @@ public class DataTransformationTests {
 
         config.addColumnConfiguration(
                 new ColumnConfiguration(
-                        0, "date", DataType.DATE, DataScale.INTERVAL, List.of(dateFormatConfiguration)
+                        0, "date", DataType.DATE, DataScale.DATE, List.of(dateFormatConfiguration)
                 )
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndDateFormatter_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -194,7 +197,7 @@ public class DataTransformationTests {
 
         DataConfiguration dataConfiguration = new DataConfiguration();
         dataConfiguration.setConfigurations(List.of(
-                new ColumnConfiguration(0, "date", DataType.DATE, DataScale.INTERVAL, List.of(dateFormatConfiguration))
+                new ColumnConfiguration(0, "date", DataType.DATE, DataScale.DATE, List.of(dateFormatConfiguration))
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);
@@ -295,12 +298,13 @@ public class DataTransformationTests {
 
         config.addColumnConfiguration(
                 new ColumnConfiguration(
-                        0, "date-time", DataType.DATE_TIME, DataScale.INTERVAL, List.of(dateTimeFormatConfiguration)
+                        0, "date-time", DataType.DATE_TIME, DataScale.DATE, List.of(dateTimeFormatConfiguration)
                 )
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndDateTimeFormatter_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -328,7 +332,7 @@ public class DataTransformationTests {
 
         DataConfiguration dataConfiguration = new DataConfiguration();
         dataConfiguration.setConfigurations(List.of(
-                new ColumnConfiguration(0, "date-time", DataType.DATE_TIME, DataScale.INTERVAL, List.of(dateTimeFormatConfiguration))
+                new ColumnConfiguration(0, "date-time", DataType.DATE_TIME, DataScale.DATE, List.of(dateTimeFormatConfiguration))
         ));
 
         DataSet dataSet = new DataSet(dataRows, dataConfiguration);
@@ -432,7 +436,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndStringPattern_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -496,7 +501,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndBooleanFormats_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -559,7 +565,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndFloatFormat_expectedResult();
 
         assertEquals(actualResult, expectedResult);
@@ -684,7 +691,8 @@ public class DataTransformationTests {
         );
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+        TransformationResult actualResult = assertDoesNotThrow(
+                () -> csvProcessor.read(stream, fileConfiguration, config));
         TransformationResult expectedResult = testDataProcessingAndIntegerFormat_expectedResult();
 
         assertEquals(actualResult, expectedResult);

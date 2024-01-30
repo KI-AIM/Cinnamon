@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -161,8 +160,7 @@ class DataControllerTest extends ControllerTest {
 	void storeConfig() throws Exception {
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
-		final String result = mockMvc.perform(post("/api/data/configuration")
-				                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
+		final String result = mockMvc.perform(multipart("/api/data/configuration")
 				                                      .param("configuration",
 				                                             objectMapper.writeValueAsString(configuration)))
 		                             .andExpect(status().isOk())
@@ -184,8 +182,7 @@ class DataControllerTest extends ControllerTest {
 
 		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
 
-		final String resultUpdate = mockMvc.perform(post("/api/data/configuration")
-				                                            .contentType(MediaType.APPLICATION_JSON_VALUE)
+		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
 				                                            .param("configuration",
 				                                                   objectMapper.writeValueAsString(
 						                                                   configurationUpdate)))
@@ -233,8 +230,7 @@ class DataControllerTest extends ControllerTest {
 		assertEquals(dataSetId, testUser.getDataConfiguration().getId(), "User has been associated with the wrong dataset!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
-		                                      .param("dataSetId", String.valueOf(dataSetId)))
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk());
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
@@ -258,8 +254,7 @@ class DataControllerTest extends ControllerTest {
 
 		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
 
-		final String resultUpdate = mockMvc.perform(post("/api/data/configuration")
-				                                            .contentType(MediaType.APPLICATION_JSON_VALUE)
+		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
 				                                            .param("configuration",
 				                                                   objectMapper.writeValueAsString(
 						                                                   configurationUpdate)))
@@ -271,27 +266,22 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadConfig() throws Exception {
-		MockMultipartFile file = TestModelHelper.loadCsvFile();
-		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
-		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+		postData();
 
-		String result = mockMvc.perform(multipart("/api/data")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration))
-				                                .param("configuration",
-				                                       objectMapper.writeValueAsString(configuration)))
-		                       .andExpect(status().isOk())
-		                       .andReturn().getResponse().getContentAsString();
-
-		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
-		                                      .param("dataSetId", String.valueOf(dataSetId)))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration"))
 		       .andExpect(status().isOk())
 		       .andExpect(
 				       content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataConfiguration())));
+	}
+
+	@Test
+	void loadConfigYaml() throws Exception {
+		postData();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
+		                                      .param("format", "yaml"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(TestModelHelper.generateDataConfigurationAsYaml()));
 	}
 
 	@Test
@@ -309,11 +299,9 @@ class DataControllerTest extends ControllerTest {
 		                       .andExpect(status().isOk())
 		                       .andReturn().getResponse().getContentAsString();
 
-		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
+		assertDoesNotThrow(() -> Long.parseLong(result));
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE)
-		                                      .param("dataSetId", String.valueOf(dataSetId)))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
 		       .andExpect(status().isOk())
 		       .andExpect(
 				       content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataSet().getData())));
@@ -337,16 +325,14 @@ class DataControllerTest extends ControllerTest {
 
 		assertDoesNotThrow(() -> Long.parseLong(result));
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataSet())));
 	}
 
 	@Test
 	void loadDataSetNoDataSet() throws Exception {
-		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		                       .andExpect(status().isBadRequest())
 		                       .andReturn().getResponse().getContentAsString();
 
@@ -356,8 +342,7 @@ class DataControllerTest extends ControllerTest {
 	@WithAnonymousUser
 	@Test
 	void loadDataSetNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isUnauthorized());
 	}
 
@@ -369,6 +354,23 @@ class DataControllerTest extends ControllerTest {
 		                       .andReturn().getResponse().getContentAsString();
 
 		testErrorMessage(result, "User has no configuration!");
+	}
+
+	private void postData() throws Exception {
+		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+
+		String result = mockMvc.perform(multipart("/api/data")
+				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration))
+				                                .param("configuration",
+				                                       objectMapper.writeValueAsString(configuration)))
+		                       .andExpect(status().isOk())
+		                       .andReturn().getResponse().getContentAsString();
+
+		assertDoesNotThrow(() -> Long.parseLong(result));
 	}
 
 }

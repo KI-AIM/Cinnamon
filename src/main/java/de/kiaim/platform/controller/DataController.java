@@ -1,5 +1,11 @@
 package de.kiaim.platform.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.file.FileConfiguration;
@@ -142,7 +148,7 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@PostMapping(value = "/configuration",
-	             consumes = MediaType.APPLICATION_JSON_VALUE,
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeConfig(
 			@Parameter(description = "Metadata describing the format of the data.",
@@ -192,12 +198,16 @@ public class DataController {
 	}
 
 	@Operation(summary = "Returns the configuration of the data set.",
-	           description = "Returns the configuration of the data set.")
+	           description = "Returns the configuration of the data set. Available formats are JSON and YAML")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully found the configuration. Returns the configuration of the data set.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = DataConfiguration.class))}),
+			             content = {
+					             @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+					                      schema = @Schema(implementation = DataConfiguration.class)),
+					             @Content(mediaType = "application/x-yaml",
+					                      schema = @Schema(implementation = DataConfiguration.class)),
+			             }),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored configuration.",
 			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -208,12 +218,22 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "/configuration",
-	            consumes = MediaType.APPLICATION_JSON_VALUE,
-	            produces = MediaType.APPLICATION_JSON_VALUE)
+	            produces = {MediaType.APPLICATION_JSON_VALUE, "application/x-yaml"})
 	public ResponseEntity<Object> loadConfig(
+			@Parameter(description = "Output format of the configuration. Allowed are 'json' and 'yaml'. If the value empty of invalid, json will be returned.",
+			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                              schema = @Schema(implementation = String.class)))
+			@RequestParam(defaultValue = "json") String format,
 			@AuthenticationPrincipal UserEntity user
-	) {
-		return handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
+	) throws JsonProcessingException {
+		ResponseEntity<Object> response = handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
+
+		if (response.getStatusCode().is2xxSuccessful() && format.equals("yaml")) {
+			final String yaml = createYamlMapper().writeValueAsString(response.getBody());
+			response = ResponseEntity.ok().header("Content-Type", "application/x-yaml").body(yaml);
+		}
+
+		return response;
 	}
 
 	@Operation(summary = "Returns the data of the data set.",
@@ -238,7 +258,6 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "/data",
-	            consumes = MediaType.APPLICATION_JSON_VALUE,
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadData(
 			@AuthenticationPrincipal UserEntity user
@@ -263,7 +282,6 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "",
-	            consumes = MediaType.APPLICATION_JSON_VALUE,
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadDataSet(
 			@AuthenticationPrincipal UserEntity user
@@ -287,7 +305,6 @@ public class DataController {
 			                                schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@DeleteMapping(value = "",
-	               consumes = MediaType.APPLICATION_JSON_VALUE,
 	               produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> deleteData(
 			@AuthenticationPrincipal UserEntity user
@@ -344,6 +361,7 @@ public class DataController {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration);
+				databaseService.store((DataConfiguration) result, user);
 			}
 			case DELETE -> {
 				databaseService.delete(user);
@@ -371,6 +389,7 @@ public class DataController {
 			case VALIDATE -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
+				databaseService.store(configuration, user);
 				result = dataProcessor.read(inputStream, fileConfiguration, configuration);
 			}
 			default -> {
@@ -417,6 +436,15 @@ public class DataController {
 		}
 
 		return file.getOriginalFilename().substring(fileExtensionBegin);
+	}
+
+	private ObjectMapper createYamlMapper() {
+		final YAMLFactory yamlFactory = new YAMLFactory();
+		yamlFactory.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER);
+		final ObjectMapper yamlMapper = new ObjectMapper(yamlFactory);
+		yamlMapper.registerModule(new JavaTimeModule());
+		yamlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		return yamlMapper;
 	}
 
 	private enum RequestType {

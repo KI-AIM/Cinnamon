@@ -11,7 +11,6 @@ import { plainToClass } from 'class-transformer';
 import { TransformationService } from '../../services/transformation.service';
 import { TransformationResult } from 'src/app/shared/model/transformation-result';
 import { LoadingService } from 'src/app/shared/services/loading.service';
-import { NgForm } from '@angular/forms';
 
 @Component({
     selector: 'app-data-configuration',
@@ -53,6 +52,19 @@ export class DataConfigurationComponent {
         });
     }
 
+    downloadConfiguration() {
+        this.configuration.downloadDataConfigurationAsYaml().subscribe({
+            next: (data: Blob) => {
+                const blob = new Blob([data], { type: 'text/yaml' });
+                const fileName = this.fileService.getFile().name + "-configuration.yaml"
+                this.saveFile(blob, fileName);
+            },
+            error: (error) => {
+                this.error = error;
+            },
+        });
+    }
+
     onValidation(isValid: boolean) {
         this.isValid = isValid;
     }
@@ -80,4 +92,12 @@ export class DataConfigurationComponent {
         window.scroll(0, 0);
     }
 
+    private saveFile(fileData: Blob, fileName: string) {
+        const anchor = document.createElement('a');
+        anchor.href = URL.createObjectURL(fileData);
+        anchor.download = fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+    }
 }

@@ -60,7 +60,7 @@ public class DatabaseService {
 	 * @throws InternalDataSetPersistenceException If the configuration could not be stored.
 	 */
 	@Transactional
-	public long store(final DataConfiguration dataConfiguration, final UserEntity user)
+	public long store(final DataConfiguration dataConfiguration, UserEntity user)
 			throws BadDataSetIdException, InternalDataSetPersistenceException {
 
 		// Store configuration

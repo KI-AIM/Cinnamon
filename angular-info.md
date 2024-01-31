@@ -82,7 +82,7 @@ This is used in several different components of the application. An example can 
 </div>
 ```
 
-Here the `uploadFile()` function is called:
+Here the `uploadFile()` function is called (from `upload-file.component.ts`):
 
 ```ts
 uploadFile() {
@@ -100,7 +100,7 @@ uploadFile() {
 }
 ```
 
-This function uses a service class (DataService) that provides an Oberservable object from a HTTPClient
+This function uses a service class (DataService - `data.service.ts`) that provides an Observable object from a HTTPClient in its `estimateData` function: 
 
 ```ts
 estimateData(file: File, fileConfig: FileConfiguration): Observable<Object> {

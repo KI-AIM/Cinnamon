@@ -286,20 +286,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadData() throws Exception {
-		MockMultipartFile file = TestModelHelper.loadCsvFile();
-		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
-		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
-
-		String result = mockMvc.perform(multipart("/api/data")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration))
-				                                .param("configuration",
-				                                       objectMapper.writeValueAsString(configuration)))
-		                       .andExpect(status().isOk())
-		                       .andReturn().getResponse().getContentAsString();
-
-		assertDoesNotThrow(() -> Long.parseLong(result));
+		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
 		       .andExpect(status().isOk())
@@ -310,20 +297,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadDataSet() throws Exception {
-		MockMultipartFile file = TestModelHelper.loadCsvFile();
-		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
-		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
-
-		String result = mockMvc.perform(multipart("/api/data")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration))
-				                                .param("configuration",
-				                                       objectMapper.writeValueAsString(configuration)))
-		                       .andExpect(status().isOk())
-		                       .andReturn().getResponse().getContentAsString();
-
-		assertDoesNotThrow(() -> Long.parseLong(result));
+		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isOk())
@@ -344,6 +318,27 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetNoPermissions() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void loadDataSetColumns() throws Exception {
+		postData();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .param("columns", "column4_integer,column0_boolean"))
+		       .andExpect(status().isOk());
+	}
+
+	@Test
+	void loadDataSetInvalidColumns() throws Exception {
+		postData();
+
+		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .param("columns", "invalid1,column4_integer,invalid2"))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Data set does not contain columns with names: 'invalid1', 'invalid2'");
 	}
 
 	@Test

@@ -1,5 +1,6 @@
 package de.kiaim.platform.service;
 
+import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.entity.DataConfigurationEntity;
 import de.kiaim.platform.model.DataSet;
@@ -21,6 +22,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 @Service
 public class DatabaseService {
@@ -149,20 +151,34 @@ public class DatabaseService {
 
 	/**
 	 * Exports the data set associated with the given user.
+	 * Returns the columns with the given names in the given order.
+	 * If no column names are provided, all columns are exported.
 	 *
 	 * @param user The user of which the data set should be exported.
+	 * @param columnNames Names of the columns to export. If empty, all columns will be exported.
 	 * @return The DataSet.
+	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException If no data set is associated with the given user.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 */
 	@Transactional
-	public DataSet exportDataSet(final UserEntity user) throws BadDataSetIdException, InternalDataSetPersistenceException {
+	public DataSet exportDataSet(final UserEntity user, List<String> columnNames)
+			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException {
 		final long dataSetId = getDataSetIdOrThrow(user);
-		final DataConfiguration dataConfiguration = exportDataConfiguration(user);
+		DataConfiguration dataConfiguration = exportDataConfiguration(user);
+
+		if (columnNames.isEmpty()) {
+			columnNames = dataConfiguration.getColumnNames();
+		} else {
+			existColumnsOrThrow(dataConfiguration, columnNames);
+			dataConfiguration = extractColumns(dataConfiguration, columnNames);
+		}
 
 		final List<DataRow> dataRows = new ArrayList<>();
 		try (final Statement exportStatement = connection.createStatement()) {
-			final String exportQuery = "SELECT * FROM " + getTableName(dataSetId) + ";";
+
+			final String exportQuery = createSelectQuery(dataSetId, columnNames);
+
 			try (final ResultSet resultSet = exportStatement.executeQuery(exportQuery)) {
 				while (resultSet.next()) {
 					final List<Data> data = new ArrayList<>();
@@ -271,12 +287,30 @@ public class DatabaseService {
 		}
 	}
 
+	private void existColumnsOrThrow(final DataConfiguration dataConfiguration, final List<String> columnNames)
+			throws BadColumnNameException {
+		final List<String> dataSetColumns = dataConfiguration.getColumnNames();
+		final List<String> unknownColumnNames = columnNames.stream()
+		                                                   .filter(Predicate.not(dataSetColumns::contains))
+		                                                   .toList();
+
+		if (!unknownColumnNames.isEmpty()) {
+			throw new BadColumnNameException(
+					"Data set does not contain columns with names: '" + String.join("', '", unknownColumnNames) + "'");
+		}
+	}
+
 	private DataConfigurationEntity getOrThrow(final long dataSetId) throws BadDataSetIdException {
 		final Optional<DataConfigurationEntity> config = dataConfigurationRepository.findById(dataSetId);
 		if (config.isEmpty()) {
 			throw new BadDataSetIdException("No DataSet with the given ID '" + dataSetId + "' found!");
 		}
 		return config.get();
+	}
+
+	private String createSelectQuery(final Long dataSetId, final List<String> columnNames) {
+		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"").toList();
+		return "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId) + ";";
 	}
 
 	private Data convertResultToData(final ResultSet resultSet, final int columnIndex,
@@ -317,4 +351,29 @@ public class DatabaseService {
 			}
 		}
 	}
+
+	private DataConfiguration extractColumns(final DataConfiguration sourceConfiguration,
+	                                         final List<String> columnNames) throws BadColumnNameException {
+		final DataConfiguration targetConfiguration = new DataConfiguration();
+
+		for (int i = 0; i < columnNames.size(); ++i) {
+			final String columnName = columnNames.get(i);
+
+			final ColumnConfiguration columnConfiguration = sourceConfiguration.getColumnConfigurationByColumnName(columnName);
+
+			if (columnConfiguration == null) {
+				throw new BadColumnNameException("Data set does not contain a column with name: '" + columnName + "'");
+			}
+
+			final var updatedColumnConfiguration = new ColumnConfiguration(i,
+			                                                               columnName,
+			                                                               columnConfiguration.getType(),
+			                                                               columnConfiguration.getScale(),
+			                                                               columnConfiguration.getConfigurations());
+			targetConfiguration.getConfigurations().add(updatedColumnConfiguration);
+		}
+
+		return targetConfiguration;
+	}
+
 }

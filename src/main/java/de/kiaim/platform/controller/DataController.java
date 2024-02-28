@@ -39,6 +39,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 // TODO Support different languages
 @RestController
@@ -92,7 +94,7 @@ public class DataController {
 			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.DATA_TYPES, file, fileConfiguration ,null, user);
+		return handleRequest(RequestType.DATA_TYPES, file, fileConfiguration ,null, null, user);
 	}
 
 	@Operation(summary = "Converts and validates the uploaded file into a tabular representation.",
@@ -128,7 +130,7 @@ public class DataController {
 			@RequestParam(value = "configuration") DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.VALIDATE, file, fileConfiguration, configuration, user);
+		return handleRequest(RequestType.VALIDATE, file, fileConfiguration, configuration, null, user);
 	}
 
 	@Operation(summary = "Stores or updates the given configuration.",
@@ -157,7 +159,7 @@ public class DataController {
 			@RequestParam(value = "configuration") DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.STORE_CONFIG, null, null, configuration, user);
+		return handleRequest(RequestType.STORE_CONFIG, null, null, configuration, null, user);
 	}
 
 
@@ -194,7 +196,7 @@ public class DataController {
 			@RequestParam(value = "configuration") DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.STORE_DATE_SET, file, fileConfiguration, configuration, user);
+		return handleRequest(RequestType.STORE_DATE_SET, file, fileConfiguration, configuration, null, user);
 	}
 
 	@Operation(summary = "Returns the configuration of the data set.",
@@ -226,7 +228,7 @@ public class DataController {
 			@RequestParam(defaultValue = "json") String format,
 			@AuthenticationPrincipal UserEntity user
 	) throws JsonProcessingException {
-		ResponseEntity<Object> response = handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
+		ResponseEntity<Object> response = handleRequest(RequestType.LOAD_CONFIG, null, null, null, null, user);
 
 		if (response.getStatusCode().is2xxSuccessful() && format.equals("yaml")) {
 			final String yaml = createYamlMapper().writeValueAsString(response.getBody());
@@ -260,9 +262,16 @@ public class DataController {
 	@GetMapping(value = "/data",
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadData(
+			@Parameter(description = "Names of the columns that should be returned. If empty, all columns will be returned.",
+			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
+			                              schema = @Schema(implementation = String.class),
+			                              examples = {
+					                              @ExampleObject("name,age,birthdate")
+			                              }))
+			@RequestParam(defaultValue = "") String columns,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.LOAD_DATA, null, null, null, user);
+		return handleRequest(RequestType.LOAD_DATA, null, null, null, columns, user);
 	}
 
 	@Operation(summary = "Returns the data set.",
@@ -284,9 +293,16 @@ public class DataController {
 	@GetMapping(value = "",
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadDataSet(
+			@Parameter(description = "Names of the columns that should be returned. If empty, all columns will be returned.",
+			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
+			                              schema = @Schema(implementation = String.class),
+			                              examples = {
+					                              @ExampleObject("name,age,birthdate")
+			                              }))
+			@RequestParam(defaultValue = "") String columns,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, user);
+		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, columns, user);
 	}
 
 	@Operation(summary = "Deletes the data set from the internal data base.",
@@ -309,7 +325,7 @@ public class DataController {
 	public ResponseEntity<Object> deleteData(
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.DELETE, null, null, null, user);
+		return handleRequest(RequestType.DELETE, null, null, null, null, user);
 	}
 
 	/**
@@ -319,8 +335,8 @@ public class DataController {
 	 *     <li>{@link RequestType#DATA_TYPES}: file, fileConfiguration</li>
 	 *     <li>{@link RequestType#DELETE}: user</li>
 	 *     <li>{@link RequestType#LOAD_CONFIG}: user</li>
-	 *     <li>{@link RequestType#LOAD_DATA}: user</li>
-	 *     <li>{@link RequestType#LOAD_DATA_SET}: user</li>
+	 *     <li>{@link RequestType#LOAD_DATA}: columns, user</li>
+	 *     <li>{@link RequestType#LOAD_DATA_SET}: columns, user</li>
 	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, user</li>
 	 *     <li>{@link RequestType#STORE_DATE_SET}: file, fileConfiguration, configuration, user</li>
 	 *     <li>{@link RequestType#VALIDATE}: file, fileConfiguration, configuration</li>
@@ -330,6 +346,7 @@ public class DataController {
 	 * @param file              File containing the source data.
 	 * @param fileConfiguration Configuration describing the file.
 	 * @param configuration     Configuration describing the source data.
+	 * @param columns           Names of the columns to export.
 	 * @param user              User of the request.
 	 * @return Response entity containing the response based on the request type or an error description.
 	 */
@@ -338,10 +355,11 @@ public class DataController {
 			@Nullable final MultipartFile file,
 			@Nullable final FileConfiguration fileConfiguration,
 			@Nullable final DataConfiguration configuration,
+			@Nullable final String columns,
 			final UserEntity user
 	) {
 		try {
-			return doHandleRequest(requestType, file, fileConfiguration, configuration, user);
+			return doHandleRequest(requestType, file, fileConfiguration, configuration, columns, user);
 		} catch (ApiException e) {
 			return responseService.prepareErrorResponseEntity(e);
 		}
@@ -352,9 +370,15 @@ public class DataController {
 			final MultipartFile file,
 			final FileConfiguration fileConfiguration,
 			final DataConfiguration configuration,
+			final String columns,
 			final UserEntity requestUser
 	) throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+
+		final List<String> columnNames = columns != null && !columns.isBlank()
+		                                 ? List.of(columns.split(","))
+		                                 : new ArrayList<>();
+
 		final Object result;
 		switch (requestType) {
 			case DATA_TYPES -> {
@@ -371,11 +395,11 @@ public class DataController {
 				result = databaseService.exportDataConfiguration(user);
 			}
 			case LOAD_DATA -> {
-				final DataSet dataSet = databaseService.exportDataSet(user);
+				final DataSet dataSet = databaseService.exportDataSet(user, columnNames);
 				result = dataSet.getData();
 			}
 			case LOAD_DATA_SET -> {
-				result = databaseService.exportDataSet(user);
+				result = databaseService.exportDataSet(user, columnNames);
 			}
 			case STORE_CONFIG -> {
 				result = databaseService.store(configuration, user);

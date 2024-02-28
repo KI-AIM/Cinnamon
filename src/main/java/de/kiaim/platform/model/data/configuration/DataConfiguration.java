@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,5 +57,23 @@ public class DataConfiguration {
 	@JsonIgnore
 	public List<String> getColumnNames() {
 		return configurations.stream().map(ColumnConfiguration::getName).toList();
+	}
+
+	/**
+	 * Returns the column configuration for the column with the given name.
+	 * Returns null if no configuration with the given name exists.
+	 * @param columnName Name of the column.
+	 * @return ColumnConfiguration for the given column name or null.
+	 */
+	@JsonIgnore
+	@Nullable
+	public ColumnConfiguration getColumnConfigurationByColumnName(final String columnName) {
+		for (final ColumnConfiguration columnConfiguration : configurations) {
+			if (columnConfiguration.getName().equals(columnName)) {
+				return columnConfiguration;
+			}
+		}
+
+		return null;
 	}
 }

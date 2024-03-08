@@ -1,4 +1,5 @@
 package de.kiaim.platform.model;
 
-public class DataConfiguration {
+public enum UserRole {
+	ROLE_USER;
 }

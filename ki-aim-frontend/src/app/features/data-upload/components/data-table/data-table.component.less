@@ -1,0 +1,38 @@
+@import '../../../../styles/colors.less'; 
+
+#tableWrapper {
+    width: 100%; 
+    max-height:50vh; 
+    overflow: scroll; 
+}
+
+.table-control-row {
+    border-bottom: 1px solid @mdc-grey-400;
+}
+
+.errorRow {
+    background-color: @mdc-red-50 !important;
+    &:hover {
+        background-color: @mdc-red-50 !important;
+    }
+}
+
+.errorColumn {
+    background-color: @mdc-red-200 !important;
+    &:hover {
+        background-color: @mdc-red-200 !important;
+    }
+}
+
+.mat-mdc-header-cell {
+    font-weight: 700;
+    font-size: 1.1rem;
+    border-bottom: 1px solid @mdc-grey-400; 
+}
+
+.mat-column-position {
+    width: 32px;
+    border-right: 1px solid @mdc-grey-400;
+    padding-right: 24px;
+    text-align: center;
+  }

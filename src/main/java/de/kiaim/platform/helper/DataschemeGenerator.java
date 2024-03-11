@@ -51,7 +51,7 @@ public class DataschemeGenerator {
 	}
 
 	private String createColumnString(final String columnName, final String dataType) {
-		return "\"" + columnName + "\" " + dataType + " NOT NULL";
+		return "\"" + columnName + "\" " + dataType;
 	}
 
 }

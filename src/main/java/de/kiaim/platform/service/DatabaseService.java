@@ -268,6 +268,10 @@ public class DatabaseService {
 	}
 
 	private String convertDataToString(final Data data) throws InternalDataSetPersistenceException {
+		if (data.getValue() == null) {
+			return "null";
+		}
+
 		return switch (data.getDataType()) {
 			case BOOLEAN -> data.getValue().toString();
 			case DATE -> "'" + data.getValue() + "'";

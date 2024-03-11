@@ -13,11 +13,13 @@ import { DataRowTransformationError } from "src/app/shared/model/data-row-transf
 	styleUrls: ["./data-table.component.less"],
 })
 export class DataTableComponent {
+
 	dataSource = new MatTableDataSource<TableElement>(
 		this.addColumnErrorsToTableData(
 			this.transformDataSet(
 				this.readdTransformationErrors(
-					this.transformationService.getTransformationResult()
+					this.removeRowsWithErrorsFromDataSet(this.transformationService.getTransformationResult()),
+					this.transformationService.getTransformationResult().transformationErrors
 				)
 			), this.transformationService.getTransformationResult().transformationErrors
 		)
@@ -51,7 +53,7 @@ export class DataTableComponent {
 			dataRow.forEach((dataItem, index) => {
 				const columnName =
 					dataSet.dataConfiguration.configurations[index].name;
-				transformedRow[columnName as string] = dataItem.toString();
+				transformedRow[columnName as string] = dataItem?.toString();
 			});
 			transformedData.push(transformedRow);
 		});
@@ -62,26 +64,64 @@ export class DataTableComponent {
 	/**
 	 * Function that readds the rows that were faulty upon transformation 
 	 * to be displayed in the validation table
-	 * @param transformationResult with the DataSet and Error objects
+	 * @param dataSet: The data set to which the lines should be readded to
+	 * @param transformationErrors: The transformation object that contains the error information
 	 * @returns new DataSet
 	 */
-	readdTransformationErrors(transformationResult: TransformationResult): DataSet {
-		var dataSet = transformationResult.dataSet; 
+	readdTransformationErrors(dataSet: DataSet, transformationErrors: DataRowTransformationError[]): DataSet {
 
 		var newDataSet = new DataSet(); 
 		var dataArray = new Array<Array<any>>; 
 
 		var readdedIndices = new List<number>(); 
 		var rowCounter = 0;
-		dataSet.data.forEach((dataRow) => {
-			transformationResult.transformationErrors.forEach(error => {
-				if (error.index == rowCounter && !readdedIndices.contains(rowCounter)) {
+		//Handle edge case where all rows are faulty differently
+		if(dataSet.data.length > 0) {
+			dataSet.data.forEach((dataRow) => {
+				transformationErrors.forEach(error => {
+					if (error.index == rowCounter && !readdedIndices.contains(rowCounter)) {
+						readdedIndices.add(rowCounter);  
+						rowCounter++;
+						dataArray.push(error.rawValues); 
+					}
+				}); 
+				dataArray.push(dataRow);
+				rowCounter++; 
+			});
+		} else {
+			//Add all error rows into the dataset
+			transformationErrors.forEach(error => {
+				if (!readdedIndices.contains(rowCounter)) {
 					readdedIndices.add(rowCounter);  
 					rowCounter++;
 					dataArray.push(error.rawValues); 
 				}
 			}); 
-			dataArray.push(dataRow);
+		}
+		newDataSet.data = dataArray;
+		newDataSet.dataConfiguration = dataSet.dataConfiguration; 
+
+		return newDataSet; 
+	}
+
+	removeRowsWithErrorsFromDataSet(transformationResult: TransformationResult): DataSet {
+		var dataSet = transformationResult.dataSet; 
+
+		var newDataSet = new DataSet(); 
+		var dataArray = new Array<Array<any>>; 
+		var errorIndices = new List<number>();
+
+		transformationResult.transformationErrors.forEach(error => {
+			if (!errorIndices.contains(rowCounter)) {
+				errorIndices.add(error.index); 
+			}
+		}); 
+
+		var rowCounter = 0;
+		dataSet.data.forEach((dataRow) => {
+			if (!errorIndices.contains(rowCounter)) {
+				dataArray.push(dataRow);
+			}
 			rowCounter++; 
 		});
 		newDataSet.data = dataArray;

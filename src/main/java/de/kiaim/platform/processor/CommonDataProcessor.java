@@ -57,8 +57,6 @@ public abstract class CommonDataProcessor implements DataProcessor {
             assert !matchingColumnConfigurations.isEmpty();
             ColumnConfiguration columnConfiguration = matchingColumnConfigurations.get(0);
 
-
-
             try {
                 Data transformedData = this.dataTransformationHelper.transformData(col, columnConfiguration);
                 transformedCol.add(transformedData);
@@ -66,15 +64,17 @@ public abstract class CommonDataProcessor implements DataProcessor {
                 //Resolve to error type, to easier parse information to frontend
                 newError.addError(new DataTransformationError(colIndex, e.getTransformationErrorType()));
 
-                // set flag to not add row to DataSet
+                //Set Flag so error will be added
                 errorInRow = true;
+
+                // Remove faulty value from dataset
+                transformedCol.add(this.dataTransformationHelper.transformNullValue(columnConfiguration));
             }
         }
 
-        // If no error was found, add result to DataRows
-        if (!errorInRow) {
-            dataRows.add(new DataRow(transformedCol));
-        } else {
+        dataRows.add(new DataRow(transformedCol));
+
+        if (errorInRow) {
             //Add error to errorList
             errors.add(newError);
         }

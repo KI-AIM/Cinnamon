@@ -88,8 +88,16 @@ public class DataTransformationTests {
                                 new IntegerData(3)
                         )),
                         new DataRow(List.of(
+                                new StringData(null),
+                                new IntegerData(4)
+                        )),
+                        new DataRow(List.of(
                                 new StringData("a"),
                                 new IntegerData(5)
+                        )),
+                        new DataRow(List.of(
+                                new StringData(null),
+                                new IntegerData(6)
                         )),
                         new DataRow(List.of(
                                 new StringData("test"),
@@ -100,12 +108,20 @@ public class DataTransformationTests {
                                 new IntegerData(8)
                         )),
                         new DataRow(List.of(
+                                new StringData(null),
+                                new IntegerData(9)
+                        )),
+                        new DataRow(List.of(
                                 new StringData("missing"),
                                 new IntegerData(10)
                         )),
                         new DataRow(List.of(
                                 new StringData("values"),
                                 new IntegerData(11)
+                        )),
+                        new DataRow(List.of(
+                                new StringData(null),
+                                new IntegerData(12)
                         ))
                 );
 
@@ -184,6 +200,9 @@ public class DataTransformationTests {
                                 new DateData(LocalDate.parse("1994-02-28"))
                         )),
                         new DataRow(List.of(
+                                new DateData(null)
+                        )),
+                        new DataRow(List.of(
                                 new DateData(LocalDate.parse("1959-02-03"))
                         )),
                         new DataRow(List.of(
@@ -246,10 +265,16 @@ public class DataTransformationTests {
     private TransformationResult testDataProcessingAndDateRange_expectedResult() {
         List<DataRow> dataRows = List.of(
                 new DataRow(List.of(
+                        new DateData(null)
+                )),
+                new DataRow(List.of(
                         new DateData(LocalDate.parse("2000-01-02"))
                 )),
                 new DataRow(List.of(
                         new DateData(LocalDate.parse("2000-12-31"))
+                )),
+                new DataRow(List.of(
+                        new DateData(null)
                 ))
         );
 
@@ -324,6 +349,9 @@ public class DataTransformationTests {
                         )),
                         new DataRow(List.of(
                                 new DateTimeData(LocalDateTime.parse("1959-02-03T13:01:52"))
+                        )),
+                        new DataRow(List.of(
+                                new DateTimeData(null)
                         ))
                 );
 
@@ -380,10 +408,16 @@ public class DataTransformationTests {
     private TransformationResult testDataProcessingAndDateTimeRange_expectedResult() {
         List<DataRow> dataRows = List.of(
                 new DataRow(List.of(
+                        new DateTimeData(null)
+                )),
+                new DataRow(List.of(
                         new DateTimeData(LocalDateTime.parse("2000-01-01T12:31:31"))
                 )),
                 new DataRow(List.of(
                         new DateTimeData(LocalDateTime.parse("2000-12-31T12:31:31"))
+                )),
+                new DataRow(List.of(
+                        new DateTimeData(null)
                 ))
         );
 
@@ -458,6 +492,9 @@ public class DataTransformationTests {
                         )),
                         new DataRow(List.of(
                                 new StringData("C531.12")
+                        )),
+                        new DataRow(List.of(
+                                new StringData(null)
                         ))
                 );
 
@@ -523,6 +560,9 @@ public class DataTransformationTests {
                         )),
                         new DataRow(List.of(
                                 new BooleanData(false)
+                        )),
+                        new DataRow(List.of(
+                                new BooleanData(null)
                         ))
                 );
 
@@ -587,6 +627,9 @@ public class DataTransformationTests {
                         )),
                         new DataRow(List.of(
                                 new DecimalData(5.7664f)
+                        )),
+                        new DataRow(List.of(
+                                new DecimalData(null)
                         ))
                 );
 
@@ -640,9 +683,11 @@ public class DataTransformationTests {
 
     private TransformationResult testDataProcessingAndFloatRange_expectedResult() {
         List<DataRow> dataRows = List.of(
+                new DataRow(List.of(new DecimalData(null))),
                 new DataRow(List.of(new DecimalData(1.0f))),
                 new DataRow(List.of(new DecimalData(1.3f))),
-                new DataRow(List.of(new DecimalData(1.5f)))
+                new DataRow(List.of(new DecimalData(1.5f))),
+                new DataRow(List.of(new DecimalData(null)))
         );
 
         RangeConfiguration rangeConfiguration = new RangeConfiguration(new DecimalData(1f), new DecimalData(1.5f));
@@ -714,6 +759,9 @@ public class DataTransformationTests {
                         )),
                         new DataRow(List.of(
                                 new IntegerData(4)
+                        )),
+                        new DataRow(List.of(
+                                new IntegerData(null)
                         ))
                 );
 
@@ -767,9 +815,11 @@ public class DataTransformationTests {
 
     private TransformationResult testDataProcessingAndIntegerRange_expectedResult() {
         List<DataRow> dataRows = List.of(
+                new DataRow(List.of(new IntegerData(null))),
                 new DataRow(List.of(new IntegerData(2))),
                 new DataRow(List.of(new IntegerData(3))),
-                new DataRow(List.of(new IntegerData(4)))
+                new DataRow(List.of(new IntegerData(4))),
+                new DataRow(List.of(new IntegerData(null)))
         );
 
         RangeConfiguration rangeConfiguration = new RangeConfiguration(new IntegerData(2), new IntegerData(4));

@@ -37,6 +37,18 @@ public class DataTransformationHelper {
         return dataBuilder.setValue(value, configuration.getConfigurations()).build();
     }
 
+    public Data transformNullValue(ColumnConfiguration configuration) {
+        return switch (configuration.getType()) {
+            case BOOLEAN -> new BooleanData(null);
+            case DATE -> new DateData(null);
+            case DATE_TIME -> new DateTimeData(null);
+            case DECIMAL -> new DecimalData(null);
+            case INTEGER -> new IntegerData(null);
+            case STRING -> new StringData(null);
+            case UNDEFINED -> null;
+        };
+    }
+
     public DataBuilder getDataBuilderOrThrow(DataType dataType) throws BadDataTypeException {
         final DataBuilder dataBuilder = getDataBuilder(dataType);
         if (dataBuilder == null) {

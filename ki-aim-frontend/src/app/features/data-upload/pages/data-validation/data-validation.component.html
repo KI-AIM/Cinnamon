@@ -13,8 +13,13 @@
 </p>
 
 <p class="mt-5">
-    <span class="h2">Valid rows after transformation:
+    <span class="h2">Rows in the dataset:
         {{transformationService.getTransformationResult().dataSet.data.length}} rows
+    </span>
+</p>
+<p class="mt-1">
+    <span class="h2">Rows that will be adjusted:
+        {{transformationService.getTransformationResult().transformationErrors.length}} rows
     </span>
 </p>
 

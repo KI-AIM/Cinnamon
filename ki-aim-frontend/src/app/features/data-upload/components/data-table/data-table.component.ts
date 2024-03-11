@@ -75,17 +75,29 @@ export class DataTableComponent {
 
 		var readdedIndices = new List<number>(); 
 		var rowCounter = 0;
-		dataSet.data.forEach((dataRow) => {
+		//Handle edge case where all rows are faulty differently
+		if(dataSet.data.length > 0) {
+			dataSet.data.forEach((dataRow) => {
+				transformationErrors.forEach(error => {
+					if (error.index == rowCounter && !readdedIndices.contains(rowCounter)) {
+						readdedIndices.add(rowCounter);  
+						rowCounter++;
+						dataArray.push(error.rawValues); 
+					}
+				}); 
+				dataArray.push(dataRow);
+				rowCounter++; 
+			});
+		} else {
+			//Add all error rows into the dataset
 			transformationErrors.forEach(error => {
-				if (error.index == rowCounter && !readdedIndices.contains(rowCounter)) {
+				if (!readdedIndices.contains(rowCounter)) {
 					readdedIndices.add(rowCounter);  
 					rowCounter++;
 					dataArray.push(error.rawValues); 
 				}
 			}); 
-			dataArray.push(dataRow);
-			rowCounter++; 
-		});
+		}
 		newDataSet.data = dataArray;
 		newDataSet.dataConfiguration = dataSet.dataConfiguration; 
 

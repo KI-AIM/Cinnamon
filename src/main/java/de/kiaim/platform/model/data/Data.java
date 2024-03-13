@@ -5,8 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import de.kiaim.platform.json.DataDeserializer;
 import de.kiaim.platform.json.DataSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import org.springframework.lang.Nullable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,28 +20,35 @@ public abstract class Data {
 	public abstract DataType getDataType();
 
 	@Schema(hidden = true)
+	@Nullable
 	public abstract Object getValue();
 
+	@Nullable
 	public Boolean asBoolean() {
 		return (Boolean) getValue();
 	}
 
+	@Nullable
 	public LocalDate asDate() {
 		return (LocalDate) getValue();
 	}
 
+	@Nullable
 	public LocalDateTime asDateTime() {
 		return (LocalDateTime) getValue();
 	}
 
+	@Nullable
 	public Float asDecimal() {
 		return (Float) getValue();
 	}
 
+	@Nullable
 	public Integer asInteger() {
 		return (Integer) getValue();
 	}
 
+	@Nullable
 	public String asString() {
 		return (String) getValue();
 	}

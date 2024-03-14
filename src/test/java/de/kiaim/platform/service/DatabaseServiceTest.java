@@ -3,10 +3,12 @@ package de.kiaim.platform.service;
 import de.kiaim.platform.DatabaseTest;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.DataSet;
+import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.DataType;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.platform.model.entity.DataConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,17 +26,19 @@ class DatabaseServiceTest extends DatabaseTest {
 
 	@Test
 	void storeAndDelete() {
-		final DataSet dataSet = TestModelHelper.generateDataSet();
+		final TransformationResult transformationResult = TestModelHelper.generateTransformationResult(false);
 		final UserEntity user = getTestUser();
 
-		long dataSetId = assertDoesNotThrow(() -> databaseService.store(dataSet, user));
+		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult, user));
 
 		UserEntity testUser = getTestUser();
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getDataConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getDataConfiguration().getId(), "User has been associated with the wrong dataset!");
+		DataConfigurationEntity dataConfiguration = testUser.getDataConfiguration();
+		assertNotNull(dataConfiguration, "User has not been associated with the dataset!");
+		assertEquals(dataSetId, dataConfiguration.getId(), "User has been associated with the wrong dataset!");
+		assertEquals(0, dataTransformationErrorRepository.countByDataConfigurationId(dataConfiguration.getId()), "No transformation errors should have been persisted!");
 
 		assertDoesNotThrow(() -> databaseService.delete(user));
 
@@ -44,24 +48,48 @@ class DatabaseServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	void exportDataSet() {
-		final DataSet dataSet = TestModelHelper.generateDataSet();
+	void storeAndDeleteWithErrors() {
+		final TransformationResult transformationResult = TestModelHelper.generateTransformationResult(true);
 		final UserEntity user = getTestUser();
 
-		assertDoesNotThrow(() -> databaseService.store(dataSet, user));
+		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult, user));
+
+		UserEntity testUser = getTestUser();
+		assertTrue(existsTable(dataSetId), "Table could not be found!");
+		assertEquals(3, countEntries(dataSetId), "Number of entries wrong!");
+		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
+		DataConfigurationEntity dataConfiguration = testUser.getDataConfiguration();
+		assertNotNull(dataConfiguration, "User has not been associated with the dataset!");
+		assertEquals(dataSetId, dataConfiguration.getId(), "User has been associated with the wrong dataset!");
+		assertEquals(2, dataTransformationErrorRepository.countByDataConfigurationId(dataConfiguration.getId()), "Transformation errors have not been persisted!");
+
+		assertDoesNotThrow(() -> databaseService.delete(user));
+
+		assertFalse(existsTable(dataSetId), "Table should be deleted!");
+		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
+		assertNull(getTestUser().getDataConfiguration(), "User association with the dataset has not been removed!");
+		assertEquals(0, dataTransformationErrorRepository.countByDataConfigurationId(dataConfiguration.getId()), "Transformation errors have not been removed!");
+	}
+
+	@Test
+	void exportDataSet() {
+		final TransformationResult transformationResult = TestModelHelper.generateTransformationResult(false);
+		final UserEntity user = getTestUser();
+
+		assertDoesNotThrow(() -> databaseService.store(transformationResult, user));
 
 		final DataSet export = assertDoesNotThrow(() -> databaseService.exportDataSet(user, new ArrayList<>()));
-		assertEquals(dataSet, export, "Data sets do not match!");
+		assertEquals(transformationResult.getDataSet(), export, "Data sets do not match!");
 
 		assertDoesNotThrow(() -> databaseService.delete(user));
 	}
 
 	@Test
 	void exportDataSetColumns() {
-		final DataSet dataSet = TestModelHelper.generateDataSet();
+		final TransformationResult transformationResult = TestModelHelper.generateTransformationResult(false);
 		final UserEntity user = getTestUser();
 
-		assertDoesNotThrow(() -> databaseService.store(dataSet, user));
+		assertDoesNotThrow(() -> databaseService.store(transformationResult, user));
 
 		final DataSet export = assertDoesNotThrow(
 				() -> databaseService.exportDataSet(user, List.of("column4_integer", "column0_boolean")));

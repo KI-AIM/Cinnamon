@@ -1,8 +1,10 @@
 package de.kiaim.platform;
 
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.DataConfigurationRepository;
+import de.kiaim.platform.repository.DataTransformationErrorRepository;
 import de.kiaim.platform.repository.UserRepository;
 import de.kiaim.platform.service.DatabaseService;
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +31,9 @@ public class DatabaseTest extends ContextRequiredTest {
 
 	@Autowired
 	DataConfigurationRepository dataConfigurationRepository;
+
+	@Autowired
+	protected DataTransformationErrorRepository dataTransformationErrorRepository;
 
 	@Autowired
 	UserRepository userRepository;

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;
+import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.DataRow;
@@ -16,6 +17,7 @@ import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
+import de.kiaim.platform.service.DataSetService;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ResponseService;
 import de.kiaim.platform.service.UserService;
@@ -29,6 +31,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -53,14 +56,17 @@ public class DataController {
 	// TODO Find Processor dynamically
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
+	private final DataSetService dataSetService;
 	private final UserService userService;
 	private final ResponseService responseService;
 
 	@Autowired
 	public DataController(final CsvProcessor csvProcessor, final DatabaseService databaseService,
-						  final UserService userService, final ResponseService responseService) {
+	                      final DataSetService dataSetService, final UserService userService,
+	                      final ResponseService responseService) {
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
+		this.dataSetService = dataSetService;
 		this.userService = userService;
 		this.responseService = responseService;
 	}
@@ -262,16 +268,10 @@ public class DataController {
 	@GetMapping(value = "/data",
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadData(
-			@Parameter(description = "Names of the columns that should be returned. If empty, all columns will be returned.",
-			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
-			                              schema = @Schema(implementation = String.class),
-			                              examples = {
-					                              @ExampleObject("name,age,birthdate")
-			                              }))
-			@RequestParam(defaultValue = "") String columns,
+			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.LOAD_DATA, null, null, null, columns, user);
+		return handleRequest(RequestType.LOAD_DATA, null, null, null,  request, user);
 	}
 
 	@Operation(summary = "Returns the data set.",
@@ -293,16 +293,10 @@ public class DataController {
 	@GetMapping(value = "",
 	            produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> loadDataSet(
-			@Parameter(description = "Names of the columns that should be returned. If empty, all columns will be returned.",
-			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
-			                              schema = @Schema(implementation = String.class),
-			                              examples = {
-					                              @ExampleObject("name,age,birthdate")
-			                              }))
-			@RequestParam(defaultValue = "") String columns,
+			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) {
-		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, columns, user);
+		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, request, user);
 	}
 
 	@Operation(summary = "Deletes the data set from the internal data base.",
@@ -335,8 +329,8 @@ public class DataController {
 	 *     <li>{@link RequestType#DATA_TYPES}: file, fileConfiguration</li>
 	 *     <li>{@link RequestType#DELETE}: user</li>
 	 *     <li>{@link RequestType#LOAD_CONFIG}: user</li>
-	 *     <li>{@link RequestType#LOAD_DATA}: columns, user</li>
-	 *     <li>{@link RequestType#LOAD_DATA_SET}: columns, user</li>
+	 *     <li>{@link RequestType#LOAD_DATA}: loadDataRequest, user</li>
+	 *     <li>{@link RequestType#LOAD_DATA_SET}: loadDataRequest, user</li>
 	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, user</li>
 	 *     <li>{@link RequestType#STORE_DATE_SET}: file, fileConfiguration, configuration, user</li>
 	 *     <li>{@link RequestType#VALIDATE}: file, fileConfiguration, configuration</li>
@@ -346,7 +340,7 @@ public class DataController {
 	 * @param file              File containing the source data.
 	 * @param fileConfiguration Configuration describing the file.
 	 * @param configuration     Configuration describing the source data.
-	 * @param columns           Names of the columns to export.
+	 * @param loadDataRequest   Settings for the data set export.
 	 * @param user              User of the request.
 	 * @return Response entity containing the response based on the request type or an error description.
 	 */
@@ -355,11 +349,11 @@ public class DataController {
 			@Nullable final MultipartFile file,
 			@Nullable final FileConfiguration fileConfiguration,
 			@Nullable final DataConfiguration configuration,
-			@Nullable final String columns,
+			@Nullable final LoadDataRequest loadDataRequest,
 			final UserEntity user
 	) {
 		try {
-			return doHandleRequest(requestType, file, fileConfiguration, configuration, columns, user);
+			return doHandleRequest(requestType, file, fileConfiguration, configuration, loadDataRequest, user);
 		} catch (ApiException e) {
 			return responseService.prepareErrorResponseEntity(e);
 		}
@@ -370,13 +364,13 @@ public class DataController {
 			final MultipartFile file,
 			final FileConfiguration fileConfiguration,
 			final DataConfiguration configuration,
-			final String columns,
+			final LoadDataRequest loadDataRequest,
 			final UserEntity requestUser
 	) throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 
-		final List<String> columnNames = columns != null && !columns.isBlank()
-		                                 ? List.of(columns.split(","))
+		final List<String> columnNames = loadDataRequest != null && !loadDataRequest.getColumns().isBlank()
+		                                 ? List.of(loadDataRequest.getColumns().split(","))
 		                                 : new ArrayList<>();
 
 		final Object result;
@@ -396,7 +390,7 @@ public class DataController {
 			}
 			case LOAD_DATA -> {
 				final DataSet dataSet = databaseService.exportDataSet(user, columnNames);
-				result = dataSet.getData();
+				result = dataSetService.encodeDataRows(dataSet, user.getDataConfiguration(), loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
 				result = databaseService.exportDataSet(user, columnNames);
@@ -408,7 +402,7 @@ public class DataController {
 				final DataProcessor dataProcessor = getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				final TransformationResult transformationResult = dataProcessor.read(inputStream, fileConfiguration, configuration);
-				result = databaseService.store(transformationResult.getDataSet(), user);
+				result = databaseService.store(transformationResult, user);
 			}
 			case VALIDATE -> {
 				final DataProcessor dataProcessor = getDataProcessor(file);

@@ -70,38 +70,46 @@ export class DataTableComponent {
 	 */
 	readdTransformationErrors(dataSet: DataSet, transformationErrors: DataRowTransformationError[]): DataSet {
 
-		var newDataSet = new DataSet(); 
-		var dataArray = new Array<Array<any>>; 
+		var newDataSet = new DataSet();
+		var dataArray = new Array<Array<any>>;
 
-		var readdedIndices = new List<number>(); 
-		var rowCounter = 0;
-		//Handle edge case where all rows are faulty differently
-		if(dataSet.data.length > 0) {
-			dataSet.data.forEach((dataRow) => {
-				transformationErrors.forEach(error => {
-					if (error.index == rowCounter && !readdedIndices.contains(rowCounter)) {
-						readdedIndices.add(rowCounter);  
-						rowCounter++;
-						dataArray.push(error.rawValues); 
-					}
-				}); 
-				dataArray.push(dataRow);
-				rowCounter++; 
-			});
-		} else {
-			//Add all error rows into the dataset
-			transformationErrors.forEach(error => {
-				if (!readdedIndices.contains(rowCounter)) {
-					readdedIndices.add(rowCounter);  
-					rowCounter++;
-					dataArray.push(error.rawValues); 
-				}
-			}); 
-		}
+        if (transformationErrors.length === 0) {
+            // All rows are valid
+            dataSet.data.forEach((dataRow) => {
+                dataArray.push(dataRow);
+            });
+        } else if (dataSet.data.length === 0) {
+            // All rows are invalid
+            transformationErrors.forEach(error => {
+                dataArray.push(error.rawValues);
+            });
+        } else {
+            let rowIndex = 0;
+            let dataSetRowIndex = 0;
+
+            transformationErrors.forEach(transformationError => {
+                // Fill rows until the index of the transformation error is reached
+                while (rowIndex < transformationError.index) {
+                    dataArray.push(dataSet.data[dataSetRowIndex]);
+                    rowIndex += 1;
+                    dataSetRowIndex += 1;
+                }
+                // Add the transformation error
+                dataArray.push(transformationError.rawValues);
+                rowIndex += 1;
+            });
+
+            // Add valid rows after the last transformation error
+            while (dataSetRowIndex < dataSet.data.length) {
+                dataArray.push(dataSet.data[dataSetRowIndex]);
+                dataSetRowIndex += 1;
+            }
+        }
+
 		newDataSet.data = dataArray;
-		newDataSet.dataConfiguration = dataSet.dataConfiguration; 
+		newDataSet.dataConfiguration = dataSet.dataConfiguration;
 
-		return newDataSet; 
+		return newDataSet;
 	}
 
 	removeRowsWithErrorsFromDataSet(transformationResult: TransformationResult): DataSet {

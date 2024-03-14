@@ -34,7 +34,7 @@ public class DecimalData extends Data {
 	public static class DecimalDataBuilder implements DataBuilder {
 		private float value;
 
-		private float minValue = Float.MIN_VALUE;
+		private float minValue = -Float.MAX_VALUE;
 		private float maxValue = Float.MAX_VALUE;
 
 		/**

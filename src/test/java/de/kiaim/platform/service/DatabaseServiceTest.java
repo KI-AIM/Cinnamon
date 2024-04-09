@@ -108,10 +108,9 @@ class DatabaseServiceTest extends DatabaseTest {
 		final String configName = "testConfigName";
 		final String config = "Test config";
 
-		final UserEntity user = getTestUser();
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, user),
-		                   "The configuration could not be stored!");
+		storeConfiguration(configName, config);
 
+		final UserEntity user = getTestUser();
 		final String updatedConfig = "Updated test config";
 		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, updatedConfig, user),
 		                   "The configuration could not be updated!");
@@ -187,10 +186,9 @@ class DatabaseServiceTest extends DatabaseTest {
 				  configurations: []
 				""";
 
-		final UserEntity user = getTestUser();
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, user),
-		                   "The configuration could not be stored!");
+		storeConfiguration(configName, config);
 
+		final UserEntity user = getTestUser();
 		final String exportedConfig = assertDoesNotThrow(() -> databaseService.exportConfiguration(configName, user),
 		                                                 "The configuration could not be exported!");
 		assertEquals(config, exportedConfig, "The exported config does not match the original config!");
@@ -213,8 +211,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		final String config = "Test config";
 		final UserEntity user = getTestUser();
 
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, user),
-		                   "The configuration could not be stored!");
+		storeConfiguration(configName, config);
 
 		assertThrows(BadConfigurationNameException.class,
 		             () -> databaseService.exportConfiguration(invalidConfigName, user),

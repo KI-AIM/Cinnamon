@@ -2,6 +2,7 @@ package de.kiaim.platform;
 
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.DataTransformationError;
+import de.kiaim.platform.model.entity.DataConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.DataConfigurationRepository;
 import de.kiaim.platform.repository.DataTransformationErrorRepository;
@@ -17,7 +18,7 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 //@Transactional // Will block the DROP TABLE statement
 public class DatabaseTest extends ContextRequiredTest {
@@ -86,6 +87,20 @@ public class DatabaseTest extends ContextRequiredTest {
 
 		DataSourceUtils.releaseConnection(connection, dataSource);
 		connection = null;
+	}
+
+	protected void storeConfiguration(final String configName, final String config) {
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, getTestUser()),
+		                   "The configuration could not be stored!");
+
+		final UserEntity updatedUser = getTestUser();
+
+		final DataConfigurationEntity dataConfiguration = updatedUser.getDataConfiguration();
+		assertNotNull(dataConfiguration, "The configuration has not been created!");
+		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
+		           "The configuration has not been stored correctly under the user!");
+		assertEquals(config, dataConfiguration.getConfigurations().get(configName),
+		             "The configuration has not been stored correctly!");
 	}
 
 	protected boolean existsDataConfigration(final long dataSetId) {

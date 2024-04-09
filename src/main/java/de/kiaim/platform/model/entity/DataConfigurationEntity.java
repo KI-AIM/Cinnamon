@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -34,6 +36,18 @@ public class DataConfigurationEntity {
 	@Column(columnDefinition = "json")
 	@Setter
 	private DataConfiguration dataConfiguration;
+
+	/**
+	 * Other configurations for the platform.
+	 * Stored as plain strings.
+	 */
+	@ElementCollection(fetch = FetchType.LAZY)
+	@CollectionTable(name = "configuration",
+	                 joinColumns = @JoinColumn(name = "data_configuration_id", referencedColumnName = "id"))
+	@MapKeyColumn(name = "configuration_name")
+	@Column(name="configuration")
+	@Setter
+	private Map<String, String> configurations = new HashMap<>();
 
 	/**
 	 * User that owns this configuration and the corresponding data set.

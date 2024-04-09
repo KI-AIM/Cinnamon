@@ -2,6 +2,8 @@ package de.kiaim.platform.service;
 
 import de.kiaim.platform.DatabaseTest;
 import de.kiaim.platform.TestModelHelper;
+import de.kiaim.platform.exception.BadConfigurationNameException;
+import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.DataRow;
@@ -12,6 +14,7 @@ import de.kiaim.platform.model.entity.DataConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,6 +75,58 @@ class DatabaseServiceTest extends DatabaseTest {
 	}
 
 	@Test
+	@Transactional
+	void storeConfiguration() {
+		final String configName = "testConfig";
+		final String config = """
+				configurations:
+				- index: 0
+				  name: "column0_boolean"
+				  type: "BOOLEAN"
+				  scale: "NOMINAL"
+				  configurations: []
+				""";
+
+		final UserEntity user = getTestUser();
+
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, user),
+		                   "The configuration could not be stored!");
+
+		final UserEntity updatedUser = getTestUser();
+
+		final DataConfigurationEntity dataConfiguration = updatedUser.getDataConfiguration();
+		assertNotNull(dataConfiguration, "The configuration has not been created!");
+		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
+		           "The configuration has not been stored correctly under the user!");
+		assertEquals(config, dataConfiguration.getConfigurations().get(configName),
+		             "The configuration has not been stored correctly!");
+	}
+
+	@Test
+	@Transactional
+	void storeConfigurationOverwrite() {
+		final String configName = "testConfigName";
+		final String config = "Test config";
+
+		final UserEntity user = getTestUser();
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, user),
+		                   "The configuration could not be stored!");
+
+		final String updatedConfig = "Updated test config";
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, updatedConfig, user),
+		                   "The configuration could not be updated!");
+
+		final UserEntity updatedUser = getTestUser();
+
+		final DataConfigurationEntity dataConfiguration = updatedUser.getDataConfiguration();
+		assertNotNull(dataConfiguration, "The configuration has not been created!");
+		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
+		           "The configuration has not been stored correctly under the user!");
+		assertEquals(updatedConfig, dataConfiguration.getConfigurations().get(configName),
+		             "The configuration has not been stored correctly!");
+	}
+
+	@Test
 	void exportDataSet() {
 		final TransformationResult transformationResult = TestModelHelper.generateTransformationResult(false);
 		final UserEntity user = getTestUser();
@@ -117,5 +172,52 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertEquals(DataType.BOOLEAN, firstRow.getData().get(1).getDataType(), "Type of second value does not match!");
 
 		assertDoesNotThrow(() -> databaseService.delete(user));
+	}
+
+	@Test
+	@Transactional
+	void exportConfiguration() {
+		final String configName = "testConfigName";
+		final String config = """
+				configurations:
+				- index: 0
+				  name: "column0_boolean"
+				  type: "BOOLEAN"
+				  scale: "NOMINAL"
+				  configurations: []
+				""";
+
+		final UserEntity user = getTestUser();
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, user),
+		                   "The configuration could not be stored!");
+
+		final String exportedConfig = assertDoesNotThrow(() -> databaseService.exportConfiguration(configName, user),
+		                                                 "The configuration could not be exported!");
+		assertEquals(config, exportedConfig, "The exported config does not match the original config!");
+	}
+
+	@Test
+	@Transactional
+	void exportConfigurationNoConfiguration() {
+		final String configName = "testConfigName";
+		final UserEntity user = getTestUser();
+		assertThrows(BadDataSetIdException.class, () -> databaseService.exportConfiguration(configName, user),
+		             "Configuration should not be present!");
+	}
+
+	@Test
+	@Transactional
+	void exportConfigurationInvalidName() {
+		final String configName = "testConfigName";
+		final String invalidConfigName = "invalidConfigName";
+		final String config = "Test config";
+		final UserEntity user = getTestUser();
+
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, user),
+		                   "The configuration could not be stored!");
+
+		assertThrows(BadConfigurationNameException.class,
+		             () -> databaseService.exportConfiguration(invalidConfigName, user),
+		             "Configuration should not be present!");
 	}
 }

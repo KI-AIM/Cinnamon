@@ -1,6 +1,7 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.platform.exception.BadColumnNameException;
+import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
@@ -127,6 +128,23 @@ public class DatabaseService {
 	}
 
 	/**
+	 * Stores an arbitrary configuration under the given identifier.
+	 * If a configuration with the given name is already present, it will be overwritten.
+	 *
+	 * @param configurationName Identifier for the configuration.
+	 * @param configuration Configuration to store.
+	 * @param user The user the configuration should be associated with.
+	 * @return The ID of the configuration.
+	 */
+	@Transactional
+	public long storeConfiguration(final String configurationName, final String configuration,
+	                               final UserEntity user) {
+		final DataConfigurationEntity dataConfigurationEntity = getDataConfigurationEntity(user);
+		dataConfigurationEntity.getConfigurations().put(configurationName, configuration);
+		return storeDataConfigurationEntity(dataConfigurationEntity, user);
+	}
+
+	/**
 	 * Exports the configuration of the data set associated with the given user.
 	 *
 	 * @param user The user of which the configuration should be exported.
@@ -188,6 +206,28 @@ public class DatabaseService {
 		}
 
 		return new DataSet(dataRows, dataConfiguration);
+	}
+
+	/**
+	 * Exports the configuration with the given name
+	 * @param configurationName Name of the configuration to export.
+	 * @param user The user of which the configuration should be exported.
+	 * @return The configuration.
+	 * @throws BadConfigurationNameException If the user does not have a configuration with the given name.
+	 * @throws BadDataSetIdException If no data set is associated with the given user.
+	 */
+	@Transactional
+	public String exportConfiguration(final String configurationName, final UserEntity user)
+			throws BadConfigurationNameException, BadDataSetIdException {
+		final long dataSetId = getDataSetIdOrThrow(user);
+		final DataConfigurationEntity dataConfigurationEntity = getOrThrow(dataSetId);
+
+		if (!dataConfigurationEntity.getConfigurations().containsKey(configurationName)) {
+			throw new BadConfigurationNameException(
+					"User has no configuration with the name '" + configurationName + "'!");
+		}
+
+		return dataConfigurationEntity.getConfigurations().get(configurationName);
 	}
 
 	/**
@@ -259,15 +299,11 @@ public class DatabaseService {
 		return user.getDataConfiguration().getId();
 	}
 
-	private DataConfigurationEntity getDataConfigurationEntity(final UserEntity user)
-			throws InternalDataSetPersistenceException, BadDataSetIdException {
+	private DataConfigurationEntity getDataConfigurationEntity(final UserEntity user) {
 		final DataConfigurationEntity dataConfigurationEntity;
 
 		if (user.getDataConfiguration() != null) {
 			dataConfigurationEntity = user.getDataConfiguration();
-			if (existsTable(dataConfigurationEntity.getId())) {
-				throw new BadDataSetIdException("The data has already been stored!");
-			}
 		} else {
 			dataConfigurationEntity = new DataConfigurationEntity();
 		}
@@ -290,6 +326,11 @@ public class DatabaseService {
 	                   final List<DataRowTransformationError> rowTransformationErrors, final UserEntity user)
 			throws InternalDataSetPersistenceException, BadDataSetIdException {
 		final DataConfigurationEntity dataConfigurationEntity = getDataConfigurationEntity(user);
+
+		// Check if the data set already has been stored
+		if (dataConfigurationEntity.getId() != null && existsTable(dataConfigurationEntity.getId())) {
+			throw new BadDataSetIdException("The data has already been stored!");
+		}
 
 		dataConfigurationEntity.setDataConfiguration(dataConfiguration);
 

@@ -62,7 +62,7 @@ public class DatabaseTest extends ContextRequiredTest {
 			userRepository.save(testUser);
 
 			platformConfigurationRepository.deleteAll();
-			databaseService.executeStatement("SELECT setval('data_configuration_entity_seq', 1, true)");
+			databaseService.executeStatement("SELECT setval('platform_configuration_entity_seq', 1, true)");
 			databaseService.executeStatement(
 					"""
 							DO

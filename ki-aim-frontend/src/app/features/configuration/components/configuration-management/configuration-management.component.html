@@ -1,0 +1,30 @@
+<span (click)="openDialog(configurationManagement)">
+    Configuration
+</span>
+
+<ng-template #configurationManagement>
+    <mat-dialog-content class="mat-typography">
+        <app-info-card [hidden]="error === ''" typeClass="card-failure">
+            <div>{{error}}</div>
+        </app-info-card>
+
+        <div>Data Configuration</div>
+
+        <div>Upload</div>
+        <div>
+            <input type="file" accept=".yml,.yaml" (input)="uploadDataConfiguration($event)"
+                   [disabled]="!stateManagementService.isStepCompleted(Steps.UPLOAD) || stateManagementService.isStepCompleted(Steps.VALIDATION)">
+        </div>
+
+
+        <div>Download</div>
+        <button mat-raised-button color="primary"
+                (click)="downloadDataConfiguration()"
+                [disabled]="!stateManagementService.isStepCompleted(Steps.UPLOAD)">
+            Download configuration as YAML
+        </button>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

@@ -1,6 +1,18 @@
 <div class="d-flex flex-column navbar-side">
     <h1 class="align-self-center">KI-AIM</h1>
 
+    <div>Overview</div>
+    <ul class="nav flex-column justify-content-start">
+        <li class="nav-item">
+            <a class="nav-link" title="Configuration"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                <app-configuration-management></app-configuration-management>
+            </a>
+        </li>
+    </ul>
+
+    <div>Steps</div>
+
     <ul class="nav flex-column justify-content-start">
 
         <li *ngFor="let step of StepConfiguration | keyvalue: indexOrderAsc" class="nav-item">

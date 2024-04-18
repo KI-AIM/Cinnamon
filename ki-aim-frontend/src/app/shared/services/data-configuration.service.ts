@@ -10,7 +10,7 @@ import { instanceToPlain } from 'class-transformer';
     providedIn: 'root',
 })
 export class DataConfigurationService {
-    private _dataConfiguration: DataConfiguration; 
+    private _dataConfiguration: DataConfiguration;
 
     constructor(private httpClient: HttpClient) {
         this.setDataConfiguration(new DataConfiguration());
@@ -24,7 +24,11 @@ export class DataConfigurationService {
     }
 
     public getColumnConfigurations(): List<ColumnConfiguration> {
-        return new List<ColumnConfiguration>(this.getDataConfiguration().configurations); 
+        return new List<ColumnConfiguration>(this.getDataConfiguration().configurations);
+    }
+
+    public downloadDataConfigurationAsJson(): Observable<DataConfiguration> {
+        return this.httpClient.get<DataConfiguration>("/api/data/configuration?format=json");
     }
 
     public postDataConfiguration(): Observable<Number> {
@@ -33,6 +37,13 @@ export class DataConfigurationService {
         var configString = JSON.stringify(instanceToPlain(this._dataConfiguration));
         formData.append("configuration", configString);
 
+        return this.httpClient.post<Number>("/api/data/configuration", formData);
+    }
+
+    public postDataConfigurationString(configString: string): Observable<Number> {
+        const formData = new FormData();
+        console.log(configString);
+        formData.append("configuration", configString);
         return this.httpClient.post<Number>("/api/data/configuration", formData);
     }
 

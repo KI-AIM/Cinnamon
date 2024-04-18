@@ -39,4 +39,8 @@ export class StateManagementService {
             this.completedSteps.remove(step);
         }
     }
+
+    isStepCompleted(step: Steps) {
+        return this.completedSteps.contains(step);
+    }
 }

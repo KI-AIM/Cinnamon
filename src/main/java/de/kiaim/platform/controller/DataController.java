@@ -444,6 +444,7 @@ public class DataController {
 	private ObjectMapper createYamlMapper() {
 		final YAMLFactory yamlFactory = new YAMLFactory();
 		yamlFactory.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER);
+		yamlFactory.disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID);
 		final ObjectMapper yamlMapper = new ObjectMapper(yamlFactory);
 		yamlMapper.registerModule(new JavaTimeModule());
 		yamlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);

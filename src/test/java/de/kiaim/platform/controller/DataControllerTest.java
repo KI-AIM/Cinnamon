@@ -139,53 +139,17 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	@Transactional
-	void storeConfig() throws Exception {
+	void storeConfigJson() throws Exception {
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+		final String jsonConfiguration = objectMapper.writeValueAsString(configuration);
+		testStoreConfig(jsonConfiguration);
+	}
 
-		final String result = mockMvc.perform(multipart("/api/data/configuration")
-				                                      .param("configuration",
-				                                             objectMapper.writeValueAsString(configuration)))
-		                             .andExpect(status().isOk())
-		                             .andReturn().getResponse().getContentAsString();
-
-		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
-
-		UserEntity testUser = getTestUser();
-		assertFalse(existsTable(dataSetId), "Table should not exist!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getPlatformConfiguration().getId(),
-		             "User has been associated with the wrong dataset!");
-		assertEquals(".*",
-		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
-		                                                   .getConfigurations().get(5).getConfigurations()
-		                                                   .get(0))
-				             .getPattern(),
-		             "Type of first column does not match!");
-
-		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
-
-		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
-				                                            .param("configuration",
-				                                                   objectMapper.writeValueAsString(
-						                                                   configurationUpdate)))
-		                                   .andExpect(status().isOk())
-		                                   .andReturn().getResponse().getContentAsString();
-
-		final long dataSetIdUpdate = assertDoesNotThrow(() -> Long.parseLong(resultUpdate));
-
-		testUser = getTestUser();
-		assertFalse(existsTable(dataSetId), "Table should not exist!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetIdUpdate, testUser.getPlatformConfiguration().getId(),
-		             "User has been associated with the wrong dataset!");
-		assertEquals(dataSetIdUpdate, dataSetId, "Update has changed the DataSet id!");
-		assertEquals("[0-9]*",
-		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
-		                                                   .getConfigurations().get(5).getConfigurations()
-		                                                   .get(0)).getPattern(),
-		             "Type of first column does not match!");
+	@Test
+	@Transactional
+	void storeConfigYaml() throws Exception {
+		final String yamlConfiguration = TestModelHelper.generateDataConfigurationAsYaml();
+		testStoreConfig(yamlConfiguration);
 	}
 
 	@Test
@@ -465,6 +429,52 @@ class DataControllerTest extends ControllerTest {
 
 	private String wrapInQuotes(final String value) {
 		return "\"" + value + "\"";
+	}
+
+	private void testStoreConfig(final String configuration) throws Exception {
+		final String result = mockMvc.perform(multipart("/api/data/configuration")
+				                                      .param("configuration", configuration))
+		                             .andExpect(status().isOk())
+		                             .andReturn().getResponse().getContentAsString();
+
+		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
+
+		UserEntity testUser = getTestUser();
+		assertFalse(existsTable(dataSetId), "Table should not exist!");
+		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
+		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
+		assertEquals(dataSetId, testUser.getPlatformConfiguration().getId(),
+		             "User has been associated with the wrong dataset!");
+		assertEquals(".*",
+		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
+		                                                   .getConfigurations().get(5).getConfigurations()
+		                                                   .get(0))
+				             .getPattern(),
+		             "Type of first column does not match!");
+
+		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
+
+		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
+				                                            .param("configuration",
+				                                                   objectMapper.writeValueAsString(
+						                                                   configurationUpdate)))
+		                                   .andExpect(status().isOk())
+		                                   .andReturn().getResponse().getContentAsString();
+
+		final long dataSetIdUpdate = assertDoesNotThrow(() -> Long.parseLong(resultUpdate));
+
+		testUser = getTestUser();
+		assertFalse(existsTable(dataSetId), "Table should not exist!");
+		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
+		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
+		assertEquals(dataSetIdUpdate, testUser.getPlatformConfiguration().getId(),
+		             "User has been associated with the wrong dataset!");
+		assertEquals(dataSetIdUpdate, dataSetId, "Update has changed the DataSet id!");
+		assertEquals("[0-9]*",
+		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
+		                                                   .getConfigurations().get(5).getConfigurations()
+		                                                   .get(0)).getPattern(),
+		             "Type of first column does not match!");
 	}
 
 }

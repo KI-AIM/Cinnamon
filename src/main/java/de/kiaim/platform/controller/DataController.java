@@ -2,10 +2,8 @@ package de.kiaim.platform.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.SerializationConfig;
+import de.kiaim.platform.config.YamlMapper;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.dto.LoadDataRequest;
@@ -53,6 +51,7 @@ import java.util.List;
                                        "Data Sets are associated with the user of the request.")
 public class DataController {
 
+	private final ObjectMapper yamlMapper;
 	// TODO Find Processor dynamically
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
@@ -69,6 +68,7 @@ public class DataController {
 		this.dataSetService = dataSetService;
 		this.userService = userService;
 		this.responseService = responseService;
+		this.yamlMapper = YamlMapper.yamlMapper();
 	}
 
 	@Operation(summary = "Estimates the data types of a given data set.",
@@ -140,7 +140,7 @@ public class DataController {
 	}
 
 	@Operation(summary = "Stores or updates the given configuration.",
-	           description = "Stores or updates the given configuration.")
+	           description = "Stores or updates the given configuration. The configuration can be a JSON or YAML string.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully stored the configuration. Returns the id of the data set.",
@@ -159,15 +159,17 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeConfig(
-			@Parameter(description = "Metadata describing the format of the data.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = DataConfiguration.class)))
+			@Parameter(description = "Metadata describing the format of the data as JSON or YAML.",
+			           content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                               schema = @Schema(implementation = DataConfiguration.class)),
+			                      @Content(mediaType = "application/x-yaml",
+			                               schema = @Schema(implementation = DataConfiguration.class)),
+			           })
 			@RequestParam(value = "configuration") DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
-	) throws ApiException {
+	) throws ApiException, JsonProcessingException {
 		return handleRequest(RequestType.STORE_CONFIG, null, null, configuration, null, user);
 	}
-
 
 	@Operation(summary = "Stores the given data into the internal database for further processing.",
 	           description = "Stores the given data into the internal database for further processing.")
@@ -237,7 +239,7 @@ public class DataController {
 		ResponseEntity<Object> response = handleRequest(RequestType.LOAD_CONFIG, null, null, null, null, user);
 
 		if (response.getStatusCode().is2xxSuccessful() && format.equals("yaml")) {
-			final String yaml = createYamlMapper().writeValueAsString(response.getBody());
+			final String yaml = yamlMapper.writeValueAsString(response.getBody());
 			response = ResponseEntity.ok().header("Content-Type", "application/x-yaml").body(yaml);
 		}
 
@@ -439,16 +441,6 @@ public class DataController {
 		}
 
 		return file.getOriginalFilename().substring(fileExtensionBegin);
-	}
-
-	private ObjectMapper createYamlMapper() {
-		final YAMLFactory yamlFactory = new YAMLFactory();
-		yamlFactory.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER);
-		yamlFactory.disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID);
-		final ObjectMapper yamlMapper = new ObjectMapper(yamlFactory);
-		yamlMapper.registerModule(new JavaTimeModule());
-		yamlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-		return yamlMapper;
 	}
 
 	private enum RequestType {

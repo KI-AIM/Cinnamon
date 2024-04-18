@@ -16,6 +16,8 @@ import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.PlatformConfigurationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,8 @@ import java.util.function.Predicate;
 
 @Service
 public class DatabaseService {
+
+	private final Logger LOGGER = LoggerFactory.getLogger(DatabaseService.class);
 
 	final Connection connection;
 	final PlatformConfigurationRepository platformConfigurationRepository;
@@ -102,7 +106,8 @@ public class DatabaseService {
 		final String tableQuery = dataschemeGenerator.createSchema(dataSet.getDataConfiguration(), tableName);
 		try (final Statement tableStatement = connection.createStatement()) {
 			tableStatement.execute(tableQuery);
-		} catch (SQLException e) {
+		} catch (final SQLException e) {
+			LOGGER.error("The Table for the DataSet could not be created!", e);
 			throw new InternalDataSetPersistenceException("The Table for the DataSet could not be created!", e);
 		}
 
@@ -121,6 +126,7 @@ public class DatabaseService {
 				delete(user);
 			} catch (BadDataSetIdException ignored) {
 			}
+			LOGGER.error("The DataSet could not be persisted!", e);
 			throw new InternalDataSetPersistenceException("The DataSet could not be persisted!", e);
 		}
 
@@ -202,6 +208,7 @@ public class DatabaseService {
 				}
 			}
 		} catch (SQLException e) {
+			LOGGER.error("The DataSet could not be exported!", e);
 			throw new InternalDataSetPersistenceException("The DataSet could not be exported!", e);
 		}
 
@@ -254,6 +261,7 @@ public class DatabaseService {
 			try (final Statement statement = connection.createStatement()) {
 				statement.execute("DROP TABLE IF EXISTS " + getTableName(dataSetId) + ";");
 			} catch (SQLException e) {
+				LOGGER.error("The DataSet could not be deleted!", e);
 				throw new InternalDataSetPersistenceException("The DataSet could not be deleted!", e);
 			}
 		}
@@ -276,6 +284,7 @@ public class DatabaseService {
 				return resultSet.next();
 			}
 		} catch (SQLException e) {
+			LOGGER.error("The Configuration could not be stored!", e);
 			throw new InternalDataSetPersistenceException("The Configuration could not be stored!", e);
 		}
 	}
@@ -378,7 +387,10 @@ public class DatabaseService {
 			case DECIMAL -> data.getValue().toString();
 			case INTEGER -> data.getValue().toString();
 			case STRING -> "'" + data.getValue().toString().replace("'", "''") + "'";
-			case UNDEFINED -> throw new InternalDataSetPersistenceException("Undefined data type can not be persisted!");
+			case UNDEFINED -> {
+				LOGGER.error("Undefined data type can not be persisted!");
+				throw new InternalDataSetPersistenceException("Undefined data type can not be persisted!");
+			}
 		};
 	}
 
@@ -445,18 +457,21 @@ public class DatabaseService {
 					return new DateData(localDate);
 				}
 				case UNDEFINED -> {
+					LOGGER.error("Undefined data type can not be exported!");
 					throw new InternalDataSetPersistenceException("Undefined data type can not be exported!");
 				}
 				default -> throw new IllegalStateException("Unexpected value: " + dataType);
 			}
 		} catch (SQLException e) {
 			try {
-				throw new InternalDataSetPersistenceException(
-						"Failed to convert value " + resultSet.getString(columnIndex) + " to the given DataType '" +
-						dataType.name() + "'!");
+				final String errorMessage = "Failed to convert value '" + resultSet.getString(columnIndex)
+				                            + "' to the given DataType '" + dataType.name() + "'!";
+				LOGGER.error(errorMessage, e);
+				throw new InternalDataSetPersistenceException(errorMessage, e);
 			} catch (SQLException ex) {
+				LOGGER.error("Failed to convert value to the given DataType '" + dataType.name() + "'!", ex);
 				throw new InternalDataSetPersistenceException(
-						"Failed to convert value to the given DataType '" + dataType.name() + "'!");
+						"Failed to convert value to the given DataType '" + dataType.name() + "'!", ex);
 			}
 		}
 	}

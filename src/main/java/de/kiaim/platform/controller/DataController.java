@@ -375,7 +375,7 @@ public class DataController {
 			}
 			case LOAD_DATA -> {
 				final DataSet dataSet = databaseService.exportDataSet(user, columnNames);
-				result = dataSetService.encodeDataRows(dataSet, user.getDataConfiguration(), loadDataRequest);
+				result = dataSetService.encodeDataRows(dataSet, user.getPlatformConfiguration(), loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
 				result = databaseService.exportDataSet(user, columnNames);

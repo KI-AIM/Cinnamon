@@ -6,7 +6,7 @@ import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.entity.DataConfigurationEntity;
+import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
@@ -15,7 +15,7 @@ import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
 import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.repository.DataConfigurationRepository;
+import de.kiaim.platform.repository.PlatformConfigurationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
@@ -36,16 +36,16 @@ import java.util.function.Predicate;
 public class DatabaseService {
 
 	final Connection connection;
-	final DataConfigurationRepository dataConfigurationRepository;
+	final PlatformConfigurationRepository platformConfigurationRepository;
 
 	final DataschemeGenerator dataschemeGenerator;
 	final UserService userService;
 
 	@Autowired
-	public DatabaseService(DataSource dataSource, DataConfigurationRepository dataConfigurationRepository,
+	public DatabaseService(DataSource dataSource, PlatformConfigurationRepository platformConfigurationRepository,
 	                       DataschemeGenerator dataschemeGenerator, UserService userService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
-		this.dataConfigurationRepository = dataConfigurationRepository;
+		this.platformConfigurationRepository = platformConfigurationRepository;
 		this.dataschemeGenerator = dataschemeGenerator;
 		this.userService = userService;
 	}
@@ -139,9 +139,9 @@ public class DatabaseService {
 	@Transactional
 	public long storeConfiguration(final String configurationName, final String configuration,
 	                               final UserEntity user) {
-		final DataConfigurationEntity dataConfigurationEntity = getDataConfigurationEntity(user);
-		dataConfigurationEntity.getConfigurations().put(configurationName, configuration);
-		return storeDataConfigurationEntity(dataConfigurationEntity, user);
+		final PlatformConfigurationEntity platformConfigurationEntity = getPlatformConfigurationEntity(user);
+		platformConfigurationEntity.getConfigurations().put(configurationName, configuration);
+		return storeDataConfigurationEntity(platformConfigurationEntity, user);
 	}
 
 	/**
@@ -173,8 +173,8 @@ public class DatabaseService {
 	public DataSet exportDataSet(final UserEntity user, List<String> columnNames)
 			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException {
 		final long dataSetId = getDataSetIdOrThrow(user);
-		final DataConfigurationEntity dataConfigurationEntity = getOrThrow(dataSetId);
-		DataConfiguration dataConfiguration = dataConfigurationEntity.getDataConfiguration();
+		final PlatformConfigurationEntity platformConfigurationEntity = getOrThrow(dataSetId);
+		DataConfiguration dataConfiguration = platformConfigurationEntity.getDataConfiguration();
 
 		if (columnNames.isEmpty()) {
 			columnNames = dataConfiguration.getColumnNames();
@@ -220,14 +220,14 @@ public class DatabaseService {
 	public String exportConfiguration(final String configurationName, final UserEntity user)
 			throws BadConfigurationNameException, BadDataSetIdException {
 		final long dataSetId = getDataSetIdOrThrow(user);
-		final DataConfigurationEntity dataConfigurationEntity = getOrThrow(dataSetId);
+		final PlatformConfigurationEntity platformConfigurationEntity = getOrThrow(dataSetId);
 
-		if (!dataConfigurationEntity.getConfigurations().containsKey(configurationName)) {
+		if (!platformConfigurationEntity.getConfigurations().containsKey(configurationName)) {
 			throw new BadConfigurationNameException(
 					"User has no configuration with the name '" + configurationName + "'!");
 		}
 
-		return dataConfigurationEntity.getConfigurations().get(configurationName);
+		return platformConfigurationEntity.getConfigurations().get(configurationName);
 	}
 
 	/**
@@ -259,7 +259,7 @@ public class DatabaseService {
 		}
 
 		// Delete the configuration
-		dataConfigurationRepository.deleteById(dataSetId);
+		platformConfigurationRepository.deleteById(dataSetId);
 	}
 
 	/**
@@ -293,22 +293,22 @@ public class DatabaseService {
 	}
 
 	private long getDataSetIdOrThrow(final UserEntity user) throws BadDataSetIdException {
-		if (user.getDataConfiguration() == null) {
+		if (user.getPlatformConfiguration() == null) {
 			throw new BadDataSetIdException("User has no configuration!");
 		}
-		return user.getDataConfiguration().getId();
+		return user.getPlatformConfiguration().getId();
 	}
 
-	private DataConfigurationEntity getDataConfigurationEntity(final UserEntity user) {
-		final DataConfigurationEntity dataConfigurationEntity;
+	private PlatformConfigurationEntity getPlatformConfigurationEntity(final UserEntity user) {
+		final PlatformConfigurationEntity platformConfigurationEntity;
 
-		if (user.getDataConfiguration() != null) {
-			dataConfigurationEntity = user.getDataConfiguration();
+		if (user.getPlatformConfiguration() != null) {
+			platformConfigurationEntity = user.getPlatformConfiguration();
 		} else {
-			dataConfigurationEntity = new DataConfigurationEntity();
+			platformConfigurationEntity = new PlatformConfigurationEntity();
 		}
 
-		return dataConfigurationEntity;
+		return platformConfigurationEntity;
 	}
 
 	/**
@@ -325,14 +325,14 @@ public class DatabaseService {
 	private long store(final DataConfiguration dataConfiguration,
 	                   final List<DataRowTransformationError> rowTransformationErrors, final UserEntity user)
 			throws InternalDataSetPersistenceException, BadDataSetIdException {
-		final DataConfigurationEntity dataConfigurationEntity = getDataConfigurationEntity(user);
+		final PlatformConfigurationEntity platformConfigurationEntity = getPlatformConfigurationEntity(user);
 
 		// Check if the data set already has been stored
-		if (dataConfigurationEntity.getId() != null && existsTable(dataConfigurationEntity.getId())) {
+		if (platformConfigurationEntity.getId() != null && existsTable(platformConfigurationEntity.getId())) {
 			throw new BadDataSetIdException("The data has already been stored!");
 		}
 
-		dataConfigurationEntity.setDataConfiguration(dataConfiguration);
+		platformConfigurationEntity.setDataConfiguration(dataConfiguration);
 
 		for (final DataRowTransformationError rowTransformationError : rowTransformationErrors) {
 			for (final DataTransformationError transformationError : rowTransformationError.getDataTransformationErrors()) {
@@ -345,22 +345,22 @@ public class DatabaseService {
 				transformationErrorEntity.setOriginalValue(
 						rowTransformationError.getRawValues().get(transformationError.getIndex()));
 
-				dataConfigurationEntity.addDataRowTransformationError(transformationErrorEntity);
+				platformConfigurationEntity.addDataRowTransformationError(transformationErrorEntity);
 			}
 		}
 
-		return storeDataConfigurationEntity(dataConfigurationEntity, user);
+		return storeDataConfigurationEntity(platformConfigurationEntity, user);
 	}
 
-	private long storeDataConfigurationEntity(final DataConfigurationEntity dataConfigurationEntity,
+	private long storeDataConfigurationEntity(final PlatformConfigurationEntity platformConfigurationEntity,
 	                                          final UserEntity user) {
-		dataConfigurationRepository.save(dataConfigurationEntity);
+		platformConfigurationRepository.save(platformConfigurationEntity);
 
 		// Get ID
-		final long dataSetId = dataConfigurationEntity.getId();
+		final long dataSetId = platformConfigurationEntity.getId();
 
 		// Set current data configuration for the user
-		userService.setConfigurationToUser(dataConfigurationEntity, user);
+		userService.setConfigurationToUser(platformConfigurationEntity, user);
 
 		return dataSetId;
 	}
@@ -383,7 +383,7 @@ public class DatabaseService {
 	}
 
 	private void existsOrThrow(final long dataSetId) throws BadDataSetIdException {
-		final boolean exists = dataConfigurationRepository.existsById(dataSetId);
+		final boolean exists = platformConfigurationRepository.existsById(dataSetId);
 		if (!exists) {
 			throw new BadDataSetIdException("No DataSet with the given ID '" + dataSetId + "' found!");
 		}
@@ -402,8 +402,8 @@ public class DatabaseService {
 		}
 	}
 
-	private DataConfigurationEntity getOrThrow(final long dataSetId) throws BadDataSetIdException {
-		final Optional<DataConfigurationEntity> config = dataConfigurationRepository.findById(dataSetId);
+	private PlatformConfigurationEntity getOrThrow(final long dataSetId) throws BadDataSetIdException {
+		final Optional<PlatformConfigurationEntity> config = platformConfigurationRepository.findById(dataSetId);
 		if (config.isEmpty()) {
 			throw new BadDataSetIdException("No DataSet with the given ID '" + dataSetId + "' found!");
 		}

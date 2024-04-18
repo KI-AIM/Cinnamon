@@ -1,10 +1,9 @@
 package de.kiaim.platform;
 
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
-import de.kiaim.platform.model.DataTransformationError;
-import de.kiaim.platform.model.entity.DataConfigurationEntity;
+import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.repository.DataConfigurationRepository;
+import de.kiaim.platform.repository.PlatformConfigurationRepository;
 import de.kiaim.platform.repository.DataTransformationErrorRepository;
 import de.kiaim.platform.repository.UserRepository;
 import de.kiaim.platform.service.DatabaseService;
@@ -31,7 +30,7 @@ public class DatabaseTest extends ContextRequiredTest {
 	DatabaseService databaseService;
 
 	@Autowired
-	DataConfigurationRepository dataConfigurationRepository;
+	PlatformConfigurationRepository platformConfigurationRepository;
 
 	@Autowired
 	protected DataTransformationErrorRepository dataTransformationErrorRepository;
@@ -59,10 +58,10 @@ public class DatabaseTest extends ContextRequiredTest {
 	protected void cleanDatabase() {
 		try {
 			final UserEntity testUser = getTestUser();
-			testUser.setDataConfiguration(null);
+			testUser.setPlatformConfiguration(null);
 			userRepository.save(testUser);
 
-			dataConfigurationRepository.deleteAll();
+			platformConfigurationRepository.deleteAll();
 			databaseService.executeStatement("SELECT setval('data_configuration_entity_seq', 1, true)");
 			databaseService.executeStatement(
 					"""
@@ -95,7 +94,7 @@ public class DatabaseTest extends ContextRequiredTest {
 
 		final UserEntity updatedUser = getTestUser();
 
-		final DataConfigurationEntity dataConfiguration = updatedUser.getDataConfiguration();
+		final PlatformConfigurationEntity dataConfiguration = updatedUser.getPlatformConfiguration();
 		assertNotNull(dataConfiguration, "The configuration has not been created!");
 		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
@@ -104,7 +103,7 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	protected boolean existsDataConfigration(final long dataSetId) {
-		return dataConfigurationRepository.existsById(dataSetId);
+		return platformConfigurationRepository.existsById(dataSetId);
 	}
 
 	protected boolean existsTable(final long dataSetId) {

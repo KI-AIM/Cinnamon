@@ -24,7 +24,7 @@ public class DataTransformationErrorEntity {
 	@ManyToOne
 	@JoinColumn(nullable = false)
 	@Setter
-	private DataConfigurationEntity dataConfiguration;
+	private PlatformConfigurationEntity platformConfiguration;
 
 	/**
 	 * Index of the row in the data set this transformation error corresponds to.

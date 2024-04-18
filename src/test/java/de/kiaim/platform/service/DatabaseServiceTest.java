@@ -10,7 +10,7 @@ import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.DataType;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
-import de.kiaim.platform.model.entity.DataConfigurationEntity;
+import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,16 +38,17 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		DataConfigurationEntity dataConfiguration = testUser.getDataConfiguration();
-		assertNotNull(dataConfiguration, "User has not been associated with the dataset!");
-		assertEquals(dataSetId, dataConfiguration.getId(), "User has been associated with the wrong dataset!");
-		assertEquals(0, dataTransformationErrorRepository.countByDataConfigurationId(dataConfiguration.getId()), "No transformation errors should have been persisted!");
+		PlatformConfigurationEntity platformConfiguration = testUser.getPlatformConfiguration();
+		assertNotNull(platformConfiguration, "User has not been associated with the dataset!");
+		assertEquals(dataSetId, platformConfiguration.getId(), "User has been associated with the wrong dataset!");
+		assertEquals(0, dataTransformationErrorRepository.countByPlatformConfigurationId(platformConfiguration.getId()),
+		             "No transformation errors should have been persisted!");
 
 		assertDoesNotThrow(() -> databaseService.delete(user));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
-		assertNull(getTestUser().getDataConfiguration(), "User association with the dataset has not been removed!");
+		assertNull(getTestUser().getPlatformConfiguration(), "User association with the dataset has not been removed!");
 	}
 
 	@Test
@@ -61,17 +62,19 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(3, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		DataConfigurationEntity dataConfiguration = testUser.getDataConfiguration();
-		assertNotNull(dataConfiguration, "User has not been associated with the dataset!");
-		assertEquals(dataSetId, dataConfiguration.getId(), "User has been associated with the wrong dataset!");
-		assertEquals(2, dataTransformationErrorRepository.countByDataConfigurationId(dataConfiguration.getId()), "Transformation errors have not been persisted!");
+		PlatformConfigurationEntity platformConfiguration = testUser.getPlatformConfiguration();
+		assertNotNull(platformConfiguration, "User has not been associated with the dataset!");
+		assertEquals(dataSetId, platformConfiguration.getId(), "User has been associated with the wrong dataset!");
+		assertEquals(2, dataTransformationErrorRepository.countByPlatformConfigurationId(platformConfiguration.getId()),
+		             "Transformation errors have not been persisted!");
 
 		assertDoesNotThrow(() -> databaseService.delete(user));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
-		assertNull(getTestUser().getDataConfiguration(), "User association with the dataset has not been removed!");
-		assertEquals(0, dataTransformationErrorRepository.countByDataConfigurationId(dataConfiguration.getId()), "Transformation errors have not been removed!");
+		assertNull(getTestUser().getPlatformConfiguration(), "User association with the dataset has not been removed!");
+		assertEquals(0, dataTransformationErrorRepository.countByPlatformConfigurationId(platformConfiguration.getId()),
+		             "Transformation errors have not been removed!");
 	}
 
 	@Test
@@ -94,11 +97,11 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final UserEntity updatedUser = getTestUser();
 
-		final DataConfigurationEntity dataConfiguration = updatedUser.getDataConfiguration();
-		assertNotNull(dataConfiguration, "The configuration has not been created!");
-		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
+		final PlatformConfigurationEntity platformConfiguration = updatedUser.getPlatformConfiguration();
+		assertNotNull(platformConfiguration, "The configuration has not been created!");
+		assertTrue(platformConfiguration.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
-		assertEquals(config, dataConfiguration.getConfigurations().get(configName),
+		assertEquals(config, platformConfiguration.getConfigurations().get(configName),
 		             "The configuration has not been stored correctly!");
 	}
 
@@ -117,11 +120,11 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final UserEntity updatedUser = getTestUser();
 
-		final DataConfigurationEntity dataConfiguration = updatedUser.getDataConfiguration();
-		assertNotNull(dataConfiguration, "The configuration has not been created!");
-		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
+		final PlatformConfigurationEntity platformConfiguration = updatedUser.getPlatformConfiguration();
+		assertNotNull(platformConfiguration, "The configuration has not been created!");
+		assertTrue(platformConfiguration.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
-		assertEquals(updatedConfig, dataConfiguration.getConfigurations().get(configName),
+		assertEquals(updatedConfig, platformConfiguration.getConfigurations().get(configName),
 		             "The configuration has not been stored correctly!");
 	}
 

@@ -1,7 +1,7 @@
 package de.kiaim.platform.controller;
 
 import de.kiaim.platform.ControllerTest;
-import de.kiaim.platform.model.entity.DataConfigurationEntity;
+import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -37,7 +37,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		final UserEntity user = getTestUser();
-		final DataConfigurationEntity dataConfiguration = user.getDataConfiguration();
+		final PlatformConfigurationEntity dataConfiguration = user.getPlatformConfiguration();
 		assertNotNull(dataConfiguration, "The configuration has not been created!");
 		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");

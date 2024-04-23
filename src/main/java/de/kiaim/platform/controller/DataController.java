@@ -2,7 +2,6 @@ package de.kiaim.platform.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationConfig;
 import de.kiaim.platform.config.YamlMapper;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;

@@ -4,25 +4,30 @@
 
 <ng-template #configurationManagement>
     <mat-dialog-content class="mat-typography">
+
+        <!-- Error -->
         <app-info-card [hidden]="error === ''" typeClass="card-failure">
             <div>{{error}}</div>
         </app-info-card>
+        <div *ngFor="let config of configurationService.getRegisteredConfigurations()">
+            <div>{{config.displayName}}</div>
 
-        <div>Data Configuration</div>
+            <!-- Upload -->
+            <div>Upload</div>
+            <div>
+                <input type="file" accept=".yml,.yaml" (input)="uploadConfiguration(config, $event)"
+                       [disabled]="!stateManagementService.isStepCompleted(config.availableAfterStep) || stateManagementService.isStepCompleted(config.lockedAfterStep)">
+            </div>
 
-        <div>Upload</div>
-        <div>
-            <input type="file" accept=".yml,.yaml" (input)="uploadDataConfiguration($event)"
-                   [disabled]="!stateManagementService.isStepCompleted(Steps.UPLOAD) || stateManagementService.isStepCompleted(Steps.VALIDATION)">
+            <!-- Download -->
+            <div>Download</div>
+            <button mat-raised-button color="primary"
+                    (click)="downloadConfiguration(config)"
+                    [disabled]="!stateManagementService.isStepCompleted(config.availableAfterStep)">
+                Download configuration as YAML
+            </button>
         </div>
 
-
-        <div>Download</div>
-        <button mat-raised-button color="primary"
-                (click)="downloadDataConfiguration()"
-                [disabled]="!stateManagementService.isStepCompleted(Steps.UPLOAD)">
-            Download configuration as YAML
-        </button>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close color="primary">Close</button>

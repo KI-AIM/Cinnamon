@@ -3,8 +3,12 @@ import { DataConfiguration } from '../model/data-configuration';
 import { ColumnConfiguration } from '../model/column-configuration';
 import { List } from 'src/app/core/utils/list';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, switchMap } from 'rxjs';
+import { Observable, of, switchMap } from 'rxjs';
 import { instanceToPlain } from 'class-transformer';
+import { ConfigurationService } from './configuration.service';
+import { ConfigurationRegisterData } from '../model/configuration-register-data';
+import { Steps } from 'src/app/core/enums/steps';
+import { stringify } from 'yaml';
 
 @Injectable({
     providedIn: 'root',
@@ -12,8 +16,25 @@ import { instanceToPlain } from 'class-transformer';
 export class DataConfigurationService {
     private _dataConfiguration: DataConfiguration;
 
-    constructor(private httpClient: HttpClient) {
+    constructor(
+        private httpClient: HttpClient,
+        private configurationService: ConfigurationService,
+    ) {
         this.setDataConfiguration(new DataConfiguration());
+    }
+
+    public registerConfig() {
+        const configReg = new ConfigurationRegisterData();
+        configReg.availableAfterStep = Steps.UPLOAD;
+        configReg.lockedAfterStep = Steps.VALIDATION;
+        configReg.displayName = "Data Configuration";
+        configReg.name = "data-configuration";
+        configReg.orderNumber = 0;
+        configReg.syncWithBackend = false;
+        configReg.getConfigCallback = () => this.getConfigurationCallback();
+        configReg.setConfigCallback = (config) => this.setConfigCallback(config);
+
+        this.configurationService.registerConfiguration(configReg);
     }
 
     public getDataConfiguration(): DataConfiguration {
@@ -51,5 +72,29 @@ export class DataConfigurationService {
         return this.postDataConfiguration().pipe(switchMap((response) => {
             return this.httpClient.get<Blob>("/api/data/configuration?format=yaml", {responseType: 'text' as 'json'});
         }));
+    }
+
+    private getConfigurationCallback(): string {
+        this.postDataConfiguration().subscribe();
+        return stringify(this.getDataConfiguration());
+    }
+
+    private setConfigCallback(configData: string) {
+        this.postDataConfigurationString(configData).subscribe({
+            next: (data: Number) => {
+                return of(this.downloadDataConfigurationAsJson().subscribe({
+                    next: (data: DataConfiguration) => {
+                        this.setDataConfiguration(data);
+                        return of(null);
+                    },
+                    error: (error) => {
+                        return of(error);
+                    },
+                }));
+            },
+            error: (error) => {
+                return of(error);
+            },
+        });
     }
 }

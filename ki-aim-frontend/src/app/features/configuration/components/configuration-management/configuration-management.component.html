@@ -1,7 +1,3 @@
-<span (click)="openDialog(configurationManagement)">
-    Configuration
-</span>
-
 <ng-template #configurationManagement>
     <mat-dialog-content class="mat-typography">
 
@@ -9,24 +5,36 @@
         <app-info-card [hidden]="error === ''" typeClass="card-failure">
             <div>{{error}}</div>
         </app-info-card>
+
+        <!-- Configuration selection -->
+        <div>Select configurations to download</div>
         <div *ngFor="let config of configurationService.getRegisteredConfigurations()">
-            <div>{{config.displayName}}</div>
-
-            <!-- Upload -->
-            <div>Upload</div>
-            <div>
-                <input type="file" accept=".yml,.yaml" (input)="uploadConfiguration(config, $event)"
-                       [disabled]="!stateManagementService.isStepCompleted(config.availableAfterStep) || stateManagementService.isStepCompleted(config.lockedAfterStep)">
-            </div>
-
-            <!-- Download -->
-            <div>Download</div>
-            <button mat-raised-button color="primary"
-                    (click)="downloadConfiguration(config)"
-                    [disabled]="!stateManagementService.isStepCompleted(config.availableAfterStep)">
-                Download configuration as YAML
-            </button>
+            <span>
+                <mat-checkbox [id]="config.name" color="primary" [disabled]="!stateManagementService.isStepCompleted(config.availableAfterStep)">
+                    {{config.displayName}}
+                </mat-checkbox>
+            </span>
         </div>
+
+        <div>Download</div>
+        <button mat-raised-button color="primary" (click)="downloadAllConfigurations()"
+                [disabled]="!stateManagementService.isStepCompleted(Steps.UPLOAD)">
+            <mat-icon>file_download</mat-icon>
+            Download
+        </button>
+
+        <div>Upload</div>
+        <span style="width: 50%;">
+            <input id="configInput" type="file" accept=".yml,.yaml"
+                   [disabled]="!stateManagementService.isStepCompleted(Steps.UPLOAD)">
+        </span>
+        <span style="width: 50%;">
+            <button mat-raised-button color="primary" (click)="uploadAllConfigurations()"
+                    [disabled]="!stateManagementService.isStepCompleted(Steps.UPLOAD)">
+                <mat-icon>file_upload</mat-icon>
+                Upload
+            </button>
+        </span>
 
     </mat-dialog-content>
     <mat-dialog-actions align="end">

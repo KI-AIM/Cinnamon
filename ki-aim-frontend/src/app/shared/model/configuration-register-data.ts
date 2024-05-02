@@ -37,14 +37,17 @@ export class ConfigurationRegisterData {
     syncWithBackend: boolean;
 
     /**
-     * Function that should retrieve the configuration as a YAML string.
+     * Function that should retrieve the configuration as a javascript object a YAML string.
      * Gets called when downloading the configuration.
+     * The object will be converted into a YAML string before downloading.
+     * @returns The configuration as a javascript object or a YAML string.
      */
-    getConfigCallback: () => string;
+    getConfigCallback: () => Object | string;
 
     /**
      * Function that should set the configuration in the front end.
      * Gets called when uploading the configuration.
+     * @param config The configurations as a YAML string.
      */
     setConfigCallback: (config: string) => void;
 }

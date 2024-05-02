@@ -1,11 +1,8 @@
-import { Component, TemplateRef } from '@angular/core';
+import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
-import { FileUtilityService } from "src/app/shared/services/file-utility.service";
-import { FileService } from "src/app/features/data-upload/services/file.service";
-import { StateManagementService } from "src/app/core/services/state-management.service";
 import { Steps } from "../../../../core/enums/steps";
 import { ConfigurationService } from 'src/app/shared/services/configuration.service';
-import { ConfigurationRegisterData } from 'src/app/shared/model/configuration-register-data';
+import { StateManagementService } from 'src/app/core/services/state-management.service';
 
 @Component({
   selector: 'app-configuration-management',
@@ -16,11 +13,11 @@ export class ConfigurationManagementComponent {
     protected readonly Steps = Steps;
     protected error: string;
 
+    @ViewChild('configurationManagement') dialogWrap: TemplateRef<any>;
+
     constructor(
         public configurationService: ConfigurationService,
         public dialog: MatDialog,
-        public fileService: FileService,
-        public fileUtilityService: FileUtilityService,
         public stateManagementService: StateManagementService,
     ) {
         this.error = "";
@@ -30,63 +27,45 @@ export class ConfigurationManagementComponent {
      * Opens the dialog.
      * @param templateRef Reference of the dialog.
      */
-    openDialog(templateRef: TemplateRef<any>) {
-        this.dialog.open(templateRef, {
+    openDialog() {
+        this.dialog.open(this.dialogWrap, {
             width: '60%'
         });
     }
 
     /**
-     * Downloads the configuration based on the given configuration data.
+     * Downloads all registered configurations.
      * Uses the getConfigCallback function to retrieve the configuration.
      * If configured, stores the configuration under the configured name into the database.
-     * 
-     * @param config The register data of the configuration to download.
      */
-    downloadConfiguration(config: ConfigurationRegisterData) {
-        const configData = config.getConfigCallback();
-
-        if (config.syncWithBackend) {
-            this.configurationService.storeConfig(config.name, configData).subscribe({
-                error: (error) => {
-                    this.error = error;
-                },
-            });
+    downloadAllConfigurations() {
+        const included = [];
+        for (const config of this.configurationService.getRegisteredConfigurations()) {
+            if ((document.getElementById(config.name + "-input") as HTMLInputElement).checked) {
+                included.push(config.name);
+            }
         }
-
-        const blob = new Blob([configData], { type: 'text/yaml' });
-        const fileName = this.fileService.getFile().name + "-" + config.name + "-configuration.yaml"
-        this.fileUtilityService.saveFile(blob, fileName);
+        this.configurationService.downloadAllConfigurations(included);
     }
 
     /**
-     * Uploads the configuration from the target of the given event as the configuration of the given configuration register data.
+     * Uploads all configurations contained in the file.
      * Uses the setConfigCallback function to update the configuration in the application.
      * If configured, stores the configuration under the configured name into the database.
-     * 
-     * @param config The register data of the configuration to upload.
      * @param event Input event of the file input.
      */
-    uploadConfiguration(config: ConfigurationRegisterData, event: Event) {
-        const files = (event.target as HTMLInputElement)?.files;
-
-        if (files) {
-            const reader = new FileReader();
-            reader.addEventListener("load", () => {
-                const configData = reader.result as string;
-
-                if (config.syncWithBackend) {
-                    this.configurationService.storeConfig(config.name, configData).subscribe({
-                        error: (error) => {
-                            this.error = error;
-                        },
-                    });
-                }
-
-                config.setConfigCallback(reader.result as string);
-            }, false);
-
-            reader.readAsText(files[0]);
+    uploadAllConfigurations() {
+        const files = (document.getElementById("configInput") as HTMLInputElement).files;
+        if (!files || files.length === 0) {
+            return;
         }
+
+        const included = [];
+        for (const config of this.configurationService.getRegisteredConfigurations()) {
+            if ((document.getElementById(config.name + "-input") as HTMLInputElement).checked) {
+                included.push(config.name);
+            }
+        }
+        this.configurationService.uploadAllConfigurations(files[0], included);
     }
 }

@@ -15,8 +15,10 @@
         <div class="px-1">
             <button mat-raised-button color="primary" (click)="confirmConfiguration()" [disabled]="!isValid">Confirm configuration and start validation</button>
         </div>
-        <div class="px-1">
-            <button mat-raised-button color="primary" (click)="downloadConfiguration()">Download configuration as YAML</button>
+
+        <!-- Upload -->
+        <div>
+            <input type="file" accept=".yml,.yaml" (input)="uploadConfiguration($event)">
         </div>
     </div>
 </div>

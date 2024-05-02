@@ -4,6 +4,7 @@ import { Mode } from '../../enums/mode';
 import { StepConfiguration, Steps } from '../../enums/steps';
 import { KeyValue } from '@angular/common';
 import { UserService } from 'src/app/shared/services/user.service';
+import { ConfigurationManagementComponent } from 'src/app/features/configuration/components/configuration-management/configuration-management.component';
 
 @Component({
     selector: 'app-navigation',
@@ -15,6 +16,8 @@ export class NavigationComponent {
     Mode = Mode;
     Steps = Steps;
     StepConfiguration = StepConfiguration; 
+
+    @ViewChild(ConfigurationManagementComponent) configManagement: ConfigurationManagementComponent;
 
     constructor(
         public stateManagement: StateManagementService,
@@ -34,5 +37,9 @@ export class NavigationComponent {
 
     onLogout() {
         this.userService.logout();
+    }
+
+    openConfigurations() {
+        this.configManagement.openDialog();
     }
 }

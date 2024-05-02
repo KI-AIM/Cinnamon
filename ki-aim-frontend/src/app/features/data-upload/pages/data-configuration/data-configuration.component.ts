@@ -11,6 +11,7 @@ import { plainToClass } from 'class-transformer';
 import { TransformationService } from '../../services/transformation.service';
 import { TransformationResult } from 'src/app/shared/model/transformation-result';
 import { LoadingService } from 'src/app/shared/services/loading.service';
+import { ConfigurationService } from 'src/app/shared/services/configuration.service';
 
 @Component({
     selector: 'app-data-configuration',
@@ -23,6 +24,7 @@ export class DataConfigurationComponent {
 
     constructor(
         public configuration: DataConfigurationService,
+        public configurationService: ConfigurationService,
         public dataService: DataService,
         private titleService: TitleService,
         private fileService: FileService,
@@ -52,17 +54,13 @@ export class DataConfigurationComponent {
         });
     }
 
-    downloadConfiguration() {
-        this.configuration.downloadDataConfigurationAsYaml().subscribe({
-            next: (data: Blob) => {
-                const blob = new Blob([data], { type: 'text/yaml' });
-                const fileName = this.fileService.getFile().name + "-configuration.yaml"
-                this.saveFile(blob, fileName);
-            },
-            error: (error) => {
-                this.error = error;
-            },
-        });
+    uploadConfiguration(event: Event) {
+        const files = (event.target as HTMLInputElement).files
+        if (!files || files.length === 0) {
+            return;
+        }
+
+        this.configurationService.uploadConfigurationByName(this.configuration.CONFIGURATION_NAME, files[0]);
     }
 
     onValidation(isValid: boolean) {
@@ -90,14 +88,5 @@ export class DataConfigurationComponent {
         this.error = error.error.errors;
 
         window.scroll(0, 0);
-    }
-
-    private saveFile(fileData: Blob, fileName: string) {
-        const anchor = document.createElement('a');
-        anchor.href = URL.createObjectURL(fileData);
-        anchor.download = fileName;
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
     }
 }

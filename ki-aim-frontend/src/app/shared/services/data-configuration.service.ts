@@ -8,12 +8,13 @@ import { instanceToPlain } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { Steps } from 'src/app/core/enums/steps';
-import { stringify } from 'yaml';
 
 @Injectable({
     providedIn: 'root',
 })
 export class DataConfigurationService {
+    public readonly CONFIGURATION_NAME = "configurations";
+
     private _dataConfiguration: DataConfiguration;
 
     constructor(
@@ -28,7 +29,7 @@ export class DataConfigurationService {
         configReg.availableAfterStep = Steps.UPLOAD;
         configReg.lockedAfterStep = Steps.VALIDATION;
         configReg.displayName = "Data Configuration";
-        configReg.name = "data-configuration";
+        configReg.name = this.CONFIGURATION_NAME;
         configReg.orderNumber = 0;
         configReg.syncWithBackend = false;
         configReg.getConfigCallback = () => this.getConfigurationCallback();
@@ -63,7 +64,6 @@ export class DataConfigurationService {
 
     public postDataConfigurationString(configString: string): Observable<Number> {
         const formData = new FormData();
-        console.log(configString);
         formData.append("configuration", configString);
         return this.httpClient.post<Number>("/api/data/configuration", formData);
     }
@@ -74,9 +74,9 @@ export class DataConfigurationService {
         }));
     }
 
-    private getConfigurationCallback(): string {
+    private getConfigurationCallback(): Object {
         this.postDataConfiguration().subscribe();
-        return stringify(this.getDataConfiguration());
+        return this.getDataConfiguration();
     }
 
     private setConfigCallback(configData: string) {

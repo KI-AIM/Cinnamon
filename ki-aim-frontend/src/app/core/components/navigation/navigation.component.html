@@ -1,17 +1,8 @@
 <div class="d-flex flex-column navbar-side">
     <h1 class="align-self-center">KI-AIM</h1>
 
-    <div>Overview</div>
-    <ul class="nav flex-column justify-content-start">
-        <li class="nav-item">
-            <a class="nav-link" title="Configuration"
-               [ngClass]="{'disabled': !userService.isAuthenticated()}">
-                <app-configuration-management></app-configuration-management>
-            </a>
-        </li>
-    </ul>
-
-    <div>Steps</div>
+    <hr class="hr">
+    <!-- <div style="padding: 0 2rem; font-size: 24px;">Steps</div> -->
 
     <ul class="nav flex-column justify-content-start">
 
@@ -25,8 +16,24 @@
             </a>
         </li>
     </ul>
+
+    <hr class="hr">
+    <!-- <div>Actions</div> -->
+    <ul class="nav flex-column justify-content-start">
+        <li class="nav-item">
+            <a class="nav-link" title="Configuration"
+               (click)="openConfigurations()"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                    Configurations
+            </a>
+        </li>
+    </ul>
+
+
     <div [hidden]="!userService.isAuthenticated()" class="logout" (click)="onLogout()">
         <mat-icon>logout</mat-icon>
         <span>Logout</span>
     </div>
+
+    <app-configuration-management></app-configuration-management>
 </div>

@@ -77,21 +77,6 @@ export class ConfigurationService {
     }
 
     /**
-     * Uploads the configuration from the target of the given event as the configuration of the given configuration name.
-     * Uses the setConfigCallback function to update the configuration in the application.
-     * If configured, stores the configuration under the configured name into the database.
-     * 
-     * @param configName Name of the register data of the configuration to upload.
-     * @param file file containing the config to be loaded.
-     */
-    uploadConfigurationByName(configName: string, file: Blob) {
-        const config = this.getRegisteredConfigurationByName(configName);
-        if (config != null) {
-            this.uploadAllConfigurations(file, [configName]);
-        }
-    }
-
-    /**
      * Downloads the registered configurations which names are included in the given array.
      * Uses the getConfigCallback function to retrieve the configuration.
      * If configured, stores the configuration under the configured name into the database.
@@ -122,8 +107,10 @@ export class ConfigurationService {
      * If configured, stores the configuration under the configured name into the database.
      * @param file file containing the config to be loaded.
      * @param includedConfigurations Names of the configurations to upload.
+     * @param errorCallback Function that gets called in case of an error.
+     * @param successCallback Function that gets called after the configuration has been successfully imported.
      */
-    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string>) {
+    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string>, errorCallback?: (a: string) => void, successCallback?: () => void) {
         const reader = new FileReader();
         reader.addEventListener("load", () => {
             const configData = reader.result as string;
@@ -143,12 +130,17 @@ export class ConfigurationService {
                 if (configData.syncWithBackend) {
                     this.storeConfig(configData.name, yamlConfigString).subscribe({
                         error: (error) => {
-                            // TODO Error handling
-                            // this.error = error;
+                            if (errorCallback) {
+                                errorCallback(error);
+                            }
                         },
                     });
                 }
                 configData?.setConfigCallback(yamlConfigString);
+            }
+
+            if (successCallback) {
+                successCallback();
             }
 
         }, false);

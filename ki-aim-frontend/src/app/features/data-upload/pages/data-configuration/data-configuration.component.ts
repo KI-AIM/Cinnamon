@@ -54,15 +54,6 @@ export class DataConfigurationComponent {
         });
     }
 
-    uploadConfiguration(event: Event) {
-        const files = (event.target as HTMLInputElement).files
-        if (!files || files.length === 0) {
-            return;
-        }
-
-        this.configurationService.uploadConfigurationByName(this.configuration.CONFIGURATION_NAME, files[0]);
-    }
-
     onValidation(isValid: boolean) {
         this.isValid = isValid;
     }

@@ -28,6 +28,7 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { RangeComponent } from './components/configurationSettings/range/range.component';
 import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
+import { ConfigurationModule } from "../configuration/configuration.module";
 
 @NgModule({
 	declarations: [
@@ -45,6 +46,7 @@ import { DataConfigurationService } from "src/app/shared/services/data-configura
 	],
     imports: [
         CommonModule,
+		ConfigurationModule,
         FormsModule,
         RouterModule,
         SharedModule,

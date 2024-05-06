@@ -48,24 +48,4 @@ export class ConfigurationManagementComponent {
         this.configurationService.downloadAllConfigurations(included);
     }
 
-    /**
-     * Uploads all configurations contained in the file.
-     * Uses the setConfigCallback function to update the configuration in the application.
-     * If configured, stores the configuration under the configured name into the database.
-     * @param event Input event of the file input.
-     */
-    uploadAllConfigurations() {
-        const files = (document.getElementById("configInput") as HTMLInputElement).files;
-        if (!files || files.length === 0) {
-            return;
-        }
-
-        const included = [];
-        for (const config of this.configurationService.getRegisteredConfigurations()) {
-            if ((document.getElementById(config.name + "-input") as HTMLInputElement).checked) {
-                included.push(config.name);
-            }
-        }
-        this.configurationService.uploadAllConfigurations(files[0], included);
-    }
 }

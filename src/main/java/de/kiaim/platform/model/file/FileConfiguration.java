@@ -17,4 +17,7 @@ public class FileConfiguration {
 
 	@Schema(description = "Configurations specific for CSV files.")
 	private CsvFileConfiguration csvFileConfiguration;
+
+	@Schema(description = "Configuration specific for XLSX files")
+	private XlsxFileConfiguration xlsxFileConfiguration;
 }

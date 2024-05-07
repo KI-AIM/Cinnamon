@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ import java.util.List;
 @ToString
 public class IntegerData extends Data {
 
+	@Nullable
 	private final Integer value;
 
 	@Override

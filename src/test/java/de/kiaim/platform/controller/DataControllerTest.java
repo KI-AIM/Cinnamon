@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -172,7 +173,8 @@ class DataControllerTest extends ControllerTest {
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
 		assertNotNull(testUser.getDataConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getDataConfiguration().getId(), "User has been associated with the wrong dataset!");
+		assertEquals(dataSetId, testUser.getDataConfiguration().getId(),
+		             "User has been associated with the wrong dataset!");
 		assertEquals(".*",
 		             ((StringPatternConfiguration) testUser.getDataConfiguration().getDataConfiguration()
 		                                                   .getConfigurations().get(5).getConfigurations()
@@ -195,7 +197,8 @@ class DataControllerTest extends ControllerTest {
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
 		assertNotNull(testUser.getDataConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetIdUpdate, testUser.getDataConfiguration().getId(), "User has been associated with the wrong dataset!");
+		assertEquals(dataSetIdUpdate, testUser.getDataConfiguration().getId(),
+		             "User has been associated with the wrong dataset!");
 		assertEquals(dataSetIdUpdate, dataSetId, "Update has changed the DataSet id!");
 		assertEquals("[0-9]*",
 		             ((StringPatternConfiguration) testUser.getDataConfiguration().getDataConfiguration()
@@ -227,7 +230,8 @@ class DataControllerTest extends ControllerTest {
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
 		assertNotNull(testUser.getDataConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getDataConfiguration().getId(), "User has been associated with the wrong dataset!");
+		assertEquals(dataSetId, testUser.getDataConfiguration().getId(),
+		             "User has been associated with the wrong dataset!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
@@ -284,16 +288,107 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(content().string(TestModelHelper.generateDataConfigurationAsYaml()));
 	}
 
+	// ================================================================================================================
+	// region loadData()
+	// ================================================================================================================
+
 	@Test
 	void loadData() throws Exception {
 		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
 		       .andExpect(status().isOk())
-		       .andExpect(
-				       content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataSet().getData())));
+		       .andExpect(content().string(TestModelHelper.generateDataAsJson()));
 	}
 
+	@Test
+	void loadDataNoDataSet() throws Exception {
+		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "User has no configuration!");
+	}
+
+	@WithAnonymousUser
+	@Test
+	void loadDataNoPermissions() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
+		       .andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void loadDataColumns() throws Exception {
+		postData();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .param("columns", "column4_integer,column0_boolean"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(TestModelHelper.generateDataColumnsAsJson()));
+	}
+
+	@Test
+	void loadDataInvalidColumns() throws Exception {
+		postData();
+
+		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                                      .param("columns", "invalid1,column4_integer,invalid2"))
+		                       .andExpect(status().isBadRequest())
+		                       .andReturn().getResponse().getContentAsString();
+
+		testErrorMessage(result, "Data set does not contain columns with names: 'invalid1', 'invalid2'");
+	}
+
+	@Test
+	void loadDataEncoding() throws Exception {
+		postData(true);
+
+		final String defaultNullEncoding = "N/A";
+		final String formatErrorEncoding = ":(";
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .param("defaultNullEncoding", defaultNullEncoding)
+		                                      .param("formatErrorEncoding", formatErrorEncoding))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(TestModelHelper.generateDataAsJson(wrapInQuotes(defaultNullEncoding),
+		                                                                      wrapInQuotes(formatErrorEncoding))));
+	}
+
+	@Test
+	void loadDataEncodingNull() throws Exception {
+		postData(true);
+
+		final String defaultNullEncoding = "N/A";
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .param("defaultNullEncoding", defaultNullEncoding)
+		                                      .param("formatErrorEncoding", "$null"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(TestModelHelper.generateDataAsJson(wrapInQuotes(defaultNullEncoding),
+		                                                                      "null")));
+	}
+
+	@Test
+	void loadDataEncodingValue() throws Exception {
+		postData(true);
+
+		final String defaultNullEncoding = "N/A";
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .param("defaultNullEncoding", defaultNullEncoding)
+		                                      .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(TestModelHelper.generateDataAsJson(wrapInQuotes(defaultNullEncoding),
+		                                                                      wrapInQuotes("forty two"))));
+	}
+
+	// ================================================================================================================
+	// endregion
+	// ================================================================================================================
+
+	// ================================================================================================================
+	// region loadDataSet()
+	// ================================================================================================================
 
 	@Test
 	void loadDataSet() throws Exception {
@@ -301,7 +396,7 @@ class DataControllerTest extends ControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataSet())));
+		       .andExpect(content().string(TestModelHelper.generateDataSetAsJson()));
 	}
 
 	@Test
@@ -326,7 +421,8 @@ class DataControllerTest extends ControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
 		                                      .param("columns", "column4_integer,column0_boolean"))
-		       .andExpect(status().isOk());
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(TestModelHelper.generateDataSetColumnsAsJson()));
 	}
 
 	@Test
@@ -334,12 +430,32 @@ class DataControllerTest extends ControllerTest {
 		postData();
 
 		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .param("columns", "invalid1,column4_integer,invalid2"))
+		                                                      .param("columns", "invalid1,column4_integer,invalid2"))
 		                       .andExpect(status().isBadRequest())
 		                       .andReturn().getResponse().getContentAsString();
 
 		testErrorMessage(result, "Data set does not contain columns with names: 'invalid1', 'invalid2'");
 	}
+
+	@Test
+	void loadDataSetEncoding() throws Exception {
+		postData(true);
+
+		final String defaultNullEncoding = "N/A";
+		final String formatErrorEncoding = ":(";
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .param("defaultNullEncoding", defaultNullEncoding)
+		                                      .param("formatErrorEncoding", formatErrorEncoding))
+		       .andExpect(status().isOk())
+		       .andExpect(
+				       content().string(TestModelHelper.generateDataSetAsJson(wrapInQuotes(defaultNullEncoding),
+				                                                              wrapInQuotes(formatErrorEncoding))));
+	}
+
+	// ================================================================================================================
+	// endregion loadDataSet()
+	// ================================================================================================================
 
 	@Test
 	void deleteDataNoDataSet() throws Exception {
@@ -352,7 +468,17 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	private void postData() throws Exception {
-		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		postData(true);
+	}
+
+	private void postData(final boolean withErrors) throws Exception {
+		MockMultipartFile file;
+		if (withErrors) {
+			file = TestModelHelper.loadCsvFileWithErrors();
+		} else {
+			file = TestModelHelper.loadCsvFile();
+		}
+
 		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
@@ -366,6 +492,10 @@ class DataControllerTest extends ControllerTest {
 		                       .andReturn().getResponse().getContentAsString();
 
 		assertDoesNotThrow(() -> Long.parseLong(result));
+	}
+
+	private String wrapInQuotes(final String value) {
+		return "\"" + value + "\"";
 	}
 
 }

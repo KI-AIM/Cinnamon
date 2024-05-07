@@ -2,6 +2,9 @@ package de.kiaim.platform.service;
 
 import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.helper.DataschemeGenerator;
+import de.kiaim.platform.model.DataRowTransformationError;
+import de.kiaim.platform.model.DataTransformationError;
+import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.DataConfigurationEntity;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.data.*;
@@ -9,6 +12,7 @@ import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.DataConfigurationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +62,7 @@ public class DatabaseService {
 	/**
 	 * Stores the DataConfiguration and associates the configuration with the user of the request.
 	 *
-	 * @param dataConfiguration The configuration to be store.
+	 * @param dataConfiguration The configuration to be stored.
 	 * @param user The user the configuration should be associated with.
 	 * @return The ID of the configuration.
 	 * @throws BadDataSetIdException If the data has already been stored.
@@ -64,47 +71,30 @@ public class DatabaseService {
 	@Transactional
 	public long store(final DataConfiguration dataConfiguration, UserEntity user)
 			throws BadDataSetIdException, InternalDataSetPersistenceException {
-
-		// Store configuration
-		final DataConfigurationEntity dataConfigurationEntity;
-		if (user.getDataConfiguration() != null) {
-			dataConfigurationEntity = user.getDataConfiguration();
-			if (existsTable(dataConfigurationEntity.getId())) {
-				throw new BadDataSetIdException("The data has already been stored!");
-			}
-		} else {
-			dataConfigurationEntity = new DataConfigurationEntity();
-		}
-
-		dataConfigurationEntity.setDataConfiguration(dataConfiguration);
-		dataConfigurationRepository.save(dataConfigurationEntity);
-
-		// Get id
-		final long dataSetId = dataConfigurationEntity.getId();
-
-		// Set current data configuration for the user
-		userService.setConfigurationToUser(dataConfigurationEntity, user);
-
-		return dataSetId;
+		return store(dataConfiguration, new ArrayList<>(), user);
 	}
 
 	/**
-	 * Stores the given DataSet and the DataConfiguration into the database and associates them with the given user.
+	 * Stores the given TransformationResult by storing the DataSet,
+	 * the DataConfiguration and the transformation errors into the database and associates them with the given user.
 	 * The table for the DataSet will be generated automatically.
 	 * Returns an ID to access the data.
 	 *
-	 * @param dataSet DataSet to store.
+	 * @param transformationResult  TransformationResult to store.
 	 * @param user The user the configuration should be associated with.
 	 * @return The generated ID of the DataSet.
 	 * @throws BadDataSetIdException If the data has already been stored.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
 	 */
 	@Transactional
-	public long store(final DataSet dataSet, final UserEntity user)
+	public long store(final TransformationResult transformationResult, final UserEntity user)
 			throws BadDataSetIdException, InternalDataSetPersistenceException  {
 
-		// Store configuration
-		final long dataSetId = store(dataSet.getDataConfiguration(), user);
+		final DataSet dataSet = transformationResult.getDataSet();
+
+		// Store configuration and transformation errors
+		final long dataSetId = store(dataSet.getDataConfiguration(), transformationResult.getTransformationErrors(),
+		                             user);
 		final String tableName = getTableName(dataSetId);
 
 		// Create table
@@ -165,7 +155,8 @@ public class DatabaseService {
 	public DataSet exportDataSet(final UserEntity user, List<String> columnNames)
 			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException {
 		final long dataSetId = getDataSetIdOrThrow(user);
-		DataConfiguration dataConfiguration = exportDataConfiguration(user);
+		final DataConfigurationEntity dataConfigurationEntity = getOrThrow(dataSetId);
+		DataConfiguration dataConfiguration = dataConfigurationEntity.getDataConfiguration();
 
 		if (columnNames.isEmpty()) {
 			columnNames = dataConfiguration.getColumnNames();
@@ -174,6 +165,7 @@ public class DatabaseService {
 			dataConfiguration = extractColumns(dataConfiguration, columnNames);
 		}
 
+		// Export the data from the database
 		final List<DataRow> dataRows = new ArrayList<>();
 		try (final Statement exportStatement = connection.createStatement()) {
 
@@ -267,6 +259,71 @@ public class DatabaseService {
 		return user.getDataConfiguration().getId();
 	}
 
+	private DataConfigurationEntity getDataConfigurationEntity(final UserEntity user)
+			throws InternalDataSetPersistenceException, BadDataSetIdException {
+		final DataConfigurationEntity dataConfigurationEntity;
+
+		if (user.getDataConfiguration() != null) {
+			dataConfigurationEntity = user.getDataConfiguration();
+			if (existsTable(dataConfigurationEntity.getId())) {
+				throw new BadDataSetIdException("The data has already been stored!");
+			}
+		} else {
+			dataConfigurationEntity = new DataConfigurationEntity();
+		}
+
+		return dataConfigurationEntity;
+	}
+
+	/**
+	 * Stores the DataConfiguration with the transformation errors
+	 * and associates the configuration with the user of the request.
+	 *
+	 * @param dataConfiguration The configuration to be stored.
+	 * @param rowTransformationErrors The transformation errors occurred during reading the corresponding data set.
+	 * @param user The user the configuration should be associated with.
+	 * @return The ID of the configuration.
+	 * @throws BadDataSetIdException If the data has already been stored.
+	 * @throws InternalDataSetPersistenceException If the configuration could not be stored.
+	 */
+	private long store(final DataConfiguration dataConfiguration,
+	                   final List<DataRowTransformationError> rowTransformationErrors, final UserEntity user)
+			throws InternalDataSetPersistenceException, BadDataSetIdException {
+		final DataConfigurationEntity dataConfigurationEntity = getDataConfigurationEntity(user);
+
+		dataConfigurationEntity.setDataConfiguration(dataConfiguration);
+
+		for (final DataRowTransformationError rowTransformationError : rowTransformationErrors) {
+			for (final DataTransformationError transformationError : rowTransformationError.getDataTransformationErrors()) {
+
+				final DataTransformationErrorEntity transformationErrorEntity = new DataTransformationErrorEntity();
+
+				transformationErrorEntity.setRowIndex(rowTransformationError.getIndex());
+				transformationErrorEntity.setColumnIndex(transformationError.getIndex());
+				transformationErrorEntity.setErrorType(transformationError.getErrorType());
+				transformationErrorEntity.setOriginalValue(
+						rowTransformationError.getRawValues().get(transformationError.getIndex()));
+
+				dataConfigurationEntity.addDataRowTransformationError(transformationErrorEntity);
+			}
+		}
+
+		return storeDataConfigurationEntity(dataConfigurationEntity, user);
+	}
+
+	private long storeDataConfigurationEntity(final DataConfigurationEntity dataConfigurationEntity,
+	                                          final UserEntity user) {
+		dataConfigurationRepository.save(dataConfigurationEntity);
+
+		// Get ID
+		final long dataSetId = dataConfigurationEntity.getId();
+
+		// Set current data configuration for the user
+		userService.setConfigurationToUser(dataConfigurationEntity, user);
+
+		return dataSetId;
+	}
+
 	private String convertDataToString(final Data data) throws InternalDataSetPersistenceException {
 		if (data.getValue() == null) {
 			return "null";
@@ -319,25 +376,32 @@ public class DatabaseService {
 
 	private Data convertResultToData(final ResultSet resultSet, final int columnIndex,
 	                                 final DataType dataType) throws InternalDataSetPersistenceException {
+
 		try {
 			switch (dataType) {
 				case BOOLEAN -> {
-					return new BooleanData(resultSet.getBoolean(columnIndex));
+					return new BooleanData((Boolean) resultSet.getObject(columnIndex));
 				}
 				case DATE_TIME -> {
-					return new DateTimeData(resultSet.getTimestamp(columnIndex).toLocalDateTime());
+					final Timestamp timestamp = resultSet.getTimestamp(columnIndex);
+					final LocalDateTime localDateTime = timestamp != null ? timestamp.toLocalDateTime() : null;
+					return new DateTimeData(localDateTime);
 				}
 				case DECIMAL -> {
-					return new DecimalData(resultSet.getFloat(columnIndex));
+					final BigDecimal bigDecimal = resultSet.getBigDecimal(columnIndex);
+					final Float floatValue = bigDecimal != null ? bigDecimal.floatValue() : null;
+					return new DecimalData(floatValue);
 				}
 				case INTEGER -> {
-					return new IntegerData(resultSet.getInt(columnIndex));
+					return new IntegerData((Integer) resultSet.getObject(columnIndex));
 				}
 				case STRING -> {
 					return new StringData(resultSet.getString(columnIndex));
 				}
 				case DATE -> {
-					return new DateData(resultSet.getDate(columnIndex).toLocalDate());
+					final Date date = resultSet.getDate(columnIndex);
+					final LocalDate localDate = date != null ? date.toLocalDate() : null;
+					return new DateData(localDate);
 				}
 				case UNDEFINED -> {
 					throw new InternalDataSetPersistenceException("Undefined data type can not be exported!");

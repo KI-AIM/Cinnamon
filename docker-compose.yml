@@ -1,0 +1,33 @@
+version: '3.8'
+
+networks:
+    data-management-network:
+
+services:
+    ki-aim-db:
+        image: postgres:16.2-alpine
+        container_name: ki-aim-db
+        restart: always
+        networks:
+            - data-management-network
+        environment:
+            - POSTGRES_DB=ki_aim_db
+            - POSTGRES_USER=ki_aim_user
+            - POSTGRES_PASSWORD=changeme
+#        volumes:
+#            - ./volumes/ki-aim-db/data:/var/lib/postgresql/data
+    ki-aim-platform:
+        image: ki-aim-platform:0.0.1
+        build:
+            context: ./
+            dockerfile: Dockerfile
+        container_name: ki-aim-platform
+        restart: always
+        ports:
+            - "8080:8080"
+        networks:
+            - data-management-network
+        environment:
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://ki-aim-db:5432/ki_aim_db
+        depends_on:
+            - ki-aim-db

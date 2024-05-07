@@ -3,8 +3,9 @@
 </p>
 
 <div>
-    <input type="file" accept=".csv" #fileForm (input)="onFileInput($event)">
-    <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)" style="vertical-align: middle;">
+    <input type="file" accept=".csv,.xlsx" #fileForm (input)="onFileInput($event)">
+    <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
+        [hidden]="!this.file" style="vertical-align: middle;">
         <mat-icon fontIcon="settings"></mat-icon>
     </a>
 </div>

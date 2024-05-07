@@ -14,16 +14,7 @@ import { DataRowTransformationError } from "src/app/shared/model/data-row-transf
 })
 export class DataTableComponent {
 
-	dataSource = new MatTableDataSource<TableElement>(
-		this.addColumnErrorsToTableData(
-			this.transformDataSet(
-				this.readdTransformationErrors(
-					this.removeRowsWithErrorsFromDataSet(this.transformationService.getTransformationResult()),
-					this.transformationService.getTransformationResult().transformationErrors
-				)
-			), this.transformationService.getTransformationResult().transformationErrors
-		)
-	);
+	dataSource = new MatTableDataSource<TableElement>();
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	displayedColumns: string[] = ['position'].concat(this.getColumnNames(this.transformationService.getTransformationResult().dataSet));
 	filterCriteria = "ALL"; 
@@ -36,6 +27,16 @@ export class DataTableComponent {
 
 	ngAfterViewInit() {
 		this.dataSource.paginator = this.paginator;
+
+		this.dataSource.data = this.addColumnErrorsToTableData(
+			this.transformDataSet(
+				this.readdTransformationErrors(
+					this.removeRowsWithErrorsFromDataSet(this.transformationService.getTransformationResult()),
+					this.transformationService.getTransformationResult().transformationErrors
+				)
+			),
+			this.transformationService.getTransformationResult().transformationErrors
+		);
 	}
 
 	/**

@@ -9,7 +9,7 @@ import lombok.Getter;
 
 /**
  * Wrapper class for the Object mapper configured for YAML.
- * Not implemented as a bean because Spring makes it incredible difficult to have two ObjectMapper beans.
+ * Not implemented as a bean because Spring makes it incredibly difficult to have two ObjectMapper beans.
  */
 @Getter
 public abstract class YamlMapper {

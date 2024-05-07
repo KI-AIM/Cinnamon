@@ -1,7 +1,10 @@
 package de.kiaim.platform.controller;
 
 import de.kiaim.platform.exception.ApiException;
+import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ResponseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
@@ -25,6 +28,8 @@ import java.util.Map;
 @ControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
+	private final Logger LOGGER = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
 	final ResponseService responseService;
 
 	@Autowired
@@ -38,6 +43,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(value = {ApiException.class})
 	public ResponseEntity<Object> handleApiException(final ApiException apiException, final WebRequest webRequest) {
+		LOGGER.error("An error occurred during a request", apiException);
 		return responseService.prepareErrorResponseEntity(apiException);
 	}
 

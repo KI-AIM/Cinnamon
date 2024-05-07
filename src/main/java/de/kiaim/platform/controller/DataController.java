@@ -6,6 +6,8 @@ import de.kiaim.platform.config.YamlMapper;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.dto.LoadDataRequest;
+import de.kiaim.platform.model.dto.ReadDataRequest;
+import de.kiaim.platform.model.dto.StoreDataConfigurationRequest;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.DataRow;
@@ -24,10 +26,12 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
+import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -122,20 +126,15 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> readAndValidateData(
-			@Parameter(description = "File containing the data.",
-			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-			@RequestPart(value = "file") MultipartFile file,
-			@Parameter(description = "Configuration for the file.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = FileConfiguration.class)))
-			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
-			@Parameter(description = "Metadata describing the format of the data.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = DataConfiguration.class)))
-			@RequestParam(value = "configuration") DataConfiguration configuration,
+			@RequestBody(description = "Data and metadata for reading.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ReadDataRequest.class)),
+			             })
+			@ModelAttribute @Valid final ReadDataRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.VALIDATE, file, fileConfiguration, configuration, null, user);
+		return handleRequest(RequestType.VALIDATE, requestData.getFile(), requestData.getFileConfiguration(),
+		                     requestData.getConfiguration(), null, user);
 	}
 
 	@Operation(summary = "Stores or updates the given configuration.",
@@ -158,16 +157,16 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeConfig(
-			@Parameter(description = "Metadata describing the format of the data as JSON or YAML.",
-			           content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                               schema = @Schema(implementation = DataConfiguration.class)),
-			                      @Content(mediaType = "application/x-yaml",
-			                               schema = @Schema(implementation = DataConfiguration.class)),
-			           })
-			@RequestParam(value = "configuration") DataConfiguration configuration,
+			@RequestBody(description = "Metadata describing the format of the data as JSON or YAML.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = StoreDataConfigurationRequest.class)),
+			                        @Content(mediaType = "application/x-yaml",
+			                                 schema = @Schema(implementation = StoreDataConfigurationRequest.class)),
+			             })
+			@ModelAttribute @Valid StoreDataConfigurationRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException, JsonProcessingException {
-		return handleRequest(RequestType.STORE_CONFIG, null, null, configuration, null, user);
+		return handleRequest(RequestType.STORE_CONFIG, null, null, requestData.getConfiguration(), null, user);
 	}
 
 	@Operation(summary = "Stores the given data into the internal database for further processing.",
@@ -190,20 +189,15 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeData(
-			@Parameter(description = "File containing the data to be stored.",
-			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-			@RequestPart(value = "file") MultipartFile file,
-			@Parameter(description = "Configuration for the file.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = FileConfiguration.class)))
-			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
-			@Parameter(description = "Metadata describing the format of the data.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = DataConfiguration.class)))
-			@RequestParam(value = "configuration") DataConfiguration configuration,
+			@RequestBody(description = "Data and metadata for reading.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ReadDataRequest.class)),
+			             })
+			@ModelAttribute @Valid final ReadDataRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.STORE_DATE_SET, file, fileConfiguration, configuration, null, user);
+		return handleRequest(RequestType.STORE_DATE_SET, requestData.getFile(), requestData.getFileConfiguration(),
+		                     requestData.getConfiguration(), null, user);
 	}
 
 	@Operation(summary = "Returns the configuration of the data set.",

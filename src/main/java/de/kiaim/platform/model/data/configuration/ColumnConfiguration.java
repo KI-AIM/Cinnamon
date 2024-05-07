@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.kiaim.platform.json.ColumnConfigurationDeserializer;
 import de.kiaim.platform.model.data.DataType;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.List;
 @Schema(description = "Configuration of a single column in the data set.")
 @AllArgsConstructor
 @Getter
+@Setter
 @EqualsAndHashCode
 @ToString
 @JsonDeserialize(using = ColumnConfigurationDeserializer.class)
@@ -32,24 +35,30 @@ public class ColumnConfiguration {
      * The index of the column
      */
     @Schema(description = "Index of the column in the data set.", example = "1")
-    int index;
+    @NotNull(message = "The index must not be empty!")
+    @Min(value = 0, message = "The index must not be negative!")
+    Integer index;
 
     /**
      * The name of the column
      */
     @Schema(description = "Name of the column.", example = "dateOfBirth")
+    @NotBlank(message = "The column name must not be empty!")
+    @Pattern(regexp = "^\\S+$", message = "The column name must not contain space characters!")
     String name;
 
     /**
      * The datatype of the column
      */
     @Schema(description = "Data type of the column.", example = "DATE")
+    @NotNull(message = "The data type must not be empty!")
     DataType type;
 
     /**
      * The scale of the column
      */
     @Schema(description = "Data scale of the column.", example = "INTERVAL")
+    @NotNull(message = "The data scale must not be empty!")
     DataScale scale;
 
     /**
@@ -57,9 +66,8 @@ public class ColumnConfiguration {
      */
     @Schema(description = "List of different configurations depending on the data type.",
             example = "[{\"name\": \"DateFormatConfiguration\", \"dataFormatter\": \"yyyy-MM-dd\"}]")
+    @Valid
     List<Configuration> configurations;
-
-
 
     /**
      * Adds a new configuration to the column configuration

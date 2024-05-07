@@ -1,10 +1,6 @@
 package de.kiaim.platform.converter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.kiaim.platform.config.YamlMapper;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import lombok.SneakyThrows;

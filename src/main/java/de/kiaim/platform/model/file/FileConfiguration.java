@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Schema(description = "Metadata describing the type of the uploaded data.")
 @Getter
 @Setter
 @NoArgsConstructor

@@ -32,6 +32,25 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
+	public int getNumberColumns(final InputStream data, final FileConfiguration fileConfiguration) {
+		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
+		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
+
+		final Iterable<CSVRecord> records;
+		try {
+			records = csvFormat.parse(new InputStreamReader(data));
+		} catch (IOException e) {
+			// TODO catch Error
+			throw new RuntimeException(e);
+		}
+
+		return records.iterator().next().size();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
 	public TransformationResult read(InputStream data, FileConfiguration fileConfiguration,
 	                                 DataConfiguration configuration) throws BadColumnNameException {
 		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();

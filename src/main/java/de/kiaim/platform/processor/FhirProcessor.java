@@ -19,6 +19,11 @@ public class FhirProcessor implements DataProcessor {
         return FileType.FHIR;
     }
 
+    @Override
+    public int getNumberColumns(InputStream data, FileConfiguration fileConfiguration) {
+        return 0;
+    }
+
     /**
      * {@inheritDoc}
      */

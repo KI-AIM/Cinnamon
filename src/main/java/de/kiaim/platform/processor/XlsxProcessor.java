@@ -19,6 +19,11 @@ public class XlsxProcessor implements DataProcessor {
         return FileType.XLSX;
     }
 
+    @Override
+    public int getNumberColumns(InputStream data, FileConfiguration fileConfiguration) {
+        return 0;
+    }
+
     /**
      * {@inheritDoc}
      */

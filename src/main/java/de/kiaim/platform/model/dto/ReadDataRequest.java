@@ -2,6 +2,7 @@ package de.kiaim.platform.model.dto;
 
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.validation.MatchingNumberColumnsConstraint;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -12,6 +13,7 @@ import lombok.Setter;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
+@MatchingNumberColumnsConstraint
 @Getter @Setter
 public class ReadDataRequest {
 

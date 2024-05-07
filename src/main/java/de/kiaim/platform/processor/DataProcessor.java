@@ -17,6 +17,14 @@ public interface DataProcessor {
 	 */
 	FileType getSupportedDataType();
 
+	/**
+	 * Returns the number of columns in the given data.
+	 * @param data The raw data InputStream
+	 * @param fileConfiguration Configuration describing the format of the data.
+	 * @return The number of columns in the data.
+	 */
+	int getNumberColumns(InputStream data, FileConfiguration fileConfiguration);
+
     /**
      * Receives data from frontend, converts it to
      * the corresponding filetype and performs the

@@ -25,8 +25,6 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	@Override
 	public TransformationResult read(InputStream data, FileConfiguration fileConfiguration,
 	                                 DataConfiguration configuration) throws BadColumnNameException {
-		validateColumnNames(configuration.getColumnNames());
-
 		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 

@@ -26,7 +26,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -126,11 +125,7 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> readAndValidateData(
-			@RequestBody(description = "Data and metadata for reading.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ReadDataRequest.class)),
-			             })
-			@ModelAttribute @Valid final ReadDataRequest requestData,
+			@ParameterObject @Valid final ReadDataRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
 		return handleRequest(RequestType.VALIDATE, requestData.getFile(), requestData.getFileConfiguration(),
@@ -157,15 +152,9 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeConfig(
-			@RequestBody(description = "Metadata describing the format of the data as JSON or YAML.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = StoreDataConfigurationRequest.class)),
-			                        @Content(mediaType = "application/x-yaml",
-			                                 schema = @Schema(implementation = StoreDataConfigurationRequest.class)),
-			             })
-			@ModelAttribute @Valid StoreDataConfigurationRequest requestData,
+			@ParameterObject @Valid final StoreDataConfigurationRequest requestData,
 			@AuthenticationPrincipal UserEntity user
-	) throws ApiException, JsonProcessingException {
+	) throws ApiException {
 		return handleRequest(RequestType.STORE_CONFIG, null, null, requestData.getConfiguration(), null, user);
 	}
 
@@ -189,11 +178,7 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeData(
-			@RequestBody(description = "Data and metadata for reading.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ReadDataRequest.class)),
-			             })
-			@ModelAttribute @Valid final ReadDataRequest requestData,
+			@ParameterObject @Valid final ReadDataRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
 		return handleRequest(RequestType.STORE_DATE_SET, requestData.getFile(), requestData.getFileConfiguration(),

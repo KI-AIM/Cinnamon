@@ -7,5 +7,5 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public interface DataTransformationErrorRepository extends CrudRepository<DataTransformationErrorEntity, Long> {
 
-	long countByDataConfigurationId(final Long dataConfigurationId);
+	long countByPlatformConfigurationId(final Long platformConfigurationId);
 }

@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -45,11 +44,9 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void estimateDatatypesMissingFile() throws Exception {
-		String result = mockMvc.perform(multipart("/api/data/datatypes"))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "Missing part: 'file'");
+		mockMvc.perform(multipart("/api/data/datatypes"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Missing part: 'file'"));
 	}
 
 	@Test
@@ -59,14 +56,11 @@ class DataControllerTest extends ControllerTest {
 		                                               classLoader.getResourceAsStream("test.csv"));
 		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
-		String result = mockMvc.perform(multipart("/api/data/datatypes")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration)))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "Missing filename");
+		mockMvc.perform(multipart("/api/data/datatypes")
+				                .file(file)
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Missing filename"));
 	}
 
 	@Test
@@ -76,14 +70,11 @@ class DataControllerTest extends ControllerTest {
 		                                               classLoader.getResourceAsStream("test.csv"));
 		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
-		String result = mockMvc.perform(multipart("/api/data/datatypes")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration)))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "Missing file extension");
+		mockMvc.perform(multipart("/api/data/datatypes")
+				                .file(file)
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Missing file extension"));
 	}
 
 	@Test
@@ -92,12 +83,10 @@ class DataControllerTest extends ControllerTest {
 		MockMultipartFile file = new MockMultipartFile("file", "file", null,
 		                                               classLoader.getResourceAsStream("test.csv"));
 
-		String result = mockMvc.perform(multipart("/api/data/datatypes")
-				                                .file(file))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "Missing parameter: 'fileConfiguration'");
+		mockMvc.perform(multipart("/api/data/datatypes")
+				                .file(file))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Missing parameter: 'fileConfiguration'"));
 	}
 
 	@Test
@@ -120,14 +109,11 @@ class DataControllerTest extends ControllerTest {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
-		String result = mockMvc.perform(multipart("/api/data/validation")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration)))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "Missing parameter: 'configuration'");
+		mockMvc.perform(multipart("/api/data/validation")
+				                .file(file)
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Missing parameter: 'configuration'"));
 	}
 
 	@Test
@@ -135,24 +121,19 @@ class DataControllerTest extends ControllerTest {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
 
-		String result = mockMvc.perform(multipart("/api/data/validation")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration))
-				                                .param("configuration", "invalid"))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-		testErrorMessage(result, "Invalid parameter: 'configuration'");
+		mockMvc.perform(multipart("/api/data/validation")
+				                .file(file)
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
+				                .param("configuration", "invalid"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Invalid parameter: 'configuration'"));
 
-		result = mockMvc.perform(multipart("/api/data/validation")
-				                         .file(file)
-				                         .param("fileConfiguration",
-				                                objectMapper.writeValueAsString(fileConfiguration))
-				                         .param("configuration", "\"invalid\""))
-		                .andExpect(status().isBadRequest())
-		                .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "Invalid parameter: 'configuration'");
+		mockMvc.perform(multipart("/api/data/validation")
+				                .file(file)
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
+				                .param("configuration", "\"invalid\""))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Invalid parameter: 'configuration'"));
 	}
 
 
@@ -172,11 +153,11 @@ class DataControllerTest extends ControllerTest {
 		UserEntity testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getDataConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getDataConfiguration().getId(),
+		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
+		assertEquals(dataSetId, testUser.getPlatformConfiguration().getId(),
 		             "User has been associated with the wrong dataset!");
 		assertEquals(".*",
-		             ((StringPatternConfiguration) testUser.getDataConfiguration().getDataConfiguration()
+		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
 		                                                   .getConfigurations().get(5).getConfigurations()
 		                                                   .get(0))
 				             .getPattern(),
@@ -196,12 +177,12 @@ class DataControllerTest extends ControllerTest {
 		testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getDataConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetIdUpdate, testUser.getDataConfiguration().getId(),
+		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
+		assertEquals(dataSetIdUpdate, testUser.getPlatformConfiguration().getId(),
 		             "User has been associated with the wrong dataset!");
 		assertEquals(dataSetIdUpdate, dataSetId, "Update has changed the DataSet id!");
 		assertEquals("[0-9]*",
-		             ((StringPatternConfiguration) testUser.getDataConfiguration().getDataConfiguration()
+		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
 		                                                   .getConfigurations().get(5).getConfigurations()
 		                                                   .get(0)).getPattern(),
 		             "Type of first column does not match!");
@@ -229,8 +210,8 @@ class DataControllerTest extends ControllerTest {
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getDataConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getDataConfiguration().getId(),
+		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
+		assertEquals(dataSetId, testUser.getPlatformConfiguration().getId(),
 		             "User has been associated with the wrong dataset!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
@@ -239,7 +220,7 @@ class DataControllerTest extends ControllerTest {
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
-		assertNull(getTestUser().getDataConfiguration(), "User association with the dataset has not been removed!");
+		assertNull(getTestUser().getPlatformConfiguration(), "User association with the dataset has not been removed!");
 	}
 
 	@Test
@@ -258,14 +239,12 @@ class DataControllerTest extends ControllerTest {
 
 		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
 
-		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
-				                                            .param("configuration",
-				                                                   objectMapper.writeValueAsString(
-						                                                   configurationUpdate)))
-		                                   .andExpect(status().isBadRequest())
-		                                   .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(resultUpdate, "The data has already been stored!");
+		mockMvc.perform(multipart("/api/data/configuration")
+				                .param("configuration",
+				                       objectMapper.writeValueAsString(
+						                       configurationUpdate)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("The data has already been stored!"));
 	}
 
 	@Test
@@ -303,11 +282,9 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadDataNoDataSet() throws Exception {
-		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "User has no configuration!");
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("User has no configuration!"));
 	}
 
 	@WithAnonymousUser
@@ -331,12 +308,10 @@ class DataControllerTest extends ControllerTest {
 	void loadDataInvalidColumns() throws Exception {
 		postData();
 
-		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
-		                                                      .param("columns", "invalid1,column4_integer,invalid2"))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "Data set does not contain columns with names: 'invalid1', 'invalid2'");
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .param("columns", "invalid1,column4_integer,invalid2"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Data set does not contain columns with names: 'invalid1', 'invalid2'"));
 	}
 
 	@Test
@@ -401,11 +376,9 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadDataSetNoDataSet() throws Exception {
-		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "User has no configuration!");
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("User has no configuration!"));
 	}
 
 	@WithAnonymousUser
@@ -429,12 +402,10 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetInvalidColumns() throws Exception {
 		postData();
 
-		String result = mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                                      .param("columns", "invalid1,column4_integer,invalid2"))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "Data set does not contain columns with names: 'invalid1', 'invalid2'");
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .param("columns", "invalid1,column4_integer,invalid2"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Data set does not contain columns with names: 'invalid1', 'invalid2'"));
 	}
 
 	@Test
@@ -459,12 +430,10 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void deleteDataNoDataSet() throws Exception {
-		String result = mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
-		                                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
-		                       .andExpect(status().isBadRequest())
-		                       .andReturn().getResponse().getContentAsString();
-
-		testErrorMessage(result, "User has no configuration!");
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("User has no configuration!"));
 	}
 
 	private void postData() throws Exception {

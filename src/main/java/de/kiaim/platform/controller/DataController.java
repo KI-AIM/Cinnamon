@@ -99,7 +99,7 @@ public class DataController {
 			                              schema = @Schema(implementation = FileConfiguration.class)))
 			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
 			@AuthenticationPrincipal UserEntity user
-	) {
+	) throws ApiException {
 		return handleRequest(RequestType.DATA_TYPES, file, fileConfiguration ,null, null, user);
 	}
 
@@ -135,7 +135,7 @@ public class DataController {
 			                              schema = @Schema(implementation = DataConfiguration.class)))
 			@RequestParam(value = "configuration") DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
-	) {
+	) throws ApiException {
 		return handleRequest(RequestType.VALIDATE, file, fileConfiguration, configuration, null, user);
 	}
 
@@ -164,7 +164,7 @@ public class DataController {
 			                              schema = @Schema(implementation = DataConfiguration.class)))
 			@RequestParam(value = "configuration") DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
-	) {
+	) throws ApiException {
 		return handleRequest(RequestType.STORE_CONFIG, null, null, configuration, null, user);
 	}
 
@@ -201,7 +201,7 @@ public class DataController {
 			                              schema = @Schema(implementation = DataConfiguration.class)))
 			@RequestParam(value = "configuration") DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
-	) {
+	) throws ApiException {
 		return handleRequest(RequestType.STORE_DATE_SET, file, fileConfiguration, configuration, null, user);
 	}
 
@@ -233,7 +233,7 @@ public class DataController {
 			                              schema = @Schema(implementation = String.class)))
 			@RequestParam(defaultValue = "json") String format,
 			@AuthenticationPrincipal UserEntity user
-	) throws JsonProcessingException {
+	) throws ApiException, JsonProcessingException {
 		ResponseEntity<Object> response = handleRequest(RequestType.LOAD_CONFIG, null, null, null, null, user);
 
 		if (response.getStatusCode().is2xxSuccessful() && format.equals("yaml")) {
@@ -270,7 +270,7 @@ public class DataController {
 	public ResponseEntity<Object> loadData(
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
-	) {
+	) throws ApiException {
 		return handleRequest(RequestType.LOAD_DATA, null, null, null,  request, user);
 	}
 
@@ -295,7 +295,7 @@ public class DataController {
 	public ResponseEntity<Object> loadDataSet(
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
-	) {
+	) throws ApiException {
 		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, request, user);
 	}
 
@@ -318,7 +318,7 @@ public class DataController {
 	               produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> deleteData(
 			@AuthenticationPrincipal UserEntity user
-	) {
+	) throws ApiException {
 		return handleRequest(RequestType.DELETE, null, null, null, null, user);
 	}
 
@@ -341,7 +341,7 @@ public class DataController {
 	 * @param fileConfiguration Configuration describing the file.
 	 * @param configuration     Configuration describing the source data.
 	 * @param loadDataRequest   Settings for the data set export.
-	 * @param user              User of the request.
+	 * @param requestUser       User of the request.
 	 * @return Response entity containing the response based on the request type or an error description.
 	 */
 	private ResponseEntity<Object> handleRequest(
@@ -350,21 +350,6 @@ public class DataController {
 			@Nullable final FileConfiguration fileConfiguration,
 			@Nullable final DataConfiguration configuration,
 			@Nullable final LoadDataRequest loadDataRequest,
-			final UserEntity user
-	) {
-		try {
-			return doHandleRequest(requestType, file, fileConfiguration, configuration, loadDataRequest, user);
-		} catch (ApiException e) {
-			return responseService.prepareErrorResponseEntity(e);
-		}
-	}
-
-	private ResponseEntity<Object> doHandleRequest(
-			final RequestType requestType,
-			final MultipartFile file,
-			final FileConfiguration fileConfiguration,
-			final DataConfiguration configuration,
-			final LoadDataRequest loadDataRequest,
 			final UserEntity requestUser
 	) throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
@@ -390,7 +375,7 @@ public class DataController {
 			}
 			case LOAD_DATA -> {
 				final DataSet dataSet = databaseService.exportDataSet(user, columnNames);
-				result = dataSetService.encodeDataRows(dataSet, user.getDataConfiguration(), loadDataRequest);
+				result = dataSetService.encodeDataRows(dataSet, user.getPlatformConfiguration(), loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
 				result = databaseService.exportDataSet(user, columnNames);

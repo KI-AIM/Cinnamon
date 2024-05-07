@@ -57,13 +57,12 @@ public class UserControllerTest extends ControllerTest {
 		String mail = getTestUser().getUsername();
 		String password = "password";
 
-		final String response = mockMvc.perform(post("/api/user/register")
-				                                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-				                                        .content(objectMapper.writeValueAsString(
-						                                        new RegisterRequest(mail, password, password))))
-		                               .andExpect(status().isBadRequest())
-		                               .andReturn().getResponse().getContentAsString();
-		testValidationError(response, "email", "Email is not available!");
+		mockMvc.perform(post("/api/user/register")
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(
+						                objectMapper.writeValueAsString(new RegisterRequest(mail, password, password))))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("email", "Email is not available!"));
 	}
 
 	@Test
@@ -71,13 +70,11 @@ public class UserControllerTest extends ControllerTest {
 		String mail = "new_" + getTestUser().getUsername();
 		String password = "password";
 
-		final String response = mockMvc.perform(post("/api/user/register")
-				                                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-				                                        .content(objectMapper.writeValueAsString(
-						                                        new RegisterRequest(mail, password,
-						                                                            "wrong_" + password))))
-		                               .andExpect(status().isBadRequest())
-		                               .andReturn().getResponse().getContentAsString();
-		testValidationError(response, "passwordRepeated", "Passwords do not match!");
+		mockMvc.perform(post("/api/user/register")
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(
+						                new RegisterRequest(mail, password, "wrong_" + password))))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("passwordRepeated", "Passwords do not match!"));
 	}
 }

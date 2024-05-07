@@ -1,5 +1,6 @@
 package de.kiaim.platform.controller;
 
+import de.kiaim.platform.exception.ApiException;
 import de.kiaim.platform.service.ResponseService;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -29,6 +31,19 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	public ApiExceptionHandler(ResponseService responseService) {
 		this.responseService = responseService;
 	}
+
+	//==============================
+	//-- Custom exception handler --
+	//==============================
+
+	@ExceptionHandler(value = {ApiException.class})
+	public ResponseEntity<Object> handleApiException(final ApiException apiException, final WebRequest webRequest) {
+		return responseService.prepareErrorResponseEntity(apiException);
+	}
+
+	//===================================
+	//-- Overwritten exception handler --
+	//===================================
 
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,

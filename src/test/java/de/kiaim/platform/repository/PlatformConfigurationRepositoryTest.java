@@ -2,7 +2,7 @@ package de.kiaim.platform.repository;
 
 import de.kiaim.platform.DatabaseTest;
 import de.kiaim.platform.TestModelHelper;
-import de.kiaim.platform.model.entity.DataConfigurationEntity;
+import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,16 +13,16 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
-class DataConfigurationRepositoryTest extends DatabaseTest {
+class PlatformConfigurationRepositoryTest extends DatabaseTest {
 
 	@Autowired
-	DataConfigurationRepository repository;
+	PlatformConfigurationRepository repository;
 
 	@Test
 	void save() {
 		final DataConfiguration dataConfiguration = TestModelHelper.generateDataConfiguration();
 
-		final DataConfigurationEntity entity = new DataConfigurationEntity();
+		final PlatformConfigurationEntity entity = new PlatformConfigurationEntity();
 		entity.setDataConfiguration(dataConfiguration);
 
 		repository.save(entity);
@@ -34,11 +34,11 @@ class DataConfigurationRepositoryTest extends DatabaseTest {
 	void load() {
 		final DataConfiguration dataConfiguration = TestModelHelper.generateDataConfiguration();
 
-		final DataConfigurationEntity entity = new DataConfigurationEntity();
+		final PlatformConfigurationEntity entity = new PlatformConfigurationEntity();
 		entity.setDataConfiguration(dataConfiguration);
 
 		repository.save(entity);
-		final Optional<DataConfigurationEntity> loadedEntity = repository.findById(entity.getId());
+		final Optional<PlatformConfigurationEntity> loadedEntity = repository.findById(entity.getId());
 		assertTrue(loadedEntity.isPresent());
 		assertEquals(dataConfiguration, loadedEntity.get().getDataConfiguration());
 	}
@@ -47,7 +47,7 @@ class DataConfigurationRepositoryTest extends DatabaseTest {
 	void delete() {
 		final DataConfiguration dataConfiguration = TestModelHelper.generateDataConfiguration();
 
-		final DataConfigurationEntity entity = new DataConfigurationEntity();
+		final PlatformConfigurationEntity entity = new PlatformConfigurationEntity();
 		entity.setDataConfiguration(dataConfiguration);
 
 		repository.save(entity);

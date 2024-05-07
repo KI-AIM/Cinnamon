@@ -16,10 +16,7 @@ import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
-import de.kiaim.platform.service.DataSetService;
-import de.kiaim.platform.service.DatabaseService;
-import de.kiaim.platform.service.ResponseService;
-import de.kiaim.platform.service.UserService;
+import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -54,19 +51,18 @@ import java.util.List;
 public class DataController {
 
 	private final ObjectMapper yamlMapper;
-	// TODO Find Processor dynamically
-	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
+	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
 	private final UserService userService;
 	private final ResponseService responseService;
 
 	@Autowired
-	public DataController(final CsvProcessor csvProcessor, final DatabaseService databaseService,
+	public DataController(final DatabaseService databaseService, final DataProcessorService dataProcessorService,
 	                      final DataSetService dataSetService, final UserService userService,
 	                      final ResponseService responseService) {
-		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
+		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
 		this.userService = userService;
 		this.responseService = responseService;
@@ -341,7 +337,7 @@ public class DataController {
 		final Object result;
 		switch (requestType) {
 			case DATA_TYPES -> {
-				final DataProcessor dataProcessor = getDataProcessor(file);
+				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration);
 				databaseService.store((DataConfiguration) result, user);
@@ -364,13 +360,13 @@ public class DataController {
 				result = databaseService.store(configuration, user);
 			}
 			case STORE_DATE_SET -> {
-				final DataProcessor dataProcessor = getDataProcessor(file);
+				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				final TransformationResult transformationResult = dataProcessor.read(inputStream, fileConfiguration, configuration);
 				result = databaseService.store(transformationResult, user);
 			}
 			case VALIDATE -> {
-				final DataProcessor dataProcessor = getDataProcessor(file);
+				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				databaseService.store(configuration, user);
 				result = dataProcessor.read(inputStream, fileConfiguration, configuration);
@@ -384,41 +380,12 @@ public class DataController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
-	private DataProcessor getDataProcessor(final MultipartFile file) throws BadFileException {
-		final String fileExtension = extractFileExtension(file);
-
-		switch (fileExtension) {
-			case ".csv":
-				return csvProcessor;
-			default:
-				throw new BadFileException("Unsupported file type: '" + fileExtension + "'");
-		}
-	}
-
 	private InputStream getInputStream(final MultipartFile file) throws BadFileException {
 		try {
 			return file.getInputStream();
 		} catch (IOException e) {
 			throw new BadFileException("Could not read file");
 		}
-	}
-
-	private String extractFileExtension(final MultipartFile file) throws BadFileException {
-		if (file == null) {
-			throw new BadFileException("Missing file");
-		}
-
-		final String fileName = file.getOriginalFilename();
-		if (fileName == null || fileName.isBlank()) {
-			throw new BadFileException("Missing filename");
-		}
-
-		final int fileExtensionBegin = file.getOriginalFilename().lastIndexOf('.');
-		if (fileExtensionBegin == -1) {
-			throw new BadFileException("Missing file extension");
-		}
-
-		return file.getOriginalFilename().substring(fileExtensionBegin);
 	}
 
 	private enum RequestType {

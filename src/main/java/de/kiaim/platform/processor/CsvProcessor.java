@@ -9,6 +9,7 @@ import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.data.DataType;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.file.FileType;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,14 @@ import java.util.*;
 
 @Service
 public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public FileType getSupportedDataType() {
+		return FileType.CSV;
+	}
 
 	/**
 	 * {@inheritDoc}

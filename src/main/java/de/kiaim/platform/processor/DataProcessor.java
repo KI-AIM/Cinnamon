@@ -4,12 +4,18 @@ import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.file.FileType;
 
 import java.io.InputStream;
 
 public interface DataProcessor {
 
 
+	/**
+	 * Returns the FileType this processor can handle.
+	 * @return The FileType.
+	 */
+	FileType getSupportedDataType();
 
     /**
      * Receives data from frontend, converts it to

@@ -1,4 +1,5 @@
 import { Steps } from "src/app/core/enums/steps";
+import { Observable } from "rxjs";
 
 /**
  * Data for registering a configuration.
@@ -35,6 +36,8 @@ export class ConfigurationRegisterData {
      * Writing the configuration into the database will be required for loading the application state after logging out and in again.
      */
     syncWithBackend: boolean;
+
+    storeConfig: ((configName: string, yamlConfigString: string) => Observable<Number>) | null;
 
     /**
      * Function that should retrieve the configuration as a javascript object a YAML string.

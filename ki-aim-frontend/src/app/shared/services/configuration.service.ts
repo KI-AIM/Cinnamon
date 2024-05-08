@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { Observable } from "rxjs";
+import { catchError, concatMap, forkJoin, from, map, Observable, of, switchMap, tap } from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { FileService } from 'src/app/features/data-upload/services/file.service';
 import { FileUtilityService } from './file-utility.service';
@@ -145,35 +145,81 @@ export class ConfigurationService {
         const reader = new FileReader();
         reader.addEventListener("load", () => {
             const configData = reader.result as string;
-            const configurations = parse(configData);
+            const configurations = parse(configData) as object;
 
             let hasError = false;
 
-            for (const [name, config] of Object.entries(configurations)) {
-                const configData = this.getRegisteredConfigurationByName(name);
+            from(Object.entries(configurations)).pipe(
+                map(([name, config]) => {
+                    const configData = this.getRegisteredConfigurationByName(name);
 
-                if (configData == null || !includedConfigurations.includes(configData?.name)) {
-                    continue;
-                }
+                    if (configData == null || !includedConfigurations.includes(configData.name)) {
+                        return {name, configData, yamlConfigString: null};
+                    }
 
-                const yamlConfig: { [a: string]: any } = {};
-                yamlConfig[name] = config;
-                const yamlConfigString = stringify(yamlConfig);
+                    const yamlConfig: { [a: string]: any } = {};
+                    yamlConfig[name] = config;
+                    const yamlConfigString = stringify(yamlConfig);
 
-                if (configData.syncWithBackend) {
-                    this.storeConfig(configData.name, yamlConfigString).subscribe({
-                        error: (error) => {
-                            hasError = true;
-                            errorCallback(error);
-                        },
-                    });
+                    return {name, configData, yamlConfigString};
+                }),
+                concatMap((object) => {
+                    const name = object.name;
+                    const yamlConfigString = object.yamlConfigString;
+
+                    let ob;
+                    if (yamlConfigString === null) {
+                        ob = of(0 as Number);
+                    } else if (object.configData.storeConfig === null) {
+                        ob = this.storeConfig(name, yamlConfigString);
+                    } else {
+                        ob = object.configData.storeConfig(name, yamlConfigString);
+                    }
+
+                    return ob.pipe(map(number => {
+                        return {...object, success: number !== 0};
+                    }));
+                }),
+                tap((object) => {
+                    if (object.configData !== null && object.yamlConfigString !== null) {
+                        object.configData.setConfigCallback(object.yamlConfigString, () => {});
+                    }
+                }),
+                catchError((err) => {
+                    console.log(err);
+                    return of(0);
+                }),
+            ).subscribe({
+                error: (error) => {
+                    console.log(error);
                 }
-                const ec = (error: string) => {
-                    hasError = true;
-                    errorCallback(error);
-                }
-                configData.setConfigCallback(yamlConfigString, ec);
-            }
+            });
+
+            // for (const [name, config] of Object.entries(configurations)) {
+            //     const configData = this.getRegisteredConfigurationByName(name);
+            //
+            //     if (configData == null || !includedConfigurations.includes(configData?.name)) {
+            //         continue;
+            //     }
+            //
+            //     const yamlConfig: { [a: string]: any } = {};
+            //     yamlConfig[name] = config;
+            //     const yamlConfigString = stringify(yamlConfig);
+            //
+            //     if (configData.syncWithBackend) {
+            //         this.storeConfig(configData.name, yamlConfigString).subscribe({
+            //             error: (error) => {
+            //                 hasError = true;
+            //                 errorCallback(error);
+            //             },
+            //         });
+            //     }
+            //     const ec = (error: string) => {
+            //         hasError = true;
+            //         errorCallback(error);
+            //     }
+            //     configData.setConfigCallback(yamlConfigString, ec);
+            // }
 
             if (!hasError) {
                 successCallback();

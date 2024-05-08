@@ -34,6 +34,7 @@ export class DataConfigurationService {
         configReg.name = this.CONFIGURATION_NAME;
         configReg.orderNumber = 0;
         configReg.syncWithBackend = false;
+        configReg.storeConfig = (configName, yamlConfigString) => this.postDataConfigurationString(yamlConfigString);
         configReg.getConfigCallback = () => this.getConfigurationCallback();
         configReg.setConfigCallback = (config, onErrorCallback) => this.setConfigCallback(config, onErrorCallback);
 

@@ -8,6 +8,7 @@ import { instanceToPlain } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { Steps } from 'src/app/core/enums/steps';
+import { FileService } from "../../features/data-upload/services/file.service";
 
 @Injectable({
     providedIn: 'root',
@@ -20,6 +21,7 @@ export class DataConfigurationService {
     constructor(
         private httpClient: HttpClient,
         private configurationService: ConfigurationService,
+        private fileService: FileService,
     ) {
         this.setDataConfiguration(new DataConfiguration());
     }
@@ -54,24 +56,20 @@ export class DataConfigurationService {
     }
 
     public postDataConfiguration(): Observable<Number> {
-        const formData = new FormData();
-
-        var configString = JSON.stringify(instanceToPlain(this._dataConfiguration));
-        formData.append("configuration", configString);
-
-        return this.httpClient.post<Number>("/api/data/configuration", formData);
+        const configString = JSON.stringify(instanceToPlain(this._dataConfiguration));
+        return this.postDataConfigurationString(configString);
     }
 
     public postDataConfigurationString(configString: string): Observable<Number> {
         const formData = new FormData();
-        formData.append("configuration", configString);
-        return this.httpClient.post<Number>("/api/data/configuration", formData);
-    }
 
-    public downloadDataConfigurationAsYaml(): Observable<Blob> {
-        return this.postDataConfiguration().pipe(switchMap((response) => {
-            return this.httpClient.get<Blob>("/api/data/configuration?format=yaml", {responseType: 'text' as 'json'});
-        }));
+        formData.append("file", this.fileService.getFile());
+        const fileConfigString = JSON.stringify(this.fileService.getFileConfiguration());
+        formData.append("fileConfiguration", fileConfigString);
+
+        formData.append("configuration", configString);
+
+        return this.httpClient.post<Number>("/api/data/configuration", formData);
     }
 
     private getConfigurationCallback(): Object {

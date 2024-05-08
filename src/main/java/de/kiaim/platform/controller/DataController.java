@@ -7,14 +7,12 @@ import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.dto.ReadDataRequest;
-import de.kiaim.platform.model.dto.StoreDataConfigurationRequest;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -148,7 +146,7 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeConfig(
-			@ParameterObject @Valid final StoreDataConfigurationRequest requestData,
+			@ParameterObject @Valid final ReadDataRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
 		return handleRequest(RequestType.STORE_CONFIG, null, null, requestData.getConfiguration(), null, user);

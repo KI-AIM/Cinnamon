@@ -64,9 +64,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
                 List<String> convertedRow = new ArrayList<>();
 
                 try (Stream<Cell> cells = r.stream()) {
-                    cells.forEach(c -> {
-                        convertedRow.add(c.getRawValue());
-                    });
+                    cells.forEach(c -> convertedRow.add(c.getText()));
                 }
                 convertedRows.add(convertedRow);
             });

@@ -17,6 +17,7 @@ import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
+import de.kiaim.platform.processor.XlsxProcessor;
 import de.kiaim.platform.service.DataSetService;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ResponseService;
@@ -55,16 +56,19 @@ public class DataController {
 
 	// TODO Find Processor dynamically
 	private final CsvProcessor csvProcessor;
+	private final XlsxProcessor xlsxProcessor;
 	private final DatabaseService databaseService;
 	private final DataSetService dataSetService;
 	private final UserService userService;
 	private final ResponseService responseService;
 
 	@Autowired
-	public DataController(final CsvProcessor csvProcessor, final DatabaseService databaseService,
-	                      final DataSetService dataSetService, final UserService userService,
-	                      final ResponseService responseService) {
+	public DataController(final CsvProcessor csvProcessor,
+		final XlsxProcessor xlsxProcessor, final DatabaseService databaseService,
+		final DataSetService dataSetService, final UserService userService,
+		final ResponseService responseService) {
 		this.csvProcessor = csvProcessor;
+		this.xlsxProcessor = xlsxProcessor;
 		this.databaseService = databaseService;
 		this.dataSetService = dataSetService;
 		this.userService = userService;
@@ -410,6 +414,8 @@ public class DataController {
 		switch (fileExtension) {
 			case ".csv":
 				return csvProcessor;
+			case ".xlsx":
+				return xlsxProcessor;
 			default:
 				throw new BadFileException("Unsupported file type: '" + fileExtension + "'");
 		}

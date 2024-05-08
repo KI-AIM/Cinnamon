@@ -48,6 +48,8 @@ export class UploadFileComponent {
 		[QuoteChar.SINGLE_QUOTE]: "Single Quote (')",
 	};
 
+	public currentFileType = "";
+
 	constructor(
 		private titleService: TitleService,
 		public stateManagement: StateManagementService,
@@ -67,7 +69,18 @@ export class UploadFileComponent {
 		const files = (event.target as HTMLInputElement)?.files;
 
 		if (files) {
+			console.log(this.getFileExtension(files[0]));
 			this.file = files[0];
+			this.currentFileType = this.getFileExtension(files[0]); 
+		}
+	}
+
+	private getFileExtension(file: File): string {
+		var fileExtension = file.name.split(".").pop(); 
+		if (fileExtension != undefined) {
+			return fileExtension; 
+		} else {
+			return "csv"; 
 		}
 	}
 
@@ -76,6 +89,9 @@ export class UploadFileComponent {
 
 		if (this.file) {
 			this.fileService.setFile(this.file);
+
+			this.setFileType(this.file);
+			
 			this.fileService.setFileConfiguration(this.fileConfiguration)
 
 			this.dataService.estimateData(this.file, this.fileService.getFileConfiguration()).subscribe({
@@ -83,6 +99,17 @@ export class UploadFileComponent {
 				error: (e) => this.handleError(e),
 			});
 		}
+	}
+
+	setFileType(file: File) {
+		switch (this.getFileExtension(file)) {
+			case "csv": 
+				this.fileConfiguration.fileType = FileType.CSV;
+				break;
+			case "xlsx": 
+				this.fileConfiguration.fileType = FileType.XLSX;
+				break; 
+		} 
 	}
 
     openDialog(templateRef: TemplateRef<any>) {

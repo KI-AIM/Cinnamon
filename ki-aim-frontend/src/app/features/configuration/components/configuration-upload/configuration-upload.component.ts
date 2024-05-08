@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef } from '@angular/core';
+import { Component, EventEmitter, Input, Output, TemplateRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfigurationService } from 'src/app/shared/services/configuration.service';
 
@@ -15,6 +15,7 @@ export class ConfigurationUploadComponent {
    * If null, all configurations in the selected will be uploaded
    */
   @Input() public configurationName: string | null = null;
+  @Output() onError: EventEmitter<any> = new EventEmitter();
 
   constructor(
     private configurationService: ConfigurationService,
@@ -45,7 +46,6 @@ export class ConfigurationUploadComponent {
    * If the configuration name of this component is set, only this configuration will be uploaded.
    * Uses the setConfigCallback function to update the configuration in the application.
    * If configured, stores the configuration under the configured name into the database.
-   * @param event Input event of the file input.
    */
   uploadConfiguration() {
     const files = (document.getElementById("configInput") as HTMLInputElement).files;
@@ -65,7 +65,8 @@ export class ConfigurationUploadComponent {
       }
     }
 
-    this.configurationService.uploadAllConfigurations(files[0], included, (error) => this.error = error, () => this.closeDialog());
+    const errorCallback = (error: string) => this.onError.emit([error]);
+    this.configurationService.uploadAllConfigurations(files[0], included, errorCallback, () => this.closeDialog());
   }
 
 }

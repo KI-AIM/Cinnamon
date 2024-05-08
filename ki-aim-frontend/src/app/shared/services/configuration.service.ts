@@ -58,6 +58,37 @@ export class ConfigurationService {
     }
 
     /**
+     * Extracts the configuration object with the given name form the given YAML configuration file.
+     * Calls the given callback with the parameter in the form of {<configuration name>: <extracted config>}.
+     * If the config is not present, <extracted config> is null.
+     *
+     * @param file YAML file containing configurations.
+     * @param configurationName Name of the configuration to extract.
+     * @param callback Callback that gets called with the configuration.
+     */
+    public extractConfig(file: Blob, configurationName: string, callback: (result: object | null) => void) {
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+            const configData = reader.result as string;
+            const configurations = parse(configData);
+
+            const result: {[a: string]: object | null} = {};
+            result[configurationName] = null;
+
+            for (const [name, config] of Object.entries(configurations)) {
+                if (name === configurationName) {
+                    result[configurationName] = config as object;
+                    break;
+                }
+            }
+
+            callback(result);
+        }, false);
+
+        reader.readAsText(file);
+    }
+
+    /**
      * Loads the configuration with the given name from the database.
      * @param configurationName Identifier of the configuration to load.
      * @returns Observable containing the configuration as a string.
@@ -110,11 +141,13 @@ export class ConfigurationService {
      * @param errorCallback Function that gets called in case of an error.
      * @param successCallback Function that gets called after the configuration has been successfully imported.
      */
-    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string>, errorCallback?: (a: string) => void, successCallback?: () => void) {
+    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string>, errorCallback: (a: string) => void, successCallback: () => void) {
         const reader = new FileReader();
         reader.addEventListener("load", () => {
             const configData = reader.result as string;
             const configurations = parse(configData);
+
+            let hasError = false;
 
             for (const [name, config] of Object.entries(configurations)) {
                 const configData = this.getRegisteredConfigurationByName(name);
@@ -130,19 +163,21 @@ export class ConfigurationService {
                 if (configData.syncWithBackend) {
                     this.storeConfig(configData.name, yamlConfigString).subscribe({
                         error: (error) => {
-                            if (errorCallback) {
-                                errorCallback(error);
-                            }
+                            hasError = true;
+                            errorCallback(error);
                         },
                     });
                 }
-                configData?.setConfigCallback(yamlConfigString);
+                const ec = (error: string) => {
+                    hasError = true;
+                    errorCallback(error);
+                }
+                configData.setConfigCallback(yamlConfigString, ec);
             }
 
-            if (successCallback) {
+            if (!hasError) {
                 successCallback();
             }
-
         }, false);
 
         reader.readAsText(file);

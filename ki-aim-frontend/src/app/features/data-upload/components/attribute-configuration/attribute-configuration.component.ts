@@ -11,7 +11,7 @@ import { DataType } from 'src/app/shared/model/data-type';
     styleUrls: ['./attribute-configuration.component.less'],
 })
 export class AttributeConfigurationComponent implements AfterViewInit {
-    @Input() attrNumber: String; 
+    @Input() attrNumber: String;
     @Input() column: ColumnConfiguration;
 
     @Output() onValidation = new EventEmitter<boolean>();
@@ -29,16 +29,16 @@ export class AttributeConfigurationComponent implements AfterViewInit {
     getDataTypes(): List<String> {
         const types = Object.keys(DataType).filter(x => !(parseInt(x) >= 0));
 
-        return new List<String>(types); 
+        return new List<String>(types);
     }
 
     getDataScales(): List<String> {
-        const scales = Object.keys(DataScale).filter(x => !(parseInt(x) >= 0)); 
+        const scales = Object.keys(DataScale).filter(x => !(parseInt(x) >= 0));
 
-        return new List<String>(scales); 
+        return new List<String>(scales);
     }
 
     parseInt(value: String): Number {
-        return Number(value); 
+        return Number(value);
     }
 }

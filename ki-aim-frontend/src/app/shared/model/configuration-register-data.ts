@@ -49,5 +49,5 @@ export class ConfigurationRegisterData {
      * Gets called when uploading the configuration.
      * @param config The configurations as a YAML string.
      */
-    setConfigCallback: (config: string) => void;
+    setConfigCallback: (config: string, onErrorCallback: (errorMessage: string) => void) => void;
 }

@@ -11,7 +11,6 @@ import { plainToClass } from 'class-transformer';
 import { TransformationService } from '../../services/transformation.service';
 import { TransformationResult } from 'src/app/shared/model/transformation-result';
 import { LoadingService } from 'src/app/shared/services/loading.service';
-import { ConfigurationService } from 'src/app/shared/services/configuration.service';
 
 @Component({
     selector: 'app-data-configuration',
@@ -24,7 +23,6 @@ export class DataConfigurationComponent {
 
     constructor(
         public configuration: DataConfigurationService,
-        public configurationService: ConfigurationService,
         public dataService: DataService,
         private titleService: TitleService,
         private fileService: FileService,
@@ -79,5 +77,15 @@ export class DataConfigurationComponent {
         this.error = error.error.errors;
 
         window.scroll(0, 0);
+    }
+
+    protected handleConfigUploadError(error: HttpErrorResponse) {
+        let errorMessage = "";
+        if (error.error.hasOwnProperty("errors")) {
+            errorMessage = JSON.stringify(error.error.errors, null, 2);
+        } else {
+            errorMessage = error.error;
+        }
+        this.error = errorMessage;
     }
 }

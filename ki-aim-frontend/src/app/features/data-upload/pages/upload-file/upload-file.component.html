@@ -10,15 +10,15 @@
 </div>
 
 <p>
-    If you already have a configuration file, you can upload it here. 
+    If you already have a configuration file, you can upload it here.
 </p>
 
 <div class="mb-2">
-    <input id="configInput" type="file" accept=".yml,.yaml">
+    <input id="configInput" type="file" accept=".yml,.yaml" (input)="onDataConfigurationFileInput($event)">
 </div>
 
 <div class="py-2">
-    <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="!this.file">Confirm file and start configuration</button>
+    <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="!this.dataFile">Confirm file and start configuration</button>
 </div>
 
 <h3>More Information</h3>

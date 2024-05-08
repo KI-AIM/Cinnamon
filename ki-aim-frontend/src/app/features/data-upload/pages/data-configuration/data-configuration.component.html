@@ -5,7 +5,9 @@
 <div class="p-5">
     <!-- Upload -->
     <div class="py-1">
-        <app-configuration-upload [configurationName]="configuration.CONFIGURATION_NAME"></app-configuration-upload>
+        <app-configuration-upload [configurationName]="configuration.CONFIGURATION_NAME"
+                                  (onError)="handleConfigUploadError($event[0]);">
+        </app-configuration-upload>
     </div>
 
     <div class="d-flex flex-column mb-3">

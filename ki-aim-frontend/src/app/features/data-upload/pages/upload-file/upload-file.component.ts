@@ -12,9 +12,10 @@ import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { FileService } from "../../services/file.service";
 import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
-import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
-import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
+import { FileConfiguration } from "src/app/shared/model/file-configuration";
+import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
 import { LoadingService } from "src/app/shared/services/loading.service";
+import { ConfigurationService } from "../../../../shared/services/configuration.service";
 
 @Component({
 	selector: "app-upload-file",
@@ -23,7 +24,8 @@ import { LoadingService } from "src/app/shared/services/loading.service";
 })
 export class UploadFileComponent {
 	Steps = Steps;
-	file: File | null;
+    private dataConfigurationFile: File | null;
+	protected dataFile: File | null;
 	public fileConfiguration: FileConfiguration;
 
 	@ViewChild("uploadErrorModal") errorModal: TemplateRef<NgbModal>;
@@ -57,7 +59,8 @@ export class UploadFileComponent {
 		private modalService: NgbModal,
 		private fileService: FileService,
 		public dialog: MatDialog,
-		public loadingService: LoadingService
+		public loadingService: LoadingService,
+        private configurationService: ConfigurationService,
 	) {
 		this.titleService.setPageTitle("Upload data");
 		this.fileConfiguration = fileService.getFileConfiguration();
@@ -67,22 +70,49 @@ export class UploadFileComponent {
 		const files = (event.target as HTMLInputElement)?.files;
 
 		if (files) {
-			this.file = files[0];
+			this.dataFile = files[0];
 		}
 	}
 
+    onDataConfigurationFileInput(event: Event) {
+        const files = (event.target as HTMLInputElement)?.files;
+
+        if (files) {
+            this.dataConfigurationFile = files[0];
+        }
+    }
+
 	uploadFile() {
-		this.loadingService.setLoadingStatus(true); 
+		this.loadingService.setLoadingStatus(true);
 
-		if (this.file) {
-			this.fileService.setFile(this.file);
-			this.fileService.setFileConfiguration(this.fileConfiguration)
+        if (!this.dataFile) {
+            return;
+        }
 
-			this.dataService.estimateData(this.file, this.fileService.getFileConfiguration()).subscribe({
-				next: (d) => this.handleUpload(d),
-				error: (e) => this.handleError(e),
-			});
-		}
+        this.fileService.setFile(this.dataFile);
+        this.fileService.setFileConfiguration(this.fileConfiguration)
+
+        if (this.dataConfigurationFile == null) {
+            this.dataService.estimateData(this.dataFile, this.fileService.getFileConfiguration()).subscribe({
+                next: (d) => this.handleUpload(d),
+                error: (e) => this.handleError(e),
+            });
+        } else {
+            // this.configurationService.uploadAllConfigurations(this.dataConfigurationFile, null, (a) => {
+            // }, () => {
+            //
+            // });
+            this.dataConfigurationService.validateConfiguration(
+                this.dataConfigurationFile,
+                {
+                    next: value => {
+                        this.handleUpload(value);
+                    },
+                    error: (e) => this.handleError(e),
+                }
+            );
+        }
+
 	}
 
     openDialog(templateRef: TemplateRef<any>) {
@@ -92,7 +122,7 @@ export class UploadFileComponent {
     }
 
 	private handleUpload(data: Object) {
-		this.loadingService.setLoadingStatus(false); 
+		this.loadingService.setLoadingStatus(false);
 		this.dataConfigurationService.setDataConfiguration(
 			plainToClass(DataConfiguration, data)
 		);
@@ -101,18 +131,25 @@ export class UploadFileComponent {
 	}
 
 	private handleError(error: HttpErrorResponse) {
-		this.loadingService.setLoadingStatus(false); 
+		this.loadingService.setLoadingStatus(false);
 		this.showErrorDialog(error);
 	}
 
 	private showErrorDialog(error: HttpErrorResponse) {
+        let errorMessage = "";
+        if (error.error.hasOwnProperty("errors")) {
+            errorMessage = JSON.stringify(error.error.errors, null, 2);
+        } else {
+            errorMessage = error.error;
+        }
+
 		this.dialog.open(InformationDialogComponent, {
 			data: {
-				title: "An unexpected error occured",
+				title: "An unexpected error occurred",
 				content: "We are sorry, something went wrong: " +
 							"<div class='pre-wrapper'>" +
 								"<pre>" + error.message + "</pre>\n" +
-								"<pre>" + error.error + "</pre>" +
+								"<pre>" + errorMessage + "</pre>" +
 							"</div>" +
 							"<b>Please try again with a different file!</b>"
 			}

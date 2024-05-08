@@ -3,7 +3,7 @@ import { DataConfiguration } from '../model/data-configuration';
 import { ColumnConfiguration } from '../model/column-configuration';
 import { List } from 'src/app/core/utils/list';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, switchMap } from 'rxjs';
+import { map, Observable, PartialObserver } from 'rxjs';
 import { instanceToPlain } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
@@ -35,7 +35,7 @@ export class DataConfigurationService {
         configReg.orderNumber = 0;
         configReg.syncWithBackend = false;
         configReg.getConfigCallback = () => this.getConfigurationCallback();
-        configReg.setConfigCallback = (config) => this.setConfigCallback(config);
+        configReg.setConfigCallback = (config, onErrorCallback) => this.setConfigCallback(config, onErrorCallback);
 
         this.configurationService.registerConfiguration(configReg);
     }
@@ -49,6 +49,15 @@ export class DataConfigurationService {
 
     public getColumnConfigurations(): List<ColumnConfiguration> {
         return new List<ColumnConfiguration>(this.getDataConfiguration().configurations);
+    }
+
+    public validateConfiguration(dataConfig: File, observer: PartialObserver<DataConfiguration>) {
+        const callback = (result: object | null) => {
+            this.setDataConfiguration(result as DataConfiguration);
+            this.postDataConfiguration().pipe(map(() => this._dataConfiguration)).subscribe(observer);
+        };
+
+        this.configurationService.extractConfig(dataConfig, this.CONFIGURATION_NAME, callback);
     }
 
     public downloadDataConfigurationAsJson(): Observable<DataConfiguration> {
@@ -77,21 +86,22 @@ export class DataConfigurationService {
         return this.getDataConfiguration();
     }
 
-    private setConfigCallback(configData: string) {
+    private setConfigCallback(configData: string, onErrorCallback: (errorMessage: string) => void): void {
         this.postDataConfigurationString(configData).subscribe({
             next: (data: Number) => {
-                return of(this.downloadDataConfigurationAsJson().subscribe({
+                this.downloadDataConfigurationAsJson().subscribe({
                     next: (data: DataConfiguration) => {
                         this.setDataConfiguration(data);
-                        return of(null);
                     },
                     error: (error) => {
-                        return of(error);
+                        console.log(error);
+                        onErrorCallback(error);
                     },
-                }));
+                });
             },
             error: (error) => {
-                return of(error);
+                console.log(error);
+                onErrorCallback(error);
             },
         });
     }

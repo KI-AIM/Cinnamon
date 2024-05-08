@@ -19,22 +19,28 @@ public class MatchingNumberColumnsValidator implements ConstraintValidator<Match
 	@SneakyThrows
 	@Override
 	public boolean isValid(final ReadDataRequest value, final ConstraintValidatorContext context) {
-		final var dataProcessor = dataProcessorService.getDataProcessor(value.getFile());
+		final int numberColumnsData = (value.getFile() != null && value.getFileConfiguration() != null)
+		                              ? dataProcessorService.getDataProcessor(value.getFile())
+		                                                    .getNumberColumns(value.getFile().getInputStream(),
+		                                                                      value.getFileConfiguration())
+		                              : 0;
 
-		final var numberColumnsData = dataProcessor.getNumberColumns(value.getFile().getInputStream(),
-		                                                             value.getFileConfiguration());
-		final var numberColumnsConfig = value.getConfiguration().getConfigurations().size();
+		final var numberColumnsConfig =
+				(value.getConfiguration() != null && value.getConfiguration().getConfigurations() != null)
+				? value.getConfiguration().getConfigurations().size()
+				: 0;
 
 		var isValid = true;
 
 		if (numberColumnsData != numberColumnsConfig) {
 			context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate()
-			                                             + " Expected " + numberColumnsData
-			                                             + " but got " + numberColumnsConfig + "!")
+			                                             + " The data set has " + numberColumnsData
+			                                             + " and the configuration " + numberColumnsConfig + " columns!")
 			       .addPropertyNode("configuration")
+			       .addPropertyNode("configurations")
 			       .addConstraintViolation()
 			       .disableDefaultConstraintViolation();
-			return true;
+			isValid = false;
 		}
 
 		return isValid;

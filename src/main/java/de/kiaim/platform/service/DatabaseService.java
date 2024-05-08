@@ -1,23 +1,31 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.platform.exception.BadColumnNameException;
+import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.helper.DataschemeGenerator;
-import de.kiaim.platform.model.entity.DataConfigurationEntity;
+import de.kiaim.platform.model.DataRowTransformationError;
+import de.kiaim.platform.model.DataTransformationError;
+import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
 import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.repository.DataConfigurationRepository;
+import de.kiaim.platform.repository.PlatformConfigurationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,16 +36,16 @@ import java.util.function.Predicate;
 public class DatabaseService {
 
 	final Connection connection;
-	final DataConfigurationRepository dataConfigurationRepository;
+	final PlatformConfigurationRepository platformConfigurationRepository;
 
 	final DataschemeGenerator dataschemeGenerator;
 	final UserService userService;
 
 	@Autowired
-	public DatabaseService(DataSource dataSource, DataConfigurationRepository dataConfigurationRepository,
+	public DatabaseService(DataSource dataSource, PlatformConfigurationRepository platformConfigurationRepository,
 	                       DataschemeGenerator dataschemeGenerator, UserService userService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
-		this.dataConfigurationRepository = dataConfigurationRepository;
+		this.platformConfigurationRepository = platformConfigurationRepository;
 		this.dataschemeGenerator = dataschemeGenerator;
 		this.userService = userService;
 	}
@@ -55,7 +63,7 @@ public class DatabaseService {
 	/**
 	 * Stores the DataConfiguration and associates the configuration with the user of the request.
 	 *
-	 * @param dataConfiguration The configuration to be store.
+	 * @param dataConfiguration The configuration to be stored.
 	 * @param user The user the configuration should be associated with.
 	 * @return The ID of the configuration.
 	 * @throws BadDataSetIdException If the data has already been stored.
@@ -64,47 +72,30 @@ public class DatabaseService {
 	@Transactional
 	public long store(final DataConfiguration dataConfiguration, UserEntity user)
 			throws BadDataSetIdException, InternalDataSetPersistenceException {
-
-		// Store configuration
-		final DataConfigurationEntity dataConfigurationEntity;
-		if (user.getDataConfiguration() != null) {
-			dataConfigurationEntity = user.getDataConfiguration();
-			if (existsTable(dataConfigurationEntity.getId())) {
-				throw new BadDataSetIdException("The data has already been stored!");
-			}
-		} else {
-			dataConfigurationEntity = new DataConfigurationEntity();
-		}
-
-		dataConfigurationEntity.setDataConfiguration(dataConfiguration);
-		dataConfigurationRepository.save(dataConfigurationEntity);
-
-		// Get id
-		final long dataSetId = dataConfigurationEntity.getId();
-
-		// Set current data configuration for the user
-		userService.setConfigurationToUser(dataConfigurationEntity, user);
-
-		return dataSetId;
+		return store(dataConfiguration, new ArrayList<>(), user);
 	}
 
 	/**
-	 * Stores the given DataSet and the DataConfiguration into the database and associates them with the given user.
+	 * Stores the given TransformationResult by storing the DataSet,
+	 * the DataConfiguration and the transformation errors into the database and associates them with the given user.
 	 * The table for the DataSet will be generated automatically.
 	 * Returns an ID to access the data.
 	 *
-	 * @param dataSet DataSet to store.
+	 * @param transformationResult  TransformationResult to store.
 	 * @param user The user the configuration should be associated with.
 	 * @return The generated ID of the DataSet.
 	 * @throws BadDataSetIdException If the data has already been stored.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
 	 */
 	@Transactional
-	public long store(final DataSet dataSet, final UserEntity user)
+	public long store(final TransformationResult transformationResult, final UserEntity user)
 			throws BadDataSetIdException, InternalDataSetPersistenceException  {
 
-		// Store configuration
-		final long dataSetId = store(dataSet.getDataConfiguration(), user);
+		final DataSet dataSet = transformationResult.getDataSet();
+
+		// Store configuration and transformation errors
+		final long dataSetId = store(dataSet.getDataConfiguration(), transformationResult.getTransformationErrors(),
+		                             user);
 		final String tableName = getTableName(dataSetId);
 
 		// Create table
@@ -137,6 +128,23 @@ public class DatabaseService {
 	}
 
 	/**
+	 * Stores an arbitrary configuration under the given identifier.
+	 * If a configuration with the given name is already present, it will be overwritten.
+	 *
+	 * @param configurationName Identifier for the configuration.
+	 * @param configuration Configuration to store.
+	 * @param user The user the configuration should be associated with.
+	 * @return The ID of the configuration.
+	 */
+	@Transactional
+	public long storeConfiguration(final String configurationName, final String configuration,
+	                               final UserEntity user) {
+		final PlatformConfigurationEntity platformConfigurationEntity = getPlatformConfigurationEntity(user);
+		platformConfigurationEntity.getConfigurations().put(configurationName, configuration);
+		return storeDataConfigurationEntity(platformConfigurationEntity, user);
+	}
+
+	/**
 	 * Exports the configuration of the data set associated with the given user.
 	 *
 	 * @param user The user of which the configuration should be exported.
@@ -165,7 +173,8 @@ public class DatabaseService {
 	public DataSet exportDataSet(final UserEntity user, List<String> columnNames)
 			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException {
 		final long dataSetId = getDataSetIdOrThrow(user);
-		DataConfiguration dataConfiguration = exportDataConfiguration(user);
+		final PlatformConfigurationEntity platformConfigurationEntity = getOrThrow(dataSetId);
+		DataConfiguration dataConfiguration = platformConfigurationEntity.getDataConfiguration();
 
 		if (columnNames.isEmpty()) {
 			columnNames = dataConfiguration.getColumnNames();
@@ -174,6 +183,7 @@ public class DatabaseService {
 			dataConfiguration = extractColumns(dataConfiguration, columnNames);
 		}
 
+		// Export the data from the database
 		final List<DataRow> dataRows = new ArrayList<>();
 		try (final Statement exportStatement = connection.createStatement()) {
 
@@ -196,6 +206,28 @@ public class DatabaseService {
 		}
 
 		return new DataSet(dataRows, dataConfiguration);
+	}
+
+	/**
+	 * Exports the configuration with the given name
+	 * @param configurationName Name of the configuration to export.
+	 * @param user The user of which the configuration should be exported.
+	 * @return The configuration.
+	 * @throws BadConfigurationNameException If the user does not have a configuration with the given name.
+	 * @throws BadDataSetIdException If no data set is associated with the given user.
+	 */
+	@Transactional
+	public String exportConfiguration(final String configurationName, final UserEntity user)
+			throws BadConfigurationNameException, BadDataSetIdException {
+		final long dataSetId = getDataSetIdOrThrow(user);
+		final PlatformConfigurationEntity platformConfigurationEntity = getOrThrow(dataSetId);
+
+		if (!platformConfigurationEntity.getConfigurations().containsKey(configurationName)) {
+			throw new BadConfigurationNameException(
+					"User has no configuration with the name '" + configurationName + "'!");
+		}
+
+		return platformConfigurationEntity.getConfigurations().get(configurationName);
 	}
 
 	/**
@@ -227,7 +259,7 @@ public class DatabaseService {
 		}
 
 		// Delete the configuration
-		dataConfigurationRepository.deleteById(dataSetId);
+		platformConfigurationRepository.deleteById(dataSetId);
 	}
 
 	/**
@@ -261,10 +293,76 @@ public class DatabaseService {
 	}
 
 	private long getDataSetIdOrThrow(final UserEntity user) throws BadDataSetIdException {
-		if (user.getDataConfiguration() == null) {
+		if (user.getPlatformConfiguration() == null) {
 			throw new BadDataSetIdException("User has no configuration!");
 		}
-		return user.getDataConfiguration().getId();
+		return user.getPlatformConfiguration().getId();
+	}
+
+	private PlatformConfigurationEntity getPlatformConfigurationEntity(final UserEntity user) {
+		final PlatformConfigurationEntity platformConfigurationEntity;
+
+		if (user.getPlatformConfiguration() != null) {
+			platformConfigurationEntity = user.getPlatformConfiguration();
+		} else {
+			platformConfigurationEntity = new PlatformConfigurationEntity();
+		}
+
+		return platformConfigurationEntity;
+	}
+
+	/**
+	 * Stores the DataConfiguration with the transformation errors
+	 * and associates the configuration with the user of the request.
+	 *
+	 * @param dataConfiguration The configuration to be stored.
+	 * @param rowTransformationErrors The transformation errors occurred during reading the corresponding data set.
+	 * @param user The user the configuration should be associated with.
+	 * @return The ID of the configuration.
+	 * @throws BadDataSetIdException If the data has already been stored.
+	 * @throws InternalDataSetPersistenceException If the configuration could not be stored.
+	 */
+	private long store(final DataConfiguration dataConfiguration,
+	                   final List<DataRowTransformationError> rowTransformationErrors, final UserEntity user)
+			throws InternalDataSetPersistenceException, BadDataSetIdException {
+		final PlatformConfigurationEntity platformConfigurationEntity = getPlatformConfigurationEntity(user);
+
+		// Check if the data set already has been stored
+		if (platformConfigurationEntity.getId() != null && existsTable(platformConfigurationEntity.getId())) {
+			throw new BadDataSetIdException("The data has already been stored!");
+		}
+
+		platformConfigurationEntity.setDataConfiguration(dataConfiguration);
+
+		for (final DataRowTransformationError rowTransformationError : rowTransformationErrors) {
+			for (final DataTransformationError transformationError : rowTransformationError.getDataTransformationErrors()) {
+
+				final DataTransformationErrorEntity transformationErrorEntity = new DataTransformationErrorEntity();
+
+				transformationErrorEntity.setRowIndex(rowTransformationError.getIndex());
+				transformationErrorEntity.setColumnIndex(transformationError.getIndex());
+				transformationErrorEntity.setErrorType(transformationError.getErrorType());
+				transformationErrorEntity.setOriginalValue(
+						rowTransformationError.getRawValues().get(transformationError.getIndex()));
+
+				platformConfigurationEntity.addDataRowTransformationError(transformationErrorEntity);
+			}
+		}
+
+		return storeDataConfigurationEntity(platformConfigurationEntity, user);
+	}
+
+	private long storeDataConfigurationEntity(final PlatformConfigurationEntity platformConfigurationEntity,
+	                                          final UserEntity user) {
+		platformConfigurationRepository.save(platformConfigurationEntity);
+
+		// Get ID
+		final long dataSetId = platformConfigurationEntity.getId();
+
+		// Set current data configuration for the user
+		userService.setConfigurationToUser(platformConfigurationEntity, user);
+
+		return dataSetId;
 	}
 
 	private String convertDataToString(final Data data) throws InternalDataSetPersistenceException {
@@ -285,7 +383,7 @@ public class DatabaseService {
 	}
 
 	private void existsOrThrow(final long dataSetId) throws BadDataSetIdException {
-		final boolean exists = dataConfigurationRepository.existsById(dataSetId);
+		final boolean exists = platformConfigurationRepository.existsById(dataSetId);
 		if (!exists) {
 			throw new BadDataSetIdException("No DataSet with the given ID '" + dataSetId + "' found!");
 		}
@@ -304,8 +402,8 @@ public class DatabaseService {
 		}
 	}
 
-	private DataConfigurationEntity getOrThrow(final long dataSetId) throws BadDataSetIdException {
-		final Optional<DataConfigurationEntity> config = dataConfigurationRepository.findById(dataSetId);
+	private PlatformConfigurationEntity getOrThrow(final long dataSetId) throws BadDataSetIdException {
+		final Optional<PlatformConfigurationEntity> config = platformConfigurationRepository.findById(dataSetId);
 		if (config.isEmpty()) {
 			throw new BadDataSetIdException("No DataSet with the given ID '" + dataSetId + "' found!");
 		}
@@ -319,25 +417,32 @@ public class DatabaseService {
 
 	private Data convertResultToData(final ResultSet resultSet, final int columnIndex,
 	                                 final DataType dataType) throws InternalDataSetPersistenceException {
+
 		try {
 			switch (dataType) {
 				case BOOLEAN -> {
-					return new BooleanData(resultSet.getBoolean(columnIndex));
+					return new BooleanData((Boolean) resultSet.getObject(columnIndex));
 				}
 				case DATE_TIME -> {
-					return new DateTimeData(resultSet.getTimestamp(columnIndex).toLocalDateTime());
+					final Timestamp timestamp = resultSet.getTimestamp(columnIndex);
+					final LocalDateTime localDateTime = timestamp != null ? timestamp.toLocalDateTime() : null;
+					return new DateTimeData(localDateTime);
 				}
 				case DECIMAL -> {
-					return new DecimalData(resultSet.getFloat(columnIndex));
+					final BigDecimal bigDecimal = resultSet.getBigDecimal(columnIndex);
+					final Float floatValue = bigDecimal != null ? bigDecimal.floatValue() : null;
+					return new DecimalData(floatValue);
 				}
 				case INTEGER -> {
-					return new IntegerData(resultSet.getInt(columnIndex));
+					return new IntegerData((Integer) resultSet.getObject(columnIndex));
 				}
 				case STRING -> {
 					return new StringData(resultSet.getString(columnIndex));
 				}
 				case DATE -> {
-					return new DateData(resultSet.getDate(columnIndex).toLocalDate());
+					final Date date = resultSet.getDate(columnIndex);
+					final LocalDate localDate = date != null ? date.toLocalDate() : null;
+					return new DateData(localDate);
 				}
 				case UNDEFINED -> {
 					throw new InternalDataSetPersistenceException("Undefined data type can not be exported!");

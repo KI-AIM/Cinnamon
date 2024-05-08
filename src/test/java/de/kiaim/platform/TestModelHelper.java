@@ -63,7 +63,7 @@ public class TestModelHelper {
 		return configuration;
 	}
 
-	public static List<DataRow> generateDataRows() {
+	public static List<DataRow> generateDataRows(final boolean withErrors) {
 		final List<Data> data1 = List.of(new BooleanData(true),
 		                                 new DateData(LocalDate.of(2023, 11, 20)),
 		                                 new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456000)),
@@ -78,34 +78,98 @@ public class TestModelHelper {
 		                                 new StringData("Bye World!"));
 		final DataRow dataRow1 = new DataRow(data1);
 		final DataRow dataRow2 = new DataRow(data2);
-		return List.of(dataRow1, dataRow2);
+
+
+		final List<DataRow> dataRows;
+
+		if (withErrors) {
+			final List<Data> data3 = List.of(new BooleanData(true),
+			                                 new DateData(LocalDate.of(2023, 11, 20)),
+			                                 new DateTimeData(null),
+			                                 new DecimalData(4.2f),
+			                                 new IntegerData(null),
+			                                 new StringData("Hello World!"));
+			final DataRow dataRow3 = new DataRow(data3);
+
+			dataRows = List.of(dataRow1, dataRow2, dataRow3);
+		} else {
+			dataRows = List.of(dataRow1, dataRow2);
+		}
+
+		return dataRows;
 	}
 
 	public static DataSet generateDataSet() {
-		return new DataSet(generateDataRows(), generateDataConfiguration());
+		return generateDataSet(false);
+	}
+
+	public static DataSet generateDataSet(final boolean withErrors) {
+		return new DataSet(generateDataRows(withErrors), generateDataConfiguration());
 	}
 
 	public static TransformationResult generateTransformationResult(final boolean withErrors) {
 
 		if (withErrors) {
-			final List<String> rawValues = List.of("true", "2023-11-20", "", "4.2", "42", "Hello World!");
+			final List<String> rawValues = List.of("true", "2023-11-20", "", "4.2", "forty two", "Hello World!");
 			final DataRowTransformationError dataRowTransformationError = new DataRowTransformationError(2, rawValues);
-			final DataTransformationError dataTransformationError = new DataTransformationError(2,
-			                                                                                    TransformationErrorType.MISSING_VALUE);
-			dataRowTransformationError.addError(dataTransformationError);
+
+			final DataTransformationError missingValueError = new DataTransformationError(2,
+			                                                                              TransformationErrorType.MISSING_VALUE);
+			dataRowTransformationError.addError(missingValueError);
+
+			final DataTransformationError formatError = new DataTransformationError(4,
+			                                                                        TransformationErrorType.FORMAT_ERROR);
+			dataRowTransformationError.addError(formatError);
+
 			final List<DataRowTransformationError> dataRowTransformationErrors = List.of(dataRowTransformationError);
-			return new TransformationResult(generateDataSet(), dataRowTransformationErrors);
+			return new TransformationResult(generateDataSet(true), dataRowTransformationErrors);
 		} else {
 			return new TransformationResult(generateDataSet(), new ArrayList<>());
 		}
 	}
+
+	public static String generateDataSetColumnsAsJson() {
+		return """
+                {"dataConfiguration":{"configurations":[{"index":0,"name":"column4_integer","type":"INTEGER","scale":"INTERVAL","configurations":[{"name":"RangeConfiguration","minValue":0,"maxValue":100}]},{"index":1,"name":"column0_boolean","type":"BOOLEAN","scale":"NOMINAL","configurations":[]}]},"data":[[42,true],[24,false],[null,true]]}""";
+	}
+
+	public static String generateDataColumnsAsJson() {
+		return """
+				[[42,true],[24,false],[null,true]]""";
+	}
+
+	public static String generateDataSetAsJson() {
+		return generateDataSetAsJson("null", "null");
+	}
+
+	public static String generateDataSetAsJson(final String missingValueEncoding, final String formatErrorEncoding) {
+		return
+				"""
+						{"dataConfiguration":""" + generateDataConfigurationAsJson() +
+				"""
+						,"data":""" + generateDataAsJson(missingValueEncoding, formatErrorEncoding) + "}";
+	}
+
+	public static String generateDataAsJson() {
+		return generateDataAsJson("null", "null");
+	}
+
+	public static String generateDataAsJson(final String missingValueEncoding, final String formatErrorEncoding) {
+		return
+				"""
+						[[true,"2023-11-20","2023-11-20T12:50:27.123456",4.2,42,"Hello World!"],[false,"2023-11-20","2023-11-20T12:50:27.123456",2.4,24,"Bye World!"],[true,"2023-11-20","""
+				+ missingValueEncoding + ",4.2," + formatErrorEncoding +
+				"""
+						,"Hello World!"]]""";
+	}
+
 
 	public static String generateTransformationResultAsJson() {
 		return
 				"""
 						{"dataSet":{"dataConfiguration":""" + generateDataConfigurationAsJson() +
 				"""
-						,"data":[[true,"2023-11-20","2023-11-20T12:50:27.123456",4.2,42,"Hello World!"],[false,"2023-11-20","2023-11-20T12:50:27.123456",2.4,24,"Bye World!"]]},"transformationErrors":[{"index":2,"rawValues":["true","2023-11-20","","4.2","42","Hello World!"],"dataTransformationErrors":[{"index":2,"errorType":"MISSING_VALUE"}]}]}""";
+						,"data":[[true,"2023-11-20","2023-11-20T12:50:27.123456",4.2,42,"Hello World!"],[false,"2023-11-20","2023-11-20T12:50:27.123456",2.4,24,"Bye World!"],[true,"2023-11-20",null,4.2,null,"Hello World!"]]},"transformationErrors":[{"index":2,"rawValues":["true","2023-11-20","","4.2","forty two","Hello World!"],"dataTransformationErrors":[{"index":2,"errorType":"MISSING_VALUE"},{"index":4,"errorType":"FORMAT_ERROR"}]}]}""";
 	}
 
 	public static String generateDataConfigurationAsJson() {
@@ -168,5 +232,11 @@ public class TestModelHelper {
 		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
 		return new MockMultipartFile("file", "file.csv", null,
 		                             classLoader.getResourceAsStream("test.csv"));
+	}
+
+	public static MockMultipartFile loadCsvFileWithErrors() throws IOException {
+		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
+		return new MockMultipartFile("file", "file.csv", null,
+		                             classLoader.getResourceAsStream("testWithErrors.csv"));
 	}
 }

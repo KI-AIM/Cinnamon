@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ import java.util.List;
 @ToString
 public class DecimalData extends Data {
 
+	@Nullable
 	private final Float value;
 
 	@Override
@@ -32,7 +34,7 @@ public class DecimalData extends Data {
 	public static class DecimalDataBuilder implements DataBuilder {
 		private float value;
 
-		private float minValue = Float.MIN_VALUE;
+		private float minValue = -Float.MAX_VALUE;
 		private float maxValue = Float.MAX_VALUE;
 
 		/**

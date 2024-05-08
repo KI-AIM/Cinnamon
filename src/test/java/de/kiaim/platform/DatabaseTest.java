@@ -1,8 +1,10 @@
 package de.kiaim.platform;
 
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.repository.DataConfigurationRepository;
+import de.kiaim.platform.repository.PlatformConfigurationRepository;
+import de.kiaim.platform.repository.DataTransformationErrorRepository;
 import de.kiaim.platform.repository.UserRepository;
 import de.kiaim.platform.service.DatabaseService;
 import org.junit.jupiter.api.AfterEach;
@@ -15,7 +17,7 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 //@Transactional // Will block the DROP TABLE statement
 public class DatabaseTest extends ContextRequiredTest {
@@ -28,7 +30,10 @@ public class DatabaseTest extends ContextRequiredTest {
 	DatabaseService databaseService;
 
 	@Autowired
-	DataConfigurationRepository dataConfigurationRepository;
+	PlatformConfigurationRepository platformConfigurationRepository;
+
+	@Autowired
+	protected DataTransformationErrorRepository dataTransformationErrorRepository;
 
 	@Autowired
 	UserRepository userRepository;
@@ -53,10 +58,10 @@ public class DatabaseTest extends ContextRequiredTest {
 	protected void cleanDatabase() {
 		try {
 			final UserEntity testUser = getTestUser();
-			testUser.setDataConfiguration(null);
+			testUser.setPlatformConfiguration(null);
 			userRepository.save(testUser);
 
-			dataConfigurationRepository.deleteAll();
+			platformConfigurationRepository.deleteAll();
 			databaseService.executeStatement("SELECT setval('data_configuration_entity_seq', 1, true)");
 			databaseService.executeStatement(
 					"""
@@ -83,8 +88,22 @@ public class DatabaseTest extends ContextRequiredTest {
 		connection = null;
 	}
 
+	protected void storeConfiguration(final String configName, final String config) {
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, getTestUser()),
+		                   "The configuration could not be stored!");
+
+		final UserEntity updatedUser = getTestUser();
+
+		final PlatformConfigurationEntity dataConfiguration = updatedUser.getPlatformConfiguration();
+		assertNotNull(dataConfiguration, "The configuration has not been created!");
+		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
+		           "The configuration has not been stored correctly under the user!");
+		assertEquals(config, dataConfiguration.getConfigurations().get(configName),
+		             "The configuration has not been stored correctly!");
+	}
+
 	protected boolean existsDataConfigration(final long dataSetId) {
-		return dataConfigurationRepository.existsById(dataSetId);
+		return platformConfigurationRepository.existsById(dataSetId);
 	}
 
 	protected boolean existsTable(final long dataSetId) {

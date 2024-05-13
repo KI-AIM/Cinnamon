@@ -10,6 +10,7 @@ import { ConfigurationRegisterData } from '../model/configuration-register-data'
 import { Steps } from 'src/app/core/enums/steps';
 import { FileService } from "../../features/data-upload/services/file.service";
 import { parse } from "yaml";
+import { ImportPipeData } from "../model/import-pipe-data";
 
 @Injectable({
     providedIn: 'root',
@@ -87,8 +88,8 @@ export class DataConfigurationService {
         return this.getDataConfiguration();
     }
 
-    private setConfigCallback(configData: string): void {
-        const config = parse(configData);
+    private setConfigCallback(importData: ImportPipeData): void {
+        const config = parse(importData.yamlConfigString);
         this.setDataConfiguration(config);
     }
 }

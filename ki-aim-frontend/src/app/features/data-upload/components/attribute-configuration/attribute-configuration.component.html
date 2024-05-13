@@ -3,9 +3,11 @@
         <mat-form-field>
             <mat-label>Column name</mat-label>
 
-            <input type="text" matInput [id]="'name_' + attrNumber" [(ngModel)]="column.name" appTrimValue required appNoSpaceValidator #name="ngModel" (change)="column.name = column.name.trim()" />
-            <mat-error *ngIf="name.errors?.['required']">Name must not be blank</mat-error>
+            <input type="text" matInput [id]="'name_' + attrNumber" [(ngModel)]="column.name" required
+                   appNoSpaceValidator #name="ngModel" (change)="column.name = column.name.trim();"/>
             <mat-error *ngIf="name.errors?.['noSpace']">Name must not contain spaces</mat-error>
+            <mat-error *ngIf="name.errors?.['required']">Name must not be blank</mat-error>
+            <mat-error *ngIf="name.errors?.['unique']">Name must be unique</mat-error>
         </mat-form-field>
     </div>
 

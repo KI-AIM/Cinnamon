@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, TemplateRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfigurationService } from 'src/app/shared/services/configuration.service';
+import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
 
 @Component({
   selector: 'app-configuration-upload',
@@ -15,13 +16,17 @@ export class ConfigurationUploadComponent {
    * If null, all configurations in the selected will be uploaded
    */
   @Input() public configurationName: string | null = null;
-  @Output() onUpload: EventEmitter<any> = new EventEmitter();
+  @Output() onUpload: EventEmitter<ImportPipeData[] | null> = new EventEmitter();
 
   constructor(
     private configurationService: ConfigurationService,
     private dialog: MatDialog,
   ) {
     this.error = "";
+  }
+
+  public setError(error: string): void {
+      this.error = error;
   }
 
   /**
@@ -37,7 +42,7 @@ export class ConfigurationUploadComponent {
   /**
    * Closes the import dialog.
    */
-  private closeDialog() {
+  public closeDialog() {
     this.dialog.closeAll();
   }
 
@@ -66,7 +71,7 @@ export class ConfigurationUploadComponent {
     }
 
     this.configurationService.uploadAllConfigurations(files[0], included).subscribe(result => {
-        this.onUpload.emit([result]);
+        this.onUpload.emit(result);
     });
   }
 

@@ -1,5 +1,6 @@
 import { Steps } from "src/app/core/enums/steps";
 import { Observable } from "rxjs";
+import { ImportPipeData } from "./import-pipe-data";
 
 /**
  * Data for registering a configuration.
@@ -49,5 +50,5 @@ export class ConfigurationRegisterData {
      * Gets called when uploading the configuration.
      * @param config The configurations as a YAML string.
      */
-    setConfigCallback: (config: string) => void;
+    setConfigCallback: (importData: ImportPipeData) => void;
 }

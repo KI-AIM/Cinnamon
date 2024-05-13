@@ -5,6 +5,7 @@ import { ConfigurationRegisterData } from '../model/configuration-register-data'
 import { FileService } from 'src/app/features/data-upload/services/file.service';
 import { FileUtilityService } from './file-utility.service';
 import { parse, stringify } from 'yaml';
+import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data";
 
 /**
  * Service for managing configurations.
@@ -144,7 +145,7 @@ export class ConfigurationService {
      * @param includedConfigurations Names of the configurations to upload.
      * @return Observable of the import pipeline.
      */
-    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string>): Observable<any> {
+    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string>): Observable<ImportPipeData[] | null> {
         const readBlob = (blob: Blob) => new Observable<string | ArrayBuffer | null>((subscriber) => {
             const reader = new FileReader();
             reader.readAsText(blob);
@@ -165,17 +166,22 @@ export class ConfigurationService {
                 return from(Object.entries(configurations)).pipe(
                     map(([name, config]) => {
                         // Get the data for the configuration
+
                         const configData = this.getRegisteredConfigurationByName(name);
 
-                        if (configData == null || !includedConfigurations.includes(configData.name)) {
-                            return {name, configData, yamlConfigString: null};
+                        let yamlConfigString = null;
+                        if (configData != null && includedConfigurations.includes(configData.name)) {
+                            const yamlConfig: { [a: string]: any } = {};
+                            yamlConfig[name] = config;
+                            yamlConfigString = stringify(yamlConfig);
                         }
 
-                        const yamlConfig: { [a: string]: any } = {};
-                        yamlConfig[name] = config;
-                        const yamlConfigString = stringify(yamlConfig);
-
-                        return {name, configData, yamlConfigString};
+                        const result = new ImportPipeDataIntern();
+                        result.name = name;
+                        result.configData = configData;
+                        result.yamlConfigString = yamlConfigString;
+                        return result;
+                        // return {name, configData, yamlConfigString};
                     }),
                     concatMap((object) => {
                         // Store the configuration in the backend
@@ -183,7 +189,8 @@ export class ConfigurationService {
                         const yamlConfigString = object.yamlConfigString;
 
                         let ob;
-                        if (yamlConfigString === null) {
+                        if (object.configData == null || yamlConfigString === null) {
+                            // If the config is not in the config file, use 0 as a placeholder
                             ob = of(0 as Number);
                         } else {
                             // Cannot be null after registering
@@ -192,21 +199,26 @@ export class ConfigurationService {
 
                         return ob.pipe(
                             map(number => {
-                                return {...object, success: number !== 0};
+                                object.success = number !== 0;
+                                return object as ImportPipeData;
+                                // return {...object, success: number !== 0};
                             }),
                             catchError((error) => {
                                 console.log('Error while storing the configuration: ', error);
-                                return of({...object, error, success: false});
+                                object.error = error;
+                                object.success = false;
+                                return of(object as ImportPipeData);
+                                // return of({...object, error, success: false});
                             }),
                         );
                     }),
                     tap((object) => {
                         // Set the configuration in the UI
                         if (object.configData !== null && object.yamlConfigString !== null) {
-                            object.configData.setConfigCallback(object.yamlConfigString);
+                            object.configData.setConfigCallback(object);
                         }
                     }),
-                    // toArray(),
+                    toArray(),
                     catchError((error) => {
                         console.log('Error during configuration import:', error);
                         return of(null);

@@ -15,14 +15,24 @@ export class AttributeConfigurationComponent implements AfterViewInit {
     @Input() column: ColumnConfiguration;
 
     @Output() onValidation = new EventEmitter<boolean>();
+    @Output() onInput = new EventEmitter<any>();
 
     @ViewChild("name") nameInput: NgModel;
+    private oldName: string = "";
 
     constructor() { }
 
     ngAfterViewInit(): void {
         this.nameInput.statusChanges?.subscribe(() => {
             this.onValidation.emit(this.nameInput.valid ?? true)
+        });
+        this.nameInput.valueChanges?.subscribe((newValue) => {
+            // Trigger validation when the model has been changed programmatically
+            if (this.oldName !== newValue) {
+                this.oldName = newValue;
+                this.onInput.emit();
+                this.nameInput.control.markAsTouched();
+            }
         });
     }
 
@@ -38,7 +48,7 @@ export class AttributeConfigurationComponent implements AfterViewInit {
         return new List<String>(scales);
     }
 
-    parseInt(value: String): Number {
+    protected parseInt(value: String): Number {
         return Number(value);
     }
 }

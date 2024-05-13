@@ -15,7 +15,7 @@ export class ConfigurationUploadComponent {
    * If null, all configurations in the selected will be uploaded
    */
   @Input() public configurationName: string | null = null;
-  @Output() onError: EventEmitter<any> = new EventEmitter();
+  @Output() onUpload: EventEmitter<any> = new EventEmitter();
 
   constructor(
     private configurationService: ConfigurationService,
@@ -65,8 +65,9 @@ export class ConfigurationUploadComponent {
       }
     }
 
-    const errorCallback = (error: string) => this.onError.emit([error]);
-    this.configurationService.uploadAllConfigurations(files[0], included, errorCallback, () => this.closeDialog());
+    this.configurationService.uploadAllConfigurations(files[0], included).subscribe(result => {
+        this.onUpload.emit([result]);
+    });
   }
 
 }

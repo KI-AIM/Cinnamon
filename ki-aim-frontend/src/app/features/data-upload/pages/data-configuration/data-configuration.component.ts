@@ -79,13 +79,16 @@ export class DataConfigurationComponent {
         window.scroll(0, 0);
     }
 
-    protected handleConfigUploadError(error: HttpErrorResponse) {
-        let errorMessage = "";
-        if (error.error.hasOwnProperty("errors")) {
-            errorMessage = JSON.stringify(error.error.errors, null, 2);
+    protected handleConfigUpload(result: any) {
+        if (result.hasOwnProperty('error') && result['error'] instanceof HttpErrorResponse) {
+            let errorMessage = "";
+            if (result.error.error.hasOwnProperty("errors")) {
+                errorMessage = JSON.stringify(result.error.error.errors, null, 2);
+            } else {
+                errorMessage = result.error.error;
+            }
+            this.error = errorMessage;
         } else {
-            errorMessage = error.error;
         }
-        this.error = errorMessage;
     }
 }

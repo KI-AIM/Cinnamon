@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { catchError, concatMap, forkJoin, from, map, Observable, of, switchMap, tap } from "rxjs";
+import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, toArray } from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { FileService } from 'src/app/features/data-upload/services/file.service';
 import { FileUtilityService } from './file-utility.service';
@@ -34,7 +34,7 @@ export class ConfigurationService {
 
     /**
      * Returns the registered configuration with given name if present.
-     * Otherwise returns null.
+     * Otherwise, returns null.
      * @param name Name of the registered configuration to return.
      * @returns The registered configuration or null.
      */
@@ -53,6 +53,10 @@ export class ConfigurationService {
      * @param data Metadata of the configuration.
      */
     public registerConfiguration(data: ConfigurationRegisterData) {
+        if (data.storeConfig == null) {
+            data.storeConfig = (configName, yamlConfigString) => this.storeConfig(configName, yamlConfigString);
+        }
+
         this.registeredConfigurations.push(data);
         this.registeredConfigurations = this.registeredConfigurations.sort((a, b) => a.orderNumber - b.orderNumber);
     }
@@ -138,95 +142,81 @@ export class ConfigurationService {
      * If configured, stores the configuration under the configured name into the database.
      * @param file file containing the config to be loaded.
      * @param includedConfigurations Names of the configurations to upload.
-     * @param errorCallback Function that gets called in case of an error.
-     * @param successCallback Function that gets called after the configuration has been successfully imported.
+     * @return Observable of the import pipeline.
      */
-    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string>, errorCallback: (a: string) => void, successCallback: () => void) {
-        const reader = new FileReader();
-        reader.addEventListener("load", () => {
-            const configData = reader.result as string;
-            const configurations = parse(configData) as object;
+    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string>): Observable<any> {
+        const readBlob = (blob: Blob) => new Observable<string | ArrayBuffer | null>((subscriber) => {
+            const reader = new FileReader();
+            reader.readAsText(blob);
+            reader.onload = () => {
+                subscriber.next(reader.result);
+                subscriber.complete();
+            };
+            reader.onerror = () => subscriber.error(reader.error);
+            return () => reader.abort();
+        });
 
-            let hasError = false;
+        return of(file).pipe(
+            switchMap(currentFile => readBlob(currentFile)),
+            mergeMap((result) => {
+                const configData = result as string;
+                const configurations = parse(configData) as object;
 
-            from(Object.entries(configurations)).pipe(
-                map(([name, config]) => {
-                    const configData = this.getRegisteredConfigurationByName(name);
+                return from(Object.entries(configurations)).pipe(
+                    map(([name, config]) => {
+                        // Get the data for the configuration
+                        const configData = this.getRegisteredConfigurationByName(name);
 
-                    if (configData == null || !includedConfigurations.includes(configData.name)) {
-                        return {name, configData, yamlConfigString: null};
-                    }
+                        if (configData == null || !includedConfigurations.includes(configData.name)) {
+                            return {name, configData, yamlConfigString: null};
+                        }
 
-                    const yamlConfig: { [a: string]: any } = {};
-                    yamlConfig[name] = config;
-                    const yamlConfigString = stringify(yamlConfig);
+                        const yamlConfig: { [a: string]: any } = {};
+                        yamlConfig[name] = config;
+                        const yamlConfigString = stringify(yamlConfig);
 
-                    return {name, configData, yamlConfigString};
-                }),
-                concatMap((object) => {
-                    const name = object.name;
-                    const yamlConfigString = object.yamlConfigString;
+                        return {name, configData, yamlConfigString};
+                    }),
+                    concatMap((object) => {
+                        // Store the configuration in the backend
+                        const name = object.name;
+                        const yamlConfigString = object.yamlConfigString;
 
-                    let ob;
-                    if (yamlConfigString === null) {
-                        ob = of(0 as Number);
-                    } else if (object.configData.storeConfig === null) {
-                        ob = this.storeConfig(name, yamlConfigString);
-                    } else {
-                        ob = object.configData.storeConfig(name, yamlConfigString);
-                    }
+                        let ob;
+                        if (yamlConfigString === null) {
+                            ob = of(0 as Number);
+                        } else {
+                            // Cannot be null after registering
+                            ob = object.configData.storeConfig!(name, yamlConfigString);
+                        }
 
-                    return ob.pipe(map(number => {
-                        return {...object, success: number !== 0};
-                    }));
-                }),
-                tap((object) => {
-                    if (object.configData !== null && object.yamlConfigString !== null) {
-                        object.configData.setConfigCallback(object.yamlConfigString, () => {});
-                    }
-                }),
-                catchError((err) => {
-                    console.log(err);
-                    return of(0);
-                }),
-            ).subscribe({
-                error: (error) => {
-                    console.log(error);
-                }
-            });
-
-            // for (const [name, config] of Object.entries(configurations)) {
-            //     const configData = this.getRegisteredConfigurationByName(name);
-            //
-            //     if (configData == null || !includedConfigurations.includes(configData?.name)) {
-            //         continue;
-            //     }
-            //
-            //     const yamlConfig: { [a: string]: any } = {};
-            //     yamlConfig[name] = config;
-            //     const yamlConfigString = stringify(yamlConfig);
-            //
-            //     if (configData.syncWithBackend) {
-            //         this.storeConfig(configData.name, yamlConfigString).subscribe({
-            //             error: (error) => {
-            //                 hasError = true;
-            //                 errorCallback(error);
-            //             },
-            //         });
-            //     }
-            //     const ec = (error: string) => {
-            //         hasError = true;
-            //         errorCallback(error);
-            //     }
-            //     configData.setConfigCallback(yamlConfigString, ec);
-            // }
-
-            if (!hasError) {
-                successCallback();
-            }
-        }, false);
-
-        reader.readAsText(file);
+                        return ob.pipe(
+                            map(number => {
+                                return {...object, success: number !== 0};
+                            }),
+                            catchError((error) => {
+                                console.log('Error while storing the configuration: ', error);
+                                return of({...object, error, success: false});
+                            }),
+                        );
+                    }),
+                    tap((object) => {
+                        // Set the configuration in the UI
+                        if (object.configData !== null && object.yamlConfigString !== null) {
+                            object.configData.setConfigCallback(object.yamlConfigString);
+                        }
+                    }),
+                    // toArray(),
+                    catchError((error) => {
+                        console.log('Error during configuration import:', error);
+                        return of(null);
+                    }),
+                );
+            }),
+            catchError((error) => {
+                console.log('Error during configuration read:', error);
+                return of(null);
+            }),
+        );
     }
-
 }

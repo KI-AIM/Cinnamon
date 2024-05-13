@@ -31,12 +31,9 @@ export class ConfigurationRegisterData {
     orderNumber: number;
 
     /**
-     * Whether uploading and downloading a configuration should automatically update the configuration in the database.
-     * Set this to false, if you want to write your own synchronization logic.
-     * Writing the configuration into the database will be required for loading the application state after logging out and in again.
+     * Function that gets called to store the configuration string with the backend.
+     * If null when registering, it will be overwritten with the default function.
      */
-    syncWithBackend: boolean;
-
     storeConfig: ((configName: string, yamlConfigString: string) => Observable<Number>) | null;
 
     /**
@@ -52,5 +49,5 @@ export class ConfigurationRegisterData {
      * Gets called when uploading the configuration.
      * @param config The configurations as a YAML string.
      */
-    setConfigCallback: (config: string, onErrorCallback: (errorMessage: string) => void) => void;
+    setConfigCallback: (config: string) => void;
 }

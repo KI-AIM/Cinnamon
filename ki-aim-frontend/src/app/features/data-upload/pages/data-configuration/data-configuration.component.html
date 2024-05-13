@@ -6,7 +6,7 @@
     <!-- Upload -->
     <div class="py-1">
         <app-configuration-upload [configurationName]="configuration.CONFIGURATION_NAME"
-                                  (onError)="handleConfigUploadError($event[0]);">
+                                  (onUpload)="handleConfigUpload($event[0]);">
         </app-configuration-upload>
     </div>
 

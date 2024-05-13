@@ -9,6 +9,7 @@ import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { Steps } from 'src/app/core/enums/steps';
 import { FileService } from "../../features/data-upload/services/file.service";
+import { parse } from "yaml";
 
 @Injectable({
     providedIn: 'root',
@@ -33,10 +34,9 @@ export class DataConfigurationService {
         configReg.displayName = "Data Configuration";
         configReg.name = this.CONFIGURATION_NAME;
         configReg.orderNumber = 0;
-        configReg.syncWithBackend = false;
         configReg.storeConfig = (configName, yamlConfigString) => this.postDataConfigurationString(yamlConfigString);
         configReg.getConfigCallback = () => this.getConfigurationCallback();
-        configReg.setConfigCallback = (config, onErrorCallback) => this.setConfigCallback(config, onErrorCallback);
+        configReg.setConfigCallback = (config) => this.setConfigCallback(config);
 
         this.configurationService.registerConfiguration(configReg);
     }
@@ -87,23 +87,8 @@ export class DataConfigurationService {
         return this.getDataConfiguration();
     }
 
-    private setConfigCallback(configData: string, onErrorCallback: (errorMessage: string) => void): void {
-        this.postDataConfigurationString(configData).subscribe({
-            next: (data: Number) => {
-                this.downloadDataConfigurationAsJson().subscribe({
-                    next: (data: DataConfiguration) => {
-                        this.setDataConfiguration(data);
-                    },
-                    error: (error) => {
-                        console.log(error);
-                        onErrorCallback(error);
-                    },
-                });
-            },
-            error: (error) => {
-                console.log(error);
-                onErrorCallback(error);
-            },
-        });
+    private setConfigCallback(configData: string): void {
+        const config = parse(configData);
+        this.setDataConfiguration(config);
     }
 }

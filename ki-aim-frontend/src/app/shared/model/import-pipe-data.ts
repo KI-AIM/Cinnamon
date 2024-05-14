@@ -5,7 +5,7 @@ export class ImportPipeDataIntern {
     name: string;
     configData: ConfigurationRegisterData | null;
     yamlConfigString: string | null;
-    error: HttpErrorResponse;
+    error: HttpErrorResponse | null = null;
     success: boolean;
 }
 

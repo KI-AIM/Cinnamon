@@ -24,7 +24,7 @@ import { ConfigurationService } from "../../../../shared/services/configuration.
 })
 export class UploadFileComponent {
 	Steps = Steps;
-    private dataConfigurationFile: File | null;
+    private configurationFile: File | null;
 	protected dataFile: File | null;
 	public fileConfiguration: FileConfiguration;
 
@@ -78,7 +78,7 @@ export class UploadFileComponent {
         const files = (event.target as HTMLInputElement)?.files;
 
         if (files) {
-            this.dataConfigurationFile = files[0];
+            this.configurationFile = files[0];
         }
     }
 
@@ -92,25 +92,47 @@ export class UploadFileComponent {
         this.fileService.setFile(this.dataFile);
         this.fileService.setFileConfiguration(this.fileConfiguration)
 
-        if (this.dataConfigurationFile == null) {
+        if (this.configurationFile == null) {
             this.dataService.estimateData(this.dataFile, this.fileService.getFileConfiguration()).subscribe({
                 next: (d) => this.handleUpload(d),
                 error: (e) => this.handleError(e),
             });
         } else {
-            // this.configurationService.uploadAllConfigurations(this.dataConfigurationFile, null, (a) => {
-            // }, () => {
-            //
-            // });
-            this.dataConfigurationService.validateConfiguration(
-                this.dataConfigurationFile,
-                {
-                    next: value => {
-                        this.handleUpload(value);
-                    },
-                    error: (e) => this.handleError(e),
-                }
-            );
+            this.configurationService.uploadAllConfigurations(this.configurationFile, null).subscribe(result => {
+					if (result === null) {
+						return;
+					}
+
+					let hasError = false;
+					let errorMessage = "";
+
+					for (const importData of result) {
+						if (importData.error !== null) {
+							hasError = true;
+							errorMessage += importData.name + ":";
+
+							if (importData.error.error.hasOwnProperty("errors")) {
+								errorMessage += "<div class='pre-wrapper'><pre>" + JSON.stringify(importData.error.error.errors, null, 2) + "</pre></div>";
+							} else {
+								errorMessage += importData.error.error;
+							}
+						}
+					}
+
+					this.loadingService.setLoadingStatus(false);
+					if (hasError) {
+						this.dialog.open(InformationDialogComponent, {
+							data: {
+								title: "Failed to import the configurations",
+								content: "The Following errors happened during the import: " +
+									"<div>" + errorMessage + "</div>"
+							}
+						});
+					} else {
+						this.router.navigateByUrl("/dataConfiguration");
+						this.stateManagement.addCompletedStep(Steps.UPLOAD);
+					}
+			});
         }
 
 	}

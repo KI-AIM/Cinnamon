@@ -142,10 +142,10 @@ export class ConfigurationService {
      * Uses the setConfigCallback function to update the configuration in the application.
      * If configured, stores the configuration under the configured name into the database.
      * @param file file containing the config to be loaded.
-     * @param includedConfigurations Names of the configurations to upload.
+     * @param includedConfigurations Names of the configurations to upload. If null, all configurations will be uploaded.
      * @return Observable of the import pipeline.
      */
-    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string>): Observable<ImportPipeData[] | null> {
+    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string> | null): Observable<ImportPipeData[] | null> {
         const readBlob = (blob: Blob) => new Observable<string | ArrayBuffer | null>((subscriber) => {
             const reader = new FileReader();
             reader.readAsText(blob);
@@ -170,7 +170,7 @@ export class ConfigurationService {
                         const configData = this.getRegisteredConfigurationByName(name);
 
                         let yamlConfigString = null;
-                        if (configData != null && includedConfigurations.includes(configData.name)) {
+                        if (configData != null && (includedConfigurations === null || includedConfigurations.includes(configData.name))) {
                             const yamlConfig: { [a: string]: any } = {};
                             yamlConfig[name] = config;
                             yamlConfigString = stringify(yamlConfig);
@@ -181,7 +181,6 @@ export class ConfigurationService {
                         result.configData = configData;
                         result.yamlConfigString = yamlConfigString;
                         return result;
-                        // return {name, configData, yamlConfigString};
                     }),
                     concatMap((object) => {
                         // Store the configuration in the backend
@@ -201,14 +200,11 @@ export class ConfigurationService {
                             map(number => {
                                 object.success = number !== 0;
                                 return object as ImportPipeData;
-                                // return {...object, success: number !== 0};
                             }),
                             catchError((error) => {
-                                console.log('Error while storing the configuration: ', error);
                                 object.error = error;
                                 object.success = false;
                                 return of(object as ImportPipeData);
-                                // return of({...object, error, success: false});
                             }),
                         );
                     }),

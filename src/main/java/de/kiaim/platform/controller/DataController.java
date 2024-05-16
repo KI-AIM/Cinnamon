@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.platform.config.YamlMapper;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;
+import de.kiaim.platform.model.dto.EstimateDataTypesRequest;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.dto.ReadDataRequest;
 import de.kiaim.platform.model.file.FileConfiguration;
@@ -84,16 +85,11 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> estimateDatatypes(
-			@Parameter(description = "File containing the data.",
-			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-			@RequestPart(value = "file") MultipartFile file,
-			@Parameter(description = "Configuration for the file.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = FileConfiguration.class)))
-			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
+			@ParameterObject @Valid final EstimateDataTypesRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.DATA_TYPES, file, fileConfiguration ,null, null, user);
+		return handleRequest(RequestType.DATA_TYPES, requestData.getFile(), requestData.getFileConfiguration(), null,
+		                     null, user);
 	}
 
 	@Operation(summary = "Converts and validates the uploaded file into a tabular representation.",

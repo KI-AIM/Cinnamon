@@ -113,7 +113,7 @@ class DataControllerTest extends ControllerTest {
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Invalid request"))
+		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(validationError("file", "Data must be present!"));
 	}
 
@@ -126,7 +126,7 @@ class DataControllerTest extends ControllerTest {
 				                .file(file)
 				                .param("configuration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Invalid request"))
+		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
 	}
 
@@ -139,7 +139,7 @@ class DataControllerTest extends ControllerTest {
 				                .file(file)
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Invalid request"))
+		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(validationError("configuration", "Configuration must be present!"));
 	}
 
@@ -153,14 +153,14 @@ class DataControllerTest extends ControllerTest {
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration", "invalid"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Invalid request"));
+		       .andExpect(errorMessage("Request validation failed"));
 
 		mockMvc.perform(multipart("/api/data/validation")
 				                .file(file)
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration", "\"invalid\""))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Invalid request"))
+		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(validationError("configuration", "Failed to convert value"));
 	}
 

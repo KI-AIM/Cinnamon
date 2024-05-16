@@ -19,19 +19,19 @@ public class MatchingNumberColumnsValidator implements ConstraintValidator<Match
 	@SneakyThrows
 	@Override
 	public boolean isValid(final ReadDataRequest value, final ConstraintValidatorContext context) {
-		final int numberColumnsData = (value.getFile() != null && value.getFileConfiguration() != null)
-		                              ? dataProcessorService.getDataProcessor(value.getFile())
-		                                                    .getNumberColumns(value.getFile().getInputStream(),
-		                                                                      value.getFileConfiguration())
-		                              : 0;
+		// Null values are validated by other constraints
+		if (value.getFile() == null || value.getFileConfiguration() == null
+		    || value.getConfiguration() == null || value.getConfiguration().getConfigurations() == null) {
+			return true;
+		}
 
-		final var numberColumnsConfig =
-				(value.getConfiguration() != null && value.getConfiguration().getConfigurations() != null)
-				? value.getConfiguration().getConfigurations().size()
-				: 0;
+		final int numberColumnsData = dataProcessorService.getDataProcessor(value.getFile())
+		                                                  .getNumberColumns(value.getFile().getInputStream(),
+		                                                                    value.getFileConfiguration());
+
+		final var numberColumnsConfig = value.getConfiguration().getConfigurations().size();
 
 		var isValid = true;
-
 		if (numberColumnsData != numberColumnsConfig) {
 			context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate()
 			                                             + " The data set has " + numberColumnsData

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.Nullable;
 
 import java.util.Date;
 
@@ -18,7 +19,17 @@ public class ErrorResponse {
 	@Schema(description = "Http status code.", example = "400")
 	final int status;
 
-	@Schema(description = "JSON containing a detailed error description",
+	@Schema(description = "Path of the request.", example = "/api/data")
+	final String path;
+
+	@Schema(description = "Code specifying the exact error.", example = "1-5-1")
+	final String errorCode;
+
+	@Schema(description = "Short description of the error", example = "Unsupported fiel type: .txt")
+	final String errorMessage;
+
+	@Schema(description = "JSON containing a detailed error description. Not always available.",
 	        example = "{\"email\":\"Email is not available!\"}")
-	final Object errors;
+	@Nullable
+	final Object errorDetails;
 }

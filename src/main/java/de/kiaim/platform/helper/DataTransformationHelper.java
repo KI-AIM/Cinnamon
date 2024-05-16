@@ -52,7 +52,8 @@ public class DataTransformationHelper {
     public DataBuilder getDataBuilderOrThrow(DataType dataType) throws BadDataTypeException {
         final DataBuilder dataBuilder = getDataBuilder(dataType);
         if (dataBuilder == null) {
-            throw new BadDataTypeException("No builder for type 'UNDEFINED'!");
+            throw new BadDataTypeException(BadDataTypeException.UNDEFINED_NOT_ALLOWED,
+                                           "No builder for type 'UNDEFINED'!");
         }
         return dataBuilder;
     }

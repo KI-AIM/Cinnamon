@@ -47,7 +47,7 @@ public class DataConfigurationValidatorTest extends ContextRequiredTest {
 		assertTrue(iterator.hasNext(), "Should have violations!");
 
 		var violation = iterator.next();
-		assertEquals("The column name may not contain space characters!", violation.getMessage(), "Violation has an unexpected message!");
+		assertEquals("The column name must not contain space characters!", violation.getMessage(), "Violation has an unexpected message!");
 		assertEquals("configurations[0].name", violation.getPropertyPath().toString(), "Violation has an unexpected path!");
 
 		assertFalse(iterator.hasNext(), "Should have only one violation!");

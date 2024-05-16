@@ -34,7 +34,7 @@ public class DataProcessorService {
 			}
 		}
 
-		throw new BadFileException("Unsupported file type: '" + fileExtension + "'");
+		throw new BadFileException(BadFileException.UNSUPPORTED, "Unsupported file type: '" + fileExtension + "'");
 	}
 
 	/**
@@ -45,17 +45,17 @@ public class DataProcessorService {
 	 */
 	private String extractFileExtension(@Nullable final MultipartFile file) throws BadFileException {
 		if (file == null) {
-			throw new BadFileException("Missing file");
+			throw new BadFileException(BadFileException.MISSING_FILE, "Missing file");
 		}
 
 		final String fileName = file.getOriginalFilename();
 		if (fileName == null || fileName.isBlank()) {
-			throw new BadFileException("Missing filename");
+			throw new BadFileException(BadFileException.MISSING_FILE_NAME, "Missing filename");
 		}
 
 		final int fileExtensionBegin = file.getOriginalFilename().lastIndexOf('.');
 		if (fileExtensionBegin == -1) {
-			throw new BadFileException("Missing file extension");
+			throw new BadFileException(BadFileException.MISSING_FILE_EXTENSION, "Missing file extension");
 		}
 
 		return file.getOriginalFilename().substring(fileExtensionBegin);

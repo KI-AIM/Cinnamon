@@ -105,6 +105,32 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void readAndValidateDataMissingFile() throws Exception {
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+
+		mockMvc.perform(multipart("/api/data/validation")
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
+				                .param("configuration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Invalid request"))
+		       .andExpect(validationError("file", "Data must be present!"));
+	}
+
+	@Test
+	void readAndValidateDataMissingFileConfiguration() throws Exception {
+		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+
+		mockMvc.perform(multipart("/api/data/validation")
+				                .file(file)
+				                .param("configuration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Invalid request"))
+		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
+	}
+
+	@Test
 	void readAndValidateDataMissingConfiguration() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
@@ -113,7 +139,8 @@ class DataControllerTest extends ControllerTest {
 				                .file(file)
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Missing parameter: 'configuration'"));
+		       .andExpect(errorMessage("Invalid request"))
+		       .andExpect(validationError("configuration", "Configuration must be present!"));
 	}
 
 	@Test
@@ -126,16 +153,16 @@ class DataControllerTest extends ControllerTest {
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration", "invalid"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Invalid parameter: 'configuration'"));
+		       .andExpect(errorMessage("Invalid request"));
 
 		mockMvc.perform(multipart("/api/data/validation")
 				                .file(file)
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration", "\"invalid\""))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Invalid parameter: 'configuration'"));
+		       .andExpect(errorMessage("Invalid request"))
+		       .andExpect(validationError("configuration", "Failed to convert value"));
 	}
-
 
 	@Test
 	@Transactional
@@ -204,6 +231,9 @@ class DataControllerTest extends ControllerTest {
 		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
 
 		mockMvc.perform(multipart("/api/data/configuration")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration",
 				                       objectMapper.writeValueAsString(
 						                       configurationUpdate)))
@@ -432,7 +462,13 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	private void testStoreConfig(final String configuration) throws Exception {
+		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+
 		final String result = mockMvc.perform(multipart("/api/data/configuration")
+				                                      .file(file)
+				                                      .param("fileConfiguration",
+				                                             objectMapper.writeValueAsString(fileConfiguration))
 				                                      .param("configuration", configuration))
 		                             .andExpect(status().isOk())
 		                             .andReturn().getResponse().getContentAsString();
@@ -455,6 +491,9 @@ class DataControllerTest extends ControllerTest {
 		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
 
 		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
+				                                            .file(file)
+				                                            .param("fileConfiguration",
+				                                                   objectMapper.writeValueAsString(fileConfiguration))
 				                                            .param("configuration",
 				                                                   objectMapper.writeValueAsString(
 						                                                   configurationUpdate)))

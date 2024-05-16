@@ -53,17 +53,14 @@ public class DataController {
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
 	private final UserService userService;
-	private final ResponseService responseService;
 
 	@Autowired
 	public DataController(final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final DataSetService dataSetService, final UserService userService,
-	                      final ResponseService responseService) {
+	                      final DataSetService dataSetService, final UserService userService) {
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
 		this.userService = userService;
-		this.responseService = responseService;
 		this.yamlMapper = YamlMapper.yamlMapper();
 	}
 
@@ -325,7 +322,7 @@ public class DataController {
 			@Nullable final DataConfiguration configuration,
 			@Nullable final LoadDataRequest loadDataRequest,
 			final UserEntity requestUser
-	) throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
+	) throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalMissingHandlingException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 
 		final List<String> columnNames = loadDataRequest != null && !loadDataRequest.getColumns().isBlank()
@@ -370,9 +367,8 @@ public class DataController {
 				result = dataProcessor.read(inputStream, fileConfiguration, configuration);
 			}
 			default -> {
-				return responseService.prepareErrorResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR,
-				                                                  "Missing handling for request type '" +
-				                                                  requestType.name() + "'");
+				throw new InternalMissingHandlingException(InternalMissingHandlingException.REQUEST_TYPE,
+				                                           "Missing handling for request type '" + requestType.name() + "'");
 			}
 		}
 		return new ResponseEntity<>(result, HttpStatus.OK);
@@ -382,7 +378,7 @@ public class DataController {
 		try {
 			return file.getInputStream();
 		} catch (IOException e) {
-			throw new BadFileException("Could not read file");
+			throw new BadFileException(BadFileException.NOT_READABLE, "Could not read file");
 		}
 	}
 

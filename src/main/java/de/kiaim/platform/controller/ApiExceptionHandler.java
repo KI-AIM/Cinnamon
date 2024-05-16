@@ -1,7 +1,6 @@
 package de.kiaim.platform.controller;
 
 import de.kiaim.platform.exception.ApiException;
-import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ResponseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +27,16 @@ import java.util.Map;
 @ControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
+	/**
+	 * Error class for invalid request structures.
+	 */
+	public static final String REQUEST_STRUCTURE_ERROR = "1";
+
+	/**
+	 * Error class for validation errors.
+	 */
+	public static final String VALIDATION_ERROR = "2";
+
 	private final Logger LOGGER = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
 	final ResponseService responseService;
@@ -44,7 +53,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(value = {ApiException.class})
 	public ResponseEntity<Object> handleApiException(final ApiException apiException, final WebRequest webRequest) {
 		LOGGER.error("An error occurred during a request", apiException);
-		return responseService.prepareErrorResponseEntity(apiException);
+		return responseService.prepareErrorResponseEntity(apiException, webRequest);
 	}
 
 	//===================================
@@ -61,33 +70,44 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 				errors.get(fieldError.getField()).add(fieldError.getDefaultMessage());
 			} else {
 				List<String> fieldErrors = new ArrayList<>();
-				fieldErrors.add(fieldError.getDefaultMessage());
+				String message = fieldError.getDefaultMessage();
+
+				// TODO hacked in message for failed conversion
+				if (message.startsWith("Failed to convert property value of type")) {
+					message = "Failed to convert value";
+				}
+
+				fieldErrors.add(message);
 				errors.put(fieldError.getField(), fieldErrors);
 			}
 		}
 
-		return responseService.prepareErrorResponseEntity(headers, status, errors);
+		final String errorCode = ApiException.VALIDATION + "-" + VALIDATION_ERROR + "-1";
+		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode, "Request validation failed", errors);
 	}
 
 	@Override
 	protected ResponseEntity<Object> handleMissingServletRequestParameter(
 			MissingServletRequestParameterException ex, HttpHeaders headers, HttpStatusCode status,
 			WebRequest request) {
-		return responseService.prepareErrorResponseEntity(headers, status,
-		                                                  "Missing parameter: '" + ex.getParameterName() + "'");
+		final String errorCode = ApiException.VALIDATION + "-" + REQUEST_STRUCTURE_ERROR + "-1";
+		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode,
+		                                                  "Missing parameter: '" + ex.getParameterName() + "'", null);
 	}
 
 	@Override
 	protected ResponseEntity<Object> handleMissingServletRequestPart(
 			MissingServletRequestPartException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-		return responseService.prepareErrorResponseEntity(headers, status,
-		                                                  "Missing part: '" + ex.getRequestPartName() + "'");
+		final String errorCode = ApiException.VALIDATION + "-" + REQUEST_STRUCTURE_ERROR + "-2";
+		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode,
+		                                                  "Missing part: '" + ex.getRequestPartName() + "'", null);
 	}
 
 	@Override
 	protected ResponseEntity<Object> handleTypeMismatch(
 			TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-		return responseService.prepareErrorResponseEntity(headers, status,
-		                                                  "Invalid parameter: '" + ex.getPropertyName() + "'");
+		final String errorCode = ApiException.VALIDATION + "-" + REQUEST_STRUCTURE_ERROR + "-3";
+		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode,
+		                                                  "Invalid parameter: '" + ex.getPropertyName() + "'", null);
 	}
 }

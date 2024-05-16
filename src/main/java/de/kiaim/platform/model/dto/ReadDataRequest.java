@@ -26,6 +26,7 @@ public class ReadDataRequest {
 	           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 	                              schema = @Schema(implementation = FileConfiguration.class)))
 	@NotNull(message = "File Configuration must be present!")
+	@Valid
 	private FileConfiguration fileConfiguration;
 
 	@Parameter(description = "Metadata describing the format of the data as JSON or YAML.",

@@ -65,7 +65,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		}
 
 		final Iterator<CSVRecord> recordIterator = records.iterator();
-		if (recordIterator.hasNext() && csvFileConfiguration.isHasHeader()) {
+		if (recordIterator.hasNext() && csvFileConfiguration.getHasHeader()) {
 			recordIterator.next();
 		}
 
@@ -103,7 +103,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 
 		int numberColumns = 0;
 		final List<String> columnNames;
-		if (csvFileConfiguration.isHasHeader()) {
+		if (csvFileConfiguration.getHasHeader()) {
 			columnNames = normalizeColumnNames(records.iterator().next().values());
 			numberColumns = columnNames.size();
 		} else {

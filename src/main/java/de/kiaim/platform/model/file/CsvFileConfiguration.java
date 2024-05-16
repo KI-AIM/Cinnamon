@@ -17,7 +17,7 @@ public class CsvFileConfiguration {
 	@NotBlank(message = "Column separator must be present")
 	private String columnSeparator = ",";
 
-	@Schema(description = "Character separating lines.", example = "\n")
+	@Schema(description = "Character separating lines.", example = "\\n")
 	@NotBlank(message = "Line separator must be present")
 	private String lineSeparator = "\n";
 

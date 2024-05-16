@@ -7,7 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { StateManagementService } from 'src/app/core/services/state-management.service';
 import { Steps } from 'src/app/core/enums/steps';
-import { plainToClass } from 'class-transformer';
+import { plainToClass, plainToInstance } from 'class-transformer';
 import { TransformationService } from '../../services/transformation.service';
 import { TransformationResult } from 'src/app/shared/model/transformation-result';
 import { LoadingService } from 'src/app/shared/services/loading.service';
@@ -17,8 +17,9 @@ import {
 import {
     ConfigurationUploadComponent
 } from "../../../configuration/components/configuration-upload/configuration-upload.component";
-import { AbstractControl, ValidationErrors, ValidatorFn } from "@angular/forms";
 import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
+import { ErrorResponse } from 'src/app/shared/model/error-response';
+import { ErrorMessageService } from 'src/app/shared/services/error-message.service';
 
 @Component({
     selector: 'app-data-configuration',
@@ -41,6 +42,7 @@ export class DataConfigurationComponent implements OnInit {
         private stateManagement: StateManagementService,
         private transformationService: TransformationService,
         public loadingService: LoadingService,
+		private errorMessageService: ErrorMessageService,
     ) {
         this.error = "";
         this.isValid = true;
@@ -88,7 +90,7 @@ export class DataConfigurationComponent implements OnInit {
 
     private handleError(error: HttpErrorResponse) {
         this.loadingService.setLoadingStatus(false);
-        this.error = error.error.errors;
+        this.error = this.errorMessageService.extractErrorMessage(error) + "a";
 
         window.scroll(0, 0);
     }
@@ -131,24 +133,22 @@ export class DataConfigurationComponent implements OnInit {
         }
 
         const configImportData = result[0]
+        console.log(configImportData);
         if (configImportData.hasOwnProperty('error') && configImportData['error'] instanceof HttpErrorResponse) {
             let errorMessage = "";
-            if (configImportData.error.error.hasOwnProperty("errors")) {
-                if (typeof configImportData.error.error.errors === 'string') {
-                    errorMessage = configImportData.error.error.errors;
-                } else {
+            const errorResponse = plainToInstance(ErrorResponse, configImportData.error.error);
 
-                    for (const [field, errors] of Object.entries(configImportData.error.error.errors)) {
-                        const parts = field.split(".");
-                        if (parts.length === 3) {
-                        } else {
-                            errorMessage += (errors as string[]).join(", ") + "\n";
-                        }
+            if (errorResponse.errorCode === '3-2-1') {
+                for (const [field, errors] of Object.entries(errorResponse.errorDetails)) {
+                    const parts = field.split(".");
+                    if (parts.length === 3) {
+                    } else {
+                        errorMessage += (errors as string[]).join(", ") + "\n";
                     }
                 }
 
             } else {
-                errorMessage = configImportData.error.error;
+                errorMessage = errorResponse.errorMessage;
             }
             this.error = errorMessage;
         }

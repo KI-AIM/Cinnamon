@@ -7,7 +7,6 @@ import { plainToClass } from "class-transformer";
 import { DataConfiguration } from "../../../../shared/model/data-configuration";
 import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
 import { Router } from "@angular/router";
-import { HttpErrorResponse } from "@angular/common/http";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { FileService } from "../../services/file.service";
 import { MatDialog } from "@angular/material/dialog";
@@ -16,6 +15,7 @@ import { FileConfiguration } from "src/app/shared/model/file-configuration";
 import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
 import { LoadingService } from "src/app/shared/services/loading.service";
 import { ConfigurationService } from "../../../../shared/services/configuration.service";
+import { ErrorMessageService } from "src/app/shared/services/error-message.service";
 
 @Component({
 	selector: "app-upload-file",
@@ -61,6 +61,7 @@ export class UploadFileComponent {
 		public dialog: MatDialog,
 		public loadingService: LoadingService,
         private configurationService: ConfigurationService,
+		private errorMessageService: ErrorMessageService,
 	) {
 		this.titleService.setPageTitle("Upload data");
 		this.fileConfiguration = fileService.getFileConfiguration();
@@ -95,43 +96,30 @@ export class UploadFileComponent {
         if (this.configurationFile == null) {
             this.dataService.estimateData(this.dataFile, this.fileService.getFileConfiguration()).subscribe({
                 next: (d) => this.handleUpload(d),
-                error: (e) => this.handleError(e),
+                error: (e) => this.handleError("Failed to estimate the data types" + this.errorMessageService.convertResponseToMessage(e)),
             });
         } else {
             this.configurationService.uploadAllConfigurations(this.configurationFile, null).subscribe(result => {
-					if (result === null) {
-						return;
-					}
+				let hasError = false;
+				let errorMessage = "";
 
-					let hasError = false;
-					let errorMessage = "";
-
+				if (result === null) {
+					errorMessage = "An unexpected error occurred!";
+					hasError = true;
+				} else {
 					for (const importData of result) {
 						if (importData.error !== null) {
 							hasError = true;
-							errorMessage += importData.name + ":";
-
-							if (importData.error.error.hasOwnProperty("errors")) {
-								errorMessage += "<div class='pre-wrapper'><pre>" + JSON.stringify(importData.error.error.errors, null, 2) + "</pre></div>";
-							} else {
-								errorMessage += importData.error.error;
-							}
+							errorMessage += "Errors for '" + importData.name + "':" + this.errorMessageService.convertResponseToMessage(importData.error);
 						}
 					}
+				}
 
-					this.loadingService.setLoadingStatus(false);
-					if (hasError) {
-						this.dialog.open(InformationDialogComponent, {
-							data: {
-								title: "Failed to import the configurations",
-								content: "The Following errors happened during the import: " +
-									"<div>" + errorMessage + "</div>"
-							}
-						});
-					} else {
-						this.router.navigateByUrl("/dataConfiguration");
-						this.stateManagement.addCompletedStep(Steps.UPLOAD);
-					}
+				if (hasError) {
+					this.handleError("Failed to import the configurations<br>" + errorMessage);
+				} else {
+					this.navigateToNextStep();
+				}
 			});
         }
 
@@ -144,36 +132,28 @@ export class UploadFileComponent {
     }
 
 	private handleUpload(data: Object) {
-		this.loadingService.setLoadingStatus(false);
 		this.dataConfigurationService.setDataConfiguration(
 			plainToClass(DataConfiguration, data)
 		);
+		this.navigateToNextStep();
+	}
+
+	private navigateToNextStep() {
+		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/dataConfiguration");
 		this.stateManagement.addCompletedStep(Steps.UPLOAD);
 	}
 
-	private handleError(error: HttpErrorResponse) {
+	private handleError(error: string) {
 		this.loadingService.setLoadingStatus(false);
 		this.showErrorDialog(error);
 	}
 
-	private showErrorDialog(error: HttpErrorResponse) {
-        let errorMessage = "";
-        if (error.error.hasOwnProperty("errors")) {
-            errorMessage = JSON.stringify(error.error.errors, null, 2);
-        } else {
-            errorMessage = error.error;
-        }
-
+	private showErrorDialog(error: string) {
 		this.dialog.open(InformationDialogComponent, {
 			data: {
-				title: "An unexpected error occurred",
-				content: "We are sorry, something went wrong: " +
-							"<div class='pre-wrapper'>" +
-								"<pre>" + error.message + "</pre>\n" +
-								"<pre>" + errorMessage + "</pre>" +
-							"</div>" +
-							"<b>Please try again with a different file!</b>"
+				title: "An error occurred",
+				content: error,
 			}
 		});
 	}

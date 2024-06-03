@@ -14,16 +14,16 @@ import lombok.Setter;
 public class CsvFileConfiguration {
 
 	@Schema(description = "Character separating the columns.", example = ",")
-	@NotBlank(message = "Column separator must be present")
+	@NotNull(message = "Column separator must be present")
 	private String columnSeparator = ",";
 
 	@Schema(description = "Character separating lines.", example = "\\n")
-	@NotBlank(message = "Line separator must be present")
+	@NotNull(message = "Line separator must be present")
 	private String lineSeparator = "\n";
 
 	@Schema(description = "Character used for escaping values.", example = "\"")
-	@NotBlank(message = "Quote char must be present")
-	private char quoteChar = '"';
+	@NotNull(message = "Quote char must be present")
+	private Character quoteChar = '"';
 
 	@Schema(description = "Whether the file contains a header row.", example = "true")
 	@NotNull(message = "Has header must be present")

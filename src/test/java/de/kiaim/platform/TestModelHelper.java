@@ -16,13 +16,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestModelHelper {
-	public static FileConfiguration generateFileConfigurationCsv() {
-		return generateFileConfigurationCsv(true);
+	public static FileConfiguration generateFileConfiguration() {
+		return generateFileConfiguration(true);
 	}
 
-	public static FileConfiguration generateFileConfigurationCsv(final boolean hasHeader) {
-		return new FileConfiguration(FileType.CSV,
-			new CsvFileConfiguration(",", "\n", '"', hasHeader), new XlsxFileConfiguration(true));
+	public static FileConfiguration generateFileConfiguration(final boolean hasHeader) {
+		return new FileConfiguration(
+			FileType.CSV,
+			new CsvFileConfiguration(",", "\n", '"', hasHeader),
+			new XlsxFileConfiguration(hasHeader)
+		);
 	}
 
 	public static DataConfiguration generateDataConfiguration(final String stringPattern) {

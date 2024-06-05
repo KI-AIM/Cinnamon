@@ -11,6 +11,7 @@ import { plainToClass } from 'class-transformer';
 import { TransformationService } from '../../services/transformation.service';
 import { TransformationResult } from 'src/app/shared/model/transformation-result';
 import { LoadingService } from 'src/app/shared/services/loading.service';
+import { FileType } from 'src/app/shared/model/file-configuration';
 
 @Component({
     selector: 'app-data-configuration',
@@ -19,13 +20,14 @@ import { LoadingService } from 'src/app/shared/services/loading.service';
 })
 export class DataConfigurationComponent {
     error: string;
+    FileType = FileType; 
     isValid: boolean;
 
     constructor(
         public configuration: DataConfigurationService,
         public dataService: DataService,
+        public fileService: FileService,
         private titleService: TitleService,
-        private fileService: FileService,
         private router: Router,
         private stateManagement: StateManagementService,
         private transformationService: TransformationService,

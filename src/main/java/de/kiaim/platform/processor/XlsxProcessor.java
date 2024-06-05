@@ -4,10 +4,18 @@ import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.DataType;
+import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
+import de.kiaim.platform.model.data.configuration.Configuration;
+import de.kiaim.platform.model.data.configuration.DataScale;
+import de.kiaim.platform.model.data.configuration.DateFormatConfiguration;
+import de.kiaim.platform.model.data.configuration.DateTimeFormatConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.file.XlsxFileConfiguration;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.dhatim.fastexcel.reader.Cell;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
@@ -33,7 +41,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
 
         try (InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
             Sheet sheet = wb.getFirstSheet();
-            rows = transformSheetToRows(sheet);
+            rows = transformSheetToRows(sheet, configuration);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -56,7 +64,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         return new TransformationResult(new DataSet(dataRows, configuration), errors);
     }
 
-    private List<List<String>> transformSheetToRows(Sheet sheet) {
+    private List<List<String>> transformSheetToRows(Sheet sheet, DataConfiguration configuration) {
         List<List<String>> convertedRows = new ArrayList<>();
 
         try (Stream<Row> rows = sheet.openStream()) {
@@ -64,7 +72,12 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
                 List<String> convertedRow = new ArrayList<>();
 
                 try (Stream<Cell> cells = r.stream()) {
-                    cells.forEach(c -> convertedRow.add(c.getText()));
+
+                    for (int i = 0; i < r.getCellCount(); i++) {
+                         ColumnConfiguration columnConfiguration = configuration.getConfigurations().get(i);
+
+                        convertedRow.add(getConvertedCellValue(r, i, columnConfiguration));
+                    }
                 }
                 convertedRows.add(convertedRow);
             });
@@ -73,6 +86,91 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         }
         return convertedRows;
     }
+
+    private String getConvertedCellValue(Row r, int index, ColumnConfiguration columnConfiguration) {
+
+        if (index < r.getCellCount()) {
+            switch (columnConfiguration.getType()) {
+                case DATE -> {
+                    try {
+                        LocalDateTime date = r.getCellAsDate(index).orElse(null);
+                        if (date != null) {
+                            List<Configuration> dateFormatConfigurations =
+                                columnConfiguration.getConfigurations().stream().filter(
+                                    configuration -> configuration.getClass().equals(
+                                        DateFormatConfiguration.class
+                                    )
+                                ).toList();
+
+                            DateFormatConfiguration dateFormatConfiguration;
+                            if (!dateFormatConfigurations.isEmpty()) {
+                                dateFormatConfiguration =
+                                    (DateFormatConfiguration) dateFormatConfigurations.get(0);
+                            } else {
+                                dateFormatConfiguration = null;
+                            }
+
+                            if (dateFormatConfiguration != null) {
+                                return date.format(DateTimeFormatter.ofPattern(
+                                    dateFormatConfiguration.getDateFormatter()));
+                            } else {
+                                return date.format(DateTimeFormatter.ISO_DATE);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+                case DATE_TIME -> {
+                    try {
+                        LocalDateTime date = r.getCellAsDate(index).orElse(null);
+                        if (date != null) {
+                            List<Configuration> dateTimeFormatConfigurations =
+                                columnConfiguration.getConfigurations().stream().filter(
+                                    configuration -> configuration.getClass().equals(
+                                        DateTimeFormatConfiguration.class
+                                    )
+                                ).toList();
+
+                            DateTimeFormatConfiguration dateTimeFormatConfiguration;
+                            if (!dateTimeFormatConfigurations.isEmpty()) {
+                                dateTimeFormatConfiguration =
+                                    (DateTimeFormatConfiguration) dateTimeFormatConfigurations.get(0);
+                            } else {
+                                dateTimeFormatConfiguration = null;
+                            }
+
+                            if (dateTimeFormatConfiguration != null) {
+                                return date.format(DateTimeFormatter.ofPattern(
+                                    dateTimeFormatConfiguration.getDateTimeFormatter()));
+                            } else {
+                                return date.format(DateTimeFormatter.ISO_DATE);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+                case INTEGER -> {
+                    try {
+                        BigDecimal number = r.getCellAsNumber(index).orElse(null);
+                        if (number != null) {
+                            return String.valueOf(number.intValue());
+                        }
+                    } catch (Exception ignored) {}
+                }
+                case DECIMAL -> {
+                    try {
+                        BigDecimal number = r.getCellAsNumber(index).orElse(null);
+                        if (number != null) {
+                            return String.valueOf(number.floatValue());
+                        }
+                    } catch (Exception ignored) {}
+                }
+                case STRING, BOOLEAN -> {
+                    return r.getCellRawValue(index).orElse(null);
+                }
+            }
+        }
+        return r.getCellRawValue(index).orElse(null);
+    }
+
 
     /**
      * {@inheritDoc}
@@ -84,7 +182,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
 
         try (InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
             Sheet sheet = wb.getFirstSheet();
-            rows = transformSheetToRows(sheet);
+            rows = transformSheetToRows(sheet, getStringDataConfiguration(sheet));
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -117,12 +215,31 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         return buildConfigurationForDataTypes(estimatedDataTypes, columnNames);
     }
 
+    private DataConfiguration getStringDataConfiguration(Sheet sheet) {
+        DataConfiguration configuration = new DataConfiguration();
+
+        try (Stream<Row> rows = sheet.openStream()) {
+            Row firstRow = rows.toList().get(0);
+
+            for (int i = 0; i < firstRow.getCellCount(); i++) {
+                configuration.addColumnConfiguration(
+                    new ColumnConfiguration(i, "column" + i, DataType.STRING, DataScale.NOMINAL, new ArrayList<>())
+                );
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return configuration;
+    }
+
     /**
-     * Function that returns a subset of complete rows for xlsx records.
-     * Complete means that no missing value should be present in a row.
-     * The amount of rows is limited by the parameter maxNumberOfRows.
+     * Function that returns a subset of complete rows for xlsx records. Complete means that no
+     * missing value should be present in a row. The amount of rows is limited by the parameter
+     * maxNumberOfRows.
      *
-     * @param rows List structure that holds the rows
+     * @param rows            List structure that holds the rows
      * @param maxNumberOfRows the maximum number of rows
      * @return A List<String[]> of split rows
      */

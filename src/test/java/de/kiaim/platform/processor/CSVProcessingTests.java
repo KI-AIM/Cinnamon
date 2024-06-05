@@ -45,7 +45,7 @@ public class CSVProcessingTests {
                730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfiguration(false);
 
         DataConfiguration config = getDataConfiguration();
 
@@ -69,7 +69,7 @@ public class CSVProcessingTests {
                730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfiguration();
 
         DataConfiguration config = getDataConfiguration();
 
@@ -141,7 +141,7 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv(false);
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfiguration(false);
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
@@ -166,7 +166,7 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+        FileConfiguration fileConfiguration = TestModelHelper.generateFileConfiguration();
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
         DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration);

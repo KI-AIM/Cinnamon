@@ -133,7 +133,6 @@ export class DataConfigurationComponent implements OnInit {
         }
 
         const configImportData = result[0]
-        console.log(configImportData);
         if (configImportData.hasOwnProperty('error') && configImportData['error'] instanceof HttpErrorResponse) {
             let errorMessage = "";
             const errorResponse = plainToInstance(ErrorResponse, configImportData.error.error);

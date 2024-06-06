@@ -4,7 +4,7 @@ import { ColumnConfiguration } from '../model/column-configuration';
 import { List } from 'src/app/core/utils/list';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable, PartialObserver } from 'rxjs';
-import { instanceToPlain } from 'class-transformer';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { Steps } from 'src/app/core/enums/steps';
@@ -90,6 +90,7 @@ export class DataConfigurationService {
 
     private setConfigCallback(importData: ImportPipeData): void {
         const config = parse(importData.yamlConfigString);
-        this.setDataConfiguration(config);
+        const dataConfig = plainToInstance(DataConfiguration, config);
+        this.setDataConfiguration(dataConfig);
     }
 }

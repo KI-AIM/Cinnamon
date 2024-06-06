@@ -44,9 +44,14 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void estimateDatatypesMissingFile() throws Exception {
-		mockMvc.perform(multipart("/api/data/datatypes"))
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+
+		mockMvc.perform(multipart("/api/data/datatypes")
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Missing part: 'file'"));
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("file", "Data must be present!"));
 	}
 
 	@Test
@@ -86,7 +91,8 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(multipart("/api/data/datatypes")
 				                .file(file))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Missing parameter: 'fileConfiguration'"));
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
 	}
 
 	@Test

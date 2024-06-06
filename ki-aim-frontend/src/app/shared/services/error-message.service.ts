@@ -35,7 +35,7 @@ export class ErrorMessageService {
 		}
 
 		if (error.status === 504) {
-			return this.wrapErrorMessage("The API at " + error.url + "could not be reached");
+			return this.wrapErrorMessage("The API at " + error.url + " could not be reached");
 		}
 
 		let errorMessage = '';

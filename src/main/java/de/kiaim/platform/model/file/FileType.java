@@ -10,7 +10,7 @@ import java.util.Set;
 public enum FileType {
 	CSV(new HashSet<>(List.of(".csv"))),
 	FHIR(new HashSet<>(List.of(".json", ".xml"))),
-	XLSX(new HashSet<>(List.of(".xlsx", ".xlsm")));
+	XLSX(new HashSet<>(List.of(".xlsx")));
 
 	/**
 	 * Supported file extensions.

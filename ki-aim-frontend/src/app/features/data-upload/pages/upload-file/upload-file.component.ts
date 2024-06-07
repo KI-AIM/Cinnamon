@@ -16,6 +16,7 @@ import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-
 import { LoadingService } from "src/app/shared/services/loading.service";
 import { ConfigurationService } from "../../../../shared/services/configuration.service";
 import { ErrorMessageService } from "src/app/shared/services/error-message.service";
+import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
 
 @Component({
 	selector: "app-upload-file",
@@ -94,36 +95,47 @@ export class UploadFileComponent {
         this.fileService.setFileConfiguration(this.fileConfiguration)
 
         if (this.configurationFile == null) {
+            // Estimate data configuration based on the data set
             this.dataService.estimateData(this.dataFile, this.fileService.getFileConfiguration()).subscribe({
                 next: (d) => this.handleUpload(d),
                 error: (e) => this.handleError("Failed to estimate the data types" + this.errorMessageService.convertResponseToMessage(e)),
             });
         } else {
+            // Use data configuration from the selected file
             this.configurationService.uploadAllConfigurations(this.configurationFile, null).subscribe(result => {
-				let hasError = false;
-				let errorMessage = "";
-
-				if (result === null) {
-					errorMessage = "An unexpected error occurred!";
-					hasError = true;
-				} else {
-					for (const importData of result) {
-						if (importData.error !== null) {
-							hasError = true;
-							errorMessage += "Errors for '" + importData.name + "':" + this.errorMessageService.convertResponseToMessage(importData.error);
-						}
-					}
-				}
-
-				if (hasError) {
-					this.handleError("Failed to import the configurations<br>" + errorMessage);
-				} else {
-					this.navigateToNextStep();
-				}
-			});
+                this.handleConfigurationUpload(result);
+            });
         }
 
 	}
+
+    /**
+     * Handles the result of the configuration upload.
+     * Redirects to the next step if the upload was successful, handles the errors otherwise.
+     * @param result The result.
+     */
+    private handleConfigurationUpload(result: ImportPipeData[] | null) {
+        let hasError = false;
+        let errorMessage = "";
+
+        if (result === null) {
+            errorMessage = "An unexpected error occurred!";
+            hasError = true;
+        } else {
+            for (const importData of result) {
+                if (importData.error !== null) {
+                    hasError = true;
+                    errorMessage += "Errors for '" + importData.name + "':" + this.errorMessageService.convertResponseToMessage(importData.error);
+                }
+            }
+        }
+
+        if (hasError) {
+            this.handleError("Failed to import the configurations<br>" + errorMessage);
+        } else {
+            this.navigateToNextStep();
+        }
+    }
 
     openDialog(templateRef: TemplateRef<any>) {
         this.dialog.open(templateRef, {

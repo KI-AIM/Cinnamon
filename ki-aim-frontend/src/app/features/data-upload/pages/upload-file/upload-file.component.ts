@@ -69,29 +69,28 @@ export class UploadFileComponent {
 		const files = (event.target as HTMLInputElement)?.files;
 
 		if (files) {
-			console.log(this.getFileExtension(files[0]));
 			this.file = files[0];
-			this.currentFileType = this.getFileExtension(files[0]); 
+			this.currentFileType = this.getFileExtension(files[0]);
 		}
 	}
 
 	private getFileExtension(file: File): string {
-		var fileExtension = file.name.split(".").pop(); 
+		var fileExtension = file.name.split(".").pop();
 		if (fileExtension != undefined) {
-			return fileExtension; 
+			return fileExtension;
 		} else {
-			return "csv"; 
+			return "csv";
 		}
 	}
 
 	uploadFile() {
-		this.loadingService.setLoadingStatus(true); 
+		this.loadingService.setLoadingStatus(true);
 
 		if (this.file) {
 			this.fileService.setFile(this.file);
 
 			this.setFileType(this.file);
-			
+
 			this.fileService.setFileConfiguration(this.fileConfiguration)
 
 			this.dataService.estimateData(this.file, this.fileService.getFileConfiguration()).subscribe({
@@ -103,13 +102,13 @@ export class UploadFileComponent {
 
 	setFileType(file: File) {
 		switch (this.getFileExtension(file)) {
-			case "csv": 
+			case "csv":
 				this.fileConfiguration.fileType = FileType.CSV;
 				break;
-			case "xlsx": 
+			case "xlsx":
 				this.fileConfiguration.fileType = FileType.XLSX;
-				break; 
-		} 
+				break;
+		}
 	}
 
     openDialog(templateRef: TemplateRef<any>) {
@@ -119,7 +118,7 @@ export class UploadFileComponent {
     }
 
 	private handleUpload(data: Object) {
-		this.loadingService.setLoadingStatus(false); 
+		this.loadingService.setLoadingStatus(false);
 		this.dataConfigurationService.setDataConfiguration(
 			plainToClass(DataConfiguration, data)
 		);
@@ -128,7 +127,7 @@ export class UploadFileComponent {
 	}
 
 	private handleError(error: HttpErrorResponse) {
-		this.loadingService.setLoadingStatus(false); 
+		this.loadingService.setLoadingStatus(false);
 		this.showErrorDialog(error);
 	}
 

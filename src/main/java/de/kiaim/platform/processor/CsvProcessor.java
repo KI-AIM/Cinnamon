@@ -9,6 +9,7 @@ import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.data.DataType;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.file.FileType;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
@@ -23,10 +24,35 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
+	public FileType getSupportedDataType() {
+		return FileType.CSV;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getNumberColumns(final InputStream data, final FileConfiguration fileConfiguration) {
+		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
+		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
+
+		final Iterable<CSVRecord> records;
+		try {
+			records = csvFormat.parse(new InputStreamReader(data));
+		} catch (IOException e) {
+			// TODO catch Error
+			throw new RuntimeException(e);
+		}
+
+		return records.iterator().next().size();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
 	public TransformationResult read(InputStream data, FileConfiguration fileConfiguration,
 	                                 DataConfiguration configuration) throws BadColumnNameException {
-		validateColumnNames(configuration.getColumnNames());
-
 		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
@@ -39,7 +65,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		}
 
 		final Iterator<CSVRecord> recordIterator = records.iterator();
-		if (recordIterator.hasNext() && csvFileConfiguration.isHasHeader()) {
+		if (recordIterator.hasNext() && csvFileConfiguration.getHasHeader()) {
 			recordIterator.next();
 		}
 
@@ -77,7 +103,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 
 		int numberColumns = 0;
 		final List<String> columnNames;
-		if (csvFileConfiguration.isHasHeader()) {
+		if (csvFileConfiguration.getHasHeader()) {
 			columnNames = normalizeColumnNames(records.iterator().next().values());
 			numberColumns = columnNames.size();
 		} else {

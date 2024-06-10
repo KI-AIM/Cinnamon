@@ -1,11 +1,19 @@
 <app-info-card [hidden]="error === ''" typeClass="card-failure">
-    <div>{{error}}</div>
+    <div [innerHTML]="error"></div>
 </app-info-card>
 
 <div class="p-5">
+    <!-- Upload -->
+    <div class="py-1">
+        <app-configuration-upload #configurationUpload [configurationName]="configuration.CONFIGURATION_NAME"
+                                  (onUpload)="handleConfigUpload($event);">
+        </app-configuration-upload>
+    </div>
+
     <div class="d-flex flex-column mb-3">
         <div *ngFor="let column of configuration.getColumnConfigurations().getAll(), index as i">
-            <app-attribute-configuration [attrNumber]="i.toString()" [column]="column" (onValidation)="onValidation($event)">
+            <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()" [column]="column"
+                                         (onValidation)="onValidation($event)" (onInput)="checkUniqueColumnNames()">
 
             </app-attribute-configuration>
         </div>
@@ -14,9 +22,6 @@
     <div class="btn-group">
         <div class="px-1">
             <button mat-raised-button color="primary" (click)="confirmConfiguration()" [disabled]="!isValid">Confirm configuration and start validation</button>
-        </div>
-        <div class="px-1">
-            <button mat-raised-button color="primary" (click)="downloadConfiguration()">Download configuration as YAML</button>
         </div>
     </div>
 </div>

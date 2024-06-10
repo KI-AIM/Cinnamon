@@ -44,9 +44,14 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void estimateDatatypesMissingFile() throws Exception {
-		mockMvc.perform(multipart("/api/data/datatypes"))
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+
+		mockMvc.perform(multipart("/api/data/datatypes")
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Missing part: 'file'"));
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("file", "Data must be present!"));
 	}
 
 	@Test
@@ -86,7 +91,8 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(multipart("/api/data/datatypes")
 				                .file(file))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Missing parameter: 'fileConfiguration'"));
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
 	}
 
 	@Test
@@ -105,6 +111,32 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void readAndValidateDataMissingFile() throws Exception {
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+
+		mockMvc.perform(multipart("/api/data/validation")
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
+				                .param("configuration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("file", "Data must be present!"));
+	}
+
+	@Test
+	void readAndValidateDataMissingFileConfiguration() throws Exception {
+		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+
+		mockMvc.perform(multipart("/api/data/validation")
+				                .file(file)
+				                .param("configuration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
+	}
+
+	@Test
 	void readAndValidateDataMissingConfiguration() throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
@@ -113,7 +145,8 @@ class DataControllerTest extends ControllerTest {
 				                .file(file)
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Missing parameter: 'configuration'"));
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("configuration", "Configuration must be present!"));
 	}
 
 	@Test
@@ -126,66 +159,30 @@ class DataControllerTest extends ControllerTest {
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration", "invalid"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Invalid parameter: 'configuration'"));
+		       .andExpect(errorMessage("Request validation failed"));
 
 		mockMvc.perform(multipart("/api/data/validation")
 				                .file(file)
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration", "\"invalid\""))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Invalid parameter: 'configuration'"));
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("configuration", "Failed to convert value"));
 	}
-
 
 	@Test
 	@Transactional
-	void storeConfig() throws Exception {
+	void storeConfigJson() throws Exception {
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
+		final String jsonConfiguration = objectMapper.writeValueAsString(configuration);
+		testStoreConfig(jsonConfiguration);
+	}
 
-		final String result = mockMvc.perform(multipart("/api/data/configuration")
-				                                      .param("configuration",
-				                                             objectMapper.writeValueAsString(configuration)))
-		                             .andExpect(status().isOk())
-		                             .andReturn().getResponse().getContentAsString();
-
-		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
-
-		UserEntity testUser = getTestUser();
-		assertFalse(existsTable(dataSetId), "Table should not exist!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getPlatformConfiguration().getId(),
-		             "User has been associated with the wrong dataset!");
-		assertEquals(".*",
-		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
-		                                                   .getConfigurations().get(5).getConfigurations()
-		                                                   .get(0))
-				             .getPattern(),
-		             "Type of first column does not match!");
-
-		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
-
-		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
-				                                            .param("configuration",
-				                                                   objectMapper.writeValueAsString(
-						                                                   configurationUpdate)))
-		                                   .andExpect(status().isOk())
-		                                   .andReturn().getResponse().getContentAsString();
-
-		final long dataSetIdUpdate = assertDoesNotThrow(() -> Long.parseLong(resultUpdate));
-
-		testUser = getTestUser();
-		assertFalse(existsTable(dataSetId), "Table should not exist!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetIdUpdate, testUser.getPlatformConfiguration().getId(),
-		             "User has been associated with the wrong dataset!");
-		assertEquals(dataSetIdUpdate, dataSetId, "Update has changed the DataSet id!");
-		assertEquals("[0-9]*",
-		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
-		                                                   .getConfigurations().get(5).getConfigurations()
-		                                                   .get(0)).getPattern(),
-		             "Type of first column does not match!");
+	@Test
+	@Transactional
+	void storeConfigYaml() throws Exception {
+		final String yamlConfiguration = TestModelHelper.generateDataConfigurationAsYaml();
+		testStoreConfig(yamlConfiguration);
 	}
 
 	@Test
@@ -240,6 +237,9 @@ class DataControllerTest extends ControllerTest {
 		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
 
 		mockMvc.perform(multipart("/api/data/configuration")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration))
 				                .param("configuration",
 				                       objectMapper.writeValueAsString(
 						                       configurationUpdate)))
@@ -465,6 +465,61 @@ class DataControllerTest extends ControllerTest {
 
 	private String wrapInQuotes(final String value) {
 		return "\"" + value + "\"";
+	}
+
+	private void testStoreConfig(final String configuration) throws Exception {
+		MockMultipartFile file = TestModelHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+
+		final String result = mockMvc.perform(multipart("/api/data/configuration")
+				                                      .file(file)
+				                                      .param("fileConfiguration",
+				                                             objectMapper.writeValueAsString(fileConfiguration))
+				                                      .param("configuration", configuration))
+		                             .andExpect(status().isOk())
+		                             .andReturn().getResponse().getContentAsString();
+
+		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
+
+		UserEntity testUser = getTestUser();
+		assertFalse(existsTable(dataSetId), "Table should not exist!");
+		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
+		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
+		assertEquals(dataSetId, testUser.getPlatformConfiguration().getId(),
+		             "User has been associated with the wrong dataset!");
+		assertEquals(".*",
+		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
+		                                                   .getConfigurations().get(5).getConfigurations()
+		                                                   .get(0))
+				             .getPattern(),
+		             "Type of first column does not match!");
+
+		final DataConfiguration configurationUpdate = TestModelHelper.generateDataConfiguration("[0-9]*");
+
+		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
+				                                            .file(file)
+				                                            .param("fileConfiguration",
+				                                                   objectMapper.writeValueAsString(fileConfiguration))
+				                                            .param("configuration",
+				                                                   objectMapper.writeValueAsString(
+						                                                   configurationUpdate)))
+		                                   .andExpect(status().isOk())
+		                                   .andReturn().getResponse().getContentAsString();
+
+		final long dataSetIdUpdate = assertDoesNotThrow(() -> Long.parseLong(resultUpdate));
+
+		testUser = getTestUser();
+		assertFalse(existsTable(dataSetId), "Table should not exist!");
+		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
+		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
+		assertEquals(dataSetIdUpdate, testUser.getPlatformConfiguration().getId(),
+		             "User has been associated with the wrong dataset!");
+		assertEquals(dataSetIdUpdate, dataSetId, "Update has changed the DataSet id!");
+		assertEquals("[0-9]*",
+		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
+		                                                   .getConfigurations().get(5).getConfigurations()
+		                                                   .get(0)).getPattern(),
+		             "Type of first column does not match!");
 	}
 
 }

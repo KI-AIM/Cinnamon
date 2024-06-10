@@ -7,14 +7,16 @@ import { plainToClass } from "class-transformer";
 import { DataConfiguration } from "../../../../shared/model/data-configuration";
 import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
 import { Router } from "@angular/router";
-import { HttpErrorResponse } from "@angular/common/http";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { FileService } from "../../services/file.service";
 import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
-import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
-import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
+import { FileConfiguration } from "src/app/shared/model/file-configuration";
+import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
 import { LoadingService } from "src/app/shared/services/loading.service";
+import { ConfigurationService } from "../../../../shared/services/configuration.service";
+import { ErrorMessageService } from "src/app/shared/services/error-message.service";
+import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
 
 @Component({
 	selector: "app-upload-file",
@@ -23,7 +25,8 @@ import { LoadingService } from "src/app/shared/services/loading.service";
 })
 export class UploadFileComponent {
 	Steps = Steps;
-	file: File | null;
+    private configurationFile: File | null;
+	protected dataFile: File | null;
 	public fileConfiguration: FileConfiguration;
 
 	@ViewChild("uploadErrorModal") errorModal: TemplateRef<NgbModal>;
@@ -57,7 +60,9 @@ export class UploadFileComponent {
 		private modalService: NgbModal,
 		private fileService: FileService,
 		public dialog: MatDialog,
-		public loadingService: LoadingService
+		public loadingService: LoadingService,
+        private configurationService: ConfigurationService,
+		private errorMessageService: ErrorMessageService,
 	) {
 		this.titleService.setPageTitle("Upload data");
 		this.fileConfiguration = fileService.getFileConfiguration();
@@ -67,23 +72,70 @@ export class UploadFileComponent {
 		const files = (event.target as HTMLInputElement)?.files;
 
 		if (files) {
-			this.file = files[0];
+			this.dataFile = files[0];
 		}
 	}
+
+    onDataConfigurationFileInput(event: Event) {
+        const files = (event.target as HTMLInputElement)?.files;
+
+        if (files) {
+            this.configurationFile = files[0];
+        }
+    }
 
 	uploadFile() {
-		this.loadingService.setLoadingStatus(true); 
+		this.loadingService.setLoadingStatus(true);
 
-		if (this.file) {
-			this.fileService.setFile(this.file);
-			this.fileService.setFileConfiguration(this.fileConfiguration)
+        if (!this.dataFile) {
+            return;
+        }
 
-			this.dataService.estimateData(this.file, this.fileService.getFileConfiguration()).subscribe({
-				next: (d) => this.handleUpload(d),
-				error: (e) => this.handleError(e),
-			});
-		}
+        this.fileService.setFile(this.dataFile);
+        this.fileService.setFileConfiguration(this.fileConfiguration)
+
+        if (this.configurationFile == null) {
+            // Estimate data configuration based on the data set
+            this.dataService.estimateData(this.dataFile, this.fileService.getFileConfiguration()).subscribe({
+                next: (d) => this.handleUpload(d),
+                error: (e) => this.handleError("Failed to estimate the data types" + this.errorMessageService.convertResponseToMessage(e)),
+            });
+        } else {
+            // Use data configuration from the selected file
+            this.configurationService.uploadAllConfigurations(this.configurationFile, null).subscribe(result => {
+                this.handleConfigurationUpload(result);
+            });
+        }
+
 	}
+
+    /**
+     * Handles the result of the configuration upload.
+     * Redirects to the next step if the upload was successful, handles the errors otherwise.
+     * @param result The result.
+     */
+    private handleConfigurationUpload(result: ImportPipeData[] | null) {
+        let hasError = false;
+        let errorMessage = "";
+
+        if (result === null) {
+            errorMessage = "An unexpected error occurred!";
+            hasError = true;
+        } else {
+            for (const importData of result) {
+                if (importData.error !== null) {
+                    hasError = true;
+                    errorMessage += "Errors for '" + importData.name + "':" + this.errorMessageService.convertResponseToMessage(importData.error);
+                }
+            }
+        }
+
+        if (hasError) {
+            this.handleError("Failed to import the configurations<br>" + errorMessage);
+        } else {
+            this.navigateToNextStep();
+        }
+    }
 
     openDialog(templateRef: TemplateRef<any>) {
         this.dialog.open(templateRef, {
@@ -92,29 +144,28 @@ export class UploadFileComponent {
     }
 
 	private handleUpload(data: Object) {
-		this.loadingService.setLoadingStatus(false); 
 		this.dataConfigurationService.setDataConfiguration(
 			plainToClass(DataConfiguration, data)
 		);
+		this.navigateToNextStep();
+	}
+
+	private navigateToNextStep() {
+		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/dataConfiguration");
 		this.stateManagement.addCompletedStep(Steps.UPLOAD);
 	}
 
-	private handleError(error: HttpErrorResponse) {
-		this.loadingService.setLoadingStatus(false); 
+	private handleError(error: string) {
+		this.loadingService.setLoadingStatus(false);
 		this.showErrorDialog(error);
 	}
 
-	private showErrorDialog(error: HttpErrorResponse) {
+	private showErrorDialog(error: string) {
 		this.dialog.open(InformationDialogComponent, {
 			data: {
-				title: "An unexpected error occured",
-				content: "We are sorry, something went wrong: " +
-							"<div class='pre-wrapper'>" +
-								"<pre>" + error.message + "</pre>\n" +
-								"<pre>" + error.error + "</pre>" +
-							"</div>" +
-							"<b>Please try again with a different file!</b>"
+				title: "An error occurred",
+				content: error,
 			}
 		});
 	}

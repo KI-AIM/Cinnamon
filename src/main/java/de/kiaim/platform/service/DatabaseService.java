@@ -16,6 +16,8 @@ import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.PlatformConfigurationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,8 @@ import java.util.function.Predicate;
 
 @Service
 public class DatabaseService {
+
+	private final Logger LOGGER = LoggerFactory.getLogger(DatabaseService.class);
 
 	final Connection connection;
 	final PlatformConfigurationRepository platformConfigurationRepository;
@@ -102,8 +106,10 @@ public class DatabaseService {
 		final String tableQuery = dataschemeGenerator.createSchema(dataSet.getDataConfiguration(), tableName);
 		try (final Statement tableStatement = connection.createStatement()) {
 			tableStatement.execute(tableQuery);
-		} catch (SQLException e) {
-			throw new InternalDataSetPersistenceException("The Table for the DataSet could not be created!", e);
+		} catch (final SQLException e) {
+			LOGGER.error("The Table for the DataSet could not be created!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.TABLE_CREATE,
+			                                              "The Table for the DataSet could not be created!", e);
 		}
 
 		// Insert data
@@ -121,7 +127,9 @@ public class DatabaseService {
 				delete(user);
 			} catch (BadDataSetIdException ignored) {
 			}
-			throw new InternalDataSetPersistenceException("The DataSet could not be persisted!", e);
+			LOGGER.error("The DataSet could not be persisted!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_STORE,
+			                                              "The DataSet could not be persisted!", e);
 		}
 
 		return dataSetId;
@@ -202,7 +210,9 @@ public class DatabaseService {
 				}
 			}
 		} catch (SQLException e) {
-			throw new InternalDataSetPersistenceException("The DataSet could not be exported!", e);
+			LOGGER.error("The DataSet could not be exported!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_EXPORT,
+			                                              "The DataSet could not be exported!", e);
 		}
 
 		return new DataSet(dataRows, dataConfiguration);
@@ -223,8 +233,9 @@ public class DatabaseService {
 		final PlatformConfigurationEntity platformConfigurationEntity = getOrThrow(dataSetId);
 
 		if (!platformConfigurationEntity.getConfigurations().containsKey(configurationName)) {
-			throw new BadConfigurationNameException(
-					"User has no configuration with the name '" + configurationName + "'!");
+			throw new BadConfigurationNameException(BadConfigurationNameException.NOT_FOUND,
+			                                        "User has no configuration with the name '" + configurationName +
+			                                        "'!");
 		}
 
 		return platformConfigurationEntity.getConfigurations().get(configurationName);
@@ -254,7 +265,9 @@ public class DatabaseService {
 			try (final Statement statement = connection.createStatement()) {
 				statement.execute("DROP TABLE IF EXISTS " + getTableName(dataSetId) + ";");
 			} catch (SQLException e) {
-				throw new InternalDataSetPersistenceException("The DataSet could not be deleted!", e);
+				LOGGER.error("The DataSet could not be deleted!", e);
+				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_DELETE,
+				                                              "The DataSet could not be deleted!", e);
 			}
 		}
 
@@ -276,7 +289,9 @@ public class DatabaseService {
 				return resultSet.next();
 			}
 		} catch (SQLException e) {
-			throw new InternalDataSetPersistenceException("The Configuration could not be stored!", e);
+			LOGGER.error("The Configuration could not be stored!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.TABLE_CHECk,
+			                                              "The Configuration could not be stored!", e);
 		}
 	}
 
@@ -294,7 +309,7 @@ public class DatabaseService {
 
 	private long getDataSetIdOrThrow(final UserEntity user) throws BadDataSetIdException {
 		if (user.getPlatformConfiguration() == null) {
-			throw new BadDataSetIdException("User has no configuration!");
+			throw new BadDataSetIdException(BadDataSetIdException.NO_CONFIGURATION, "User has no configuration!");
 		}
 		return user.getPlatformConfiguration().getId();
 	}
@@ -329,7 +344,7 @@ public class DatabaseService {
 
 		// Check if the data set already has been stored
 		if (platformConfigurationEntity.getId() != null && existsTable(platformConfigurationEntity.getId())) {
-			throw new BadDataSetIdException("The data has already been stored!");
+			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been stored!");
 		}
 
 		platformConfigurationEntity.setDataConfiguration(dataConfiguration);
@@ -378,14 +393,19 @@ public class DatabaseService {
 			case DECIMAL -> data.getValue().toString();
 			case INTEGER -> data.getValue().toString();
 			case STRING -> "'" + data.getValue().toString().replace("'", "''") + "'";
-			case UNDEFINED -> throw new InternalDataSetPersistenceException("Undefined data type can not be persisted!");
+			case UNDEFINED -> {
+				LOGGER.error("Undefined data type can not be persisted!");
+				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_TYPE_STORE,
+				                                              "Undefined data type can not be persisted!");
+			}
 		};
 	}
 
 	private void existsOrThrow(final long dataSetId) throws BadDataSetIdException {
 		final boolean exists = platformConfigurationRepository.existsById(dataSetId);
 		if (!exists) {
-			throw new BadDataSetIdException("No DataSet with the given ID '" + dataSetId + "' found!");
+			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET,
+			                                "No DataSet with the given ID '" + dataSetId + "' found!");
 		}
 	}
 
@@ -397,15 +417,17 @@ public class DatabaseService {
 		                                                   .toList();
 
 		if (!unknownColumnNames.isEmpty()) {
-			throw new BadColumnNameException(
-					"Data set does not contain columns with names: '" + String.join("', '", unknownColumnNames) + "'");
+			throw new BadColumnNameException(BadColumnNameException.NOT_FOUND,
+			                                 "Data set does not contain columns with names: '" +
+			                                 String.join("', '", unknownColumnNames) + "'");
 		}
 	}
 
 	private PlatformConfigurationEntity getOrThrow(final long dataSetId) throws BadDataSetIdException {
 		final Optional<PlatformConfigurationEntity> config = platformConfigurationRepository.findById(dataSetId);
 		if (config.isEmpty()) {
-			throw new BadDataSetIdException("No DataSet with the given ID '" + dataSetId + "' found!");
+			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET,
+			                                "No DataSet with the given ID '" + dataSetId + "' found!");
 		}
 		return config.get();
 	}
@@ -445,18 +467,24 @@ public class DatabaseService {
 					return new DateData(localDate);
 				}
 				case UNDEFINED -> {
-					throw new InternalDataSetPersistenceException("Undefined data type can not be exported!");
+					LOGGER.error("Undefined data type can not be exported!");
+					throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_TYPE_EXPORT,
+					                                              "Undefined data type can not be exported!");
 				}
 				default -> throw new IllegalStateException("Unexpected value: " + dataType);
 			}
 		} catch (SQLException e) {
 			try {
-				throw new InternalDataSetPersistenceException(
-						"Failed to convert value " + resultSet.getString(columnIndex) + " to the given DataType '" +
-						dataType.name() + "'!");
+				final String errorMessage = "Failed to convert value '" + resultSet.getString(columnIndex)
+				                            + "' to the given DataType '" + dataType.name() + "'!";
+				LOGGER.error(errorMessage, e);
+				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.VALUE_CONVERSION,
+				                                              errorMessage, e);
 			} catch (SQLException ex) {
-				throw new InternalDataSetPersistenceException(
-						"Failed to convert value to the given DataType '" + dataType.name() + "'!");
+				LOGGER.error("Failed to convert value to the given DataType '" + dataType.name() + "'!", ex);
+				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.VALUE_CONVERSION,
+				                                              "Failed to convert value to the given DataType '" +
+				                                              dataType.name() + "'!", ex);
 			}
 		}
 	}
@@ -471,7 +499,8 @@ public class DatabaseService {
 			final ColumnConfiguration columnConfiguration = sourceConfiguration.getColumnConfigurationByColumnName(columnName);
 
 			if (columnConfiguration == null) {
-				throw new BadColumnNameException("Data set does not contain a column with name: '" + columnName + "'");
+				throw new BadColumnNameException(BadColumnNameException.NOT_FOUND,
+				                                 "Data set does not contain a column with name: '" + columnName + "'");
 			}
 
 			final var updatedColumnConfiguration = new ColumnConfiguration(i,

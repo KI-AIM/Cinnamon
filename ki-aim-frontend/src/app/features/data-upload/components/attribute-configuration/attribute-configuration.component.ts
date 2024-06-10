@@ -11,12 +11,14 @@ import { DataType } from 'src/app/shared/model/data-type';
     styleUrls: ['./attribute-configuration.component.less'],
 })
 export class AttributeConfigurationComponent implements AfterViewInit {
-    @Input() attrNumber: String; 
+    @Input() attrNumber: String;
     @Input() column: ColumnConfiguration;
 
     @Output() onValidation = new EventEmitter<boolean>();
+    @Output() onInput = new EventEmitter<any>();
 
     @ViewChild("name") nameInput: NgModel;
+    private oldName: string = "";
 
     constructor() { }
 
@@ -24,21 +26,29 @@ export class AttributeConfigurationComponent implements AfterViewInit {
         this.nameInput.statusChanges?.subscribe(() => {
             this.onValidation.emit(this.nameInput.valid ?? true)
         });
+        this.nameInput.valueChanges?.subscribe((newValue) => {
+            // Trigger validation when the model has been changed programmatically
+            if (this.oldName !== newValue) {
+                this.oldName = newValue;
+                this.onInput.emit();
+                this.nameInput.control.markAsTouched();
+            }
+        });
     }
 
     getDataTypes(): List<String> {
         const types = Object.keys(DataType).filter(x => !(parseInt(x) >= 0));
 
-        return new List<String>(types); 
+        return new List<String>(types);
     }
 
     getDataScales(): List<String> {
-        const scales = Object.keys(DataScale).filter(x => !(parseInt(x) >= 0)); 
+        const scales = Object.keys(DataScale).filter(x => !(parseInt(x) >= 0));
 
-        return new List<String>(scales); 
+        return new List<String>(scales);
     }
 
-    parseInt(value: String): Number {
-        return Number(value); 
+    protected parseInt(value: String): Number {
+        return Number(value);
     }
 }

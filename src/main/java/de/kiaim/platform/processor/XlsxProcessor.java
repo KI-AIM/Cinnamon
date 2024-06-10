@@ -12,6 +12,7 @@ import de.kiaim.platform.model.data.configuration.DateTimeFormatConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.file.FileType;
 import de.kiaim.platform.model.file.XlsxFileConfiguration;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,6 +30,27 @@ import java.util.stream.Stream;
 
 @Service
 public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
+
+    @Override
+    public FileType getSupportedDataType() {
+        return FileType.XLSX;
+    }
+
+    @Override
+    public int getNumberColumns(InputStream data, FileConfiguration fileConfiguration) {
+        final XlsxFileConfiguration xlsxFileConfiguration = fileConfiguration.getXlsxFileConfiguration();
+        List<List<String>> rows;
+
+        try(InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
+            Sheet sheet = wb.getFirstSheet();
+            rows = transformSheetToRows(sheet, getStringDataConfiguration(sheet));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return rows.size();
+    }
+
     /**
      * {@inheritDoc}
      */

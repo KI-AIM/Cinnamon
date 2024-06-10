@@ -3,8 +3,9 @@
 </p>
 
 <div>
-    <input type="file" accept=".csv" #fileForm (input)="onFileInput($event)">
-    <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)" style="vertical-align: middle;">
+    <input type="file" accept=".csv,.xlsx" #fileForm (input)="onFileInput($event)">
+    <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
+        [hidden]="!this.dataFile" style="vertical-align: middle;">
         <mat-icon fontIcon="settings"></mat-icon>
     </a>
 </div>
@@ -63,40 +64,49 @@
 <ng-template #fileConfigurationDialog>
     <mat-dialog-content class="mat-typography">
         <h1>Configure the file</h1>
-        <div>
-            <mat-form-field class="d-block">
-                <mat-label>Column Separator</mat-label>
-                <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.columnSeparator">
-                    <mat-option *ngFor="let delimiter of delimiters" [value]="delimiter">
-                        {{ delimiterLabels[delimiter] }}
-                    </mat-option>
-                </mat-select>
-            </mat-form-field>
+        <div *ngIf="this.currentFileType == 'csv'">
+            <div>
+                <mat-form-field class="d-block">
+                    <mat-label>Column Separator</mat-label>
+                    <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.columnSeparator">
+                        <mat-option *ngFor="let delimiter of delimiters" [value]="delimiter">
+                            {{ delimiterLabels[delimiter] }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div>
+                <mat-form-field class="d-block">
+                    <mat-label>Line break</mat-label>
+                    <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.lineSeparator">
+                        <mat-option *ngFor="let lineEnd of lineEndings" [value]="lineEnd">
+                            {{ lineEndingLabels[lineEnd] }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div>
+                <mat-form-field class="d-block">
+                    <mat-label>Quote Char</mat-label>
+                    <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.quoteChar">
+                        <mat-option *ngFor="let quoteChar of quoteChars" [value]="quoteChar">
+                            {{ quoteCharLabels[quoteChar] }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div>
+                <mat-checkbox [(ngModel)]="this.fileConfiguration.csvFileConfiguration.hasHeader" color="primary">
+                    Use first row as header
+                </mat-checkbox>
+            </div>
         </div>
-        <div>
-            <mat-form-field class="d-block">
-                <mat-label>Line break</mat-label>
-                <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.lineSeparator">
-                    <mat-option *ngFor="let lineEnd of lineEndings" [value]="lineEnd">
-                        {{ lineEndingLabels[lineEnd] }}
-                    </mat-option>
-                </mat-select>
-            </mat-form-field>
-        </div>
-        <div>
-            <mat-form-field class="d-block">
-                <mat-label>Quote Char</mat-label>
-                <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.quoteChar">
-                    <mat-option *ngFor="let quoteChar of quoteChars" [value]="quoteChar">
-                        {{ quoteCharLabels[quoteChar] }}
-                    </mat-option>
-                </mat-select>
-            </mat-form-field>
-        </div>
-        <div>
-            <mat-checkbox [(ngModel)]="this.fileConfiguration.csvFileConfiguration.hasHeader" color="primary">
-                Use first row as header
-            </mat-checkbox>
+        <div *ngIf="this.currentFileType == 'xlsx'">
+            <div>
+                <mat-checkbox [(ngModel)]="this.fileConfiguration.xlsxFileConfiguration.hasHeader" color="primary">
+                    Use first row as header
+                </mat-checkbox>
+            </div>
         </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">

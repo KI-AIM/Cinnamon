@@ -15,6 +15,7 @@ import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.DataProcessor;
+import de.kiaim.platform.processor.XlsxProcessor;
 import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

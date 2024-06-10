@@ -6,6 +6,7 @@ import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.file.CsvFileConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.file.FileType;
+import de.kiaim.platform.model.file.XlsxFileConfiguration;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
@@ -15,12 +16,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestModelHelper {
-	public static FileConfiguration generateFileConfigurationCsv() {
-		return generateFileConfigurationCsv(true);
+	public static FileConfiguration generateFileConfiguration() {
+		return generateFileConfiguration(true);
 	}
 
-	public static FileConfiguration generateFileConfigurationCsv(final boolean hasHeader) {
-		return new FileConfiguration(FileType.CSV, new CsvFileConfiguration(",", "\n", '"', hasHeader));
+	public static FileConfiguration generateFileConfiguration(final boolean hasHeader) {
+		return new FileConfiguration(
+			FileType.CSV,
+			new CsvFileConfiguration(",", "\n", '"', hasHeader),
+			new XlsxFileConfiguration(hasHeader)
+		);
 	}
 
 	public static DataConfiguration generateDataConfiguration(final String stringPattern) {

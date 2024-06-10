@@ -20,6 +20,7 @@ import {
 import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
 import { ErrorResponse } from 'src/app/shared/model/error-response';
 import { ErrorMessageService } from 'src/app/shared/services/error-message.service';
+import { FileType } from 'src/app/shared/model/file-configuration';
 
 @Component({
     selector: 'app-data-configuration',
@@ -28,6 +29,7 @@ import { ErrorMessageService } from 'src/app/shared/services/error-message.servi
 })
 export class DataConfigurationComponent implements OnInit {
     error: string;
+    FileType = FileType;
     isValid: boolean;
 
     @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
@@ -36,8 +38,8 @@ export class DataConfigurationComponent implements OnInit {
     constructor(
         public configuration: DataConfigurationService,
         public dataService: DataService,
+        public fileService: FileService,
         private titleService: TitleService,
-        private fileService: FileService,
         private router: Router,
         private stateManagement: StateManagementService,
         private transformationService: TransformationService,

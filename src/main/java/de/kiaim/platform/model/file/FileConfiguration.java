@@ -23,4 +23,7 @@ public class FileConfiguration {
 	@NotNull(message = "CSV file configuration must be present")
 	@Valid
 	private CsvFileConfiguration csvFileConfiguration;
+
+	@Schema(description = "Configuration specific for XLSX files")
+	private XlsxFileConfiguration xlsxFileConfiguration;
 }

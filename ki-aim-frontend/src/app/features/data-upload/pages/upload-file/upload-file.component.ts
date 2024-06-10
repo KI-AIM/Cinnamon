@@ -11,7 +11,7 @@ import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { FileService } from "../../services/file.service";
 import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
-import { FileConfiguration } from "src/app/shared/model/file-configuration";
+import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
 import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
 import { LoadingService } from "src/app/shared/services/loading.service";
 import { ConfigurationService } from "../../../../shared/services/configuration.service";
@@ -51,6 +51,8 @@ export class UploadFileComponent {
 		[QuoteChar.SINGLE_QUOTE]: "Single Quote (')",
 	};
 
+	public currentFileType = "";
+
 	constructor(
 		private titleService: TitleService,
 		public stateManagement: StateManagementService,
@@ -73,6 +75,16 @@ export class UploadFileComponent {
 
 		if (files) {
 			this.dataFile = files[0];
+			this.currentFileType = this.getFileExtension(files[0]);
+		}
+	}
+
+    private getFileExtension(file: File): string {
+		var fileExtension = file.name.split(".").pop();
+		if (fileExtension != undefined) {
+			return fileExtension;
+		} else {
+			return "csv";
 		}
 	}
 
@@ -90,7 +102,7 @@ export class UploadFileComponent {
         if (!this.dataFile) {
             return;
         }
-
+        this.setFileType(this.dataFile);
         this.fileService.setFile(this.dataFile);
         this.fileService.setFileConfiguration(this.fileConfiguration)
 
@@ -136,6 +148,17 @@ export class UploadFileComponent {
             this.navigateToNextStep();
         }
     }
+
+	setFileType(file: File) {
+		switch (this.getFileExtension(file)) {
+			case "csv":
+				this.fileConfiguration.fileType = FileType.CSV;
+				break;
+			case "xlsx":
+				this.fileConfiguration.fileType = FileType.XLSX;
+				break;
+		}
+	}
 
     openDialog(templateRef: TemplateRef<any>) {
         this.dialog.open(templateRef, {

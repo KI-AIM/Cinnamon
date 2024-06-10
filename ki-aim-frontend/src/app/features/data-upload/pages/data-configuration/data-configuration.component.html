@@ -3,6 +3,12 @@
 </app-info-card>
 
 <div class="p-5">
+    <div
+        class="mb-3 alert alert-warning" role="alert"
+        *ngIf="fileService.fileConfiguration.fileType == FileType.XLSX">
+        <b>WARNING:</b> For XLSX files, Dates can not be estimated correctly, because Excel stores them as numbers internally. They will instead be configured as INTEGER. <br/>
+        Please make sure, that you configure every column that contains dates manually.
+    </div>
     <!-- Upload -->
     <div class="py-1">
         <app-configuration-upload #configurationUpload [configurationName]="configuration.CONFIGURATION_NAME"

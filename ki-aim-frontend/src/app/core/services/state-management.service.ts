@@ -39,4 +39,18 @@ export class StateManagementService {
             this.completedSteps.remove(step);
         }
     }
+
+    /**
+     * Checks if a given step is completed.
+     * If step is null, returns false.
+     * 
+     * @param step The step to check.
+     * @returns If the given step is completed.
+     */
+    isStepCompleted(step: Steps | null) {
+        if (step == null) {
+            return false;
+        }
+        return this.completedSteps.contains(step);
+    }
 }

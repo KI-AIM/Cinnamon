@@ -3,17 +3,43 @@ import { DataConfiguration } from '../model/data-configuration';
 import { ColumnConfiguration } from '../model/column-configuration';
 import { List } from 'src/app/core/utils/list';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, switchMap } from 'rxjs';
-import { instanceToPlain } from 'class-transformer';
+import { map, Observable, PartialObserver } from 'rxjs';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { ConfigurationService } from './configuration.service';
+import { ConfigurationRegisterData } from '../model/configuration-register-data';
+import { Steps } from 'src/app/core/enums/steps';
+import { FileService } from "../../features/data-upload/services/file.service";
+import { parse } from "yaml";
+import { ImportPipeData } from "../model/import-pipe-data";
 
 @Injectable({
     providedIn: 'root',
 })
 export class DataConfigurationService {
-    private _dataConfiguration: DataConfiguration; 
+    public readonly CONFIGURATION_NAME = "configurations";
 
-    constructor(private httpClient: HttpClient) {
+    private _dataConfiguration: DataConfiguration;
+
+    constructor(
+        private httpClient: HttpClient,
+        private configurationService: ConfigurationService,
+        private fileService: FileService,
+    ) {
         this.setDataConfiguration(new DataConfiguration());
+    }
+
+    public registerConfig() {
+        const configReg = new ConfigurationRegisterData();
+        configReg.availableAfterStep = Steps.UPLOAD;
+        configReg.lockedAfterStep = Steps.VALIDATION;
+        configReg.displayName = "Data Configuration";
+        configReg.name = this.CONFIGURATION_NAME;
+        configReg.orderNumber = 0;
+        configReg.storeConfig = (configName, yamlConfigString) => this.postDataConfigurationString(yamlConfigString);
+        configReg.getConfigCallback = () => this.getConfigurationCallback();
+        configReg.setConfigCallback = (config) => this.setConfigCallback(config);
+
+        this.configurationService.registerConfiguration(configReg);
     }
 
     public getDataConfiguration(): DataConfiguration {
@@ -24,21 +50,47 @@ export class DataConfigurationService {
     }
 
     public getColumnConfigurations(): List<ColumnConfiguration> {
-        return new List<ColumnConfiguration>(this.getDataConfiguration().configurations); 
+        return new List<ColumnConfiguration>(this.getDataConfiguration().configurations);
+    }
+
+    public validateConfiguration(dataConfig: File, observer: PartialObserver<DataConfiguration>) {
+        const callback = (result: object | null) => {
+            this.setDataConfiguration(result as DataConfiguration);
+            this.postDataConfiguration().pipe(map(() => this._dataConfiguration)).subscribe(observer);
+        };
+
+        this.configurationService.extractConfig(dataConfig, this.CONFIGURATION_NAME, callback);
+    }
+
+    public downloadDataConfigurationAsJson(): Observable<DataConfiguration> {
+        return this.httpClient.get<DataConfiguration>("/api/data/configuration?format=json");
     }
 
     public postDataConfiguration(): Observable<Number> {
+        const configString = JSON.stringify(instanceToPlain(this._dataConfiguration));
+        return this.postDataConfigurationString(configString);
+    }
+
+    public postDataConfigurationString(configString: string): Observable<Number> {
         const formData = new FormData();
 
-        var configString = JSON.stringify(instanceToPlain(this._dataConfiguration));
+        formData.append("file", this.fileService.getFile());
+        const fileConfigString = JSON.stringify(this.fileService.getFileConfiguration());
+        formData.append("fileConfiguration", fileConfigString);
+
         formData.append("configuration", configString);
 
         return this.httpClient.post<Number>("/api/data/configuration", formData);
     }
 
-    public downloadDataConfigurationAsYaml(): Observable<Blob> {
-        return this.postDataConfiguration().pipe(switchMap((response) => {
-            return this.httpClient.get<Blob>("/api/data/configuration?format=yaml", {responseType: 'text' as 'json'});
-        }));
+    private getConfigurationCallback(): Object {
+        this.postDataConfiguration().subscribe();
+        return this.getDataConfiguration();
+    }
+
+    private setConfigCallback(importData: ImportPipeData): void {
+        const config = parse(importData.yamlConfigString);
+        const dataConfig = plainToInstance(DataConfiguration, config);
+        this.setDataConfiguration(dataConfig);
     }
 }

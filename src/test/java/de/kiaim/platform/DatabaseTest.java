@@ -47,43 +47,19 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	@BeforeEach
+	@Transactional
 	void setUp() {
 		if (connection == null) {
 			connection = DataSourceUtils.getConnection(dataSource);
+			// Clean database to prevent issues with canceled tests
+			doCleanDatabase();
 		}
 	}
 
 	@AfterEach
 	@Transactional
 	protected void cleanDatabase() {
-		try {
-			final UserEntity testUser = getTestUser();
-			testUser.setPlatformConfiguration(null);
-			userRepository.save(testUser);
-
-			platformConfigurationRepository.deleteAll();
-			databaseService.executeStatement("SELECT setval('data_configuration_entity_seq', 1, true)");
-			databaseService.executeStatement(
-					"""
-							DO
-							$do$
-							DECLARE
-							   _tbl text;
-							BEGIN
-							FOR _tbl  IN
-							    SELECT quote_ident(table_schema) || '.' || quote_ident(table_name)
-							    FROM   information_schema.tables
-							    WHERE  table_name LIKE 'data_set_' || '%'
-							    AND    table_schema NOT LIKE 'pg\\_%'
-							LOOP
-							    EXECUTE 'DROP TABLE ' || _tbl;
-							END LOOP;
-							END
-							$do$;
-							""");
-		} catch (SQLException ignored) {
-		}
-
+		doCleanDatabase();
 		DataSourceUtils.releaseConnection(connection, dataSource);
 		connection = null;
 	}
@@ -125,6 +101,36 @@ public class DatabaseTest extends ContextRequiredTest {
 		} catch (SQLException e) {
 			fail(e);
 			return 0;
+		}
+	}
+
+	private void doCleanDatabase() {
+		try {
+			final UserEntity testUser = getTestUser();
+			testUser.setPlatformConfiguration(null);
+			userRepository.save(testUser);
+
+			platformConfigurationRepository.deleteAll();
+			databaseService.executeStatement("SELECT setval('platform_configuration_entity_seq', 1, true)");
+			databaseService.executeStatement(
+					"""
+							DO
+							$do$
+							DECLARE
+							   _tbl text;
+							BEGIN
+							FOR _tbl  IN
+							    SELECT quote_ident(table_schema) || '.' || quote_ident(table_name)
+							    FROM   information_schema.tables
+							    WHERE  table_name LIKE 'data_set_' || '%'
+							    AND    table_schema NOT LIKE 'pg\\_%'
+							LOOP
+							    EXECUTE 'DROP TABLE ' || _tbl;
+							END LOOP;
+							END
+							$do$;
+							""");
+		} catch (SQLException ignored) {
 		}
 	}
 

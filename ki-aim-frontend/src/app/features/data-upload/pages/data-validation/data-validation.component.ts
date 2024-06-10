@@ -11,6 +11,7 @@ import { DataConfigurationService } from "src/app/shared/services/data-configura
 import { TitleService } from "src/app/core/services/title-service.service";
 import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
+import { ErrorMessageService } from "src/app/shared/services/error-message.service";
 
 @Component({
 	selector: "app-data-validation",
@@ -28,6 +29,7 @@ export class DataValidationComponent {
 		private configuration: DataConfigurationService,
 		private titleService: TitleService,
         private dialog: MatDialog,
+		private errorMessageService: ErrorMessageService,
 	) {
         this.titleService.setPageTitle("Data validation");
     }
@@ -59,12 +61,8 @@ export class DataValidationComponent {
 
 		this.dialog.open(InformationDialogComponent, {
 			data: {
-				title: "An unexpected error occured",
-				content: "We are sorry, something went wrong: " + 
-							"<div class='pre-wrapper'>" + 
-								"<pre>" + error.message + "</pre>\n" + 
-								"<pre>" + error.error.errors + "</pre>" +
-							"</div>"
+				title: "An error occurred",
+				content: "We are sorry, something went wrong: " + this.errorMessageService.convertResponseToMessage(error),
 			}
 		}); 
 	}

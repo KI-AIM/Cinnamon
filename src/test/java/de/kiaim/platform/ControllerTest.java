@@ -1,6 +1,5 @@
 package de.kiaim.platform;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +29,7 @@ public class ControllerTest extends DatabaseTest {
 		return  mvcResult -> {
 			final String response = mvcResult.getResponse().getContentAsString();
 			final ErrorResponse errorResponse = objectMapper.readValue(response, ErrorResponse.class);
-			final LinkedHashMap<String, List<String>> errors = (LinkedHashMap) errorResponse.getErrors();
+			final LinkedHashMap<String, List<String>> errors = (LinkedHashMap) errorResponse.getErrorDetails();
 			assertEquals(1, errors.size(), "Number of errors not correct!");
 			assertTrue(errors.containsKey(key), "No error for '" + key + "' present!");
 			assertEquals(expectedErrors, errors.get(key), "Unexpected message!");
@@ -41,8 +40,7 @@ public class ControllerTest extends DatabaseTest {
 		return  mvcResult -> {
 			final String response = mvcResult.getResponse().getContentAsString();
 			final ErrorResponse errorResponse = objectMapper.readValue(response, ErrorResponse.class);
-			final String errors = (String) errorResponse.getErrors();
-			assertEquals(expectedError, errors, "Unexpected message!");
+			assertEquals(expectedError, errorResponse.getErrorMessage() , "Unexpected message!");
 		};
 	}
 }

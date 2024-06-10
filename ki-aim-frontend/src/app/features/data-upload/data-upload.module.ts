@@ -1,4 +1,4 @@
-import { NgModule } from "@angular/core";
+import { APP_INITIALIZER, NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { AdditionalConfigurationComponent } from "./components/additional-configuration/additional-configuration.component";
 import { AttributeConfigurationComponent } from "./components/attribute-configuration/attribute-configuration.component";
@@ -27,6 +27,8 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatSelectModule } from "@angular/material/select";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { RangeComponent } from './components/configurationSettings/range/range.component';
+import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
+import { ConfigurationModule } from "../configuration/configuration.module";
 
 @NgModule({
 	declarations: [
@@ -44,6 +46,7 @@ import { RangeComponent } from './components/configurationSettings/range/range.c
 	],
     imports: [
         CommonModule,
+		ConfigurationModule,
         FormsModule,
         RouterModule,
         SharedModule,
@@ -65,6 +68,17 @@ import { RangeComponent } from './components/configurationSettings/range/range.c
 		DataConfigurationComponent,
 		UploadFileComponent,
 	],
-	providers: [FileService, TransformationService, CdkColumnDef],
+	providers: [
+		FileService,
+		TransformationService,
+		CdkColumnDef,
+		{
+			// Calls the useFactory function when starting the application
+			provide: APP_INITIALIZER,
+			useFactory: (service: DataConfigurationService) => function () { return service.registerConfig(); },
+			deps: [DataConfigurationService],
+			multi: true,
+		},
+	],
 })
 export class DataUploadModule {}

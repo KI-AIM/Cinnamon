@@ -1,6 +1,5 @@
 package de.kiaim.platform.processor;
 
-import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.helper.DataTransformationHelper;
 import de.kiaim.platform.model.*;
 import de.kiaim.platform.model.data.*;
@@ -167,23 +166,6 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
     public List<String> normalizeColumnNames(final String[] columnNames) {
         return Arrays.stream(columnNames).map(columnName -> columnName.replace(" ", "_")).toList();
-    }
-
-    public void validateColumnNames(final List<String> columnNames) throws BadColumnNameException {
-        final List<Pair<Integer, String>> invalidColumnNames = new ArrayList<>();
-        for (int columnIndex = 0; columnIndex < columnNames.size(); ++columnIndex) {
-            final String columnName = columnNames.get(columnIndex);
-            if (columnName.contains(" ")) {
-                invalidColumnNames.add(new Pair<>(columnIndex, columnName));
-            }
-        }
-        if (!invalidColumnNames.isEmpty()) {
-            String message = "Column names must not contain spaces. Please corrects the following column names: ";
-            message += String.join(", ", invalidColumnNames.stream()
-                                                           .map(pair -> pair.element0() + ":\"" + pair.element1() + "\"")
-                                                           .toList());
-            throw new BadColumnNameException(message.toString());
-        }
     }
 
     /**

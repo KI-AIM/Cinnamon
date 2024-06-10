@@ -2,26 +2,21 @@ package de.kiaim.platform.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.kiaim.platform.config.YamlMapper;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.DataSet;
+import de.kiaim.platform.model.dto.EstimateDataTypesRequest;
 import de.kiaim.platform.model.dto.LoadDataRequest;
+import de.kiaim.platform.model.dto.ReadDataRequest;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.processor.XlsxProcessor;
-import de.kiaim.platform.service.DataSetService;
-import de.kiaim.platform.service.DatabaseService;
-import de.kiaim.platform.service.ResponseService;
-import de.kiaim.platform.service.UserService;
+import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -32,6 +27,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
+import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -54,25 +50,20 @@ import java.util.List;
                                        "Data Sets are associated with the user of the request.")
 public class DataController {
 
-	// TODO Find Processor dynamically
-	private final CsvProcessor csvProcessor;
-	private final XlsxProcessor xlsxProcessor;
+	private final ObjectMapper yamlMapper;
 	private final DatabaseService databaseService;
+	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
 	private final UserService userService;
-	private final ResponseService responseService;
 
 	@Autowired
-	public DataController(final CsvProcessor csvProcessor,
-		final XlsxProcessor xlsxProcessor, final DatabaseService databaseService,
-		final DataSetService dataSetService, final UserService userService,
-		final ResponseService responseService) {
-		this.csvProcessor = csvProcessor;
-		this.xlsxProcessor = xlsxProcessor;
+	public DataController(final DatabaseService databaseService, final DataProcessorService dataProcessorService,
+	                      final DataSetService dataSetService, final UserService userService) {
 		this.databaseService = databaseService;
+		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
 		this.userService = userService;
-		this.responseService = responseService;
+		this.yamlMapper = YamlMapper.yamlMapper();
 	}
 
 	@Operation(summary = "Estimates the data types of a given data set.",
@@ -95,16 +86,11 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> estimateDatatypes(
-			@Parameter(description = "File containing the data.",
-			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-			@RequestPart(value = "file") MultipartFile file,
-			@Parameter(description = "Configuration for the file.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = FileConfiguration.class)))
-			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
+			@ParameterObject @Valid final EstimateDataTypesRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.DATA_TYPES, file, fileConfiguration ,null, null, user);
+		return handleRequest(RequestType.DATA_TYPES, requestData.getFile(), requestData.getFileConfiguration(), null,
+		                     null, user);
 	}
 
 	@Operation(summary = "Converts and validates the uploaded file into a tabular representation.",
@@ -127,24 +113,15 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> readAndValidateData(
-			@Parameter(description = "File containing the data.",
-			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-			@RequestPart(value = "file") MultipartFile file,
-			@Parameter(description = "Configuration for the file.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = FileConfiguration.class)))
-			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
-			@Parameter(description = "Metadata describing the format of the data.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = DataConfiguration.class)))
-			@RequestParam(value = "configuration") DataConfiguration configuration,
+			@ParameterObject @Valid final ReadDataRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.VALIDATE, file, fileConfiguration, configuration, null, user);
+		return handleRequest(RequestType.VALIDATE, requestData.getFile(), requestData.getFileConfiguration(),
+		                     requestData.getConfiguration(), null, user);
 	}
 
 	@Operation(summary = "Stores or updates the given configuration.",
-	           description = "Stores or updates the given configuration.")
+	           description = "Stores or updates the given configuration. The configuration can be a JSON or YAML string.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully stored the configuration. Returns the id of the data set.",
@@ -163,15 +140,11 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeConfig(
-			@Parameter(description = "Metadata describing the format of the data.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = DataConfiguration.class)))
-			@RequestParam(value = "configuration") DataConfiguration configuration,
+			@ParameterObject @Valid final ReadDataRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.STORE_CONFIG, null, null, configuration, null, user);
+		return handleRequest(RequestType.STORE_CONFIG, null, null, requestData.getConfiguration(), null, user);
 	}
-
 
 	@Operation(summary = "Stores the given data into the internal database for further processing.",
 	           description = "Stores the given data into the internal database for further processing.")
@@ -193,20 +166,11 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> storeData(
-			@Parameter(description = "File containing the data to be stored.",
-			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
-			@RequestPart(value = "file") MultipartFile file,
-			@Parameter(description = "Configuration for the file.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = FileConfiguration.class)))
-			@RequestParam("fileConfiguration") FileConfiguration fileConfiguration,
-			@Parameter(description = "Metadata describing the format of the data.",
-			           content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                              schema = @Schema(implementation = DataConfiguration.class)))
-			@RequestParam(value = "configuration") DataConfiguration configuration,
+			@ParameterObject @Valid final ReadDataRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.STORE_DATE_SET, file, fileConfiguration, configuration, null, user);
+		return handleRequest(RequestType.STORE_DATE_SET, requestData.getFile(), requestData.getFileConfiguration(),
+		                     requestData.getConfiguration(), null, user);
 	}
 
 	@Operation(summary = "Returns the configuration of the data set.",
@@ -241,7 +205,7 @@ public class DataController {
 		ResponseEntity<Object> response = handleRequest(RequestType.LOAD_CONFIG, null, null, null, null, user);
 
 		if (response.getStatusCode().is2xxSuccessful() && format.equals("yaml")) {
-			final String yaml = createYamlMapper().writeValueAsString(response.getBody());
+			final String yaml = yamlMapper.writeValueAsString(response.getBody());
 			response = ResponseEntity.ok().header("Content-Type", "application/x-yaml").body(yaml);
 		}
 
@@ -355,7 +319,7 @@ public class DataController {
 			@Nullable final DataConfiguration configuration,
 			@Nullable final LoadDataRequest loadDataRequest,
 			final UserEntity requestUser
-	) throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
+	) throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalMissingHandlingException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 
 		final List<String> columnNames = loadDataRequest != null && !loadDataRequest.getColumns().isBlank()
@@ -365,7 +329,7 @@ public class DataController {
 		final Object result;
 		switch (requestType) {
 			case DATA_TYPES -> {
-				final DataProcessor dataProcessor = getDataProcessor(file);
+				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration);
 				databaseService.store((DataConfiguration) result, user);
@@ -388,72 +352,31 @@ public class DataController {
 				result = databaseService.store(configuration, user);
 			}
 			case STORE_DATE_SET -> {
-				final DataProcessor dataProcessor = getDataProcessor(file);
+				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				final TransformationResult transformationResult = dataProcessor.read(inputStream, fileConfiguration, configuration);
 				result = databaseService.store(transformationResult, user);
 			}
 			case VALIDATE -> {
-				final DataProcessor dataProcessor = getDataProcessor(file);
+				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				databaseService.store(configuration, user);
 				result = dataProcessor.read(inputStream, fileConfiguration, configuration);
 			}
 			default -> {
-				return responseService.prepareErrorResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR,
-				                                                  "Missing handling for request type '" +
-				                                                  requestType.name() + "'");
+				throw new InternalMissingHandlingException(InternalMissingHandlingException.REQUEST_TYPE,
+				                                           "Missing handling for request type '" + requestType.name() + "'");
 			}
 		}
 		return new ResponseEntity<>(result, HttpStatus.OK);
-	}
-
-	private DataProcessor getDataProcessor(final MultipartFile file) throws BadFileException {
-		final String fileExtension = extractFileExtension(file);
-
-		switch (fileExtension) {
-			case ".csv":
-				return csvProcessor;
-			case ".xlsx":
-				return xlsxProcessor;
-			default:
-				throw new BadFileException("Unsupported file type: '" + fileExtension + "'");
-		}
 	}
 
 	private InputStream getInputStream(final MultipartFile file) throws BadFileException {
 		try {
 			return file.getInputStream();
 		} catch (IOException e) {
-			throw new BadFileException("Could not read file");
+			throw new BadFileException(BadFileException.NOT_READABLE, "Could not read file");
 		}
-	}
-
-	private String extractFileExtension(final MultipartFile file) throws BadFileException {
-		if (file == null) {
-			throw new BadFileException("Missing file");
-		}
-
-		final String fileName = file.getOriginalFilename();
-		if (fileName == null || fileName.isBlank()) {
-			throw new BadFileException("Missing filename");
-		}
-
-		final int fileExtensionBegin = file.getOriginalFilename().lastIndexOf('.');
-		if (fileExtensionBegin == -1) {
-			throw new BadFileException("Missing file extension");
-		}
-
-		return file.getOriginalFilename().substring(fileExtensionBegin);
-	}
-
-	private ObjectMapper createYamlMapper() {
-		final YAMLFactory yamlFactory = new YAMLFactory();
-		yamlFactory.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER);
-		final ObjectMapper yamlMapper = new ObjectMapper(yamlFactory);
-		yamlMapper.registerModule(new JavaTimeModule());
-		yamlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-		return yamlMapper;
 	}
 
 	private enum RequestType {

@@ -24,6 +24,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './features/auth/auth.module';
 import { AnonymizationConfigurationComponent } from './features/anonymization/anonymization-configuration/anonymization-configuration.component';
+import { MatDialogModule } from "@angular/material/dialog";
+import { MatOptionModule } from "@angular/material/core";
+import { MatSelectModule } from "@angular/material/select";
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { ConfigurationModule } from './features/configuration/configuration.module';
 
 @NgModule({
     declarations: [
@@ -33,6 +38,7 @@ import { AnonymizationConfigurationComponent } from './features/anonymization/an
     ],
     imports: [
         BrowserModule,
+        ConfigurationModule,
         SharedModule,
         AppRoutingModule,
         AuthModule,
@@ -42,6 +48,12 @@ import { AnonymizationConfigurationComponent } from './features/anonymization/an
         NgbModule,
         BrowserAnimationsModule,
         MatIconModule,
+        MatButtonModule,
+        MatCheckboxModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatOptionModule,
+        MatSelectModule,
     ],
     providers: [
         TitleService,

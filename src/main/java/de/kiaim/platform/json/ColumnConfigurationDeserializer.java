@@ -10,6 +10,7 @@ import de.kiaim.platform.helper.DataTransformationHelper;
 import de.kiaim.platform.model.data.*;
 import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.data.exception.DataBuildingException;
+import org.springframework.lang.Nullable;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -26,34 +27,21 @@ public class ColumnConfigurationDeserializer extends JsonDeserializer<ColumnConf
 	public ColumnConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 		final JsonNode jsonNode = p.getCodec().readTree(p);
 
-		final int index = jsonNode.get("index").asInt();
-		final String columnName = jsonNode.get("name").asText();
-		final DataType type = p.getCodec().readValue(jsonNode.get("type").traverse(), DataType.class);
-		final DataScale scale = p.getCodec().readValue(jsonNode.get("scale").traverse(), DataScale.class);
+		final Integer index = jsonNode.has("index")
+		                      ? jsonNode.get("index").asInt()
+		                      : null;
+		final String columnName = jsonNode.has("name")
+		                          ? jsonNode.get("name").asText()
+		                          : null;
+		final DataType type = jsonNode.has("type")
+		                      ? p.getCodec().readValue(jsonNode.get("type").traverse(), DataType.class)
+		                      : null;
+		final DataScale scale = jsonNode.has("scale")
+		                        ? p.getCodec().readValue(jsonNode.get("scale").traverse(), DataScale.class)
+		                        : null;
 
 		final ArrayNode configurationNodes = (ArrayNode) jsonNode.get("configurations");
-		final List<Configuration> configurations = new ArrayList<>();
-
-		for (JsonNode configurationNode : configurationNodes) {
-			final String configurationName = configurationNode.get("name").asText();
-			if (configurationName.equals("RangeConfiguration")) {
-				try {
-					final Data minValue = convertRangeValue(configurationNode.get("minValue"), type);
-					final Data maxValue = convertRangeValue(configurationNode.get("maxValue"), type);
-					configurations.add(new RangeConfiguration(minValue, maxValue));
-				} catch (BadDataTypeException e) {
-					throw new InvalidDatatypeJsonException(
-							"Could not convert 'minValue' and 'maxValue' of RangeConfiguration because the column configuration contains an invalid data type!",
-							configurationNode.traverse().currentLocation(), e);
-				} catch (DataBuildingException e) {
-					throw new DataBuildingJsonException(
-							"Could not convert 'minValue' and 'maxValue' of RangeConfiguration because of an invalid format!",
-							configurationNode.traverse().currentLocation(), e);
-				}
-			} else {
-				configurations.add(p.getCodec().readValue(configurationNode.traverse(), Configuration.class));
-			}
-		}
+		final List<Configuration> configurations = convertConfigurationArrayValue(configurationNodes, type, p);
 
 		return new ColumnConfiguration(index, columnName, type, scale, configurations);
 	}
@@ -120,5 +108,45 @@ public class ColumnConfigurationDeserializer extends JsonDeserializer<ColumnConf
 		}
 
 		return numbers;
+	}
+
+	private List<Configuration> convertConfigurationArrayValue(@Nullable final JsonNode configurationArrayNode,
+	                                                           @Nullable final DataType type,
+	                                                           final JsonParser jsonParser)
+			throws IOException {
+		final List<Configuration> configurations = new ArrayList<>();
+
+		if (configurationArrayNode == null) {
+			return configurations;
+		}
+
+		final ArrayNode configurationNodes = (ArrayNode) configurationArrayNode;
+
+		for (JsonNode configurationNode : configurationNodes) {
+			final String configurationName = configurationNode.get("name").asText();
+			if (configurationName.equals("RangeConfiguration")) {
+				if (type == null) {
+					configurations.add(new RangeConfiguration(null, null));
+				} else {
+					try {
+						final Data minValue = convertRangeValue(configurationNode.get("minValue"), type);
+						final Data maxValue = convertRangeValue(configurationNode.get("maxValue"), type);
+						configurations.add(new RangeConfiguration(minValue, maxValue));
+					} catch (BadDataTypeException e) {
+						throw new InvalidDatatypeJsonException(
+								"Could not convert 'minValue' and 'maxValue' of RangeConfiguration because the column configuration contains an invalid data type!",
+								configurationNode.traverse().currentLocation(), e);
+					} catch (DataBuildingException e) {
+						throw new DataBuildingJsonException(
+								"Could not convert 'minValue' and 'maxValue' of RangeConfiguration because of an invalid format!",
+								configurationNode.traverse().currentLocation(), e);
+					}
+				}
+			} else {
+				configurations.add(jsonParser.getCodec().readValue(configurationNode.traverse(), Configuration.class));
+			}
+		}
+
+		return configurations;
 	}
 }

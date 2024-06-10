@@ -11,7 +11,7 @@ import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { FileService } from "../../services/file.service";
 import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
-import { FileConfiguration } from "src/app/shared/model/file-configuration";
+import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
 import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
 import { LoadingService } from "src/app/shared/services/loading.service";
 import { ConfigurationService } from "../../../../shared/services/configuration.service";
@@ -102,7 +102,7 @@ export class UploadFileComponent {
         if (!this.dataFile) {
             return;
         }
-        this.setFileType(this.file);
+        this.setFileType(this.dataFile);
         this.fileService.setFile(this.dataFile);
         this.fileService.setFileConfiguration(this.fileConfiguration)
 

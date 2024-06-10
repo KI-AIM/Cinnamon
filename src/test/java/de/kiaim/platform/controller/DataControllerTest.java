@@ -44,7 +44,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void estimateDatatypesMissingFile() throws Exception {
-		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfiguration();
 
 		mockMvc.perform(multipart("/api/data/datatypes")
 				                .param("fileConfiguration",
@@ -112,7 +112,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void readAndValidateDataMissingFile() throws Exception {
-		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfiguration();
 		final DataConfiguration configuration = TestModelHelper.generateDataConfiguration();
 
 		mockMvc.perform(multipart("/api/data/validation")
@@ -469,7 +469,7 @@ class DataControllerTest extends ControllerTest {
 
 	private void testStoreConfig(final String configuration) throws Exception {
 		MockMultipartFile file = TestModelHelper.loadCsvFile();
-		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfigurationCsv();
+		FileConfiguration fileConfiguration = TestModelHelper.generateFileConfiguration();
 
 		final String result = mockMvc.perform(multipart("/api/data/configuration")
 				                                      .file(file)

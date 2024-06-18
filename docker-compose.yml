@@ -19,7 +19,7 @@ services:
     ki-aim-platform:
         image: ki-aim-platform:0.0.1
         build:
-            context: ./
+            context: ./ki-aim-platform
             dockerfile: Dockerfile
         container_name: ki-aim-platform
         restart: always

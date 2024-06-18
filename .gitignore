@@ -31,10 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-### Angular ###
-ki-aim-frontend/.angular
-ki-aim-frontend/.vscode
-ki-aim-frontend/dist
-ki-aim-frontend/node_modules
-ki-aim-frontend/node

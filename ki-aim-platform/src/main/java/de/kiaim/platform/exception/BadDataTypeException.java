@@ -6,7 +6,7 @@ package de.kiaim.platform.exception;
 public class BadDataTypeException extends BadRequestException {
 
 	/**
-	 * Exception code for data type {@link de.kiaim.platform.model.data.DataType#UNDEFINED} in requests.
+	 * Exception code for data type {@link de.kiaim.model.enumeration.DataType#UNDEFINED} in requests.
 	 */
 	public static final String UNDEFINED_NOT_ALLOWED = "1";
 

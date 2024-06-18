@@ -8,9 +8,9 @@ A platform for providing anonymized data by combining anonymization and syntheti
 This project contains the following submodules.
 For more information, read the README.md of the submodules.
 
-## KI-AIM-Platform
+### KI-AIM-Platform
 
-The KI-AIM platform provides the data management as well as the front end of the project.
+The KI-AIM platform provides data management as well as the front end of the project.
 
 ## Build & Run
 To build the entire project with all submodules, run

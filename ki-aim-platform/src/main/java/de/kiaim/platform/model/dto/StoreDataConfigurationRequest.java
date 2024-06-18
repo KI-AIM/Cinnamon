@@ -1,6 +1,6 @@
 package de.kiaim.platform.model.dto;
 
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.model.configuration.DataConfiguration;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

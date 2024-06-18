@@ -2,9 +2,9 @@ package de.kiaim.platform.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.model.configuration.DataConfiguration;
 import de.kiaim.platform.ContextRequiredTest;
 import de.kiaim.platform.TestModelHelper;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

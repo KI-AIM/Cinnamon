@@ -1,8 +1,8 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.model.configuration.DataConfiguration;
 import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.model.file.FileConfiguration;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.file.FileType;
 

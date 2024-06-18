@@ -1,8 +1,11 @@
 package de.kiaim.platform;
 
+import de.kiaim.model.configuration.*;
+import de.kiaim.model.data.*;
+import de.kiaim.model.enumeration.DataScale;
+import de.kiaim.model.enumeration.DataType;
+import de.kiaim.model.enumeration.TransformationErrorType;
 import de.kiaim.platform.model.*;
-import de.kiaim.platform.model.data.*;
-import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.file.CsvFileConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.file.FileType;
@@ -57,7 +60,7 @@ public class TestModelHelper {
 	public static DataConfiguration generateEstimatedConfiguration() {
 		final DataConfiguration configuration = new DataConfiguration();
 		final List<ColumnConfiguration> columnConfigurations = List.of(
-				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, DataScale.NOMINAL ,new ArrayList<>()),
+				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, DataScale.NOMINAL, new ArrayList<>()),
 				new ColumnConfiguration(1, "column1_date", DataType.DATE, DataScale.DATE, new ArrayList<>()),
 				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, DataScale.DATE, new ArrayList<>()),
 				new ColumnConfiguration(3, "column3_decimal", DataType.DECIMAL, DataScale.RATIO, new ArrayList<>()),

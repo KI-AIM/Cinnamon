@@ -1,15 +1,15 @@
 package de.kiaim.platform.service;
 
+import de.kiaim.model.configuration.ColumnConfiguration;
+import de.kiaim.model.configuration.DataConfiguration;
+import de.kiaim.model.data.DataRow;
+import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.DatabaseTest;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.data.DataRow;
-import de.kiaim.platform.model.data.DataType;
-import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import org.junit.jupiter.api.Test;

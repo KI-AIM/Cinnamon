@@ -1,7 +1,7 @@
 package de.kiaim.platform.helper;
 
+import de.kiaim.model.configuration.DataConfiguration;
 import de.kiaim.platform.TestModelHelper;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

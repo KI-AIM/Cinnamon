@@ -1,11 +1,14 @@
 package de.kiaim.platform.processor;
 
-import de.kiaim.platform.helper.DataTransformationHelper;
-import de.kiaim.platform.model.*;
-import de.kiaim.platform.model.data.*;
-import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
-import de.kiaim.platform.model.data.exception.DataBuildingException;
+import de.kiaim.model.configuration.ColumnConfiguration;
+import de.kiaim.model.configuration.DataConfiguration;
+import de.kiaim.model.data.*;
+import de.kiaim.model.enumeration.DataType;
+import de.kiaim.model.exception.DataBuildingException;
+import de.kiaim.model.helper.DataTransformationHelper;
+import de.kiaim.platform.model.DataRowTransformationError;
+import de.kiaim.platform.model.DataTransformationError;
+import de.kiaim.platform.model.Pair;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 

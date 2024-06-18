@@ -2,10 +2,10 @@ package de.kiaim.platform.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import de.kiaim.model.data.Data;
+import de.kiaim.model.data.DataRow;
+import de.kiaim.model.configuration.DataConfiguration;
 import de.kiaim.platform.json.DataSetSerializer;
-import de.kiaim.platform.model.data.Data;
-import de.kiaim.platform.model.data.DataRow;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

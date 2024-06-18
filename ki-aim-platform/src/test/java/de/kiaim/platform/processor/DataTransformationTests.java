@@ -1,10 +1,13 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.model.configuration.*;
+import de.kiaim.model.data.*;
+import de.kiaim.model.enumeration.DataScale;
+import de.kiaim.model.enumeration.DataType;
+import de.kiaim.model.enumeration.TransformationErrorType;
 import de.kiaim.platform.PlatformApplication;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.*;
-import de.kiaim.platform.model.data.*;
-import de.kiaim.platform.model.data.configuration.*;
 import de.kiaim.platform.model.file.FileConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

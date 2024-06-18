@@ -1,16 +1,12 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.model.configuration.*;
+import de.kiaim.model.data.DataRow;
+import de.kiaim.model.enumeration.DataType;
+import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataSet;
-import de.kiaim.platform.model.data.DataRow;
-import de.kiaim.platform.model.data.DataType;
-import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
-import de.kiaim.platform.model.data.configuration.Configuration;
-import de.kiaim.platform.model.data.configuration.DataScale;
-import de.kiaim.platform.model.data.configuration.DateFormatConfiguration;
-import de.kiaim.platform.model.data.configuration.DateTimeFormatConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.file.FileType;
 import de.kiaim.platform.model.file.XlsxFileConfiguration;

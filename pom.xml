@@ -3,8 +3,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.1.5</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+
     <groupId>de.ki-aim</groupId>
-    <!-- TODO add name of the app -->
     <artifactId>ki-aim-parent</artifactId>
     <version>0.0.1</version>
     <packaging>pom</packaging>
@@ -13,11 +19,15 @@
 
     <properties>
         <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <swagger.version>2.2.22</swagger.version>
     </properties>
 
     <modules>
+        <module>ki-aim-model</module>
         <module>ki-aim-platform</module>
     </modules>
 

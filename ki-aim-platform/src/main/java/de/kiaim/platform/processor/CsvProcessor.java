@@ -1,13 +1,13 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.model.configuration.DataConfiguration;
+import de.kiaim.model.data.DataRow;
+import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataSet;
-import de.kiaim.platform.model.data.DataRow;
 import de.kiaim.platform.model.file.CsvFileConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
-import de.kiaim.platform.model.data.DataType;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.file.FileType;
 import org.apache.commons.csv.CSVFormat;

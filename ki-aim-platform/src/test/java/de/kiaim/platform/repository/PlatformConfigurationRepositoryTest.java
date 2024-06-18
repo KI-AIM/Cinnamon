@@ -1,9 +1,9 @@
 package de.kiaim.platform.repository;
 
+import de.kiaim.model.configuration.DataConfiguration;
 import de.kiaim.platform.DatabaseTest;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;

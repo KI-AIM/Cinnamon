@@ -1,7 +1,7 @@
 package de.kiaim.platform.helper;
 
-import de.kiaim.platform.model.data.configuration.ColumnConfiguration;
-import de.kiaim.platform.model.data.configuration.DataConfiguration;
+import de.kiaim.model.configuration.ColumnConfiguration;
+import de.kiaim.model.configuration.DataConfiguration;
 import org.springframework.stereotype.Service;
 
 @Service

@@ -1,5 +1,6 @@
 package de.kiaim.platform.model;
 
+import de.kiaim.model.enumeration.TransformationErrorType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;

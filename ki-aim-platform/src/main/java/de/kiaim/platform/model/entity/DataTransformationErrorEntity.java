@@ -1,6 +1,6 @@
 package de.kiaim.platform.model.entity;
 
-import de.kiaim.platform.model.TransformationErrorType;
+import de.kiaim.model.enumeration.TransformationErrorType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,4 +1,4 @@
-package de.kiaim.model.configuration;
+package de.kiaim.model.configuration.data;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

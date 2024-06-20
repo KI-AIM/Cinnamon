@@ -4,8 +4,8 @@ package de.kiaim.platform.processor;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.kiaim.model.configuration.ColumnConfiguration;
-import de.kiaim.model.configuration.DataConfiguration;
+import de.kiaim.model.configuration.data.ColumnConfiguration;
+import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.data.BooleanData;
 import de.kiaim.model.data.DataRow;

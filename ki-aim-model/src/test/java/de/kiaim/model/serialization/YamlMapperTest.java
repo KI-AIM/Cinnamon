@@ -3,7 +3,7 @@ package de.kiaim.model.serialization;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.DataConfigurationTestHelper;
-import de.kiaim.model.configuration.DataConfiguration;
+import de.kiaim.model.configuration.data.DataConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

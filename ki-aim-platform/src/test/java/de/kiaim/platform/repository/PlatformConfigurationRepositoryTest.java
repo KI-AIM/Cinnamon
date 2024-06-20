@@ -1,6 +1,6 @@
 package de.kiaim.platform.repository;
 
-import de.kiaim.model.configuration.DataConfiguration;
+import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.platform.DatabaseTest;
 import de.kiaim.platform.TestModelHelper;
 import de.kiaim.platform.model.entity.PlatformConfigurationEntity;

@@ -1,4 +1,4 @@
-package de.kiaim.model.configuration;
+package de.kiaim.model.configuration.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.model.enumeration.DataType;

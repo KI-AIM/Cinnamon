@@ -1,6 +1,6 @@
 package de.kiaim.platform.processor;
 
-import de.kiaim.model.configuration.DataConfiguration;
+import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.exception.BadColumnNameException;

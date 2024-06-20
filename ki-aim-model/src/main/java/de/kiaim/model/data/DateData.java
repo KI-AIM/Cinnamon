@@ -1,8 +1,8 @@
 package de.kiaim.model.data;
 
-import de.kiaim.model.configuration.Configuration;
-import de.kiaim.model.configuration.DateFormatConfiguration;
-import de.kiaim.model.configuration.RangeConfiguration;
+import de.kiaim.model.configuration.data.Configuration;
+import de.kiaim.model.configuration.data.DateFormatConfiguration;
+import de.kiaim.model.configuration.data.RangeConfiguration;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.exception.DateFormatException;
 import de.kiaim.model.exception.ValueNotInRangeException;

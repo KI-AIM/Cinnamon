@@ -1,4 +1,4 @@
-package de.kiaim.model.configuration;
+package de.kiaim.model.configuration.data;
 
 import de.kiaim.model.data.*;
 import io.swagger.v3.oas.annotations.media.Schema;

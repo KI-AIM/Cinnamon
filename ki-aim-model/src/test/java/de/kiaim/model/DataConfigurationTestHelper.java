@@ -1,6 +1,6 @@
 package de.kiaim.model;
 
-import de.kiaim.model.configuration.*;
+import de.kiaim.model.configuration.data.*;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;

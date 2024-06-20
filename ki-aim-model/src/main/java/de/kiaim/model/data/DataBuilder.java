@@ -1,6 +1,6 @@
 package de.kiaim.model.data;
 
-import de.kiaim.model.configuration.Configuration;
+import de.kiaim.model.configuration.data.Configuration;
 import de.kiaim.model.exception.DataBuildingException;
 
 import java.util.List;

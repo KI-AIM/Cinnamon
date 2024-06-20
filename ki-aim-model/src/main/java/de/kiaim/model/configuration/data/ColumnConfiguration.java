@@ -1,4 +1,4 @@
-package de.kiaim.model.configuration;
+package de.kiaim.model.configuration.data;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.kiaim.model.enumeration.DataScale;

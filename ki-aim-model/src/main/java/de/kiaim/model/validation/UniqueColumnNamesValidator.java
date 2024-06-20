@@ -1,6 +1,6 @@
 package de.kiaim.model.validation;
 
-import de.kiaim.model.configuration.ColumnConfiguration;
+import de.kiaim.model.configuration.data.ColumnConfiguration;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.springframework.lang.Nullable;

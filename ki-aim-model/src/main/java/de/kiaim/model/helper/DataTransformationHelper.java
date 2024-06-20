@@ -1,6 +1,6 @@
 package de.kiaim.model.helper;
 
-import de.kiaim.model.configuration.ColumnConfiguration;
+import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.exception.ConfigurationFormatException;

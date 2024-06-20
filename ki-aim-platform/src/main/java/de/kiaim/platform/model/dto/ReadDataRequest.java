@@ -1,6 +1,6 @@
 package de.kiaim.platform.model.dto;
 
-import de.kiaim.model.configuration.DataConfiguration;
+import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.validation.MatchingNumberColumnsConstraint;
 import io.swagger.v3.oas.annotations.Parameter;

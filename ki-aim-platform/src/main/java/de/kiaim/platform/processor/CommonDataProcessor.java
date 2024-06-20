@@ -1,7 +1,7 @@
 package de.kiaim.platform.processor;
 
-import de.kiaim.model.configuration.ColumnConfiguration;
-import de.kiaim.model.configuration.DataConfiguration;
+import de.kiaim.model.configuration.data.ColumnConfiguration;
+import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.exception.DataBuildingException;

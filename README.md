@@ -8,6 +8,10 @@ A platform for providing anonymized data by combining anonymization and syntheti
 This project contains the following submodules.
 For more information, read the README.md of the submodules.
 
+### KI-AIM-Model
+
+This submodule contains commonly used model classes like configurations.
+
 ### KI-AIM-Platform
 
 The KI-AIM platform provides data management as well as the front end of the project.

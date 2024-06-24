@@ -34,4 +34,12 @@ public class DataSetTest {
 		final DataSet expected = DataSetTestHelper.generateDataSet(true);
 		assertEquals(expected, dataSet);
 	}
+
+	@Test
+	public void serializationTest() throws JsonProcessingException {
+		final DataSet dataSet = DataSetTestHelper.generateDataSet(true);
+		final String json = jsonMapper.writeValueAsString(dataSet);
+		final String expected = DataSetTestHelper.generateDataSetAsJson();
+		assertEquals(expected, json);
+	}
 }

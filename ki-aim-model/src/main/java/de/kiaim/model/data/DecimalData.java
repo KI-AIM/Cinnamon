@@ -76,6 +76,15 @@ public class DecimalData extends Data {
 			return new DecimalData(this.value);
 		}
 
+		/**
+		 * Builds the DecimalData object containing a null value.
+		 * @return the new DecimalData object.
+		 */
+		@Override
+		public DecimalData buildNull() {
+			return new DecimalData(null);
+		}
+
 		private void processConfigurations(List<Configuration> configurationList) {
 			for (Configuration configuration : configurationList) {
 				if (configuration instanceof RangeConfiguration) {

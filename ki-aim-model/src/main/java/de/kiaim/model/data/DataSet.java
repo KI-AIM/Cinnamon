@@ -1,11 +1,9 @@
-package de.kiaim.platform.model;
+package de.kiaim.model.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import de.kiaim.model.data.Data;
-import de.kiaim.model.data.DataRow;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.platform.json.DataSetSerializer;
+import de.kiaim.model.serialization.DataSetDeserializer;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -20,7 +18,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @EqualsAndHashCode
 @ToString
-@JsonSerialize(using = DataSetSerializer.class)
+@JsonDeserialize(using = DataSetDeserializer.class)
 public class DataSet {
 
 	@JsonIgnore
@@ -38,5 +36,11 @@ public class DataSet {
 		                                      .map(Data::getValue)
 		                                      .collect(Collectors.toList()))
 		               .toList();
+	}
+
+	public void setData(final List<List<Data>> data) {
+		for (final List<Data> row : data) {
+			dataRows.add(new DataRow(row));
+		}
 	}
 }

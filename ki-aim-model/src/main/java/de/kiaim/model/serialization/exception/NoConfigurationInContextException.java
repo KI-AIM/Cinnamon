@@ -1,9 +1,9 @@
-package de.kiaim.model.serialization;
+package de.kiaim.model.serialization.exception;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class NoConfigurationInContextException extends JsonProcessingException {
-	protected NoConfigurationInContextException(String msg) {
+	public NoConfigurationInContextException(String msg) {
 		super(msg);
 	}
 }

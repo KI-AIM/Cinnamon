@@ -80,6 +80,15 @@ public class DateTimeData extends Data {
 		}
 
 		/**
+		 * Builds the DateTimeData object containing a null value.
+		 * @return the new DateTimeData object.
+		 */
+		@Override
+		public DateTimeData buildNull() {
+			return new DateTimeData(null);
+		}
+
+		/**
 		 * Processes the parsed configurations one by one for validation
 		 * @param configurationList A List of different Configuration objects
 		 */

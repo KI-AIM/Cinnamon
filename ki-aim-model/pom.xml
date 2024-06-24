@@ -35,6 +35,10 @@
       <artifactId>jackson-datatype-jsr310</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-parameter-names</artifactId>
+    </dependency>
 
     <!-- Swagger -->
     <dependency>
@@ -80,7 +84,6 @@
       <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
 </project>

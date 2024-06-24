@@ -65,5 +65,14 @@ public class BooleanData extends Data {
 		public BooleanData build() {
 			return new BooleanData(this.value);
 		}
+
+		/**
+		 * Builds the BooleanData object containing a null value.
+		 * @return the new BooleanData object.
+		 */
+		@Override
+		public BooleanData buildNull() {
+			return new BooleanData(null);
+		}
 	}
 }

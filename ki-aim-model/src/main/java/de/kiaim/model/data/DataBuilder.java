@@ -26,4 +26,10 @@ public interface DataBuilder {
      */
      Data build();
 
+    /**
+     * Builds the Data object containing a null value.
+     * @return the new Data object.
+     */
+     Data buildNull();
+
 }

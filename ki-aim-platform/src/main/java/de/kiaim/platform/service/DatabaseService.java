@@ -11,7 +11,6 @@ import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
-import de.kiaim.platform.model.DataSet;
 import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;

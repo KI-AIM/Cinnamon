@@ -14,6 +14,8 @@ import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.exception.ConfigurationFormatException;
 import de.kiaim.model.exception.DataBuildingException;
 import de.kiaim.model.helper.DataTransformationHelper;
+import de.kiaim.model.serialization.exception.DataBuildingJsonException;
+import de.kiaim.model.serialization.exception.InvalidDatatypeJsonException;
 import org.springframework.lang.Nullable;
 
 import java.io.IOException;

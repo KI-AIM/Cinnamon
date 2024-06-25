@@ -78,6 +78,15 @@ public class DateData extends Data {
 		}
 
 		/**
+		 * Builds the DateData object containing a null value.
+		 * @return the new DateData object.
+		 */
+		@Override
+		public DateData buildNull() {
+			return new DateData(null);
+		}
+
+		/**
 		 * Processes the parsed configurations one by one for validation
 		 * @param configurationList A List of different Configuration objects
 		 */

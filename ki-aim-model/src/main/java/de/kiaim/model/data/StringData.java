@@ -61,6 +61,15 @@ public class StringData extends Data {
 		}
 
 		/**
+		 * Builds the StringData object containing a null value.
+		 * @return the new StringData object.
+		 */
+		@Override
+		public StringData buildNull() {
+			return new StringData(null);
+		}
+
+		/**
 		 * Processes the parsed configurations one by one for validation
 		 * @param value The value that should be validated
 		 * @param configurationList A List of different Configuration objects

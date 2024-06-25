@@ -77,6 +77,15 @@ public class IntegerData extends Data {
 			return new IntegerData(this.value);
 		}
 
+		/**
+		 * Builds the IntegerData object containing a null value.
+		 * @return the new IntegerData object.
+		 */
+		@Override
+		public IntegerData buildNull() {
+			return new IntegerData(null);
+		}
+
 		private void processConfigurations(List<Configuration> configurationList) {
 			for (Configuration configuration : configurationList) {
 				if (configuration instanceof RangeConfiguration) {

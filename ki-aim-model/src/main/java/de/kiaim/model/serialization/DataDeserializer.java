@@ -11,6 +11,9 @@ import de.kiaim.model.data.DataBuilder;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.exception.ConfigurationFormatException;
 import de.kiaim.model.helper.DataTransformationHelper;
+import de.kiaim.model.serialization.exception.DataFormatException;
+import de.kiaim.model.serialization.exception.InvalidDatatypeJsonException;
+import de.kiaim.model.serialization.exception.NoConfigurationInContextException;
 
 import java.io.IOException;
 import java.util.ArrayList;

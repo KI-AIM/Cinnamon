@@ -1,6 +1,6 @@
 package de.kiaim.platform.service;
 
-import de.kiaim.platform.model.DataSet;
+import de.kiaim.model.data.DataSet;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;

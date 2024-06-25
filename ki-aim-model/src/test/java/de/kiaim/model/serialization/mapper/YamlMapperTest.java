@@ -1,4 +1,4 @@
-package de.kiaim.model.serialization;
+package de.kiaim.model.serialization.mapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

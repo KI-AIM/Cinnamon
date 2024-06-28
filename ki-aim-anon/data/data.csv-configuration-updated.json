@@ -1,0 +1,612 @@
+{
+  "configurations": [
+    {
+      "index": 0,
+      "name": "death_date",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 1,
+      "name": "death_reason_icd10",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 2,
+      "name": "death_tumor",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(J|N|U)"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "name": "distant_metastasis_date",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 4,
+      "name": "distant_metastasis_localisation",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(PUL|OSS|HEP|BRA|LYM|MAR|PLE|PER|ADR|SKI|OTH|GEN)"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "name": "ecog",
+      "type": "INTEGER",
+      "scale": "ORDINAL",
+      "configurations": [
+        {
+          "name": "RangeConfiguration",
+          "minValue": 0,
+          "maxValue": 4
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "name": "history_assessment_distant_metastasis",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(K|R|T|P|N|F|U|X)"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "name": "history_assessment_lymphnodes",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(K|R|T|P|N|F|U|X)"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "name": "history_assessment_primary_tumor",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(K|T|P|N|R|F|U|X)"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "name": "history_date",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 10,
+      "name": "history_overall_assessment_tumor_status",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(V|T|K|P|D|B|R|Y|U|X)"
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "name": "intention_of_operation",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 12,
+      "name": "intention_of_radiotherapy",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 13,
+      "name": "ldh",
+      "type": "INTEGER",
+      "scale": "RATIO",
+      "configurations": []
+    },
+    {
+      "index": 14,
+      "name": "morphology_code",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 15,
+      "name": "morphology_text",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 16,
+      "name": "number_of_affected_lymphnodes",
+      "type": "INTEGER",
+      "scale": "RATIO",
+      "configurations": []
+    },
+    {
+      "index": 17,
+      "name": "number_of_affected_sentinel_lymphnodes",
+      "type": "INTEGER",
+      "scale": "RATIO",
+      "configurations": []
+    },
+    {
+      "index": 18,
+      "name": "number_of_analyzed_lymphnodes",
+      "type": "INTEGER",
+      "scale": "RATIO",
+      "configurations": []
+    },
+    {
+      "index": 19,
+      "name": "number_of_analyzed_sentinel_lymphnodes",
+      "type": "INTEGER",
+      "scale": "RATIO",
+      "configurations": []
+    },
+    {
+      "index": 20,
+      "name": "operation_complication",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(N|U|ABD|ABS|ASF|ANI|AEP|ALR|ANS|AEE|API|BIF|BOG|BOE|BSI|CHI|DAI|DPS|DIC|DEP|DLU|DSI|ENF|GER|HEM|HUR|HAE|HFI|HNK|HZI|HRS|HNA|HOP|HYB|HYF|IFV|KAS|KES|KIM|KRA|KDS|LEV|LOE|LYF|LYE|MES|MIL|MED|MAT|MYI|RNB|NAB|NIN|OES|OSM|PAF|PIT|PAB|PPA|PAV|PER|PLB|PEY|PLE|PMN|PNT|PDA|PAE|RPA|RIN|SKI|SES|SFH|STK|TZP|TIA|TRZ|WUH|WSS)"
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "name": "operation_date",
+      "type": "DATE_TIME",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 22,
+      "name": "ops_code",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 23,
+      "name": "patient_birthdate",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 24,
+      "name": "patient_gender",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 25,
+      "name": "primary-tumor-topography_ICD",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 26,
+      "name": "primary-tumor_ICD",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 27,
+      "name": "radiotherapy_adverse_events_CTCAE_code",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 28,
+      "name": "radiotherapy_adverse_events_CTCAE_grade",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(K|1|2|3|4|5|U)"
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "name": "radiotherapy_application_type",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(P|P-ST|P-4D|P-ST4D|PRCN-ST|PRCN-4D|PRCN-ST4D|PRCJ|PRCJ-4D|K|KHDR|KLDR|KPDR|I|IHDR|ILDR|IPDR|MSIRT|MPRRT|MPSMA|MRJT|MRIT|M|S)"
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "name": "radiotherapy_begin_date",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 31,
+      "name": "radiotherapy_end_date",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 32,
+      "name": "radiotherapy_end_reason",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(E|F|A|P|S|V|T|U)"
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "name": "radiotherapy_position_operation",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(O|A|N|I|Z|S)"
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "name": "radiotherapy_single_dosage",
+      "type": "DECIMAL",
+      "scale": "RATIO",
+      "configurations": []
+    },
+    {
+      "index": 35,
+      "name": "radiotherapy_site_targetarea",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(L|R|B|M|U|T)"
+        }
+      ]
+    },
+    {
+      "index": 36,
+      "name": "radiotherapy_targetarea",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(1[.][1-5]|2[.][1-9]|3[.][1-9]|4[.][1-13]|5[.][1-12]|6[.][1-19]|7[.][1-9]|8[.][1-2]|9[.][1-15]|10[.][1-3])"
+        }
+      ]
+    },
+    {
+      "index": 37,
+      "name": "radiotherapy_total_dosage",
+      "type": "DECIMAL",
+      "scale": "RATIO",
+      "configurations": []
+    },
+    {
+      "index": 38,
+      "name": "residual_tumor_status_operation",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(R0|R1|R2a|R2b|RX)"
+        }
+      ]
+    },
+    {
+      "index": 39,
+      "name": "residual_tumor_status_primary_therapy",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(R0|R1|R2a|R2b|RX)"
+        }
+      ]
+    },
+    {
+      "index": 40,
+      "name": "security_distance_primary_tumor",
+      "type": "INTEGER",
+      "scale": "INTERVAL",
+      "configurations": []
+    },
+    {
+      "index": 41,
+      "name": "systemic_therapy_adverse_events_CTCAE_code",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 42,
+      "name": "systemic_therapy_adverse_events_CTCAE_grade",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(K|1|2|3|4|5|U)"
+        }
+      ]
+    },
+    {
+      "index": 43,
+      "name": "systemic_therapy_begin_date",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 44,
+      "name": "systemic_therapy_end_date",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 45,
+      "name": "systemic_therapy_end_reason",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(E|R|W|A|P|S|V|T|U)"
+        }
+      ]
+    },
+    {
+      "index": 46,
+      "name": "systemic_therapy_position_operation",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(O|A|N|I|S)"
+        }
+      ]
+    },
+    {
+      "index": 47,
+      "name": "systemic_therapy_protocol",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 48,
+      "name": "systemic_therapy_reason",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(K|P|S|X)"
+        }
+      ]
+    },
+    {
+      "index": 49,
+      "name": "systemic_therapy_substance",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 50,
+      "name": "systemic_therapy_type",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(CH|HO|IM|ZS|CI|CZ|CIZ|IZ|SZ|AS|WS|WW|SO)"
+        }
+      ]
+    },
+    {
+      "index": 51,
+      "name": "tnm_cpu_m-prefix",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "[c]{0,1}[p]{0,1}[u]{0,1}"
+        }
+      ]
+    },
+    {
+      "index": 52,
+      "name": "tnm_cpu_n-prefix",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "[c]{0,1}[p]{0,1}[u]{0,1}"
+        }
+      ]
+    },
+    {
+      "index": 53,
+      "name": "tnm_cpu_t-prefix",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "[c]{0,1}[p]{0,1}[u]{0,1}"
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "name": "tnm_date",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 55,
+      "name": "tnm_m_category",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "[M][1-2]"
+        }
+      ]
+    },
+    {
+      "index": 56,
+      "name": "tnm_n_category",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "[N][1-3X]"
+        }
+      ]
+    },
+    {
+      "index": 57,
+      "name": "tnm_r-symbol",
+      "type": "BOOLEAN",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 58,
+      "name": "tnm_t_category",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "[T][1-4X]"
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "name": "tnm_y-symbol",
+      "type": "BOOLEAN",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 60,
+      "name": "tumor_conference_date",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 61,
+      "name": "tumor_conference_type",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(praeth|postop|postth|ther)"
+        }
+      ]
+    },
+    {
+      "index": 62,
+      "name": "tumor_diagnosis_date",
+      "type": "DATE",
+      "scale": "DATE",
+      "configurations": []
+    },
+    {
+      "index": 63,
+      "name": "tumor_localisation",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": []
+    },
+    {
+      "index": 64,
+      "name": "tumor_thickness",
+      "type": "DECIMAL",
+      "scale": "RATIO",
+      "configurations": []
+    },
+    {
+      "index": 65,
+      "name": "ulzeration",
+      "type": "STRING",
+      "scale": "NOMINAL",
+      "configurations": [
+        {
+          "name": "StringPatternConfiguration",
+          "pattern": "(J|N|U)"
+        }
+      ]
+    }
+  ]
+}

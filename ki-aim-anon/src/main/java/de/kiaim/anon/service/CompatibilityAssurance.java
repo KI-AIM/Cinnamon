@@ -45,6 +45,36 @@ public class CompatibilityAssurance {
     }
 
     /**
+     * Check the compatibility between a dataset configuration and rows.
+     * @param dataSet The DataSet to check.
+     * @throws IllegalArgumentException If there is a mismatch in the number of data elements or data types.
+     */
+    public static Boolean isDataSetCompatible(DataSet dataSet) {
+        List<ColumnConfiguration> configurations = dataSet.getDataConfiguration().getConfigurations();
+        int expectedNumberOfColumns = configurations.size();
+
+        for (DataRow row : dataSet.getDataRows()) {
+            List<Data> rowData = row.getData();
+
+            // Check that the number of data items in the row corresponds to the number of columns in configuration
+            if (rowData.size() != expectedNumberOfColumns) {
+                throw new IllegalArgumentException("Mismatch in number of columns. Expected: " + expectedNumberOfColumns + ", Found: " + rowData.size());
+            }
+
+            // Check the type of each data item against its column configuration
+            for (int i = 0; i < rowData.size(); i++) {
+                Data data = rowData.get(i);
+                DataType expectedDataType = configurations.get(i).getType();
+                // TODO : handle null data case
+                if (!isDataTypeCompatible(data, expectedDataType)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
      * Check the compatibility between an anonymization configuration and a data configuration.
      * This method ensures that the attribute configurations in the anonymization configuration
      * match the column configurations in the data configuration.

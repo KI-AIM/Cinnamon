@@ -1,12 +1,7 @@
 package de.kiaim.anon.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import de.kiaim.anon.AbstractAnonymizationTests;
 import de.kiaim.anon.model.AnonymizationRequest;
-import de.kiaim.anon.service.AnonymizationService;
-import de.kiaim.model.configuration.anonymization.DatasetAnonymizationConfig;
-import de.kiaim.model.data.DataSet;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -19,15 +14,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class AnonymizationControllerTest extends AbstractAnonymizationTests{
+public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
     @Autowired
     private MockMvc mockMvc;

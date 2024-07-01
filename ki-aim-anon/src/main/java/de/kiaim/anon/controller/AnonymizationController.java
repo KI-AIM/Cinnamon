@@ -34,7 +34,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
     })
     @PostMapping(value = "/anonymization", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String[][]> processAnonymization(
+    public ResponseEntity<DataSet> processAnonymization(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Request containing the dataset and anonymization configuration.",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -45,8 +45,8 @@ public class AnonymizationController {
         try {
             DataSet dataSet = request.getDataSet();
             DatasetAnonymizationConfig datasetAnonymizationConfig = request.getDatasetAnonymizationConfig();
-            String[][] results = anonymizationService.anonymizeData(dataSet, datasetAnonymizationConfig);
-            return ResponseEntity.ok(results);
+            DataSet result = anonymizationService.anonymizeData(dataSet, datasetAnonymizationConfig);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }

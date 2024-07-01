@@ -2,6 +2,7 @@ package de.kiaim.anon.service;
 
 import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.anon.converter.DatasetAnonConfigConverter;
+import de.kiaim.anon.processor.AnonymizedDatasetProcessor;
 import de.kiaim.model.configuration.anonymization.DatasetAnonymizationConfig;
 import de.kiaim.anon.processor.DataSetProcessor;
 import de.kiaim.model.configuration.data.DataConfiguration;
@@ -43,7 +44,7 @@ public class AnonymizationService {
         return false;
     }
 
-    public String[][] anonymizeData(DataSet dataSet, DatasetAnonymizationConfig datasetAnonymizationConfig) throws Exception {
+    public DataSet anonymizeData(DataSet dataSet, DatasetAnonymizationConfig datasetAnonymizationConfig) throws Exception {
         // TODO : add quality check mechanism
 
         // Convert KI-AIM DatasetAnonymizationConfig to AnonymizationConfig usable by JAL
@@ -59,7 +60,7 @@ public class AnonymizationService {
 
         // TODO : add quality assurance, built dataSet object from String[]
 
-        return anonymizer.AnonymizedData();
+        return AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), dataSet.getDataConfiguration());
     }
 
 

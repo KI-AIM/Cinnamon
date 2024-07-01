@@ -1,4 +1,4 @@
-package de.kiaim.anon.controller;
+package de.kiaim.anon;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.anon.service.AnonymizationService;

@@ -1,19 +1,25 @@
 package de.kiaim.anon.processor;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.model.data.*;
+import de.kiaim.model.data.Data;
+import de.kiaim.model.data.DataRow;
+import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataType;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static de.kiaim.anon.helper.DataGeneration.createDataByTypeAndValue;
+
 /**
  * Build DataSet object from String[][] result of anonymized dataset.
  * Check Data valus validity with original DataConfiguration.
  *
  */
+@Component
 public class AnonymizedDatasetProcessor {
     //    Need to check that the data type before and after data anon didn't change.
 //    Small functions to check specific transformations and if append correct it.
@@ -29,7 +35,12 @@ public class AnonymizedDatasetProcessor {
     public static DataSet convertToDataSet(String[][] anonymizedData, DataConfiguration originalDataConfiguration) {
         List<DataRow> dataRows = new ArrayList<>();
 
-        for (String[] row : anonymizedData) {
+        // Check if the first row contains column names
+        boolean firstRowIsHeader = isHeaderRow(anonymizedData[0], originalDataConfiguration);
+        int startRow = firstRowIsHeader ? 1 : 0;
+
+        for (int rowIndex = startRow; rowIndex < anonymizedData.length; rowIndex++) {
+            String[] row = anonymizedData[rowIndex];
             List<Data> dataList = new ArrayList<>();
             for (int i = 0; i < row.length; i++) {
                 String value = row[i];
@@ -40,13 +51,22 @@ public class AnonymizedDatasetProcessor {
                 value = checkAndCorrectValue(value, type);
 
                 // Convert value in Data
-                Data dataValue = convertStringToData(value, type);
+                Data dataValue = createDataByTypeAndValue(type, parseValueByType(value, type));
                 dataList.add(dataValue);
             }
             dataRows.add(new DataRow(dataList));
         }
 
         return new DataSet(dataRows, originalDataConfiguration);
+    }
+
+    private static boolean isHeaderRow(String[] row, DataConfiguration dataConfiguration) {
+        for (int i = 0; i < row.length; i++) {
+            if (!row[i].equalsIgnoreCase(dataConfiguration.getConfigurations().get(i).getName())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String checkAndCorrectValue(String value, DataType type) {
@@ -65,15 +85,27 @@ public class AnonymizedDatasetProcessor {
         return value;
     }
 
-    private static Data convertStringToData(String value, DataType type) {
+    private static Object parseValueByType(String value, DataType type) {
+        if (value == null) {
+            return switch (type) {
+                case BOOLEAN -> null;
+                case DATE -> null;
+                case DATE_TIME -> null;
+                case DECIMAL -> null;
+                case INTEGER -> null;
+                case STRING -> null;
+                default -> throw new IllegalArgumentException("Unknown data type: " + type);
+            };
+        }
+
         try {
             return switch (type) {
-                case BOOLEAN -> new BooleanData(Boolean.parseBoolean(value));
-                case DATE -> new DateData(LocalDate.parse(value));
-                case DATE_TIME -> new DateTimeData(LocalDateTime.parse(value));
-                case DECIMAL -> new DecimalData(Float.parseFloat(value));
-                case INTEGER -> new IntegerData(Integer.parseInt(value));
-                case STRING -> new StringData(value);
+                case BOOLEAN -> Boolean.parseBoolean(value);
+                case DATE -> LocalDate.parse(value);
+                case DATE_TIME -> LocalDateTime.parse(value);
+                case DECIMAL -> Float.parseFloat(value);
+                case INTEGER -> Integer.parseInt(value);
+                case STRING -> value;
                 default -> throw new IllegalArgumentException("Unknown data type: " + type);
             };
         } catch (Exception e) {

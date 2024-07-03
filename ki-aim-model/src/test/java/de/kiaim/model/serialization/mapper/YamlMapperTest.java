@@ -11,15 +11,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class YamlMapperTest {
 
+	static ObjectMapper jsonMapper;
 	static ObjectMapper yamlMapper;
 
 	@BeforeAll
 	static void beforeAll() {
+		jsonMapper = JsonMapper.jsonMapper();
 		yamlMapper = YamlMapper.yamlMapper();
 	}
 
 	@Test
-	public void serializeDataConfiguration() throws JsonProcessingException {
+	public void serializeDataConfigurationJson() throws JsonProcessingException {
+		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
+		final String json = jsonMapper.writeValueAsString(dataConfiguration);
+		final String expected = DataConfigurationTestHelper.generateDataConfigurationAsJson();
+		assertEquals(expected, json);
+	}
+
+	@Test
+	public void serializeDataConfigurationYaml() throws JsonProcessingException {
 		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
 		final String yaml = yamlMapper.writeValueAsString(dataConfiguration);
 		final String expected = DataConfigurationTestHelper.generateDataConfigurationAsYaml();
@@ -27,7 +37,15 @@ public class YamlMapperTest {
 	}
 
 	@Test
-	public void deserializeDataConfiguration() throws JsonProcessingException {
+	public void deserializeDataConfigurationJson() throws JsonProcessingException {
+		final String json = DataConfigurationTestHelper.generateDataConfigurationAsJson();
+		final DataConfiguration dataConfiguration = yamlMapper.readValue(json, DataConfiguration.class);
+		final DataConfiguration expected = DataConfigurationTestHelper.generateDataConfiguration();
+		assertEquals(expected, dataConfiguration);
+	}
+
+	@Test
+	public void deserializeDataConfigurationYaml() throws JsonProcessingException {
 		final String yaml = DataConfigurationTestHelper.generateDataConfigurationAsYaml();
 		final DataConfiguration dataConfiguration = yamlMapper.readValue(yaml, DataConfiguration.class);
 		final DataConfiguration expected = DataConfigurationTestHelper.generateDataConfiguration();

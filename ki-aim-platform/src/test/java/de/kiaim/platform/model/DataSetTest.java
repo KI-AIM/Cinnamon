@@ -19,13 +19,13 @@ public class DataSetTest extends ContextRequiredTest {
 	public void serializationTest() throws JsonProcessingException {
 		final DataSet dataSet = TestModelHelper.generateDataSet(true);
 		final String json = objectMapper.writeValueAsString(dataSet);
-		final String expected = TestModelHelper.generateDataSetAsJson();
+		final String expected = TestModelHelper.generateDataSetAsYaml();
 		assertEquals(expected, json);
 	}
 
 	@Test
 	public void deserializationTest() throws JsonProcessingException {
-		final String json = TestModelHelper.generateDataSetAsJson();
+		final String json = TestModelHelper.generateDataSetAsYaml();
 		final DataSet dataSet = objectMapper.readValue(json, DataSet.class);
 		final DataSet expected = TestModelHelper.generateDataSet(true);
 		assertEquals(expected, dataSet);

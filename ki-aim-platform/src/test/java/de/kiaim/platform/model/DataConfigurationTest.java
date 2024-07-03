@@ -19,13 +19,13 @@ public class DataConfigurationTest extends ContextRequiredTest {
 	public void serializationTest() throws JsonProcessingException {
 		final DataConfiguration dataConfiguration = TestModelHelper.generateDataConfiguration();
 		final String json = objectMapper.writeValueAsString(dataConfiguration);
-		final String expected = TestModelHelper.generateDataConfigurationAsJson();
+		final String expected = TestModelHelper.generateDataConfigurationAsYaml();
 		assertEquals(expected, json);
 	}
 
 	@Test
 	public void deserializationTest() throws JsonProcessingException {
-		final String json = TestModelHelper.generateDataConfigurationAsJson();
+		final String json = TestModelHelper.generateDataConfigurationAsYaml();
 		final DataConfiguration dataConfiguration = objectMapper.readValue(json, DataConfiguration.class);
 		final DataConfiguration expected = TestModelHelper.generateDataConfiguration();
 		assertEquals(expected, dataConfiguration);

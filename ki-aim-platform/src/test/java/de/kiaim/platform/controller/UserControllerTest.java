@@ -27,7 +27,7 @@ public class UserControllerTest extends ControllerTest {
 	public void login() throws Exception {
 		mockMvc.perform(get("/api/user/login"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string("true"));
+		       .andExpect(content().string("true\n"));
 	}
 
 	@Test

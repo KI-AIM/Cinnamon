@@ -1,5 +1,6 @@
 package de.kiaim.platform.controller;
 
+import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.dto.RegisterRequest;
 import de.kiaim.platform.service.UserService;
@@ -35,7 +36,7 @@ public class UserController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "User credential are correct.",
-			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			             content = @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                schema = @Schema(implementation = Boolean.class),
 			                                examples = {@ExampleObject("true")})),
 			@ApiResponse(responseCode = "500",
@@ -43,7 +44,7 @@ public class UserController {
 			             content = @Content),
 	})
 	@GetMapping(value = "/login",
-	            produces = MediaType.APPLICATION_JSON_VALUE)
+	            produces = CustomMediaType.APPLICATION_YAML_VALUE)
 	public boolean login() {
 		return true;
 	}
@@ -56,12 +57,12 @@ public class UserController {
 			             content = @Content),
 			@ApiResponse(responseCode = "400",
 			             description = "Invalid request. Email is not available or passwords do not match.",
-			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			             content = @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@PostMapping(value = "/register",
-	             consumes = MediaType.APPLICATION_JSON_VALUE,
-	             produces = MediaType.APPLICATION_JSON_VALUE)
+	             consumes = CustomMediaType.APPLICATION_YAML_VALUE,
+	             produces = CustomMediaType.APPLICATION_YAML_VALUE)
 	public ResponseEntity<Object> register(
 			@Parameter(description = "Information about the new user.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE),

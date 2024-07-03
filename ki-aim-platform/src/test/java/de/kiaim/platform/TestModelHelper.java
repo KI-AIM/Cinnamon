@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 
 public class TestModelHelper {
 	public static FileConfiguration generateFileConfiguration() {
@@ -25,9 +26,9 @@ public class TestModelHelper {
 
 	public static FileConfiguration generateFileConfiguration(final boolean hasHeader) {
 		return new FileConfiguration(
-			FileType.CSV,
-			new CsvFileConfiguration(",", "\n", '"', hasHeader),
-			new XlsxFileConfiguration(hasHeader)
+				FileType.CSV,
+				new CsvFileConfiguration(",", "\n", '"', hasHeader),
+				new XlsxFileConfiguration(hasHeader)
 		);
 	}
 
@@ -36,15 +37,21 @@ public class TestModelHelper {
 
 		final DateFormatConfiguration dateFormatConfiguration = new DateFormatConfiguration("yyyy-MM-dd");
 		dataConfiguration.getConfigurations().get(1).addConfiguration(dateFormatConfiguration);
-		final RangeConfiguration dateRangeConfiguration = new RangeConfiguration(new DateData(LocalDate.of(1970, 1, 1)), new DateData(LocalDate.of(2030, 1, 1)));
+		final RangeConfiguration dateRangeConfiguration = new RangeConfiguration(new DateData(LocalDate.of(1970, 1, 1)),
+		                                                                         new DateData(
+				                                                                         LocalDate.of(2030, 1, 1)));
 		dataConfiguration.getConfigurations().get(1).addConfiguration(dateRangeConfiguration);
 
-		final DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
+		final DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration(
+				"yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
 		dataConfiguration.getConfigurations().get(2).addConfiguration(dateTimeFormatConfiguration);
-		final RangeConfiguration dateTimeRangeConfiguration = new RangeConfiguration(new DateTimeData(LocalDateTime.of(1970, 1, 1, 0, 1)), new DateTimeData(LocalDateTime.of(2030, 1, 1, 23, 59)));
+		final RangeConfiguration dateTimeRangeConfiguration = new RangeConfiguration(
+				new DateTimeData(LocalDateTime.of(1970, 1, 1, 0, 1)),
+				new DateTimeData(LocalDateTime.of(2030, 1, 1, 23, 59)));
 		dataConfiguration.getConfigurations().get(2).addConfiguration(dateTimeRangeConfiguration);
 
-		final RangeConfiguration integerRangeConfiguration = new RangeConfiguration(new IntegerData(0), new IntegerData(100));
+		final RangeConfiguration integerRangeConfiguration = new RangeConfiguration(new IntegerData(0),
+		                                                                            new IntegerData(100));
 		dataConfiguration.getConfigurations().get(4).addConfiguration(integerRangeConfiguration);
 
 		final StringPatternConfiguration stringPatternConfiguration = new StringPatternConfiguration(stringPattern);
@@ -136,48 +143,105 @@ public class TestModelHelper {
 		}
 	}
 
-	public static String generateDataSetColumnsAsJson() {
+	public static String generateDataSetColumnsAsYaml() {
 		return """
-                {"dataConfiguration":{"configurations":[{"index":0,"name":"column4_integer","type":"INTEGER","scale":"INTERVAL","configurations":[{"name":"RangeConfiguration","minValue":0,"maxValue":100}]},{"index":1,"name":"column0_boolean","type":"BOOLEAN","scale":"NOMINAL","configurations":[]}]},"data":[[42,true],[24,false],[null,true]]}""";
+				dataConfiguration:
+				  configurations:
+				  - index: 0
+				    name: "column4_integer"
+				    type: "INTEGER"
+				    scale: "INTERVAL"
+				    configurations:
+				    - name: "RangeConfiguration"
+				      minValue: 0
+				      maxValue: 100
+				  - index: 1
+				    name: "column0_boolean"
+				    type: "BOOLEAN"
+				    scale: "NOMINAL"
+				    configurations: []
+				data:
+				""" + generateDataColumnsAsYaml();
 	}
 
-	public static String generateDataColumnsAsJson() {
+	public static String generateDataColumnsAsYaml() {
 		return """
-				[[42,true],[24,false],[null,true]]""";
+				- - 42
+				  - true
+				- - 24
+				  - false
+				- - null
+				  - true
+				""";
 	}
 
-	public static String generateDataSetAsJson() {
-		return generateDataSetAsJson("null", "null");
+	public static String generateDataSetAsYaml() {
+		return generateDataSetAsYaml("null", "null");
 	}
 
-	public static String generateDataSetAsJson(final String missingValueEncoding, final String formatErrorEncoding) {
+	public static String generateDataSetAsYaml(final String missingValueEncoding, final String formatErrorEncoding) {
 		return
 				"""
-						{"dataConfiguration":""" + generateDataConfigurationAsJson() +
+						dataConfiguration:
+						""" + indentYaml(generateDataConfigurationAsYaml()) +
 				"""
-						,"data":""" + generateDataAsJson(missingValueEncoding, formatErrorEncoding) + "}";
+						data:
+						""" + generateDataAsYaml(missingValueEncoding, formatErrorEncoding);
 	}
 
-	public static String generateDataAsJson() {
-		return generateDataAsJson("null", "null");
+	public static String generateDataAsYaml() {
+		return generateDataAsYaml("null", "null");
 	}
 
-	public static String generateDataAsJson(final String missingValueEncoding, final String formatErrorEncoding) {
+	public static String generateDataAsYaml(final String missingValueEncoding, final String formatErrorEncoding) {
 		return
 				"""
-						[[true,"2023-11-20","2023-11-20T12:50:27.123456",4.2,42,"Hello World!"],[false,"2023-11-20","2023-11-20T12:50:27.123456",2.4,24,"Bye World!"],[true,"2023-11-20","""
-				+ missingValueEncoding + ",4.2," + formatErrorEncoding +
+						- - true
+						  - "2023-11-20"
+						  - "2023-11-20T12:50:27.123456"
+						  - 4.2
+						  - 42
+						  - "Hello World!"
+						- - false
+						  - "2023-11-20"
+						  - "2023-11-20T12:50:27.123456"
+						  - 2.4
+						  - 24
+						  - "Bye World!"
+						- - true
+						  - "2023-11-20"
+						  -\s""" + missingValueEncoding +
 				"""
-						,"Hello World!"]]""";
+					
+						\s\s- 4.2
+						  -\s""" + formatErrorEncoding +
+				"""
+						
+						  - "Hello World!"
+						""";
 	}
 
-
-	public static String generateTransformationResultAsJson() {
+	public static String generateTransformationResultAsYaml() {
 		return
 				"""
-						{"dataSet":{"dataConfiguration":""" + generateDataConfigurationAsJson() +
+						dataSet:
+						""" + indentYaml(generateDataSetAsYaml()) +
 				"""
-						,"data":[[true,"2023-11-20","2023-11-20T12:50:27.123456",4.2,42,"Hello World!"],[false,"2023-11-20","2023-11-20T12:50:27.123456",2.4,24,"Bye World!"],[true,"2023-11-20",null,4.2,null,"Hello World!"]]},"transformationErrors":[{"index":2,"rawValues":["true","2023-11-20","","4.2","forty two","Hello World!"],"dataTransformationErrors":[{"index":2,"errorType":"MISSING_VALUE"},{"index":4,"errorType":"FORMAT_ERROR"}]}]}""";
+						transformationErrors:
+						- index: 2
+						  rawValues:
+						  - "true"
+						  - "2023-11-20"
+						  - ""
+						  - "4.2"
+						  - "forty two"
+						  - "Hello World!"
+						  dataTransformationErrors:
+						  - index: 2
+						    errorType: "MISSING_VALUE"
+						  - index: 4
+						    errorType: "FORMAT_ERROR"
+						""";
 	}
 
 	public static String generateDataConfigurationAsJson() {
@@ -246,5 +310,10 @@ public class TestModelHelper {
 		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
 		return new MockMultipartFile("file", "file.csv", null,
 		                             classLoader.getResourceAsStream("testWithErrors.csv"));
+	}
+
+	private static String indentYaml(final String value) {
+		final String indent = "  ";
+		return indent + value.replaceAll("(?:\r\n?|\n)(?!\\z)", "$0" + Matcher.quoteReplacement(indent));
 	}
 }

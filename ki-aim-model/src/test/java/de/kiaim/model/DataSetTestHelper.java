@@ -5,6 +5,7 @@ import de.kiaim.model.data.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.regex.Matcher;
 
 public class DataSetTestHelper {
 
@@ -54,7 +55,7 @@ public class DataSetTestHelper {
 	public static String generateDataSetAsJson(final String missingValueEncoding, final String formatErrorEncoding) {
 		return
 				"""
-						{"dataConfiguration":""" + generateDataConfigurationAsJson() +
+						{"dataConfiguration":""" + DataConfigurationTestHelper.generateDataConfigurationAsJson() +
 				"""
 						,"data":""" + generateDataAsJson(missingValueEncoding, formatErrorEncoding) + "}";
 	}
@@ -68,8 +69,54 @@ public class DataSetTestHelper {
 						,"Hello World!"]]""";
 	}
 
-	public static String generateDataConfigurationAsJson() {
-		return """
-				{"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","scale":"NOMINAL","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","scale":"DATE","configurations":[{"name":"DateFormatConfiguration","dateFormatter":"yyyy-MM-dd"},{"name":"RangeConfiguration","minValue":"1970-01-01","maxValue":"2030-01-01"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","scale":"DATE","configurations":[{"name":"DateTimeFormatConfiguration","dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSSSS"},{"name":"RangeConfiguration","minValue":"1970-01-01T00:01:00","maxValue":"2030-01-01T23:59:00"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","scale":"RATIO","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","scale":"INTERVAL","configurations":[{"name":"RangeConfiguration","minValue":0,"maxValue":100}]},{"index":5,"name":"column5_string","type":"STRING","scale":"NOMINAL","configurations":[{"name":"StringPatternConfiguration","pattern":".*"}]}]}""";
+	public static String generateDataSetAsYaml() {
+		return generateDataSetAsYaml("null", "null");
+	}
+
+	public static String generateDataSetAsYaml(final String missingValueEncoding, final String formatErrorEncoding) {
+		return
+				"""
+						dataConfiguration:
+						""" + indentYaml(DataConfigurationTestHelper.generateDataConfigurationAsYaml()) +
+				"""
+						data:
+						""" + generateDataAsYaml(missingValueEncoding, formatErrorEncoding);
+	}
+
+	public static String generateDataAsYaml() {
+		return generateDataAsYaml("null", "null");
+	}
+
+	public static String generateDataAsYaml(final String missingValueEncoding, final String formatErrorEncoding) {
+		return
+				"""
+						- - true
+						  - "2023-11-20"
+						  - "2023-11-20T12:50:27.123456"
+						  - 4.2
+						  - 42
+						  - "Hello World!"
+						- - false
+						  - "2023-11-20"
+						  - "2023-11-20T12:50:27.123456"
+						  - 2.4
+						  - 24
+						  - "Bye World!"
+						- - true
+						  - "2023-11-20"
+						  -\s""" + missingValueEncoding +
+				"""
+					
+						\s\s- 4.2
+						  -\s""" + formatErrorEncoding +
+				"""
+						
+						  - "Hello World!"
+						""";
+	}
+
+	private static String indentYaml(final String value) {
+		final String indent = "  ";
+		return indent + value.replaceAll("(?:\r\n?|\n)(?!\\z)", "$0" + Matcher.quoteReplacement(indent));
 	}
 }

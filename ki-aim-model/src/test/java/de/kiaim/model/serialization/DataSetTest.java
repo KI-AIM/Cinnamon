@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.DataSetTestHelper;
 import de.kiaim.model.data.*;
 import de.kiaim.model.serialization.mapper.JsonMapper;
+import de.kiaim.model.serialization.mapper.YamlMapper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -13,14 +14,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class DataSetTest {
 
 	static ObjectMapper jsonMapper;
+	static ObjectMapper yamlMapper;
 
 	@BeforeAll
 	static void beforeAll() {
 		jsonMapper = JsonMapper.jsonMapper();
+		yamlMapper = YamlMapper.yamlMapper();
 	}
 
 	@Test
-	public void serializationTest() throws JsonProcessingException {
+	public void serializeJson() throws JsonProcessingException {
 		final DataSet dataSet = DataSetTestHelper.generateDataSet(true);
 		final String json = jsonMapper.writeValueAsString(dataSet);
 		final String expected = DataSetTestHelper.generateDataSetAsJson();
@@ -28,9 +31,25 @@ public class DataSetTest {
 	}
 
 	@Test
-	public void deserializationTest() throws JsonProcessingException {
+	public void serializeYaml() throws JsonProcessingException {
+		final DataSet dataSet = DataSetTestHelper.generateDataSet(true);
+		final String yaml = yamlMapper.writeValueAsString(dataSet);
+		final String expected = DataSetTestHelper.generateDataSetAsYaml();
+		assertEquals(expected, yaml);
+	}
+
+	@Test
+	public void deserializeJson() throws JsonProcessingException {
 		final String json = DataSetTestHelper.generateDataSetAsJson();
 		final DataSet dataSet = jsonMapper.readValue(json, DataSet.class);
+		final DataSet expected = DataSetTestHelper.generateDataSet(true);
+		assertEquals(expected, dataSet);
+	}
+
+	@Test
+	public void deserializeYaml() throws JsonProcessingException {
+		final String yaml = DataSetTestHelper.generateDataSetAsYaml();
+		final DataSet dataSet = yamlMapper.readValue(yaml, DataSet.class);
 		final DataSet expected = DataSetTestHelper.generateDataSet(true);
 		assertEquals(expected, dataSet);
 	}

@@ -18,7 +18,7 @@ public class TransformationResultTest extends ContextRequiredTest {
 	public void serializationTest() throws JsonProcessingException {
 		final TransformationResult transformationResult = TestModelHelper.generateTransformationResult(true);
 		final String json = objectMapper.writeValueAsString(transformationResult);
-		final String expected = TestModelHelper.generateTransformationResultAsJson();
+		final String expected = TestModelHelper.generateTransformationResultAsYaml();
 		assertEquals(expected, json);
 	}
 }

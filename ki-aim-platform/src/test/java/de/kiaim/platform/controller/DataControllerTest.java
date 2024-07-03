@@ -200,7 +200,7 @@ class DataControllerTest extends ControllerTest {
 		                       .andExpect(status().isOk())
 		                       .andReturn().getResponse().getContentAsString();
 
-		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
+		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result.trim()));
 
 		UserEntity testUser = getTestUser();
 
@@ -248,23 +248,23 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
-	void loadConfig() throws Exception {
+	void loadConfigYaml() throws Exception {
 		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration"))
 		       .andExpect(status().isOk())
 		       .andExpect(
-				       content().string(objectMapper.writeValueAsString(TestModelHelper.generateDataConfiguration())));
+				       content().string(TestModelHelper.generateDataConfigurationAsYaml()));
 	}
 
 	@Test
-	void loadConfigYaml() throws Exception {
+	void loadConfigJson() throws Exception {
 		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
-		                                      .param("format", "yaml"))
+		                                      .param("format", "json"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(TestModelHelper.generateDataConfigurationAsYaml()));
+		       .andExpect(content().string(TestModelHelper.generateDataConfigurationAsJson()));
 	}
 
 	// ================================================================================================================
@@ -277,7 +277,7 @@ class DataControllerTest extends ControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(TestModelHelper.generateDataAsJson()));
+		       .andExpect(content().string(TestModelHelper.generateDataAsYaml()));
 	}
 
 	@Test
@@ -301,7 +301,7 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(TestModelHelper.generateDataColumnsAsJson()));
+		       .andExpect(content().string(TestModelHelper.generateDataColumnsAsYaml()));
 	}
 
 	@Test
@@ -325,7 +325,7 @@ class DataControllerTest extends ControllerTest {
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(TestModelHelper.generateDataAsJson(wrapInQuotes(defaultNullEncoding),
+		       .andExpect(content().string(TestModelHelper.generateDataAsYaml(wrapInQuotes(defaultNullEncoding),
 		                                                                      wrapInQuotes(formatErrorEncoding))));
 	}
 
@@ -339,7 +339,7 @@ class DataControllerTest extends ControllerTest {
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", "$null"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(TestModelHelper.generateDataAsJson(wrapInQuotes(defaultNullEncoding),
+		       .andExpect(content().string(TestModelHelper.generateDataAsYaml(wrapInQuotes(defaultNullEncoding),
 		                                                                      "null")));
 	}
 
@@ -353,7 +353,7 @@ class DataControllerTest extends ControllerTest {
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", "$value"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(TestModelHelper.generateDataAsJson(wrapInQuotes(defaultNullEncoding),
+		       .andExpect(content().string(TestModelHelper.generateDataAsYaml(wrapInQuotes(defaultNullEncoding),
 		                                                                      wrapInQuotes("forty two"))));
 	}
 
@@ -371,7 +371,7 @@ class DataControllerTest extends ControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(TestModelHelper.generateDataSetAsJson()));
+		       .andExpect(content().string(TestModelHelper.generateDataSetAsYaml()));
 	}
 
 	@Test
@@ -395,7 +395,7 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(TestModelHelper.generateDataSetColumnsAsJson()));
+		       .andExpect(content().string(TestModelHelper.generateDataSetColumnsAsYaml()));
 	}
 
 	@Test
@@ -420,7 +420,7 @@ class DataControllerTest extends ControllerTest {
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
 		       .andExpect(status().isOk())
 		       .andExpect(
-				       content().string(TestModelHelper.generateDataSetAsJson(wrapInQuotes(defaultNullEncoding),
+				       content().string(TestModelHelper.generateDataSetAsYaml(wrapInQuotes(defaultNullEncoding),
 				                                                              wrapInQuotes(formatErrorEncoding))));
 	}
 
@@ -460,7 +460,7 @@ class DataControllerTest extends ControllerTest {
 		                       .andExpect(status().isOk())
 		                       .andReturn().getResponse().getContentAsString();
 
-		assertDoesNotThrow(() -> Long.parseLong(result));
+		assertDoesNotThrow(() -> Long.parseLong(result.trim()));
 	}
 
 	private String wrapInQuotes(final String value) {
@@ -479,7 +479,7 @@ class DataControllerTest extends ControllerTest {
 		                             .andExpect(status().isOk())
 		                             .andReturn().getResponse().getContentAsString();
 
-		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result));
+		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result.trim()));
 
 		UserEntity testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
@@ -506,7 +506,7 @@ class DataControllerTest extends ControllerTest {
 		                                   .andExpect(status().isOk())
 		                                   .andReturn().getResponse().getContentAsString();
 
-		final long dataSetIdUpdate = assertDoesNotThrow(() -> Long.parseLong(resultUpdate));
+		final long dataSetIdUpdate = assertDoesNotThrow(() -> Long.parseLong(resultUpdate.trim()));
 
 		testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");

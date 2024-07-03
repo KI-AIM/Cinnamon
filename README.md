@@ -16,6 +16,10 @@ This submodule contains commonly used model classes like configurations.
 
 The KI-AIM platform provides data management as well as the front end of the project.
 
+### KI-AIM-Test
+
+Submodule containing all tests for the other modules as well as test utilities.
+
 ## Build & Run
 To build the entire project with all submodules, run
 

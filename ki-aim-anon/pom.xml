@@ -33,6 +33,19 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- YAML -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>2.15.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.15.3</version>
+        </dependency>
+
         <!-- Annotations -->
         <dependency>
             <groupId>org.projectlombok</groupId>

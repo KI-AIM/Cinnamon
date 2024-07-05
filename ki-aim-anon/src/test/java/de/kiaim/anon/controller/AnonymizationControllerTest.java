@@ -26,9 +26,9 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     @Test
     public void testProcessAnonymization() throws Exception {
         assertNotNull(dataSet);
-        assertNotNull(datasetAnonymizationConfig);
+        assertNotNull(kiaimAnonConfig);
 
-        AnonymizationRequest request = new AnonymizationRequest(dataSet, datasetAnonymizationConfig);
+        AnonymizationRequest request = new AnonymizationRequest(dataSet, kiaimAnonConfig);
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         MvcResult result = mockMvc.perform(post("/api/anonymization/anonymization")

@@ -1,6 +1,6 @@
 package de.kiaim.anon.model;
 
-import de.kiaim.model.configuration.anonymization.DatasetAnonymizationConfig;
+import de.kiaim.model.configuration.anonymization.AnonymizationConfig;
 import de.kiaim.model.data.DataSet;
 import lombok.*;
 
@@ -11,5 +11,5 @@ import lombok.*;
 @ToString
 public class AnonymizationRequest {
     private DataSet dataSet;
-    private DatasetAnonymizationConfig datasetAnonymizationConfig;
+    private AnonymizationConfig kiaimAnonConfig;
 }

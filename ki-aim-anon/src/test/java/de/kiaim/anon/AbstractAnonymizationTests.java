@@ -3,7 +3,7 @@ package de.kiaim.anon;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.anon.service.AnonymizationService;
 import de.kiaim.model.configuration.anonymization.AnonConfigReader;
-import de.kiaim.model.configuration.anonymization.DatasetAnonymizationConfig;
+import de.kiaim.model.configuration.anonymization.AnonymizationConfig;
 import de.kiaim.model.data.DataSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ public class AbstractAnonymizationTests {
     protected ObjectMapper objectMapper;
 
     protected DataSet dataSet;
-    protected DatasetAnonymizationConfig datasetAnonymizationConfig;
+    protected AnonymizationConfig kiaimAnonConfig;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -40,7 +40,7 @@ public class AbstractAnonymizationTests {
         String anonConfigPath = "data/data.csv-anon-configuration-demodata-v1.yml";
 
         dataSet = importDataset(datasetPath);
-        datasetAnonymizationConfig = importAnonConfig(anonConfigPath);
+        kiaimAnonConfig = importAnonConfig(anonConfigPath);
     }
 
     public DataSet importDataset(String datasetPath) throws IOException {
@@ -48,7 +48,7 @@ public class AbstractAnonymizationTests {
         return objectMapper.readValue(dataSetJson, DataSet.class);
     }
 
-    public DatasetAnonymizationConfig importAnonConfig(String anonConfigPath) throws IOException {
+    public AnonymizationConfig importAnonConfig(String anonConfigPath) throws IOException {
         File file = ResourceUtils.getFile(anonConfigPath);
         return anonConfigReader.readAnonymizationConfig(file.getAbsolutePath());
     }
@@ -56,6 +56,7 @@ public class AbstractAnonymizationTests {
     @Test
     public void testProcessAnonymization() throws Exception {
         assertNotNull(dataSet);
-        assertNotNull(datasetAnonymizationConfig);
+        assertNotNull(kiaimAnonConfig);
+        System.out.println(kiaimAnonConfig);
     }
 }

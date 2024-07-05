@@ -42,6 +42,18 @@ public class AnonymizationConfig {
     /** List of attributes and their config */
     private List<AttributeConfig> attributeConfigs;
 
+    public AnonymizationConfig(Collection<PrivacyModel> privacyModelList,
+                               double suppressionLimit,
+                               QualityModelConfig qualityModel,
+                               boolean localGeneralization,
+                               List<AttributeConfig> attributeConfigs) {
+        this.privacyModelList = privacyModelList;
+        this.suppressionLimit = suppressionLimit;
+        this.qualityModel = qualityModel;
+        this.localGeneralization = localGeneralization;
+        this.attributeConfigs = attributeConfigs;
+    }
+
 
     // TODO (KO): move to converter?
     public JALConfig toJalConfig(String name){

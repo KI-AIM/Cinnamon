@@ -28,10 +28,10 @@ public class AnonConfigReader {
         this.objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
-    public DatasetAnonymizationConfig readAnonymizationConfig(String pathToAnonymizationConfig) throws IOException {
+    public AnonymizationConfig readAnonymizationConfig(String pathToAnonymizationConfig) throws IOException {
         log.debug("Reading anonymization configuration from {}", pathToAnonymizationConfig);
         try (InputStream input = Files.newInputStream(Paths.get(pathToAnonymizationConfig))) {
-            return objectMapper.readValue(input, DatasetAnonymizationConfig.class);
+            return objectMapper.readValue(input, AnonymizationConfig.class);
         } catch (IOException e) {
             log.error("Failed to read anonymization configuration from {}", pathToAnonymizationConfig, e);
             throw e;

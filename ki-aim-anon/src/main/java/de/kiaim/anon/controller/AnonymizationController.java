@@ -1,8 +1,8 @@
 package de.kiaim.anon.controller;
 
 import de.kiaim.anon.model.AnonymizationRequest;
-import de.kiaim.model.configuration.anonymization.DatasetAnonymizationConfig;
 import de.kiaim.anon.service.AnonymizationService;
+import de.kiaim.model.configuration.anonymization.AnonymizationConfig;
 import de.kiaim.model.data.DataSet;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -44,8 +44,8 @@ public class AnonymizationController {
             @RequestBody(required = true) AnonymizationRequest request) {
         try {
             DataSet dataSet = request.getDataSet();
-            DatasetAnonymizationConfig datasetAnonymizationConfig = request.getDatasetAnonymizationConfig();
-            DataSet result = anonymizationService.anonymizeData(dataSet, datasetAnonymizationConfig);
+            AnonymizationConfig kiaimAnonConfig = request.getKiaimAnonConfig();
+            DataSet result = anonymizationService.anonymizeData(dataSet, kiaimAnonConfig);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

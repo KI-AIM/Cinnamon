@@ -1,9 +1,8 @@
 package de.kiaim.anon.service;
 
 import de.kiaim.anon.config.AnonymizationConfig;
-import de.kiaim.anon.converter.DatasetAnonConfigConverter;
+import de.kiaim.anon.converter.KiaimAnonConfigConverter;
 import de.kiaim.anon.processor.AnonymizedDatasetProcessor;
-import de.kiaim.model.configuration.anonymization.DatasetAnonymizationConfig;
 import de.kiaim.anon.processor.DataSetProcessor;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataSet;
@@ -34,7 +33,7 @@ public class AnonymizationService {
     private DataSetProcessor dataSetProcessor;
 
     @Autowired
-    private DatasetAnonConfigConverter datasetAnonConfigConverter;
+    private KiaimAnonConfigConverter datasetAnonConfigConverter;
 
     protected boolean checkDataConfiguration(DataSet dataset, DataConfiguration config, AnonymizationConfig anonConfig){
         // check if configuration and dataset is consistent, will probably be already made when creating the dataset object
@@ -44,16 +43,19 @@ public class AnonymizationService {
         return false;
     }
 
-    public DataSet anonymizeData(DataSet dataSet, DatasetAnonymizationConfig datasetAnonymizationConfig) throws Exception {
+    public DataSet anonymizeData(DataSet dataSet, de.kiaim.model.configuration.anonymization.AnonymizationConfig kiaimAnonConfig) throws Exception {
         // TODO : add quality check mechanism
-
+        System.out.println("Start Anon");
         // Convert KI-AIM DatasetAnonymizationConfig to AnonymizationConfig usable by JAL
-        AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(datasetAnonymizationConfig, dataSet);
-
+        AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(kiaimAnonConfig, dataSet);
+        System.out.println("AnonConfig converted in JAL object:");
+        System.out.println(anonymizationConfigConverted);
         // Convert KI-AIM DataSet object to String[][] usable by JAL
         String[][] jalData = dataSetProcessor.convertDatasetToStringArray(dataSet);
 
-        // TODO : add mechanism to make anon name variable
+        System.out.println("Jal data generated, start anonymize");
+        // TODO : add mechanism to make anon name variable: add process ID
+
 
         Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig("AnonymizationJALV0"));
         anonymizer.anonymize();

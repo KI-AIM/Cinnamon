@@ -1,12 +1,11 @@
-anonymizationConfiguration:
-  privacyModels:
+privacyModels:
 #    - name: "K-Anon"
 #      values: 1
-    - name: "AvgRisk"
-      values: 0.1
-  suppressionLimit: "90"
-  qualityModel: "LOSS"
-  localGeneralization: False
+  - name: "AvgRisk"
+    values: 0.1
+suppressionLimit: "90"
+qualityModel: "LOSS"
+localGeneralization: False
 attributeConfigurations:
 - index: 0
   name: "death_date"

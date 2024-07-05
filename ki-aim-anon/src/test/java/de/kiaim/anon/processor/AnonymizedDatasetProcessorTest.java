@@ -20,7 +20,7 @@ public class AnonymizedDatasetProcessorTest extends AbstractAnonymizationTests {
 
     @BeforeEach
     public void setAnonymizedDataset() throws Exception {
-        anonymizedDataset = anonymizationService.anonymizeData(dataSet, datasetAnonymizationConfig);
+        anonymizedDataset = anonymizationService.anonymizeData(dataSet, kiaimAnonConfig);
     }
 
     @Test

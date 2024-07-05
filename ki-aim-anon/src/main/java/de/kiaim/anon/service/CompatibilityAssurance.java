@@ -1,7 +1,7 @@
 package de.kiaim.anon.service;
 
+import de.kiaim.model.configuration.anonymization.AnonymizationConfig;
 import de.kiaim.model.configuration.anonymization.AttributeConfig;
-import de.kiaim.model.configuration.anonymization.DatasetAnonymizationConfig;
 import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.*;
@@ -91,7 +91,7 @@ public class CompatibilityAssurance {
      *                                  differs from the corresponding scale in the data configuration.
      */
     public static void checkAnonAndDataConfigCompatibility(
-            DatasetAnonymizationConfig anonymizationConfig, DataConfiguration dataConfiguration){
+            AnonymizationConfig anonymizationConfig, DataConfiguration dataConfiguration){
         if (anonymizationConfig.getAttributeConfigurations().size() != dataConfiguration.getConfigurations().size()) {
             throw new IllegalArgumentException(anonymizationConfig.getAttributeConfigurations().size() +
                     "attributes found in anon config while dataset contains " + dataConfiguration.getConfigurations().size() + " attributes.");

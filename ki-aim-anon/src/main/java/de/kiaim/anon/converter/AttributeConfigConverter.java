@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  */
 public class AttributeConfigConverter {
     /**
-     * Converts a KI-AIM specific AttributeConfig to a general AttributeConfig
+     * Converts a KI-AIM specific AttributeConfig to a general AttributeConfig,
      * using ColumnConfiguration for name, type, scale fields.
      * extracting min and max values if applicable.
      *

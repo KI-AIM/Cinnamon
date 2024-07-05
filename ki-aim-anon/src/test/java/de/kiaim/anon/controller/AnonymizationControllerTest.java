@@ -31,7 +31,7 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
         AnonymizationRequest request = new AnonymizationRequest(dataSet, kiaimAnonConfig);
         String jsonRequest = objectMapper.writeValueAsString(request);
 
-        MvcResult result = mockMvc.perform(post("/api/anonymization/anonymization")
+        MvcResult result = mockMvc.perform(post("/api/anonymization/anonymization_tabular")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk())// Display result in console

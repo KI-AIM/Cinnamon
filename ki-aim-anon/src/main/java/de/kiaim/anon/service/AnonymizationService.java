@@ -47,7 +47,7 @@ public class AnonymizationService {
         // TODO : add quality check mechanism
         System.out.println("Start Anon");
         // Convert KI-AIM DatasetAnonymizationConfig to AnonymizationConfig usable by JAL
-        AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(kiaimAnonConfig, dataSet);
+        AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(kiaimAnonConfig, dataSet.getDataConfiguration());
         System.out.println("AnonConfig converted in JAL object:");
         System.out.println(anonymizationConfigConverted);
         // Convert KI-AIM DataSet object to String[][] usable by JAL

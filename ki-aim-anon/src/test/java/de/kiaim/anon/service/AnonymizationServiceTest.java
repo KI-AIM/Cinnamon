@@ -18,7 +18,7 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
 
     @Test
     public void testAnonymizationService(){
-        AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(kiaimAnonConfig, dataSet);
+        AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(kiaimAnonConfig, dataSet.getDataConfiguration());
         System.out.println("AnonConfig converted in JAL object:");
         System.out.println(anonymizationConfigConverted);
     }

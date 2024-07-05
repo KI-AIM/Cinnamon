@@ -18,14 +18,9 @@ import java.util.List;
 @ToString
 public class AttributeConfig {
     private int index;
-    private String name;
-    private DataType dataType;
     private String attributeType;
-    private DataScale scale;
-    private String dateFormat;
     private List<String> order;
     private String transformation;
     private String anonyGroup;
     private Hierarchy hierarchy;
-
 }

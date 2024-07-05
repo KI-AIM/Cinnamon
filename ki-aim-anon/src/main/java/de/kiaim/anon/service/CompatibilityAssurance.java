@@ -75,66 +75,18 @@ public class CompatibilityAssurance {
     }
 
     /**
-     * Check the compatibility between an anonymization configuration and a data configuration.
-     * This method ensures that the attribute configurations in the anonymization configuration
-     * match the column configurations in the data configuration.
-     *
-     * @param anonymizationConfig The anonymization configuration to check.
-     * @param dataConfiguration The data configuration to check.
-     * @throws IllegalArgumentException if the number of attributes in the anonymization configuration
-     *                                  differs from the number of columns in the data configuration.
-     * @throws IllegalArgumentException if the index of an attribute in the anonymization configuration
-     *                                  differs from the corresponding index in the data configuration.
-     * @throws IllegalArgumentException if the data type of an attribute in the anonymization configuration
-     *                                  differs from the corresponding data type in the data configuration.
-     * @throws IllegalArgumentException if the scale of an attribute in the anonymization configuration
-     *                                  differs from the corresponding scale in the data configuration.
-     */
-    public static void checkAnonAndDataConfigCompatibility(
-            AnonymizationConfig anonymizationConfig, DataConfiguration dataConfiguration){
-        if (anonymizationConfig.getAttributeConfigurations().size() != dataConfiguration.getConfigurations().size()) {
-            throw new IllegalArgumentException(anonymizationConfig.getAttributeConfigurations().size() +
-                    "attributes found in anon config while dataset contains " + dataConfiguration.getConfigurations().size() + " attributes.");
-        }
-
-        for (AttributeConfig attributeConfig : anonymizationConfig.getAttributeConfigurations()){
-            String name = attributeConfig.getName();
-            ColumnConfiguration columnConfiguration = dataConfiguration.getColumnConfigurationByColumnName(name);
-            if (attributeConfig.getIndex() != columnConfiguration.getIndex()){
-                throw new IllegalArgumentException(anonymizationConfig.getAttributeConfigurations().size() +
-                        "attributes found in anon config while dataset contains " + dataConfiguration.getConfigurations().size() + " attributes.");
-            }
-//            if (attributeConfig.getDataType() != columnConfiguration.getType()){
-//                throw new IllegalArgumentException(name + " attributes is of type " + attributeConfig.getAttributeType()
-//                + " in anon config but "+ columnConfiguration.getType() + " in data config.");
-//            }
-//            if (attributeConfig.getScale() != columnConfiguration.getScale()){
-//                throw new IllegalArgumentException(name + " attributes is of scale " + attributeConfig.getScale()
-//                        + " in anon config but "+ columnConfiguration.getScale() + " in data config.");
-//            }
-        }
-    }
-
-    /**
      * Helper function to determine if the data type of Data object is compatible with the expected data type.
      */
     private static boolean isDataTypeCompatible(Data data, DataType expectedDataType) {
-        switch (expectedDataType) {
-            case STRING:
-                return data instanceof StringData;
-            case INTEGER:
-                return data instanceof IntegerData;
-            case DECIMAL:
-                return data instanceof DecimalData;
-            case BOOLEAN:
-                return data instanceof BooleanData;
-            case DATE:
-                return data instanceof DateData;
-            case DATE_TIME:
-                return data instanceof DateTimeData;
-            default:
-                return false;
-        }
+        return switch (expectedDataType) {
+            case STRING -> data instanceof StringData;
+            case INTEGER -> data instanceof IntegerData;
+            case DECIMAL -> data instanceof DecimalData;
+            case BOOLEAN -> data instanceof BooleanData;
+            case DATE -> data instanceof DateData;
+            case DATE_TIME -> data instanceof DateTimeData;
+            default -> false;
+        };
     }
 
     /**

@@ -1,12 +1,15 @@
 package de.kiaim.anon.converter;
 
+import de.kiaim.model.configuration.data.*;
 import de.kiaim.model.data.Data;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.model.enumeration.DataType;
 import org.bihmi.jal.config.AttributeConfig;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -16,23 +19,25 @@ import java.util.stream.Collectors;
  */
 public class AttributeConfigConverter {
     /**
-     * Converts a KI-AIM specific AttributeConfig to a general AttributeConfig, extracting min and max values if applicable.
+     * Converts a KI-AIM specific AttributeConfig to a general AttributeConfig
+     * using ColumnConfiguration for name, type, scale fields.
+     * extracting min and max values if applicable.
      *
      * @param kiAttributeConfig The KI-AIM specific AttributeConfig to be converted.
-     * @param dataSet The dataset from which to extract min and max values for numeric columns.
+     * @param columnConfig The dataset from which to extract min and max values for numeric columns.
      * @return The converted AttributeConfig.
      */
     public static AttributeConfig convert(
             de.kiaim.model.configuration.anonymization.AttributeConfig kiAttributeConfig,
-            DataSet dataSet) {
+            ColumnConfiguration columnConfig) {
 
         Object minValue = null;
         Object maxValue = null;
 
-        List<DataRow> rows = dataSet.getDataRows();
-        List<Data> columnData = rows.stream()
-                .map(row -> row.getData().get(kiAttributeConfig.getIndex()))
-                .toList();
+//        List<DataRow> rows = dataSet.getDataRows();
+//        List<Data> columnData = rows.stream()
+//                .map(row -> row.getData().get(kiAttributeConfig.getIndex()))
+//                .toList();
 
 //        switch (kiAttributeConfig.getDataType()) {
 //            case DECIMAL:
@@ -46,12 +51,17 @@ public class AttributeConfigConverter {
 //            // TODO : handle date (?)
 //        }
 
+        Optional<String> dateFormat = Optional.empty();
+        if (columnConfig.getType() == DataType.DATE || columnConfig.getType() == DataType.DATE_TIME) {
+            dateFormat = getDateFormat(columnConfig);
+        }
+
         AttributeConfig.AttributeConfigBuilder builder = AttributeConfig.builder()
-                .name(kiAttributeConfig.getName())
-                .dataType(kiAttributeConfig.getDataType().toString())
+                .name(columnConfig.getName())
+                .dataType(columnConfig.getType().toString())
                 .attributeType(kiAttributeConfig.getAttributeType())
-                .dateFormat(kiAttributeConfig.getDateFormat())
-                .hierarchyConfig(HierarchyConverter.convert(kiAttributeConfig.getHierarchy(), kiAttributeConfig.getName()));
+                .dateFormat(dateFormat.orElse(null))
+                .hierarchyConfig(HierarchyConverter.convert(kiAttributeConfig.getHierarchy(), columnConfig.getName()));
 
         if (minValue != null) {
             builder.min(minValue);
@@ -63,6 +73,16 @@ public class AttributeConfigConverter {
         return builder.build();
     }
 
+    private static Optional<String> getDateFormat(ColumnConfiguration columnConfig) {
+        for (Configuration config : columnConfig.getConfigurations()) {
+            if (config instanceof DateFormatConfiguration) {
+                return Optional.of(((DateFormatConfiguration) config).getDateFormatter());
+            } else if (config instanceof DateTimeFormatConfiguration) {
+                return Optional.of(((DateTimeFormatConfiguration) config).getDateTimeFormatter());
+            }
+        }
+        return Optional.empty();
+    }
 
     /**
      * Extracts the minimum value from a list of Data objects.
@@ -106,9 +126,13 @@ public class AttributeConfigConverter {
 
     public static List<AttributeConfig> convertList(
             List<de.kiaim.model.configuration.anonymization.AttributeConfig> kiAttributeConfigs,
-            DataSet dataSet) {
+            DataConfiguration dataConfig) {
         return kiAttributeConfigs.stream()
-                .map(kiAttributeConfig -> convert(kiAttributeConfig, dataSet))
+                .map(kiAttributeConfig -> {
+                    int index = kiAttributeConfig.getIndex();
+                    ColumnConfiguration columnConfig = dataConfig.getConfigurations().get(index);
+                    return convert(kiAttributeConfig, columnConfig);
+                })
                 .collect(Collectors.toList());
     }
 }

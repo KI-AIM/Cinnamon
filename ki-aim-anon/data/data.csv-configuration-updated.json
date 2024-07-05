@@ -585,8 +585,8 @@
     {
       "index": 63,
       "name": "tumor_localisation",
-      "type": "STRING",
-      "scale": "NOMINAL",
+      "type": "INTEGER",
+      "scale": "INTERVAL",
       "configurations": []
     },
     {

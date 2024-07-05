@@ -3,6 +3,7 @@ package de.kiaim.anon.service;
 import de.kiaim.anon.AbstractAnonymizationTests;
 import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.anon.converter.KiaimAnonConfigConverter;
+import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.data.DataSet;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +24,11 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     @Test
     public void testAnonymizationService() throws Exception {
         AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(kiaimAnonConfig, dataSet.getDataConfiguration());
-        System.out.println("AnonConfig converted in JAL object:");
-        System.out.println(anonymizationConfigConverted);
-
+//        System.out.println("AnonConfig converted in JAL object:");
+//        System.out.println(anonymizationConfigConverted);
+        ColumnConfiguration tumorConfig = dataSet.getDataConfiguration().getColumnConfigurationByColumnName("tumor_localisation");
+        System.out.println("Test class: dataSet config for tumor_localisation");
+        System.out.println(tumorConfig);
         DataSet anonymizedDataset = anonymizationService.anonymizeData(dataSet, kiaimAnonConfig);
         assertNotNull(anonymizedDataset);
     }

@@ -57,6 +57,6 @@ public class AbstractAnonymizationTests {
     public void testProcessAnonymization() throws Exception {
         assertNotNull(dataSet);
         assertNotNull(kiaimAnonConfig);
-        System.out.println(kiaimAnonConfig);
+//        System.out.println(kiaimAnonConfig);
     }
 }

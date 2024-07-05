@@ -9,6 +9,9 @@ public class DataTypeConverter {
             case "INTEGER" -> DataType.INTEGER;
             case "DECIMAL" -> DataType.DECIMAL;
             case "ORDERED_STRING" -> DataType.ORDERED_STRING;
+//            // TODO : handle BOOLEAN and DATE_TIME, find a better solution
+            case "BOOLEAN" -> DataType.STRING;
+            case "DATE_TIME" -> DataType.DATE;
             default -> throw new IllegalArgumentException("String " + datatype + " could not be mapped to any ARX datatype.");
         };
     }

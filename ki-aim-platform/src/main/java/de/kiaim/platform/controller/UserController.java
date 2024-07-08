@@ -36,15 +36,18 @@ public class UserController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "User credential are correct.",
-			             content = @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                schema = @Schema(implementation = Boolean.class),
-			                                examples = {@ExampleObject("true")})),
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = Boolean.class),
+			                                 examples = {@ExampleObject("true")}),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = Boolean.class),
+			                                 examples = {@ExampleObject("true")})}),
 			@ApiResponse(responseCode = "500",
 			             description = "User is not authorized.",
 			             content = @Content),
 	})
 	@GetMapping(value = "/login",
-	            produces = CustomMediaType.APPLICATION_YAML_VALUE)
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public boolean login() {
 		return true;
 	}
@@ -57,12 +60,14 @@ public class UserController {
 			             content = @Content),
 			@ApiResponse(responseCode = "400",
 			             description = "Invalid request. Email is not available or passwords do not match.",
-			             content = @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                schema = @Schema(implementation = ErrorResponse.class))),
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 	})
 	@PostMapping(value = "/register",
-	             consumes = CustomMediaType.APPLICATION_YAML_VALUE,
-	             produces = CustomMediaType.APPLICATION_YAML_VALUE)
+	             consumes = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE},
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> register(
 			@Parameter(description = "Information about the new user.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE),

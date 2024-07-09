@@ -9,6 +9,7 @@ import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.EstimateDataTypesRequest;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.dto.ReadDataRequest;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.dto.ErrorResponse;
@@ -85,14 +86,17 @@ public class DataController {
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
+	private final StatusService statusService;
 	private final UserService userService;
 
 	@Autowired
 	public DataController(final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final DataSetService dataSetService, final UserService userService) {
+	                      final DataSetService dataSetService, final StatusService statusService,
+	                      final UserService userService) {
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
+		this.statusService = statusService;
 		this.userService = userService;
 	}
 
@@ -405,6 +409,8 @@ public class DataController {
 				final InputStream inputStream = getInputStream(file);
 				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration);
 				databaseService.store((DataConfiguration) result, user);
+				// TODO null check?
+				statusService.updateStatus(user.getProject(), Step.DATA_CONFIG, true);
 			}
 			case DELETE -> {
 				databaseService.delete(user);

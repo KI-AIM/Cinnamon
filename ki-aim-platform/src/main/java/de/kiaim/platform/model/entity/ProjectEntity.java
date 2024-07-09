@@ -31,6 +31,14 @@ public class ProjectEntity {
 	private Long id;
 
 	/**
+	 * Current status of the project.
+	 */
+	@OneToOne(mappedBy = "project", optional = false, fetch = FetchType.EAGER, orphanRemoval = true,
+	          cascade = CascadeType.PERSIST)
+	@Setter
+	private StatusEntity status = new StatusEntity();
+
+	/**
 	 * The data configuration
 	 */
 	@Type(JsonType.class)

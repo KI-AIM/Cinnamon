@@ -1,10 +1,10 @@
 package de.kiaim.test.platform;
 
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.DataTransformationErrorRepository;
-import de.kiaim.platform.repository.PlatformConfigurationRepository;
+import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.platform.repository.UserRepository;
 import de.kiaim.platform.service.DatabaseService;
 import org.junit.jupiter.api.AfterEach;
@@ -33,7 +33,7 @@ public class DatabaseTest extends ContextRequiredTest {
 	DatabaseService databaseService;
 
 	@Autowired
-	PlatformConfigurationRepository platformConfigurationRepository;
+	ProjectRepository projectRepository;
 
 	@Autowired
 	protected DataTransformationErrorRepository dataTransformationErrorRepository;
@@ -73,7 +73,7 @@ public class DatabaseTest extends ContextRequiredTest {
 
 		final UserEntity updatedUser = getTestUser();
 
-		final PlatformConfigurationEntity dataConfiguration = updatedUser.getPlatformConfiguration();
+		final ProjectEntity dataConfiguration = updatedUser.getProject();
 		assertNotNull(dataConfiguration, "The configuration has not been created!");
 		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
@@ -82,7 +82,7 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	protected boolean existsDataConfigration(final long dataSetId) {
-		return platformConfigurationRepository.existsById(dataSetId);
+		return projectRepository.existsById(dataSetId);
 	}
 
 	protected boolean existsTable(final long dataSetId) {
@@ -110,11 +110,11 @@ public class DatabaseTest extends ContextRequiredTest {
 	private void doCleanDatabase() {
 		try {
 			final UserEntity testUser = getTestUser();
-			testUser.setPlatformConfiguration(null);
+			testUser.setProject(null);
 			userRepository.save(testUser);
 
-			platformConfigurationRepository.deleteAll();
-			databaseService.executeStatement("SELECT setval('platform_configuration_entity_seq', 1, true)");
+			projectRepository.deleteAll();
+			databaseService.executeStatement("SELECT setval('project_entity_seq', 1, true)");
 			databaseService.executeStatement(
 					"""
 							DO

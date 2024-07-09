@@ -8,7 +8,7 @@ import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.test.platform.DatabaseTest;
@@ -39,17 +39,17 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		PlatformConfigurationEntity platformConfiguration = testUser.getPlatformConfiguration();
-		assertNotNull(platformConfiguration, "User has not been associated with the dataset!");
-		assertEquals(dataSetId, platformConfiguration.getId(), "User has been associated with the wrong dataset!");
-		assertEquals(0, dataTransformationErrorRepository.countByPlatformConfigurationId(platformConfiguration.getId()),
+		ProjectEntity project = testUser.getProject();
+		assertNotNull(project, "User has not been associated with the dataset!");
+		assertEquals(dataSetId, project.getId(), "User has been associated with the wrong dataset!");
+		assertEquals(0, dataTransformationErrorRepository.countByProjectId(project.getId()),
 		             "No transformation errors should have been persisted!");
 
 		assertDoesNotThrow(() -> databaseService.delete(user));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
-		assertNull(getTestUser().getPlatformConfiguration(), "User association with the dataset has not been removed!");
+		assertNull(getTestUser().getProject(), "User association with the dataset has not been removed!");
 	}
 
 	@Test
@@ -63,18 +63,18 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(3, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		PlatformConfigurationEntity platformConfiguration = testUser.getPlatformConfiguration();
-		assertNotNull(platformConfiguration, "User has not been associated with the dataset!");
-		assertEquals(dataSetId, platformConfiguration.getId(), "User has been associated with the wrong dataset!");
-		assertEquals(2, dataTransformationErrorRepository.countByPlatformConfigurationId(platformConfiguration.getId()),
+		ProjectEntity project = testUser.getProject();
+		assertNotNull(project, "User has not been associated with the dataset!");
+		assertEquals(dataSetId, project.getId(), "User has been associated with the wrong dataset!");
+		assertEquals(2, dataTransformationErrorRepository.countByProjectId(project.getId()),
 		             "Transformation errors have not been persisted!");
 
 		assertDoesNotThrow(() -> databaseService.delete(user));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
-		assertNull(getTestUser().getPlatformConfiguration(), "User association with the dataset has not been removed!");
-		assertEquals(0, dataTransformationErrorRepository.countByPlatformConfigurationId(platformConfiguration.getId()),
+		assertNull(getTestUser().getProject(), "User association with the dataset has not been removed!");
+		assertEquals(0, dataTransformationErrorRepository.countByProjectId(project.getId()),
 		             "Transformation errors have not been removed!");
 	}
 
@@ -98,11 +98,11 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final UserEntity updatedUser = getTestUser();
 
-		final PlatformConfigurationEntity platformConfiguration = updatedUser.getPlatformConfiguration();
-		assertNotNull(platformConfiguration, "The configuration has not been created!");
-		assertTrue(platformConfiguration.getConfigurations().containsKey(configName),
+		final ProjectEntity project = updatedUser.getProject();
+		assertNotNull(project, "The configuration has not been created!");
+		assertTrue(project.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
-		assertEquals(config, platformConfiguration.getConfigurations().get(configName),
+		assertEquals(config, project.getConfigurations().get(configName),
 		             "The configuration has not been stored correctly!");
 	}
 
@@ -121,11 +121,11 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final UserEntity updatedUser = getTestUser();
 
-		final PlatformConfigurationEntity platformConfiguration = updatedUser.getPlatformConfiguration();
-		assertNotNull(platformConfiguration, "The configuration has not been created!");
-		assertTrue(platformConfiguration.getConfigurations().containsKey(configName),
+		final ProjectEntity project = updatedUser.getProject();
+		assertNotNull(project, "The configuration has not been created!");
+		assertTrue(project.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
-		assertEquals(updatedConfig, platformConfiguration.getConfigurations().get(configName),
+		assertEquals(updatedConfig, project.getConfigurations().get(configName),
 		             "The configuration has not been stored correctly!");
 	}
 

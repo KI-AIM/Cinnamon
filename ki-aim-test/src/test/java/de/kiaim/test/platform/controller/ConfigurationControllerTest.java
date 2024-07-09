@@ -1,6 +1,6 @@
 package de.kiaim.test.platform.controller;
 
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.test.platform.ControllerTest;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		final UserEntity user = getTestUser();
-		final PlatformConfigurationEntity dataConfiguration = user.getPlatformConfiguration();
+		final ProjectEntity dataConfiguration = user.getProject();
 		assertNotNull(dataConfiguration, "The configuration has not been created!");
 		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");

@@ -208,8 +208,8 @@ class DataControllerTest extends ControllerTest {
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getPlatformConfiguration().getId(),
+		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
+		assertEquals(dataSetId, testUser.getProject().getId(),
 		             "User has been associated with the wrong dataset!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
@@ -218,7 +218,7 @@ class DataControllerTest extends ControllerTest {
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
-		assertNull(getTestUser().getPlatformConfiguration(), "User association with the dataset has not been removed!");
+		assertNull(getTestUser().getProject(), "User association with the dataset has not been removed!");
 	}
 
 	@Test
@@ -492,11 +492,11 @@ class DataControllerTest extends ControllerTest {
 		UserEntity testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getPlatformConfiguration().getId(),
+		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
+		assertEquals(dataSetId, testUser.getProject().getId(),
 		             "User has been associated with the wrong dataset!");
 		assertEquals(".*",
-		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
+		             ((StringPatternConfiguration) testUser.getProject().getDataConfiguration()
 		                                                   .getConfigurations().get(5).getConfigurations()
 		                                                   .get(0))
 				             .getPattern(),
@@ -519,12 +519,12 @@ class DataControllerTest extends ControllerTest {
 		testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetIdUpdate, testUser.getPlatformConfiguration().getId(),
+		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
+		assertEquals(dataSetIdUpdate, testUser.getProject().getId(),
 		             "User has been associated with the wrong dataset!");
 		assertEquals(dataSetIdUpdate, dataSetId, "Update has changed the DataSet id!");
 		assertEquals("[0-9]*",
-		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
+		             ((StringPatternConfiguration) testUser.getProject().getDataConfiguration()
 		                                                   .getConfigurations().get(5).getConfigurations()
 		                                                   .get(0)).getPattern(),
 		             "Type of first column does not match!");

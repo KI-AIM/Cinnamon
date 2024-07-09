@@ -2,7 +2,7 @@ package de.kiaim.platform.service;
 
 import de.kiaim.model.data.DataSet;
 import de.kiaim.platform.model.dto.LoadDataRequest;
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.UserRepository;
@@ -63,7 +63,7 @@ public class DataSetService {
 			loadDataRequest.setValueNotInRangeEncoding(request.getParameter("valueNotInRangeEncoding"));
 		}
 
-		return encodeDataRows(dataSet, user.getPlatformConfiguration(), loadDataRequest);
+		return encodeDataRows(dataSet, user.getProject(), loadDataRequest);
 	}
 
 	/**
@@ -74,7 +74,7 @@ public class DataSetService {
 	 * @param dataConfiguration The DataConfigurationEntity containing the transformation errors
 	 * @return Encoded data set.
 	 */
-	public List<List<Object>> encodeDataRows(final DataSet dataSet, final PlatformConfigurationEntity dataConfiguration,
+	public List<List<Object>> encodeDataRows(final DataSet dataSet, final ProjectEntity dataConfiguration,
 	                                         final LoadDataRequest loadDataRequest) {
 
 		final List<List<Object>> data = dataSet.getData();

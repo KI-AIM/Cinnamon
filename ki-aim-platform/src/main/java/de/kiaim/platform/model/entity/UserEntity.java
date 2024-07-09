@@ -32,8 +32,8 @@ public class UserEntity implements UserDetails {
 
 	@Nullable
 	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = false, cascade = CascadeType.ALL)
-	@JoinColumn(name = "platform_configuration_id", referencedColumnName = "id")
-	private PlatformConfigurationEntity platformConfiguration = null;
+	@JoinColumn(name = "project_id", referencedColumnName = "id")
+	private ProjectEntity project = null;
 
 	//==============================
 	// Implementation of UserDetails

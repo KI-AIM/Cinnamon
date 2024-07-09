@@ -1,8 +1,8 @@
 package de.kiaim.test.platform.repository;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
-import de.kiaim.platform.repository.PlatformConfigurationRepository;
+import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.test.platform.DatabaseTest;
 import de.kiaim.test.util.DataConfigurationTestHelper;
 import org.junit.jupiter.api.Test;
@@ -14,16 +14,16 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
-class PlatformConfigurationRepositoryTest extends DatabaseTest {
+class ProjectRepositoryTest extends DatabaseTest {
 
 	@Autowired
-	PlatformConfigurationRepository repository;
+	ProjectRepository repository;
 
 	@Test
 	void save() {
 		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
 
-		final PlatformConfigurationEntity entity = new PlatformConfigurationEntity();
+		final ProjectEntity entity = new ProjectEntity();
 		entity.setDataConfiguration(dataConfiguration);
 
 		repository.save(entity);
@@ -35,11 +35,11 @@ class PlatformConfigurationRepositoryTest extends DatabaseTest {
 	void load() {
 		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
 
-		final PlatformConfigurationEntity entity = new PlatformConfigurationEntity();
+		final ProjectEntity entity = new ProjectEntity();
 		entity.setDataConfiguration(dataConfiguration);
 
 		repository.save(entity);
-		final Optional<PlatformConfigurationEntity> loadedEntity = repository.findById(entity.getId());
+		final Optional<ProjectEntity> loadedEntity = repository.findById(entity.getId());
 		assertTrue(loadedEntity.isPresent());
 		assertEquals(dataConfiguration, loadedEntity.get().getDataConfiguration());
 	}
@@ -48,7 +48,7 @@ class PlatformConfigurationRepositoryTest extends DatabaseTest {
 	void delete() {
 		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
 
-		final PlatformConfigurationEntity entity = new PlatformConfigurationEntity();
+		final ProjectEntity entity = new ProjectEntity();
 		entity.setDataConfiguration(dataConfiguration);
 
 		repository.save(entity);

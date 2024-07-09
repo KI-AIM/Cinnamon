@@ -1,9 +1,9 @@
 package de.kiaim.platform.repository;
 
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional(readOnly = true)
-public interface PlatformConfigurationRepository extends CrudRepository<PlatformConfigurationEntity, Long> {
+public interface ProjectRepository extends CrudRepository<ProjectEntity, Long> {
 }

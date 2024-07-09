@@ -14,16 +14,16 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Class to represent the platform configuration in the database.
+ * Class to represent a project in the database.
  * Contains all configurations for the platform, for example, the data configuration or the anonymization configuration.
  */
 @Getter
 @Entity
 @NoArgsConstructor
-public class PlatformConfigurationEntity {
+public class ProjectEntity {
 
 	/**
-	 * ID of the platform configuration.
+	 * ID of the project.
 	 * Is also used to identify the table for the data set.
 	 */
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
@@ -44,7 +44,7 @@ public class PlatformConfigurationEntity {
 	 */
 	@ElementCollection(fetch = FetchType.LAZY)
 	@CollectionTable(name = "configuration",
-	                 joinColumns = @JoinColumn(name = "platform_configuration_id", referencedColumnName = "id"))
+	                 joinColumns = @JoinColumn(name = "project_id", referencedColumnName = "id"))
 	@MapKeyColumn(name = "configuration_name")
 	@Column(name="configuration")
 	@Setter
@@ -53,21 +53,21 @@ public class PlatformConfigurationEntity {
 	/**
 	 * User that owns this configuration and the corresponding data set.
 	 */
-	@OneToOne(mappedBy = "platformConfiguration", optional = false, fetch = FetchType.LAZY, orphanRemoval = false,
+	@OneToOne(mappedBy = "project", optional = false, fetch = FetchType.LAZY, orphanRemoval = false,
 	          cascade = CascadeType.PERSIST)
 	private UserEntity user;
 
 	/**
 	 * List of transformation errors during the import.
 	 */
-	@OneToMany(mappedBy = "platformConfiguration", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "project", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	private final Set<DataTransformationErrorEntity> dataTransformationErrors = new HashSet<>();
 
 	public void addDataRowTransformationError(final DataTransformationErrorEntity dataTransformationError) {
 		dataTransformationErrors.add(dataTransformationError);
 
-		if (dataTransformationError.getPlatformConfiguration() != this) {
-			dataTransformationError.setPlatformConfiguration(this);
+		if (dataTransformationError.getProject() != this) {
+			dataTransformationError.setProject(this);
 		}
 	}
 }

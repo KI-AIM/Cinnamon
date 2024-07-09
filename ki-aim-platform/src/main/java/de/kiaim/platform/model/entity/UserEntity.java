@@ -1,6 +1,6 @@
 package de.kiaim.platform.model.entity;
 
-import de.kiaim.platform.model.UserRole;
+import de.kiaim.platform.model.enumeration.UserRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

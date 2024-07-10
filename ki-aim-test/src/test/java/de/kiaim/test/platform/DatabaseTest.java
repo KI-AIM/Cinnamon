@@ -50,6 +50,10 @@ public class DatabaseTest extends ContextRequiredTest {
 		return userOptional.get();
 	}
 
+	protected ProjectEntity getTestProject() {
+		return projectService.getProject(getTestUser());
+	}
+
 	@BeforeEach
 	@Transactional
 	void setUpDatabase() {

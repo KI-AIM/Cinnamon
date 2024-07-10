@@ -5,6 +5,7 @@ import de.kiaim.model.configuration.data.StringPatternConfiguration;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.test.platform.ControllerTest;
 import de.kiaim.test.util.*;
@@ -25,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class DataControllerTest extends ControllerTest {
 
 	@Test
+	@Transactional
 	void estimateDatatypes() throws Exception {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
@@ -41,6 +43,11 @@ class DataControllerTest extends ControllerTest {
 		final DataConfiguration expectedConfiguration = DataConfigurationTestHelper.generateEstimatedConfiguration();
 
 		assertEquals(expectedConfiguration, dataConfiguration, "Returned configuration is wrong!");
+
+		assertEquals(Step.DATA_CONFIG, getTestProject().getStatus().getCurrentStep(),
+		             "The current step has not been updated correctly!");
+		assertTrue(getTestProject().getStatus().getFinishedExternalProcessing(),
+		           "The current step should not require external processing!");
 	}
 
 	@Test
@@ -97,6 +104,7 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	@Transactional
 	void readAndValidateData() throws Exception {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
@@ -110,6 +118,11 @@ class DataControllerTest extends ControllerTest {
 				                .param("configuration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(objectMapper.writeValueAsString(expected)));
+
+		assertEquals(Step.VALIDATION, getTestProject().getStatus().getCurrentStep(),
+		             "The current step has not been updated correctly!");
+		assertTrue(getTestProject().getStatus().getFinishedExternalProcessing(),
+		           "The current step should not require external processing!");
 	}
 
 	@Test

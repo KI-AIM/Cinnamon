@@ -3,6 +3,7 @@ package de.kiaim.platform.model.entity;
 import de.kiaim.platform.model.enumeration.Step;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -10,6 +11,7 @@ import lombok.Setter;
  */
 @Entity
 @Getter
+@NoArgsConstructor
 public class StatusEntity {
 
 	/**
@@ -32,7 +34,7 @@ public class StatusEntity {
 	 */
 	@Setter
 	@Column(nullable = false)
-	private boolean finishedExternalProcessing = true;
+	private Boolean finishedExternalProcessing = true;
 
 	/**
 	 * The corresponding project.
@@ -40,4 +42,8 @@ public class StatusEntity {
 	@OneToOne(optional = false, fetch = FetchType.LAZY, orphanRemoval = false, cascade = CascadeType.ALL)
 	@JoinColumn(name = "project_id", referencedColumnName = "id")
 	private ProjectEntity project;
+
+	public StatusEntity(final ProjectEntity project) {
+		this.project = project;
+	}
 }

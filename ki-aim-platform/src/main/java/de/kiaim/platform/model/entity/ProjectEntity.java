@@ -34,9 +34,8 @@ public class ProjectEntity {
 	 * Current status of the project.
 	 */
 	@OneToOne(mappedBy = "project", optional = false, fetch = FetchType.EAGER, orphanRemoval = true,
-	          cascade = CascadeType.PERSIST)
-	@Setter
-	private StatusEntity status = new StatusEntity();
+	          cascade = CascadeType.ALL)
+	private StatusEntity status = new StatusEntity(this);
 
 	/**
 	 * The data configuration

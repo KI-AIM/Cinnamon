@@ -6,11 +6,11 @@ import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.exception.BadConfigurationNameException;
-import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.service.DatabaseService;
+import de.kiaim.platform.service.ProjectService;
 import de.kiaim.test.platform.DatabaseTest;
 import de.kiaim.test.util.TransformationResultTestHelper;
 import org.junit.jupiter.api.Test;
@@ -28,52 +28,48 @@ class DatabaseServiceTest extends DatabaseTest {
 	@Autowired
 	DatabaseService databaseService;
 
+	@Autowired
+	ProjectService projectService;
+
 	@Test
 	void storeAndDelete() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
 		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
 
-		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult, user));
+		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult, project));
 
-		UserEntity testUser = getTestUser();
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		ProjectEntity project = testUser.getProject();
-		assertNotNull(project, "User has not been associated with the dataset!");
-		assertEquals(dataSetId, project.getId(), "User has been associated with the wrong dataset!");
+		assertEquals(dataSetId, project.getId(), "Project has been associated with the wrong dataset!");
 		assertEquals(0, dataTransformationErrorRepository.countByProjectId(project.getId()),
 		             "No transformation errors should have been persisted!");
 
-		assertDoesNotThrow(() -> databaseService.delete(user));
+		assertDoesNotThrow(() -> databaseService.delete(project));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
-		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
-		assertNull(getTestUser().getProject(), "User association with the dataset has not been removed!");
 	}
 
 	@Test
 	void storeAndDeleteWithErrors() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(true);
 		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
 
-		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult, user));
+		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult, project));
 
-		UserEntity testUser = getTestUser();
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(3, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		ProjectEntity project = testUser.getProject();
 		assertNotNull(project, "User has not been associated with the dataset!");
 		assertEquals(dataSetId, project.getId(), "User has been associated with the wrong dataset!");
 		assertEquals(2, dataTransformationErrorRepository.countByProjectId(project.getId()),
 		             "Transformation errors have not been persisted!");
 
-		assertDoesNotThrow(() -> databaseService.delete(user));
+		assertDoesNotThrow(() -> databaseService.delete(project));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
-		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
-		assertNull(getTestUser().getProject(), "User association with the dataset has not been removed!");
 		assertEquals(0, dataTransformationErrorRepository.countByProjectId(project.getId()),
 		             "Transformation errors have not been removed!");
 	}
@@ -92,17 +88,18 @@ class DatabaseServiceTest extends DatabaseTest {
 				""";
 
 		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
 
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, user),
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, project),
 		                   "The configuration could not be stored!");
 
 		final UserEntity updatedUser = getTestUser();
 
-		final ProjectEntity project = updatedUser.getProject();
-		assertNotNull(project, "The configuration has not been created!");
-		assertTrue(project.getConfigurations().containsKey(configName),
+		final ProjectEntity updatedProject = updatedUser.getProject();
+		assertNotNull(updatedProject, "The configuration has not been created!");
+		assertTrue(updatedProject.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
-		assertEquals(config, project.getConfigurations().get(configName),
+		assertEquals(config, updatedProject.getConfigurations().get(configName),
 		             "The configuration has not been stored correctly!");
 	}
 
@@ -115,17 +112,18 @@ class DatabaseServiceTest extends DatabaseTest {
 		storeConfiguration(configName, config);
 
 		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
 		final String updatedConfig = "Updated test config";
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, updatedConfig, user),
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, updatedConfig, project),
 		                   "The configuration could not be updated!");
 
 		final UserEntity updatedUser = getTestUser();
 
-		final ProjectEntity project = updatedUser.getProject();
-		assertNotNull(project, "The configuration has not been created!");
-		assertTrue(project.getConfigurations().containsKey(configName),
+		final ProjectEntity updatedProject = updatedUser.getProject();
+		assertNotNull(updatedProject, "The configuration has not been created!");
+		assertTrue(updatedProject.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
-		assertEquals(updatedConfig, project.getConfigurations().get(configName),
+		assertEquals(updatedConfig, updatedProject.getConfigurations().get(configName),
 		             "The configuration has not been stored correctly!");
 	}
 
@@ -133,24 +131,26 @@ class DatabaseServiceTest extends DatabaseTest {
 	void exportDataSet() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
 		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
 
-		assertDoesNotThrow(() -> databaseService.store(transformationResult, user));
+		assertDoesNotThrow(() -> databaseService.store(transformationResult, project));
 
-		final DataSet export = assertDoesNotThrow(() -> databaseService.exportDataSet(user, new ArrayList<>()));
+		final DataSet export = assertDoesNotThrow(() -> databaseService.exportDataSet(project, new ArrayList<>()));
 		assertEquals(transformationResult.getDataSet(), export, "Data sets do not match!");
 
-		assertDoesNotThrow(() -> databaseService.delete(user));
+		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
 	void exportDataSetColumns() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
 		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
 
-		assertDoesNotThrow(() -> databaseService.store(transformationResult, user));
+		assertDoesNotThrow(() -> databaseService.store(transformationResult, project));
 
 		final DataSet export = assertDoesNotThrow(
-				() -> databaseService.exportDataSet(user, List.of("column4_integer", "column0_boolean")));
+				() -> databaseService.exportDataSet(project, List.of("column4_integer", "column0_boolean")));
 
 		// Test the data configuration
 		final DataConfiguration config = export.getDataConfiguration();
@@ -174,7 +174,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertEquals(DataType.INTEGER, firstRow.getData().get(0).getDataType(), "Type of first value does not match!");
 		assertEquals(DataType.BOOLEAN, firstRow.getData().get(1).getDataType(), "Type of second value does not match!");
 
-		assertDoesNotThrow(() -> databaseService.delete(user));
+		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
@@ -193,7 +193,9 @@ class DatabaseServiceTest extends DatabaseTest {
 		storeConfiguration(configName, config);
 
 		final UserEntity user = getTestUser();
-		final String exportedConfig = assertDoesNotThrow(() -> databaseService.exportConfiguration(configName, user),
+		final ProjectEntity project = projectService.getProject(user);
+
+		final String exportedConfig = assertDoesNotThrow(() -> databaseService.exportConfiguration(configName, project),
 		                                                 "The configuration could not be exported!");
 		assertEquals(config, exportedConfig, "The exported config does not match the original config!");
 	}
@@ -203,7 +205,8 @@ class DatabaseServiceTest extends DatabaseTest {
 	void exportConfigurationNoConfiguration() {
 		final String configName = "testConfigName";
 		final UserEntity user = getTestUser();
-		assertThrows(BadDataSetIdException.class, () -> databaseService.exportConfiguration(configName, user),
+		final ProjectEntity project = projectService.getProject(user);
+		assertThrows(BadConfigurationNameException.class, () -> databaseService.exportConfiguration(configName, project),
 		             "Configuration should not be present!");
 	}
 
@@ -214,11 +217,12 @@ class DatabaseServiceTest extends DatabaseTest {
 		final String invalidConfigName = "invalidConfigName";
 		final String config = "Test config";
 		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
 
 		storeConfiguration(configName, config);
 
 		assertThrows(BadConfigurationNameException.class,
-		             () -> databaseService.exportConfiguration(invalidConfigName, user),
+		             () -> databaseService.exportConfiguration(invalidConfigName, project),
 		             "Configuration should not be present!");
 	}
 }

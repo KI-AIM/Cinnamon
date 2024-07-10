@@ -7,6 +7,7 @@ import de.kiaim.platform.repository.DataTransformationErrorRepository;
 import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.platform.repository.UserRepository;
 import de.kiaim.platform.service.DatabaseService;
+import de.kiaim.platform.service.ProjectService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,16 +31,16 @@ public class DatabaseTest extends ContextRequiredTest {
 	private Connection connection;
 
 	@Autowired
-	DatabaseService databaseService;
-
+	protected DataTransformationErrorRepository dataTransformationErrorRepository;
 	@Autowired
 	ProjectRepository projectRepository;
-
-	@Autowired
-	protected DataTransformationErrorRepository dataTransformationErrorRepository;
-
 	@Autowired
 	UserRepository userRepository;
+
+	@Autowired
+	DatabaseService databaseService;
+	@Autowired
+	ProjectService projectService;
 
 	protected UserEntity getTestUser() {
 		Optional<UserEntity> userOptional = userRepository.findById("test_user");
@@ -68,16 +69,15 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	protected void storeConfiguration(final String configName, final String config) {
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, getTestUser()),
+		final UserEntity updatedUser = getTestUser();
+		final ProjectEntity project = projectService.getProject(updatedUser);
+
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, project),
 		                   "The configuration could not be stored!");
 
-		final UserEntity updatedUser = getTestUser();
-
-		final ProjectEntity dataConfiguration = updatedUser.getProject();
-		assertNotNull(dataConfiguration, "The configuration has not been created!");
-		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
+		assertTrue(project.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
-		assertEquals(config, dataConfiguration.getConfigurations().get(configName),
+		assertEquals(config, project.getConfigurations().get(configName),
 		             "The configuration has not been stored correctly!");
 	}
 

@@ -217,8 +217,6 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
-		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
-		assertNull(getTestUser().getProject(), "User association with the dataset has not been removed!");
 	}
 
 	@Test
@@ -285,7 +283,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataNoDataSet() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("User has no configuration!"));
+		       .andExpect(errorMessage("No configuration for the project with the given ID '17' found!"));
 	}
 
 	@WithAnonymousUser
@@ -384,7 +382,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetNoDataSet() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("User has no configuration!"));
+		       .andExpect(errorMessage("No configuration for the project with the given ID '23' found!"));
 	}
 
 	@WithAnonymousUser
@@ -440,8 +438,7 @@ class DataControllerTest extends ControllerTest {
 	void deleteDataNoDataSet() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("User has no configuration!"));
+		       .andExpect(status().isOk());
 	}
 
 	private void postData() throws Exception {

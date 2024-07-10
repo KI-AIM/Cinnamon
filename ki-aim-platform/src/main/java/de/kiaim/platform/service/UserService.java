@@ -1,6 +1,5 @@
 package de.kiaim.platform.service;
 
-import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,16 +31,6 @@ public class UserService implements UserDetailsService {
 
 	public boolean doesUserWithEmailExist(final String email) {
 		return userRepository.existsById(email);
-	}
-
-	public void setConfigurationToUser(ProjectEntity projectEntity, UserEntity user) {
-		user.setProject(projectEntity);
-		userRepository.save(user);
-	}
-
-	public void removeConfigurationFromUser(UserEntity user) {
-		user.setProject(null);
-		userRepository.save(user);
 	}
 
 	public void save(final String email, final String rawPassword) {

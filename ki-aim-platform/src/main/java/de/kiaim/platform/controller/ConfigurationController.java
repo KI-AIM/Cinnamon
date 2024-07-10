@@ -4,8 +4,10 @@ import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.model.dto.ErrorResponse;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.service.DatabaseService;
+import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,10 +27,13 @@ import org.springframework.web.bind.annotation.*;
 public class ConfigurationController {
 
 	private final DatabaseService databaseService;
+	private final ProjectService projectService;
 	private final UserService userService;
 
-	public ConfigurationController(final DatabaseService databaseService, final UserService userService) {
+	public ConfigurationController(final DatabaseService databaseService, final ProjectService projectService,
+	                               final UserService userService) {
 		this.databaseService = databaseService;
+		this.projectService = projectService;
 		this.userService = userService;
 	}
 
@@ -59,7 +64,8 @@ public class ConfigurationController {
 	) {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		databaseService.storeConfiguration(configurationName, configuration, user);
+		final ProjectEntity project = projectService.getProject(user);
+		databaseService.storeConfiguration(configurationName, configuration, project);
 	}
 
 	@Operation(summary = "Loads a previously stored configuration with the given name.",
@@ -89,7 +95,8 @@ public class ConfigurationController {
 	) throws BadDataSetIdException, BadConfigurationNameException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		return databaseService.exportConfiguration(configurationName, user);
+		final ProjectEntity project = projectService.getProject(user);
+		return databaseService.exportConfiguration(configurationName, project);
 	}
 
 }

@@ -9,6 +9,7 @@ import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.EstimateDataTypesRequest;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.dto.ReadDataRequest;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
@@ -86,16 +87,18 @@ public class DataController {
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
+	private final ProjectService projectService;
 	private final StatusService statusService;
 	private final UserService userService;
 
 	@Autowired
 	public DataController(final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final DataSetService dataSetService, final StatusService statusService,
-	                      final UserService userService) {
+	                      final DataSetService dataSetService, final ProjectService projectService,
+	                      final StatusService statusService, final UserService userService) {
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
+		this.projectService = projectService;
 		this.statusService = statusService;
 		this.userService = userService;
 	}
@@ -397,6 +400,7 @@ public class DataController {
 	)
 			throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalMissingHandlingException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity projectEntity =  projectService.getProject(user);
 
 		final List<String> columnNames = loadDataRequest != null && !loadDataRequest.getColumns().isBlank()
 		                                 ? List.of(loadDataRequest.getColumns().split(","))
@@ -408,38 +412,38 @@ public class DataController {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration);
-				databaseService.store((DataConfiguration) result, user);
-				// TODO null check?
-				statusService.updateStatus(user.getProject(), Step.DATA_CONFIG, true);
+				databaseService.store((DataConfiguration) result, projectEntity);
+				statusService.updateStatus(projectEntity, Step.DATA_CONFIG, true);
 			}
 			case DELETE -> {
-				databaseService.delete(user);
+				databaseService.delete(projectEntity);
 				result = null;
+				statusService.updateStatus(user.getProject(), Step.UPLOAD, true);
 			}
 			case LOAD_CONFIG -> {
-				result = databaseService.exportDataConfiguration(user);
+				result = databaseService.exportDataConfiguration(projectEntity);
 			}
 			case LOAD_DATA -> {
-				final DataSet dataSet = databaseService.exportDataSet(user, columnNames);
-				result = dataSetService.encodeDataRows(dataSet, user.getProject(), loadDataRequest);
+				final DataSet dataSet = databaseService.exportDataSet(projectEntity, columnNames);
+				result = dataSetService.encodeDataRows(dataSet, projectEntity, loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
-				result = databaseService.exportDataSet(user, columnNames);
+				result = databaseService.exportDataSet(projectEntity, columnNames);
 			}
 			case STORE_CONFIG -> {
-				result = databaseService.store(configuration, user);
+				result = databaseService.store(configuration, projectEntity);
 			}
 			case STORE_DATE_SET -> {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				final TransformationResult transformationResult = dataProcessor.read(inputStream, fileConfiguration,
 				                                                                     configuration);
-				result = databaseService.store(transformationResult, user);
+				result = databaseService.store(transformationResult, projectEntity);
 			}
 			case VALIDATE -> {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
-				databaseService.store(configuration, user);
+				databaseService.store(configuration, projectEntity);
 				result = dataProcessor.read(inputStream, fileConfiguration, configuration);
 			}
 			default -> {

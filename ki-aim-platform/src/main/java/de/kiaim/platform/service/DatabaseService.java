@@ -14,7 +14,6 @@ import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
-import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +30,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 @Service
@@ -43,15 +41,13 @@ public class DatabaseService {
 	final ProjectRepository projectRepository;
 
 	final DataschemeGenerator dataschemeGenerator;
-	final UserService userService;
 
 	@Autowired
-	public DatabaseService(DataSource dataSource, ProjectRepository projectRepository,
-	                       DataschemeGenerator dataschemeGenerator, UserService userService) {
+	public DatabaseService(final DataSource dataSource, final ProjectRepository projectRepository,
+	                       final DataschemeGenerator dataschemeGenerator) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		this.projectRepository = projectRepository;
 		this.dataschemeGenerator = dataschemeGenerator;
-		this.userService = userService;
 	}
 
 	/**
@@ -65,41 +61,40 @@ public class DatabaseService {
 	}
 
 	/**
-	 * Stores the DataConfiguration and associates the configuration with the user of the request.
+	 * Stores the DataConfiguration and associates the configuration with the given project.
 	 *
 	 * @param dataConfiguration The configuration to be stored.
-	 * @param user The user the configuration should be associated with.
+	 * @param project The project the configuration should be associated with.
 	 * @return The ID of the configuration.
 	 * @throws BadDataSetIdException If the data has already been stored.
 	 * @throws InternalDataSetPersistenceException If the configuration could not be stored.
 	 */
 	@Transactional
-	public long store(final DataConfiguration dataConfiguration, UserEntity user)
+	public long store(final DataConfiguration dataConfiguration, final ProjectEntity project)
 			throws BadDataSetIdException, InternalDataSetPersistenceException {
-		return store(dataConfiguration, new ArrayList<>(), user);
+		return store(dataConfiguration, new ArrayList<>(), project);
 	}
 
 	/**
 	 * Stores the given TransformationResult by storing the DataSet,
-	 * the DataConfiguration and the transformation errors into the database and associates them with the given user.
+	 * the DataConfiguration and the transformation errors into the database and associates them with the given project.
 	 * The table for the DataSet will be generated automatically.
 	 * Returns an ID to access the data.
 	 *
 	 * @param transformationResult  TransformationResult to store.
-	 * @param user The user the configuration should be associated with.
+	 * @param project The project the configuration should be associated with.
 	 * @return The generated ID of the DataSet.
 	 * @throws BadDataSetIdException If the data has already been stored.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
 	 */
 	@Transactional
-	public long store(final TransformationResult transformationResult, final UserEntity user)
+	public long store(final TransformationResult transformationResult, final ProjectEntity project)
 			throws BadDataSetIdException, InternalDataSetPersistenceException  {
-
 		final DataSet dataSet = transformationResult.getDataSet();
 
 		// Store configuration and transformation errors
 		final long dataSetId = store(dataSet.getDataConfiguration(), transformationResult.getTransformationErrors(),
-		                             user);
+		                             project);
 		final String tableName = getTableName(dataSetId);
 
 		// Create table
@@ -124,7 +119,7 @@ public class DatabaseService {
 			}
 		} catch (SQLException e) {
 			try {
-				delete(user);
+				delete(project);
 			} catch (BadDataSetIdException ignored) {
 			}
 			LOGGER.error("The DataSet could not be persisted!", e);
@@ -141,48 +136,44 @@ public class DatabaseService {
 	 *
 	 * @param configurationName Identifier for the configuration.
 	 * @param configuration Configuration to store.
-	 * @param user The user the configuration should be associated with.
+	 * @param project The project the configuration should be associated with.
 	 * @return The ID of the configuration.
 	 */
 	@Transactional
 	public long storeConfiguration(final String configurationName, final String configuration,
-	                               final UserEntity user) {
-		final ProjectEntity projectEntity = getProjectEntity(user);
-		projectEntity.getConfigurations().put(configurationName, configuration);
-		return storeDataConfigurationEntity(projectEntity, user);
+	                               final ProjectEntity project) {
+		project.getConfigurations().put(configurationName, configuration);
+		return storeDataConfigurationEntity(project);
 	}
 
 	/**
-	 * Exports the configuration of the data set associated with the given user.
+	 * Exports the configuration of the data set associated with the given project.
 	 *
-	 * @param user The user of which the configuration should be exported.
+	 * @param project The project of which the configuration should be exported.
 	 * @return The configuration.
-	 * @throws BadDataSetIdException If no data set is associated with the given user.
+	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
 	 */
 	@Transactional
-	public DataConfiguration exportDataConfiguration(final UserEntity user) throws BadDataSetIdException {
-		final long dataSetId = getDataSetIdOrThrow(user);
-		return getOrThrow(dataSetId).getDataConfiguration();
+	public DataConfiguration exportDataConfiguration(final ProjectEntity project) throws BadDataSetIdException {
+		return getDataConfigurationOrThrow(project);
 	}
 
 	/**
-	 * Exports the data set associated with the given user.
+	 * Exports the data set associated with the given project.
 	 * Returns the columns with the given names in the given order.
 	 * If no column names are provided, all columns are exported.
 	 *
-	 * @param user The user of which the data set should be exported.
+	 * @param project The project of which the data set should be exported.
 	 * @param columnNames Names of the columns to export. If empty, all columns will be exported.
 	 * @return The DataSet.
 	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
-	 * @throws BadDataSetIdException If no data set is associated with the given user.
+	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 */
 	@Transactional
-	public DataSet exportDataSet(final UserEntity user, List<String> columnNames)
-			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException {
-		final long dataSetId = getDataSetIdOrThrow(user);
-		final ProjectEntity projectEntity = getOrThrow(dataSetId);
-		DataConfiguration dataConfiguration = projectEntity.getDataConfiguration();
+	public DataSet exportDataSet(final ProjectEntity project, List<String> columnNames)
+			throws InternalDataSetPersistenceException, BadColumnNameException, BadDataSetIdException {
+		DataConfiguration dataConfiguration = getDataConfigurationOrThrow(project);
 
 		if (columnNames.isEmpty()) {
 			columnNames = dataConfiguration.getColumnNames();
@@ -195,7 +186,7 @@ public class DatabaseService {
 		final List<DataRow> dataRows = new ArrayList<>();
 		try (final Statement exportStatement = connection.createStatement()) {
 
-			final String exportQuery = createSelectQuery(dataSetId, columnNames);
+			final String exportQuery = createSelectQuery(getDataSetId(project), columnNames);
 
 			try (final ResultSet resultSet = exportStatement.executeQuery(exportQuery)) {
 				while (resultSet.next()) {
@@ -221,44 +212,35 @@ public class DatabaseService {
 	/**
 	 * Exports the configuration with the given name
 	 * @param configurationName Name of the configuration to export.
-	 * @param user The user of which the configuration should be exported.
+	 * @param project The project of which the configuration should be exported.
 	 * @return The configuration.
-	 * @throws BadConfigurationNameException If the user does not have a configuration with the given name.
-	 * @throws BadDataSetIdException If no data set is associated with the given user.
+	 * @throws BadConfigurationNameException If the project does not have a configuration with the given name.
 	 */
 	@Transactional
-	public String exportConfiguration(final String configurationName, final UserEntity user)
-			throws BadConfigurationNameException, BadDataSetIdException {
-		final long dataSetId = getDataSetIdOrThrow(user);
-		final ProjectEntity projectEntity = getOrThrow(dataSetId);
-
-		if (!projectEntity.getConfigurations().containsKey(configurationName)) {
+	public String exportConfiguration(final String configurationName, final ProjectEntity project)
+			throws BadConfigurationNameException {
+		if (!project.getConfigurations().containsKey(configurationName)) {
 			throw new BadConfigurationNameException(BadConfigurationNameException.NOT_FOUND,
-			                                        "User has no configuration with the name '" + configurationName +
+			                                        "Project with ID '" + project.getId() +
+			                                        "' has no configuration with the name '" + configurationName +
 			                                        "'!");
 		}
 
-		return projectEntity.getConfigurations().get(configurationName);
+		return project.getConfigurations().get(configurationName);
 	}
 
 	/**
-	 * Removes the DataSet and the DataConfiguration associated with the given user from the database
+	 * Removes the DataSet and the transformation errors associated with the given project from the database
 	 * and deletes the corresponding table.
 	 *
-	 * @param user The user of which the data set should be deleted.
-	 * @throws BadDataSetIdException If no data set is associated with the given user.
+	 * @param project The project of which the data set should be deleted.
+	 * @throws BadDataSetIdException If no data set is associated with the given project.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 */
 	@Transactional
-	public void delete(final UserEntity user)
+	public void delete(final ProjectEntity project)
 			throws BadDataSetIdException, InternalDataSetPersistenceException {
-		final long dataSetId = getDataSetIdOrThrow(user);
-
-		// Check if the dataSetId is valid
-		existsOrThrow(dataSetId);
-
-		// Remove configuration from the user
-		userService.removeConfigurationFromUser(user);
+		final long dataSetId = getDataSetId(project);
 
 		// Delete the table and its data
 		if (existsTable(dataSetId)) {
@@ -271,8 +253,9 @@ public class DatabaseService {
 			}
 		}
 
-		// Delete the configuration
-		projectRepository.deleteById(dataSetId);
+		// Delete transformation errors
+		project.getDataTransformationErrors().clear();
+		projectRepository.save(project);
 	}
 
 	/**
@@ -307,47 +290,31 @@ public class DatabaseService {
 		}
 	}
 
-	private long getDataSetIdOrThrow(final UserEntity user) throws BadDataSetIdException {
-		if (user.getProject() == null) {
-			throw new BadDataSetIdException(BadDataSetIdException.NO_CONFIGURATION, "User has no configuration!");
-		}
-		return user.getProject().getId();
-	}
-
-	private ProjectEntity getProjectEntity(final UserEntity user) {
-		final ProjectEntity projectEntity;
-
-		if (user.getProject() != null) {
-			projectEntity = user.getProject();
-		} else {
-			projectEntity = new ProjectEntity();
-		}
-
-		return projectEntity;
+	private long getDataSetId(final ProjectEntity project) {
+		return project.getId();
 	}
 
 	/**
 	 * Stores the DataConfiguration with the transformation errors
-	 * and associates the configuration with the user of the request.
+	 * and associates the configuration with the project of the request.
 	 *
 	 * @param dataConfiguration The configuration to be stored.
 	 * @param rowTransformationErrors The transformation errors occurred during reading the corresponding data set.
-	 * @param user The user the configuration should be associated with.
+	 * @param project The project the configuration should be associated with.
 	 * @return The ID of the configuration.
 	 * @throws BadDataSetIdException If the data has already been stored.
 	 * @throws InternalDataSetPersistenceException If the configuration could not be stored.
 	 */
 	private long store(final DataConfiguration dataConfiguration,
-	                   final List<DataRowTransformationError> rowTransformationErrors, final UserEntity user)
+	                   final List<DataRowTransformationError> rowTransformationErrors, final ProjectEntity project)
 			throws InternalDataSetPersistenceException, BadDataSetIdException {
-		final ProjectEntity projectEntity = getProjectEntity(user);
 
 		// Check if the data set already has been stored
-		if (projectEntity.getId() != null && existsTable(projectEntity.getId())) {
+		if (project.getId() != null && existsTable(project.getId())) {
 			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been stored!");
 		}
 
-		projectEntity.setDataConfiguration(dataConfiguration);
+		project.setDataConfiguration(dataConfiguration);
 
 		for (final DataRowTransformationError rowTransformationError : rowTransformationErrors) {
 			for (final DataTransformationError transformationError : rowTransformationError.getDataTransformationErrors()) {
@@ -360,24 +327,18 @@ public class DatabaseService {
 				transformationErrorEntity.setOriginalValue(
 						rowTransformationError.getRawValues().get(transformationError.getIndex()));
 
-				projectEntity.addDataRowTransformationError(transformationErrorEntity);
+				project.addDataRowTransformationError(transformationErrorEntity);
 			}
 		}
 
-		return storeDataConfigurationEntity(projectEntity, user);
+		return storeDataConfigurationEntity(project);
 	}
 
-	private long storeDataConfigurationEntity(final ProjectEntity projectEntity,
-	                                          final UserEntity user) {
-		projectRepository.save(projectEntity);
+	private long storeDataConfigurationEntity(final ProjectEntity project) {
+		projectRepository.save(project);
 
 		// Get ID
-		final long dataSetId = projectEntity.getId();
-
-		// Set current data configuration for the user
-		userService.setConfigurationToUser(projectEntity, user);
-
-		return dataSetId;
+		return project.getId();
 	}
 
 	private String convertDataToString(final Data data) throws InternalDataSetPersistenceException {
@@ -401,14 +362,6 @@ public class DatabaseService {
 		};
 	}
 
-	private void existsOrThrow(final long dataSetId) throws BadDataSetIdException {
-		final boolean exists = projectRepository.existsById(dataSetId);
-		if (!exists) {
-			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET,
-			                                "No DataSet with the given ID '" + dataSetId + "' found!");
-		}
-	}
-
 	private void existColumnsOrThrow(final DataConfiguration dataConfiguration, final List<String> columnNames)
 			throws BadColumnNameException {
 		final List<String> dataSetColumns = dataConfiguration.getColumnNames();
@@ -423,13 +376,14 @@ public class DatabaseService {
 		}
 	}
 
-	private ProjectEntity getOrThrow(final long dataSetId) throws BadDataSetIdException {
-		final Optional<ProjectEntity> config = projectRepository.findById(dataSetId);
-		if (config.isEmpty()) {
-			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET,
-			                                "No DataSet with the given ID '" + dataSetId + "' found!");
+	private DataConfiguration getDataConfigurationOrThrow(final ProjectEntity project) throws BadDataSetIdException {
+		final DataConfiguration dataConfiguration = project.getDataConfiguration();
+		if (dataConfiguration == null) {
+			throw new BadDataSetIdException(BadDataSetIdException.NO_CONFIGURATION,
+			                                "No configuration for the project with the given ID '" + project.getId() +
+			                                "' found!");
 		}
-		return config.get();
+		return dataConfiguration;
 	}
 
 	private String createSelectQuery(final Long dataSetId, final List<String> columnNames) {

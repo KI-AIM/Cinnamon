@@ -30,12 +30,7 @@ public class DataSet {
 
 	@ArraySchema(schema = @Schema(description = "Row of the data set.", implementation = DataRow.class))
 	public final List<List<Object>> getData() {
-		return dataRows.stream()
-		               .map(dataRow -> dataRow.getData()
-		                                      .stream()
-		                                      .map(Data::getValue)
-		                                      .collect(Collectors.toList()))
-		               .toList();
+		return dataRows.stream().map(DataRow::getRow).toList();
 	}
 
 	public void setData(final List<List<Data>> data) {

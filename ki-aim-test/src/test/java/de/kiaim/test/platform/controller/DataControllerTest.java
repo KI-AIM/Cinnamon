@@ -5,6 +5,7 @@ import de.kiaim.model.configuration.data.StringPatternConfiguration;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.test.platform.ControllerTest;
@@ -46,8 +47,8 @@ class DataControllerTest extends ControllerTest {
 
 		assertEquals(Step.DATA_CONFIG, getTestProject().getStatus().getCurrentStep(),
 		             "The current step has not been updated correctly!");
-		assertTrue(getTestProject().getStatus().getFinishedExternalProcessing(),
-		           "The current step should not require external processing!");
+		assertEquals(ProcessStatus.NOT_REQUIRED, getTestProject().getStatus().getExternalProcessStatus(),
+		             "The current step should not require external processing!");
 	}
 
 	@Test
@@ -120,8 +121,8 @@ class DataControllerTest extends ControllerTest {
 
 		assertEquals(Step.VALIDATION, getTestProject().getStatus().getCurrentStep(),
 		             "The current step has not been updated correctly!");
-		assertTrue(getTestProject().getStatus().getFinishedExternalProcessing(),
-		           "The current step should not require external processing!");
+		assertEquals(ProcessStatus.NOT_REQUIRED, getTestProject().getStatus().getExternalProcessStatus(),
+		             "The current step should not require external processing!");
 	}
 
 	@Test
@@ -294,7 +295,8 @@ class DataControllerTest extends ControllerTest {
 	void loadDataNoDataSet() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("No configuration for the project with the given ID '17' found!"));
+		       .andExpect(errorMessage(
+				       "No configuration for the project with the given ID '" + testProject.getId() + "' found!"));
 	}
 
 	@WithAnonymousUser
@@ -393,7 +395,8 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetNoDataSet() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("No configuration for the project with the given ID '23' found!"));
+		       .andExpect(errorMessage(
+				       "No configuration for the project with the given ID '" + testProject.getId() + "' found!"));
 	}
 
 	@WithAnonymousUser

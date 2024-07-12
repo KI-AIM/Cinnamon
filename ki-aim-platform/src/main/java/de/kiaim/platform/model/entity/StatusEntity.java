@@ -1,5 +1,6 @@
 package de.kiaim.platform.model.entity;
 
+import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -29,12 +30,11 @@ public class StatusEntity {
 	private Step currentStep = Step.UPLOAD;
 
 	/**
-	 * If external processing has finished.
-	 * Also true if the current step does not require any external processing.
+	 * The status of the external processing.
 	 */
 	@Setter
 	@Column(nullable = false)
-	private Boolean finishedExternalProcessing = true;
+	private ProcessStatus externalProcessStatus = ProcessStatus.NOT_REQUIRED;
 
 	/**
 	 * The corresponding project.

@@ -39,8 +39,7 @@ public class StatusEntity {
 	/**
 	 * The corresponding project.
 	 */
-	@OneToOne(optional = false, fetch = FetchType.LAZY, orphanRemoval = false, cascade = CascadeType.ALL)
-	@JoinColumn(name = "project_id", referencedColumnName = "id")
+	@OneToOne(mappedBy = "status", optional = false, fetch = FetchType.LAZY, orphanRemoval = false, cascade = CascadeType.ALL)
 	private ProjectEntity project;
 
 	public StatusEntity(final ProjectEntity project) {

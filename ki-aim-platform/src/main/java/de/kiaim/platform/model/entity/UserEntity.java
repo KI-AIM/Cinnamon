@@ -35,6 +35,21 @@ public class UserEntity implements UserDetails {
 	@JoinColumn(name = "project_id", referencedColumnName = "id")
 	private ProjectEntity project = null;
 
+	/**
+	 * Links the given project with this user.
+	 * @param newProject The project to link.
+	 */
+	public void setProject(@Nullable final ProjectEntity newProject) {
+		final ProjectEntity oldProject = this.project;
+		this.project = newProject;
+		if (oldProject != null && oldProject.getUser() == this) {
+			oldProject.setUser(null);
+		}
+		if (newProject != null && newProject.getUser() != this) {
+			newProject.setUser(this);
+		}
+	}
+
 	//==============================
 	// Implementation of UserDetails
 	//==============================

@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
+import org.springframework.lang.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,8 +34,8 @@ public class ProjectEntity {
 	/**
 	 * Current status of the project.
 	 */
-	@OneToOne(mappedBy = "project", optional = false, fetch = FetchType.EAGER, orphanRemoval = true,
-	          cascade = CascadeType.ALL)
+	@OneToOne(optional = false, fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+	@JoinColumn(name = "status_id", referencedColumnName = "id")
 	private StatusEntity status = new StatusEntity(this);
 
 	/**
@@ -69,6 +70,37 @@ public class ProjectEntity {
 	 */
 	@OneToMany(mappedBy = "project", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	private final Set<DataTransformationErrorEntity> dataTransformationErrors = new HashSet<>();
+
+
+	/**
+	 * Links the given external process with this project.
+	 * @param newExternalProcess The process to link.
+	 */
+	public void setExternalProcess(@Nullable final ExternalProcessEntity newExternalProcess) {
+		final ExternalProcessEntity oldExternalProcess = this.externalProcess;
+		this.externalProcess = newExternalProcess;
+		if (oldExternalProcess != null && oldExternalProcess.getProject() == this) {
+			oldExternalProcess.setProject(null);
+		}
+		if (newExternalProcess != null && newExternalProcess.getProject() != this) {
+			newExternalProcess.setProject(this);
+		}
+	}
+
+	/**
+	 * Links the given user with this project.
+	 * @param newUser The user to link.
+	 */
+	public void setUser(@Nullable final UserEntity newUser) {
+		final UserEntity oldUser = this.user;
+		this.user = newUser;
+		if (oldUser != null && oldUser.getProject() == this) {
+			oldUser.setProject(null);
+		}
+		if (newUser != null && newUser.getProject() != this) {
+			newUser.setProject(this);
+		}
+	}
 
 	public void addDataRowTransformationError(final DataTransformationErrorEntity dataTransformationError) {
 		dataTransformationErrors.add(dataTransformationError);

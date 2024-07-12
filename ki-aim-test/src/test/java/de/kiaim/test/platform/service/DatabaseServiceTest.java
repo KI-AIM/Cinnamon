@@ -15,6 +15,7 @@ import de.kiaim.test.platform.DatabaseTest;
 import de.kiaim.test.util.TransformationResultTestHelper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -32,45 +33,44 @@ class DatabaseServiceTest extends DatabaseTest {
 	ProjectService projectService;
 
 	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void storeAndDelete() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
 
-		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult, project));
+		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult,(testProject)));
 
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertEquals(dataSetId, project.getId(), "Project has been associated with the wrong dataset!");
-		assertEquals(0, dataTransformationErrorRepository.countByProjectId(project.getId()),
+		assertEquals(dataSetId,(testProject).getId(), "Project has been associated with the wrong dataset!");
+		assertEquals(0, dataTransformationErrorRepository.countByProjectId((testProject).getId()),
 		             "No transformation errors should have been persisted!");
 
-		assertDoesNotThrow(() -> databaseService.delete(project));
+		assertDoesNotThrow(() -> databaseService.delete(testProject));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
+
 	}
 
 	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void storeAndDeleteWithErrors() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(true);
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
 
-		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult, project));
+		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult, testProject));
 
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(3, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(project, "User has not been associated with the dataset!");
-		assertEquals(dataSetId, project.getId(), "User has been associated with the wrong dataset!");
-		assertEquals(2, dataTransformationErrorRepository.countByProjectId(project.getId()),
+		assertNotNull(testProject, "User has not been associated with the dataset!");
+		assertEquals(dataSetId, testProject.getId(), "User has been associated with the wrong dataset!");
+		assertEquals(2, dataTransformationErrorRepository.countByProjectId(testProject.getId()),
 		             "Transformation errors have not been persisted!");
 
-		assertDoesNotThrow(() -> databaseService.delete(project));
+		assertDoesNotThrow(() -> databaseService.delete(testProject));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
-		assertEquals(0, dataTransformationErrorRepository.countByProjectId(project.getId()),
+		assertEquals(0, dataTransformationErrorRepository.countByProjectId(testProject.getId()),
 		             "Transformation errors have not been removed!");
 	}
 

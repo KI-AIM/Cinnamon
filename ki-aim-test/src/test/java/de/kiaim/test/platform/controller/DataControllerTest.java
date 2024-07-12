@@ -15,6 +15,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,7 +27,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class DataControllerTest extends ControllerTest {
 
 	@Test
-	@Transactional
 	void estimateDatatypes() throws Exception {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
@@ -104,7 +104,6 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
-	@Transactional
 	void readAndValidateData() throws Exception {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
@@ -186,20 +185,19 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
-	@Transactional
 	void storeConfigJson() throws Exception {
 		final String jsonConfiguration = DataConfigurationTestHelper.generateDataConfigurationAsJson();
 		testStoreConfig(jsonConfiguration);
 	}
 
 	@Test
-	@Transactional
 	void storeConfigYaml() throws Exception {
 		final String yamlConfiguration = DataConfigurationTestHelper.generateDataConfigurationAsYaml();
 		testStoreConfig(yamlConfiguration);
 	}
 
 	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void storeDataAndDeleteData() throws Exception {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();

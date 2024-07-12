@@ -23,7 +23,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-//@Transactional // Will block the DROP TABLE statement
+@Transactional
 public class DatabaseTest extends ContextRequiredTest {
 
 	@Autowired
@@ -41,6 +41,9 @@ public class DatabaseTest extends ContextRequiredTest {
 	DatabaseService databaseService;
 	@Autowired
 	ProjectService projectService;
+
+	protected UserEntity testUser;
+	protected ProjectEntity testProject;
 
 	protected UserEntity getTestUser() {
 		Optional<UserEntity> userOptional = userRepository.findById("test_user");
@@ -62,6 +65,9 @@ public class DatabaseTest extends ContextRequiredTest {
 			// Clean database to prevent issues with canceled tests
 			doCleanDatabase();
 		}
+
+		this.testUser = getTestUser();
+		this.testProject = getTestProject();
 	}
 
 	@AfterEach
@@ -113,9 +119,10 @@ public class DatabaseTest extends ContextRequiredTest {
 
 	private void doCleanDatabase() {
 		try {
-			final UserEntity testUser = getTestUser();
-			testUser.setProject(null);
-			userRepository.save(testUser);
+			if (this.testUser != null) {
+				this.testUser.setProject(null);
+				userRepository.save(this.testUser);
+			}
 
 			projectRepository.deleteAll();
 			databaseService.executeStatement("SELECT setval('project_entity_seq', 1, true)");

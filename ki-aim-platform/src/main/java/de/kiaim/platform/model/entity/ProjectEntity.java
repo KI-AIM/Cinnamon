@@ -58,6 +58,11 @@ public class ProjectEntity {
 	@Setter
 	private Map<String, String> configurations = new HashMap<>();
 
+	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = false, cascade = CascadeType.ALL)
+	@JoinColumn(name = "external_proccess_id", referencedColumnName = "id")
+	@Nullable
+	private ExternalProcessEntity externalProcess;
+
 	/**
 	 * User that owns this configuration and the corresponding data set.
 	 */

@@ -27,6 +27,7 @@ public class StatusEntity {
 	 */
 	@Setter
 	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
 	private Step currentStep = Step.UPLOAD;
 
 	/**
@@ -34,6 +35,7 @@ public class StatusEntity {
 	 */
 	@Setter
 	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
 	private ProcessStatus externalProcessStatus = ProcessStatus.NOT_REQUIRED;
 
 	/**

@@ -18,6 +18,16 @@ public abstract class InternalException extends ApiException {
 	 */
 	public static final String MISSING_HANDLING = "2";
 
+	/**
+	 * Exception class code for exceptions from {@link InternalIOException}.
+	 */
+	public static final String IO = "3";
+
+	/**
+	 * Exception class code for exceptions from {@link InternalRequestException}.
+	 */
+	public static final String HTTP = "4";
+
 	public InternalException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

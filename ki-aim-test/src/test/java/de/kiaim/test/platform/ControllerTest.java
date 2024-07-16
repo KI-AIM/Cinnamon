@@ -1,11 +1,17 @@
 package de.kiaim.test.platform;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.model.dto.ErrorResponse;
+import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.test.util.DataConfigurationTestHelper;
+import de.kiaim.test.util.FileConfigurationTestHelper;
+import de.kiaim.test.util.ResourceHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 
@@ -13,8 +19,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
 public class ControllerTest extends DatabaseTest {
@@ -22,7 +29,7 @@ public class ControllerTest extends DatabaseTest {
 	@Autowired
 	protected ObjectMapper objectMapper;
 	@Autowired
-	private SerializationConfig serializationConfig;
+	protected SerializationConfig serializationConfig;
 
 	protected ObjectMapper yamlMapper = null;
 	protected ObjectMapper jsonMapper = null;
@@ -61,4 +68,32 @@ public class ControllerTest extends DatabaseTest {
 			assertEquals(expectedError, errorResponse.getErrorMessage() , "Unexpected message!");
 		};
 	}
+
+	protected void postData() throws Exception {
+		postData(true);
+	}
+
+	protected void postData(final boolean withErrors) throws Exception {
+		MockMultipartFile file;
+		if (withErrors) {
+			file = ResourceHelper.loadCsvFileWithErrors();
+		} else {
+			file = ResourceHelper.loadCsvFile();
+		}
+
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+
+		String result = mockMvc.perform(multipart("/api/data")
+				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration))
+				                                .param("configuration",
+				                                       objectMapper.writeValueAsString(configuration)))
+		                       .andExpect(status().isOk())
+		                       .andReturn().getResponse().getContentAsString();
+
+		assertDoesNotThrow(() -> Long.parseLong(result.trim()));
+	}
+
 }

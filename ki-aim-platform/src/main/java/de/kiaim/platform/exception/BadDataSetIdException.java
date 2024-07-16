@@ -1,7 +1,7 @@
 package de.kiaim.platform.exception;
 
 /**
- * Exceptions that are cause because of invalid data set IDs in requests.
+ * Exceptions that are caused because of invalid data set IDs in requests.
  */
 public class BadDataSetIdException extends BadRequestException {
 

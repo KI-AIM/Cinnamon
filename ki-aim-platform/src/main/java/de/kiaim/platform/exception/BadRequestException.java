@@ -33,6 +33,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String FILE = "5";
 
+	/**
+	 * Error class code for {@link BadProcessIdException}.
+	 */
+	public static final String PROCESS_ID = "6";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

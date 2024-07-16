@@ -455,33 +455,6 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 	}
 
-	private void postData() throws Exception {
-		postData(true);
-	}
-
-	private void postData(final boolean withErrors) throws Exception {
-		MockMultipartFile file;
-		if (withErrors) {
-			file = ResourceHelper.loadCsvFileWithErrors();
-		} else {
-			file = ResourceHelper.loadCsvFile();
-		}
-
-		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
-
-		String result = mockMvc.perform(multipart("/api/data")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration))
-				                                .param("configuration",
-				                                       objectMapper.writeValueAsString(configuration)))
-		                       .andExpect(status().isOk())
-		                       .andReturn().getResponse().getContentAsString();
-
-		assertDoesNotThrow(() -> Long.parseLong(result.trim()));
-	}
-
 	private String wrapInQuotes(final String value) {
 		return "\"" + value + "\"";
 	}

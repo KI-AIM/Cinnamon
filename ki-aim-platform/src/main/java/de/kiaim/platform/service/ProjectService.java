@@ -4,7 +4,11 @@ import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Service class for managing projects.
+ */
 @Service
 public class ProjectService {
 
@@ -23,6 +27,7 @@ public class ProjectService {
 	 * @param user The user of the project.
 	 * @return The project.
 	 */
+	@Transactional
 	public ProjectEntity getProject(final UserEntity user) {
 		ProjectEntity project = user.getProject();
 		if (project == null) {

@@ -71,7 +71,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .param("algorithm", "ctgan")
 				                .param("configurationName", "configurationName")
 				                .param("configuration", "configuration")
-				                .contentType(MediaType.TEXT_PLAIN_VALUE))
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 
 		// Test state changes
@@ -146,7 +146,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .param("algorithm", "ctgan")
 				                .param("configurationName", "configurationName")
 				                .param("configuration", "configuration")
-				                .contentType(MediaType.TEXT_PLAIN_VALUE))
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
 				       "No configuration for the project with the given ID '" + getTestProject().getId() + "' found!"));
@@ -167,7 +167,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .param("algorithm", "ctgan")
 				                .param("configurationName", "configurationName")
 				                .param("configuration", "configuration")
-				                .contentType(MediaType.TEXT_PLAIN_VALUE))
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorMessage("Failed to start the process! Got status of 404 NOT_FOUND"));
 	}

@@ -65,7 +65,7 @@ public class ProcessController {
 	@Operation(summary = "Starts an external process.",
 	           description = "Starts an external process.")
 	@PostMapping(value = "/start",
-	             consumes = {MediaType.TEXT_PLAIN_VALUE},
+	             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",

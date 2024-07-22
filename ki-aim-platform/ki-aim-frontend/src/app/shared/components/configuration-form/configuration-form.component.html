@@ -1,12 +1,4 @@
-<mat-select [formControlName]="configurationInputDefinition.name"
-            [id]="configurationInputDefinition.name">
-    <mat-option *ngFor="let option of configurationInputDefinition.values" [value]="option">
-        {{ option }}
-    </mat-option>
-</mat-select>
-
 <form (ngSubmit)="onSubmit()" [formGroup]="form">
-
 
     <ng-container *ngFor="let inputDefinition of formDefinition">
         <app-configuration-input [configurationInputDefinition]="inputDefinition"
@@ -14,7 +6,7 @@
     </ng-container>
 
     <div>
-        <button type="submit" [disabled]="!form.valid">OK</button>
+        <button type="submit" mat-raised-button color="primary" [disabled]="!form.valid">OK</button>
     </div>
 
 </form>

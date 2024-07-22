@@ -1,8 +1,9 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationInputDefinition } from "../../model/configuration-input-definition";
 import { stringify } from "yaml";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
+import { HttpClient } from "@angular/common/http";
 
 @Component({
   selector: 'app-configuration-form',
@@ -11,8 +12,14 @@ import { ConfigurationInputType } from "../../model/configuration-input-type";
 })
 export class ConfigurationFormComponent implements OnInit {
 
-    @Input() formDefinition!: ConfigurationInputDefinition[];
-    form!: FormGroup;
+    @Input() public formDefinition!: ConfigurationInputDefinition[];
+    @Output() public submitConfiguration = new EventEmitter<string>();
+    protected form!: FormGroup;
+
+    constructor(
+        private readonly http: HttpClient,
+    ) {
+    }
 
     ngOnInit() {
         const group: any = {};
@@ -34,6 +41,7 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     onSubmit() {
-        console.log(stringify(this.form.getRawValue()));
+        console.log("emit");
+        this.submitConfiguration.emit(stringify(this.form.getRawValue()));
     }
 }

@@ -1,7 +1,6 @@
 import { Component, Input, TemplateRef } from '@angular/core';
 import { ConfigurationInputDefinition } from "../../model/configuration-input-definition";
 import { MatDialog } from "@angular/material/dialog";
-import { ColumnConfiguration } from "../../model/column-configuration";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 
 @Component({

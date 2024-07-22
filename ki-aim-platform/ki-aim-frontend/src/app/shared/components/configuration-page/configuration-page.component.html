@@ -1,0 +1,7 @@
+<app-configuration-selection #selection [options]="Object.keys(defs)" (change)="onSelection($event)">
+</app-configuration-selection>
+
+<div *ngFor="let item of defs | keyvalue" [id]="item.key" class="config-form" style="display: none;">
+    <app-configuration-form [formDefinition]="item.value" (submitConfiguration)="onSubmit($event)">
+    </app-configuration-form>
+</div>

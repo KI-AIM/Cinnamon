@@ -23,6 +23,6 @@ import { ConfigurationPageComponent } from './components/configuration-page/conf
 @NgModule({
 	declarations: [InformationDialogComponent, InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationInputInfoComponent, ConfigurationFormComponent, ConfigurationInputArrayComponent, ConfigurationSelectionComponent, ConfigurationPageComponent],
     imports: [CommonModule, MatDialogModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatSelectModule],
-    exports: [InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationFormComponent],
+    exports: [InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationFormComponent, ConfigurationPageComponent],
 })
 export class SharedModule {}

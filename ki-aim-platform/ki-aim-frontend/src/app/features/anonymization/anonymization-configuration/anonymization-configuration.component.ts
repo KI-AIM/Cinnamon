@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { ConfigurationInputDefinition } from "../../../shared/model/configuration-input-definition";
 import { ConfigurationInputType } from "../../../shared/model/configuration-input-type";
 
@@ -10,10 +10,11 @@ import { ConfigurationInputType } from "../../../shared/model/configuration-inpu
 export class AnonymizationConfigurationComponent {
 
     abc: ConfigurationInputDefinition[];
+    defs: {[name :string]: ConfigurationInputDefinition[]} = {};
 
     constructor() {
 
-        this.abc = [];
+        this.abc = [] as ConfigurationInputDefinition[];
 
         const floatInput = new ConfigurationInputDefinition();
         floatInput.name = "float";
@@ -56,5 +57,15 @@ export class AnonymizationConfigurationComponent {
         arrayInput.defaultValue = [1, 2, 3];
         this.abc.push(arrayInput);
 
+        this.defs["Den günstigsten den Sie haben. Ist für meine Schwiegereltern."] = this.abc;
+
+        const oho = [] as ConfigurationInputDefinition[];
+        const stringInput2 = new ConfigurationInputDefinition();
+        stringInput2.name = "toll";
+        stringInput2.type = ConfigurationInputType.STRING;
+        stringInput2.label = "Text";
+        stringInput2.defaultValue = "abc";
+        oho.push(stringInput2);
+        this.defs["Mir egal, entschied du :)"] = oho;
     }
 }

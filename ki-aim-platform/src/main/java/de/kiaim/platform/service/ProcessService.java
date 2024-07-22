@@ -109,6 +109,7 @@ public class ProcessService {
 	 * @param configuration The process specific configuration.
 	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
+	 * @throws BadStepNameException If the given step name is not defined in the application properties.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 * @throws InternalIOException If the request body could not be created.
 	 * @throws InternalRequestException If the request to start the process failed.
@@ -116,13 +117,16 @@ public class ProcessService {
 	@Transactional
 	public void startProcess(final ProjectEntity project, final String stepName, final String algorithmName,
 	                         final String configuration)
-			throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException, InternalRequestException {
+			throws BadColumnNameException, BadDataSetIdException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException, InternalRequestException {
 		// Set process entity
 		final ExternalProcessEntity externalProcess = new ExternalProcessEntity();
 		project.setExternalProcess(externalProcess);
 		projectRepository.save(project);
 
 		// Get configuration
+		if (!kiAimConfiguration.getSteps().containsKey(stepName)) {
+			throw new BadStepNameException(BadStepNameException.NOT_FOUND, "The step '" + stepName + "' is not defined!");
+		}
 		final String url = kiAimConfiguration.getSteps().get(stepName).getUrl();
 
 		// Prepare body

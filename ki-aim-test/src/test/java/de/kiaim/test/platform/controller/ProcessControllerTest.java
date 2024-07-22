@@ -140,6 +140,21 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void startInvalidStepName() throws Exception {
+		postData(false);
+
+		mockMvc.perform(post("/api/process/start")
+				                .param("stepName", "invalid")
+				                .param("algorithm", "ctgan")
+				                .param("configurationName", "configurationName")
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage(
+				       "The step 'invalid' is not defined!"));
+	}
+
+	@Test
 	public void startNoData() throws Exception {
 		mockMvc.perform(post("/api/process/start")
 				                .param("stepName", "synthetization")

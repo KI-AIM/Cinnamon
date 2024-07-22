@@ -72,7 +72,7 @@ public class ProcessController {
 			             description = "Successfully started the process.",
 			             content = @Content(schema = @Schema(implementation = Void.class))),
 			@ApiResponse(responseCode = "400",
-			             description = "The project does not contain a dataset.",
+			             description = "The project does not contain a dataset, or the step name is not valid.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
@@ -88,7 +88,7 @@ public class ProcessController {
 			@ParameterObject @Valid final StartProcessRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	)
-			throws InternalDataSetPersistenceException, InternalIOException, BadColumnNameException, BadDataSetIdException, InternalRequestException {
+			throws InternalDataSetPersistenceException, InternalIOException, BadColumnNameException, BadDataSetIdException, InternalRequestException, BadStepNameException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);

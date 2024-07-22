@@ -33,7 +33,15 @@ export class ConfigurationFormComponent implements OnInit {
 
                 group[inputDefinition.name] = new FormArray(controls, Validators.required)
             } else {
-                group[inputDefinition.name] = new FormControl(inputDefinition.defaultValue, Validators.required)
+                const validators = [Validators.required];
+                if (inputDefinition.minValue !== null) {
+                    validators.push(Validators.min(inputDefinition.minValue));
+                }
+                if (inputDefinition.maxValue !== null) {
+                    validators.push(Validators.max(inputDefinition.maxValue));
+                }
+
+                group[inputDefinition.name] = new FormControl(inputDefinition.defaultValue, validators)
             }
         });
 

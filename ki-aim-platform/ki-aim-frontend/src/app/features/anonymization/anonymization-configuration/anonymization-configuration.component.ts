@@ -21,7 +21,7 @@ export class AnonymizationConfigurationComponent {
         floatInput.type = ConfigurationInputType.FLOAT;
         floatInput.label = "Float";
         floatInput.defaultValue = 0.3;
-        floatInput.minValue = 0;
+        floatInput.minValue = 0.0;
         floatInput.maxValue = 1;
         floatInput.description = "Beschreibung";
         this.abc.push(floatInput);

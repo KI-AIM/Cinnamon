@@ -10,6 +10,7 @@ import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 })
 export class ConfigurationInputComponent {
     protected readonly ConfigurationInputType = ConfigurationInputType;
+    protected readonly Math = Math;
 
     @Input() configurationInputDefinition!: ConfigurationInputDefinition;
     @Input() form!: FormGroup;

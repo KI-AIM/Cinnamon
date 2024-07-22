@@ -11,7 +11,6 @@ import { ConfigurationSelectionComponent } from "../configuration-selection/conf
 export class ConfigurationPageComponent {
     @Input() public stepName!: string;
     @Input() public configurationName!: string;
-    // TODO fetch from server?
     @Input() public defs!: {[name :string]: ConfigurationInputDefinition[]};
 
     protected readonly Object = Object;

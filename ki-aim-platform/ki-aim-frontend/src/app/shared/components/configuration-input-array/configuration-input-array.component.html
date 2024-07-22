@@ -9,6 +9,9 @@
             <div class="value-row" *ngFor="let control of formArray.controls; index as i">
                 <mat-form-field>
                     <input type="number" [formControlName]="i" matInput/>
+                    <mat-error *ngIf="formArray.at(i).hasError('required')">
+                        Value must not be empty
+                    </mat-error>
                 </mat-form-field>
                 <div class="remove-button">
                     <button mat-raised-button color="primary" (click)="removeValue(i)">remove</button>

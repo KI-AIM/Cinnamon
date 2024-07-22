@@ -13,7 +13,7 @@
             <ng-container *ngSwitchCase="ConfigurationInputType.ARRAY">
                 <mat-form-field>
                     <input type="text" [value]="form.controls[configurationInputDefinition.name].value"
-                           [id]="configurationInputDefinition.name" matInput/>
+                           [id]="configurationInputDefinition.name" matInput disabled="disabled"/>
                 </mat-form-field>
 
                 <app-configuration-input-array [configurationInputDefinition]="configurationInputDefinition"
@@ -25,31 +25,58 @@
                 <mat-form-field>
                     <input type="number" [formControlName]="configurationInputDefinition.name"
                            [id]="configurationInputDefinition.name" matInput/>
+                    <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('required')">
+                       Value must not be empty
+                    </mat-error>
+                    <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('max')">
+                        Value must be less than or equal to {{ configurationInputDefinition.maxValue }}
+                    </mat-error>
+                    <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('min')">
+                        Value must be greater than or equal to {{ configurationInputDefinition.minValue }}
+                    </mat-error>
                 </mat-form-field>
             </ng-container>
 
             <ng-container *ngSwitchCase="ConfigurationInputType.INTEGER">
                 <mat-form-field>
                     <input type="number" [formControlName]="configurationInputDefinition.name"
-                           [id]="configurationInputDefinition.name" matInput/>
+                           [id]="configurationInputDefinition.name"
+                           (change)="form.controls[configurationInputDefinition.name].setValue(Math.round(form.controls[configurationInputDefinition.name].value));"
+                           matInput/>
+                    <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('required')">
+                       Value must not be empty
+                    </mat-error>
+                    <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('max')">
+                        Value must be less than or equal to {{ configurationInputDefinition.maxValue }}
+                    </mat-error>
+                    <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('min')">
+                        Value must be greater than or equal to {{ configurationInputDefinition.minValue }}
+                    </mat-error>
                 </mat-form-field>
             </ng-container>
 
             <ng-container *ngSwitchCase="ConfigurationInputType.STRING">
-                <mat-form-field>
-                    <ng-container *ngIf="configurationInputDefinition.values; else stringInput">
+                <ng-container *ngIf="configurationInputDefinition.values; else stringInput">
+                    <mat-form-field>
                         <mat-select [formControlName]="configurationInputDefinition.name"
                                     [id]="configurationInputDefinition.name">
                             <mat-option *ngFor="let option of configurationInputDefinition.values" [value]="option">
                                 {{ option }}
                             </mat-option>
                         </mat-select>
-                    </ng-container>
-                    <ng-template #stringInput>
+                    </mat-form-field>
+                </ng-container>
+                <ng-template #stringInput>
+                    <mat-form-field>
                         <input type="text" [formControlName]="configurationInputDefinition.name"
-                               [id]="configurationInputDefinition.name" matInput/>
-                    </ng-template>
-                </mat-form-field>
+                               [id]="configurationInputDefinition.name"
+                               (change)="form.controls[configurationInputDefinition.name].setValue(form.controls[configurationInputDefinition.name].value.trim());"
+                               matInput/>
+                        <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('required')">
+                            Value must not be empty
+                        </mat-error>
+                    </mat-form-field>
+                </ng-template>
             </ng-container>
         </ng-container>
     </span>

@@ -8,10 +8,18 @@ import { MatCardModule } from "@angular/material/card";
 import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { NoSpaceValidatorDirective } from './directives/no-space-validator.directive';
+import { ConfigurationInputComponent } from './components/configuration-input/configuration-input.component';
+import { ConfigurationInputInfoComponent } from './components/configuration-input-info/configuration-input-info.component';
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { ReactiveFormsModule } from "@angular/forms";
+import { ConfigurationFormComponent } from './components/configuration-form/configuration-form.component';
+import { MatIconModule } from "@angular/material/icon";
+import { MatSelectModule } from "@angular/material/select";
 
 @NgModule({
-	declarations: [InformationDialogComponent, InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective],
-	imports: [CommonModule, MatDialogModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule],
-	exports: [InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective],
+	declarations: [InformationDialogComponent, InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationInputInfoComponent, ConfigurationFormComponent],
+    imports: [CommonModule, MatDialogModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatSelectModule],
+    exports: [InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationFormComponent],
 })
 export class SharedModule {}

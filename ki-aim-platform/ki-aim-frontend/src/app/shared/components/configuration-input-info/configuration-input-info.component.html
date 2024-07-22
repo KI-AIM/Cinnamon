@@ -1,0 +1,35 @@
+
+<a title="Additional Settings" (click)="openDialog(inputInfoDialog)"
+    style="vertical-align: middle;">
+    <mat-icon fontIcon="info"></mat-icon>
+</a>
+
+<ng-template #inputInfoDialog>
+    <mat-dialog-content class="mat-typography">
+
+        <div>
+            <span>Name</span>
+            <span>{{ configurationInputDefinition.name }}</span>
+        </div>
+        <div>
+            <span>Default</span>
+            <span>{{ configurationInputDefinition.defaultValue }}</span>
+        </div>
+        <div>
+            <span>Min</span>
+            <span>{{ configurationInputDefinition.minValue }}</span>
+        </div>
+        <div>
+            <span>Max</span>
+            <span>{{ configurationInputDefinition.maxValue }}</span>
+        </div>
+        <div>
+            <span>Description</span>
+            <span>{{ configurationInputDefinition.description }}</span>
+        </div>
+        <div>
+            <span>Impact</span>
+            <span>Weltfrieden</span>
+        </div>
+    </mat-dialog-content>
+</ng-template>

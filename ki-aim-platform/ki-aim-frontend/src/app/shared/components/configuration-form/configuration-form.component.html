@@ -1,0 +1,6 @@
+<form (ngSubmit)="onSubmit()" [formGroup]="form">
+    <ng-container *ngFor="let inputDefinition of formDefinition">
+        <app-configuration-input [configurationInputDefinition]="inputDefinition"
+                                 [form]="form"></app-configuration-input>
+    </ng-container>
+</form>

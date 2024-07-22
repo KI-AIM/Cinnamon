@@ -7,29 +7,32 @@
 <ng-template #inputInfoDialog>
     <mat-dialog-content class="mat-typography">
 
-        <div>
-            <span>Name</span>
-            <span>{{ configurationInputDefinition.name }}</span>
-        </div>
-        <div>
-            <span>Default</span>
-            <span>{{ configurationInputDefinition.defaultValue }}</span>
-        </div>
-        <div>
-            <span>Min</span>
-            <span>{{ configurationInputDefinition.minValue }}</span>
-        </div>
-        <div>
-            <span>Max</span>
-            <span>{{ configurationInputDefinition.maxValue }}</span>
-        </div>
-        <div>
-            <span>Description</span>
-            <span>{{ configurationInputDefinition.description }}</span>
-        </div>
-        <div>
-            <span>Impact</span>
-            <span>Weltfrieden</span>
+        <div class="info-table">
+
+                <span class="info-name">Name:</span>
+                <span class="info-value">{{ configurationInputDefinition.name }}</span>
+
+                <span class="info-name">Default Value:</span>
+                <span class="info-value">{{ configurationInputDefinition.defaultValue }}</span>
+
+            <ng-container *ngIf="configurationInputDefinition.type === ConfigurationInputType.INTEGER || configurationInputDefinition.type === ConfigurationInputType.FLOAT">
+
+                <span class="info-name">Minimum Value:</span>
+                <span class="info-value">{{ configurationInputDefinition.minValue }}</span>
+
+                <span class="info-name">Maximum Value:</span>
+                <span class="info-value">{{ configurationInputDefinition.maxValue }}</span>
+            </ng-container>
+
+            <span class="info-name">Description:</span>
+            <span class="info-value">{{ configurationInputDefinition.description }}</span>
+
+            <span class="info-name">Effect:</span>
+            <span class="info-value">Weltfrieden</span>
         </div>
     </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
 </ng-template>

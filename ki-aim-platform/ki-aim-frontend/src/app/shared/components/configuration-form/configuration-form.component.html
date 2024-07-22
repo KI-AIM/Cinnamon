@@ -1,6 +1,20 @@
+<mat-select [formControlName]="configurationInputDefinition.name"
+            [id]="configurationInputDefinition.name">
+    <mat-option *ngFor="let option of configurationInputDefinition.values" [value]="option">
+        {{ option }}
+    </mat-option>
+</mat-select>
+
 <form (ngSubmit)="onSubmit()" [formGroup]="form">
+
+
     <ng-container *ngFor="let inputDefinition of formDefinition">
         <app-configuration-input [configurationInputDefinition]="inputDefinition"
                                  [form]="form"></app-configuration-input>
     </ng-container>
+
+    <div>
+        <button type="submit" [disabled]="!form.valid">OK</button>
+    </div>
+
 </form>

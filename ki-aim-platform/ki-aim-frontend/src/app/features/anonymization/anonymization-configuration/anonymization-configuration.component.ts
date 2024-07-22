@@ -20,6 +20,9 @@ export class AnonymizationConfigurationComponent {
         floatInput.type = ConfigurationInputType.FLOAT;
         floatInput.label = "Float";
         floatInput.defaultValue = 0.3;
+        floatInput.minValue = 0;
+        floatInput.maxValue = 1;
+        floatInput.description = "Beschreibung";
         this.abc.push(floatInput);
 
         const integerInput = new ConfigurationInputDefinition();
@@ -27,6 +30,8 @@ export class AnonymizationConfigurationComponent {
         integerInput.type = ConfigurationInputType.INTEGER;
         integerInput.label = "Int";
         integerInput.defaultValue = 2;
+        integerInput.minValue = 0;
+        integerInput.maxValue = 100;
         this.abc.push(integerInput);
 
         const stringInput = new ConfigurationInputDefinition();
@@ -37,12 +42,19 @@ export class AnonymizationConfigurationComponent {
         this.abc.push(stringInput);
 
         const stringSelect = new ConfigurationInputDefinition();
-        stringSelect.name = "toll";
+        stringSelect.name = "select";
         stringSelect.type = ConfigurationInputType.STRING;
         stringSelect.label = "Select";
         stringSelect.defaultValue = "abc";
         stringSelect.values = ["abc", "def", "hij"];
         this.abc.push(stringSelect);
+
+        const arrayInput = new ConfigurationInputDefinition();
+        arrayInput.name = "array";
+        arrayInput.type = ConfigurationInputType.ARRAY;
+        arrayInput.label = "Array";
+        arrayInput.defaultValue = [1, 2, 3];
+        this.abc.push(arrayInput);
 
     }
 }

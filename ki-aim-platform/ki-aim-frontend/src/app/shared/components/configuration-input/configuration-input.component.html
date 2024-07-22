@@ -7,41 +7,51 @@
         </div>
     </div>
 
-    <span style="">
-    <mat-form-field [formGroup]="form">
+    <span style="" [formGroup]="form">
         <ng-container [ngSwitch]="configurationInputDefinition.type">
-            <ng-container *ngSwitchCase="ConfigurationInputType.ARRAY">
 
+            <ng-container *ngSwitchCase="ConfigurationInputType.ARRAY">
+                <mat-form-field>
+                    <input type="text" [value]="form.controls[configurationInputDefinition.name].value"
+                           [id]="configurationInputDefinition.name" matInput/>
+                </mat-form-field>
+
+                <app-configuration-input-array [configurationInputDefinition]="configurationInputDefinition"
+                                               [parentForm]="form">
+                </app-configuration-input-array>
             </ng-container>
 
             <ng-container *ngSwitchCase="ConfigurationInputType.FLOAT">
-                <input type="number" [formControlName]="configurationInputDefinition.name"
-                       [id]="configurationInputDefinition.name" matInput/>
+                <mat-form-field>
+                    <input type="number" [formControlName]="configurationInputDefinition.name"
+                           [id]="configurationInputDefinition.name" matInput/>
+                </mat-form-field>
             </ng-container>
 
             <ng-container *ngSwitchCase="ConfigurationInputType.INTEGER">
-                <input type="number" [formControlName]="configurationInputDefinition.name"
-                       [id]="configurationInputDefinition.name" matInput/>
+                <mat-form-field>
+                    <input type="number" [formControlName]="configurationInputDefinition.name"
+                           [id]="configurationInputDefinition.name" matInput/>
+                </mat-form-field>
             </ng-container>
 
             <ng-container *ngSwitchCase="ConfigurationInputType.STRING">
-                <ng-container *ngIf="configurationInputDefinition.values; else stringInput">
-                    <mat-select [formControlName]="configurationInputDefinition.name"
-                                [id]="configurationInputDefinition.name">
-                        <mat-option *ngFor="let option of configurationInputDefinition.values" [value]="option">
-                            {{ option }}
-                        </mat-option>
-                    </mat-select>
-                </ng-container>
-                <ng-template #stringInput>
-                    <input type="text" [formControlName]="configurationInputDefinition.name"
-                           [id]="configurationInputDefinition.name" matInput/>
-                </ng-template>
-
+                <mat-form-field>
+                    <ng-container *ngIf="configurationInputDefinition.values; else stringInput">
+                        <mat-select [formControlName]="configurationInputDefinition.name"
+                                    [id]="configurationInputDefinition.name">
+                            <mat-option *ngFor="let option of configurationInputDefinition.values" [value]="option">
+                                {{ option }}
+                            </mat-option>
+                        </mat-select>
+                    </ng-container>
+                    <ng-template #stringInput>
+                        <input type="text" [formControlName]="configurationInputDefinition.name"
+                               [id]="configurationInputDefinition.name" matInput/>
+                    </ng-template>
+                </mat-form-field>
             </ng-container>
         </ng-container>
-
-    </mat-form-field>
     </span>
 
     <div class="d-flex" style="height: 56px;">

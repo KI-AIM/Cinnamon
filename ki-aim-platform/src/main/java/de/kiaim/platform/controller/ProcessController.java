@@ -52,7 +52,7 @@ public class ProcessController {
 	@PostMapping(value = "/start/test")
 	public ResponseEntity<String> startProcess(
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
+	) throws BadStepNameException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);

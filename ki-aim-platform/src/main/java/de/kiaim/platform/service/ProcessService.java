@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.platform.config.SerializationConfig;
-import de.kiaim.platform.config.KiAimConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
@@ -37,32 +36,33 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class ProcessService {
 
-	private final KiAimConfiguration kiAimConfiguration;
 	private final String contextPath;
 
 	private final ObjectMapper yamlMapper;
 
-	private final DatabaseService databaseService;
 	private final ExternalProcessRepository externalProcessRepository;
 	private final ProjectRepository projectRepository;
 
+	private final DatabaseService databaseService;
 	private final StatusService statusService;
+	private final StepService stepService;
 
 	public ProcessService(final SerializationConfig serializationConfig,
-	                      final KiAimConfiguration kiAimConfiguration,
 	                      @Value("#{servletContext.contextPath}") final String contextPath,
-	                      final DatabaseService databaseService,
 	                      final ExternalProcessRepository externalProcessRepository,
 	                      final ProjectRepository projectRepository,
-	                      final StatusService statusService) {
+	                      final DatabaseService databaseService,
+	                      final StatusService statusService,
+	                      final StepService stepService
+	) {
 		this.yamlMapper = serializationConfig.yamlMapper();
 
-		this.kiAimConfiguration = kiAimConfiguration;
 		this.contextPath = contextPath;
-		this.databaseService = databaseService;
 		this.externalProcessRepository = externalProcessRepository;
 		this.projectRepository = projectRepository;
+		this.databaseService = databaseService;
 		this.statusService = statusService;
+		this.stepService = stepService;
 	}
 
 	/**
@@ -73,14 +73,15 @@ public class ProcessService {
 	 * @param algorithmName The name of the algorithm.
 	 */
 	@Transactional
-	public void startProcessTest(final ProjectEntity project, final String stepName, final String algorithmName) {
+	public void startProcessTest(final ProjectEntity project, final String stepName, final String algorithmName)
+			throws BadStepNameException {
 		// Set process entity
 		final ExternalProcessEntity externalProcess = new ExternalProcessEntity();
 		project.setExternalProcess(externalProcess);
 		projectRepository.save(project);
 
 		// Get configuration
-		final String url = kiAimConfiguration.getSteps().get(stepName).getUrl();
+		final String url = stepService.getStepConfiguration(stepName).getUrl();
 
 		// Create request
 		final WebClient webClient = WebClient.builder().baseUrl(url).build();
@@ -124,10 +125,7 @@ public class ProcessService {
 		projectRepository.save(project);
 
 		// Get configuration
-		if (!kiAimConfiguration.getSteps().containsKey(stepName)) {
-			throw new BadStepNameException(BadStepNameException.NOT_FOUND, "The step '" + stepName + "' is not defined!");
-		}
-		final String url = kiAimConfiguration.getSteps().get(stepName).getUrl();
+		final String url = stepService.getStepConfiguration(stepName).getUrl();
 
 		// Prepare body
 		// TODO use streaming?

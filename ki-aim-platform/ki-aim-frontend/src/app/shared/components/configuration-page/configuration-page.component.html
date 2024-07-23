@@ -1,7 +1,17 @@
-<app-configuration-selection #selection [options]="Object.keys(defs)" (change)="onSelection($event)">
-</app-configuration-selection>
+<h3>Algorithm Selection</h3>
 
-<div *ngFor="let item of defs | keyvalue" [id]="item.key" class="config-form" style="display: none;">
-    <app-configuration-form [formDefinition]="item.value" (submitConfiguration)="onSubmit($event)">
+<app-configuration-selection #selection [options]="Object.keys(defs)"></app-configuration-selection>
+
+<h3>Algorithm Configuration</h3>
+
+<div *ngIf="!selection.selectedOption" id="placeholder" class="w-100 mt-4">
+    <div class="ms-auto me-auto" style="width: fit-content">
+        Please select an algorithm
+    </div>
+</div>
+
+<div *ngFor="let item of defs | keyvalue" [id]="item.key">
+    <app-configuration-form *ngIf="selection.selectedOption === item.key" [formDefinition]="item.value"
+                            (submitConfiguration)="onSubmit($event)">
     </app-configuration-form>
 </div>

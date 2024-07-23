@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { ConfigurationInputDefinition } from "../../../shared/model/configuration-input-definition";
 import { ConfigurationInputType } from "../../../shared/model/configuration-input-type";
+import { TitleService } from "../../../core/services/title-service.service";
 
 @Component({
   selector: 'app-anonymization-configuration',
@@ -12,14 +13,17 @@ export class AnonymizationConfigurationComponent {
     abc: ConfigurationInputDefinition[];
     defs: {[name :string]: ConfigurationInputDefinition[]} = {};
 
-    constructor() {
+    constructor(
+        private titleService: TitleService,
+    ) {
+        this.titleService.setPageTitle("Anonymization");
 
         this.abc = [] as ConfigurationInputDefinition[];
 
         const floatInput = new ConfigurationInputDefinition();
         floatInput.name = "float";
         floatInput.type = ConfigurationInputType.FLOAT;
-        floatInput.label = "Float";
+        floatInput.label = "Float with a long name";
         floatInput.defaultValue = 0.3;
         floatInput.minValue = 0.0;
         floatInput.maxValue = 1;

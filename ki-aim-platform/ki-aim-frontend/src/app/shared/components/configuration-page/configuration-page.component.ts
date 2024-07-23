@@ -21,14 +21,6 @@ export class ConfigurationPageComponent {
     ) {
     }
 
-    onSelection(event: string) {
-        const abc = Array.from(document.getElementsByClassName('config-form'));
-        for (const a of abc) {
-            (a as HTMLElement).style.display = 'none';
-        }
-        document.getElementById(event)!.style.display = "";
-    }
-
     onSubmit(configuration: string) {
         const formData = new FormData();
 

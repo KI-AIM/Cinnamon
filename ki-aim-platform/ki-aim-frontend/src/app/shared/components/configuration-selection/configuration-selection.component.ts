@@ -11,13 +11,13 @@ export class ConfigurationSelectionComponent {
     @Input() public options: string[];
     @Output() public change = new EventEmitter<string>();
 
-    @ViewChild('selectElement') private selectElement: NgModel;
+    @ViewChild('selectElement') protected selectElement: NgModel;
 
     onChange(event: MatSelectChange) {
         this.change.emit(event.value);
     }
 
     public get selectedOption(): string {
-        return this.selectElement.value;
+        return this.selectElement?.value;
     }
 }

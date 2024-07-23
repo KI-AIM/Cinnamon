@@ -54,7 +54,7 @@ public class ProjectEntity {
 	@CollectionTable(name = "configuration",
 	                 joinColumns = @JoinColumn(name = "project_id", referencedColumnName = "id"))
 	@MapKeyColumn(name = "configuration_name")
-	@Column(name="configuration")
+	@Column(name="configuration", length = Integer.MAX_VALUE)
 	@Setter
 	private Map<String, String> configurations = new HashMap<>();
 

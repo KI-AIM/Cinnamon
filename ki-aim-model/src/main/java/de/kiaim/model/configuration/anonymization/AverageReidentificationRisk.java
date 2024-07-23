@@ -13,7 +13,7 @@ public class AverageReidentificationRisk extends PrivacyModel {
     /**
      * Parameter for the privacy model
      */
-    private Double averageRisk;
+    private final Double averageRisk;
 
     @JsonCreator
     public AverageReidentificationRisk(@JsonProperty("name") String name, @JsonProperty("values") double averageRisk) {

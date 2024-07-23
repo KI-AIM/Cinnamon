@@ -14,7 +14,6 @@ import java.util.List;
  * Uses JAL attributes.
  */
 @AllArgsConstructor
-@NoArgsConstructor
 @Getter
 @Setter
 @EqualsAndHashCode
@@ -25,13 +24,13 @@ public class AnonymizationConfig {
 //    Add default information
 
     /** List of privacy models to be used for anonymization */
-    private Collection<PrivacyModel> privacyModelList;
+    private final Collection<PrivacyModel> privacyModelList;
 
     /** Suppression limit */
-    private double suppressionLimit;
+    private final double suppressionLimit;
 
     /** Config containing LossMetric and corresponding parameters */
-    private QualityModelConfig qualityModel;
+    private final QualityModelConfig qualityModel;
 
     /** True if local generalization is used */
     private boolean localGeneralization = false;
@@ -40,7 +39,7 @@ public class AnonymizationConfig {
     private int localGeneralizationIterations = 100;
 
     /** List of attributes and their config */
-    private List<AttributeConfig> attributeConfigs;
+    private final List<AttributeConfig> attributeConfigs;
 
     public AnonymizationConfig(Collection<PrivacyModel> privacyModelList,
                                double suppressionLimit,

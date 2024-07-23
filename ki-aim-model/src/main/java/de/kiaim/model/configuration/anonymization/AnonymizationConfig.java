@@ -16,9 +16,9 @@ import java.util.List;
 @ToString
 public class AnonymizationConfig {
 
-    private List<PrivacyModel> privacyModels;
-    private String suppressionLimit;
-    private String qualityModel;
-    private boolean localGeneralization;
-    private List<AttributeConfig> attributeConfigurations;
+    private final List<PrivacyModel> privacyModels;
+    private final String suppressionLimit;
+    private final String qualityModel;
+    private final boolean localGeneralization;
+    private final List<AttributeConfig> attributeConfigurations;
 }

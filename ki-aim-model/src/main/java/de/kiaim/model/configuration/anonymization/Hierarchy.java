@@ -10,9 +10,9 @@ import lombok.*;
 @EqualsAndHashCode
 @ToString
 public class Hierarchy {
-    private String type;
-    private String intervalSize;
-    private String splitLevels;
-    private int minLevel;
-    private int maxLevel;
+    private final String type;
+    private final String intervalSize;
+    private final String splitLevels;
+    private final int minLevel;
+    private final int maxLevel;
 }

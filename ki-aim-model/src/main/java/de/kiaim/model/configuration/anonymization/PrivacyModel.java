@@ -22,5 +22,5 @@ import lombok.ToString;
 })
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PrivacyModel {
-    private String name;
+    private final String name;
 }

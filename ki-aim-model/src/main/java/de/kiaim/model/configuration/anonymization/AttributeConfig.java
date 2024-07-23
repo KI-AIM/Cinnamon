@@ -17,10 +17,10 @@ import java.util.List;
 @EqualsAndHashCode
 @ToString
 public class AttributeConfig {
-    private int index;
-    private String attributeType;
-    private List<String> order;
-    private String transformation;
-    private String anonyGroup;
-    private Hierarchy hierarchy;
+    private final int index;
+    private final String attributeType;
+    private final List<String> order;
+    private final String transformation;
+    private final String anonyGroup;
+    private final Hierarchy hierarchy;
 }

@@ -14,7 +14,7 @@ public class KAnonymity extends PrivacyModel {
     /**
      * Parameter for the privacy model
      */
-    private int k;
+    private final int k;
 
     @JsonCreator
     public KAnonymity(@JsonProperty("name") String name, @JsonProperty("values") int k) {

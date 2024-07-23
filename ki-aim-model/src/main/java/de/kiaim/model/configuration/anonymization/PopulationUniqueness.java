@@ -11,7 +11,7 @@ import lombok.ToString;
 @ToString
 public class PopulationUniqueness extends PrivacyModel {
     /** Parameter for the privacy model */
-    private double riskThreshold;
+    private final double riskThreshold;
 
     @JsonCreator
     public PopulationUniqueness(@JsonProperty("name") String name, @JsonProperty("values") double riskThreshold) {

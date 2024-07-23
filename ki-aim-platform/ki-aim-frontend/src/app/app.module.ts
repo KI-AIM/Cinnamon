@@ -29,12 +29,14 @@ import { MatOptionModule } from "@angular/material/core";
 import { MatSelectModule } from "@angular/material/select";
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { ConfigurationModule } from './features/configuration/configuration.module';
+import { SynthetizationConfigurationComponent } from './features/synthetization/synthetization-configuration/synthetization-configuration.component';
 
 @NgModule({
     declarations: [
         AppComponent,
         NavigationComponent,
         AnonymizationConfigurationComponent,
+        SynthetizationConfigurationComponent,
     ],
     imports: [
         BrowserModule,

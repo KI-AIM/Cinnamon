@@ -3,7 +3,8 @@ export enum Steps {
 	UPLOAD,
 	DATA_CONFIG,
 	VALIDATION,
-	ANONYMIZATION_CONFIG
+	ANONYMIZATION_CONFIG,
+    SYNTHETIZATION_CONFIG,
 }
 
 export const StepConfiguration = {
@@ -44,8 +45,16 @@ export const StepConfiguration = {
 		id: "navLinkAnonymizationConfiguration",
 		text: "Anonymization configuration",
 		enum: Steps.ANONYMIZATION_CONFIG,
-		dependsOn: Steps.VALIDATION, 
+		dependsOn: Steps.VALIDATION,
 		index: 4,
-	}
+	},
+    SYNTHETIZATION_CONFIG: {
+        path: "synthetizationConfiguration",
+        id: "navLinkSynthetizationConfiguration",
+        text: "Synthetization configuration",
+        enum: Steps.SYNTHETIZATION_CONFIG,
+        dependsOn: Steps.ANONYMIZATION_CONFIG,
+        index: 5,
+    },
 	//PERSISTING: {"path": "", "id": "", "text": "", "enum": Steps.PERSISTING, "index": 4},
 };

@@ -8,6 +8,9 @@ import {LoginComponent} from "./features/auth/pages/login/login.component";
 import {RegisterComponent} from "./features/auth/pages/register/register.component";
 import { AuthGuard } from './core/guards/auth.guard';
 import { AnonymizationConfigurationComponent } from './features/anonymization/anonymization-configuration/anonymization-configuration.component';
+import {
+    SynthetizationConfigurationComponent
+} from "./features/synthetization/synthetization-configuration/synthetization-configuration.component";
 
 const routes: Routes = [
     {path: '', redirectTo: '/login', pathMatch: 'full'},
@@ -17,7 +20,8 @@ const routes: Routes = [
     {path: 'upload', component: UploadFileComponent, canActivate: [AuthGuard]},
     {path: 'dataConfiguration', component: DataConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'dataValidation', component: DataValidationComponent, canActivate: [AuthGuard]},
-    {path: 'anonymizationConfiguration', component: AnonymizationConfigurationComponent, canActivate: [AuthGuard]}
+    {path: 'anonymizationConfiguration', component: AnonymizationConfigurationComponent, canActivate: [AuthGuard]},
+    {path: 'synthetizationConfiguration', component: SynthetizationConfigurationComponent, canActivate: [AuthGuard]},
 ];
 
 @NgModule({

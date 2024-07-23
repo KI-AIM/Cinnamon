@@ -1,6 +1,6 @@
 export enum ConfigurationInputType {
-    ARRAY,
-    FLOAT,
-    INTEGER,
-    STRING,
+    ARRAY = 'array',
+    FLOAT = 'float',
+    INTEGER = 'integer',
+    STRING = 'string',
 }

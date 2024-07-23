@@ -1,6 +1,18 @@
 {
     "/api": {
-      "target": "http://localhost:8080",
-      "secure": false
+        "target": "http://localhost:8080",
+        "secure": false
+    },
+    "/get_synthesizers": {
+        "target": "http://localhost:5000",
+        "secure": false
+    },
+    "/synthetic_tabular_data_generator": {
+        "target": "http://localhost:5000",
+        "secure": false
+    },
+    "/synthetic_longitudinal_data_generator": {
+        "target": "http://localhost:5000",
+        "secure": false
     }
-  }
+}

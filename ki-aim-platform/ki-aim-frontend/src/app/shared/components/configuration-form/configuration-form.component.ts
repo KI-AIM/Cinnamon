@@ -27,21 +27,21 @@ export class ConfigurationFormComponent implements OnInit {
         this.formDefinition.forEach(inputDefinition => {
             if (inputDefinition.type === ConfigurationInputType.ARRAY) {
                 const controls = [];
-                for (const defaultValue of inputDefinition.defaultValue as number[]) {
+                for (const defaultValue of inputDefinition.default_value as number[]) {
                     controls.push(new FormControl(defaultValue, Validators.required));
                 }
 
                 group[inputDefinition.name] = new FormArray(controls, Validators.required)
             } else {
                 const validators = [Validators.required];
-                if (inputDefinition.minValue !== null) {
-                    validators.push(Validators.min(inputDefinition.minValue));
+                if (inputDefinition.min_value !== null) {
+                    validators.push(Validators.min(inputDefinition.min_value));
                 }
-                if (inputDefinition.maxValue !== null) {
-                    validators.push(Validators.max(inputDefinition.maxValue));
+                if (inputDefinition.max_value !== null) {
+                    validators.push(Validators.max(inputDefinition.max_value));
                 }
 
-                group[inputDefinition.name] = new FormControl(inputDefinition.defaultValue, validators)
+                group[inputDefinition.name] = new FormControl(inputDefinition.default_value, validators)
             }
         });
 
@@ -49,7 +49,6 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     onSubmit() {
-        console.log("emit");
         this.submitConfiguration.emit(stringify(this.form.getRawValue()));
     }
 }

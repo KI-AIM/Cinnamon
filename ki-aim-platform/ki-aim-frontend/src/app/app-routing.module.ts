@@ -7,10 +7,10 @@ import { DataValidationComponent } from './features/data-upload/pages/data-valid
 import {LoginComponent} from "./features/auth/pages/login/login.component";
 import {RegisterComponent} from "./features/auth/pages/register/register.component";
 import { AuthGuard } from './core/guards/auth.guard';
-import { AnonymizationConfigurationComponent } from './features/anonymization/anonymization-configuration/anonymization-configuration.component';
+import { AnonymizationConfigurationComponent } from './features/anonymization/pages/anonymization-configuration/anonymization-configuration.component';
 import {
     SynthetizationConfigurationComponent
-} from "./features/synthetization/synthetization-configuration/synthetization-configuration.component";
+} from "./features/synthetization/pages/synthetization-configuration/synthetization-configuration.component";
 
 const routes: Routes = [
     {path: '', redirectTo: '/login', pathMatch: 'full'},

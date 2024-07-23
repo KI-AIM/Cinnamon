@@ -18,10 +18,10 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatSelectModule } from "@angular/material/select";
 import { ConfigurationInputArrayComponent } from './components/configuration-input-array/configuration-input-array.component';
 import { ConfigurationSelectionComponent } from './components/configuration-selection/configuration-selection.component';
-import { ConfigurationPageComponent } from './components/configuration-page/configuration-page.component';
+import { ConfigurationPageComponent } from "./components/configuration-page/configuration-page.component";
 
 @NgModule({
-	declarations: [InformationDialogComponent, InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationInputInfoComponent, ConfigurationFormComponent, ConfigurationInputArrayComponent, ConfigurationSelectionComponent, ConfigurationPageComponent],
+    declarations: [InformationDialogComponent, InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationInputInfoComponent, ConfigurationFormComponent, ConfigurationInputArrayComponent, ConfigurationSelectionComponent, ConfigurationPageComponent],
     imports: [CommonModule, MatDialogModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatSelectModule],
     exports: [InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationFormComponent, ConfigurationPageComponent],
 })

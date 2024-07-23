@@ -5,8 +5,8 @@ export class ConfigurationInputDefinition {
     type: ConfigurationInputType
     label: string
     description: string
-    defaultValue: string | number | number[]
-    minValue: number | null
-    maxValue: number | null
+    default_value: string | number | number[]
+    min_value: number | null
+    max_value: number | null
     values: string[] | null
 }

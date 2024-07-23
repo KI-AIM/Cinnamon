@@ -2,6 +2,8 @@
 
 <app-configuration-selection #selection [options]="Object.keys(defs)"></app-configuration-selection>
 
+
+
 <h3>Algorithm Configuration</h3>
 
 <div *ngIf="!selection.selectedOption" id="placeholder" class="w-100 mt-4">
@@ -11,7 +13,11 @@
 </div>
 
 <div *ngFor="let item of defs | keyvalue" [id]="item.key">
-    <app-configuration-form *ngIf="selection.selectedOption === item.key" [formDefinition]="item.value"
-                            (submitConfiguration)="onSubmit($event)">
-    </app-configuration-form>
+    <ng-container *ngIf="selection.selectedOption === item.key">
+        <p>{{ item.value.description }} </p>
+
+        <app-configuration-form [formDefinition]="item.value.model_parameter" (submitConfiguration)="onSubmit($event)">
+        </app-configuration-form>
+    </ng-container>
+
 </div>

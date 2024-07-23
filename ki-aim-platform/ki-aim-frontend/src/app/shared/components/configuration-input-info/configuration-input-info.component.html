@@ -12,22 +12,19 @@
                 <span class="info-value">{{ configurationInputDefinition.name }}</span>
 
                 <span class="info-name">Default Value:</span>
-                <span class="info-value">{{ configurationInputDefinition.defaultValue }}</span>
+                <span class="info-value">{{ configurationInputDefinition.default_value }}</span>
 
             <ng-container *ngIf="configurationInputDefinition.type === ConfigurationInputType.INTEGER || configurationInputDefinition.type === ConfigurationInputType.FLOAT">
 
                 <span class="info-name">Minimum Value:</span>
-                <span class="info-value">{{ configurationInputDefinition.minValue }}</span>
+                <span class="info-value">{{ configurationInputDefinition.min_value }}</span>
 
                 <span class="info-name">Maximum Value:</span>
-                <span class="info-value">{{ configurationInputDefinition.maxValue }}</span>
+                <span class="info-value">{{ configurationInputDefinition.max_value }}</span>
             </ng-container>
 
             <span class="info-name">Description:</span>
             <span class="info-value">{{ configurationInputDefinition.description }}</span>
-
-            <span class="info-name">Effect:</span>
-            <span class="info-value">Weltfrieden</span>
         </div>
     </mat-dialog-content>
 

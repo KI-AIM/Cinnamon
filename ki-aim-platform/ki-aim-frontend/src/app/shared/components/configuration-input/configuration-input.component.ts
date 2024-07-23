@@ -23,11 +23,11 @@ export class ConfigurationInputComponent {
         if (this.configurationInputDefinition.type === ConfigurationInputType.ARRAY) {
             const formArray = this.form.controls[this.configurationInputDefinition.name] as FormArray
             formArray.clear();
-            for (const defaultValue of this.configurationInputDefinition.defaultValue as number[]) {
+            for (const defaultValue of this.configurationInputDefinition.default_value as number[]) {
                 formArray.push(new FormControl(defaultValue, Validators.required));
             }
         } else {
-            this.form.controls[this.configurationInputDefinition.name].setValue(this.configurationInputDefinition.defaultValue);
+            this.form.controls[this.configurationInputDefinition.name].setValue(this.configurationInputDefinition.default_value);
         }
     }
 }

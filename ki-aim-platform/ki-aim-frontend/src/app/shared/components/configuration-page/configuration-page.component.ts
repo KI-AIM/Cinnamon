@@ -1,7 +1,8 @@
-import { Component, Input, ViewChild } from '@angular/core';
-import { ConfigurationInputDefinition } from "../../model/configuration-input-definition";
+import { Component, ViewChild } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
+import { AlgorithmDefinition } from "../../model/algorithm-definition";
+import { AlgorithmService } from "../../services/algorithm.service";
 
 @Component({
   selector: 'app-configuration-page',
@@ -9,27 +10,34 @@ import { ConfigurationSelectionComponent } from "../configuration-selection/conf
   styleUrls: ['./configuration-page.component.less']
 })
 export class ConfigurationPageComponent {
-    @Input() public stepName!: string;
-    @Input() public configurationName!: string;
-    @Input() public defs!: {[name :string]: ConfigurationInputDefinition[]};
+    protected defs: {[name :string]: AlgorithmDefinition} = {};
 
     protected readonly Object = Object;
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
 
     constructor(
         private readonly http: HttpClient,
+        private readonly anonService: AlgorithmService
     ) {
+        this.anonService.algorithms.subscribe(value =>
+            value.forEach(algorithm => {
+                    this.anonService.getAlgorithmDefinition(algorithm).subscribe(value1 => this.defs[algorithm.name] = value1);
+                }
+            ));
     }
 
     onSubmit(configuration: string) {
         const formData = new FormData();
 
-        formData.append("stepName", this.stepName);
+        formData.append("stepName", this.anonService.getStepName());
         formData.append("algorithm", this.selection.selectedOption);
-        formData.append("configurationName", this.configurationName);
+        formData.append("configurationName", this.anonService.getConfigurationName());
         formData.append("configuration", configuration);
+        console.log("stepName", this.anonService.getStepName());
+        console.log("algorithm", this.selection.selectedOption);
+        console.log("configurationName", this.anonService.getConfigurationName());
+        console.log("configuration", configuration);
 
-        console.log('post');
         this.http.post<any>('api/process/start', formData).subscribe({
             next: (a) => {
                 console.log(a);

@@ -1,6 +1,6 @@
 <div class="d-flex flex-row w-100">
 
-    <div class="d-flex flex-column input-height justify-content-center" style="width: 10%; min-width: 50px;">
+    <div class="d-flex flex-column input-height justify-content-center" style="width: 10%; min-width: 100px;">
         <mat-label [style.color]="isValid ? '' : 'red'" style="transition: color .1s linear"
                    [attr.for]="configurationInputDefinition.name">
             {{ configurationInputDefinition.label }}
@@ -34,10 +34,10 @@
                        Value must not be empty
                     </mat-error>
                     <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('max')">
-                        Value must be less than or equal to {{ configurationInputDefinition.maxValue }}
+                        Value must be less than or equal to {{ configurationInputDefinition.max_value }}
                     </mat-error>
                     <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('min')">
-                        Value must be greater than or equal to {{ configurationInputDefinition.minValue }}
+                        Value must be greater than or equal to {{ configurationInputDefinition.min_value }}
                     </mat-error>
                 </mat-form-field>
             </ng-container>
@@ -52,10 +52,10 @@
                        Value must not be empty
                     </mat-error>
                     <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('max')">
-                        Value must be less than or equal to {{ configurationInputDefinition.maxValue }}
+                        Value must be less than or equal to {{ configurationInputDefinition.max_value }}
                     </mat-error>
                     <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('min')">
-                        Value must be greater than or equal to {{ configurationInputDefinition.minValue }}
+                        Value must be greater than or equal to {{ configurationInputDefinition.min_value }}
                     </mat-error>
                 </mat-form-field>
             </ng-container>

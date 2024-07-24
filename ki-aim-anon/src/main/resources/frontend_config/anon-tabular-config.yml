@@ -1,6 +1,6 @@
 anonymization: "anonymization_tabular"
 version: # ?
-type: tabular
+type: "tabular"
 display_name: "anonymization_tabular"
 description: "anonymization for tabular dataset"
 URL: "/anonymization_tabular" #"-" ?

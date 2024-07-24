@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import smile.data.Dataset;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
@@ -23,14 +26,24 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
 
     @Test
     public void testAnonymizationService() throws Exception {
-        AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(kiaimAnonConfig, dataSet.getDataConfiguration());
-//        System.out.println("AnonConfig converted in JAL object:");
-//        System.out.println(anonymizationConfigConverted);
-        ColumnConfiguration tumorConfig = dataSet.getDataConfiguration().getColumnConfigurationByColumnName("tumor_localisation");
-        System.out.println("Test class: dataSet config for tumor_localisation");
-        System.out.println(tumorConfig);
-        DataSet anonymizedDataset = anonymizationService.anonymizeData(dataSet, kiaimAnonConfig);
-        assertNotNull(anonymizedDataset);
+
+        // Lancement du processus d'anonymisation en mode asynchrone
+        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, kiaimAnonConfig);
+
+        if (!future.isDone()) {
+            for (int i = 0; i<30; i++) {
+                Thread.sleep(100);
+            }
+        }
+
+        try {
+            DataSet anonymizedDataset = future.get();
+            assertNotNull(anonymizedDataset);
+            System.out.println(anonymizedDataset.getDataRows());
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
 }

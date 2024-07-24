@@ -8,7 +8,11 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataSet;
 import org.bihmi.jal.anon.Anonymizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.concurrent.CompletableFuture;
 
 import static de.kiaim.anon.service.CompatibilityAssurance.checkDataSetCompatibility;
 
@@ -39,11 +43,13 @@ public class AnonymizationService {
         // check if configuration and dataset is consistent, will probably be already made when creating the dataset object
         // check if any attributes are always NaN (null)
         // check if any datatype is included, that can not be supported yet
+        // Question : must be done in platform module ?
         checkDataSetCompatibility(dataset);
         return false;
     }
 
-    public DataSet anonymizeData(DataSet dataSet, de.kiaim.model.configuration.anonymization.AnonymizationConfig kiaimAnonConfig) throws Exception {
+    @Async
+    public CompletableFuture<DataSet> anonymizeData(DataSet dataSet, de.kiaim.model.configuration.anonymization.AnonymizationConfig kiaimAnonConfig) throws Exception {
         // TODO : add quality check mechanism
         System.out.println("Start Anon");
         // Convert KI-AIM DatasetAnonymizationConfig to AnonymizationConfig usable by JAL
@@ -57,15 +63,10 @@ public class AnonymizationService {
         System.out.println("Jal data generated, start anonymize");
         // TODO : add mechanism to make anon name variable: add process ID
 
-
         Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig("AnonymizationJALV0"));
         anonymizer.anonymize();
 
-        // TODO : add quality assurance, built dataSet object from String[]
-
-        return AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), dataSet.getDataConfiguration());
+        DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), dataSet.getDataConfiguration());
+        return CompletableFuture.completedFuture(result);
     }
-
-
-
 }

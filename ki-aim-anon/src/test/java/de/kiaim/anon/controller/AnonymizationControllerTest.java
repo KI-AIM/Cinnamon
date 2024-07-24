@@ -3,6 +3,7 @@ package de.kiaim.anon.controller;
 import de.kiaim.anon.AbstractAnonymizationTests;
 import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.model.data.DataSet;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,12 +29,18 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     @Autowired
     private MockMvc mockMvc;
 
-    @Test
-    public void testCreateAnonymizationTask() throws Exception {
+    private String processId;
+    @BeforeEach
+    public void setControllerTestVariables() throws Exception {
+        processId = "testProcess";
         assertNotNull(dataSet);
         assertNotNull(kiaimAnonConfig);
+    }
 
-        AnonymizationRequest request = new AnonymizationRequest(dataSet, kiaimAnonConfig);
+    @Test
+    public void testCreateAnonymizationTask() throws Exception {
+
+        AnonymizationRequest request = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig);
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         MvcResult result = mockMvc.perform(post("/api/anonymization/task")
@@ -42,15 +49,41 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
                 .andExpect(status().isAccepted()) // Verifier que le status est ACCEPTED (202)
                 .andReturn();
 
-        String taskId = result.getResponse().getContentAsString();
-        System.out.println("Task ID: " + taskId);
+        String responseContent = result.getResponse().getContentAsString();
+        System.out.println("Task ID: " + responseContent);
 
-        assertNotNull(taskId);
+        assertNotNull(responseContent);
+    }
+
+    @Test
+    public void testCreateAnonymizationTaskConflict() throws Exception {
+
+        AnonymizationRequest request = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig);
+        String jsonRequest = objectMapper.writeValueAsString(request);
+
+        // First request should be accepted
+        mockMvc.perform(post("/api/anonymization/process")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isAccepted());
+
+        // Second request with the same processId should return conflict
+        MvcResult result = mockMvc.perform(post("/api/anonymization/process")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isConflict())
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+        System.out.println("Response content: " + responseContent);
+
+        assertNotNull(responseContent);
+        assertTrue(responseContent.contains("Task with process ID " + processId + " already exists."));
     }
 
     @Test
     public void testGetTaskStatus() throws Exception {
-        AnonymizationRequest request = new AnonymizationRequest(dataSet, kiaimAnonConfig);
+        AnonymizationRequest request = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig);
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         MvcResult creationResult = mockMvc.perform(post("/api/anonymization/task")
@@ -73,7 +106,7 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
     @Test
     public void testGetTaskResult() throws Exception {
-        AnonymizationRequest request = new AnonymizationRequest(dataSet, kiaimAnonConfig);
+        AnonymizationRequest request = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig);
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         MvcResult creationResult = mockMvc.perform(post("/api/anonymization/task")

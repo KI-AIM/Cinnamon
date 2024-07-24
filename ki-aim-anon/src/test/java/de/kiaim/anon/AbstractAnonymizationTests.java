@@ -15,6 +15,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static de.kiaim.anon.service.CompatibilityAssurance.isDataSetCompatible;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -41,6 +42,10 @@ public class AbstractAnonymizationTests {
 
         dataSet = importDataset(datasetPath);
         kiaimAnonConfig = importAnonConfig(anonConfigPath);
+
+        // Check objects validity
+        assert isDataSetCompatible(dataSet);
+        // TODO : add check between data and anon config
     }
 
     public DataSet importDataset(String datasetPath) throws IOException {

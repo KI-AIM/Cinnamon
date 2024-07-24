@@ -10,6 +10,7 @@ import lombok.*;
 @EqualsAndHashCode
 @ToString
 public class AnonymizationRequest {
+    private final String processId;
     private final DataSet dataSet;
     private final AnonymizationConfig kiaimAnonConfig;
 }

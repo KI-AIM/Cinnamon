@@ -15,15 +15,22 @@ export class ConfigurationPageComponent {
     protected readonly Object = Object;
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
 
+    protected error: string | null = null;
+
     constructor(
         private readonly http: HttpClient,
         private readonly anonService: AlgorithmService
     ) {
-        this.anonService.algorithms.subscribe(value =>
-            value.forEach(algorithm => {
+        this.anonService.algorithms.subscribe({
+            next: value => {
+                this.error = null;
+                value.forEach(algorithm => {
                     this.anonService.getAlgorithmDefinition(algorithm).subscribe(value1 => this.defs[algorithm.name] = value1);
-                }
-            ));
+                });
+            }, error: error => {
+                this.error = `Failed to load available algorithms. Status: ${error.status} (${error.statusText})`;
+            }
+        });
     }
 
     onSubmit(configuration: string) {

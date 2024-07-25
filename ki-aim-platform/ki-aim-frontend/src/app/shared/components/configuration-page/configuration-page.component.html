@@ -1,3 +1,7 @@
+<app-info-card [hidden]="error === null" typeClass="card-failure">
+    <div>{{ error }}</div>
+</app-info-card>
+
 <h3>Algorithm Selection</h3>
 
 <app-configuration-selection #selection [options]="Object.keys(defs)"></app-configuration-selection>

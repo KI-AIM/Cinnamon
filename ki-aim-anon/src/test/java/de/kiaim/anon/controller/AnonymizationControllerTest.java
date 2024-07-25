@@ -29,18 +29,15 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     @Autowired
     private MockMvc mockMvc;
 
-    private String processId;
     @BeforeEach
     public void setControllerTestVariables() throws Exception {
-        processId = "testProcess";
+
         assertNotNull(dataSet);
         assertNotNull(kiaimAnonConfig);
     }
 
     @Test
     public void testCreateAnonymizationTask() throws Exception {
-
-        AnonymizationRequest request = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig);
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         MvcResult result = mockMvc.perform(post("/api/anonymization/task")
@@ -57,8 +54,8 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
     @Test
     public void testCreateAnonymizationTaskConflict() throws Exception {
-
-        AnonymizationRequest request = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig);
+        AnonymizationRequest request = new AnonymizationRequest(
+                processId, dataSet, kiaimAnonConfig, processId);
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         // First request should be accepted
@@ -82,8 +79,7 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     }
 
     @Test
-    public void testGetTaskStatus() throws Exception {
-        AnonymizationRequest request = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig);
+    public void testGetTaskStatus() throws Exception {;
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         MvcResult creationResult = mockMvc.perform(post("/api/anonymization/task")
@@ -106,7 +102,6 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
     @Test
     public void testGetTaskResult() throws Exception {
-        AnonymizationRequest request = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig);
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         MvcResult creationResult = mockMvc.perform(post("/api/anonymization/task")

@@ -36,7 +36,8 @@ public class AnonymizationController {
     }
 
     @Operation(summary = "Creates a new anonymization task.",
-            description = "Creates a new asynchronous anonymization task and returns a unique task ID.")
+            description = "Creates a new asynchronous anonymization task based on the processId, dataset and anon configuration." +
+                    "The anonymized dataset is return via the given callback URL.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "202", description = "Task accepted for processing.", content = @Content),
             @ApiResponse(responseCode = "409", description = "Task with the given process ID already exists.", content = @Content),
@@ -56,7 +57,9 @@ public class AnonymizationController {
             if (tasks.containsKey(processId)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + processId + " already exists.");
             }
-            Future<DataSet> future = anonymizationService.anonymizeData(request.getDataSet(), request.getKiaimAnonConfig());
+            Future<DataSet> future = anonymizationService.anonymizeData(request.getDataSet(),
+                    request.getKiaimAnonConfig(),
+                    request.getProcessId());
             tasks.put(processId, future);
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(
                     "Anonymization process " + processId + "has been accepted.");
@@ -66,7 +69,7 @@ public class AnonymizationController {
     }
 
     @Operation(summary = "Gets the status of the anonymization task.",
-            description = "Returns the current status of the anonymization task.")
+            description = "Returns the current status of the anonymization task with the given process ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Status retrieved successfully.", content = @Content),
             @ApiResponse(responseCode = "404", description = "Task not found.", content = @Content)
@@ -108,6 +111,12 @@ public class AnonymizationController {
         }
     }
 
+    @Operation(summary = "Get the tabular anon config.",
+            description = "Returns the tabular anon config file needed for frontend.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "File retrieved successfully.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error retrieving config file.", content = @Content)
+    })
     @GetMapping(value = "/config")
     @Cacheable("config")
     public ResponseEntity<byte[]> getTabularAnonConfig() {
@@ -143,7 +152,7 @@ public class AnonymizationController {
         }
     }
 
-    //TODO : delete this endpoint, it was create for testing
+    //TODO : delete this endpoint, it was created for testing
 //    @Operation(summary = "Gets all ongoing anonymization tasks.",
 //            description = "Returns a list of all ongoing anonymization tasks.")
 //    @ApiResponses(value = {

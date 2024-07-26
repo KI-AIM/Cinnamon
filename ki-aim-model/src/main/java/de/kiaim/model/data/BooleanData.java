@@ -6,7 +6,6 @@ import de.kiaim.model.exception.BooleanFormatException;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
@@ -14,7 +13,6 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@ToString
 public class BooleanData extends Data {
 
 	@Nullable

@@ -7,7 +7,6 @@ import de.kiaim.model.exception.StringPatternException;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
@@ -15,7 +14,6 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@ToString
 public class StringData extends Data {
 
 	@Nullable

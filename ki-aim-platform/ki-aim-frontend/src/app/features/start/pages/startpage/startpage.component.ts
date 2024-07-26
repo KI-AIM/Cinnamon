@@ -12,10 +12,13 @@ import { Steps } from 'src/app/core/enums/steps';
 })
 export class StartpageComponent {
     Mode = Mode;
-    Steps = Steps; 
+    Steps = Steps;
 
     constructor(private titleService: TitleService, public stateManagement: StateManagementService) {
-        this.titleService.setPageTitle("Welcome!"); 
+        this.titleService.setPageTitle("Welcome!");
     }
 
+    protected get locked(): boolean {
+        return this.stateManagement.isStepCompleted(Steps.VALIDATION);
+    }
 }

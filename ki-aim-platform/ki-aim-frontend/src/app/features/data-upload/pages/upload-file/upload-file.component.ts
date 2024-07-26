@@ -70,6 +70,10 @@ export class UploadFileComponent {
 		this.fileConfiguration = fileService.getFileConfiguration();
 	}
 
+    protected get locked(): boolean {
+        return this.stateManagement.isStepCompleted(Steps.VALIDATION);
+    }
+
 	onFileInput(event: Event) {
 		const files = (event.target as HTMLInputElement)?.files;
 

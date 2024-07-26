@@ -24,8 +24,7 @@
 </p>
 
 <div class="d-flex align-items-center justify-content-start my-2">
-    <button mat-raised-button color="primary"
-        (click)="uploadData()">
+    <button mat-raised-button color="primary" (click)="uploadData()" [disabled]="locked">
         Continue and upload data
         <mat-icon>arrow_forward</mat-icon>
     </button>

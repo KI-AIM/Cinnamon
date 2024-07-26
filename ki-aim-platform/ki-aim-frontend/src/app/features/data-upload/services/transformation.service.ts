@@ -1,9 +1,20 @@
 import { TransformationResult } from "src/app/shared/model/transformation-result";
+import { StateManagementService } from "../../../core/services/state-management.service";
+import { Injectable } from "@angular/core";
+import { Steps } from "../../../core/enums/steps";
+import { HttpClient } from "@angular/common/http";
+import { concatMap, Observable, of, tap } from "rxjs";
 
+@Injectable({
+    providedIn: "root"
+})
 export class TransformationService {
     private transformationResult: TransformationResult;
+    private fetched: boolean = false;
 
 	constructor(
+        private readonly http: HttpClient,
+        private stateManagement: StateManagementService,
     ) {
         this.transformationResult = new TransformationResult();
     }
@@ -14,5 +25,31 @@ export class TransformationService {
 
     setTransformationResult(value: TransformationResult) {
         this.transformationResult = value;
+    }
+
+    /**
+     * Returns an observable of the transformation result.
+     * If the data has already been stored, fetch the transformation result from the backend.
+     * Otherwise, returns the local transformation result.
+     */
+    public fetchTransformationResult(): Observable<TransformationResult> {
+        // Return local transformation result if it has been fetched before
+        if (this.fetched) {
+            return of(this.transformationResult);
+        }
+
+        return this.stateManagement.fetchStatus().pipe(
+            concatMap(status => {
+                if (this.stateManagement.isStepCompleted(Steps.VALIDATION)) {
+                    return this.http.get<TransformationResult>("/api/data/transformationResult").pipe(tap(value => {
+                        this.transformationResult = value;
+                        this.fetched = true;
+                    }));
+                } else {
+                    this.fetched = true;
+                    return of(this.transformationResult);
+                }
+            }),
+        );
     }
 }

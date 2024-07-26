@@ -11,7 +11,7 @@
                     <mat-label>Configuration</mat-label>
                     <mat-select [id]="'additionalSettingsConfigurations_' + attrNumber"
                         (selectionChange)="changeConfigurationSelection($event)"
-                        [disabled]="!areConfigurationAvailable(column.type.toString()) ? 'disabled' : null"
+                        [disabled]="disabled || !areConfigurationAvailable(column.type.toString())"
                         [(value)]="selected">
                         <mat-option selected disabled *ngIf="!areConfigurationAvailable(column.type.toString())"
                             value="standardSelection">No
@@ -50,7 +50,7 @@
 
             <hr />
 
-            <app-added-configuration-list [column]="column"></app-added-configuration-list>
+            <app-added-configuration-list [column]="column" [disabled]="disabled"></app-added-configuration-list>
         </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">

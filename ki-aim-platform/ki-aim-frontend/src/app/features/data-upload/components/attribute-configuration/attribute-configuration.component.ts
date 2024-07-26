@@ -13,6 +13,7 @@ import { DataType } from 'src/app/shared/model/data-type';
 export class AttributeConfigurationComponent implements AfterViewInit {
     @Input() attrNumber: String;
     @Input() column: ColumnConfiguration;
+    @Input() disabled: boolean = false;
 
     @Output() onValidation = new EventEmitter<boolean>();
     @Output() onInput = new EventEmitter<any>();

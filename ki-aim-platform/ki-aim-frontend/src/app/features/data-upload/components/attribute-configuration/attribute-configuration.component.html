@@ -4,7 +4,7 @@
             <mat-label>Column name</mat-label>
 
             <input type="text" matInput [id]="'name_' + attrNumber" [(ngModel)]="column.name" required
-                   appNoSpaceValidator #name="ngModel" (change)="column.name = column.name.trim();"/>
+                   appNoSpaceValidator [disabled]="disabled" #name="ngModel" (change)="column.name = column.name.trim();"/>
             <mat-error *ngIf="name.errors?.['noSpace']">Name must not contain spaces</mat-error>
             <mat-error *ngIf="name.errors?.['required']">Name must not be blank</mat-error>
             <mat-error *ngIf="name.errors?.['unique']">Name must be unique</mat-error>
@@ -14,7 +14,7 @@
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>Column type</mat-label>
-            <mat-select [id]="'type_' + attrNumber" [(ngModel)]="column.type">
+            <mat-select [id]="'type_' + attrNumber" [(ngModel)]="column.type" [disabled]="disabled">
                 <mat-option *ngFor="let type of getDataTypes().getAll()" [value]="type">{{type}}</mat-option>
             </mat-select>
         </mat-form-field>
@@ -23,7 +23,7 @@
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>Column scale</mat-label>
-            <mat-select [id]="'scale' + attrNumber" [(ngModel)]="column.scale">
+            <mat-select [id]="'scale' + attrNumber" [(ngModel)]="column.scale" [disabled]="disabled">
                 <mat-option *ngFor="let scale of getDataScales().getAll()" [value]="scale">{{scale}}</mat-option>
             </mat-select>
         </mat-form-field>
@@ -31,8 +31,8 @@
 
     <div class="d-flex flex-column px-2">
         <div class="h-100 d-flex justify-content-center align-items-center">
-            <app-additional-configuration [attrNumber]="parseInt(attrNumber)"
-                [column]="column"></app-additional-configuration>
+            <app-additional-configuration [attrNumber]="parseInt(attrNumber)" [column]="column" [disabled]="disabled">
+            </app-additional-configuration>
         </div>
     </div>
 </div>

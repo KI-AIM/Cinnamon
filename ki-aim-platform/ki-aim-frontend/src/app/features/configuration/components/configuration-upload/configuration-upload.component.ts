@@ -16,6 +16,7 @@ export class ConfigurationUploadComponent {
    * If null, all configurations in the selected will be uploaded
    */
   @Input() public configurationName: string | null = null;
+  @Input() public disabled: boolean = false;
   @Output() onUpload: EventEmitter<ImportPipeData[] | null> = new EventEmitter();
 
   constructor(

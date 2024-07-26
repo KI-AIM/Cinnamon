@@ -2,7 +2,7 @@
     <div>Upload an existing configuration:</div>
     <div class="btn-group">
         <div class="px-1">
-            <button mat-raised-button color="primary" (click)="openDialog(configurationUpload)">
+            <button mat-raised-button color="primary" (click)="openDialog(configurationUpload)" [disabled]="disabled">
                 Upload
             </button>
         </div>
@@ -18,7 +18,7 @@
         </app-info-card>
 
         <div>Select a file to upload</div>
-        
+
         <div class="mb-2">
             <input id="configInput" type="file" accept=".yml,.yaml">
         </div>

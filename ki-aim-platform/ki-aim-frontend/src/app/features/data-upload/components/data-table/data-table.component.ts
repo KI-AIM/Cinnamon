@@ -1,4 +1,4 @@
-import { Component, TemplateRef, ViewChild } from "@angular/core";
+import { Component, ViewChild } from "@angular/core";
 import { TransformationService } from "../../services/transformation.service";
 import { DataSet } from "src/app/shared/model/data-set";
 import { MatTableDataSource } from "@angular/material/table";
@@ -16,10 +16,10 @@ export class DataTableComponent {
 
 	dataSource = new MatTableDataSource<TableElement>();
 	@ViewChild(MatPaginator) paginator: MatPaginator;
-	displayedColumns: string[] = ['position'].concat(this.getColumnNames(this.transformationService.getTransformationResult().dataSet));
-	filterCriteria = "ALL"; 
-	
-	
+	displayedColumns: string[] = ['position'];
+	filterCriteria = "ALL";
+
+
 	constructor(
 		public transformationService: TransformationService,
 	) {
@@ -28,21 +28,30 @@ export class DataTableComponent {
 	ngAfterViewInit() {
 		this.dataSource.paginator = this.paginator;
 
-		this.dataSource.data = this.addColumnErrorsToTableData(
-			this.transformDataSet(
-				this.readdTransformationErrors(
-					this.removeRowsWithErrorsFromDataSet(this.transformationService.getTransformationResult()),
-					this.transformationService.getTransformationResult().transformationErrors
-				)
-			),
-			this.transformationService.getTransformationResult().transformationErrors
-		);
+        this.transformationService.fetchTransformationResult().subscribe({
+            next: transformationResult => {
+                this.displayedColumns = this.displayedColumns.concat(this.getColumnNames(transformationResult.dataSet))
+
+                this.dataSource.data = this.addColumnErrorsToTableData(
+                    this.transformDataSet(
+                        this.readdTransformationErrors(
+                            this.removeRowsWithErrorsFromDataSet(transformationResult),
+                            transformationResult.transformationErrors
+                        )
+                    ),
+                    transformationResult.transformationErrors
+                );
+
+            }, error: error => {
+                console.log(error());
+            }
+        });
 	}
 
 	/**
 	 * Function that transforms a dataSet object
 	 * into a format that is usable by the angular
-	 * material data tables 
+	 * material data tables
 	 * @param dataSet to be transformed
 	 * @returns Array<TableElement>
 	 */
@@ -63,7 +72,7 @@ export class DataTableComponent {
 	}
 
 	/**
-	 * Function that readds the rows that were faulty upon transformation 
+	 * Function that readds the rows that were faulty upon transformation
 	 * to be displayed in the validation table
 	 * @param dataSet: The data set to which the lines should be readded to
 	 * @param transformationErrors: The transformation object that contains the error information
@@ -114,29 +123,29 @@ export class DataTableComponent {
 	}
 
 	removeRowsWithErrorsFromDataSet(transformationResult: TransformationResult): DataSet {
-		var dataSet = transformationResult.dataSet; 
+		var dataSet = transformationResult.dataSet;
 
-		var newDataSet = new DataSet(); 
-		var dataArray = new Array<Array<any>>; 
+		var newDataSet = new DataSet();
+		var dataArray = new Array<Array<any>>;
 		var errorIndices = new List<number>();
 
 		transformationResult.transformationErrors.forEach(error => {
 			if (!errorIndices.contains(rowCounter)) {
-				errorIndices.add(error.index); 
+				errorIndices.add(error.index);
 			}
-		}); 
+		});
 
 		var rowCounter = 0;
 		dataSet.data.forEach((dataRow) => {
 			if (!errorIndices.contains(rowCounter)) {
 				dataArray.push(dataRow);
 			}
-			rowCounter++; 
+			rowCounter++;
 		});
 		newDataSet.data = dataArray;
-		newDataSet.dataConfiguration = dataSet.dataConfiguration; 
+		newDataSet.dataConfiguration = dataSet.dataConfiguration;
 
-		return newDataSet; 
+		return newDataSet;
 	}
 
 	/**
@@ -149,37 +158,37 @@ export class DataTableComponent {
 	 */
 	addColumnErrorsToTableData(data: TableElement[], transformationErrors: DataRowTransformationError[]): TableElement[] {
 		data.forEach((dataRow, index) => {
-			dataRow.errorsInRow = this.getErrorColumnIndicesForRowIndex(index, transformationErrors); 
+			dataRow.errorsInRow = this.getErrorColumnIndicesForRowIndex(index, transformationErrors);
 		})
-		return data; 
+		return data;
 	}
 
 	/**
-	 * Processes the DataRowTransformationErrors and returns 
+	 * Processes the DataRowTransformationErrors and returns
 	 * a list of indices if a column in a row has any errors.
 	 * Returns an empty Array if no error is present
 	 * @param index of the row
-	 * @param transformationErrors Array of transformation Errors 
-	 * @returns Array with Indices 
+	 * @param transformationErrors Array of transformation Errors
+	 * @returns Array with Indices
 	 */
 	getErrorColumnIndicesForRowIndex(index: number, transformationErrors: DataRowTransformationError[]): Array<number> {
-		var resultIndices: Array<number>  = []; 
+		var resultIndices: Array<number>  = [];
 
 		transformationErrors.forEach(transformationError => {
 			if (transformationError.index === index) {
 				transformationError.dataTransformationErrors.forEach(errors => {
 					resultIndices.push(errors.index)
-				}); 
+				});
 			}
-		}); 
+		});
 
-		return resultIndices; 
+		return resultIndices;
 	}
 
 	/**
 	 * Returns the column names of a DataSet in a
 	 * String Array
-	 * @param dataSet to be processed 
+	 * @param dataSet to be processed
 	 * @returns Array<string>
 	 */
 	getColumnNames(dataSet: DataSet): string[] {
@@ -199,43 +208,43 @@ export class DataTableComponent {
 	 * @returns boolean
 	 */
 	rowHasErrors(errorArray: Array<any>): boolean {
-		return errorArray.length > 0; 
+		return errorArray.length > 0;
 	}
 
 	/**
 	 * Applies a filter to the table based on the select menu in frontend
-	 * Shows different data depending on the number of errors in a row. 
+	 * Shows different data depending on the number of errors in a row.
 	 * @param $event the selectionChange event
 	 */
 	applyFilter($event: any) {
 		this.filterCriteria = $event.value;
 		switch (this.filterCriteria) {
 			case "ALL": {
-				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0 || data.errorsInRow.length <= 0; 
-				this.dataSource.filter = this.filterCriteria; 
-				break; 
+				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0 || data.errorsInRow.length <= 0;
+				this.dataSource.filter = this.filterCriteria;
+				break;
 			}
 			case "VALID": {
-				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length == 0; 
-				this.dataSource.filter = this.filterCriteria; 
+				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length == 0;
+				this.dataSource.filter = this.filterCriteria;
 				break;
 			}
 			case "ERRORS": {
-				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0; 
-				this.dataSource.filter = this.filterCriteria; 
-				break; 
+				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0;
+				this.dataSource.filter = this.filterCriteria;
+				break;
 			}
 		}
 	}
 }
 
 /**
- * Interface that dynamically stores the Value of a 
+ * Interface that dynamically stores the Value of a
  * row of a DataSet and assigns them to the column name.
  * This format is needed by the Material Table
  */
 interface TableElement {
 	position: number;
 	[key: string]: any;
-	errorsInRow: Array<any>; 
+	errorsInRow: Array<any>;
 }

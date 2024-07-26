@@ -24,6 +24,7 @@ export class AdditionalConfigurationComponent {
 
 	@Input() attrNumber: Number;
 	@Input() column: ColumnConfiguration;
+    @Input() disabled: boolean = false;
 
 	@ViewChild("dateFormat") dateFormatComponent: DateformatComponent;
 	@ViewChild("dateTimeFormat") dateTimeFormatComponent: DatetimeformatComponent;
@@ -35,13 +36,13 @@ export class AdditionalConfigurationComponent {
     selected = "standardSelection";
 
     constructor(public dialog: MatDialog) {
-        
+
     }
 
     openDialog(templateRef: TemplateRef<any>) {
         this.dialog.open(templateRef, {
             width: '60%'
-        }); 
+        });
     }
 
 	changeConfigurationSelection(event: any) {
@@ -49,16 +50,16 @@ export class AdditionalConfigurationComponent {
 	}
 
     areConfigurationAvailable(type: String): boolean {
-        return this.getConfigurationsForDatatype(type).size() > 0;  
+        return this.getConfigurationsForDatatype(type).size() > 0;
     }
 
 	getConfigurationsForDatatype(type: String): List<ConfigurationType> {
         var result = new List<ConfigurationType>
-        var configurationTypes = getConfigurationsForDatatype(type); 
+        var configurationTypes = getConfigurationsForDatatype(type);
 
         configurationTypes.getAll().forEach(configurationType => {
             if (!this.isConfigurationAlreadyAdded(configurationType)) {
-                result.add(configurationType); 
+                result.add(configurationType);
             }
         });
 
@@ -66,14 +67,14 @@ export class AdditionalConfigurationComponent {
 	}
 
     isConfigurationAlreadyAdded(configurationType: ConfigurationType): boolean {
-        var result = false; 
+        var result = false;
         this.column.configurations.forEach(configuration => {
             if (configuration.constructor.name == getConfigurationForConfigurationType(configurationType)) {
-                result = true; 
+                result = true;
             }
         });
 
-        return result; 
+        return result;
     }
 
 	getConfigurationTypeForIndex(index: number): String {
@@ -92,7 +93,7 @@ export class AdditionalConfigurationComponent {
                         this.dateFormatComponent.getDateFormatConfiguration()
                     );
                     this.currentConfigurationSelection = undefined;
-                    this.selected = "standardSelection"; 
+                    this.selected = "standardSelection";
                     break;
                 }
                 case ConfigurationType.DATETIMEFORMAT: {
@@ -100,7 +101,7 @@ export class AdditionalConfigurationComponent {
                         this.dateTimeFormatComponent.getDateTimeFormatConfiguration()
                     );
                     this.currentConfigurationSelection = undefined;
-                    this.selected = "standardSelection"; 
+                    this.selected = "standardSelection";
                     break;
                 }
                 case ConfigurationType.RANGE: {
@@ -116,7 +117,7 @@ export class AdditionalConfigurationComponent {
                         this.stringPatternComponent.getStringPatternConfiguration()
                     );
                     this.currentConfigurationSelection = undefined;
-                    this.selected = "standardSelection"; 
+                    this.selected = "standardSelection";
                     break;
                 }
             }

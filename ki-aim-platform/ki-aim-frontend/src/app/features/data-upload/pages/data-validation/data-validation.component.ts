@@ -34,6 +34,10 @@ export class DataValidationComponent {
         this.titleService.setPageTitle("Data validation");
     }
 
+    protected get locked(): boolean {
+        return this.stateManagement.isStepCompleted(Steps.VALIDATION);
+    }
+
 	uploadData() {
 		this.loadingService.setLoadingStatus(true);
 
@@ -64,6 +68,6 @@ export class DataValidationComponent {
 				title: "An error occurred",
 				content: "We are sorry, something went wrong: " + this.errorMessageService.convertResponseToMessage(error),
 			}
-		}); 
+		});
 	}
 }

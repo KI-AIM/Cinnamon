@@ -3,7 +3,7 @@
 </p>
 
 <div>
-    <input type="file" accept=".csv,.xlsx" #fileForm (input)="onFileInput($event)">
+    <input type="file" accept=".csv,.xlsx" #fileForm (input)="onFileInput($event)" [disabled]="locked">
     <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
         [hidden]="!this.dataFile" style="vertical-align: middle;">
         <mat-icon fontIcon="settings"></mat-icon>
@@ -15,7 +15,7 @@
 </p>
 
 <div class="mb-2">
-    <input id="configInput" type="file" accept=".yml,.yaml" (input)="onDataConfigurationFileInput($event)">
+    <input id="configInput" type="file" accept=".yml,.yaml" (input)="onDataConfigurationFileInput($event)" [disabled]="locked">
 </div>
 
 <div class="py-2">

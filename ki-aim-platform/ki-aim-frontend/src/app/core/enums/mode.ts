@@ -1,5 +1,5 @@
 export enum Mode {
-    UNSET,
-    STANDARD,
-    EXPERT
+    UNSET = "UNSET",
+    STANDARD = "STANDARD",
+    EXPERT = "EXPERT",
 }

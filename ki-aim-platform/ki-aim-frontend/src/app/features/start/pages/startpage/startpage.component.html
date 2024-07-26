@@ -25,7 +25,7 @@
         </mat-card-content>
         <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
             <button mat-raised-button color="primary" (click)="stateManagement.setMode(Mode.STANDARD);
-            stateManagement.addCompletedStep(Steps.WELCOME)" routerLink="/upload">
+            stateManagement.addCompletedStep(Steps.WELCOME)" [disabled]="locked" routerLink="/upload">
                 Use standard mode
             </button>
         </mat-card-actions>
@@ -43,8 +43,8 @@
                 anonymization results.</p>
         </mat-card-content>
         <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-            <button mat-raised-button color="primary" (click)="stateManagement.setMode(Mode.EXPERT); 
-            stateManagement.addCompletedStep(Steps.WELCOME)" routerLink="/upload">
+            <button mat-raised-button color="primary" (click)="stateManagement.setMode(Mode.EXPERT);
+            stateManagement.addCompletedStep(Steps.WELCOME)" [disabled]="locked" routerLink="/upload">
                 Use expert mode
             </button>
         </mat-card-actions>

@@ -9,7 +9,7 @@ import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { Steps } from 'src/app/core/enums/steps';
 import { FileService } from "../../features/data-upload/services/file.service";
-import { parse } from "yaml";
+import { parse, stringify } from "yaml";
 import { ImportPipeData } from "../model/import-pipe-data";
 
 @Injectable({
@@ -33,6 +33,7 @@ export class DataConfigurationService {
         configReg.availableAfterStep = Steps.UPLOAD;
         configReg.lockedAfterStep = Steps.VALIDATION;
         configReg.displayName = "Data Configuration";
+        configReg.fetchConfig = (configName) => this.downloadDataConfigurationAsJson().pipe(map(value => stringify(value)));
         configReg.name = this.CONFIGURATION_NAME;
         configReg.orderNumber = 0;
         configReg.storeConfig = (configName, yamlConfigString) => this.postDataConfigurationString(yamlConfigString);

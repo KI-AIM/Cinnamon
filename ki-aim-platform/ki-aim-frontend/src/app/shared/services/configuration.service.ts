@@ -6,6 +6,7 @@ import { FileService } from 'src/app/features/data-upload/services/file.service'
 import { FileUtilityService } from './file-utility.service';
 import { parse, stringify } from 'yaml';
 import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data";
+import { Steps } from "../../core/enums/steps";
 
 /**
  * Service for managing configurations.
@@ -54,6 +55,9 @@ export class ConfigurationService {
      * @param data Metadata of the configuration.
      */
     public registerConfiguration(data: ConfigurationRegisterData) {
+        if (data.fetchConfig === null) {
+            data.fetchConfig = (configName) => this.loadConfig(configName);
+        }
         if (data.storeConfig == null) {
             data.storeConfig = (configName, yamlConfigString) => this.storeConfig(configName, yamlConfigString);
         }
@@ -98,8 +102,8 @@ export class ConfigurationService {
      * @param configurationName Identifier of the configuration to load.
      * @returns Observable containing the configuration as a string.
      */
-    public loadConfig(configurationName: String): Observable<String> {
-        return this.httpClient.get<String>(this.baseUrl + "?name=" + configurationName, {responseType: 'text' as 'json'});
+    public loadConfig(configurationName: String): Observable<string> {
+        return this.httpClient.get<string>(this.baseUrl + "?name=" + configurationName, {responseType: 'text' as 'json'});
     }
 
     /**
@@ -226,5 +230,30 @@ export class ConfigurationService {
                 return of(null);
             }),
         );
+    }
+
+    /**
+     * Fetches all configurations from the backend for steps that are available before the given step.
+     * Calls the setConfigCallback function if a configuration is available.
+     * @param step The step up to which the configurations should be fetched.
+     */
+    public fetchConfigurations(step: Steps) {
+        const stepIndex = Number.parseInt(Steps[step]);
+        for (const config of this.getRegisteredConfigurations()) {
+            if (config.availableAfterStep <= stepIndex) {
+                config.fetchConfig!(config.name).subscribe({
+                    next: value => {
+                        const data = new ImportPipeData();
+                        data.name = config.name;
+                        data.configData = config;
+                        data.yamlConfigString = value;
+                        config.setConfigCallback(data);
+                    },
+                    error: err => {
+                        console.log(err);
+                    }
+                });
+            }
+        }
     }
 }

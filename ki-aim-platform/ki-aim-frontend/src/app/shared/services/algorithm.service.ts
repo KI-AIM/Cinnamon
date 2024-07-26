@@ -5,6 +5,7 @@ import { HttpClient } from "@angular/common/http";
 import { concatMap, map, Observable, of, tap } from "rxjs";
 import { parse } from "yaml";
 import { plainToInstance } from "class-transformer";
+import { ConfigurationService } from "./configuration.service";
 
 export abstract class AlgorithmService {
 
@@ -14,6 +15,7 @@ export abstract class AlgorithmService {
 
     protected constructor(
         private readonly http: HttpClient,
+        protected readonly configurationService: ConfigurationService,
     ) {
     }
 

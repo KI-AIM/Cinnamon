@@ -11,10 +11,11 @@ import { AnonymizationConfigurationComponent } from './features/anonymization/pa
 import {
     SynthetizationConfigurationComponent
 } from "./features/synthetization/pages/synthetization-configuration/synthetization-configuration.component";
+import { StateGuard } from "./core/guards/state.guard";
 
 const routes: Routes = [
-    {path: '', redirectTo: '/login', pathMatch: 'full'},
-    {path: 'login', component: LoginComponent},
+    {path: '', redirectTo: '', pathMatch: 'full', canActivate: [AuthGuard, StateGuard]},
+    {path: 'login' , component: LoginComponent},
     {path: 'register', component: RegisterComponent},
     {path: 'start', component: StartpageComponent, canActivate: [AuthGuard]},
     {path: 'upload', component: UploadFileComponent, canActivate: [AuthGuard]},

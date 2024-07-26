@@ -51,6 +51,10 @@ export class DataConfigurationComponent implements OnInit {
         this.titleService.setPageTitle("Data configuration");
     }
 
+    protected get locked(): boolean {
+        return this.stateManagement.isStepCompleted(Steps.VALIDATION)
+    }
+
     ngOnInit(): void {
     }
 
@@ -156,4 +160,7 @@ export class DataConfigurationComponent implements OnInit {
 
         this.configurationUpload.closeDialog();
     }
+
+    protected readonly Steps = Steps;
+    protected readonly dispatchEvent = dispatchEvent;
 }

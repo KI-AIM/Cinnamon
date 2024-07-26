@@ -48,6 +48,14 @@ export class ConfigurationFormComponent implements OnInit {
         this.form = new FormGroup(group);
     }
 
+    getConfiguration() {
+        return this.form.getRawValue();
+    }
+
+    setConfiguration(configuration: Object) {
+        this.form.setValue(configuration);
+    }
+
     onSubmit() {
         this.submitConfiguration.emit(stringify(this.form.getRawValue()));
     }

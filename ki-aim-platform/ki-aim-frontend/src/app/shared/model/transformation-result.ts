@@ -3,8 +3,8 @@ import { DataSet } from "./data-set";
 import { DataRowTransformationError } from "./data-row-transformation-error";
 
 export class TransformationResult {
-    dataSet: DataSet; 
+    dataSet: DataSet = new DataSet();
 
     @Type(() => DataRowTransformationError)
-    transformationErrors: DataRowTransformationError[] = []; 
+    transformationErrors: DataRowTransformationError[] = [];
 }

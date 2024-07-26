@@ -57,9 +57,7 @@ public class AnonymizationController {
             if (tasks.containsKey(processId)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + processId + " already exists.");
             }
-            Future<DataSet> future = anonymizationService.anonymizeData(request.getDataSet(),
-                    request.getKiaimAnonConfig(),
-                    request.getProcessId());
+            Future<DataSet> future = anonymizationService.anonymizeDataWithCallback(request);
             tasks.put(processId, future);
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(
                     "Anonymization process " + processId + "has been accepted.");

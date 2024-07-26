@@ -40,7 +40,7 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     public void testCreateAnonymizationTask() throws Exception {
         String jsonRequest = objectMapper.writeValueAsString(request);
 
-        MvcResult result = mockMvc.perform(post("/api/anonymization/task")
+        MvcResult result = mockMvc.perform(post("/api/anonymization/process")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isAccepted()) // Verifier que le status est ACCEPTED (202)
@@ -48,6 +48,8 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
         String responseContent = result.getResponse().getContentAsString();
         System.out.println("Task ID: " + responseContent);
+
+        Thread.sleep(1000);
 
         assertNotNull(responseContent);
     }
@@ -82,15 +84,13 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     public void testGetTaskStatus() throws Exception {;
         String jsonRequest = objectMapper.writeValueAsString(request);
 
-        MvcResult creationResult = mockMvc.perform(post("/api/anonymization/task")
+        MvcResult creationResult = mockMvc.perform(post("/api/anonymization/process")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isAccepted())
                 .andReturn();
 
-        String taskId = creationResult.getResponse().getContentAsString();
-
-        MvcResult statusResult = mockMvc.perform(get("/api/anonymization/task/" + taskId + "/status"))
+        MvcResult statusResult = mockMvc.perform(get("/api/anonymization/process/" + processId + "/status"))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -104,17 +104,15 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     public void testGetTaskResult() throws Exception {
         String jsonRequest = objectMapper.writeValueAsString(request);
 
-        MvcResult creationResult = mockMvc.perform(post("/api/anonymization/task")
+        MvcResult creationResult = mockMvc.perform(post("/api/anonymization/process")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isAccepted())
                 .andReturn();
 
-        String taskId = creationResult.getResponse().getContentAsString();
-
         Thread.sleep(10000);
 
-        MvcResult result = mockMvc.perform(get("/api/anonymization/task/" + taskId + "/result"))
+        MvcResult result = mockMvc.perform(get("/api/anonymization/process/" + processId + "/result"))
                 .andExpect(status().isOk())
                 .andReturn();
 

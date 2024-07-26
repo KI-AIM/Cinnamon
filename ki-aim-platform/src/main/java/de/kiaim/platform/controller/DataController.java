@@ -341,6 +341,17 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, request, user);
 	}
 
+	@Operation(summary = "Returns the transformation result.",
+	           description = "Returns the transformation result.")
+	@GetMapping(value = "/transformationResult",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<Object> loadTransformationResult(
+			@ParameterObject LoadDataRequest request,
+			@AuthenticationPrincipal UserEntity user
+	) throws ApiException {
+		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT, null, null, null, request, user);
+	}
+
 	@Operation(summary = "Deletes the data set from the internal data base.",
 	           description = "Deletes the data set from the internal data base.")
 	@ApiResponses(value = {
@@ -428,6 +439,9 @@ public class DataController {
 			case LOAD_DATA_SET -> {
 				result = databaseService.exportDataSet(projectEntity, columnNames);
 			}
+			case LOAD_TRANSFORMATION_RESULT -> {
+				result = databaseService.exportTransformationResult(projectEntity);
+			}
 			case STORE_CONFIG -> {
 				result = databaseService.store(configuration, projectEntity);
 			}
@@ -469,6 +483,7 @@ public class DataController {
 		LOAD_CONFIG,
 		LOAD_DATA,
 		LOAD_DATA_SET,
+		LOAD_TRANSFORMATION_RESULT,
 		STORE_CONFIG,
 		STORE_DATE_SET,
 		VALIDATE;

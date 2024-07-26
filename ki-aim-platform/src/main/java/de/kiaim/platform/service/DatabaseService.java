@@ -29,8 +29,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Service
 public class DatabaseService {
@@ -207,6 +210,30 @@ public class DatabaseService {
 		}
 
 		return new DataSet(dataRows, dataConfiguration);
+	}
+
+	@Transactional
+	public TransformationResult exportTransformationResult(final ProjectEntity project)
+			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException {
+		final DataSet dataSet = exportDataSet(project, new ArrayList<>());
+
+		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
+		for (final var error : project.getDataTransformationErrors()) {
+			if (!rowErrors.containsKey(error.getRowIndex())) {
+				final List<String> o = dataSet.getDataRows()
+				                              .get(error.getRowIndex())
+				                              .getData()
+				                              .stream()
+				                              .map(Data::toString)
+				                              .collect(Collectors.toList());
+				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex(), o));
+			}
+			final var rowError = rowErrors.get(error.getRowIndex());
+			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType()));
+			rowError.getRawValues().set(error.getColumnIndex(), error.getOriginalValue());
+		}
+
+		return new TransformationResult(dataSet, rowErrors.values().stream().toList());
 	}
 
 	/**

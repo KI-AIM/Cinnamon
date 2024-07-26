@@ -9,10 +9,12 @@ import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.test.platform.DatabaseTest;
 import de.kiaim.test.util.TransformationResultTestHelper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
@@ -23,7 +25,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 class DatabaseServiceTest extends DatabaseTest {
 
 	@Autowired
@@ -31,6 +32,11 @@ class DatabaseServiceTest extends DatabaseTest {
 
 	@Autowired
 	ProjectService projectService;
+
+	@BeforeEach
+	public void setUp() {
+		projectService.setMode(testProject, Mode.EXPERT);
+	}
 
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)

@@ -1,7 +1,10 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.entity.StatusEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.Mode;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,13 +32,22 @@ public class ProjectService {
 	 */
 	@Transactional
 	public ProjectEntity getProject(final UserEntity user) {
-		ProjectEntity project = user.getProject();
+		final UserEntity user2 = userRepository.findById(user.getEmail()).get();
+
+		ProjectEntity project = user2.getProject();
 		if (project == null) {
 			project = new ProjectEntity();
 			user.setProject(project);
-			userRepository.save(user);
+			userRepository.save(user2);
 		}
 		return project;
+	}
+
+	@Transactional
+	public void setMode(final ProjectEntity project, final Mode mode) {
+		project.getStatus().setMode(mode);
+		project.getStatus().setCurrentStep(Step.UPLOAD);
+		userRepository.save(project.getUser());
 	}
 
 }

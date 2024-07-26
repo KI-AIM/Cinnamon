@@ -5,12 +5,16 @@ import de.kiaim.model.configuration.data.StringPatternConfiguration;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.service.ProjectService;
 import de.kiaim.test.platform.ControllerTest;
 import de.kiaim.test.util.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithAnonymousUser;
@@ -26,6 +30,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WithUserDetails("test_user")
 class DataControllerTest extends ControllerTest {
+
+	@Autowired ProjectService projectService;
+
+	@BeforeEach
+	public void setUp() {
+		projectService.setMode(testProject, Mode.EXPERT);
+	}
 
 	@Test
 	void estimateDatatypes() throws Exception {

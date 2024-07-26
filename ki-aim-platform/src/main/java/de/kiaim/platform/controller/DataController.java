@@ -413,14 +413,10 @@ public class DataController {
 				final InputStream inputStream = getInputStream(file);
 				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration);
 				databaseService.store((DataConfiguration) result, projectEntity);
-
-				statusService.updateStatus(projectEntity, Step.DATA_CONFIG);
 			}
 			case DELETE -> {
 				databaseService.delete(projectEntity);
 				result = null;
-
-				statusService.updateStatus(projectEntity, Step.UPLOAD);
 			}
 			case LOAD_CONFIG -> {
 				result = databaseService.exportDataConfiguration(projectEntity);
@@ -449,8 +445,6 @@ public class DataController {
 				final InputStream inputStream = getInputStream(file);
 				databaseService.store(configuration, projectEntity);
 				result = dataProcessor.read(inputStream, fileConfiguration, configuration);
-
-				statusService.updateStatus(projectEntity, Step.VALIDATION);
 			}
 			default -> {
 				throw new InternalMissingHandlingException(InternalMissingHandlingException.REQUEST_TYPE,

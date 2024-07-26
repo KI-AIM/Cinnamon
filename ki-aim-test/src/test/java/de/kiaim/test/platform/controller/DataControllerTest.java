@@ -45,9 +45,9 @@ class DataControllerTest extends ControllerTest {
 
 		assertEquals(expectedConfiguration, dataConfiguration, "Returned configuration is wrong!");
 
-		assertEquals(Step.DATA_CONFIG, getTestProject().getStatus().getCurrentStep(),
-		             "The current step has not been updated correctly!");
-		assertEquals(ProcessStatus.NOT_REQUIRED, getTestProject().getStatus().getExternalProcessStatus(),
+		assertEquals(Step.UPLOAD, testProject.getStatus().getCurrentStep(),
+		             "The current step should not have been updated!");
+		assertEquals(ProcessStatus.NOT_REQUIRED, testProject.getStatus().getExternalProcessStatus(),
 		             "The current step should not require external processing!");
 	}
 
@@ -119,9 +119,9 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(objectMapper.writeValueAsString(expected)));
 
-		assertEquals(Step.VALIDATION, getTestProject().getStatus().getCurrentStep(),
-		             "The current step has not been updated correctly!");
-		assertEquals(ProcessStatus.NOT_REQUIRED, getTestProject().getStatus().getExternalProcessStatus(),
+		assertEquals(Step.UPLOAD, testProject.getStatus().getCurrentStep(),
+		             "The current step should have not been updated!");
+		assertEquals(ProcessStatus.NOT_REQUIRED, testProject.getStatus().getExternalProcessStatus(),
 		             "The current step should not require external processing!");
 	}
 
@@ -223,6 +223,9 @@ class DataControllerTest extends ControllerTest {
 		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
 		assertEquals(dataSetId, testUser.getProject().getId(),
 		             "User has been associated with the wrong dataset!");
+		// TODO fix when creating projects dynamically
+//		assertEquals(Step.ANONYMIZATION_CONFIG, testUser.getProject().getStatus().getCurrentStep(),
+//		             "The current step has not been updated!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))

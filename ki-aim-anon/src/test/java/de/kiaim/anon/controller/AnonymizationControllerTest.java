@@ -21,6 +21,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,16 +42,50 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     public void testCreateAnonymizationTask() throws Exception {
         String jsonRequest = objectMapper.writeValueAsString(request);
 
-        MvcResult result = mockMvc.perform(post("/api/anonymization/process")
+        MvcResult result = mockMvc.perform(post("/api/anonymization/process/callback/result")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isAccepted()) // Verifier que le status est ACCEPTED (202)
                 .andReturn();
 
         String responseContent = result.getResponse().getContentAsString();
-        System.out.println("Task ID: " + responseContent);
+        System.out.println("Response content: " + responseContent);
 
         Thread.sleep(1000);
+
+        assertNotNull(responseContent);
+    }
+
+    @Test
+    public void testCreateAnonymizationTaskProcessIdCallback() throws Exception {
+
+        String jsonRequest = objectMapper.writeValueAsString(request);
+
+        MvcResult result = mockMvc.perform(post("/api/anonymization/process/callback/processId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isAccepted()) // Ensure status is 202 Accepted
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+        System.out.println("Task ID: " + responseContent);
+
+        assertNotNull(responseContent);
+    }
+
+    @Test
+    public void testCompleteProcess() throws Exception {
+
+        String jsonRequest = objectMapper.writeValueAsString(request);
+
+        MvcResult result = mockMvc.perform(post("/api/anonymization/process/callback/processId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isAccepted()) // Ensure status is 202 Accepted
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+        System.out.println("Task ID: " + responseContent);
 
         assertNotNull(responseContent);
     }
@@ -104,7 +140,7 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     public void testGetTaskResult() throws Exception {
         String jsonRequest = objectMapper.writeValueAsString(request);
 
-        MvcResult creationResult = mockMvc.perform(post("/api/anonymization/process")
+        MvcResult creationResult = mockMvc.perform(post("/api/anonymization/process/callback/result")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isAccepted())

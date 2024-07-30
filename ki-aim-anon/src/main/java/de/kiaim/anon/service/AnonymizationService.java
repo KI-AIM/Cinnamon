@@ -115,7 +115,7 @@ public class AnonymizationService {
      * @return A CompletableFuture containing the anonymized dataset.
      */
     @Async
-    public CompletableFuture<DataSet> anonymizeDataWithCallback(AnonymizationRequest request) {
+    public CompletableFuture<DataSet> anonymizeDataWithCallbackResult(AnonymizationRequest request) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 log.info("Start anon.");
@@ -128,7 +128,39 @@ public class AnonymizationService {
                 log.info("Anon finished.");
 
                 // Send success callback
-                sendCallback(request.getCallbackURL(), result);
+                sendCallbackResult(request.getCallbackURL(), result);
+                return result;
+            } catch (Exception ex) {
+                log.error("An error occurred during data anonymization", ex);
+                sendFailureCallback(request.getCallbackURL(), ex);
+                throw new RuntimeException(ex);
+            }
+        });
+    }
+
+    /**
+     * Asynchronously anonymizes the given dataset based on the provided anonymization configuration and process ID.
+     * Once the anonymization is complete, it sends the processID of the completed task to the specified callback URL.
+     * The result of the anonymization is also stored so it can be retrieved via the GET endpoint.
+     *
+     * @param request The anonymization request containing the dataset, configuration, and callback URL.
+     * @return A CompletableFuture containing the anonymized dataset.
+     */
+    @Async
+    public CompletableFuture<DataSet> anonymizeDataWithCallbackProcessId(AnonymizationRequest request) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                log.info("Start anon.");
+                AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(request.getKiaimAnonConfig(), request.getDataSet().getDataConfiguration());
+                String[][] jalData = dataSetProcessor.convertDatasetToStringArray(request.getDataSet());
+                log.info("Jal data generated, start anonymize.");
+                Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig(request.getProcessId()));
+                anonymizer.anonymize();
+                DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), request.getDataSet().getDataConfiguration());
+                log.info("Anon finished.");
+
+                // Send success callback
+                sendCallbackProcessId(request.getCallbackURL(), request.getProcessId());
                 return result;
             } catch (Exception ex) {
                 log.error("An error occurred during data anonymization", ex);
@@ -144,13 +176,33 @@ public class AnonymizationService {
      * @param callbackUrl The URL to send the callback to.
      * @param result The anonymized dataset.
      */
-    public void sendCallback(String callbackUrl, DataSet result) {
+    public void sendCallbackResult(String callbackUrl, DataSet result) {
         log.info("Sending callback to URL: {}", callbackUrl);
         long startTime = System.currentTimeMillis();
 
         webClient.post()
                 .uri(callbackUrl)
                 .body(BodyInserters.fromValue(result))
+                .retrieve()
+                .bodyToMono(Void.class)
+                .doOnError(e -> log.error("Failed to send callback to URL: {}", callbackUrl, e))
+                .doFinally(signal -> log.info("Callback sent to URL: {} in {} ms", callbackUrl, System.currentTimeMillis() - startTime))
+                .subscribe();
+    }
+
+    /**
+     * Sends the anonymized dataset to the specified callback URL.
+     *
+     * @param callbackUrl The URL to send the callback to.
+     * @param processId The processId of the completed anonymization task.
+     */
+    public void sendCallbackProcessId(String callbackUrl, String processId) {
+        log.info("Sending callback to URL: {}", callbackUrl);
+        long startTime = System.currentTimeMillis();
+
+        webClient.post()
+                .uri(callbackUrl)
+                .body(BodyInserters.fromValue(processId))
                 .retrieve()
                 .bodyToMono(Void.class)
                 .doOnError(e -> log.error("Failed to send callback to URL: {}", callbackUrl, e))

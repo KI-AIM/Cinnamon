@@ -41,6 +41,7 @@ public class AbstractAnonymizationTests {
     protected AnonymizationConfig kiaimAnonConfig;
     protected String processId;
     protected AnonymizationRequest request;
+    protected String mockUrl;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -49,13 +50,13 @@ public class AbstractAnonymizationTests {
 
         dataSet = importDataset(datasetPath);
         kiaimAnonConfig = importAnonConfig(anonConfigPath);
-        processId = "testProcess";
+        processId = "testProcess123";
 
         if (mockWebServer == null) {
             mockWebServer = new MockWebServer();
             mockWebServer.start();
         }
-        String mockUrl = mockWebServer.url("/test/callback").toString();
+        mockUrl = mockWebServer.url("/test/callback").toString();
         request = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig, mockUrl);
 
         // Check objects validity

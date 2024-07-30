@@ -70,15 +70,23 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     public void testAnonymizeDataWithCallback() throws Exception {
         mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
 
-        anonymizationService.anonymizeDataWithCallback(request).join();
+        String localMockUrl = mockWebServer.url("/callback/success").toString();
+        AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig, localMockUrl);
+        anonymizationService.anonymizeDataWithCallbackResult(anonRequest).join();
 
         var recordedRequest = mockWebServer.takeRequest();
         assertEquals("POST", recordedRequest.getMethod());
-        assertEquals("/test/callback", recordedRequest.getPath());
+        assertEquals("/callback/success", recordedRequest.getPath());
+
+        // Convert the request body back to DataSet and verify its content
+        DataSet receivedDataSet = objectMapper.readValue(recordedRequest.getBody().readUtf8(), DataSet.class);
+        assertNotNull(receivedDataSet);
+//        // Log the received data for verification
+        System.out.println("Received DataSet in callback: " + receivedDataSet);
     }
 
     @Test
-    public void testSendCallback() throws IOException, InterruptedException {
+    public void testSendCallbackResult() throws IOException, InterruptedException {
         // Enqueue a mock response
         mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
 
@@ -89,7 +97,7 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
         String mockUrl = mockWebServer.url("/callback/success").toString();
 
         // Call the method to send the callback
-        anonymizationService.sendCallback(mockUrl, dataSet);
+        anonymizationService.sendCallbackResult(mockUrl, dataSet);
 
         // Verify the request
         var recordedRequest = mockWebServer.takeRequest();
@@ -102,5 +110,27 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
 //        assertNotNull(receivedDataSet);
 //        // Log the received data for verification
 //        System.out.println("Received DataSet in callback: " + receivedDataSet);
+    }
+
+    @Test
+    public void testSendCallbackProcessId() throws IOException, InterruptedException {
+        // Enqueue a mock response
+        mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
+
+        // Get the full URL of the mock server
+        String mockUrl = mockWebServer.url("/callback/success").toString();
+
+        // Call the method to send the callback
+        anonymizationService.sendCallbackProcessId(mockUrl, processId);
+
+        // Verify the request
+        var recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/callback/success", recordedRequest.getPath());
+
+        // Verify the request body
+        String receivedProcessId = recordedRequest.getBody().readUtf8();
+        assertNotNull(receivedProcessId);
+        assertEquals(processId, receivedProcessId);
     }
 }

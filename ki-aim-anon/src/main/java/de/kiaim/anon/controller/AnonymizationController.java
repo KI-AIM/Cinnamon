@@ -43,10 +43,10 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "409", description = "Task with the given process ID already exists.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
     })
-    @PostMapping(value = "/process", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> createAnonymizationTask(
+    @PostMapping(value = "/process/callback/result", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> createAnonymizationTaskWithCallbackResult(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Request containing the dataset and anonymization configuration.",
+                    description = "Request containing the process ID, the dataset, the anonymization configuration and the callback URL.",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = AnonymizationRequest.class)),
                     required = true
@@ -57,10 +57,41 @@ public class AnonymizationController {
             if (tasks.containsKey(processId)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + processId + " already exists.");
             }
-            Future<DataSet> future = anonymizationService.anonymizeDataWithCallback(request);
+            Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);
             tasks.put(processId, future);
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(
-                    "Anonymization process " + processId + "has been accepted.");
+                    "Anonymization process " + processId + " has been accepted.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Creates a new anonymization task.",
+            description = "Creates a new asynchronous anonymization task based on the processId, dataset and anon configuration." +
+                    "A callback with the processId is sent once the process is done.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Task accepted for processing.", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Task with the given process ID already exists.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
+    })
+    @PostMapping(value = "/process/callback/processId", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> createAnonymizationTaskWithCallbackProcessId(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Request containing the process ID, the dataset, the anonymization configuration and the callback URL.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AnonymizationRequest.class)),
+                    required = true
+            )
+            @RequestBody AnonymizationRequest request) {
+        try {
+            String processId = request.getProcessId();
+            if (tasks.containsKey(processId)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + processId + " already exists.");
+            }
+            Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackProcessId(request);
+            tasks.put(processId, future);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(
+                    "Anonymization process " + processId + " has been accepted.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
         }

@@ -6,7 +6,7 @@ import { Status } from "../../shared/model/status";
 import { HttpClient } from "@angular/common/http";
 import { Router } from "@angular/router";
 import { UserService } from "../../shared/services/user.service";
-import { catchError, Observable, of, tap } from "rxjs";
+import { Observable, of, tap } from "rxjs";
 import { ConfigurationService } from "../../shared/services/configuration.service";
 
 @Injectable({
@@ -15,6 +15,7 @@ import { ConfigurationService } from "../../shared/services/configuration.servic
 export class StateManagementService {
 
     private status: Status;
+    private fetched: boolean = false;
 
     private readonly completedSteps: List<Steps>;
 
@@ -58,6 +59,26 @@ export class StateManagementService {
 
     getCompletedSteps(): List<Object> {
         return this.completedSteps;
+    }
+
+    /**
+     * Sets the given step to the current steps and marks all previous steps as completed.
+     * Steps after the given step will be removed from the list of completed steps.
+     *
+     * @param step The next step.
+     */
+    setNextStep(step: Steps): void {
+        this.status.currentStep = step;
+
+        this.completedSteps.clear();
+
+        Object.entries(Steps).forEach(([key, value]) => {
+            const currentIndex = typeof step === "number" ? step : Steps[step];
+            console.log(currentIndex);
+            if (key < currentIndex) {
+                this.addCompletedStep(Steps[value as keyof typeof Steps]);
+            }
+        });
     }
 
     addCompletedStep(step: Steps): void {
@@ -122,17 +143,16 @@ export class StateManagementService {
      * Fetches the status from the backend.
      */
     public fetchStatus(): Observable<Status> {
+        if (this.fetched) {
+            return of(this.status);
+        }
+
         return this.http.get<Status>("/api/project/status")
             .pipe(
                 tap(value => {
+                    this.fetched = true;
                     this.status = value;
-
-                    Object.entries(Steps).forEach(([key, value]) => {
-                        const currentIndex = Steps[this.status.currentStep];
-                        if (key < currentIndex) {
-                            this.addCompletedStep(Steps[value as keyof typeof Steps]);
-                        }
-                    });
+                    this.setNextStep(value.currentStep);
                 }),
             );
     }

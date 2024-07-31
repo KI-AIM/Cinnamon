@@ -180,7 +180,7 @@ export class UploadFileComponent {
 	private navigateToNextStep() {
 		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/dataConfiguration");
-		this.stateManagement.addCompletedStep(Steps.UPLOAD);
+        this.stateManagement.setNextStep(Steps.DATA_CONFIG);
 	}
 
 	private handleError(error: string) {

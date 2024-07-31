@@ -91,7 +91,7 @@ export class DataConfigurationComponent implements OnInit {
         this.loadingService.setLoadingStatus(false);
 
         this.router.navigateByUrl("/dataValidation");
-        this.stateManagement.addCompletedStep(Steps.DATA_CONFIG);
+        this.stateManagement.setNextStep(Steps.VALIDATION);
     }
 
     private handleError(error: HttpErrorResponse) {

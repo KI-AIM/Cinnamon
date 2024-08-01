@@ -1,13 +1,4 @@
-<mat-expansion-panel>
-    <mat-expansion-panel-header>
-        <mat-panel-title>{{ group.display_name }}</mat-panel-title>
-        <mat-panel-description> {{ group.description }}</mat-panel-description>
-    </mat-expansion-panel-header>
-
-
-    <ng-container *ngFor="let inputDefinition of group.parameters">
-        <app-configuration-input [configurationInputDefinition]="inputDefinition"
-                                 [form]="formGroup"></app-configuration-input>
-    </ng-container>
-
-</mat-expansion-panel>
+<ng-container *ngFor="let inputDefinition of group.parameters">
+    <app-configuration-input [configurationInputDefinition]="inputDefinition"
+                             [form]="formGroup"></app-configuration-input>
+</ng-container>

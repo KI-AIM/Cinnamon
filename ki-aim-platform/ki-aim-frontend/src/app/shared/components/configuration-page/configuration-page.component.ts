@@ -25,7 +25,6 @@ export class ConfigurationPageComponent {
         this.anonService.algorithms.subscribe({
             next: value => {
                 this.error = null;
-                console.log(value);
                 this.algorithms = value;
             }, error: error => {
                 console.log(error);

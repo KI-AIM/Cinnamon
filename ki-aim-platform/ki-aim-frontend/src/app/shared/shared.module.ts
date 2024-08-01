@@ -20,10 +20,12 @@ import { ConfigurationInputArrayComponent } from './components/configuration-inp
 import { ConfigurationSelectionComponent } from './components/configuration-selection/configuration-selection.component';
 import { ConfigurationPageComponent } from "./components/configuration-page/configuration-page.component";
 import { ConfigurationGroupComponent } from './components/configuration-group/configuration-group.component';
+import { MatCheckboxModule } from "@angular/material/checkbox";
+import { MatExpansionModule } from "@angular/material/expansion";
 
 @NgModule({
     declarations: [InformationDialogComponent, InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationInputInfoComponent, ConfigurationFormComponent, ConfigurationInputArrayComponent, ConfigurationSelectionComponent, ConfigurationPageComponent, ConfigurationGroupComponent],
-    imports: [CommonModule, MatDialogModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatSelectModule],
+    imports: [CommonModule, MatDialogModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatSelectModule, MatCheckboxModule, MatExpansionModule],
     exports: [InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationFormComponent, ConfigurationPageComponent],
 })
 export class SharedModule {}

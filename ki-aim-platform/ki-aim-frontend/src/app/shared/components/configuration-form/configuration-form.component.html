@@ -1,11 +1,14 @@
 <form (ngSubmit)="onSubmit()" [formGroup]="form">
 
-    <ng-container *ngFor="let groupDefinition of Object.values(algorithmDefinition.arguments)">
-        <app-configuration-group [form]="form" [group]="groupDefinition">
-        </app-configuration-group>
-    </ng-container>
+    <mat-accordion>
+        <ng-container *ngFor="let groupDefinition of getGroupNames()">
+            <app-configuration-group [form]="form" [fromGroupName]="groupDefinition"
+                                     [group]="algorithmDefinition.arguments[groupDefinition]">
+            </app-configuration-group>
+        </ng-container>
+    </mat-accordion>
 
-    <div>
+    <div class="mt-2">
         <button type="submit" mat-raised-button color="primary" [disabled]="!form.valid">Start Algorithm</button>
     </div>
 

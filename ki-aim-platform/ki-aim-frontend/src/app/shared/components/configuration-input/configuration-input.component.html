@@ -13,18 +13,23 @@
             <ng-container *ngSwitchCase="ConfigurationInputType.ARRAY">
                 <div class="input-array-wrapper">
                     <mat-form-field class="input-array">
-                    <input type="text"
-                           [value]="form.controls[configurationInputDefinition.name].value"
-                           [id]="configurationInputDefinition.name" matInput disabled="disabled"/>
-                </mat-form-field>
+                        <input type="text"
+                               [value]="form.controls[configurationInputDefinition.name].value"
+                               [id]="configurationInputDefinition.name" matInput disabled="disabled"/>
+                    </mat-form-field>
 
-                <span class="input-array-button input-height d-flex flex-column justify-content-center">
-                    <app-configuration-input-array [configurationInputDefinition]="configurationInputDefinition"
-                                                   [parentForm]="form">
-                    </app-configuration-input-array>
-                </span>
+                     <span class="input-array-button input-height d-flex flex-column justify-content-center">
+                         <app-configuration-input-array [configurationInputDefinition]="configurationInputDefinition"
+                                                        [parentForm]="form">
+                         </app-configuration-input-array>
+                     </span>
                 </div>
             </ng-container>
+
+            <ng-container *ngSwitchCase="ConfigurationInputType.BOOLEAN">
+                <mat-checkbox [formControlName]="configurationInputDefinition.name"></mat-checkbox>
+            </ng-container>
+
 
             <ng-container *ngSwitchCase="ConfigurationInputType.FLOAT">
                 <mat-form-field class="input">

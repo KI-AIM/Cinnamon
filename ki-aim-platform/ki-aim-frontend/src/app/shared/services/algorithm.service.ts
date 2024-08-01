@@ -35,10 +35,7 @@ export abstract class AlgorithmService {
     getDefinitionUrl: (algorithm: Algorithm) => string;
 
     public getAlgorithmDefinitionByName(algorithmName: string): Observable<AlgorithmDefinition> {
-        console.log(algorithmName);
-        console.log(this._algorithms);
         const algorithm = this._algorithms?.find((value) => value.name === algorithmName)!;
-        console.log(algorithm);
         return this.getAlgorithmDefinition(algorithm);
     }
 
@@ -100,7 +97,7 @@ export abstract class AlgorithmService {
 
     // TODO use url
     private loadAlgorithmDefinition(url: string, algorithm: Algorithm): Observable<AlgorithmDefinition> {
-        return this.http.get<string>(this.getDefinitionUrl(algorithm), {responseType: 'text' as 'json'})
+        return this.http.get<string>(algorithm.URL, {responseType: 'text' as 'json'})
             .pipe(map(value => {
                 return plainToInstance(AlgorithmDefinition, parse(value))
             }));

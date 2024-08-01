@@ -18,62 +18,20 @@ export class ConfigurationFormComponent implements OnInit {
     protected algorithmDefinition: AlgorithmDefinition;
 
     @Output() public submitConfiguration = new EventEmitter<string>();
-    protected form!: FormGroup;
+    protected form: FormGroup;
 
     constructor(
         private readonly anonService: AlgorithmService
     ) {
-        // this.anonService.getAlgorithmDefinition(this.algorithm).subscribe(value => this.algorithmDefinition = value);
+       this.form = new FormGroup({});
     }
 
     ngOnInit() {
-
-        console.log(this.algorithmName);
-        console.log(this.algorithm);
         this.anonService.getAlgorithmDefinitionByName(this.algorithmName)
             .subscribe(value => {
                 this.algorithmDefinition = value
-
-
-                const formGroup: any = {};
-
-                Object.entries(this.algorithmDefinition.arguments).forEach(([name, groupDefinition]) => {
-                    const group: any = {};
-
-                    groupDefinition.parameters.forEach(inputDefinition => {
-                        if (inputDefinition.type === ConfigurationInputType.ARRAY) {
-                            const controls = [];
-                            for (const defaultValue of inputDefinition.default_value as number[]) {
-                                controls.push(new FormControl(defaultValue, Validators.required));
-                            }
-
-                            group[inputDefinition.name] = new FormArray(controls, Validators.required)
-                        } else {
-                            const validators = [Validators.required];
-                            if (inputDefinition.min_value !== null) {
-                                validators.push(Validators.min(inputDefinition.min_value));
-                            }
-                            if (inputDefinition.max_value !== null) {
-                                validators.push(Validators.max(inputDefinition.max_value));
-                            }
-
-                            group[inputDefinition.name] = new FormControl(inputDefinition.default_value, validators)
-                        }
-                    });
-
-                    formGroup[name] = new FormGroup(group);
-                });
-
-                this.form = new FormGroup(formGroup);
-
-
+                this.form = this.createForm(value);
             });
-
-
-    }
-
-    ngAfterViewInit() {
-        console.log('hi');
     }
 
     getConfiguration() {
@@ -84,9 +42,48 @@ export class ConfigurationFormComponent implements OnInit {
         this.form.setValue(configuration);
     }
 
+    getGroupNames(): Array<string> {
+        if (this.algorithmDefinition == undefined) {
+            return [];
+        }
+
+        return Object.keys(this.algorithmDefinition.arguments);
+    }
+
     onSubmit() {
         this.submitConfiguration.emit(stringify(this.form.getRawValue()));
     }
 
-    protected readonly Object = Object;
+    private createForm(algorithmDefinition: AlgorithmDefinition): FormGroup {
+        const formGroup: any = {};
+
+        Object.entries(algorithmDefinition.arguments).forEach(([name, groupDefinition]) => {
+            const group: any = {};
+
+            groupDefinition.parameters.forEach(inputDefinition => {
+                if (inputDefinition.type === ConfigurationInputType.ARRAY) {
+                    const controls = [];
+                    for (const defaultValue of inputDefinition.default_value as number[]) {
+                        controls.push(new FormControl(defaultValue, Validators.required));
+                    }
+
+                    group[inputDefinition.name] = new FormArray(controls, Validators.required)
+                } else {
+                    const validators = [Validators.required];
+                    if (inputDefinition.min_value !== null) {
+                        validators.push(Validators.min(inputDefinition.min_value));
+                    }
+                    if (inputDefinition.max_value !== null) {
+                        validators.push(Validators.max(inputDefinition.max_value));
+                    }
+
+                    group[inputDefinition.name] = new FormControl(inputDefinition.default_value, validators)
+                }
+            });
+
+            formGroup[name] = new FormGroup(group);
+        });
+
+        return new FormGroup(formGroup);
+    }
 }

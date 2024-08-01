@@ -10,10 +10,15 @@ import { FormGroup } from "@angular/forms";
 export class ConfigurationGroupComponent {
 
     @Input() public form!: FormGroup;
-    @Input() public group: ConfigurationGroupDefinition;
+    @Input() public fromGroupName!: string;
+    @Input() public group!: ConfigurationGroupDefinition;
 
     constructor(
     ) {
+    }
+
+    protected get formGroup(): FormGroup {
+        return this.form.controls[this.fromGroupName] as FormGroup;
     }
 
 }

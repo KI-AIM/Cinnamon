@@ -1,4 +1,4 @@
-import { ConfigurationInputDefinition } from "./configuration-input-definition";
+import { ConfigurationGroupDefinition } from "./configuration-group-definition";
 
 export class AlgorithmDefinition {
     synthesizer: string
@@ -6,9 +6,7 @@ export class AlgorithmDefinition {
     type: string
     display_name: string
     description: string
+    name: string
     URL: string
-    model_parameter: ConfigurationInputDefinition[]
-    data: ConfigurationInputDefinition[]
-    model_fitting: ConfigurationInputDefinition[]
-    sampling: ConfigurationInputDefinition[]
+    arguments: {[name: string]: ConfigurationGroupDefinition}
 }

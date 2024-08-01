@@ -1,7 +1,7 @@
 import { Component, ViewChild } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
-import { AlgorithmDefinition } from "../../model/algorithm-definition";
+import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService } from "../../services/algorithm.service";
 
 @Component({
@@ -10,9 +10,10 @@ import { AlgorithmService } from "../../services/algorithm.service";
   styleUrls: ['./configuration-page.component.less']
 })
 export class ConfigurationPageComponent {
-    protected defs: {[name :string]: AlgorithmDefinition} = {};
 
-    protected readonly Object = Object;
+    protected algorithms: Algorithm[] = [];
+
+    // protected readonly Object = Object;
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
 
     protected error: string | null = null;
@@ -24,10 +25,10 @@ export class ConfigurationPageComponent {
         this.anonService.algorithms.subscribe({
             next: value => {
                 this.error = null;
-                value.forEach(algorithm => {
-                    this.anonService.getAlgorithmDefinition(algorithm).subscribe(value1 => this.defs[algorithm.name] = value1);
-                });
+                console.log(value);
+                this.algorithms = value;
             }, error: error => {
+                console.log(error);
                 this.error = `Failed to load available algorithms. Status: ${error.status} (${error.statusText})`;
             }
         });

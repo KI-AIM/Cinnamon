@@ -2,8 +2,8 @@
     <mat-label>Which algorithm do you want to use?</mat-label>
 
     <mat-select #selectElement (selectionChange)="onChange($event)">
-        <mat-option *ngFor="let option of options" [value]="option">
-            {{ option }}
+        <mat-option *ngFor="let option of algorithms" [value]="option.synthesizer">
+            {{ option.name }}
         </mat-option>
     </mat-select>
 </mat-form-field>

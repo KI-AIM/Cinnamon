@@ -74,7 +74,6 @@ export class StateManagementService {
 
         Object.entries(Steps).forEach(([key, value]) => {
             const currentIndex = typeof step === "number" ? step : Steps[step];
-            console.log(currentIndex);
             if (key < currentIndex) {
                 this.addCompletedStep(Steps[value as keyof typeof Steps]);
             }

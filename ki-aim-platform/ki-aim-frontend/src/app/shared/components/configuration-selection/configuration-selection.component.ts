@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { MatSelectChange } from "@angular/material/select";
 import { NgModel } from "@angular/forms";
+import { Algorithm } from "../../model/algorithm";
 
 @Component({
   selector: 'app-configuration-selection',
@@ -8,7 +9,7 @@ import { NgModel } from "@angular/forms";
   styleUrls: ['./configuration-selection.component.less']
 })
 export class ConfigurationSelectionComponent {
-    @Input() public options: string[];
+    @Input() public algorithms: Algorithm[]
     @Output() public change = new EventEmitter<string>();
 
     @ViewChild('selectElement') protected selectElement: NgModel;

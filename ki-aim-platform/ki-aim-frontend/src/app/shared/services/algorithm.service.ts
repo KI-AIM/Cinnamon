@@ -34,10 +34,15 @@ export abstract class AlgorithmService {
      */
     getDefinitionUrl: (algorithm: Algorithm) => string;
 
-    /**
-     * Gets the definition for the given algorithm.
-     * @param algorithm Algorithm for which the definition should be returned.
-     */
+    public getAlgorithmDefinitionByName(algorithmName: string): Observable<AlgorithmDefinition> {
+        console.log(algorithmName);
+        console.log(this._algorithms);
+        const algorithm = this._algorithms?.find((value) => value.name === algorithmName)!;
+        console.log(algorithm);
+        return this.getAlgorithmDefinition(algorithm);
+    }
+
+
     public getAlgorithmDefinition(algorithm: Algorithm): Observable<AlgorithmDefinition> {
         if (!(algorithm.name in this.algorithmDefinitions)) {
             return this.stepConfig
@@ -82,12 +87,12 @@ export abstract class AlgorithmService {
 
     // TODO use url
     private loadAlgorithms(url: string): Observable<Algorithm[]> {
-        return this.http.get<string>('/get_synthesizers', {responseType: 'text' as 'json'})
+        return this.http.get<string>('/get_algorithms', {responseType: 'text' as 'json'})
             .pipe(
                 map(value => {
-                    const abc = parse(value) as Object[];
+                    const response = parse(value) as { [available_synthesizers: string]: Object[] };
                     const result: Algorithm[] = [];
-                    abc.forEach(value1 => result.push(plainToInstance(Algorithm, value1)))
+                    response['available_synthesizers'].forEach(value1 => result.push(plainToInstance(Algorithm, value1)))
                     return result;
                 })
             );

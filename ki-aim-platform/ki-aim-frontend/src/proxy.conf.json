@@ -3,7 +3,7 @@
         "target": "http://localhost:8080",
         "secure": false
     },
-    "/get_synthesizers": {
+    "/get_algorithms": {
         "target": "http://localhost:5000",
         "secure": false
     },

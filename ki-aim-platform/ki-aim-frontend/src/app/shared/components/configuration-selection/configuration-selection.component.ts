@@ -9,8 +9,8 @@ import { Algorithm } from "../../model/algorithm";
   styleUrls: ['./configuration-selection.component.less']
 })
 export class ConfigurationSelectionComponent {
-    @Input() public algorithms: Algorithm[]
-    @Output() public change = new EventEmitter<string>();
+    @Input() public algorithms!: Algorithm[]
+    @Output() public change = new EventEmitter<Algorithm>();
 
     @ViewChild('selectElement') protected selectElement: NgModel;
 
@@ -18,7 +18,7 @@ export class ConfigurationSelectionComponent {
         this.change.emit(event.value);
     }
 
-    public get selectedOption(): string {
+    public get selectedOption(): Algorithm {
         return this.selectElement?.value;
     }
 }

@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AlgorithmService } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
-import { Algorithm } from "../../../shared/model/algorithm";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
@@ -14,17 +13,15 @@ export class SynthetizationService extends AlgorithmService {
     _configuration: Object;
 
     constructor(
-        private readonly http2: HttpClient,
-        private readonly configurationService2: ConfigurationService,
+        http: HttpClient,
+        configurationService: ConfigurationService,
     ) {
-        super(http2, configurationService2);
+        super(http, configurationService);
     }
 
     public override getStepName = (): string => "synthetization";
 
     public override getConfigurationName = (): string => "synthetization";
-
-    public override getDefinitionUrl = (algorithm: Algorithm) => `/synthetic_${algorithm.type}_data_generator/synthesizer_config/${algorithm.name}.yaml`;
 
     public registerConfig() {
         const configReg = new ConfigurationRegisterData();

@@ -2,9 +2,13 @@ package de.kiaim.platform.service;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.model.configuration.data.DateFormatConfiguration;
+import de.kiaim.model.configuration.data.DateTimeFormatConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.config.SerializationConfig;
+import de.kiaim.platform.config.StepConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
@@ -15,12 +19,14 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -36,7 +42,7 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class ProcessService {
 
-	private final String contextPath;
+	private final int port;
 
 	private final ObjectMapper yamlMapper;
 
@@ -48,7 +54,7 @@ public class ProcessService {
 	private final StepService stepService;
 
 	public ProcessService(final SerializationConfig serializationConfig,
-	                      @Value("#{servletContext.contextPath}") final String contextPath,
+	                      @Value("${server.port}") final int port,
 	                      final ExternalProcessRepository externalProcessRepository,
 	                      final ProjectRepository projectRepository,
 	                      final DatabaseService databaseService,
@@ -57,7 +63,7 @@ public class ProcessService {
 	) {
 		this.yamlMapper = serializationConfig.yamlMapper();
 
-		this.contextPath = contextPath;
+		this.port = port;
 		this.externalProcessRepository = externalProcessRepository;
 		this.projectRepository = projectRepository;
 		this.databaseService = databaseService;
@@ -106,7 +112,7 @@ public class ProcessService {
 	 * Starts an external process.
 	 * @param project The project the process corresponds to.
 	 * @param stepName Name of the step in the configuration
-	 * @param algorithmName The name of the algorithm.
+	 * @param url URL to start the process.
 	 * @param configuration The process specific configuration.
 	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
@@ -116,7 +122,7 @@ public class ProcessService {
 	 * @throws InternalRequestException If the request to start the process failed.
 	 */
 	@Transactional
-	public void startProcess(final ProjectEntity project, final String stepName, final String algorithmName,
+	public void startProcess(final ProjectEntity project, final String stepName, final String url,
 	                         final String configuration)
 			throws BadColumnNameException, BadDataSetIdException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException, InternalRequestException {
 		// Set process entity
@@ -125,28 +131,69 @@ public class ProcessService {
 		projectRepository.save(project);
 
 		// Get configuration
-		final String url = stepService.getStepConfiguration(stepName).getUrl();
+		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(stepName);
+		final String serverUrl = stepConfiguration.getUrl();
+		final String callbackHost = stepConfiguration.getCallbackHost();
 
 		// Prepare body
-		// TODO use streaming?
-		final var outputStream = new ByteArrayOutputStream();
-		createZipFile(project, outputStream, configuration);
-
 		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
-		bodyBuilder.part("data", new ByteArrayResource(outputStream.toByteArray()));
-		bodyBuilder.part("session_key", externalProcess.getId().toString());
-		bodyBuilder.part("callback", contextPath + "/process/" + externalProcess.getId().toString() + "/callback");
 
-		final LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-		map.add("session_key", externalProcess.getId().toString());
-		map.add("callback", contextPath + "/process/" + externalProcess.getId().toString() + "/callback");
+		try {
+			final DataSet dataSet = databaseService.exportDataSet(project, new ArrayList<>());
+
+			final var outputStream = new ByteArrayOutputStream();
+			final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+			final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
+					dataSet.getDataConfiguration().getColumnNames().toArray(new String[0])).build();
+
+			final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
+			for (final DataRow dataRow : dataSet.getDataRows()) {
+				csvPrinter.printRecord(dataRow.getRow());
+			}
+			csvPrinter.flush();
+
+			bodyBuilder.part("data", new ByteArrayResource(outputStream.toByteArray()) {
+				@Override
+				public String getFilename() {
+					return "real_data.csv";
+				}
+			});
+			bodyBuilder.part("attribute_config", new FileSystemResource(new File("C:\\Users\\danie\\Desktop\\input_files\\attribute_config.yaml")));
+			// TODO does not work because of data format configurations
+//			bodyBuilder.part("attribute_config", new ByteArrayResource(yamlMapper.writeValueAsString(dataSet.getDataConfiguration()).getBytes()) {
+//				@Override
+//				public String getFilename() {
+//					return "attribute_config.yaml";
+//				}
+//			});
+			bodyBuilder.part("algorithm_config", new ByteArrayResource(configuration.getBytes()) {
+				@Override
+				public String getFilename() {
+					return "algorithm_config.yaml";
+				}
+			});
+
+		} catch (IOException e) {
+			throw new InternalIOException(InternalIOException.ZIP_CREATION,
+			                              "Failed to create the ZIP file for starting an external process!", e);
+		}
+
+
+		bodyBuilder.part("session_key", externalProcess.getId().toString());
+		final var serverAddress = ServletUriComponentsBuilder.fromCurrentContextPath()
+		                                                     .host(callbackHost)
+		                                                     .port(this.port)
+		                                                     .build()
+		                                                     .toUriString();
+		bodyBuilder.part("callback",
+		                 serverAddress + "/api/process/" + externalProcess.getId().toString() + "/callback");
 
 		// Do the request
 		AtomicReference<InternalRequestException> apiException = new AtomicReference<>();
 
-		final WebClient webClient = WebClient.builder().baseUrl(url).build();
+		final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
 		final var response = webClient.post()
-		                              .uri("/start_synthetization_process/" + algorithmName)
+		                              .uri(url)
 		                              .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
 		                              .retrieve()
 		                              .onStatus(a -> a.is4xxClientError() || a.is5xxServerError(),
@@ -158,7 +205,7 @@ public class ProcessService {
 							                                        b.statusCode()));
 			                                        return null;
 		                                        })
-		                              .toBodilessEntity()
+		                              .bodyToMono(String.class)
 		                              .onErrorComplete()
 		                              .block();
 		if (apiException.get() != null) {

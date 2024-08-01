@@ -1,6 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
-import { stringify } from "yaml";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { AlgorithmService } from "../../services/algorithm.service";
@@ -51,7 +50,7 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     onSubmit() {
-        this.submitConfiguration.emit(stringify(this.form.getRawValue()));
+        this.submitConfiguration.emit(this.form.getRawValue());
     }
 
     private createForm(algorithmDefinition: AlgorithmDefinition): FormGroup {

@@ -30,16 +30,18 @@ export abstract class AlgorithmService {
     getConfigurationName: () => string;
 
     /**
-     * URL to the definition of the given algorithm.
+     * Returns the definition for the algorithm with the given name.
+     * @param algorithmName The algorithm of which the definition should be returned.
      */
-    getDefinitionUrl: (algorithm: Algorithm) => string;
-
     public getAlgorithmDefinitionByName(algorithmName: string): Observable<AlgorithmDefinition> {
         const algorithm = this._algorithms?.find((value) => value.name === algorithmName)!;
         return this.getAlgorithmDefinition(algorithm);
     }
 
-
+    /**
+     * Returns the definition for the given algorithm.
+     * @param algorithm The algorithm of which the definition should be returned.
+     */
     public getAlgorithmDefinition(algorithm: Algorithm): Observable<AlgorithmDefinition> {
         if (!(algorithm.name in this.algorithmDefinitions)) {
             return this.stepConfig
@@ -47,7 +49,9 @@ export abstract class AlgorithmService {
                     concatMap(value => {
                         return this.loadAlgorithmDefinition(value.url, algorithm)
                     }),
-                    tap(value => this.algorithmDefinitions[algorithm.name] = value)
+                    tap(value => {
+                        this.algorithmDefinitions[algorithm.name] = value;
+                    }),
                 );
         }
 

@@ -17,6 +17,8 @@ public class StartProcessRequest {
 	@NotBlank
 	private String algorithm;
 
+	private String url;
+
 	@Schema(description = "Name under which the configuration should be saved.", example = "synthetization-config")
 	@NotBlank
 	private String configurationName;

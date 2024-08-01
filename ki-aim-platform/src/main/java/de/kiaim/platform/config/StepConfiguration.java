@@ -17,4 +17,7 @@ public class StepConfiguration {
 	@Schema(description = "URL of the corresponding server.", example = "https://my-anonymization-server.de")
 	@NotBlank
 	private String url;
+
+	@NotBlank
+	private String callbackHost;
 }

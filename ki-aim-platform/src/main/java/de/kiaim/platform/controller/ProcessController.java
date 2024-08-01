@@ -24,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
@@ -97,7 +98,7 @@ public class ProcessController {
 		databaseService.storeConfiguration(requestData.getConfigurationName(), requestData.getConfiguration(), project);
 
 		// Start process
-		processService.startProcess(project, requestData.getStepName(), requestData.getAlgorithm(),
+		processService.startProcess(project, requestData.getStepName(), requestData.getUrl(),
 		                            requestData.getConfiguration());
 
 		return ResponseEntity.ok(null);
@@ -116,10 +117,18 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 	})
-	@PostMapping(value = "/{processId}/callback")
+	@CrossOrigin
+	@PostMapping(value = "/{processId}/callback",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE}
+	)
 	public ResponseEntity<String> callback(
 			@Parameter(description = "Id of the process to mark as finished.")
-			@PathVariable final Long processId
+			@PathVariable final Long processId,
+			@RequestParam(name = "synthetic_data", required = false) final MultipartFile syntheticData,
+			@RequestParam(name = "train", required = false) final MultipartFile trainingData,
+			@RequestParam(name = "test", required = false) final MultipartFile test,
+			@RequestParam(name = "model", required = false) final MultipartFile model
 	) throws BadProcessIdException {
 		processService.finishProcess(processId);
 		return ResponseEntity.ok().body(null);

@@ -12,6 +12,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
@@ -35,8 +37,9 @@ public class SecurityConfig {
 		httpSecurity.csrf(AbstractHttpConfigurer::disable)
 		            .authorizeHttpRequests(authz -> authz
 				            .requestMatchers(antMatcher("/api/doc"),
+				                             // TODO Implement proper security
+				                             antMatcher("/api/process/**/callback"),
 				                             antMatcher("/api/swagger-ui/**"),
-//				                             antMatcher("/api/user"),
 				                             antMatcher("/api/user/register")).permitAll()
 				            .requestMatchers(antMatcher("/api/**")).hasRole("USER")
 				            .requestMatchers(antMatcher("/**")).permitAll()

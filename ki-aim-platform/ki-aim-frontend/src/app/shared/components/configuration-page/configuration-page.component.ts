@@ -3,6 +3,7 @@ import { HttpClient } from "@angular/common/http";
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService } from "../../services/algorithm.service";
+import { stringify } from "yaml";
 
 @Component({
   selector: 'app-configuration-page',
@@ -13,7 +14,6 @@ export class ConfigurationPageComponent {
 
     protected algorithms: Algorithm[] = [];
 
-    // protected readonly Object = Object;
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
 
     protected error: string | null = null;
@@ -33,25 +33,46 @@ export class ConfigurationPageComponent {
         });
     }
 
-    onSubmit(configuration: string) {
+    onSubmit(configuration: Object) {
         const formData = new FormData();
 
-        formData.append("stepName", this.anonService.getStepName());
-        formData.append("algorithm", this.selection.selectedOption);
-        formData.append("configurationName", this.anonService.getConfigurationName());
-        formData.append("configuration", configuration);
-        console.log("stepName", this.anonService.getStepName());
-        console.log("algorithm", this.selection.selectedOption);
-        console.log("configurationName", this.anonService.getConfigurationName());
-        console.log("configuration", configuration);
+        this.anonService.getAlgorithmDefinition(this.selection.selectedOption).subscribe({
+            next: value => {
 
-        this.http.post<any>('api/process/start', formData).subscribe({
-            next: (a) => {
-                console.log(a);
-            },
-            error: err => {
-                console.log(err);
+                formData.append("stepName", this.anonService.getStepName());
+                formData.append("algorithm", this.selection.selectedOption.synthesizer);
+                formData.append("configurationName", this.anonService.getConfigurationName());
+                formData.append("configuration", stringify(this.createConfiguration(configuration, this.selection.selectedOption)));
+                formData.append("url", value.URL);
+
+                this.http.post<any>('api/process/start', formData).subscribe({
+                    next: (a) => {
+                        // TODO set status
+                    },
+                    error: err => {
+                        console.log(err);
+                    }
+                });
             }
         });
+
+    }
+
+    private createConfiguration(arg: Object, selectedAlgorithm: Algorithm) {
+        // TODO remove hardcoded value for missing argument
+        //@ts-ignore
+        (arg["model_parameter"] as Object)["generator_decay"] = 1e-6;
+
+        return {
+            synthetization_process: [
+                {
+                    algorithm: null,
+                    synthesizer: selectedAlgorithm.name,
+                    type: selectedAlgorithm.type,
+                    version: selectedAlgorithm.version,
+                    ...arg
+                },
+            ],
+        };
     }
 }

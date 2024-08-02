@@ -7,6 +7,7 @@ import { FileUtilityService } from './file-utility.service';
 import { parse, stringify } from 'yaml';
 import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data";
 import { Steps } from "../../core/enums/steps";
+import { environments } from "../../../environments/environment";
 
 /**
  * Service for managing configurations.
@@ -15,7 +16,7 @@ import { Steps } from "../../core/enums/steps";
     providedIn: 'root'
 })
 export class ConfigurationService {
-    private baseUrl: String = "api/config";
+    private baseUrl: string = environments.apiUrl + "/api/config";
     private registeredConfigurations: Array<ConfigurationRegisterData>;
 
     constructor(

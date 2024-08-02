@@ -117,7 +117,6 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 	})
-	@CrossOrigin
 	@PostMapping(value = "/{processId}/callback",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE}

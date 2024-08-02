@@ -4,6 +4,7 @@ import { Injectable } from "@angular/core";
 import { Steps } from "../../../core/enums/steps";
 import { HttpClient } from "@angular/common/http";
 import { concatMap, Observable, of, tap } from "rxjs";
+import { environments } from "../../../../environments/environment";
 
 @Injectable({
     providedIn: "root"
@@ -41,10 +42,13 @@ export class TransformationService {
         return this.stateManagement.fetchStatus().pipe(
             concatMap(status => {
                 if (this.stateManagement.isStepCompleted(Steps.VALIDATION)) {
-                    return this.http.get<TransformationResult>("/api/data/transformationResult").pipe(tap(value => {
-                        this.transformationResult = value;
-                        this.fetched = true;
-                    }));
+                    return this.http.get<TransformationResult>(environments.apiUrl + "/api/data/transformationResult")
+                        .pipe(
+                            tap(value => {
+                                this.transformationResult = value;
+                                this.fetched = true;
+                            }),
+                        );
                 } else {
                     this.fetched = true;
                     return of(this.transformationResult);

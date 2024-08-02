@@ -11,11 +11,13 @@ import { Steps } from 'src/app/core/enums/steps';
 import { FileService } from "../../features/data-upload/services/file.service";
 import { parse, stringify } from "yaml";
 import { ImportPipeData } from "../model/import-pipe-data";
+import { environments } from "../../../environments/environment";
 
 @Injectable({
     providedIn: 'root',
 })
 export class DataConfigurationService {
+    private readonly baseUrl: string = environments.apiUrl + "/api/data/configuration";
     public readonly CONFIGURATION_NAME = "configurations";
 
     private _dataConfiguration: DataConfiguration;
@@ -64,7 +66,7 @@ export class DataConfigurationService {
     }
 
     public downloadDataConfigurationAsJson(): Observable<DataConfiguration> {
-        return this.httpClient.get<DataConfiguration>("/api/data/configuration?format=json");
+        return this.httpClient.get<DataConfiguration>(this.baseUrl + "?format=json");
     }
 
     public postDataConfiguration(): Observable<Number> {
@@ -81,7 +83,7 @@ export class DataConfigurationService {
 
         formData.append("configuration", configString);
 
-        return this.httpClient.post<Number>("/api/data/configuration", formData);
+        return this.httpClient.post<Number>(this.baseUrl, formData);
     }
 
     private getConfigurationCallback(): Object {

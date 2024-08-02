@@ -4,6 +4,7 @@ import { ConfigurationSelectionComponent } from "../configuration-selection/conf
 import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService } from "../../services/algorithm.service";
 import { stringify } from "yaml";
+import { environments } from "../../../../environments/environment";
 
 @Component({
   selector: 'app-configuration-page',
@@ -45,7 +46,7 @@ export class ConfigurationPageComponent {
                 formData.append("configuration", stringify(this.createConfiguration(configuration, this.selection.selectedOption)));
                 formData.append("url", value.URL);
 
-                this.http.post<any>('api/process/start', formData).subscribe({
+                this.http.post<any>(environments.apiUrl + '/api/process/start', formData).subscribe({
                     next: (a) => {
                         // TODO set status
                     },

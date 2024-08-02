@@ -4,14 +4,16 @@ import {
 	HttpErrorResponse,
 	HttpHeaders,
 } from "@angular/common/http";
-import { Observable, finalize, retry } from "rxjs";
+import { Observable } from "rxjs";
 import { Router } from "@angular/router";
 import { User } from "../model/user";
+import { environments } from "../../../environments/environment";
 
 @Injectable({
 	providedIn: "root",
 })
 export class UserService {
+    private readonly baseURL = environments.apiUrl + "/api/user";
 	private readonly USER_KEY = "user";
 	private user: User;
 
@@ -47,7 +49,7 @@ export class UserService {
 		);
 
 		this.http
-			.get<any>("api/user/login", { headers: headers })
+			.get<any>(this.baseURL + "/login", { headers: headers })
 			.subscribe({
 				next: (data: any) => {
 					if (typeof data === "boolean" && data) {
@@ -77,6 +79,6 @@ export class UserService {
 		password: string;
 		passwordRepeated: string;
 	}): Observable<any> {
-		return this.http.post("api/user/register", request);
+		return this.http.post(this.baseURL + "/register", request);
 	}
 }

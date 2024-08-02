@@ -2,6 +2,7 @@ package de.kiaim.platform.config;
 
 import de.kiaim.platform.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -11,7 +12,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -21,11 +21,14 @@ import static org.springframework.security.web.util.matcher.AntPathRequestMatche
 @EnableWebSecurity
 public class SecurityConfig {
 
+	private final String[] corsAllowedOrigins;
 	private final PasswordEncoder passwordEncoder;
 	private final UserService userService;
 
 	@Autowired
-	public SecurityConfig(final PasswordEncoder passwordEncoder, final UserService userService) {
+	public SecurityConfig(@Value("${ki-aim.corsAllowedOrigins}") final String[] corsAllowedOrigins,
+	                      final PasswordEncoder passwordEncoder, final UserService userService) {
+		this.corsAllowedOrigins = corsAllowedOrigins;
 		this.passwordEncoder = passwordEncoder;
 		this.userService = userService;
 	}
@@ -35,6 +38,7 @@ public class SecurityConfig {
 //		httpSecurity.csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer
 //				            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
 		httpSecurity.csrf(AbstractHttpConfigurer::disable)
+		            .cors(Customizer.withDefaults())
 		            .authorizeHttpRequests(authz -> authz
 				            .requestMatchers(antMatcher("/api/doc"),
 				                             // TODO Implement proper security
@@ -47,6 +51,19 @@ public class SecurityConfig {
 		            .httpBasic(Customizer.withDefaults())
                     .authenticationProvider(daoAuthenticationProvider());
 		return httpSecurity.build();
+	}
+
+	@Bean
+	public WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurer() {
+			@Override
+			public void addCorsMappings(final CorsRegistry registry) {
+				registry.addMapping("/**")
+						.allowedHeaders("*")
+						.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+				        .allowedOrigins(corsAllowedOrigins);
+			}
+		};
 	}
 
 	@Bean

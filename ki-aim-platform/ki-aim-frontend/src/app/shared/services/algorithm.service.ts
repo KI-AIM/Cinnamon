@@ -6,6 +6,7 @@ import { concatMap, map, Observable, of, tap } from "rxjs";
 import { parse } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
+import { environments } from "../../../environments/environment";
 
 export abstract class AlgorithmService {
 
@@ -108,6 +109,6 @@ export abstract class AlgorithmService {
     }
 
     private loadStepConfig(stepName: string): Observable<StepConfiguration> {
-        return this.http.get<StepConfiguration>(`api/step/${stepName}`);
+        return this.http.get<StepConfiguration>(environments.apiUrl + `/api/step/${stepName}`);
     }
 }

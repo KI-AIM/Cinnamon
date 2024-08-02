@@ -8,11 +8,13 @@ import { Router } from "@angular/router";
 import { UserService } from "../../shared/services/user.service";
 import { Observable, of, tap } from "rxjs";
 import { ConfigurationService } from "../../shared/services/configuration.service";
+import { environments } from "../../../environments/environment";
 
 @Injectable({
     providedIn: 'root'
 })
 export class StateManagementService {
+    private readonly baseUrl: string = environments.apiUrl + "/api/project"
 
     private status: Status;
     private fetched: boolean = false;
@@ -45,12 +47,11 @@ export class StateManagementService {
      */
     setMode(mode: Mode) {
         this.status.mode = mode;
-        this.http.post("/api/project/", this.status)
 
         const formData = new FormData();
 
         formData.append("mode", mode.toString());
-        this.http.post("/api/project", formData).subscribe({
+        this.http.post(this.baseUrl, formData).subscribe({
             error: err => {
                 console.log(err);
             }
@@ -146,7 +147,7 @@ export class StateManagementService {
             return of(this.status);
         }
 
-        return this.http.get<Status>("/api/project/status")
+        return this.http.get<Status>(this.baseUrl + "/status")
             .pipe(
                 tap(value => {
                     this.fetched = true;

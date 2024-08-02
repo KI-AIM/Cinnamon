@@ -12,11 +12,12 @@ export class ConfigurationInputComponent {
     protected readonly ConfigurationInputType = ConfigurationInputType;
     protected readonly Math = Math;
 
-    @Input() configurationInputDefinition!: ConfigurationInputDefinition;
-    @Input() form!: FormGroup;
+    @Input() public configurationInputDefinition!: ConfigurationInputDefinition;
+    @Input() public form!: FormGroup;
+    @Input() public disabled!: boolean;
 
     get isValid() {
-        return this.form.controls[this.configurationInputDefinition.name].valid;
+        return !this.form.controls[this.configurationInputDefinition.name].invalid;
     }
 
     setToDefault() {

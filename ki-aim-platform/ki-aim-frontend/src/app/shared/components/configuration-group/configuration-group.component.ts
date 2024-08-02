@@ -12,6 +12,7 @@ export class ConfigurationGroupComponent {
     @Input() public form!: FormGroup;
     @Input() public fromGroupName!: string;
     @Input() public group!: ConfigurationGroupDefinition;
+    @Input() public disabled!: boolean;
 
     constructor(
     ) {

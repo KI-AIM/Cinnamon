@@ -10,7 +10,8 @@ import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 })
 export class ConfigurationInputArrayComponent {
     @Input() configurationInputDefinition!: ConfigurationInputDefinition;
-    @Input() parentForm!: FormGroup
+    @Input() parentForm!: FormGroup;
+    @Input() disabled!: boolean;
 
     constructor(public dialog: MatDialog) {
     }

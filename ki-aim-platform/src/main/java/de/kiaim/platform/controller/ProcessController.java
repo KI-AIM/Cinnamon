@@ -5,6 +5,7 @@ import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.dto.StartProcessRequest;
 import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.entity.StatusEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProcessService;
@@ -85,7 +86,7 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	public ResponseEntity<String> startProcess(
+	public StatusEntity startProcess(
 			@ParameterObject @Valid final StartProcessRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	)
@@ -101,7 +102,7 @@ public class ProcessController {
 		processService.startProcess(project, requestData.getStepName(), requestData.getUrl(),
 		                            requestData.getConfiguration());
 
-		return ResponseEntity.ok(null);
+		return project.getStatus();
 	}
 
 	@Operation(summary = "Callback endpoint for marking processes as finished.",

@@ -1,28 +1,73 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, QueryList, ViewChild } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService } from "../../services/algorithm.service";
 import { stringify } from "yaml";
+import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
 import { environments } from "../../../../environments/environment";
+import { Status } from "../../model/status";
+import { StateManagementService } from "../../../core/services/state-management.service";
+import { ProcessStatus } from "../../../core/enums/process-status";
+import { interval, Observable, Subscription, tap } from "rxjs";
 
 @Component({
-  selector: 'app-configuration-page',
-  templateUrl: './configuration-page.component.html',
-  styleUrls: ['./configuration-page.component.less']
+    selector: 'app-configuration-page',
+    templateUrl: './configuration-page.component.html',
+    styleUrls: ['./configuration-page.component.less']
 })
-export class ConfigurationPageComponent {
+export class ConfigurationPageComponent implements OnInit, OnDestroy {
 
     protected algorithms: Algorithm[] = [];
+    protected disabled: boolean = false;
+    protected processStatus: ProcessStatus = ProcessStatus.NOT_STARTED;
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
+    @ViewChild('form') private forms: QueryList<ConfigurationFormComponent>;
 
     protected error: string | null = null;
 
+    private statusObserver: Observable<any>;
+    private statusSubscription: Subscription;
+
     constructor(
         private readonly http: HttpClient,
-        private readonly anonService: AlgorithmService
+        private readonly anonService: AlgorithmService,
+        private readonly stateService: StateManagementService,
     ) {
+
+        anonService._setConfig = this.setConfig;
+        anonService._getConfig = () => {
+            console.log(this.forms);
+            return '';
+            // return this.createConfiguration(this.form.getRawValue(), this.selection.selectedOption);
+        }
+
+        this.statusObserver = interval(10000).pipe(tap(() => {
+            this.stateService.getStatus(true).subscribe({
+                next: value => {
+                    if (value.externalProcessStatus !== ProcessStatus.SCHEDULED &&
+                        value.externalProcessStatus !== ProcessStatus.RUNNING) {
+                        this.disabled = false;
+                        this.processStatus = value.externalProcessStatus;
+                        this.stopListenToStatus();
+                    }
+                },
+            });
+        }));
+    }
+
+    ngOnDestroy() {
+        this.stopListenToStatus();
+    }
+
+    ngOnInit() {
+        this.stateService.fetchStatus().subscribe({
+            next: value => {
+                this.setState(value);
+            },
+        });
+
         this.anonService.algorithms.subscribe({
             next: value => {
                 this.error = null;
@@ -32,6 +77,22 @@ export class ConfigurationPageComponent {
                 this.error = `Failed to load available algorithms. Status: ${error.status} (${error.statusText})`;
             }
         });
+    }
+
+    private startListenToStatus(): void {
+       this.statusSubscription = this.statusObserver.subscribe();
+    }
+
+    private stopListenToStatus(): void {
+        this.statusSubscription.unsubscribe();
+    }
+
+    private setState(status: Status): void {
+        this.processStatus = status.externalProcessStatus;
+        if (status.externalProcessStatus === ProcessStatus.SCHEDULED || status.externalProcessStatus === ProcessStatus.RUNNING) {
+            this.startListenToStatus();
+            this.disabled = true;
+        }
     }
 
     onSubmit(configuration: Object) {
@@ -46,12 +107,12 @@ export class ConfigurationPageComponent {
                 formData.append("configuration", stringify(this.createConfiguration(configuration, this.selection.selectedOption)));
                 formData.append("url", value.URL);
 
-                this.http.post<any>(environments.apiUrl + '/api/process/start', formData).subscribe({
-                    next: (a) => {
-                        // TODO set status
+                this.http.post<Status>(environments.apiUrl + '/api/process/start', formData).subscribe({
+                    next: (status: Status) => {
+                        this.setState(status);
                     },
                     error: err => {
-                        console.log(err);
+                        this.error = `Failed to start the process. Status: ${err.status} (${err.statusText})`;
                     }
                 });
             }

@@ -1,5 +1,6 @@
 package de.kiaim.platform.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -11,6 +12,11 @@ import lombok.Setter;
 @Schema(description = "Configuration of a step.")
 @Getter @Setter
 public class StepConfiguration {
+
+	@JsonIgnore
+	@NotBlank
+	private String callbackHost;
+
 	/**
 	 * URL of the server.
 	 */
@@ -18,6 +24,4 @@ public class StepConfiguration {
 	@NotBlank
 	private String url;
 
-	@NotBlank
-	private String callbackHost;
 }

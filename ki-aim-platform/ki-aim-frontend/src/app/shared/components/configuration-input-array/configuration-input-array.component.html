@@ -1,7 +1,10 @@
-<a title="Additional Settings" (click)="openDialog(inputArrayDialog)"
-   style="vertical-align: middle;">
+<a *ngIf="!disabled" title="Additional Settings" (click)="openDialog(inputArrayDialog)"
+   style="vertical-align: middle; color: black;">
     <mat-icon fontIcon="settings"></mat-icon>
 </a>
+<span *ngIf="disabled" title="Additional Settings" style="vertical-align: middle; color: gray;">
+    <mat-icon fontIcon="settings"></mat-icon>
+</span>
 
 <ng-template #inputArrayDialog>
     <mat-dialog-content class="mat-typography" [formGroup]="parentForm">

@@ -12,8 +12,9 @@ import { Algorithm } from "../../model/algorithm";
 })
 export class ConfigurationFormComponent implements OnInit {
 
-    @Input() public algorithm: Algorithm;
-    @Input() public algorithmName: string;
+    @Input() public algorithm!: Algorithm;
+    @Input() public algorithmName!: string;
+    @Input() public disabled!: boolean;
     protected algorithmDefinition: AlgorithmDefinition;
 
     @Output() public submitConfiguration = new EventEmitter<string>();
@@ -30,7 +31,16 @@ export class ConfigurationFormComponent implements OnInit {
             .subscribe(value => {
                 this.algorithmDefinition = value
                 this.form = this.createForm(value);
+                this.updateForm();
             });
+    }
+
+    public get valid(): boolean {
+        return !this.form.invalid;
+    }
+
+    public get formData(): Object {
+        return this.form.getRawValue();
     }
 
     getConfiguration() {
@@ -47,6 +57,14 @@ export class ConfigurationFormComponent implements OnInit {
         }
 
         return Object.keys(this.algorithmDefinition.arguments);
+    }
+
+    private updateForm() {
+        if (this.disabled) {
+            this.form.disable();
+        } else {
+            this.form.enable();
+        }
     }
 
     onSubmit() {

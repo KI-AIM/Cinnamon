@@ -1,15 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, Subscription } from 'rxjs';
+import { Observable } from 'rxjs';
 import { DataConfiguration } from '../model/data-configuration';
 import { instanceToPlain } from 'class-transformer';
 import { FileConfiguration } from "../model/file-configuration";
+import { environments } from "../../../environments/environment";
 
 @Injectable({
     providedIn: 'root',
 })
 export class DataService {
-    private baseUrl: String = "api/data"
+    private baseUrl: String = environments.apiUrl + "/api/data"
 
     constructor(private httpClient: HttpClient) {
     }
@@ -40,15 +41,15 @@ export class DataService {
     }
 
     storeData(file: File, config: DataConfiguration, fileConfig: FileConfiguration): Observable<Object> {
-        const formData = new FormData(); 
+        const formData = new FormData();
 
-        formData.append("file", file); 
+        formData.append("file", file);
 
         const fileConfigString = JSON.stringify(fileConfig);
         formData.append("fileConfiguration", fileConfigString);
 
-        var configString = JSON.stringify(instanceToPlain(config)); 
-        formData.append("configuration", configString); 
+        var configString = JSON.stringify(instanceToPlain(config));
+        formData.append("configuration", configString);
 
         return this.httpClient.post(this.baseUrl.toString(), formData);
     }

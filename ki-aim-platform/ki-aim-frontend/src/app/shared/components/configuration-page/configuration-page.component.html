@@ -4,8 +4,7 @@
 
 <h3>Algorithm Selection</h3>
 
-<app-configuration-selection #selection [algorithms]="algorithms"></app-configuration-selection>
-
+<app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"></app-configuration-selection>
 
 <h3>Algorithm Configuration</h3>
 
@@ -17,11 +16,16 @@
 <ng-template #configurationForms>
     <div *ngFor="let item of algorithms" [id]="item">
         <ng-container *ngIf="selection.selectedOption.synthesizer === item.synthesizer">
-            <p>{{ item.description }} </p>
+            <p>{{ item.description }}</p>
 
-            <app-configuration-form [algorithmName]="item.name" [algorithm]="item" (submitConfiguration)="onSubmit($event)">
+            <app-configuration-form #form [algorithmName]="item.name" [algorithm]="item" [disabled]="disabled"
+                                    (submitConfiguration)="onSubmit($event)">
             </app-configuration-form>
         </ng-container>
     </div>
 </ng-template>
+
+<div class="status" [ngClass]="processStatus">
+    <span>{{ processStatus.replace("_", " ") }}</span>
+</div>
 

@@ -10,9 +10,10 @@ import { Algorithm } from "../../model/algorithm";
 })
 export class ConfigurationSelectionComponent {
     @Input() public algorithms!: Algorithm[]
+    @Input() public disabled!: boolean;
     @Output() public change = new EventEmitter<Algorithm>();
 
-    @ViewChild('selectElement') protected selectElement: NgModel;
+    @ViewChild('selectElement') protected selectElement!: NgModel;
 
     onChange(event: MatSelectChange) {
         this.change.emit(event.value);
@@ -20,5 +21,9 @@ export class ConfigurationSelectionComponent {
 
     public get selectedOption(): Algorithm {
         return this.selectElement?.value;
+    }
+
+    public set selectedOption(value: Algorithm) {
+        this.selectElement.reset(value);
     }
 }

@@ -1,4 +1,4 @@
 <ng-container *ngFor="let inputDefinition of group.parameters">
-    <app-configuration-input [configurationInputDefinition]="inputDefinition"
-                             [form]="formGroup"></app-configuration-input>
+    <app-configuration-input [configurationInputDefinition]="inputDefinition" [form]="formGroup" [disabled]="disabled">
+    </app-configuration-input>
 </ng-container>

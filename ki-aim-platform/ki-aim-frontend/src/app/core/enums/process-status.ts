@@ -1,0 +1,7 @@
+export enum ProcessStatus {
+    NOT_REQUIRED = "NOT_REQUIRED",
+    NOT_STARTED = "NOT_STARTED",
+    SCHEDULED = "SCHEDULED",
+    RUNNING = "RUNNING",
+    FINISHED = "FINISHED",
+}

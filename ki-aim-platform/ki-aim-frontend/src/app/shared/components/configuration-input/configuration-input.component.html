@@ -20,14 +20,15 @@
 
                      <span class="input-array-button input-height d-flex flex-column justify-content-center">
                          <app-configuration-input-array [configurationInputDefinition]="configurationInputDefinition"
-                                                        [parentForm]="form">
+                                                        [parentForm]="form" [disabled]="disabled">
                          </app-configuration-input-array>
                      </span>
                 </div>
             </ng-container>
 
             <ng-container *ngSwitchCase="ConfigurationInputType.BOOLEAN">
-                <mat-checkbox [formControlName]="configurationInputDefinition.name"></mat-checkbox>
+                <mat-checkbox [formControlName]="configurationInputDefinition.name">
+                </mat-checkbox>
             </ng-container>
 
 
@@ -92,17 +93,20 @@
     </span>
 
     <div class="d-flex input-height ms-3">
+        <div class="me-2 d-flex flex-column justify-content-center">
+            <a *ngIf="!disabled" title="Set to default" (click)="setToDefault()"
+               style="vertical-align: middle; color: black">
+                <mat-icon fontIcon="replay"></mat-icon>
+            </a>
+            <span *ngIf="disabled" title="Set to default" style="vertical-align: middle; color: grey;">
+                <mat-icon fontIcon="replay"></mat-icon>
+            </span>
+        </div>
+
         <div class="d-flex flex-column justify-content-center">
             <span>
                 <app-configuration-input-info [configurationInputDefinition]="configurationInputDefinition">
                 </app-configuration-input-info>
-            </span>
-        </div>
-        <div class="d-flex flex-column justify-content-center">
-            <span>
-                <a title="Set to default" (click)="setToDefault()" style="vertical-align: middle;">
-                    <mat-icon fontIcon="replay"></mat-icon>
-                </a>
             </span>
         </div>
     </div>

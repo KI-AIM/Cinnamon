@@ -1,8 +1,9 @@
 anonymization: "anonymization_tabular"
+name: "anonymization_tabular"
 version: # ?
 type: "tabular"
-display_name: "anonymization_tabular"
-description: "anonymization for tabular dataset"
+display_name: "Anonymization for tabular data."
+description: "Anonymization for tabular dataset"
 URL: "/anonymization_tabular" #"-" ?
 configurations:
   model_parameter:

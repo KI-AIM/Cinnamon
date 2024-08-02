@@ -41,7 +41,7 @@ export class StateManagementService {
         }
     }
 
-    public getStatus(refresh: boolean): Observable<Status> {
+    public getStatus(refresh: boolean, onError: (error: any) => void): Observable<Status> {
         if (refresh) {
             this.http.get<Status>(this.baseUrl + "/status").subscribe({
                 next: status => {
@@ -50,6 +50,9 @@ export class StateManagementService {
                     this.setNextStep(status.currentStep);
                     this.statusSubject.next(status);
                 },
+                error: err => {
+                    onError(err);
+                }
             });
         }
 

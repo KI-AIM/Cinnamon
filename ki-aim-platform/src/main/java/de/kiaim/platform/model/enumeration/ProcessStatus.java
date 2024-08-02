@@ -8,6 +8,7 @@ public enum ProcessStatus {
 	NOT_STARTED,
 	SCHEDULED,
 	RUNNING,
+	CANCELED,
 	FINISHED,
 	;
 }

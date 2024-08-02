@@ -44,14 +44,20 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
         }
 
         this.statusObserver = interval(10000).pipe(tap(() => {
-            this.stateService.getStatus(true).subscribe({
+            this.stateService.getStatus(true, (error) => {
+                this.error = `Failed to update status. Status: ${error.status} (${error.statusText})`;
+            }).subscribe({
                 next: value => {
+                    this.error = null;
                     if (value.externalProcessStatus !== ProcessStatus.SCHEDULED &&
                         value.externalProcessStatus !== ProcessStatus.RUNNING) {
                         this.disabled = false;
                         this.processStatus = value.externalProcessStatus;
                         this.stopListenToStatus();
                     }
+                },
+                error: err => {
+                    this.error = `Failed to update status. Status: ${err.status} (${err.statusText})`;
                 },
             });
         }));
@@ -117,7 +123,17 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
                 });
             }
         });
+    }
 
+    protected cancel() {
+        this.http.post<Status>(environments.apiUrl + '/api/process/cancel', {}).subscribe({
+            next: (status: Status) => {
+                this.setState(status);
+            },
+            error: err => {
+                this.error = `Failed to cancel the process. Status: ${err.status} (${err.statusText})`;
+            }
+        });
     }
 
     private createConfiguration(arg: Object, selectedAlgorithm: Algorithm) {

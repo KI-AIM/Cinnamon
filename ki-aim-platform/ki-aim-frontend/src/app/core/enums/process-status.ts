@@ -3,5 +3,6 @@ export enum ProcessStatus {
     NOT_STARTED = "NOT_STARTED",
     SCHEDULED = "SCHEDULED",
     RUNNING = "RUNNING",
+    CANCELED = "CANCELED",
     FINISHED = "FINISHED",
 }

@@ -2,10 +2,11 @@ import { StepConfiguration } from "../model/step-configuration";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { concatMap, map, Observable, of, tap } from "rxjs";
+import { concatMap, config, map, Observable, of, tap } from "rxjs";
 import { parse } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
+import { ImportPipeData } from "../model/import-pipe-data";
 import { environments } from "../../../environments/environment";
 
 export abstract class AlgorithmService {
@@ -13,6 +14,10 @@ export abstract class AlgorithmService {
     private _stepConfig: StepConfiguration | null = null;
     private _algorithms: Algorithm[] | null = null;
     private algorithmDefinitions: {[algorithmName: string]: AlgorithmDefinition} = {};
+
+    private _config: string;
+    public _getConfig: () => Object | string = () => '';
+    public _setConfig: (config: ImportPipeData) => void = () => { console.log(config)};
 
     protected constructor(
         private readonly http: HttpClient,
@@ -29,6 +34,8 @@ export abstract class AlgorithmService {
      * Name of the configuration for storing identifying it in the db.
      */
     getConfigurationName: () => string;
+
+    abstract createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object;
 
     /**
      * Returns the definition for the algorithm with the given name.

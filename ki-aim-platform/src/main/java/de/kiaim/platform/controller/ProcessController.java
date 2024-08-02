@@ -105,6 +105,19 @@ public class ProcessController {
 		return project.getStatus();
 	}
 
+	@PostMapping(value = "/cancel")
+	public StatusEntity cancelProcess(
+			@AuthenticationPrincipal final UserEntity requestUser
+	) {
+		// Load user from the database because lazy loaded fields cannot be read from the injected user
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+
+		processService.cancelProcess(project);
+
+		return project.getStatus();
+	}
+
 	@Operation(summary = "Callback endpoint for marking processes as finished.",
 	           description = "Callback endpoint for marking processes as finished.")
 	@ApiResponses(value = {

@@ -172,6 +172,20 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
         System.out.println("Config File Content: " + fileContentAsString.substring(0, 300) + "...");
     }
 
+    @Test
+    public void testGetAnonAlgorithms() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/anonymization/algorithms"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        byte[] fileContent = result.getResponse().getContentAsByteArray();
+        assertNotNull(fileContent);
+
+        // Optionally, check file content
+        String fileContentAsString = new String(fileContent);
+        System.out.println("Config File Content: " + fileContentAsString);
+    }
+
 //    @Test
 //    public void testProcessAnonymization() throws Exception {
 //        assertNotNull(dataSet);

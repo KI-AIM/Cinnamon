@@ -162,6 +162,28 @@ public class AnonymizationController {
         }
     }
 
+    @Operation(summary = "Get the anonymization algorithms available.",
+            description = "Returns a YML file with available anonymization algorithms.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "File retrieved successfully.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error retrieving config file.", content = @Content)
+    })
+    @GetMapping(value = "/algorithms")
+    @Cacheable("algorithms")
+    public ResponseEntity<byte[]> getAlgorithms() {
+        try {
+            Resource resource = new ClassPathResource("frontend_config/anon-algorithms.yml");
+            byte[] fileContent = FileCopyUtils.copyToByteArray(resource.getInputStream());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=anon-algorithms.yml");
+
+            return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @Operation(summary = "Cancels an ongoing anonymization task.",
             description = "Cancels an ongoing anonymization task with the given process ID.")
     @ApiResponses(value = {
@@ -180,19 +202,4 @@ public class AnonymizationController {
             return ResponseEntity.ok("Task " + processId + " has been cancelled successfully");
         }
     }
-
-    //TODO : delete this endpoint, it was created for testing
-//    @Operation(summary = "Gets all ongoing anonymization tasks.",
-//            description = "Returns a list of all ongoing anonymization tasks.")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Tasks retrieved successfully.", content = @Content)
-//    })
-//    @GetMapping("/processes/ongoing")
-//    public ResponseEntity<List<String>> getOngoingTasks() {
-//        List<String> ongoingTasks = tasks.entrySet().stream()
-//                .filter(entry -> !entry.getValue().isDone())
-//                .map(Map.Entry::getKey)
-//                .collect(Collectors.toList());
-//        return ResponseEntity.ok(ongoingTasks);
-//    }
 }

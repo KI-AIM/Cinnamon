@@ -4,9 +4,11 @@ import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.dto.StartProcessRequest;
+import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
-import de.kiaim.platform.model.entity.StatusEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.ProcessStatus;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProcessService;
 import de.kiaim.platform.service.ProjectService;
@@ -31,6 +33,7 @@ import java.io.IOException;
 
 /**
  * Controller for managing external processes.
+ * TODO add /project/{id}
  */
 @RestController()
 @RequestMapping("/api/process")
@@ -51,17 +54,20 @@ public class ProcessController {
 		this.userService = userService;
 	}
 
-	@PostMapping(value = "/start/test")
-	public ResponseEntity<String> startProcess(
+	@GetMapping("/{stepName}")
+	public ProcessStatus getProcess(
+			@PathVariable("stepName") final String stepName,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws BadStepNameException {
-		// Load user from the database because lazy loaded fields cannot be read from the injected user
+	) {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		// Start process
-		processService.startProcessTest(project, "synthetization", "ctgan");
 
-		return ResponseEntity.ok(null);
+		// TODO move into service
+		final Step step = Step.getStep(stepName);
+		if (!project.getProcesses().containsKey(step)) {
+			// TODO throw bad?
+		}
+		return project.getProcesses().get(step).getExternalProcessStatus();
 	}
 
 	@Operation(summary = "Starts an external process.",
@@ -86,11 +92,11 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	public StatusEntity startProcess(
+	public ProcessStatus startProcess(
 			@ParameterObject @Valid final StartProcessRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	)
-			throws InternalDataSetPersistenceException, InternalIOException, BadColumnNameException, BadDataSetIdException, InternalRequestException, BadStepNameException {
+			throws BadColumnNameException, BadDataSetIdException, BadStepNameException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalIOException, InternalRequestException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
@@ -99,23 +105,25 @@ public class ProcessController {
 		databaseService.storeConfiguration(requestData.getConfigurationName(), requestData.getConfiguration(), project);
 
 		// Start process
-		processService.startProcess(project, requestData.getStepName(), requestData.getUrl(),
-		                            requestData.getConfiguration());
+		final ExternalProcessEntity process = processService.startProcess(project, requestData.getStepName(),
+		                                                                  requestData.getUrl(),
+		                                                                  requestData.getConfiguration());
 
-		return project.getStatus();
+		return process.getExternalProcessStatus();
 	}
 
 	@PostMapping(value = "/cancel")
-	public StatusEntity cancelProcess(
+	public ProcessStatus cancelProcess(
+			@RequestParam("stepName") final String stepName,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
+	) throws BadStepNameException, InternalRequestException, InternalApplicationConfigurationException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		processService.cancelProcess(project);
+		final ExternalProcessEntity process = processService.cancelProcess(project, stepName);
 
-		return project.getStatus();
+		return process.getExternalProcessStatus();
 	}
 
 	@Operation(summary = "Callback endpoint for marking processes as finished.",
@@ -142,8 +150,8 @@ public class ProcessController {
 			@RequestParam(name = "train", required = false) final MultipartFile trainingData,
 			@RequestParam(name = "test", required = false) final MultipartFile test,
 			@RequestParam(name = "model", required = false) final MultipartFile model
-	) throws BadProcessIdException {
-		processService.finishProcess(processId);
+	) throws BadProcessIdException, InternalIOException {
+		processService.finishProcess(processId, syntheticData, trainingData, test, model);
 		return ResponseEntity.ok().body(null);
 	}
 
@@ -158,7 +166,7 @@ public class ProcessController {
 		response.setContentType("application/zip");
 		response.setHeader("Content-Disposition", "attachment; filename=process.zip");
 
-		processService.createZipFile(project, response.getOutputStream(), "hi");
+		processService.createZipFile(project, response.getOutputStream());
 
 		return ResponseEntity.ok().build();
 	}

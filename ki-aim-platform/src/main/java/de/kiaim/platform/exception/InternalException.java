@@ -28,6 +28,11 @@ public abstract class InternalException extends ApiException {
 	 */
 	public static final String HTTP = "4";
 
+	/**
+	 * Exception class code for exceptions from {@link InternalApplicationConfigurationException}.
+	 */
+	public static final String APPLICATION_CONFIGURATION = "5";
+
 	public InternalException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

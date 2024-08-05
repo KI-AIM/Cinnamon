@@ -10,6 +10,11 @@ public class InternalRequestException extends InternalException {
 	 */
 	public static final String PROCESS_START = "1";
 
+	/**
+	 * Exception code for failed process cancellation.
+	 */
+	public static final String PROCESS_CANCEL = "2";
+
 	public InternalRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

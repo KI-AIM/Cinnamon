@@ -1,6 +1,7 @@
 package de.kiaim.platform.model.entity;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
+import de.kiaim.platform.model.enumeration.Step;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -58,10 +59,10 @@ public class ProjectEntity {
 	@Setter
 	private Map<String, String> configurations = new HashMap<>();
 
-	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-	@JoinColumn(name = "external_process_id", referencedColumnName = "id")
-	@Nullable
-	private ExternalProcessEntity externalProcess;
+	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+	@MapKeyEnumerated(EnumType.STRING)
+	@MapKeyColumn(name = "step")
+	private final Map<Step, ExternalProcessEntity> processes = new HashMap<>();
 
 	/**
 	 * User that owns this configuration and the corresponding data set.
@@ -76,19 +77,11 @@ public class ProjectEntity {
 	@OneToMany(mappedBy = "project", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	private final Set<DataTransformationErrorEntity> dataTransformationErrors = new HashSet<>();
 
-
-	/**
-	 * Links the given external process with this project.
-	 * @param newExternalProcess The process to link.
-	 */
-	public void setExternalProcess(@Nullable final ExternalProcessEntity newExternalProcess) {
-		final ExternalProcessEntity oldExternalProcess = this.externalProcess;
-		this.externalProcess = newExternalProcess;
-		if (oldExternalProcess != null && oldExternalProcess.getProject() == this) {
-			oldExternalProcess.setProject(null);
-		}
-		if (newExternalProcess != null && newExternalProcess.getProject() != this) {
-			newExternalProcess.setProject(this);
+	public void putExternalProcess(final Step step, final ExternalProcessEntity externalProcess) {
+		if (!processes.containsKey(step)) {
+			externalProcess.setProject(this);
+			externalProcess.setStep(step);
+			processes.put(step, externalProcess);
 		}
 	}
 

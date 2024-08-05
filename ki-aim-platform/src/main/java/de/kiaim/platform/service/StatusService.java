@@ -4,6 +4,7 @@ import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.ProjectRepository;
+import org.springframework.security.access.expression.SecurityExpressionHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class StatusService {
 
 	private final ProjectRepository projectRepository;
+	private final SecurityExpressionHandler webSecurityExpressionHandler;
 
-	public StatusService(ProjectRepository projectRepository) {
+	public StatusService(ProjectRepository projectRepository, SecurityExpressionHandler webSecurityExpressionHandler) {
 		this.projectRepository = projectRepository;
+		this.webSecurityExpressionHandler = webSecurityExpressionHandler;
 	}
 
 	/**
@@ -28,7 +31,7 @@ public class StatusService {
 	 * @param currentStep The new step.
 	 */
 	@Transactional
-	public void updateStatus(final ProjectEntity project, final Step currentStep) {
+	public void updateCurrentStep(final ProjectEntity project, final Step currentStep) {
 		updateStatus(project, currentStep,
 		             currentStep.isHasExternalProcessing() ? ProcessStatus.NOT_STARTED : ProcessStatus.NOT_REQUIRED);
 	}
@@ -43,17 +46,6 @@ public class StatusService {
 	public void updateStatus(final ProjectEntity project, final Step currentStep,
 	                         final ProcessStatus externalProcessStatus) {
 		project.getStatus().setCurrentStep(currentStep);
-		project.getStatus().setExternalProcessStatus(externalProcessStatus);
-		projectRepository.save(project);
-	}
-
-	/**
-	 * Sets the status of the external process to be finished.
-	 * @param project The project to be updated.
-	 */
-	@Transactional
-	public void setExternalProcessingStatus(final ProjectEntity project, final ProcessStatus externalProcessStatus) {
-		project.getStatus().setExternalProcessStatus(externalProcessStatus);
 		projectRepository.save(project);
 	}
 

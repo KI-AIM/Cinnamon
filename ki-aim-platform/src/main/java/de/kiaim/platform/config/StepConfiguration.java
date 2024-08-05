@@ -13,9 +13,19 @@ import lombok.Setter;
 @Getter @Setter
 public class StepConfiguration {
 
+	/**
+	 * Host name for this application used for requests from other modules.
+	 */
 	@JsonIgnore
 	@NotBlank
 	private String callbackHost;
+
+	/**
+	 * Endpoint for cancelling requests.
+	 */
+	@JsonIgnore
+	@NotBlank
+	private String cancelEndpoint;
 
 	/**
 	 * URL of the server.

@@ -57,7 +57,7 @@ export class DataValidationComponent {
 		this.loadingService.setLoadingStatus(false);
 
 		this.router.navigateByUrl("/anonymizationConfiguration");
-        this.stateManagement.setNextStep(Steps.ANONYMIZATION_CONFIG)
+        this.stateManagement.setNextStep(Steps.ANONYMIZATION)
 	}
 
 	private handleError(error: HttpErrorResponse) {

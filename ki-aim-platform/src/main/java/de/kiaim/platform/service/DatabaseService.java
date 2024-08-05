@@ -130,6 +130,11 @@ public class DatabaseService {
 			                                              "The DataSet could not be persisted!", e);
 		}
 
+		try {
+			connection.commit();
+		} catch (SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_STORE, "Oh no", e);
+		}
 		return dataSetId;
 	}
 

@@ -1,6 +1,7 @@
 package de.kiaim.platform.model.enumeration;
 
 import lombok.Getter;
+import org.springframework.lang.Nullable;
 
 /**
  * Steps of a project where the backend is involved.
@@ -11,8 +12,8 @@ public enum Step {
 	UPLOAD(1, false),
 	DATA_CONFIG(2, false),
 	VALIDATION(3, false),
-	ANONYMIZATION_CONFIG(4, true),
-	SYNTHETIZATION_CONFIG(5, true),
+	ANONYMIZATION(4, true),
+	SYNTHETIZATION(5, true),
 	;
 
 	/**
@@ -29,5 +30,16 @@ public enum Step {
 	Step(final int index, final boolean hasExternalProcessing) {
 		this.index = index;
 		this.hasExternalProcessing = hasExternalProcessing;
+	}
+
+	@Nullable
+	public static Step getStep(final String stepName) {
+		for (final Step step : values()) {
+			if (step.name().equalsIgnoreCase(stepName)) {
+				return step;
+			}
+		}
+
+		return null;
 	}
 }

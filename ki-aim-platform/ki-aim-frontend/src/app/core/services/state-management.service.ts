@@ -6,7 +6,7 @@ import { Status } from "../../shared/model/status";
 import { HttpClient } from "@angular/common/http";
 import { Router } from "@angular/router";
 import { UserService } from "../../shared/services/user.service";
-import { Observable, of, ReplaySubject, Subject, tap } from "rxjs";
+import { Observable, of, tap } from "rxjs";
 import { ConfigurationService } from "../../shared/services/configuration.service";
 import { environments } from "../../../environments/environment";
 
@@ -21,8 +21,6 @@ export class StateManagementService {
 
     private readonly completedSteps: List<Steps>;
 
-    private statusSubject: Subject<Status>;
-
     constructor(
         private readonly configurationService: ConfigurationService,
         private readonly http: HttpClient,
@@ -34,29 +32,9 @@ export class StateManagementService {
         this.status.currentStep = Steps.WELCOME;
         this.completedSteps = new List();
 
-        this.statusSubject = new ReplaySubject<Status>(1);
-
         if (this.userService.isAuthenticated()) {
             this.fetchCurrentStep();
         }
-    }
-
-    public getStatus(refresh: boolean, onError: (error: any) => void): Observable<Status> {
-        if (refresh) {
-            this.http.get<Status>(this.baseUrl + "/status").subscribe({
-                next: status => {
-                    this.fetched = true;
-                    this.status = status;
-                    this.setNextStep(status.currentStep);
-                    this.statusSubject.next(status);
-                },
-                error: err => {
-                    onError(err);
-                }
-            });
-        }
-
-        return this.statusSubject.asObservable();
     }
 
     getMode(): Mode {

@@ -1,9 +1,15 @@
 package de.kiaim.platform.model.entity;
 
+import de.kiaim.platform.model.enumeration.ProcessStatus;
+import de.kiaim.platform.model.enumeration.Step;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.lang.Nullable;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Entity representing a planned or running external process like the anonymization.
@@ -21,24 +27,47 @@ public class ExternalProcessEntity {
 	private Long id;
 
 	/**
+	 * Associated step of the process.
+	 */
+	@Setter
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private Step step;
+
+	/**
+	 * The status of the external processing.
+	 */
+	@Setter
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private ProcessStatus externalProcessStatus = ProcessStatus.NOT_STARTED;
+
+	/**
+	 * Process id in the module.
+	 */
+	@Setter
+	private String externalId;
+
+	/**
 	 * The corresponding project.
 	 */
-	@OneToOne(mappedBy = "externalProcess", optional = false, fetch = FetchType.LAZY, orphanRemoval = false,
-	          cascade = {})
+	@ManyToOne(fetch = FetchType.EAGER)
+	@Setter
 	private ProjectEntity project;
 
 	/**
-	 * Links the given project with this external process.
-	 * @param newProject The project to link.
+	 * The result data set.
 	 */
-	public void setProject(@Nullable final ProjectEntity newProject) {
-		final ProjectEntity oldProject = this.project;
-		this.project = newProject;
-		if (oldProject != null && oldProject.getExternalProcess() == this) {
-			oldProject.setExternalProcess(null);
-		}
-		if (newProject != null && newProject.getExternalProcess() != this) {
-			newProject.setExternalProcess(this);
-		}
-	}
+	@Lob
+	@Setter
+	private byte[] resultDataSet;
+
+	/**
+	 * Additional files created during the process.
+	 */
+	@ElementCollection(fetch = FetchType.LAZY)
+	@MapKeyColumn(name = "filename")
+	@Lob
+	private final Map<String, byte[]> additionalResultFiles = new HashMap<>();
+
 }

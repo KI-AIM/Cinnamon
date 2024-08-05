@@ -452,7 +452,7 @@ public class DataController {
 				                                                                     configuration);
 				result = databaseService.store(transformationResult, projectEntity);
 
-				statusService.updateStatus(projectEntity, Step.ANONYMIZATION_CONFIG);
+				statusService.updateCurrentStep(projectEntity, Step.ANONYMIZATION);
 			}
 			case VALIDATE -> {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);

@@ -1,6 +1,7 @@
 package de.kiaim.test.platform.controller;
 
 import de.kiaim.platform.model.enumeration.ProcessStatus;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.test.platform.ControllerTest;
 import de.kiaim.test.util.DataConfigurationTestHelper;
 import de.kiaim.test.util.ResourceHelper;
@@ -67,7 +68,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .build());
 
 		mockMvc.perform(post("/api/process/start")
-				                .param("stepName", "synthetization")
+				                .param("stepName", "SYNTHETIZATION")
 				                .param("algorithm", "ctgan")
 				                .param("configurationName", "configurationName")
 				                .param("configuration", "configuration")
@@ -76,9 +77,9 @@ public class ProcessControllerTest extends ControllerTest {
 
 		// Test state changes
 		var updateTestProject = getTestProject();
-		var process = updateTestProject.getExternalProcess();
+		var process = updateTestProject.getProcesses().get(Step.SYNTHETIZATION);
 		assertNotNull(process, "No external process has been created!");
-		assertEquals(ProcessStatus.RUNNING, updateTestProject.getStatus().getExternalProcessStatus(),
+		assertEquals(ProcessStatus.RUNNING, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 
 		// Test request
@@ -133,9 +134,9 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		// Test state changes
-		process = updateTestProject.getExternalProcess();
-		assertNull(process, "External process has not been deleted!");
-		assertEquals(ProcessStatus.FINISHED, updateTestProject.getStatus().getExternalProcessStatus(),
+		process = updateTestProject.getProcesses().get(Step.SYNTHETIZATION);
+		assertNotNull(process, "External process has not been deleted!");
+		assertEquals(ProcessStatus.FINISHED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 	}
 

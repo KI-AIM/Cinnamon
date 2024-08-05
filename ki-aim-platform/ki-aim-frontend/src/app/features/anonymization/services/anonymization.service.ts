@@ -19,13 +19,13 @@ export class AnonymizationService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName = (): string => "anonymization";
+    public override getStepName = (): string => "ANONYMIZATION";
 
     public override getConfigurationName = (): string => "anonymization";
 
     public registerConfig() {
         const configReg = new ConfigurationRegisterData();
-        configReg.availableAfterStep = Steps.ANONYMIZATION_CONFIG;
+        configReg.availableAfterStep = Steps.ANONYMIZATION;
         configReg.lockedAfterStep = null;
         configReg.displayName = "Anonymization Configuration";
         configReg.fetchConfig = null;

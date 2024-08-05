@@ -10,6 +10,8 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String ZIP_CREATION = "1";
 
+	public static final String MULTIPART_READING = "2";
+
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

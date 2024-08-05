@@ -6,7 +6,6 @@ import { AlgorithmService } from "../../services/algorithm.service";
 import { stringify } from "yaml";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
 import { environments } from "../../../../environments/environment";
-import { Status } from "../../model/status";
 import { StateManagementService } from "../../../core/services/state-management.service";
 import { ProcessStatus } from "../../../core/enums/process-status";
 import { interval, Observable, Subscription, tap } from "rxjs";
@@ -17,6 +16,7 @@ import { interval, Observable, Subscription, tap } from "rxjs";
     styleUrls: ['./configuration-page.component.less']
 })
 export class ConfigurationPageComponent implements OnInit, OnDestroy {
+    private readonly baseUrl = environments.apiUrl + "/api/process";
 
     protected algorithms: Algorithm[] = [];
     protected disabled: boolean = false;
@@ -35,40 +35,37 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
         private readonly anonService: AlgorithmService,
         private readonly stateService: StateManagementService,
     ) {
-
-        anonService._setConfig = this.setConfig;
-        anonService._getConfig = () => {
-            console.log(this.forms);
-            return '';
-            // return this.createConfiguration(this.form.getRawValue(), this.selection.selectedOption);
-        }
+        // anonService._setConfig = this.setConfig;
+        // anonService._getConfig = () => {
+        //     console.log(this.forms);
+        //     return '';
+        //     // return this.createConfiguration(this.form.getRawValue(), this.selection.selectedOption);
+        // }
 
         this.statusObserver = interval(10000).pipe(tap(() => {
-            this.stateService.getStatus(true, (error) => {
-                this.error = `Failed to update status. Status: ${error.status} (${error.statusText})`;
-            }).subscribe({
-                next: value => {
+            this.getProcessStatus().subscribe({
+                next: status => {
                     this.error = null;
-                    if (value.externalProcessStatus !== ProcessStatus.SCHEDULED &&
-                        value.externalProcessStatus !== ProcessStatus.RUNNING) {
+                    if (status !== ProcessStatus.SCHEDULED && status !== ProcessStatus.RUNNING) {
                         this.disabled = false;
-                        this.processStatus = value.externalProcessStatus;
+                        this.processStatus = status;
                         this.stopListenToStatus();
                     }
                 },
                 error: err => {
                     this.error = `Failed to update status. Status: ${err.status} (${err.statusText})`;
-                },
+                }
             });
         }));
     }
+
 
     ngOnDestroy() {
         this.stopListenToStatus();
     }
 
     ngOnInit() {
-        this.stateService.fetchStatus().subscribe({
+        this.getProcessStatus().subscribe({
             next: value => {
                 this.setState(value);
             },
@@ -90,15 +87,21 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     private stopListenToStatus(): void {
-        this.statusSubscription.unsubscribe();
+        if (this.statusSubscription) {
+            this.statusSubscription.unsubscribe();
+        }
     }
 
-    private setState(status: Status): void {
-        this.processStatus = status.externalProcessStatus;
-        if (status.externalProcessStatus === ProcessStatus.SCHEDULED || status.externalProcessStatus === ProcessStatus.RUNNING) {
+    private setState(status: ProcessStatus): void {
+        this.processStatus = status;
+        if (status === ProcessStatus.SCHEDULED || status === ProcessStatus.RUNNING) {
             this.startListenToStatus();
             this.disabled = true;
         }
+    }
+
+    private getProcessStatus(): Observable<ProcessStatus> {
+        return this.http.get<ProcessStatus>(this.baseUrl + "/" + this.anonService.getStepName());
     }
 
     onSubmit(configuration: Object) {
@@ -113,8 +116,8 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
                 formData.append("configuration", stringify(this.createConfiguration(configuration, this.selection.selectedOption)));
                 formData.append("url", value.URL);
 
-                this.http.post<Status>(environments.apiUrl + '/api/process/start', formData).subscribe({
-                    next: (status: Status) => {
+                this.http.post<ProcessStatus>(this.baseUrl + '/start', formData).subscribe({
+                    next: (status: ProcessStatus) => {
                         this.setState(status);
                     },
                     error: err => {
@@ -126,12 +129,27 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     protected cancel() {
-        this.http.post<Status>(environments.apiUrl + '/api/process/cancel', {}).subscribe({
-            next: (status: Status) => {
+        const formData = new FormData()
+        formData.append("stepName", this.anonService.getConfigurationName());
+
+        this.http.post<ProcessStatus>(this.baseUrl + '/cancel', formData).subscribe({
+            next: (status: ProcessStatus) => {
                 this.setState(status);
             },
             error: err => {
                 this.error = `Failed to cancel the process. Status: ${err.status} (${err.statusText})`;
+            }
+        });
+    }
+
+    protected downloadResult() {
+        this.http.get(this.baseUrl + '/zip', {responseType: 'arraybuffer'}).subscribe({
+            next: data => {
+                const blob = new Blob([data], {
+                    type: 'application/zip'
+                });
+                const url = window.URL.createObjectURL(blob);
+                window.open(url);
             }
         });
     }

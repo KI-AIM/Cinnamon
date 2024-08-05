@@ -19,13 +19,13 @@ export class SynthetizationService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName = (): string => "synthetization";
+    public override getStepName = (): string => "SYNTHETIZATION";
 
     public override getConfigurationName = (): string => "synthetization";
 
     public registerConfig() {
         const configReg = new ConfigurationRegisterData();
-        configReg.availableAfterStep = Steps.SYNTHETIZATION_CONFIG;
+        configReg.availableAfterStep = Steps.SYNTHETIZATION;
         configReg.lockedAfterStep = null;
         configReg.displayName = "Synthetization Configuration";
         configReg.fetchConfig = null;

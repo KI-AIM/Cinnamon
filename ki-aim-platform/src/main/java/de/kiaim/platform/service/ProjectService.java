@@ -1,5 +1,6 @@
 package de.kiaim.platform.service;
 
+import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.StatusEntity;
 import de.kiaim.platform.model.entity.UserEntity;
@@ -38,6 +39,13 @@ public class ProjectService {
 		if (project == null) {
 			project = new ProjectEntity();
 			user.setProject(project);
+
+			for (final Step step : Step.values()) {
+				if (step.isHasExternalProcessing()) {
+					project.putExternalProcess(step, new ExternalProcessEntity());
+				}
+			}
+
 			userRepository.save(user2);
 		}
 		return project;

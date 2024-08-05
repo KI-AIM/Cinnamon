@@ -58,8 +58,6 @@ class DataControllerTest extends ControllerTest {
 
 		assertEquals(Step.UPLOAD, testProject.getStatus().getCurrentStep(),
 		             "The current step should not have been updated!");
-		assertEquals(ProcessStatus.NOT_REQUIRED, testProject.getStatus().getExternalProcessStatus(),
-		             "The current step should not require external processing!");
 	}
 
 	@Test
@@ -132,8 +130,6 @@ class DataControllerTest extends ControllerTest {
 
 		assertEquals(Step.UPLOAD, testProject.getStatus().getCurrentStep(),
 		             "The current step should have not been updated!");
-		assertEquals(ProcessStatus.NOT_REQUIRED, testProject.getStatus().getExternalProcessStatus(),
-		             "The current step should not require external processing!");
 	}
 
 	@Test

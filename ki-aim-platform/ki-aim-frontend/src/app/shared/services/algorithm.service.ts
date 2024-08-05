@@ -35,7 +35,7 @@ export abstract class AlgorithmService {
      */
     getConfigurationName: () => string;
 
-    abstract createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object;
+    // abstract createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object;
 
     /**
      * Returns the definition for the algorithm with the given name.

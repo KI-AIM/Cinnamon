@@ -7,6 +7,9 @@ description: "Anonymization for tabular dataset"
 URL: "/anonymization_tabular" #"-" ?
 configurations:
   model_parameter:
+    display_name: "Short Name"
+    description: "Longer Description"
+    parameters:
     - name: "privacyModels"
       type: list
       label: "Privacy Models"
@@ -18,7 +21,7 @@ configurations:
             - name: "k"
               type: int
               description: "k value for k-anonymity privacy model"
-              possible_values: []
+              possible_values: [ ]
         - name: "AverageReidentificationRisk"
           description: ""
           values:
@@ -41,71 +44,71 @@ configurations:
               type: ARXPopulationModel.Region
               description: #?
               possible_values: [ ]
-    - name: "suppressionLimit"
-      type: string #change ?
-      label: "Suppression Limit"
-      description: "Maximum suppression limit."
-      allowed_values: #?
-      default_value: "100"
-    - name: "qualityModel"
-      type: string
-      label: "Quality Model"
-      description: "Quality model to use for anonymization."
-      allowed_values: #?
-      default_value: "LOSS"
-    - name: "localGeneralization"
-      type: boolean
-      label: "Local Generalization"
-      description: "Whether to use local generalization."
-      default_value: False
-  attributeConfigurations:
-    - name: "attribute_name" #or ID ? #suppress cause defined by platform module ?
-      type: string
-      label: "Attribute Name"
-      description: "The name of the attribute."
-    - name: "attribute_type"
-      type: string
-      label: "Attribute Type"
-      description: "Type of attribute for anoymization."
-      allowed_values: ["IDENTIFYING_ATTRIBUTE", "QUASI_IDENTIFYING_ATTRIBUTE", "INSENSITIVE_ATTRIBUTE", "SENSITIVE_ATTRIBUTE"]
-      default_value: "INSENSITIVE_ATTRIBUTE"
-    - name: "order"
-      type: list
-      label: "Ordered values"
-      description: "Order of values for ordinal attributes."
-      default_value: []
-      attributes_concerned:
-        - data_type: [ "STRING", "INTEGER", "DECIMAL"]
-          data_scale: ["ORDINAL"]
-    - name: "transformation"
-      type: string
-      label: "Transformation"
-      description: "Transformation rule for the attribute."
-      allowed_values: ["GENERALIZATION", "MICROAGGREGATION","CLUSTERING_AND_MICROAGGREGATION"]
-      default_value: ""
-    - name: "hierarchy"
-      type: object
-      label: "Hierarchy"
-      description: "Hierarchical details for the attribute."
-      properties:
-        - name: "type"
-          type: string
-          label: "Hierarchy Type"
-          description: "Type of hierarchy."
-          default_value: ""
-          allowed_values: ["MASKING", "INTERVALS"]
-        - name: "intervalSize"
+        - name: "suppressionLimit"
           type: string #change ?
-          label: "Interval Size"
-          description: "Interval size for the first hierarchy level."
-          default_value: ""
-        - name: "minLevel"
-          type: integer
-          label: "Minimum Level"
-          description: "Minimum level in the hierarchy."
-          default_value: 0
-        - name: "maxLevel"
-          type: integer
-          label: "Maximum Level"
-          description: "Maximum level in the hierarchy."
-          default_value: 1
+          label: "Suppression Limit"
+          description: "Maximum suppression limit."
+          allowed_values: #?
+          default_value: "100"
+        - name: "qualityModel"
+          type: string
+          label: "Quality Model"
+          description: "Quality model to use for anonymization."
+          allowed_values: #?
+          default_value: "LOSS"
+        - name: "localGeneralization"
+          type: boolean
+          label: "Local Generalization"
+          description: "Whether to use local generalization."
+          default_value: False
+attributeConfigurations:
+  - name: "attribute_name" #or ID ? #suppress cause defined by platform module ?
+    type: string
+    label: "Attribute Name"
+    description: "The name of the attribute."
+  - name: "attribute_type"
+    type: string
+    label: "Attribute Type"
+    description: "Type of attribute for anoymization."
+    allowed_values: [ "IDENTIFYING_ATTRIBUTE", "QUASI_IDENTIFYING_ATTRIBUTE", "INSENSITIVE_ATTRIBUTE", "SENSITIVE_ATTRIBUTE" ]
+    default_value: "INSENSITIVE_ATTRIBUTE"
+  - name: "order"
+    type: list
+    label: "Ordered values"
+    description: "Order of values for ordinal attributes."
+    default_value: [ ]
+    attributes_concerned:
+      - data_type: [ "STRING", "INTEGER", "DECIMAL" ]
+        data_scale: [ "ORDINAL" ]
+  - name: "transformation"
+    type: string
+    label: "Transformation"
+    description: "Transformation rule for the attribute."
+    allowed_values: [ "GENERALIZATION", "MICROAGGREGATION","CLUSTERING_AND_MICROAGGREGATION" ]
+    default_value: ""
+  - name: "hierarchy"
+    type: object
+    label: "Hierarchy"
+    description: "Hierarchical details for the attribute."
+    properties:
+      - name: "type"
+        type: string
+        label: "Hierarchy Type"
+        description: "Type of hierarchy."
+        default_value: ""
+        allowed_values: [ "MASKING", "INTERVALS" ]
+      - name: "intervalSize"
+        type: string #change ?
+        label: "Interval Size"
+        description: "Interval size for the first hierarchy level."
+        default_value: ""
+      - name: "minLevel"
+        type: integer
+        label: "Minimum Level"
+        description: "Minimum level in the hierarchy."
+        default_value: 0
+      - name: "maxLevel"
+        type: integer
+        label: "Maximum Level"
+        description: "Maximum level in the hierarchy."
+        default_value: 1

@@ -1,3 +1,4 @@
 export class StepConfiguration {
-    url: string
+    algorithmEndpoint: string;
+    url: string;
 }

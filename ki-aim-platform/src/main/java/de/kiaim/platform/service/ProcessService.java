@@ -92,6 +92,8 @@ public class ProcessService {
 		// Set process entity
 		final ExternalProcessEntity externalProcess = project.getProcesses().get(step);
 
+		// TODO check if not running already
+
 		// Get configuration
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
 		final String serverUrl = stepConfiguration.getUrl();
@@ -138,7 +140,6 @@ public class ProcessService {
 			                              "Failed to create the ZIP file for starting an external process!", e);
 		}
 
-
 		bodyBuilder.part("session_key", externalProcess.getId().toString());
 		final var serverAddress = ServletUriComponentsBuilder.fromCurrentContextPath()
 		                                                     .host(callbackHost)
@@ -181,6 +182,15 @@ public class ProcessService {
 		return externalProcess;
 	}
 
+	/**
+	 * Cancels the process for the given step name.
+	 * @param project
+	 * @param stepName
+	 * @return
+	 * @throws BadStepNameException
+	 * @throws InternalApplicationConfigurationException
+	 * @throws InternalRequestException
+	 */
 	public ExternalProcessEntity cancelProcess(final ProjectEntity project, final String stepName)
 			throws BadStepNameException, InternalApplicationConfigurationException, InternalRequestException {
 		// Get Step
@@ -190,6 +200,11 @@ public class ProcessService {
 			// TODO throw bad?
 		}
 		final ExternalProcessEntity externalProcess = project.getProcesses().get(step);
+
+		if (!(externalProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
+		      externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING)) {
+			// TODO throw bad
+		}
 
 		// Get configuration
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);

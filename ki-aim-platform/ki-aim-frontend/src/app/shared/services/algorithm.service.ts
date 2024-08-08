@@ -96,22 +96,33 @@ export abstract class AlgorithmService {
 
     // TODO use url
     private loadAlgorithms(url: string): Observable<Algorithm[]> {
-        return this.http.get<string>('/get_algorithms', {responseType: 'text' as 'json'})
-            .pipe(
-                map(value => {
-                    const response = parse(value) as { [available_synthesizers: string]: Object[] };
-                    const result: Algorithm[] = [];
+        return this.stepConfig.pipe(
+            concatMap(value => {
+                return this.http.get<string>(value.algorithmEndpoint, {responseType: 'text' as 'json'})
+            }),
+            map(value => {
+                const response = parse(value) as { [available_synthesizers: string]: Object[] };
+                const result: Algorithm[] = [];
+                if (response['algorithms']) {
+                    response['algorithms'].forEach(value1 => result.push(plainToInstance(Algorithm, value1)))
+                } else {
                     response['available_synthesizers'].forEach(value1 => result.push(plainToInstance(Algorithm, value1)))
-                    return result;
-                })
-            );
+                }
+                return result;
+            }),
+        );
     }
 
     // TODO use url
     private loadAlgorithmDefinition(url: string, algorithm: Algorithm): Observable<AlgorithmDefinition> {
         return this.http.get<string>(algorithm.URL, {responseType: 'text' as 'json'})
             .pipe(map(value => {
-                return plainToInstance(AlgorithmDefinition, parse(value))
+                console.log(value);
+                const todoChange = parse(value);
+                if (todoChange['arguments'] == undefined) {
+                    todoChange['arguments'] = todoChange["configurations"];
+                }
+                return plainToInstance(AlgorithmDefinition, todoChange);
             }));
     }
 

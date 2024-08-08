@@ -14,6 +14,12 @@ import lombok.Setter;
 public class StepConfiguration {
 
 	/**
+	 * Endpoint for fetching the available algorithms.
+	 */
+	@NotBlank
+	private String algorithmEndpoint;
+
+	/**
 	 * Host name for this application used for requests from other modules.
 	 */
 	@JsonIgnore

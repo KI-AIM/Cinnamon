@@ -40,7 +40,7 @@ export const StepConfiguration = {
 		dependsOn: Steps.DATA_CONFIG,
 		index: 3,
 	},
-	ANONYMIZATION_CONFIG: {
+	ANONYMIZATION: {
 		path: "anonymizationConfiguration",
 		id: "navLinkAnonymizationConfiguration",
 		text: "Anonymization configuration",
@@ -48,7 +48,7 @@ export const StepConfiguration = {
 		dependsOn: Steps.VALIDATION,
 		index: 4,
 	},
-    SYNTHETIZATION_CONFIG: {
+    SYNTHETIZATION: {
         path: "synthetizationConfiguration",
         id: "navLinkSynthetizationConfiguration",
         text: "Synthetization configuration",

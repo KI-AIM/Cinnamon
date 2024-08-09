@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 /**
  * Configuration for a sigle step.
  */
@@ -32,6 +34,12 @@ public class StepConfiguration {
 	@JsonIgnore
 	@NotBlank
 	private String cancelEndpoint;
+
+	/**
+	 * List of required pre-processors for this step.
+	 */
+	@JsonIgnore
+	private List<String> preProcessors;
 
 	/**
 	 * URL of the server.

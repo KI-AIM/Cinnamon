@@ -105,6 +105,20 @@ public class ProcessService {
 		try {
 			final DataSet dataSet = databaseService.exportDataSet(project, new ArrayList<>());
 
+			// TODO put somewhere else
+			if (stepConfiguration.getPreProcessors().contains("dateformat"))
+			{
+				for (final var columnConfiguration : dataSet.getDataConfiguration().getConfigurations()) {
+					for (final var config : columnConfiguration.getConfigurations()) {
+						if (config instanceof DateFormatConfiguration dateFormatConfiguration) {
+							dateFormatConfiguration.setDateFormatter("%Y-%m-%d");
+						} else if (config instanceof DateTimeFormatConfiguration dateFormatConfiguration) {
+							dateFormatConfiguration.setDateTimeFormatter("%Y-%m-%dT%H:%M:%S.%f");
+						}
+					}
+				}
+			}
+
 			final var outputStream = new ByteArrayOutputStream();
 			final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
 			final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(

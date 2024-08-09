@@ -167,6 +167,7 @@
 				<directory>src/main/resources</directory>
 				<filtering>true</filtering>
 				<includes>
+					<include>**/banner.txt</include>
 					<include>**/*.properties</include>
 				</includes>
 			</resource>

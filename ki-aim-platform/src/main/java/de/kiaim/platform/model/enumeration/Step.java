@@ -1,5 +1,6 @@
 package de.kiaim.platform.model.enumeration;
 
+import de.kiaim.platform.exception.BadStepNameException;
 import lombok.Getter;
 import org.springframework.lang.Nullable;
 
@@ -32,6 +33,11 @@ public enum Step {
 		this.hasExternalProcessing = hasExternalProcessing;
 	}
 
+	/**
+	 * Returns the step with the given name or null.
+	 * @param stepName The name of the step.
+	 * @return The step or null.
+	 */
 	@Nullable
 	public static Step getStep(final String stepName) {
 		for (final Step step : values()) {
@@ -41,5 +47,20 @@ public enum Step {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Returns the step with the given name.
+	 * @param stepName The step name.
+	 * @return The step.
+	 * @throws BadStepNameException If no step with the given name exists.
+	 */
+	public static Step getStepOrThrow(final String stepName) throws BadStepNameException {
+		final Step step = Step.getStep(stepName);
+		if (step == null) {
+			throw new BadStepNameException(BadStepNameException.NOT_FOUND,
+			                               "The step '" + stepName + "' is not defined!");
+		}
+		return step;
 	}
 }

@@ -1,11 +1,12 @@
 package de.kiaim.test.platform.controller;
 
+import de.kiaim.platform.model.dto.SynthetizationResponse;
+import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.test.platform.ControllerTest;
 import de.kiaim.test.util.DataConfigurationTestHelper;
 import de.kiaim.test.util.ResourceHelper;
-import jakarta.servlet.ServletContext;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
@@ -15,45 +16,48 @@ import org.apache.commons.fileupload2.core.FileItem;
 import org.apache.commons.fileupload2.core.FileItemFactory;
 import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.util.TestSocketUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WithUserDetails("test_user")
 public class ProcessControllerTest extends ControllerTest {
 
-	@Autowired
-	ServletContext servletContext;
+	private static final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 
-	public static MockWebServer mockBackEnd;
+	@Value("${ki-aim.steps.SYNTHETIZATION.callbackHost}")
+	private String callbackHost;
+
+	private MockWebServer mockBackEnd;
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("ki-aim.steps.synthetization.url",
-		             () -> String.format("http://localhost:%s", mockBackEnd.getPort()));
+		registry.add("ki-aim.steps.synthetization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
 	}
 
-	@BeforeAll
-	static void setUp() throws IOException {
+	@BeforeEach
+	void setUpMockWebServer() throws IOException {
 		mockBackEnd = new MockWebServer();
-		mockBackEnd.start();
+		mockBackEnd.start(mockBackEndPort);
 	}
 
-	@AfterAll
-	static void tearDown() throws IOException {
+	@AfterEach
+	void shutDownMockWebServer() throws IOException {
 		mockBackEnd.shutdown();
 	}
 
@@ -61,19 +65,22 @@ public class ProcessControllerTest extends ControllerTest {
 	public void startAndFinishProcess() throws Exception {
 		postData(false);
 
+		final SynthetizationResponse response = new SynthetizationResponse();
+		response.setPid("123");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 				                    .code(200)
-				                    .body("ok")
+				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
 		mockMvc.perform(post("/api/process/start")
-				                .param("stepName", "SYNTHETIZATION")
-				                .param("algorithm", "ctgan")
+				                .param("stepName", Step.SYNTHETIZATION.name())
+				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configurationName", "configurationName")
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
-		       .andExpect(status().isOk());
+		       .andExpect(status().isOk())
+		       .andExpect(content().string("\"" + ProcessStatus.RUNNING.name() + "\""));
 
 		// Test state changes
 		var updateTestProject = getTestProject();
@@ -99,44 +106,86 @@ public class ProcessControllerTest extends ControllerTest {
 		final List<DiskFileItem> fileItems = upload.parseRequest(request);
 
 		final Long id = process.getId();
-		final String callbackUrl = servletContext.getContextPath() + "/process/" + id.toString() + "/callback";
+		final String callbackUrl = "http://" + callbackHost + ":8080/api/process/" + id.toString() + "/callback";
 
 		// Test request content
 		for (final FileItem fileItem : fileItems) {
 			if (fileItem.getFieldName().equals("data")) {
-
-				try (final var zipIn = new ZipInputStream(new ByteArrayInputStream(fileItem.get()))) {
-					final String content = readNextZipEntry(zipIn);
-					assertEquals(DataConfigurationTestHelper.generateDataConfigurationAsYaml(), content, "Unexpected content of first file!");
-
-					final String contentSecond = readNextZipEntry(zipIn);
-					assertEquals("configuration", contentSecond, "Unexpected content of second file!");
-
-					final String contentThird = readNextZipEntry(zipIn);
-					assertEquals(ResourceHelper.loadCsvFileAsString(), contentThird, "Unexpected content of third file!");
-
-					final ZipEntry forth = zipIn.getNextEntry();
-					assertNull(forth, "There should be only three files in the zip!");
-				}
-
+				assertEquals(ResourceHelper.loadCsvFileAsString(), fileItem.getString(),
+				             "Unexpected content of data!");
+			} else if (fileItem.getFieldName().equals("attribute_config")) {
+				assertEquals(DataConfigurationTestHelper.generateDataConfigurationAsYaml(), fileItem.getString(),
+				             "Unexpected content of attribute config!");
+			} else if (fileItem.getFieldName().equals("algorithm_config")) {
+				assertEquals("configuration", fileItem.getString(), "Unexpected session key!");
 			} else if (fileItem.getFieldName().equals("session_key")) {
-				// TODO fix
-				// assertEquals(id.toString(), fileItem.getString(), "Unexpected session key!");
+				assertEquals(id.toString(), fileItem.getString(), "Unexpected session key!");
 			} else if (fileItem.getFieldName().equals("callback")) {
-				// TODO fix
-				// assertEquals(callbackUrl, fileItem.getString(), "Unexpected callback URL!");
+				assertEquals(callbackUrl, fileItem.getString(), "Unexpected callback URL!");
 			} else {
 				fail("Unexpected field: " + fileItem.getFieldName());
 			}
 		}
 
-		mockMvc.perform(post("/api/process/" + id.toString() + "/callback"))
+		final MockMultipartFile resultData = new MockMultipartFile("synthetic_data", "csv.csv",
+		                                                           MediaType.TEXT_PLAIN_VALUE,
+		                                                           "data".getBytes());
+		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
+		                                                                 MediaType.TEXT_PLAIN_VALUE,
+		                                                                 "info".getBytes());
+		mockMvc.perform(multipart("/api/process/" + id + "/callback")
+				                .file(resultData)
+				                .file(resultAdditional))
 		       .andExpect(status().isOk());
 
 		// Test state changes
 		process = updateTestProject.getProcesses().get(Step.SYNTHETIZATION);
-		assertNotNull(process, "External process has not been deleted!");
 		assertEquals(ProcessStatus.FINISHED, process.getExternalProcessStatus(),
+		             "External process status has not been updated!");
+		assertNotNull(process.getResultDataSet(), "Result has not been set!");
+		assertEquals("data", new String(process.getResultDataSet(), StandardCharsets.UTF_8),
+		             "Result has not been set correctly!");
+		assertTrue(process.getAdditionalResultFiles().containsKey("additional.txt"),
+		           "Additional result has not been set!");
+		assertEquals("info",
+		             new String(process.getAdditionalResultFiles().get("additional.txt"), StandardCharsets.UTF_8),
+		             "Additional result has not been set correctly!");
+	}
+
+	@Test
+	public void startAndCancelProcess() throws Exception {
+		postData(false);
+
+		final SynthetizationResponse response = new SynthetizationResponse();
+		response.setPid("123");
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(response))
+				                    .build());
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(response))
+				                    .build());
+
+		mockMvc.perform(post("/api/process/start")
+				                .param("stepName", Step.SYNTHETIZATION.name())
+				                .param("url", "/start_synthetization_process/ctgan")
+				                .param("configurationName", "configurationName")
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string("\"" + ProcessStatus.RUNNING.name() + "\""));
+
+		mockMvc.perform(multipart("/api/process/cancel")
+				                .param("stepName", Step.SYNTHETIZATION.name()))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string("\"" + ProcessStatus.CANCELED.name() + "\""));
+
+		// Test state changes
+		final ExternalProcessEntity process = getTestProject().getProcesses().get(Step.SYNTHETIZATION);
+		assertEquals(ProcessStatus.CANCELED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 	}
 
@@ -146,7 +195,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		mockMvc.perform(post("/api/process/start")
 				                .param("stepName", "invalid")
-				                .param("algorithm", "ctgan")
+				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configurationName", "configurationName")
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -159,7 +208,7 @@ public class ProcessControllerTest extends ControllerTest {
 	public void startNoData() throws Exception {
 		mockMvc.perform(post("/api/process/start")
 				                .param("stepName", "synthetization")
-				                .param("algorithm", "ctgan")
+				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configurationName", "configurationName")
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -172,41 +221,50 @@ public class ProcessControllerTest extends ControllerTest {
 	public void startModuleUnavailable() throws Exception {
 		postData(false);
 
+		final SynthetizationResponse response = new SynthetizationResponse();
+		response.setMessage("Not found");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 				                    .code(404)
-				                    .body("ok")
+				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
 		mockMvc.perform(post("/api/process/start")
 				                .param("stepName", "synthetization")
-				                .param("algorithm", "ctgan")
+				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configurationName", "configurationName")
-				                .param("configuration", "configuration")
+				                .param("configuration", "configuration2")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isInternalServerError())
-		       .andExpect(errorMessage("Failed to start the process! Got status of 404 NOT_FOUND"));
+		       .andExpect(errorMessage(
+				       "Failed to start the process! Got status of 404 NOT_FOUND with message: 'Not found'"));
+	}
+
+	@Test
+	public void cancelInvalidStepName() throws Exception {
+		mockMvc.perform(multipart("/api/process/cancel")
+				                .param("stepName", "Invalid"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("The step 'Invalid' is not defined!"));
+	}
+
+	@Test
+	public void cancelNotStarted() throws Exception {
+		mockMvc.perform(multipart("/api/process/cancel")
+				                .param("stepName", Step.SYNTHETIZATION.name()))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string("\"" + ProcessStatus.NOT_STARTED.name() + "\""));
 	}
 
 	@Test
 	public void finishInvalidProcess() throws Exception {
-		mockMvc.perform(post("/api/process/0/callback"))
+		final MockMultipartFile result = new MockMultipartFile("synthetic_data", "result.csv",
+		                                                       MediaType.TEXT_PLAIN_VALUE,
+		                                                       "result".getBytes());
+		mockMvc.perform(multipart("/api/process/0/callback")
+				                .file(result))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("No process with the given ID '0' exists! Maybe it was canceled!"));
-	}
-
-	private String readNextZipEntry(final ZipInputStream zipIn) throws IOException {
-		final StringBuilder sb = new StringBuilder();
-		final byte[] buffer = new byte[1024];
-		int read;
-
-		final ZipEntry zipEntry =  zipIn.getNextEntry();
-		assertNotNull(zipEntry, "Next ZIP entry does not exist!");
-		while((read = zipIn.read(buffer, 0, 1024)) >= 0) {
-			sb.append(new String(buffer, 0, read));
-		}
-
-		return sb.toString();
+		       .andExpect(errorMessage("No process with the given ID '0' exists!"));
 	}
 
 }

@@ -4,12 +4,12 @@
         <ng-container *ngFor="let groupDefinition of getGroupNames()">
             <mat-expansion-panel>
                 <mat-expansion-panel-header>
-                    <mat-panel-title>{{ algorithmDefinition.arguments[groupDefinition].display_name }}</mat-panel-title>
-                    <mat-panel-description> {{ algorithmDefinition.arguments[groupDefinition].description }}</mat-panel-description>
+                    <mat-panel-title>{{ algorithmDefinition.configurations[groupDefinition].display_name }}</mat-panel-title>
+                    <mat-panel-description> {{ algorithmDefinition.configurations[groupDefinition].description }}</mat-panel-description>
                 </mat-expansion-panel-header>
 
                 <app-configuration-group [form]="form" [fromGroupName]="groupDefinition"
-                                         [group]="algorithmDefinition.arguments[groupDefinition]" [disabled]="disabled">
+                                         [group]="algorithmDefinition.configurations[groupDefinition]" [disabled]="disabled">
                 </app-configuration-group>
 
             </mat-expansion-panel>

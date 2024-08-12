@@ -2,7 +2,7 @@ export class Algorithm {
     class: string
     description: string
     name: string
-    synthesizer: string
+    display_name: string
     // TODO enum?
     type: string
     version: string

@@ -32,6 +32,22 @@ public class TransformationResultTestHelper {
 		}
 	}
 
+	public static String generateTransformationResultAsJsonA() {
+		return
+				"""
+						{"dataSet":""" + DataSetTestHelper.generateDataSetAsJson() +
+				"""
+						,"transformationErrors":[{"index":2,"rawValues":["true","2023-11-20","","4.2","forty two","Hello World!"],"dataTransformationErrors":[{"index":2,"errorType":"MISSING_VALUE"},{"index":4,"errorType":"FORMAT_ERROR"}]}]}""";
+	}
+
+	public static String generateTransformationResultAsJsonB() {
+		return
+				"""
+						{"dataSet":""" + DataSetTestHelper.generateDataSetAsJson() +
+				"""
+						,"transformationErrors":[{"index":2,"rawValues":["true","2023-11-20","","4.2","forty two","Hello World!"],"dataTransformationErrors":[{"index":4,"errorType":"FORMAT_ERROR"},{"index":2,"errorType":"MISSING_VALUE"}]}]}""";
+	}
+
 	public static String generateTransformationResultAsYaml() {
 		return
 				"""

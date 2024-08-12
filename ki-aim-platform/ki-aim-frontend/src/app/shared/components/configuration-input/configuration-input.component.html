@@ -10,7 +10,7 @@
     <span style="flex: 1 1 auto;" [formGroup]="form">
         <ng-container [ngSwitch]="configurationInputDefinition.type">
 
-            <ng-container *ngSwitchCase="ConfigurationInputType.ARRAY">
+            <ng-container *ngSwitchCase="ConfigurationInputType.LIST">
                 <div class="input-array-wrapper">
                     <mat-form-field class="input-array">
                         <input type="text"

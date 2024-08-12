@@ -2,8 +2,9 @@ package de.kiaim.platform.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.Setter;
 
-@Getter
+@Getter @Setter
 public class SynthetizationResponse {
 
 	private String message;

@@ -28,7 +28,7 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     protected error: string | null = null;
 
     private statusObserver: Observable<any>;
-    private statusSubscription: Subscription;
+    private statusSubscription: Subscription | null = null;
 
     constructor(
         private readonly http: HttpClient,
@@ -46,11 +46,7 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
             this.getProcessStatus().subscribe({
                 next: status => {
                     this.error = null;
-                    if (status !== ProcessStatus.SCHEDULED && status !== ProcessStatus.RUNNING) {
-                        this.disabled = false;
-                        this.processStatus = status;
-                        this.stopListenToStatus();
-                    }
+                    this.setState(status)
                 },
                 error: err => {
                     this.error = `Failed to update status. Status: ${err.status} (${err.statusText})`;
@@ -58,7 +54,6 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
             });
         }));
     }
-
 
     ngOnDestroy() {
         this.stopListenToStatus();
@@ -83,11 +78,13 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     private startListenToStatus(): void {
-       this.statusSubscription = this.statusObserver.subscribe();
+        if (this.statusSubscription === null) {
+            this.statusSubscription = this.statusObserver.subscribe();
+        }
     }
 
     private stopListenToStatus(): void {
-        if (this.statusSubscription) {
+        if (this.statusSubscription !== null) {
             this.statusSubscription.unsubscribe();
         }
     }
@@ -97,6 +94,9 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
         if (status === ProcessStatus.SCHEDULED || status === ProcessStatus.RUNNING) {
             this.startListenToStatus();
             this.disabled = true;
+        } else {
+            this.stopListenToStatus();
+            this.disabled = false;
         }
     }
 
@@ -111,13 +111,13 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
             next: value => {
 
                 formData.append("stepName", this.anonService.getStepName());
-                formData.append("algorithm", this.selection.selectedOption.synthesizer);
                 formData.append("configurationName", this.anonService.getConfigurationName());
-                formData.append("configuration", stringify(this.createConfiguration(configuration, this.selection.selectedOption)));
+                formData.append("configuration", stringify(this.anonService.createConfiguration(configuration, this.selection.selectedOption)));
                 formData.append("url", value.URL);
 
                 this.http.post<ProcessStatus>(this.baseUrl + '/start', formData).subscribe({
                     next: (status: ProcessStatus) => {
+                        this.error = null;
                         this.setState(status);
                     },
                     error: err => {
@@ -143,7 +143,7 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     protected downloadResult() {
-        this.http.get(this.baseUrl + '/zip', {responseType: 'arraybuffer'}).subscribe({
+        this.http.get(environments.apiUrl + "/api/project/zip", {responseType: 'arraybuffer'}).subscribe({
             next: data => {
                 const blob = new Blob([data], {
                     type: 'application/zip'
@@ -152,23 +152,5 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
                 window.open(url);
             }
         });
-    }
-
-    private createConfiguration(arg: Object, selectedAlgorithm: Algorithm) {
-        // TODO remove hardcoded value for missing argument
-        //@ts-ignore
-        (arg["model_parameter"] as Object)["generator_decay"] = 1e-6;
-
-        return {
-            synthetization_process: [
-                {
-                    algorithm: null,
-                    synthesizer: selectedAlgorithm.name,
-                    type: selectedAlgorithm.type,
-                    version: selectedAlgorithm.version,
-                    ...arg
-                },
-            ],
-        };
     }
 }

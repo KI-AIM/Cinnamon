@@ -102,8 +102,8 @@ public class DatabaseService {
 
 		// Create table
 		final String tableQuery = dataschemeGenerator.createSchema(dataSet.getDataConfiguration(), tableName);
-		try (final Statement tableStatement = connection.createStatement()) {
-			tableStatement.execute(tableQuery);
+		try {
+			executeStatement(tableQuery);
 		} catch (final SQLException e) {
 			LOGGER.error("The Table for the DataSet could not be created!", e);
 			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.TABLE_CREATE,
@@ -130,11 +130,6 @@ public class DatabaseService {
 			                                              "The DataSet could not be persisted!", e);
 		}
 
-		try {
-			connection.commit();
-		} catch (SQLException e) {
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_STORE, "Oh no", e);
-		}
 		return dataSetId;
 	}
 
@@ -276,8 +271,8 @@ public class DatabaseService {
 
 		// Delete the table and its data
 		if (existsTable(dataSetId)) {
-			try (final Statement statement = connection.createStatement()) {
-				statement.execute("DROP TABLE IF EXISTS " + getTableName(dataSetId) + ";");
+			try {
+				executeStatement("DROP TABLE IF EXISTS " + getTableName(dataSetId) + ";");
 			} catch (SQLException e) {
 				LOGGER.error("The DataSet could not be deleted!", e);
 				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_DELETE,
@@ -318,6 +313,7 @@ public class DatabaseService {
 	@Transactional
 	public void executeStatement(final String query) throws SQLException {
 		try (final Statement statement = connection.createStatement()) {
+			statement.setQueryTimeout(20);
 			statement.execute(query);
 		}
 	}

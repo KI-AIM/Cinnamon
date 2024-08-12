@@ -4,6 +4,7 @@ import { HttpClient } from "@angular/common/http";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
+import { Algorithm } from "../../../shared/model/algorithm";
 
 @Injectable({
     providedIn: 'root',
@@ -22,6 +23,19 @@ export class SynthetizationService extends AlgorithmService {
     public override getStepName = (): string => "SYNTHETIZATION";
 
     public override getConfigurationName = (): string => "synthetization";
+
+    public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
+        return {
+            synthetization_configuration: {
+                algorithm: {
+                    synthesizer: selectedAlgorithm.name,
+                    type: selectedAlgorithm.type,
+                    version: selectedAlgorithm.version,
+                    ...arg
+                },
+            },
+        };
+    }
 
     public registerConfig() {
         const configReg = new ConfigurationRegisterData();

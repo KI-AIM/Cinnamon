@@ -67,8 +67,7 @@ public class ProjectEntity {
 	/**
 	 * User that owns this configuration and the corresponding data set.
 	 */
-	@OneToOne(mappedBy = "project", optional = false, fetch = FetchType.LAZY, orphanRemoval = false,
-	          cascade = CascadeType.PERSIST)
+	@OneToOne(mappedBy = "project", optional = false, orphanRemoval = false, cascade = CascadeType.PERSIST)
 	private UserEntity user;
 
 	/**

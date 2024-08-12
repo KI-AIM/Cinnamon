@@ -56,7 +56,7 @@ export class ConfigurationFormComponent implements OnInit {
             return [];
         }
 
-        return Object.keys(this.algorithmDefinition.arguments);
+        return Object.keys(this.algorithmDefinition.configurations);
     }
 
     private updateForm() {
@@ -74,11 +74,11 @@ export class ConfigurationFormComponent implements OnInit {
     private createForm(algorithmDefinition: AlgorithmDefinition): FormGroup {
         const formGroup: any = {};
 
-        Object.entries(algorithmDefinition.arguments).forEach(([name, groupDefinition]) => {
+        Object.entries(algorithmDefinition.configurations).forEach(([name, groupDefinition]) => {
             const group: any = {};
 
             groupDefinition.parameters.forEach(inputDefinition => {
-                if (inputDefinition.type === ConfigurationInputType.ARRAY) {
+                if (inputDefinition.type === ConfigurationInputType.LIST) {
                     const controls = [];
                     for (const defaultValue of inputDefinition.default_value as number[]) {
                         controls.push(new FormControl(defaultValue, Validators.required));

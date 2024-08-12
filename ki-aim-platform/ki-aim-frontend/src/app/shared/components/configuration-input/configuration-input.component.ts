@@ -21,7 +21,7 @@ export class ConfigurationInputComponent {
     }
 
     setToDefault() {
-        if (this.configurationInputDefinition.type === ConfigurationInputType.ARRAY) {
+        if (this.configurationInputDefinition.type === ConfigurationInputType.LIST) {
             const formArray = this.form.controls[this.configurationInputDefinition.name] as FormArray
             formArray.clear();
             for (const defaultValue of this.configurationInputDefinition.default_value as number[]) {

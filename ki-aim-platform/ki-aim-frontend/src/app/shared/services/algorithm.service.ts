@@ -35,7 +35,7 @@ export abstract class AlgorithmService {
      */
     getConfigurationName: () => string;
 
-    // abstract createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object;
+    abstract createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object;
 
     /**
      * Returns the definition for the algorithm with the given name.
@@ -103,11 +103,7 @@ export abstract class AlgorithmService {
             map(value => {
                 const response = parse(value) as { [available_synthesizers: string]: Object[] };
                 const result: Algorithm[] = [];
-                if (response['algorithms']) {
-                    response['algorithms'].forEach(value1 => result.push(plainToInstance(Algorithm, value1)))
-                } else {
-                    response['available_synthesizers'].forEach(value1 => result.push(plainToInstance(Algorithm, value1)))
-                }
+                response['algorithms'].forEach(value1 => result.push(plainToInstance(Algorithm, value1)))
                 return result;
             }),
         );
@@ -117,12 +113,7 @@ export abstract class AlgorithmService {
     private loadAlgorithmDefinition(url: string, algorithm: Algorithm): Observable<AlgorithmDefinition> {
         return this.http.get<string>(algorithm.URL, {responseType: 'text' as 'json'})
             .pipe(map(value => {
-                console.log(value);
-                const todoChange = parse(value);
-                if (todoChange['arguments'] == undefined) {
-                    todoChange['arguments'] = todoChange["configurations"];
-                }
-                return plainToInstance(AlgorithmDefinition, todoChange);
+                return plainToInstance(AlgorithmDefinition, parse(value));
             }));
     }
 

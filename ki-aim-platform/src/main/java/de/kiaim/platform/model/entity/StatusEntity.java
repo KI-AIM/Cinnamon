@@ -2,7 +2,6 @@ package de.kiaim.platform.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.platform.model.enumeration.Mode;
-import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
@@ -48,19 +47,10 @@ public class StatusEntity {
 	private Step currentStep = Step.WELCOME;
 
 	/**
-	 * The status of the external processing.
-	 */
-	@Schema(description = "Status of the external process.")
-	@Setter
-	@Column(nullable = false)
-	@Enumerated(EnumType.STRING)
-	private ProcessStatus externalProcessStatus = ProcessStatus.NOT_REQUIRED;
-
-	/**
 	 * The corresponding project.
 	 */
 	@JsonIgnore
-	@OneToOne(mappedBy = "status", optional = false, fetch = FetchType.LAZY, orphanRemoval = false, cascade = CascadeType.ALL)
+	@OneToOne(mappedBy = "status", optional = false, orphanRemoval = false, cascade = CascadeType.ALL)
 	private ProjectEntity project;
 
 	public StatusEntity(final ProjectEntity project) {

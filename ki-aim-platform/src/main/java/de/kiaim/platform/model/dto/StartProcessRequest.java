@@ -9,14 +9,12 @@ import lombok.Setter;
 @Getter @Setter
 public class StartProcessRequest {
 
-	@Schema(description = "Name of the step.", example = "synthetization")
+	@Schema(description = "Name of the step.", example = "SYNTHETIZATION")
 	@NotBlank
 	private String stepName;
 
-	@Schema(description = "Name of the algorithm to start.", example = "ctgan")
+	@Schema(description = "URI to start the algorithm.", example = "/start_synthetization_process/ctgan")
 	@NotBlank
-	private String algorithm;
-
 	private String url;
 
 	@Schema(description = "Name under which the configuration should be saved.", example = "synthetization-config")

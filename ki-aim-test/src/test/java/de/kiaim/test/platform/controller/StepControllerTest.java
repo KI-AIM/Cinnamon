@@ -18,7 +18,7 @@ public class StepControllerTest extends ControllerTest {
 		                          .andExpect(status().isOk())
 		                          .andReturn().getResponse().getContentAsString();
 		final var stepConfig = objectMapper.readValue(config, StepConfiguration.class);
-		assertEquals("https://anonymization.de", stepConfig.getUrl(), "Unexpected URL!");
+		assertEquals("http://anonymization.de", stepConfig.getUrl(), "Unexpected URL!");
 	}
 
 	@Test

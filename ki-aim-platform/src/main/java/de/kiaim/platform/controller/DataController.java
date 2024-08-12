@@ -388,6 +388,7 @@ public class DataController {
 	 *     <li>{@link RequestType#LOAD_CONFIG}: user</li>
 	 *     <li>{@link RequestType#LOAD_DATA}: loadDataRequest, user</li>
 	 *     <li>{@link RequestType#LOAD_DATA_SET}: loadDataRequest, user</li>
+	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT}: user</li>
 	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, user</li>
 	 *     <li>{@link RequestType#STORE_DATE_SET}: file, fileConfiguration, configuration, user</li>
 	 *     <li>{@link RequestType#VALIDATE}: file, fileConfiguration, configuration</li>

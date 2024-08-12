@@ -3,7 +3,7 @@
 
     <mat-select #selectElement [disabled]="disabled" (selectionChange)="onChange($event)">
         <mat-option *ngFor="let option of algorithms" [value]="option">
-            {{ option.name }}
+            {{ option.display_name }}
         </mat-option>
     </mat-select>
 </mat-form-field>

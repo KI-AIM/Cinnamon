@@ -6,7 +6,6 @@ import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Mode;
-import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.service.ProjectService;
@@ -23,10 +22,11 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WithUserDetails("test_user")
 class DataControllerTest extends ControllerTest {
@@ -231,7 +231,7 @@ class DataControllerTest extends ControllerTest {
 		assertEquals(dataSetId, testUser.getProject().getId(),
 		             "User has been associated with the wrong dataset!");
 		// TODO fix when creating projects dynamically
-//		assertEquals(Step.ANONYMIZATION_CONFIG, testUser.getProject().getStatus().getCurrentStep(),
+//		assertEquals(Step.ANONYMIZATION, testUser.getProject().getStatus().getCurrentStep(),
 //		             "The current step has not been updated!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
@@ -457,6 +457,16 @@ class DataControllerTest extends ControllerTest {
 	// ================================================================================================================
 	// endregion loadDataSet()
 	// ================================================================================================================
+
+	@Test
+	void loadTransformationResult() throws Exception {
+		postData(true);
+
+		mockMvc.perform(get("/api/data/transformationResult"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(oneOf(TransformationResultTestHelper.generateTransformationResultAsJsonA(),
+		                                         TransformationResultTestHelper.generateTransformationResultAsJsonB())));
+	}
 
 	@Test
 	void deleteDataNoDataSet() throws Exception {

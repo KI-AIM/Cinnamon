@@ -67,7 +67,7 @@ public class DatabaseTest extends ContextRequiredTest {
 		}
 
 		this.testUser = getTestUser();
-		this.testProject = getTestProject();
+		this.testProject = projectService.createProject(testUser);
 	}
 
 	@AfterEach
@@ -145,6 +145,7 @@ public class DatabaseTest extends ContextRequiredTest {
 							$do$;
 							""");
 		} catch (SQLException ignored) {
+			fail(ignored);
 		}
 	}
 

@@ -10,8 +10,6 @@ import { ConfigurationService } from "../../../shared/services/configuration.ser
 })
 export class AnonymizationService extends AlgorithmService {
 
-    _configuration: Object;
-
     constructor(
         http: HttpClient,
         configurationService: ConfigurationService,
@@ -35,10 +33,10 @@ export class AnonymizationService extends AlgorithmService {
         configReg.displayName = "Anonymization Configuration";
         configReg.fetchConfig = null;
         configReg.name = this.getConfigurationName();
-        configReg.orderNumber = 3;
+        configReg.orderNumber = 1;
         configReg.storeConfig = null;
-        configReg.getConfigCallback = () => this._configuration;
-        configReg.setConfigCallback = (config) => this._configuration = config;
+        configReg.getConfigCallback = () => this.doGetConfig();
+        configReg.setConfigCallback = (config) => this.doSetConfig(config);
 
         this.configurationService.registerConfiguration(configReg);
     }

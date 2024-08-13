@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, QueryList, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import { Algorithm } from "../../model/algorithm";
@@ -6,14 +6,14 @@ import { AlgorithmService } from "../../services/algorithm.service";
 import { stringify } from "yaml";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
 import { environments } from "../../../../environments/environment";
-import { StateManagementService } from "../../../core/services/state-management.service";
 import { ProcessStatus } from "../../../core/enums/process-status";
 import { interval, Observable, Subscription, tap } from "rxjs";
+import { ImportPipeData } from "../../model/import-pipe-data";
 
 @Component({
     selector: 'app-configuration-page',
     templateUrl: './configuration-page.component.html',
-    styleUrls: ['./configuration-page.component.less']
+    styleUrls: ['./configuration-page.component.less'],
 })
 export class ConfigurationPageComponent implements OnInit, OnDestroy {
     private readonly baseUrl = environments.apiUrl + "/api/process";
@@ -23,7 +23,7 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     protected processStatus: ProcessStatus = ProcessStatus.NOT_STARTED;
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
-    @ViewChild('form') private forms: QueryList<ConfigurationFormComponent>;
+    @ViewChild('form') private forms: ConfigurationFormComponent;
 
     protected error: string | null = null;
 
@@ -32,16 +32,8 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
 
     constructor(
         private readonly http: HttpClient,
-        private readonly anonService: AlgorithmService,
-        private readonly stateService: StateManagementService,
+        protected readonly anonService: AlgorithmService,
     ) {
-        // anonService._setConfig = this.setConfig;
-        // anonService._getConfig = () => {
-        //     console.log(this.forms);
-        //     return '';
-        //     // return this.createConfiguration(this.form.getRawValue(), this.selection.selectedOption);
-        // }
-
         this.statusObserver = interval(10000).pipe(tap(() => {
             this.getProcessStatus().subscribe({
                 next: status => {
@@ -60,6 +52,9 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
+        this.anonService.setDoGetConfig(() => this.getConfig());
+        this.anonService.setDoSetConfig((data: ImportPipeData) => this.setConfig(data));
+
         this.getProcessStatus().subscribe({
             next: value => {
                 this.setState(value);
@@ -75,6 +70,17 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
                 this.error = `Failed to load available algorithms. Status: ${error.status} (${error.statusText})`;
             }
         });
+    }
+
+    private getConfig(): string {
+        if (!this.forms) {
+            return '';
+        } else {
+            return stringify(this.anonService.createConfiguration(this.forms.formData, this.selection.selectedOption))
+        }
+    }
+
+    private setConfig(config: ImportPipeData) {
     }
 
     private startListenToStatus(): void {

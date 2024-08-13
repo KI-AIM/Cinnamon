@@ -138,7 +138,8 @@ export class ConfigurationService {
             }
         }
 
-        const fileName = this.fileService.getFile().name + "-configuration.yaml"
+        // TODO use project name
+        const fileName = "configuration.yaml"
         this.fileUtilityService.saveYamlFile(configString, fileName);
     }
 

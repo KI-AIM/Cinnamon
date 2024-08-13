@@ -15,9 +15,8 @@ export abstract class AlgorithmService {
     private _algorithms: Algorithm[] | null = null;
     private algorithmDefinitions: {[algorithmName: string]: AlgorithmDefinition} = {};
 
-    private _config: string;
-    public _getConfig: () => Object | string = () => '';
-    public _setConfig: (config: ImportPipeData) => void = () => { console.log(config)};
+    public doGetConfig: () => Object | string = () => '';
+    protected doSetConfig: (config: ImportPipeData) => void = () => { console.log(config)};
 
     protected constructor(
         private readonly http: HttpClient,
@@ -36,6 +35,14 @@ export abstract class AlgorithmService {
     getConfigurationName: () => string;
 
     abstract createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object;
+
+    public setDoGetConfig(func: () => string) {
+        this.doGetConfig = func;
+    }
+
+    public setDoSetConfig(func: (data: ImportPipeData) => void) {
+        this.doSetConfig = func;
+    }
 
     /**
      * Returns the definition for the algorithm with the given name.

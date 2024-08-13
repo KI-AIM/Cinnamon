@@ -147,7 +147,7 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
 
     protected cancel() {
         const formData = new FormData()
-        formData.append("stepName", this.anonService.getConfigurationName());
+        formData.append("stepName", this.anonService.getStepName());
 
         this.http.post<ProcessStatus>(this.baseUrl + '/cancel', formData).subscribe({
             next: (status: ProcessStatus) => {

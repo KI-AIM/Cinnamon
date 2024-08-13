@@ -4,6 +4,7 @@ import { HttpClient } from "@angular/common/http";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
+import { Algorithm } from "../../../shared/model/algorithm";
 
 @Injectable({
     providedIn: 'root',
@@ -24,6 +25,10 @@ export class AnonymizationService extends AlgorithmService {
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
         // TODO
         return { };
+    }
+    public override readConfiguration(arg: Object): {config: Object, selectedAlgorithm: Algorithm} {
+        // TODO
+        return {config: {}, selectedAlgorithm: new Algorithm()};
     }
 
     public registerConfig() {

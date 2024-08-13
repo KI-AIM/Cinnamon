@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, TemplateRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfigurationService } from 'src/app/shared/services/configuration.service';
-import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
+import { ImportPipeData } from "../../model/import-pipe-data";
 
 @Component({
   selector: 'app-configuration-upload',

@@ -20,7 +20,7 @@ export class SynthetizationService extends AlgorithmService {
 
     public override getStepName = (): string => "SYNTHETIZATION";
 
-    public override getConfigurationName = (): string => "synthetization";
+    public override getConfigurationName = (): string => "synthetization_configuration";
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
         return {
@@ -33,6 +33,15 @@ export class SynthetizationService extends AlgorithmService {
                 },
             },
         };
+    }
+
+    public override readConfiguration(arg: any): {config: Object, selectedAlgorithm: Algorithm} {
+        const selectedAlgorithm = this.getAlgorithmByName(arg["synthetization_configuration"]["algorithm"]["synthesizer"])
+        const config = arg["synthetization_configuration"]["algorithm"];
+        delete config["synthesizer"];
+        delete config["type"];
+        delete config["version"];
+        return {config, selectedAlgorithm};
     }
 
     public registerConfig() {

@@ -3,7 +3,7 @@ import { HttpClient } from "@angular/common/http";
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService } from "../../services/algorithm.service";
-import { stringify } from "yaml";
+import { parse, stringify } from "yaml";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
 import { environments } from "../../../../environments/environment";
 import { ProcessStatus } from "../../../core/enums/process-status";
@@ -81,6 +81,17 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     private setConfig(config: ImportPipeData) {
+        if (config.success) {
+            this.error = null;
+            const result = this.anonService.readConfiguration(parse(config.yamlConfigString));
+            this.selection.selectedOption = result.selectedAlgorithm;
+            setTimeout(() => {
+                this.forms.setConfiguration(result.config);
+            }, 100);
+        } else {
+            this.error = "Failed to load configuration";
+        }
+
     }
 
     private startListenToStatus(): void {

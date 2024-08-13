@@ -24,7 +24,6 @@ import { MatDialogModule } from "@angular/material/dialog";
 import { MatOptionModule } from "@angular/material/core";
 import { MatSelectModule } from "@angular/material/select";
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { ConfigurationModule } from './features/configuration/configuration.module';
 import { AnonymizationModule } from "./features/anonymization/anonymization.module";
 import { SynthetizationModule } from "./features/synthetization/synthetization.module";
 
@@ -35,7 +34,6 @@ import { SynthetizationModule } from "./features/synthetization/synthetization.m
     ],
     imports: [
         BrowserModule,
-        ConfigurationModule,
         SharedModule,
         AnonymizationModule,
         AppRoutingModule,

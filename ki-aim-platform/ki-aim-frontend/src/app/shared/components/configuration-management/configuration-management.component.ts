@@ -1,6 +1,6 @@
 import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
-import { Steps } from "../../../../core/enums/steps";
+import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from 'src/app/shared/services/configuration.service';
 import { StateManagementService } from 'src/app/core/services/state-management.service';
 

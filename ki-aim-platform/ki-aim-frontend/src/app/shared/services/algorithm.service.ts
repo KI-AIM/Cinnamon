@@ -34,14 +34,41 @@ export abstract class AlgorithmService {
      */
     getConfigurationName: () => string;
 
+    /**
+     * Creates the YAML configuration.
+     * @param arg The configuration from the form.
+     * @param selectedAlgorithm The selected algorithm.
+     */
     abstract createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object;
 
+    /**
+     * Extracts the form data and the algorithm name from the given configuration object.
+     * @param arg The configuration object.
+     */
+    abstract readConfiguration(arg: Object): {config: Object, selectedAlgorithm: Algorithm};
+
+    /**
+     * Sets the callback function for retrieving the configuration from the UI.
+     * @param func The function that is getting called.
+     */
     public setDoGetConfig(func: () => string) {
         this.doGetConfig = func;
     }
 
+    /**
+     * Sets the callback function for setting the configuration to the UI.
+     * @param func The function that is getting called.
+     */
     public setDoSetConfig(func: (data: ImportPipeData) => void) {
         this.doSetConfig = func;
+    }
+
+    /**
+     * Returns the algorithm with the given name.
+     * @param algorithmName The name of the algorithm.
+     */
+    public getAlgorithmByName(algorithmName: string): Algorithm {
+        return this._algorithms?.find((value) => value.name === algorithmName)!;
     }
 
     /**
@@ -49,8 +76,7 @@ export abstract class AlgorithmService {
      * @param algorithmName The algorithm of which the definition should be returned.
      */
     public getAlgorithmDefinitionByName(algorithmName: string): Observable<AlgorithmDefinition> {
-        const algorithm = this._algorithms?.find((value) => value.name === algorithmName)!;
-        return this.getAlgorithmDefinition(algorithm);
+        return this.getAlgorithmDefinition(this.getAlgorithmByName(algorithmName));
     }
 
     /**

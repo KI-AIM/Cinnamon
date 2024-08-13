@@ -22,10 +22,50 @@ import { ConfigurationPageComponent } from "./components/configuration-page/conf
 import { ConfigurationGroupComponent } from './components/configuration-group/configuration-group.component';
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatExpansionModule } from "@angular/material/expansion";
+import { ConfigurationUploadComponent } from "./components/configuration-upload/configuration-upload.component";
+import {
+    ConfigurationManagementComponent
+} from "./components/configuration-management/configuration-management.component";
 
 @NgModule({
-    declarations: [InformationDialogComponent, InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationInputInfoComponent, ConfigurationFormComponent, ConfigurationInputArrayComponent, ConfigurationSelectionComponent, ConfigurationPageComponent, ConfigurationGroupComponent],
-    imports: [CommonModule, MatDialogModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatSelectModule, MatCheckboxModule, MatExpansionModule],
-    exports: [InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective, ConfigurationInputComponent, ConfigurationFormComponent, ConfigurationPageComponent],
+    declarations: [
+        ConfigurationFormComponent,
+        ConfigurationGroupComponent,
+        ConfigurationInputArrayComponent,
+        ConfigurationInputComponent,
+        ConfigurationInputInfoComponent,
+        ConfigurationManagementComponent,
+        ConfigurationPageComponent,
+        ConfigurationSelectionComponent,
+        ConfigurationUploadComponent,
+        InfoCardComponent,
+        InformationDialogComponent,
+        LoadingSpinnerComponent,
+        NoSpaceValidatorDirective,
+    ],
+    imports: [
+        CommonModule,
+        MatButtonModule,
+        MatCardModule,
+        MatCheckboxModule,
+        MatDialogModule,
+        MatExpansionModule,
+        MatFormFieldModule,
+        MatIconModule,
+        MatInputModule,
+        MatProgressSpinnerModule,
+        MatSelectModule,
+        ReactiveFormsModule,
+    ],
+    exports: [
+        ConfigurationFormComponent,
+        ConfigurationInputComponent,
+        ConfigurationManagementComponent,
+        ConfigurationPageComponent,
+        ConfigurationUploadComponent,
+        InfoCardComponent,
+        LoadingSpinnerComponent,
+        NoSpaceValidatorDirective,
+    ],
 })
 export class SharedModule {}

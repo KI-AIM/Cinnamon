@@ -16,7 +16,7 @@ import {
 } from "../../components/attribute-configuration/attribute-configuration.component";
 import {
     ConfigurationUploadComponent
-} from "../../../configuration/components/configuration-upload/configuration-upload.component";
+} from "../../../../shared/components/configuration-upload/configuration-upload.component";
 import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
 import { ErrorResponse } from 'src/app/shared/model/error-response';
 import { ErrorMessageService } from 'src/app/shared/services/error-message.service';

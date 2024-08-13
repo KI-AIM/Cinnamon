@@ -2,6 +2,12 @@
     <div>{{ error }}</div>
 </app-info-card>
 
+<!-- Upload -->
+<div class="mb-2">
+    <app-configuration-upload [configurationName]="this.anonService.getConfigurationName()" [disabled]="disabled">
+    </app-configuration-upload>
+</div>
+
 <h3>Algorithm Selection</h3>
 
 <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"></app-configuration-selection>

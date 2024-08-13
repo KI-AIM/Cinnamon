@@ -1,6 +1,5 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { MatSelectChange } from "@angular/material/select";
-import { NgModel } from "@angular/forms";
+import { MatSelect, MatSelectChange } from "@angular/material/select";
 import { Algorithm } from "../../model/algorithm";
 
 @Component({
@@ -13,7 +12,7 @@ export class ConfigurationSelectionComponent {
     @Input() public disabled!: boolean;
     @Output() public change = new EventEmitter<Algorithm>();
 
-    @ViewChild('selectElement') protected selectElement!: NgModel;
+    @ViewChild('selectElement') protected selectElement!: MatSelect;
 
     onChange(event: MatSelectChange) {
         this.change.emit(event.value);
@@ -24,6 +23,6 @@ export class ConfigurationSelectionComponent {
     }
 
     public set selectedOption(value: Algorithm) {
-        this.selectElement.reset(value);
+        this.selectElement.value = value;
     }
 }

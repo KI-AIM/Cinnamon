@@ -94,11 +94,10 @@ export abstract class AlgorithmService {
         return of(this._algorithms);
     }
 
-    // TODO use url
     private loadAlgorithms(url: string): Observable<Algorithm[]> {
         return this.stepConfig.pipe(
             concatMap(value => {
-                return this.http.get<string>(value.algorithmEndpoint, {responseType: 'text' as 'json'})
+                return this.http.get<string>(url + value.algorithmEndpoint, {responseType: 'text' as 'json'})
             }),
             map(value => {
                 const response = parse(value) as { [available_synthesizers: string]: Object[] };
@@ -109,9 +108,8 @@ export abstract class AlgorithmService {
         );
     }
 
-    // TODO use url
     private loadAlgorithmDefinition(url: string, algorithm: Algorithm): Observable<AlgorithmDefinition> {
-        return this.http.get<string>(algorithm.URL, {responseType: 'text' as 'json'})
+        return this.http.get<string>(url + algorithm.URL, {responseType: 'text' as 'json'})
             .pipe(map(value => {
                 return plainToInstance(AlgorithmDefinition, parse(value));
             }));

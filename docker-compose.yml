@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
     data-management-network:
 
@@ -19,8 +17,8 @@ services:
     ki-aim-platform:
         image: ki-aim-platform:0.0.1
         build:
-            context: ./ki-aim-platform
-            dockerfile: Dockerfile
+            context: ./
+            dockerfile: ./ki-aim-platform/Dockerfile
         container_name: ki-aim-platform
         restart: always
         ports:

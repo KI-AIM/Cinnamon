@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.serialization.mapper.JsonMapper;
+import de.kiaim.model.serialization.mapper.YamlMapper;
 import de.kiaim.platform.json.DataSetSerializer;
 import de.kiaim.platform.service.DataSetService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,7 @@ public class SerializationConfig {
 		this.dataSetService = dataSetService;
 	}
 
-	@Bean
+//	@Bean
 	public ObjectMapper jsonMapper() {
 		var jsonMapper = JsonMapper.jsonMapper();
 
@@ -31,4 +32,15 @@ public class SerializationConfig {
 		return jsonMapper;
 	}
 
+	@Bean
+	public ObjectMapper yamlMapper() {
+		var yamlMapper = YamlMapper.yamlMapper();
+
+		final SimpleModule module = new SimpleModule();
+		module.addSerializer(DataSet.class, new DataSetSerializer(dataSetService));
+
+		yamlMapper.registerModule(module);
+
+		return yamlMapper;
+	}
 }

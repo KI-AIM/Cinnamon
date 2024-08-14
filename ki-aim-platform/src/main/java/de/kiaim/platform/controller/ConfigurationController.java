@@ -1,5 +1,6 @@
 package de.kiaim.platform.controller;
 
+import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.model.dto.ErrorResponse;
@@ -40,7 +41,7 @@ public class ConfigurationController {
 	})
 	@PostMapping(value = "",
 	             consumes = MediaType.TEXT_PLAIN_VALUE,
-	             produces = MediaType.APPLICATION_JSON_VALUE)
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public void store(
 			@Parameter(description = "Name under which the configuration should be saved.",
 			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
@@ -70,11 +71,14 @@ public class ConfigurationController {
 			                                schema = @Schema(implementation = String.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored configurations or no configuration with the give name.",
-			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                schema = @Schema(implementation = ErrorResponse.class))),
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 	})
 	@GetMapping(value = "",
-	            produces = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE})
+	            produces = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE,
+	                        CustomMediaType.APPLICATION_YAML_VALUE})
 	public String load(
 			@Parameter(description = "Name of the configuration to be loaded.",
 			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,

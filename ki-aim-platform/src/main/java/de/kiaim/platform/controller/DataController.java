@@ -409,8 +409,7 @@ public class DataController {
 			@Nullable final DataConfiguration configuration,
 			@Nullable final LoadDataRequest loadDataRequest,
 			final UserEntity requestUser
-	)
-			throws BadColumnNameException, BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalMissingHandlingException {
+	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
 

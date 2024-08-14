@@ -15,6 +15,11 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String MULTIPART_READING = "2";
 
+	/**
+	 * Exception code for failed data configuration deserialization from JSON stored in the database.
+	 */
+	public static final String DATA_CONFIGURATION_DESERIALIZATION = "3";
+
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

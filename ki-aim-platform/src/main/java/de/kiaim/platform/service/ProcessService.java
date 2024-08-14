@@ -16,7 +16,6 @@ import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.ExternalProcessRepository;
 import de.kiaim.platform.repository.ProjectRepository;
-import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -46,7 +45,6 @@ public class ProcessService {
 
 	private final int port;
 
-	private final EntityManager entityManager;
 	private final ObjectMapper yamlMapper;
 
 	private final ExternalProcessRepository externalProcessRepository;
@@ -57,7 +55,6 @@ public class ProcessService {
 
 	public ProcessService(final SerializationConfig serializationConfig,
 	                      @Value("${server.port}") final int port,
-	                      final EntityManager entityManager,
 	                      final ExternalProcessRepository externalProcessRepository,
 	                      final ProjectRepository projectRepository,
 	                      final DatabaseService databaseService,
@@ -66,7 +63,6 @@ public class ProcessService {
 		this.yamlMapper = serializationConfig.yamlMapper();
 
 		this.port = port;
-		this.entityManager = entityManager;
 		this.externalProcessRepository = externalProcessRepository;
 		this.projectRepository = projectRepository;
 		this.databaseService = databaseService;
@@ -141,7 +137,6 @@ public class ProcessService {
 		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
 
 		try {
-			entityManager.detach(project);
 			final DataSet dataSet = databaseService.exportDataSet(project, new ArrayList<>());
 
 			// TODO put somewhere else
@@ -250,7 +245,7 @@ public class ProcessService {
 		}
 
 		// Update status
-		externalProcessRepository.save(externalProcess);
+		projectRepository.save(project);
 
 		return externalProcess;
 	}

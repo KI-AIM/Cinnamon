@@ -1,18 +1,18 @@
 package de.kiaim.platform.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataType;
-import de.kiaim.platform.exception.BadColumnNameException;
-import de.kiaim.platform.exception.BadConfigurationNameException;
+import de.kiaim.platform.config.SerializationConfig;
+import de.kiaim.platform.exception.*;
 import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.ProjectEntity;
-import de.kiaim.platform.exception.BadDataSetIdException;
-import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
 import de.kiaim.platform.repository.ProjectRepository;
 import org.slf4j.Logger;
@@ -44,11 +44,14 @@ public class DatabaseService {
 	final ProjectRepository projectRepository;
 
 	final DataschemeGenerator dataschemeGenerator;
+	final ObjectMapper jsonMapper;
 
 	@Autowired
-	public DatabaseService(final DataSource dataSource, final ProjectRepository projectRepository,
+	public DatabaseService(final DataSource dataSource, final SerializationConfig serializationConfig,
+	                       final ProjectRepository projectRepository,
 	                       final DataschemeGenerator dataschemeGenerator) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
+		jsonMapper = serializationConfig.jsonMapper();
 		this.projectRepository = projectRepository;
 		this.dataschemeGenerator = dataschemeGenerator;
 	}
@@ -155,9 +158,11 @@ public class DatabaseService {
 	 * @param project The project of which the configuration should be exported.
 	 * @return The configuration.
 	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
-	public DataConfiguration exportDataConfiguration(final ProjectEntity project) throws BadDataSetIdException {
+	public DataConfiguration exportDataConfiguration(final ProjectEntity project)
+			throws BadDataSetIdException, InternalIOException {
 		return getDataConfigurationOrThrow(project);
 	}
 
@@ -172,10 +177,11 @@ public class DatabaseService {
 	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
 	public DataSet exportDataSet(final ProjectEntity project, List<String> columnNames)
-			throws InternalDataSetPersistenceException, BadColumnNameException, BadDataSetIdException {
+			throws InternalDataSetPersistenceException, BadColumnNameException, BadDataSetIdException, InternalIOException {
 		DataConfiguration dataConfiguration = getDataConfigurationOrThrow(project);
 
 		if (columnNames.isEmpty()) {
@@ -214,7 +220,7 @@ public class DatabaseService {
 
 	@Transactional
 	public TransformationResult exportTransformationResult(final ProjectEntity project)
-			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException {
+			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException, InternalIOException {
 		final DataSet dataSet = exportDataSet(project, new ArrayList<>());
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
@@ -404,14 +410,26 @@ public class DatabaseService {
 		}
 	}
 
-	private DataConfiguration getDataConfigurationOrThrow(final ProjectEntity project) throws BadDataSetIdException {
-		final DataConfiguration dataConfiguration = project.getDataConfiguration();
-		if (dataConfiguration == null) {
+	/**
+	 * Returns a detached DataConfiguration.
+	 */
+	private DataConfiguration getDataConfigurationOrThrow(final ProjectEntity project)
+			throws BadDataSetIdException, InternalIOException {
+		final String json = projectRepository.getDataConfiguration(project.getId());
+
+		if (json == null) {
 			throw new BadDataSetIdException(BadDataSetIdException.NO_CONFIGURATION,
 			                                "No configuration for the project with the given ID '" + project.getId() +
 			                                "' found!");
 		}
-		return dataConfiguration;
+
+		try {
+			return jsonMapper.readValue(json, DataConfiguration.class);
+		} catch (JsonProcessingException e) {
+			throw new InternalIOException(InternalIOException.DATA_CONFIGURATION_DESERIALIZATION,
+			                              "Failed to export data configuration because of a failed deserialization!",
+			                              e);
+		}
 	}
 
 	private String createSelectQuery(final Long dataSetId, final List<String> columnNames) {

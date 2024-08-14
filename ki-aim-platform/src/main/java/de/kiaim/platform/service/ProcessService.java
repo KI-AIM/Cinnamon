@@ -5,6 +5,7 @@ import de.kiaim.model.configuration.data.DateFormatConfiguration;
 import de.kiaim.model.configuration.data.DateTimeFormatConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.config.StepConfiguration;
 import de.kiaim.platform.exception.*;
@@ -15,6 +16,7 @@ import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.ExternalProcessRepository;
 import de.kiaim.platform.repository.ProjectRepository;
+import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -44,6 +46,7 @@ public class ProcessService {
 
 	private final int port;
 
+	private final EntityManager entityManager;
 	private final ObjectMapper yamlMapper;
 
 	private final ExternalProcessRepository externalProcessRepository;
@@ -54,6 +57,7 @@ public class ProcessService {
 
 	public ProcessService(final SerializationConfig serializationConfig,
 	                      @Value("${server.port}") final int port,
+	                      final EntityManager entityManager,
 	                      final ExternalProcessRepository externalProcessRepository,
 	                      final ProjectRepository projectRepository,
 	                      final DatabaseService databaseService,
@@ -62,6 +66,7 @@ public class ProcessService {
 		this.yamlMapper = serializationConfig.yamlMapper();
 
 		this.port = port;
+		this.entityManager = entityManager;
 		this.externalProcessRepository = externalProcessRepository;
 		this.projectRepository = projectRepository;
 		this.databaseService = databaseService;
@@ -136,16 +141,41 @@ public class ProcessService {
 		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
 
 		try {
+			entityManager.detach(project);
 			final DataSet dataSet = databaseService.exportDataSet(project, new ArrayList<>());
 
 			// TODO put somewhere else
+			// Set date format
 			if (stepConfiguration.getPreProcessors().contains("dateformat")) {
 				for (final var columnConfiguration : dataSet.getDataConfiguration().getConfigurations()) {
-					for (final var config : columnConfiguration.getConfigurations()) {
-						if (config instanceof DateFormatConfiguration dateFormatConfiguration) {
-							dateFormatConfiguration.setDateFormatter("%Y-%m-%d");
-						} else if (config instanceof DateTimeFormatConfiguration dateFormatConfiguration) {
-							dateFormatConfiguration.setDateTimeFormatter("%Y-%m-%dT%H:%M:%S.%f");
+					if (columnConfiguration.getType() == DataType.DATE_TIME) {
+						boolean found = false;
+						for (final var config : columnConfiguration.getConfigurations()) {
+							if (config instanceof DateTimeFormatConfiguration dateFormatConfiguration) {
+								found = true;
+								dateFormatConfiguration.setDateTimeFormatter("%Y-%m-%dT%H:%M:%S.%f");
+								break;
+							}
+						}
+
+						if (!found) {
+							columnConfiguration.getConfigurations()
+							                   .add(new DateTimeFormatConfiguration("%Y-%m-%dT%H:%M:%S.%f"));
+						}
+
+					} else if (columnConfiguration.getType() == DataType.DATE) {
+
+						boolean found = false;
+						for (final var config : columnConfiguration.getConfigurations()) {
+							if (config instanceof DateFormatConfiguration dateFormatConfiguration) {
+								found = true;
+								dateFormatConfiguration.setDateFormatter("%Y-%m-%d");
+								break;
+							}
+						}
+
+						if (!found) {
+							columnConfiguration.getConfigurations().add(new DateFormatConfiguration("%Y-%m-%d"));
 						}
 					}
 				}
@@ -220,7 +250,7 @@ public class ProcessService {
 		}
 
 		// Update status
-		projectRepository.save(project);
+		externalProcessRepository.save(externalProcess);
 
 		return externalProcess;
 	}

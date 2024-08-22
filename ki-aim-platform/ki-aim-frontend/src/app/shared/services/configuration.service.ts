@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, toArray } from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
-import { FileService } from 'src/app/features/data-upload/services/file.service';
 import { FileUtilityService } from './file-utility.service';
 import { parse, stringify } from 'yaml';
 import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data";
@@ -20,7 +19,6 @@ export class ConfigurationService {
     private registeredConfigurations: Array<ConfigurationRegisterData>;
 
     constructor(
-        private fileService: FileService,
         private fileUtilityService: FileUtilityService,
         private httpClient: HttpClient,
     ) {
@@ -82,7 +80,7 @@ export class ConfigurationService {
             const configData = reader.result as string;
             const configurations = parse(configData);
 
-            const result: {[a: string]: object | null} = {};
+            const result: { [a: string]: object | null } = {};
             result[configurationName] = null;
 
             for (const [name, config] of Object.entries(configurations)) {
@@ -104,7 +102,13 @@ export class ConfigurationService {
      * @returns Observable containing the configuration as a string.
      */
     public loadConfig(configurationName: String): Observable<string> {
-        return this.httpClient.get<string>(this.baseUrl + "?name=" + configurationName, {responseType: 'text' as 'json'});
+        return this.httpClient.get<string>(this.baseUrl + "?name=" + configurationName, {responseType: 'text' as 'json'})
+            .pipe(
+                map(value => {
+                    // Plain text has to be parsed to YAML string
+                    return parse(value)
+                }),
+            );
     }
 
     /**
@@ -246,9 +250,11 @@ export class ConfigurationService {
                 config.fetchConfig!(config.name).subscribe({
                     next: value => {
                         const data = new ImportPipeData();
+                        data.success = true;
                         data.name = config.name;
                         data.configData = config;
                         data.yamlConfigString = value;
+
                         config.setConfigCallback(data);
                     },
                     error: err => {

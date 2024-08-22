@@ -2,7 +2,7 @@ import { StepConfiguration } from "../model/step-configuration";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { concatMap, config, map, Observable, of, tap } from "rxjs";
+import { concatMap, map, Observable, of, tap } from "rxjs";
 import { parse } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
@@ -15,8 +15,10 @@ export abstract class AlgorithmService {
     private _algorithms: Algorithm[] | null = null;
     private algorithmDefinitions: {[algorithmName: string]: AlgorithmDefinition} = {};
 
+    private _cachedImportPipeData: ImportPipeData | null = null;
+
     public doGetConfig: () => Object | string = () => '';
-    protected doSetConfig: (config: ImportPipeData) => void = () => { console.log(config)};
+    protected doSetConfig: (config: ImportPipeData) => void = () => { };
 
     protected constructor(
         private readonly http: HttpClient,
@@ -61,6 +63,14 @@ export abstract class AlgorithmService {
      */
     public setDoSetConfig(func: (data: ImportPipeData) => void) {
         this.doSetConfig = func;
+    }
+
+    public setConfigWait(value: ImportPipeData) {
+        if (this._algorithms !== null) {
+            this.doSetConfig(value);
+        } else {
+            this._cachedImportPipeData = value;
+        }
     }
 
     /**
@@ -121,7 +131,13 @@ export abstract class AlgorithmService {
                     concatMap(value => {
                         return this.loadAlgorithms(value.url)
                     }),
-                    tap(value => this._algorithms = value)
+                    tap(value =>  {
+                        this._algorithms = value
+                        if (this._cachedImportPipeData !== null) {
+                            this.doSetConfig(this._cachedImportPipeData);
+                            this._cachedImportPipeData = null;
+                        }
+                    }),
                 );
         }
         return of(this._algorithms);

@@ -36,8 +36,8 @@ export class SynthetizationService extends AlgorithmService {
     }
 
     public override readConfiguration(arg: any): {config: Object, selectedAlgorithm: Algorithm} {
-        const selectedAlgorithm = this.getAlgorithmByName(arg["synthetization_configuration"]["algorithm"]["synthesizer"])
-        const config = arg["synthetization_configuration"]["algorithm"];
+        const selectedAlgorithm = this.getAlgorithmByName(arg[this.getConfigurationName()]["algorithm"]["synthesizer"])
+        const config = arg[this.getConfigurationName()]["algorithm"];
         delete config["synthesizer"];
         delete config["type"];
         delete config["version"];
@@ -54,7 +54,7 @@ export class SynthetizationService extends AlgorithmService {
         configReg.orderNumber = 2;
         configReg.storeConfig = null;
         configReg.getConfigCallback = () => this.doGetConfig();
-        configReg.setConfigCallback = (config) => this.doSetConfig(config);
+        configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);
     }

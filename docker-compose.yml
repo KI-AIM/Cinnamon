@@ -1,5 +1,6 @@
 networks:
     data-management-network:
+    synthetization-network:
 
 services:
     ki-aim-db:
@@ -25,7 +26,18 @@ services:
             - "8080:8080"
         networks:
             - data-management-network
+            - synthetization-network
         environment:
             - SPRING_DATASOURCE_URL=jdbc:postgresql://ki-aim-db:5432/ki_aim_db
+            - KI-AIM.STEPS.SYNTHETIZATION.URL=http://ki-aim-synthetization:5000
+            - KI-AIM.STEPS.SYNTHETIZATION.CALLBACKHOST=ki-aim-platform
         depends_on:
             - ki-aim-db
+    ki-aim-synthetization:
+        image: synthetization_module
+        container_name: ki-aim-synthetization
+        restart: always
+        ports:
+            - "5000:5000"
+        networks:
+            - synthetization-network

@@ -113,7 +113,7 @@ export abstract class AlgorithmService {
      * Gets the corresponding step configuration.
      * @private
      */
-    private get stepConfig(): Observable<StepConfiguration> {
+    public get stepConfig(): Observable<StepConfiguration> {
         if (this._stepConfig == null) {
             return this.loadStepConfig(this.getStepName())
                 .pipe(tap(value => this._stepConfig = value));

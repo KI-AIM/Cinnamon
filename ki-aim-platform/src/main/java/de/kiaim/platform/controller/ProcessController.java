@@ -7,7 +7,6 @@ import de.kiaim.platform.model.dto.StartProcessRequest;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProcessService;
 import de.kiaim.platform.service.ProjectService;
@@ -54,8 +53,8 @@ public class ProcessController {
 	           description = "Returns the status of the process for the given step.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "Successfully returns the status of the process.",
-			             content = @Content(schema = @Schema(implementation = ProcessStatus.class))),
+			             description = "Successfully returns the process object.",
+			             content = @Content(schema = @Schema(implementation = ExternalProcessEntity.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name does not exist.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -70,22 +69,22 @@ public class ProcessController {
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@GetMapping("/{stepName}")
-	public ProcessStatus getProcess(
+	public ExternalProcessEntity getProcess(
 			@PathVariable("stepName") final String stepName,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		return processService.getProcessStatus(project, stepName);
+		return processService.getProcess(project, stepName);
 	}
 
 	@Operation(summary = "Starts an external process.",
-	           description = "Starts an external process.")
+	           description = "Starts an external process. Re")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "Successfully started the process.",
-			             content = @Content(schema = @Schema(implementation = Void.class))),
+			             description = "Successfully started the process. Returns the process object.",
+			             content = @Content(schema = @Schema(implementation = ExternalProcessEntity.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -102,7 +101,7 @@ public class ProcessController {
 	@PostMapping(value = "/start",
 	             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ProcessStatus startProcess(
+	public ExternalProcessEntity startProcess(
 			@ParameterObject @Valid final StartProcessRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	)
@@ -115,19 +114,17 @@ public class ProcessController {
 		databaseService.storeConfiguration(requestData.getConfigurationName(), requestData.getConfiguration(), project);
 
 		// Start process
-		final ExternalProcessEntity process = processService.startProcess(project, requestData.getStepName(),
-		                                                                  requestData.getUrl(),
-		                                                                  requestData.getConfiguration());
-
-		return process.getExternalProcessStatus();
+		return processService.startProcess(project, requestData.getStepName(),
+		                                   requestData.getUrl(),
+		                                   requestData.getConfiguration());
 	}
 
 	@Operation(summary = "Cancels a process.",
 	           description = "Cancels a process if one is scheduled or running.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "Successfully canceled the process.",
-			             content = @Content(schema = @Schema(implementation = ProcessStatus.class))),
+			             description = "Successfully canceled the process. Returns the process object.",
+			             content = @Content(schema = @Schema(implementation = ExternalProcessEntity.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -144,7 +141,7 @@ public class ProcessController {
 	@PostMapping(value = "/cancel",
 	             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ProcessStatus cancelProcess(
+	public ExternalProcessEntity cancelProcess(
 			@RequestParam("stepName") final String stepName,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
@@ -152,9 +149,7 @@ public class ProcessController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		final ExternalProcessEntity process = processService.cancelProcess(project, stepName);
-
-		return process.getExternalProcessStatus();
+		return processService.cancelProcess(project, stepName);
 	}
 
 	@Operation(summary = "Callback endpoint for marking processes as finished.",

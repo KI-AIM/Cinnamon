@@ -9,6 +9,9 @@ import { environments } from "../../../../environments/environment";
 import { ProcessStatus } from "../../../core/enums/process-status";
 import { interval, Observable, Subscription, tap } from "rxjs";
 import { ImportPipeData } from "../../model/import-pipe-data";
+import { ExternalProcess } from "../../model/external-process";
+import { SynthetizationProgress } from "../../model/synthetization-progress";
+import { SynthetizationProcess } from "../../model/synthetization-process";
 
 @Component({
     selector: 'app-configuration-page',
@@ -22,6 +25,10 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     protected disabled: boolean = false;
     protected processStatus: ProcessStatus = ProcessStatus.NOT_STARTED;
 
+    // TODO implement for anonymization
+    private sessionKey: string;
+    protected synthProcess: SynthetizationProcess | null = null;
+
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') private forms: ConfigurationFormComponent;
 
@@ -34,16 +41,17 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
         private readonly http: HttpClient,
         protected readonly anonService: AlgorithmService,
     ) {
-        this.statusObserver = interval(10000).pipe(tap(() => {
-            this.getProcessStatus().subscribe({
-                next: status => {
+        this.statusObserver = interval(1000).pipe(tap(() => {
+            this.getProcess().subscribe({
+                next: process => {
                     this.error = null;
-                    this.setState(status)
+                    this.setState(process.externalProcessStatus)
                 },
                 error: err => {
                     this.error = `Failed to update status. Status: ${err.status} (${err.statusText})`;
                 }
             });
+            this.updateStatus();
         }));
     }
 
@@ -55,9 +63,9 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
         this.anonService.setDoGetConfig(() => this.getConfig());
         this.anonService.setDoSetConfig((data: ImportPipeData) => this.setConfig(data));
 
-        this.getProcessStatus().subscribe({
-            next: value => {
-                this.setState(value);
+        this.getProcess().subscribe({
+            next: process => {
+                this.setState(process.externalProcessStatus);
             },
         });
 
@@ -117,8 +125,8 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
         }
     }
 
-    private getProcessStatus(): Observable<ProcessStatus> {
-        return this.http.get<ProcessStatus>(this.baseUrl + "/" + this.anonService.getStepName());
+    private getProcess(): Observable<ExternalProcess> {
+        return this.http.get<ExternalProcess>(this.baseUrl + "/" + this.anonService.getStepName());
     }
 
     onSubmit(configuration: Object) {
@@ -132,10 +140,11 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
                 formData.append("configuration", stringify(this.anonService.createConfiguration(configuration, this.selection.selectedOption)));
                 formData.append("url", value.URL);
 
-                this.http.post<ProcessStatus>(this.baseUrl + '/start', formData).subscribe({
-                    next: (status: ProcessStatus) => {
+                this.http.post<ExternalProcess>(this.baseUrl + '/start', formData).subscribe({
+                    next: (process: ExternalProcess) => {
                         this.error = null;
-                        this.setState(status);
+                        this.setState(process.externalProcessStatus);
+                        this.sessionKey = process.sessionKey
                     },
                     error: err => {
                         this.error = `Failed to start the process. Status: ${err.status} (${err.statusText})`;
@@ -168,6 +177,19 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
                 const url = window.URL.createObjectURL(blob);
                 window.open(url);
             }
+        });
+    }
+
+    private updateStatus() {
+        this.anonService.stepConfig.subscribe(value => {
+            this.http.get<SynthetizationProcess>(value.url + value.statusEndpoint, {
+                params: {"session_key": this.sessionKey},
+                responseType: 'text' as 'json'
+            }).subscribe({
+                next: value => {
+                    this.synthProcess = value;
+                },
+            })
         });
     }
 }

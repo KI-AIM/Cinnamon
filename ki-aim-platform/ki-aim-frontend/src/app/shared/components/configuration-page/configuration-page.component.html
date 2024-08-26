@@ -31,8 +31,11 @@
     </div>
 </ng-template>
 
-<div class="status mt-2" [ngClass]="processStatus">
-    <span>{{ processStatus.replace("_", " ") }}</span>
+<div>
+    <span class="status mt-2" [ngClass]="processStatus">
+        <span>{{ processStatus.replace("_", " ") }}</span>
+    </span>
+    <span> {{ synthProcess?.status?.fitting?.remaining_time }} </span>
 </div>
 
 <div class="mt-2">

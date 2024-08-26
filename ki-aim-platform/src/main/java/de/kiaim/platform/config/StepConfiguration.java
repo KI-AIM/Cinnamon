@@ -41,6 +41,9 @@ public class StepConfiguration {
 	@JsonIgnore
 	private List<String> preProcessors;
 
+	@NotBlank
+	private String statusEndpoint;
+
 	/**
 	 * URL of the server.
 	 */

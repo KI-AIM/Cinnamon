@@ -79,18 +79,21 @@ public class ProcessService {
 	 * @throws InternalInvalidStateException If no ExternalProcessEntity exists for the given step.
 	 */
 	@Transactional
-	public ProcessStatus getProcessStatus(final ProjectEntity project, final String stepName)
+	public ExternalProcessEntity getProcess(final ProjectEntity project, final String stepName)
 			throws BadStepNameException, InternalInvalidStateException {
 		final Step step = Step.getStepOrThrow(stepName);
+
 		if (!step.isHasExternalProcessing()) {
-			return ProcessStatus.NOT_REQUIRED;
+			final var dummy = new ExternalProcessEntity();
+			dummy.setExternalProcessStatus(ProcessStatus.NOT_REQUIRED);
+			return dummy;
 		}
 
 		if (!project.getProcesses().containsKey(step)) {
 			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
 			                                        "No process entity for step '" + step.name() + "' available!");
 		}
-		return project.getProcesses().get(step).getExternalProcessStatus();
+		return project.getProcesses().get(step);
 	}
 
 	/**

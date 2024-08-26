@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.NonNull;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -51,7 +52,7 @@ public class AnonymizationController {
                             schema = @Schema(implementation = AnonymizationRequest.class)),
                     required = true
             )
-            @RequestBody AnonymizationRequest request) {
+            @RequestBody @NonNull AnonymizationRequest request) {
         try {
             String processId = request.getProcessId();
             if (tasks.containsKey(processId)) {
@@ -82,7 +83,7 @@ public class AnonymizationController {
                             schema = @Schema(implementation = AnonymizationRequest.class)),
                     required = true
             )
-            @RequestBody AnonymizationRequest request) {
+            @RequestBody @NonNull AnonymizationRequest request) {
         try {
             String processId = request.getProcessId();
             if (tasks.containsKey(processId)) {
@@ -104,7 +105,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "404", description = "Task not found.", content = @Content)
     })
     @GetMapping("/process/{processId}/status")
-    public ResponseEntity<String> getTaskStatus(@PathVariable String processId) {
+    public ResponseEntity<String> getTaskStatus(@PathVariable @NonNull String processId) {
         Future<DataSet> future = tasks.get(processId);
         if (future == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task not found");
@@ -123,7 +124,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "500", description = "Error retrieving task result.", content = @Content)
     })
     @GetMapping("/process/{processId}/result")
-    public ResponseEntity<DataSet> getTaskResult(@PathVariable String processId) {
+    public ResponseEntity<DataSet> getTaskResult(@PathVariable @NonNull String processId) {
         Future<DataSet> future = tasks.get(processId);
         if (future == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -192,7 +193,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "500", description = "Error cancelling the task.", content = @Content)
     })
     @DeleteMapping("/task/{processId}/cancel")
-    public ResponseEntity<String> cancelTask(@PathVariable String processId) {
+    public ResponseEntity<String> cancelTask(@PathVariable @NonNull String processId) {
         Future<DataSet> future = tasks.get(processId);
         if (future == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task " + processId + " not found");

@@ -24,7 +24,7 @@ configurations:
               min_value: 1
               max_value: 100
         - name: "AverageReidentificationRisk"
-          description: ""
+          description: "Apply average re-identifaction risk model with specified value."
           values:
             - name: "averageRisk"
               type: float
@@ -32,7 +32,7 @@ configurations:
               min_value: 0
               max_value: 1
         - name: "PopulationUniqueness"
-          description: ""
+          description: "Apply population uniqueness model with specified values."
           values:
             - name: "riskThreshold"
               type: float

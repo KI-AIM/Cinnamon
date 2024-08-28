@@ -15,6 +15,11 @@ public class InternalRequestException extends InternalException {
 	 */
 	public static final String PROCESS_CANCEL = "2";
 
+	/**
+	 * Exception code for failed process status retrieval.
+	 */
+	public static final String PROCESS_STATUS = "3";
+
 	public InternalRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

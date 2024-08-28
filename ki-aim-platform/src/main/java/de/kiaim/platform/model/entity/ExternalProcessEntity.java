@@ -73,6 +73,15 @@ public class ExternalProcessEntity {
 	private byte[] resultDataSet;
 
 	/**
+	 * Detailed status information.
+	 * Can have any form.
+	 */
+	@Schema(description = "The detailed status object retrieved from the server.")
+	@Column(length = 1000)
+	@Setter
+	private String status;
+
+	/**
 	 * Additional files created during the process.
 	 */
 	@JsonIgnore

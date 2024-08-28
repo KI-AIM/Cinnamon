@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -42,6 +43,8 @@ import java.util.*;
 @Service
 @Slf4j
 public class ProcessService {
+
+	private static final String PROCESS_ID_PLACEHOLDER = "PROCESS_ID";
 
 	private final int port;
 
@@ -253,6 +256,18 @@ public class ProcessService {
 		return externalProcess;
 	}
 
+	@Transactional
+	public ExternalProcessEntity getStatus(final ProjectEntity project, final String stepName)
+			throws BadStepNameException, InternalInvalidStateException, InternalApplicationConfigurationException, InternalRequestException {
+		final ExternalProcessEntity externalProcess = getProcess(project, stepName);
+
+		if (externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING) {
+			fetchStatus(externalProcess);
+		}
+
+		return externalProcess;
+	}
+
 	/**
 	 * Cancels the process for the given step name.
 	 *
@@ -284,7 +299,8 @@ public class ProcessService {
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
 		final String serverUrl = stepConfiguration.getUrl();
 		final String cancelEndpoint = stepConfiguration.getCancelEndpoint()
-		                                               .replace("PROCESS_ID", externalProcess.getId().toString());
+		                                               .replace(PROCESS_ID_PLACEHOLDER,
+		                                                        externalProcess.getId().toString());
 
 		final MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
 		formData.add("session_key", externalProcess.getId().toString());
@@ -320,7 +336,7 @@ public class ProcessService {
 	 */
 	@Transactional
 	public void finishProcess(final Long processId, final Set<Map.Entry<String, MultipartFile>> resultFiles)
-			throws BadProcessIdException, InternalIOException {
+			throws BadProcessIdException, InternalIOException, InternalRequestException, InternalApplicationConfigurationException {
 		final Optional<ExternalProcessEntity> process = externalProcessRepository.findById(processId);
 
 		// Invalid processID
@@ -349,8 +365,51 @@ public class ProcessService {
 			}
 		}
 
+//		fetchStatus(process.get());
+		fetchStatusAsync(process.get());
+
 		// Update status
 		process.get().setExternalProcessStatus(ProcessStatus.FINISHED);
+
 		projectRepository.save(project);
+	}
+
+	@Async
+	protected void fetchStatusAsync(final ExternalProcessEntity externalProcess)
+			throws InternalRequestException, InternalApplicationConfigurationException {
+		fetchStatus(externalProcess);
+	}
+
+	private void fetchStatus(final ExternalProcessEntity externalProcess)
+			throws InternalRequestException, InternalApplicationConfigurationException {
+		// Get configuration
+		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
+		final String serverUrl = stepConfiguration.getUrl();
+		final String statusEndpoint = stepConfiguration.getStatusEndpoint();
+		final String url = serverUrl + statusEndpoint.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getId().toString());
+
+		// Do the request
+		try {
+			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
+			final var response = webClient.get()
+			                              .uri(url)
+			                              .retrieve()
+			                              .onStatus(HttpStatusCode::isError,
+			                                        errorResponse -> errorResponse.toEntity(
+					                                                                      SynthetizationResponse.class)
+			                                                                      .map(RequestRuntimeException::new))
+			                              .bodyToMono(String.class)
+			                              .block();
+			externalProcess.setStatus(response);
+		} catch (RequestRuntimeException e) {
+			var message = "Failed to fetch the status! Got status of " + e.getResponse().getStatusCode();
+			if (e.getResponse().getBody() != null) {
+				message += " with message: '" + e.getResponse().getBody().getMessage() + "'";
+			}
+			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
+		}
+
+		// Update status
+		projectRepository.save(externalProcess.getProject());
 	}
 }

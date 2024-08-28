@@ -45,12 +45,13 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
                 next: process => {
                     this.error = null;
                     this.setState(process.externalProcessStatus)
+                    this.synthProcess = JSON.parse(process.status);
                 },
                 error: err => {
                     this.error = `Failed to update status. Status: ${err.status} (${err.statusText})`;
                 }
             });
-            this.updateStatus();
+            // this.updateStatus();
         }));
     }
 
@@ -67,7 +68,8 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
                 this.setState(process.externalProcessStatus);
                 this.sessionKey = process.sessionKey;
                 if (this.processStatus === ProcessStatus.FINISHED) {
-                    this.updateStatus();
+                    this.synthProcess = JSON.parse(process.status);
+                    // this.updateStatus();
                 }
             },
         });

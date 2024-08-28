@@ -76,7 +76,7 @@ public class ProcessController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		return processService.getProcess(project, stepName);
+		return processService.getStatus(project, stepName);
 	}
 
 	@Operation(summary = "Starts an external process.",
@@ -183,7 +183,7 @@ public class ProcessController {
 			@RequestParam(name = "test", required = false) final MultipartFile test,
 			@RequestParam(name = "model", required = false) final MultipartFile model,
 			final MultipartHttpServletRequest request
-	) throws BadProcessIdException, InternalIOException {
+	) throws ApiException {
 		processService.finishProcess(processId, request.getFileMap().entrySet());
 		return ResponseEntity.ok().body(null);
 	}

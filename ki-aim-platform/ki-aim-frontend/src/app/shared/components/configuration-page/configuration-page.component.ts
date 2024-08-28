@@ -10,7 +10,6 @@ import { ProcessStatus } from "../../../core/enums/process-status";
 import { interval, Observable, Subscription, tap } from "rxjs";
 import { ImportPipeData } from "../../model/import-pipe-data";
 import { ExternalProcess } from "../../model/external-process";
-import { SynthetizationProgress } from "../../model/synthetization-progress";
 import { SynthetizationProcess } from "../../model/synthetization-process";
 
 @Component({
@@ -66,6 +65,10 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
         this.getProcess().subscribe({
             next: process => {
                 this.setState(process.externalProcessStatus);
+                this.sessionKey = process.sessionKey;
+                if (this.processStatus === ProcessStatus.FINISHED) {
+                    this.updateStatus();
+                }
             },
         });
 
@@ -182,10 +185,7 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
 
     private updateStatus() {
         this.anonService.stepConfig.subscribe(value => {
-            this.http.get<SynthetizationProcess>(value.url + value.statusEndpoint, {
-                params: {"session_key": this.sessionKey},
-                responseType: 'text' as 'json'
-            }).subscribe({
+            this.http.get<SynthetizationProcess>(value.url + value.statusEndpoint.replace("PROCESS_ID", this.sessionKey)).subscribe({
                 next: value => {
                     this.synthProcess = value;
                 },

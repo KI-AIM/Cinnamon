@@ -1,5 +1,5 @@
 export class ProcessProgress {
-    completed: boolean;
+    completed: string;
     duration: string | null;
     remaining_time: string | null;
 }

@@ -5,7 +5,6 @@ import {
 } from "./pages/synthetization-configuration/synthetization-configuration.component";
 import { SharedModule } from "../../shared/shared.module";
 import { SynthetizationService } from "./services/synthetization.service";
-import { AlgorithmService } from "../../shared/services/algorithm.service";
 
 @NgModule({
     declarations: [SynthetizationConfigurationComponent],
@@ -14,10 +13,6 @@ import { AlgorithmService } from "../../shared/services/algorithm.service";
         SharedModule
     ],
     providers: [
-        {
-            provide: AlgorithmService,
-            useExisting: SynthetizationService
-        },
         {
             // Calls the useFactory function when starting the application
             provide: APP_INITIALIZER,

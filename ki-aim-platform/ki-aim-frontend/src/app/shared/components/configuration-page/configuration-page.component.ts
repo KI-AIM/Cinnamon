@@ -25,7 +25,6 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     protected processStatus: ProcessStatus = ProcessStatus.NOT_STARTED;
 
     // TODO implement for anonymization
-    private sessionKey: string;
     protected synthProcess: SynthetizationProcess | null = null;
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
@@ -44,14 +43,13 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
             this.getProcess().subscribe({
                 next: process => {
                     this.error = null;
-                    this.setState(process.externalProcessStatus)
-                    this.synthProcess = JSON.parse(process.status);
+                    this.setState(process.externalProcessStatus);
+                    this.synthProcess = process.status === null ? null : JSON.parse(process.status);
                 },
                 error: err => {
                     this.error = `Failed to update status. Status: ${err.status} (${err.statusText})`;
                 }
             });
-            // this.updateStatus();
         }));
     }
 
@@ -66,10 +64,8 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
         this.getProcess().subscribe({
             next: process => {
                 this.setState(process.externalProcessStatus);
-                this.sessionKey = process.sessionKey;
                 if (this.processStatus === ProcessStatus.FINISHED) {
-                    this.synthProcess = JSON.parse(process.status);
-                    // this.updateStatus();
+                    this.synthProcess = process.status === null ? null : JSON.parse(process.status);
                 }
             },
         });
@@ -149,7 +145,6 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
                     next: (process: ExternalProcess) => {
                         this.error = null;
                         this.setState(process.externalProcessStatus);
-                        this.sessionKey = process.sessionKey
                     },
                     error: err => {
                         this.error = `Failed to start the process. Status: ${err.status} (${err.statusText})`;
@@ -182,16 +177,6 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
                 const url = window.URL.createObjectURL(blob);
                 window.open(url);
             }
-        });
-    }
-
-    private updateStatus() {
-        this.anonService.stepConfig.subscribe(value => {
-            this.http.get<SynthetizationProcess>(value.url + value.statusEndpoint.replace("PROCESS_ID", this.sessionKey)).subscribe({
-                next: value => {
-                    this.synthProcess = value;
-                },
-            })
         });
     }
 }

@@ -24,16 +24,17 @@ import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.util.TestSocketUtils;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WithUserDetails("test_user")
 public class ProcessControllerTest extends ControllerTest {
@@ -61,6 +62,23 @@ public class ProcessControllerTest extends ControllerTest {
 		mockBackEnd.shutdown();
 	}
 
+
+	@Test
+	public void getProcessNotRequired() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/" + Step.WELCOME.name()))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.NOT_REQUIRED.name()));
+	}
+
+	@Test
+	public void getProcessNotStarted() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/" + Step.ANONYMIZATION.name()))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
+		       .andExpect(jsonPath("status").value(nullValue()))
+		       .andExpect(jsonPath("sessionKey").exists());
+	}
+
 	@Test
 	public void startAndFinishProcess() throws Exception {
 		postData(false);
@@ -72,6 +90,16 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .code(200)
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body("status")
+				                    .build());
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body("status")
+				                    .build());
 
 		mockMvc.perform(post("/api/process/start")
 				                .param("stepName", Step.SYNTHETIZATION.name())
@@ -80,7 +108,9 @@ public class ProcessControllerTest extends ControllerTest {
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string("\"" + ProcessStatus.RUNNING.name() + "\""));
+		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("status").value(nullValue()))
+		       .andExpect(jsonPath("sessionKey").exists());
 
 		// Test state changes
 		var updateTestProject = getTestProject();
@@ -127,6 +157,18 @@ public class ProcessControllerTest extends ControllerTest {
 			}
 		}
 
+		// Get status
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/" + Step.SYNTHETIZATION.name()))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("status").value("status"))
+		       .andExpect(jsonPath("sessionKey").exists());
+
+		recordedRequest = mockBackEnd.takeRequest();
+		assertEquals("GET", recordedRequest.getMethod());
+		assertEquals("/get_status/" + id, recordedRequest.getPath());
+
+		// Send callback request
 		final MockMultipartFile resultData = new MockMultipartFile("synthetic_data", "csv.csv",
 		                                                           MediaType.TEXT_PLAIN_VALUE,
 		                                                           "data".getBytes());
@@ -176,12 +218,16 @@ public class ProcessControllerTest extends ControllerTest {
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string("\"" + ProcessStatus.RUNNING.name() + "\""));
+		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("status").value(nullValue()))
+		       .andExpect(jsonPath("sessionKey").exists());
 
 		mockMvc.perform(multipart("/api/process/cancel")
 				                .param("stepName", Step.SYNTHETIZATION.name()))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string("\"" + ProcessStatus.CANCELED.name() + "\""));
+		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.CANCELED.name()))
+		       .andExpect(jsonPath("status").value(nullValue()))
+		       .andExpect(jsonPath("sessionKey").exists());
 
 		// Test state changes
 		final ExternalProcessEntity process = getTestProject().getProcesses().get(Step.SYNTHETIZATION);
@@ -253,7 +299,9 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(multipart("/api/process/cancel")
 				                .param("stepName", Step.SYNTHETIZATION.name()))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string("\"" + ProcessStatus.NOT_STARTED.name() + "\""));
+		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
+		       .andExpect(jsonPath("status").value(nullValue()))
+		       .andExpect(jsonPath("sessionKey").exists());
 	}
 
 	@Test

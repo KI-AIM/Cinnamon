@@ -366,7 +366,7 @@ public class ProcessService {
 		}
 
 //		fetchStatus(process.get());
-		fetchStatusAsync(process.get());
+//		fetchStatusAsync(process.get());
 
 		// Update status
 		process.get().setExternalProcessStatus(ProcessStatus.FINISHED);

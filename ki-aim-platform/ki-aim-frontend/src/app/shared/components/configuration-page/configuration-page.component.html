@@ -4,7 +4,7 @@
 
 <!-- Upload -->
 <div class="mb-2">
-    <app-configuration-upload [configurationName]="this.anonService.getConfigurationName()" [disabled]="disabled">
+    <app-configuration-upload [configurationNameObservable]="this.anonService.stepConfig" [disabled]="disabled">
     </app-configuration-upload>
 </div>
 

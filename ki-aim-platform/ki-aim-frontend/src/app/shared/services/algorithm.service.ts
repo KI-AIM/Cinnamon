@@ -46,8 +46,9 @@ export abstract class AlgorithmService {
     /**
      * Extracts the form data and the algorithm name from the given configuration object.
      * @param arg The configuration object.
+     * @param configurationName The key of the configuration.
      */
-    abstract readConfiguration(arg: Object): {config: Object, selectedAlgorithm: Algorithm};
+    abstract readConfiguration(arg: Object, configurationName: string): { config: Object, selectedAlgorithm: Algorithm };
 
     /**
      * Sets the callback function for retrieving the configuration from the UI.

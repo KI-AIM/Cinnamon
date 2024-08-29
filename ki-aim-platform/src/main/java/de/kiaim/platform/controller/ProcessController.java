@@ -7,6 +7,7 @@ import de.kiaim.platform.model.dto.StartProcessRequest;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProcessService;
 import de.kiaim.platform.service.ProjectService;
@@ -111,7 +112,8 @@ public class ProcessController {
 		final ProjectEntity project = projectService.getProject(user);
 
 		// Save config
-		databaseService.storeConfiguration(requestData.getConfigurationName(), requestData.getConfiguration(), project);
+		final Step step = Step.getStepOrThrow(requestData.getStepName());
+		databaseService.storeConfiguration(step, requestData.getConfiguration(), project);
 
 		// Start process
 		return processService.startProcess(project, requestData.getStepName(),

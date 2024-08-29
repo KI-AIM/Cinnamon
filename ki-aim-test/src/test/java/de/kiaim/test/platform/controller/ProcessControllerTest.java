@@ -4,6 +4,8 @@ import de.kiaim.platform.model.dto.SynthetizationResponse;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.service.ProjectService;
+import de.kiaim.platform.service.UserService;
 import de.kiaim.test.platform.ControllerTest;
 import de.kiaim.test.util.DataConfigurationTestHelper;
 import de.kiaim.test.util.ResourceHelper;
@@ -16,6 +18,7 @@ import org.apache.commons.fileupload2.core.FileItem;
 import org.apache.commons.fileupload2.core.FileItemFactory;
 import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -32,6 +35,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -45,6 +49,9 @@ public class ProcessControllerTest extends ControllerTest {
 	private String callbackHost;
 
 	private MockWebServer mockBackEnd;
+
+	@Autowired private UserService userService;
+	@Autowired private ProjectService projectService;
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
@@ -75,8 +82,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/" + Step.ANONYMIZATION.name()))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("status").value(nullValue()))
-		       .andExpect(jsonPath("sessionKey").exists());
+		       .andExpect(jsonPath("status").value(nullValue()));
 	}
 
 	@Test
@@ -109,8 +115,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("status").value(nullValue()))
-		       .andExpect(jsonPath("sessionKey").exists());
+		       .andExpect(jsonPath("status").value(nullValue()));
 
 		// Test state changes
 		var updateTestProject = getTestProject();
@@ -161,8 +166,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/" + Step.SYNTHETIZATION.name()))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("status").value("status"))
-		       .andExpect(jsonPath("sessionKey").exists());
+		       .andExpect(jsonPath("status").value("status"));
 
 		recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("GET", recordedRequest.getMethod());
@@ -219,20 +223,80 @@ public class ProcessControllerTest extends ControllerTest {
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("status").value(nullValue()))
-		       .andExpect(jsonPath("sessionKey").exists());
+		       .andExpect(jsonPath("status").value(nullValue()));
 
 		mockMvc.perform(multipart("/api/process/cancel")
 				                .param("stepName", Step.SYNTHETIZATION.name()))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.CANCELED.name()))
-		       .andExpect(jsonPath("status").value(nullValue()))
-		       .andExpect(jsonPath("sessionKey").exists());
+		       .andExpect(jsonPath("status").value(nullValue()));
 
 		// Test state changes
 		final ExternalProcessEntity process = getTestProject().getProcesses().get(Step.SYNTHETIZATION);
 		assertEquals(ProcessStatus.CANCELED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
+	}
+
+	@Test
+	public void startSchedule() throws Exception {
+		// Start first
+		postData(false);
+
+		final SynthetizationResponse response = new SynthetizationResponse();
+		response.setPid("1");
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(response))
+				                    .build());
+
+		mockMvc.perform(post("/api/process/start")
+				                .with(httpBasic("test_user", "password"))
+				                .param("stepName", Step.SYNTHETIZATION.name())
+				                .param("url", "/start_synthetization_process/ctgan")
+				                .param("configurationName", "configurationName")
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("status").value(nullValue()));
+
+		// Start second
+		final var user = userService.save("test_user_3", "changeme");
+		var project = projectService.createProject(user);
+		postData(false, "test_user_3");
+
+		mockMvc.perform(post("/api/process/start")
+				                .with(httpBasic("test_user_3", "changeme"))
+				                .param("stepName", Step.SYNTHETIZATION.name())
+				                .param("url", "/start_synthetization_process/ctgan")
+				                .param("configurationName", "configurationName")
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.SCHEDULED.name()));
+
+		// Cancel first
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .build());
+		response.setPid("2");
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(response))
+				                    .build());
+		mockMvc.perform(multipart("/api/process/cancel")
+				                .with(httpBasic("test_user", "password"))
+				                .param("stepName", Step.SYNTHETIZATION.name()))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.CANCELED.name()));
+
+		project = projectService.getProject(user);
+
+		// Check if second process is running
+		assertEquals(ProcessStatus.RUNNING, project.getProcesses().get(Step.SYNTHETIZATION).getExternalProcessStatus());
 	}
 
 	@Test
@@ -300,8 +364,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .param("stepName", Step.SYNTHETIZATION.name()))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("status").value(nullValue()))
-		       .andExpect(jsonPath("sessionKey").exists());
+		       .andExpect(jsonPath("status").value(nullValue()));
 	}
 
 	@Test

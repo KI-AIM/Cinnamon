@@ -160,7 +160,4 @@ export class DataConfigurationComponent implements OnInit {
 
         this.configurationUpload.closeDialog();
     }
-
-    protected readonly Steps = Steps;
-    protected readonly dispatchEvent = dispatchEvent;
 }

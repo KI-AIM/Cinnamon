@@ -35,6 +35,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -136,9 +138,237 @@ public class ProcessService {
 
 		// Get configuration
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
-		final String serverUrl = stepConfiguration.getUrl();
-		final String callbackHost = stepConfiguration.getCallbackHost();
 
+		// Check if max number of processes is reached
+		if (externalProcessRepository.countByStepAndExternalProcessStatus(step, ProcessStatus.RUNNING) <
+		    stepConfiguration.getMaxParallelProcess()) {
+			doStartProcess(project, stepConfiguration, externalProcess, configuration, url);
+		} else {
+			scheduleProcess(externalProcess, url);
+		}
+
+		// Update status
+		projectRepository.save(project);
+
+		return externalProcess;
+	}
+
+	/**
+	 * Returns the process in the given project for the step with the given name.
+	 * If the process is running, updates the status by calling the external API.
+	 *
+	 * @param project The project.
+	 * @param stepName The name of the step.
+	 * @return The updated process.
+	 * @throws BadStepNameException          If the step is not defined or the step does contain an external process.
+	 * @throws InternalInvalidStateException If no ExternalProcessEntity exists for the given step.
+	 * @throws InternalApplicationConfigurationException If the step is not configured.
+	 * @throws InternalRequestException If the request for the status fails.
+	 */
+	@Transactional
+	public ExternalProcessEntity getStatus(final ProjectEntity project, final String stepName)
+			throws BadStepNameException, InternalInvalidStateException, InternalApplicationConfigurationException, InternalRequestException {
+		final ExternalProcessEntity externalProcess = getProcess(project, stepName);
+
+		if (externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING) {
+			fetchStatus(externalProcess);
+		}
+
+		return externalProcess;
+	}
+
+	/**
+	 * Cancels the process for the given step name.
+	 *
+	 * @param project  The project.
+	 * @param stepName The step name of which the process should be canceled.
+	 * @return The canceled process object.
+	 * @throws BadStepNameException                      If the step name is not defined.
+	 * @throws InternalApplicationConfigurationException If the step is not configured.
+	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
+	 */
+	@Transactional
+	public ExternalProcessEntity cancelProcess(final ProjectEntity project, final String stepName)
+			throws BadStepNameException, InternalApplicationConfigurationException, InternalInvalidStateException {
+		// Get Step
+		final Step step = Step.getStepOrThrow(stepName);
+
+		if (!project.getProcesses().containsKey(step)) {
+			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
+			                                        "No process entity for step '" + step.name() + "' available!");
+		}
+		final ExternalProcessEntity externalProcess = project.getProcesses().get(step);
+
+		if (!(externalProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
+		      externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING)) {
+			return externalProcess;
+		}
+
+		// Get configuration
+		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
+		final String serverUrl = stepConfiguration.getUrl();
+		final String cancelEndpoint = stepConfiguration.getCancelEndpoint()
+		                                               .replace(PROCESS_ID_PLACEHOLDER,
+		                                                        externalProcess.getId().toString());
+
+		final MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+		formData.add("session_key", externalProcess.getId().toString());
+		formData.add("pid", externalProcess.getExternalId());
+
+		// Do the request
+		final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
+		webClient.post()
+		         .uri(cancelEndpoint)
+		         .body(BodyInserters.fromFormData(formData))
+		         .retrieve()
+		         .onStatus(HttpStatusCode::isError,
+		                   b -> {
+			                   log.warn("Failed to cancel the process! Got status of {}", b.statusCode());
+			                   return null;
+		                   })
+		         .toBodilessEntity()
+		         .onErrorComplete()
+		         .block();
+
+		externalProcess.setExternalProcessStatus(ProcessStatus.CANCELED);
+		projectRepository.save(project);
+
+		startScheduledProcess(externalProcess.getStep());
+
+		return externalProcess;
+	}
+
+	/**
+	 * Finishes the process with the given process ID.
+	 * Sets the status to 'finished' and deletes the ExternalProcess object.
+	 *
+	 * @param processId The ID of the process to finish.
+	 * @throws BadProcessIdException If the given process ID is not valid.
+	 */
+	@Transactional
+	public void finishProcess(final Long processId, final Set<Map.Entry<String, MultipartFile>> resultFiles)
+			throws BadProcessIdException, InternalIOException, InternalRequestException, InternalApplicationConfigurationException {
+		final Optional<ExternalProcessEntity> process = externalProcessRepository.findById(processId);
+
+		// Invalid processID
+		if (process.isEmpty()) {
+			throw new BadProcessIdException(BadProcessIdException.NO_PROCESS,
+			                                "No process with the given ID '" + processId +
+			                                "' exists!");
+		}
+
+		final ProjectEntity project = process.get().getProject();
+		final var files = process.get().getAdditionalResultFiles();
+		files.clear();
+
+		for (final var entry : resultFiles) {
+			try {
+				final var value = entry.getValue();
+				if (entry.getKey().equals("synthetic_data")) {
+					process.get().setResultDataSet(value.getBytes());
+				} else {
+					files.put(value.getOriginalFilename(), value.getBytes());
+				}
+
+			} catch (final IOException e) {
+				throw new InternalIOException(InternalIOException.MULTIPART_READING,
+				                              "Failed to read result file '" + entry.getKey() + "'!", e);
+			}
+		}
+
+//		fetchStatus(process.get());
+//		fetchStatusAsync(process.get());
+
+		// Update status
+		process.get().setExternalProcessStatus(ProcessStatus.FINISHED);
+
+		projectRepository.save(project);
+
+		startScheduledProcess(process.get().getStep());
+	}
+
+	@Async
+	protected void fetchStatusAsync(final ExternalProcessEntity externalProcess)
+			throws InternalRequestException, InternalApplicationConfigurationException {
+		fetchStatus(externalProcess);
+	}
+
+	private void fetchStatus(final ExternalProcessEntity externalProcess)
+			throws InternalRequestException, InternalApplicationConfigurationException {
+		// Get configuration
+		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
+		final String serverUrl = stepConfiguration.getUrl();
+		final String statusEndpoint = stepConfiguration.getStatusEndpoint();
+		final String url = serverUrl + statusEndpoint.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getId().toString());
+
+		// Do the request
+		try {
+			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
+			final var response = webClient.get()
+			                              .uri(url)
+			                              .retrieve()
+			                              .onStatus(HttpStatusCode::isError,
+			                                        errorResponse -> errorResponse.toEntity(
+					                                                                      SynthetizationResponse.class)
+			                                                                      .map(RequestRuntimeException::new))
+			                              .bodyToMono(String.class)
+			                              .block();
+			externalProcess.setStatus(response);
+		} catch (RequestRuntimeException e) {
+			var message = "Failed to fetch the status! Got status of " + e.getResponse().getStatusCode();
+			if (e.getResponse().getBody() != null) {
+				message += " with message: '" + e.getResponse().getBody().getMessage() + "'";
+			}
+			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
+		}
+
+		// Update status
+		projectRepository.save(externalProcess.getProject());
+	}
+
+	private void scheduleProcess(final ExternalProcessEntity externalProcess, final String processUrl) {
+		externalProcess.setScheduledTime(Timestamp.valueOf(LocalDateTime.now()));
+		externalProcess.setExternalProcessStatus(ProcessStatus.SCHEDULED);
+		externalProcess.setProcessUrl(processUrl);
+	}
+
+	private void startScheduledProcess(final Step step) {
+		final var process = externalProcessRepository.findFirstByStepAndExternalProcessStatusOrderByScheduledTimeAsc(
+				step,
+				ProcessStatus.SCHEDULED);
+
+		if (process.isEmpty()) {
+			return;
+		}
+		final var externalProcess = process.get();
+
+		try {
+			doStartProcess(externalProcess);
+		} catch (final ApiException e) {
+			log.warn("Failed to start scheduled process!", e);
+			externalProcess.setExternalProcessStatus(ProcessStatus.ERROR);
+		}
+
+		externalProcess.setScheduledTime(null);
+		externalProcess.setProcessUrl(null);
+	}
+
+	private void doStartProcess(final ExternalProcessEntity externalProcess)
+			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, BadColumnNameException, InternalIOException, BadDataSetIdException {
+		final Step step = externalProcess.getStep();
+		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
+
+		final String configuration = externalProcess.getProject().getConfigurations()
+		                                            .get(stepConfiguration.getConfigurationName());
+
+		doStartProcess(externalProcess.getProject(), stepConfiguration, externalProcess, configuration,
+		               externalProcess.getProcessUrl());
+	}
+
+	private void doStartProcess(final ProjectEntity project, final StepConfiguration stepConfiguration,
+	                            final ExternalProcessEntity externalProcess, final String configuration,
+	                            final String url)
+			throws InternalDataSetPersistenceException, BadColumnNameException, InternalIOException, BadDataSetIdException, InternalRequestException {
 		// Prepare body
 		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
 
@@ -219,6 +449,7 @@ public class ProcessService {
 		}
 
 		bodyBuilder.part("session_key", externalProcess.getId().toString());
+		final String callbackHost = stepConfiguration.getCallbackHost();
 		final var serverAddress = ServletUriComponentsBuilder.fromCurrentContextPath()
 		                                                     .host(callbackHost)
 		                                                     .port(this.port)
@@ -229,6 +460,7 @@ public class ProcessService {
 
 		// Do the request
 		try {
+			final String serverUrl = stepConfiguration.getUrl();
 			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
 			final var response = webClient.post()
 			                              .uri(url)
@@ -249,167 +481,5 @@ public class ProcessService {
 			}
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		}
-
-		// Update status
-		projectRepository.save(project);
-
-		return externalProcess;
-	}
-
-	@Transactional
-	public ExternalProcessEntity getStatus(final ProjectEntity project, final String stepName)
-			throws BadStepNameException, InternalInvalidStateException, InternalApplicationConfigurationException, InternalRequestException {
-		final ExternalProcessEntity externalProcess = getProcess(project, stepName);
-
-		if (externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING) {
-			fetchStatus(externalProcess);
-		}
-
-		return externalProcess;
-	}
-
-	/**
-	 * Cancels the process for the given step name.
-	 *
-	 * @param project  The project.
-	 * @param stepName The step name of which the process should be canceled.
-	 * @return The canceled process object.
-	 * @throws BadStepNameException                      If the step name is not defined.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
-	 */
-	@Transactional
-	public ExternalProcessEntity cancelProcess(final ProjectEntity project, final String stepName)
-			throws BadStepNameException, InternalApplicationConfigurationException, InternalInvalidStateException {
-		// Get Step
-		final Step step = Step.getStepOrThrow(stepName);
-
-		if (!project.getProcesses().containsKey(step)) {
-			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
-			                                        "No process entity for step '" + step.name() + "' available!");
-		}
-		final ExternalProcessEntity externalProcess = project.getProcesses().get(step);
-
-		if (!(externalProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
-		      externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING)) {
-			return externalProcess;
-		}
-
-		// Get configuration
-		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
-		final String serverUrl = stepConfiguration.getUrl();
-		final String cancelEndpoint = stepConfiguration.getCancelEndpoint()
-		                                               .replace(PROCESS_ID_PLACEHOLDER,
-		                                                        externalProcess.getId().toString());
-
-		final MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-		formData.add("session_key", externalProcess.getId().toString());
-		formData.add("pid", externalProcess.getExternalId());
-
-		// Do the request
-		final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
-		webClient.post()
-		         .uri(cancelEndpoint)
-		         .body(BodyInserters.fromFormData(formData))
-		         .retrieve()
-		         .onStatus(HttpStatusCode::isError,
-		                   b -> {
-			                   log.warn("Failed to cancel the process! Got status of {}", b.statusCode());
-			                   return null;
-		                   })
-		         .toBodilessEntity()
-		         .onErrorComplete()
-		         .block();
-
-		externalProcess.setExternalProcessStatus(ProcessStatus.CANCELED);
-		projectRepository.save(project);
-
-		return externalProcess;
-	}
-
-	/**
-	 * Finishes the process with the given process ID.
-	 * Sets the status to 'finished' and deletes the ExternalProcess object.
-	 *
-	 * @param processId The ID of the process to finish.
-	 * @throws BadProcessIdException If the given process ID is not valid.
-	 */
-	@Transactional
-	public void finishProcess(final Long processId, final Set<Map.Entry<String, MultipartFile>> resultFiles)
-			throws BadProcessIdException, InternalIOException, InternalRequestException, InternalApplicationConfigurationException {
-		final Optional<ExternalProcessEntity> process = externalProcessRepository.findById(processId);
-
-		// Invalid processID
-		if (process.isEmpty()) {
-			throw new BadProcessIdException(BadProcessIdException.NO_PROCESS,
-			                                "No process with the given ID '" + processId +
-			                                "' exists!");
-		}
-
-		final ProjectEntity project = process.get().getProject();
-		final var files = process.get().getAdditionalResultFiles();
-		files.clear();
-
-		for (final var entry : resultFiles) {
-			try {
-				final var value = entry.getValue();
-				if (entry.getKey().equals("synthetic_data")) {
-					process.get().setResultDataSet(value.getBytes());
-				} else {
-					files.put(value.getOriginalFilename(), value.getBytes());
-				}
-
-			} catch (final IOException e) {
-				throw new InternalIOException(InternalIOException.MULTIPART_READING,
-				                              "Failed to read result file '" + entry.getKey() + "'!", e);
-			}
-		}
-
-//		fetchStatus(process.get());
-//		fetchStatusAsync(process.get());
-
-		// Update status
-		process.get().setExternalProcessStatus(ProcessStatus.FINISHED);
-
-		projectRepository.save(project);
-	}
-
-	@Async
-	protected void fetchStatusAsync(final ExternalProcessEntity externalProcess)
-			throws InternalRequestException, InternalApplicationConfigurationException {
-		fetchStatus(externalProcess);
-	}
-
-	private void fetchStatus(final ExternalProcessEntity externalProcess)
-			throws InternalRequestException, InternalApplicationConfigurationException {
-		// Get configuration
-		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
-		final String serverUrl = stepConfiguration.getUrl();
-		final String statusEndpoint = stepConfiguration.getStatusEndpoint();
-		final String url = serverUrl + statusEndpoint.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getId().toString());
-
-		// Do the request
-		try {
-			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
-			final var response = webClient.get()
-			                              .uri(url)
-			                              .retrieve()
-			                              .onStatus(HttpStatusCode::isError,
-			                                        errorResponse -> errorResponse.toEntity(
-					                                                                      SynthetizationResponse.class)
-			                                                                      .map(RequestRuntimeException::new))
-			                              .bodyToMono(String.class)
-			                              .block();
-			externalProcess.setStatus(response);
-		} catch (RequestRuntimeException e) {
-			var message = "Failed to fetch the status! Got status of " + e.getResponse().getStatusCode();
-			if (e.getResponse().getBody() != null) {
-				message += " with message: '" + e.getResponse().getBody().getMessage() + "'";
-			}
-			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
-		}
-
-		// Update status
-		projectRepository.save(externalProcess.getProject());
 	}
 }

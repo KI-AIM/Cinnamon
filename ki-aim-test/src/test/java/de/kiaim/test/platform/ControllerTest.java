@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -86,6 +87,30 @@ public class ControllerTest extends DatabaseTest {
 
 		String result = mockMvc.perform(multipart("/api/data")
 				                                .file(file)
+				                                .param("fileConfiguration",
+				                                       objectMapper.writeValueAsString(fileConfiguration))
+				                                .param("configuration",
+				                                       objectMapper.writeValueAsString(configuration)))
+		                       .andExpect(status().isOk())
+		                       .andReturn().getResponse().getContentAsString();
+
+		assertDoesNotThrow(() -> Long.parseLong(result.trim()));
+	}
+
+	protected void postData(final boolean withErrors, final String user) throws Exception {
+		MockMultipartFile file;
+		if (withErrors) {
+			file = ResourceHelper.loadCsvFileWithErrors();
+		} else {
+			file = ResourceHelper.loadCsvFile();
+		}
+
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+
+		String result = mockMvc.perform(multipart("/api/data")
+				                                .file(file)
+				                                .with(httpBasic(user, "changeme"))
 				                                .param("fileConfiguration",
 				                                       objectMapper.writeValueAsString(fileConfiguration))
 				                                .param("configuration",

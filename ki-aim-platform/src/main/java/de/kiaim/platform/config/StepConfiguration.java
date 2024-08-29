@@ -3,6 +3,7 @@ package de.kiaim.platform.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,11 +37,27 @@ public class StepConfiguration {
 	private String cancelEndpoint;
 
 	/**
+	 * Name of the configuration.
+	 */
+	@NotBlank
+	private String configurationName;
+
+	/**
+	 * Maximum number of processes that are allowed to run in parallel.
+	 */
+	@JsonIgnore
+	@NotNull
+	private Integer maxParallelProcess;
+
+	/**
 	 * List of required pre-processors for this step.
 	 */
 	@JsonIgnore
 	private List<String> preProcessors;
 
+	/**
+	 * Endpoint for retrieving the status.
+	 */
 	@NotBlank
 	private String statusEndpoint;
 
@@ -50,5 +67,4 @@ public class StepConfiguration {
 	@Schema(description = "URL of the corresponding server.", example = "https://my-anonymization-server.de")
 	@NotBlank
 	private String url;
-
 }

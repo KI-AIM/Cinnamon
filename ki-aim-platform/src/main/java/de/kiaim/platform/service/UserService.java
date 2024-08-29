@@ -33,7 +33,7 @@ public class UserService implements UserDetailsService {
 		return userRepository.existsById(email);
 	}
 
-	public void save(final String email, final String rawPassword) {
+	public UserEntity save(final String email, final String rawPassword) {
 		Optional<UserEntity> user = userRepository.findById(email);
 		UserEntity userEntity;
 		if (user.isEmpty()) {
@@ -45,6 +45,8 @@ public class UserService implements UserDetailsService {
 		userEntity.setEmail(email);
 		userEntity.setPassword(passwordEncoder.encode(rawPassword));
 		userRepository.save(userEntity);
+
+		return userEntity;
 	}
 
 	//==============================

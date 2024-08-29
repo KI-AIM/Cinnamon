@@ -26,23 +26,27 @@ export class AnonymizationService extends AlgorithmService {
         // TODO
         return { };
     }
-    public override readConfiguration(arg: Object): {config: Object, selectedAlgorithm: Algorithm} {
+    public override readConfiguration(arg: Object, configurationName: string): {config: Object, selectedAlgorithm: Algorithm} {
         // TODO
         return {config: {}, selectedAlgorithm: new Algorithm()};
     }
 
     public registerConfig() {
-        const configReg = new ConfigurationRegisterData();
-        configReg.availableAfterStep = Steps.ANONYMIZATION;
-        configReg.lockedAfterStep = null;
-        configReg.displayName = "Anonymization Configuration";
-        configReg.fetchConfig = null;
-        configReg.name = this.getConfigurationName();
-        configReg.orderNumber = 1;
-        configReg.storeConfig = null;
-        configReg.getConfigCallback = () => this.doGetConfig();
-        configReg.setConfigCallback = (config) => this.setConfigWait(config);
+        this.stepConfig.subscribe({
+            next: value => {
+                const configReg = new ConfigurationRegisterData();
+                configReg.availableAfterStep = Steps.ANONYMIZATION;
+                configReg.lockedAfterStep = null;
+                configReg.displayName = "Anonymization Configuration";
+                configReg.fetchConfig = null;
+                configReg.name = value.configurationName;
+                configReg.orderNumber = 1;
+                configReg.storeConfig = null;
+                configReg.getConfigCallback = () => this.doGetConfig();
+                configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
-        this.configurationService.registerConfiguration(configReg);
+                this.configurationService.registerConfiguration(configReg);
+            }
+        });
     }
 }

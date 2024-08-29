@@ -17,10 +17,6 @@ public class StartProcessRequest {
 	@NotBlank
 	private String url;
 
-	@Schema(description = "Name under which the configuration should be saved.", example = "synthetization-config")
-	@NotBlank
-	private String configurationName;
-
 	@Schema(description = "Process specific configuration.")
 	@NotBlank
 	private String configuration;

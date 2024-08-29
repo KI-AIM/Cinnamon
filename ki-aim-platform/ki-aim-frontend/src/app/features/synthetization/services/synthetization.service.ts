@@ -35,9 +35,9 @@ export class SynthetizationService extends AlgorithmService {
         };
     }
 
-    public override readConfiguration(arg: any): {config: Object, selectedAlgorithm: Algorithm} {
-        const selectedAlgorithm = this.getAlgorithmByName(arg[this.getConfigurationName()]["algorithm"]["synthesizer"])
-        const config = arg[this.getConfigurationName()]["algorithm"];
+    public override readConfiguration(arg: any, configurationName: string): {config: Object, selectedAlgorithm: Algorithm} {
+        const selectedAlgorithm = this.getAlgorithmByName(arg[configurationName]["algorithm"]["synthesizer"])
+        const config = arg[configurationName]["algorithm"];
         delete config["synthesizer"];
         delete config["type"];
         delete config["version"];
@@ -45,17 +45,25 @@ export class SynthetizationService extends AlgorithmService {
     }
 
     public registerConfig() {
-        const configReg = new ConfigurationRegisterData();
-        configReg.availableAfterStep = Steps.SYNTHETIZATION;
-        configReg.lockedAfterStep = null;
-        configReg.displayName = "Synthetization Configuration";
-        configReg.fetchConfig = null;
-        configReg.name = this.getConfigurationName();
-        configReg.orderNumber = 2;
-        configReg.storeConfig = null;
-        configReg.getConfigCallback = () => this.doGetConfig();
-        configReg.setConfigCallback = (config) => this.setConfigWait(config);
+        // TODO this is a racing condition with state-guard fetching the configurations
+        this.stepConfig.subscribe({
+            next: value => {
 
-        this.configurationService.registerConfiguration(configReg);
+                const configReg = new ConfigurationRegisterData();
+                configReg.availableAfterStep = Steps.SYNTHETIZATION;
+                configReg.lockedAfterStep = null;
+                configReg.displayName = "Synthetization Configuration";
+                configReg.fetchConfig = null;
+                // configReg.name = "synthetization_configuration";
+                configReg.name = value.configurationName;
+                configReg.orderNumber = 2;
+                configReg.storeConfig = null;
+                configReg.getConfigCallback = () => this.doGetConfig();
+                configReg.setConfigCallback = (config) => this.setConfigWait(config);
+
+                this.configurationService.registerConfiguration(configReg);
+
+            }
+        });
     }
 }

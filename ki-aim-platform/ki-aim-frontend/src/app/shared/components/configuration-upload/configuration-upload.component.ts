@@ -1,14 +1,16 @@
-import { Component, EventEmitter, Input, Output, TemplateRef } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, TemplateRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfigurationService } from 'src/app/shared/services/configuration.service';
 import { ImportPipeData } from "../../model/import-pipe-data";
+import { Observable } from "rxjs";
+import { StepConfiguration } from "../../model/step-configuration";
 
 @Component({
   selector: 'app-configuration-upload',
   templateUrl: './configuration-upload.component.html',
   styleUrls: ['./configuration-upload.component.less']
 })
-export class ConfigurationUploadComponent {
+export class ConfigurationUploadComponent implements OnInit{
   protected error: string;
 
   /**
@@ -16,14 +18,26 @@ export class ConfigurationUploadComponent {
    * If null, all configurations in the selected will be uploaded
    */
   @Input() public configurationName: string | null = null;
+  @Input() public configurationNameObservable: Observable<StepConfiguration> | null = null;
   @Input() public disabled: boolean = false;
   @Output() onUpload: EventEmitter<ImportPipeData[] | null> = new EventEmitter();
+
 
   constructor(
     private configurationService: ConfigurationService,
     private dialog: MatDialog,
   ) {
     this.error = "";
+  }
+
+  ngOnInit() {
+      if (this.configurationNameObservable !== null) {
+          this.configurationNameObservable.subscribe({
+              next: value => {
+                  this.configurationName = value.configurationName;
+              }
+          });
+      }
   }
 
   public setError(error: string): void {

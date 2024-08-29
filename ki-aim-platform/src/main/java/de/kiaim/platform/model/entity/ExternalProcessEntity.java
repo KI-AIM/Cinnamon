@@ -9,7 +9,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.lang.Nullable;
 
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,8 +27,7 @@ public class ExternalProcessEntity {
 	/**
 	 * ID of the process.
 	 */
-	@Schema(description = "The session key required for authentication.")
-	@JsonProperty(value = "sessionKey")
+	@JsonIgnore
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
 	private Long id;
@@ -48,6 +49,22 @@ public class ExternalProcessEntity {
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	private ProcessStatus externalProcessStatus = ProcessStatus.NOT_STARTED;
+
+	/**
+	 * Time when the process has been scheduled.
+	 * Null if status is not SCHEDULED.
+	 */
+	@Setter
+	@Nullable
+	private Timestamp scheduledTime;
+
+	/**
+	 * URL to start the process.
+	 * Null if status is not SCHEDULED.
+	 */
+	@Setter
+	@Nullable
+	private String processUrl;
 
 	/**
 	 * Process id in the module.

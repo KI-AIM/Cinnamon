@@ -92,7 +92,7 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
     private setConfig(config: ImportPipeData) {
         if (config.success) {
             this.error = null;
-            const result = this.anonService.readConfiguration(parse(config.yamlConfigString));
+            const result = this.anonService.readConfiguration(parse(config.yamlConfigString), config.configData.name);
             this.selection.selectedOption = result.selectedAlgorithm;
             setTimeout(() => {
                 this.forms.setConfiguration(result.config);
@@ -137,7 +137,6 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
             next: value => {
 
                 formData.append("stepName", this.anonService.getStepName());
-                formData.append("configurationName", this.anonService.getConfigurationName());
                 formData.append("configuration", stringify(this.anonService.createConfiguration(configuration, this.selection.selectedOption)));
                 formData.append("url", value.URL);
 

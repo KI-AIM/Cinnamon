@@ -7,6 +7,7 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.config.SerializationConfig;
+import de.kiaim.platform.config.StepConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.DataRowTransformationError;
@@ -14,6 +15,7 @@ import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,14 +48,17 @@ public class DatabaseService {
 	final DataschemeGenerator dataschemeGenerator;
 	final ObjectMapper jsonMapper;
 
+	final StepService stepService;
+
 	@Autowired
 	public DatabaseService(final DataSource dataSource, final SerializationConfig serializationConfig,
 	                       final ProjectRepository projectRepository,
-	                       final DataschemeGenerator dataschemeGenerator) {
+	                       final DataschemeGenerator dataschemeGenerator, StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		jsonMapper = serializationConfig.jsonMapper();
 		this.projectRepository = projectRepository;
 		this.dataschemeGenerator = dataschemeGenerator;
+		this.stepService = stepService;
 	}
 
 	/**
@@ -134,6 +139,13 @@ public class DatabaseService {
 		}
 
 		return dataSetId;
+	}
+
+	@Transactional
+	public long storeConfiguration(final Step step, final String configuration, final ProjectEntity project)
+			throws InternalApplicationConfigurationException {
+		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
+		return storeConfiguration(stepConfiguration.getConfigurationName(), configuration, project);
 	}
 
 	/**

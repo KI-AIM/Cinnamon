@@ -42,25 +42,10 @@
         <th>Time</th>
         </thead>
         <tbody>
-        <tr>
-            <td>Initialization</td>
-            <td>{{ synthProcess?.status?.initialization?.completed }}</td>
-            <td> {{ (synthProcess?.status?.initialization?.completed === "True") ? synthProcess?.status?.initialization?.duration : synthProcess?.status?.initialization?.remaining_time }}</td>
-        </tr>
-        <tr>
-            <td>Fitting</td>
-            <td>{{ synthProcess?.status?.fitting?.completed }}</td>
-            <td> {{ (synthProcess?.status?.fitting?.completed === "True") ? synthProcess?.status?.fitting?.duration :  synthProcess?.status?.fitting?.remaining_time }}</td>
-        </tr>
-        <tr>
-            <td>Sampling</td>
-            <td>{{ synthProcess?.status?.sampling?.completed }}</td>
-            <td> {{ (synthProcess?.status?.sampling?.completed === "True") ? synthProcess?.status?.sampling?.duration : synthProcess?.status?.sampling?.remaining_time }}</td>
-        </tr>
-        <tr>
-            <td>Callback</td>
-            <td>{{ synthProcess?.status?.callback?.completed }}</td>
-            <td> {{ (synthProcess?.status?.callback?.completed === "True") ? synthProcess?.status?.callback?.duration : synthProcess?.status?.callback?.remaining_time }}</td>
+        <tr *ngFor="let step of synthProcess?.status">
+            <td>{{step.step}}</td>
+            <td>{{step?.completed}}</td>
+            <td> {{ (step?.completed === "True") ? step?.duration : step?.remaining_time }}</td>
         </tr>
         </tbody>
     </table>

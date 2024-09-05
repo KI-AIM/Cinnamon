@@ -31,34 +31,9 @@
     </div>
 </ng-template>
 
-<div>
-    <span class="status mt-2" [ngClass]="processStatus">
-        <span>{{ processStatus.replace("_", " ") }}</span>
-    </span>
-    <table>
-        <thead>
-        <th>Step</th>
-        <th>Finished</th>
-        <th>Time</th>
-        </thead>
-        <tbody>
-        <tr *ngFor="let step of synthProcess?.status">
-            <td>{{step.step}}</td>
-            <td>{{step?.completed}}</td>
-            <td> {{ (step?.completed === "True") ? step?.duration : step?.remaining_time }}</td>
-        </tr>
-        </tbody>
-    </table>
+<div class="mt-2">
+    <button type="submit" mat-raised-button color="primary" (click)="skip()">
+        Skip
+    </button>
 </div>
 
-<div class="mt-2">
-    <button type="submit" mat-raised-button color="primary" [disabled]="!disabled" (click)="cancel()">
-        Cancel Algorithm
-    </button>
-</div>
-<!-- TODO remove -->
-<div class="mt-2">
-    <button type="submit" mat-raised-button color="primary" (click)="downloadResult()">
-        Download
-    </button>
-</div>

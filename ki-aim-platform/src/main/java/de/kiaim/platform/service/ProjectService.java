@@ -8,6 +8,7 @@ import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.exception.InternalIOException;
+import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
@@ -70,8 +71,14 @@ public class ProjectService {
 
 		// Create entities for external processes
 		for (final Step step : Step.values()) {
-			if (step.isHasExternalProcessing()) {
-				project.putExternalProcess(step, new ExternalProcessEntity());
+			if (!step.getProcesses().isEmpty()) {
+				var exec = new ExecutionStepEntity();
+
+				for (final var processStep : step.getProcesses()) {
+					exec.putExternalProcess(processStep, new ExternalProcessEntity());
+				}
+
+				project.putExecutionStep(step, exec);
 			}
 		}
 
@@ -152,19 +159,21 @@ public class ProjectService {
 			zipOut.closeEntry();
 
 			// Add results
-			for (final ExternalProcessEntity externalProcess : project.getProcesses().values()) {
-				if (externalProcess.getResultDataSet() != null) {
-					final ZipEntry resultZipEntry = new ZipEntry(externalProcess.getStep().name() + "-result.csv");
-					zipOut.putNextEntry(resultZipEntry);
-					zipOut.write(externalProcess.getResultDataSet());
-					zipOut.closeEntry();
-				}
+			for (final ExecutionStepEntity executionStep : project.getExecutions().values()) {
+				for (final ExternalProcessEntity externalProcess : executionStep.getProcesses().values()) {
+					if (externalProcess.getResultDataSet() != null) {
+						final ZipEntry resultZipEntry = new ZipEntry(externalProcess.getStep().name() + "-result.csv");
+						zipOut.putNextEntry(resultZipEntry);
+						zipOut.write(externalProcess.getResultDataSet());
+						zipOut.closeEntry();
+					}
 
-				for (final var entry : externalProcess.getAdditionalResultFiles().entrySet()) {
-					final ZipEntry additionalFileEntry = new ZipEntry(entry.getKey());
-					zipOut.putNextEntry(additionalFileEntry);
-					zipOut.write(entry.getValue());
-					zipOut.closeEntry();
+					for (final var entry : externalProcess.getAdditionalResultFiles().entrySet()) {
+						final ZipEntry additionalFileEntry = new ZipEntry(entry.getKey());
+						zipOut.putNextEntry(additionalFileEntry);
+						zipOut.write(entry.getValue());
+						zipOut.closeEntry();
+					}
 				}
 			}
 

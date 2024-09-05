@@ -26,6 +26,7 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AnonymizationModule } from "./features/anonymization/anonymization.module";
 import { SynthetizationModule } from "./features/synthetization/synthetization.module";
+import { ExecutionModule } from "./features/execution/execution.module";
 
 @NgModule({
     declarations: [
@@ -38,6 +39,7 @@ import { SynthetizationModule } from "./features/synthetization/synthetization.m
         AnonymizationModule,
         AppRoutingModule,
         AuthModule,
+        ExecutionModule,
         StartModule,
         SynthetizationModule,
         DataUploadModule,

@@ -43,6 +43,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String STEP_NAME = "7";
 
+	/**
+	 * Error class code for {@link BadStateException}
+	 */
+	public static final String STATE = "8";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

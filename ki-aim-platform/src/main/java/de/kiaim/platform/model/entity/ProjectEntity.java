@@ -59,10 +59,13 @@ public class ProjectEntity {
 	@Setter
 	private Map<String, String> configurations = new HashMap<>();
 
+	/**
+	 * Executions of the project.
+	 */
 	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	@MapKeyEnumerated(EnumType.STRING)
 	@MapKeyColumn(name = "step")
-	private final Map<Step, ExternalProcessEntity> processes = new HashMap<>();
+	private final Map<Step, ExecutionStepEntity> executions = new HashMap<>();
 
 	/**
 	 * User that owns this configuration and the corresponding data set.
@@ -76,11 +79,11 @@ public class ProjectEntity {
 	@OneToMany(mappedBy = "project", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	private final Set<DataTransformationErrorEntity> dataTransformationErrors = new HashSet<>();
 
-	public void putExternalProcess(final Step step, final ExternalProcessEntity externalProcess) {
-		if (!processes.containsKey(step)) {
-			externalProcess.setProject(this);
-			externalProcess.setStep(step);
-			processes.put(step, externalProcess);
+	public void putExecutionStep(final Step step, final ExecutionStepEntity executionStep) {
+		if (!executions.containsKey(step)) {
+			executionStep.setProject(this);
+			executionStep.setStep(step);
+			executions.put(step, executionStep);
 		}
 	}
 

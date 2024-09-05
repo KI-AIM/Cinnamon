@@ -4,17 +4,20 @@ import de.kiaim.platform.exception.BadStepNameException;
 import lombok.Getter;
 import org.springframework.lang.Nullable;
 
+import java.util.List;
+
 /**
  * Steps of a project where the backend is involved.
  */
 @Getter
 public enum Step {
-	WELCOME(0, false),
-	UPLOAD(1, false),
-	DATA_CONFIG(2, false),
-	VALIDATION(3, false),
-	ANONYMIZATION(4, true),
-	SYNTHETIZATION(5, true),
+	WELCOME(0, List.of()),
+	UPLOAD(1, List.of()),
+	DATA_CONFIG(2, List.of()),
+	VALIDATION(3, List.of()),
+	ANONYMIZATION(4, List.of()),
+	SYNTHETIZATION(5, List.of()),
+	EXECUTION(6, List.of(ANONYMIZATION, SYNTHETIZATION)),
 	;
 
 	/**
@@ -23,14 +26,14 @@ public enum Step {
 	private final int index;
 
 	/**
-	 * If the step requires external processing.
+	 * List of processes in this step.
 	 */
-	private final boolean hasExternalProcessing;
+	private final List<Step> processes;
 
 
-	Step(final int index, final boolean hasExternalProcessing) {
+	Step(final int index, final List<Step> processes) {
 		this.index = index;
-		this.hasExternalProcessing = hasExternalProcessing;
+		this.processes = processes;
 	}
 
 	/**

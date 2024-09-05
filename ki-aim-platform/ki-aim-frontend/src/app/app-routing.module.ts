@@ -12,6 +12,7 @@ import {
     SynthetizationConfigurationComponent
 } from "./features/synthetization/pages/synthetization-configuration/synthetization-configuration.component";
 import { StateGuard } from "./core/guards/state.guard";
+import { ExecutionComponent } from "./features/execution/pages/execution/execution.component";
 
 const routes: Routes = [
     {path: '', redirectTo: '', pathMatch: 'full', canActivate: [AuthGuard, StateGuard]},
@@ -23,6 +24,7 @@ const routes: Routes = [
     {path: 'dataValidation', component: DataValidationComponent, canActivate: [AuthGuard]},
     {path: 'anonymizationConfiguration', component: AnonymizationConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'synthetizationConfiguration', component: SynthetizationConfigurationComponent, canActivate: [AuthGuard]},
+    {path: 'execution', component: ExecutionComponent, canActivate: [AuthGuard]}
 ];
 
 @NgModule({

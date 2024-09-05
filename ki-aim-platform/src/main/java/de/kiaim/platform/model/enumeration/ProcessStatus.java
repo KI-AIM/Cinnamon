@@ -11,5 +11,6 @@ public enum ProcessStatus {
 	RUNNING,
 	CANCELED,
 	FINISHED,
+	SKIPPED,
 	;
 }

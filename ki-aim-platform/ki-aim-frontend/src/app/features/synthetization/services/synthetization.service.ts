@@ -20,8 +20,6 @@ export class SynthetizationService extends AlgorithmService {
 
     public override getStepName = (): string => "SYNTHETIZATION";
 
-    public override getConfigurationName = (): string => "synthetization_configuration";
-
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
         return {
             synthetization_configuration: {

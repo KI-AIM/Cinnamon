@@ -32,11 +32,6 @@ export abstract class AlgorithmService {
     getStepName: () => string;
 
     /**
-     * Name of the configuration for storing identifying it in the db.
-     */
-    getConfigurationName: () => string;
-
-    /**
      * Creates the YAML configuration.
      * @param arg The configuration from the form.
      * @param selectedAlgorithm The selected algorithm.

@@ -6,4 +6,5 @@ export enum ProcessStatus {
     RUNNING = "RUNNING",
     CANCELED = "CANCELED",
     FINISHED = "FINISHED",
+    SKIPPED = "SKIPPED",
 }

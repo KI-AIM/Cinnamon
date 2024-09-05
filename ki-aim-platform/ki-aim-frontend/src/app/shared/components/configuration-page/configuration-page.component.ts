@@ -1,74 +1,43 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { HttpClient } from "@angular/common/http";
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService } from "../../services/algorithm.service";
 import { parse, stringify } from "yaml";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
-import { environments } from "../../../../environments/environment";
-import { ProcessStatus } from "../../../core/enums/process-status";
-import { interval, Observable, Subscription, tap } from "rxjs";
 import { ImportPipeData } from "../../model/import-pipe-data";
-import { ExternalProcess } from "../../model/external-process";
-import { SynthetizationProcess } from "../../model/synthetization-process";
+import { Steps } from "../../../core/enums/steps";
+import { Router } from "@angular/router";
+import { StateManagementService } from "../../../core/services/state-management.service";
+import { HttpClient } from "@angular/common/http";
+import { environments } from "../../../../environments/environment";
 
 @Component({
     selector: 'app-configuration-page',
     templateUrl: './configuration-page.component.html',
     styleUrls: ['./configuration-page.component.less'],
 })
-export class ConfigurationPageComponent implements OnInit, OnDestroy {
-    private readonly baseUrl = environments.apiUrl + "/api/process";
+export class ConfigurationPageComponent implements OnInit {
+    private baseUrl: string = environments.apiUrl + "/api/process";
 
     protected algorithms: Algorithm[] = [];
     protected disabled: boolean = false;
-    protected processStatus: ProcessStatus = ProcessStatus.NOT_STARTED;
-
-    // TODO implement for anonymization
-    protected synthProcess: SynthetizationProcess | null = null;
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') private forms: ConfigurationFormComponent;
 
     protected error: string | null = null;
 
-    private statusObserver: Observable<any>;
-    private statusSubscription: Subscription | null = null;
-
     constructor(
-        private readonly http: HttpClient,
         protected readonly anonService: AlgorithmService,
+        private httpClient: HttpClient,
+        private readonly router: Router,
+        private readonly stateManagement: StateManagementService,
     ) {
-        this.statusObserver = interval(1000).pipe(tap(() => {
-            this.getProcess().subscribe({
-                next: process => {
-                    this.error = null;
-                    this.setState(process.externalProcessStatus);
-                    this.synthProcess = process.status === null ? null : JSON.parse(process.status);
-                },
-                error: err => {
-                    this.error = `Failed to update status. Status: ${err.status} (${err.statusText})`;
-                }
-            });
-        }));
-    }
-
-    ngOnDestroy() {
-        this.stopListenToStatus();
     }
 
     ngOnInit() {
         this.anonService.setDoGetConfig(() => this.getConfig());
         this.anonService.setDoSetConfig((data: ImportPipeData) => this.setConfig(data));
-
-        this.getProcess().subscribe({
-            next: process => {
-                this.setState(process.externalProcessStatus);
-                if (this.processStatus === ProcessStatus.FINISHED) {
-                    this.synthProcess = process.status === null ? null : JSON.parse(process.status);
-                }
-            },
-        });
 
         this.anonService.algorithms.subscribe({
             next: value => {
@@ -100,81 +69,42 @@ export class ConfigurationPageComponent implements OnInit, OnDestroy {
         } else {
             this.error = "Failed to load configuration";
         }
-
-    }
-
-    private startListenToStatus(): void {
-        if (this.statusSubscription === null) {
-            this.statusSubscription = this.statusObserver.subscribe();
-        }
-    }
-
-    private stopListenToStatus(): void {
-        if (this.statusSubscription !== null) {
-            this.statusSubscription.unsubscribe();
-        }
-    }
-
-    private setState(status: ProcessStatus): void {
-        this.processStatus = status;
-        if (status === ProcessStatus.SCHEDULED || status === ProcessStatus.RUNNING) {
-            this.startListenToStatus();
-            this.disabled = true;
-        } else {
-            this.stopListenToStatus();
-            this.disabled = false;
-        }
-    }
-
-    private getProcess(): Observable<ExternalProcess> {
-        return this.http.get<ExternalProcess>(this.baseUrl + "/" + this.anonService.getStepName());
     }
 
     onSubmit(configuration: Object) {
-        const formData = new FormData();
-
         this.anonService.getAlgorithmDefinition(this.selection.selectedOption).subscribe({
             next: value => {
-
-                formData.append("stepName", this.anonService.getStepName());
+                const formData = new FormData();
                 formData.append("configuration", stringify(this.anonService.createConfiguration(configuration, this.selection.selectedOption)));
+                formData.append("stepName", this.anonService.getStepName());
                 formData.append("url", value.URL);
 
-                this.http.post<ExternalProcess>(this.baseUrl + '/start', formData).subscribe({
-                    next: (process: ExternalProcess) => {
-                        this.error = null;
-                        this.setState(process.externalProcessStatus);
+                this.httpClient.post<void>(this.baseUrl + "/configure", formData).subscribe({
+                    next: () => {
+                        this.router.navigateByUrl(this.anonService.getStepName() === "ANONYMIZATION" ? '/synthetizationConfiguration' : "/execution");
+                        this.stateManagement.setNextStep(this.anonService.getStepName() === "ANONYMIZATION" ? Steps.SYNTHETIZATION : Steps.EXECUTION);
                     },
                     error: err => {
-                        this.error = `Failed to start the process. Status: ${err.status} (${err.statusText})`;
+                        this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
                     }
                 });
             }
         });
     }
 
-    protected cancel() {
-        const formData = new FormData()
+    skip() {
+        const formData = new FormData();
+        formData.append("configuration", "skip");
         formData.append("stepName", this.anonService.getStepName());
+        formData.append("url", "skip");
 
-        this.http.post<ProcessStatus>(this.baseUrl + '/cancel', formData).subscribe({
-            next: (status: ProcessStatus) => {
-                this.setState(status);
+        this.httpClient.post<void>(this.baseUrl + "/configure", formData).subscribe({
+            next: () => {
+                this.router.navigateByUrl(this.anonService.getStepName() === "ANONYMIZATION" ? '/synthetizationConfiguration' : "/execution");
+                this.stateManagement.setNextStep(this.anonService.getStepName() === "ANONYMIZATION" ? Steps.SYNTHETIZATION : Steps.EXECUTION);
             },
             error: err => {
-                this.error = `Failed to cancel the process. Status: ${err.status} (${err.statusText})`;
-            }
-        });
-    }
-
-    protected downloadResult() {
-        this.http.get(environments.apiUrl + "/api/project/zip", {responseType: 'arraybuffer'}).subscribe({
-            next: data => {
-                const blob = new Blob([data], {
-                    type: 'application/zip'
-                });
-                const url = window.URL.createObjectURL(blob);
-                window.open(url);
+                this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
             }
         });
     }

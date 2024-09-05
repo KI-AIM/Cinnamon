@@ -1,7 +1,6 @@
 package de.kiaim.platform.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -54,6 +53,7 @@ public class ExternalProcessEntity {
 	 * Time when the process has been scheduled.
 	 * Null if status is not SCHEDULED.
 	 */
+	@JsonIgnore
 	@Setter
 	@Nullable
 	private Timestamp scheduledTime;
@@ -62,6 +62,7 @@ public class ExternalProcessEntity {
 	 * URL to start the process.
 	 * Null if status is not SCHEDULED.
 	 */
+	@JsonIgnore
 	@Setter
 	@Nullable
 	private String processUrl;
@@ -74,12 +75,12 @@ public class ExternalProcessEntity {
 	private String externalId;
 
 	/**
-	 * The corresponding project.
+	 * The corresponding execution step.
 	 */
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.EAGER)
 	@Setter
-	private ProjectEntity project;
+	private ExecutionStepEntity executionStep;
 
 	/**
 	 * The result data set.
@@ -106,5 +107,4 @@ public class ExternalProcessEntity {
 	@MapKeyColumn(name = "filename")
 	@Lob
 	private final Map<String, byte[]> additionalResultFiles = new HashMap<>();
-
 }

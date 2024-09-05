@@ -5,6 +5,7 @@ export enum Steps {
 	VALIDATION,
 	ANONYMIZATION,
     SYNTHETIZATION,
+    EXECUTION,
 }
 
 export const StepConfiguration = {
@@ -56,5 +57,12 @@ export const StepConfiguration = {
         dependsOn: Steps.ANONYMIZATION,
         index: 5,
     },
-	//PERSISTING: {"path": "", "id": "", "text": "", "enum": Steps.PERSISTING, "index": 4},
+    EXECUTION: {
+        path: "execution",
+        id: "navLinkExecution",
+        text: "Execution",
+        enum: Steps.EXECUTION,
+        dependsOn: Steps.SYNTHETIZATION,
+        index: 6,
+    },
 };

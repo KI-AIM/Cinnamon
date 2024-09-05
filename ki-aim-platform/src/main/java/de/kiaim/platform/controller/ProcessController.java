@@ -4,14 +4,11 @@ import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.dto.StartProcessRequest;
-import de.kiaim.platform.model.entity.ExternalProcessEntity;
+import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Step;
-import de.kiaim.platform.service.DatabaseService;
-import de.kiaim.platform.service.ProcessService;
-import de.kiaim.platform.service.ProjectService;
-import de.kiaim.platform.service.UserService;
+import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -37,55 +34,93 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 @Tag(name = "/api/process", description = "API for managing processes.")
 public class ProcessController {
 
-	private final DatabaseService databaseService;
 	private final ProcessService processService;
 	private final ProjectService projectService;
+	private final StatusService statusService;
 	private final UserService userService;
 
-	public ProcessController(final DatabaseService databaseService, final ProcessService processService,
-	                         final ProjectService projectService, final UserService userService) {
-		this.databaseService = databaseService;
+	public ProcessController(final ProcessService processService, final ProjectService projectService,
+	                         final UserService userService, final StepService stepService,
+	                         StatusService statusService) {
 		this.processService = processService;
 		this.projectService = projectService;
 		this.userService = userService;
+		this.statusService = statusService;
 	}
 
-	@Operation(summary = "Returns the status of the process for the given step.",
-	           description = "Returns the status of the process for the given step.")
+	@Operation(summary = "Returns the status of the execution.",
+	           description = "Returns the status of the execution.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "Successfully returns the process object.",
-			             content = @Content(schema = @Schema(implementation = ExternalProcessEntity.class))),
-			@ApiResponse(responseCode = "400",
-			             description = "The step name does not exist.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             description = "Successfully returns the status object.",
+			             content = @Content(schema = @Schema(implementation = ExecutionStepEntity.class))),
 			@ApiResponse(responseCode = "500",
-			             description = "The Request for starting the process failed.",
+			             description = "The Request for fetching the status from the external server failed.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping("/{stepName}")
-	public ExternalProcessEntity getProcess(
-			@PathVariable("stepName") final String stepName,
+	@GetMapping(value = "", produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ExecutionStepEntity getProcess(
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		return processService.getStatus(project, stepName);
+		return processService.getStatus(project);
 	}
 
-	@Operation(summary = "Starts an external process.",
-	           description = "Starts an external process. Re")
+	@Operation(summary = "Saves the configuration and the URL of the selected process for the given step.",
+	           description = "Saves the configuration and the URL of the selected process for the given step.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "Successfully started the process. Returns the process object.",
-			             content = @Content(schema = @Schema(implementation = ExternalProcessEntity.class))),
+			             description = "Successfully saved the configuration and the URL.",
+			             content = @Content(schema = @Schema())),
+			@ApiResponse(responseCode = "400",
+			             description = "The step name is not valid or a process is running.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "The application is in an invalid state.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))})
+	})
+	@PostMapping(value = "/configure",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<Void> configureProcess(
+			@ParameterObject @Valid final StartProcessRequest requestData,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		// Load user from the database because lazy loaded fields cannot be read from the injected user
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+
+		// Configure process
+		processService.configureProcess(project, requestData.getStepName(), requestData.getUrl(),
+		                                requestData.getConfiguration());
+
+		// Go to the next step
+		final var nextStep = requestData.getStepName().equals(Step.ANONYMIZATION.name())
+		                     ? Step.SYNTHETIZATION
+		                     : Step.EXECUTION;
+		statusService.updateCurrentStep(project, nextStep);
+
+		return ResponseEntity.ok().build();
+	}
+
+
+	@Operation(summary = "Starts the execution.",
+	           description = "Starts the execution.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully started the execution. Returns the status object.",
+			             content = @Content(schema = @Schema(implementation = ExecutionStepEntity.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -93,46 +128,32 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
-			             description = "The step has no corresponding process entity.",
+			             description = "Starting the execution failed because of a failed request.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@PostMapping(value = "/start",
-	             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
+				 consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ExternalProcessEntity startProcess(
-			@ParameterObject @Valid final StartProcessRequest requestData,
+	public ExecutionStepEntity startProcess(
 			@AuthenticationPrincipal final UserEntity requestUser
-	)
-			throws ApiException {
+	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		// Save config
-		final Step step = Step.getStepOrThrow(requestData.getStepName());
-		databaseService.storeConfiguration(step, requestData.getConfiguration(), project);
-
 		// Start process
-		return processService.startProcess(project, requestData.getStepName(),
-		                                   requestData.getUrl(),
-		                                   requestData.getConfiguration());
+		return processService.start(project);
 	}
 
 	@Operation(summary = "Cancels a process.",
 	           description = "Cancels a process if one is scheduled or running.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "Successfully canceled the process. Returns the process object.",
-			             content = @Content(schema = @Schema(implementation = ExternalProcessEntity.class))),
-			@ApiResponse(responseCode = "400",
-			             description = "The step name is not valid.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             description = "Successfully canceled the process. Returns the status object.",
+			             content = @Content(schema = @Schema(implementation = ExecutionStepEntity.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The step has not been configured correctly or no corresponding process entity exists.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -141,17 +162,16 @@ public class ProcessController {
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@PostMapping(value = "/cancel",
-	             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
+	             consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ExternalProcessEntity cancelProcess(
-			@RequestParam("stepName") final String stepName,
+	public ExecutionStepEntity cancelProcess(
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		return processService.cancelProcess(project, stepName);
+		return processService.cancel(project);
 	}
 
 	@Operation(summary = "Callback endpoint for marking processes as finished.",

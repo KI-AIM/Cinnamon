@@ -32,8 +32,10 @@ public class StatusService {
 	 */
 	@Transactional
 	public void updateCurrentStep(final ProjectEntity project, final Step currentStep) {
-		updateStatus(project, currentStep,
-		             currentStep.isHasExternalProcessing() ? ProcessStatus.NOT_STARTED : ProcessStatus.NOT_REQUIRED);
+		final var processStatus = currentStep.getProcesses().isEmpty()
+		                          ? ProcessStatus.NOT_REQUIRED
+		                          : ProcessStatus.NOT_STARTED;
+		updateStatus(project, currentStep, processStatus);
 	}
 
 	/**

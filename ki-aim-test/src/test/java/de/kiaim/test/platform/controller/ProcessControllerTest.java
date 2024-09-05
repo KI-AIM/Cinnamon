@@ -1,5 +1,7 @@
 package de.kiaim.test.platform.controller;
 
+import de.kiaim.model.status.synthetization.SynthetizationStatus;
+import de.kiaim.model.status.synthetization.SynthetizationStepStatus;
 import de.kiaim.platform.model.dto.SynthetizationResponse;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
@@ -56,6 +58,7 @@ public class ProcessControllerTest extends ControllerTest {
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
 		registry.add("ki-aim.steps.synthetization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.steps.anonymization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
 	}
 
 	@BeforeEach
@@ -69,26 +72,46 @@ public class ProcessControllerTest extends ControllerTest {
 		mockBackEnd.shutdown();
 	}
 
-
 	@Test
-	public void getProcessNotRequired() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/" + Step.WELCOME.name()))
+	public void getProcessNotStarted() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/process"))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.NOT_REQUIRED.name()));
+		       .andExpect(jsonPath("status").value(ProcessStatus.NOT_STARTED.name()))
+		       .andExpect(jsonPath("currentStep").value(nullValue()));
 	}
 
 	@Test
-	public void getProcessNotStarted() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/" + Step.ANONYMIZATION.name()))
-		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("status").value(nullValue()));
+	public void configure() throws Exception {
+		mockMvc.perform(post("/api/process/configure")
+				                .param("stepName", Step.ANONYMIZATION.name())
+				                .param("url", "/start_synthetization_process/ctgan")
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
+		mockMvc.perform(post("/api/process/configure")
+				                .param("stepName", Step.SYNTHETIZATION.name())
+				                .param("url", "/start_synthetization_process/ctgan")
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
 	}
 
 	@Test
 	public void startAndFinishProcess() throws Exception {
+		// Setup
 		postData(false);
+		configure();
 
+		// All requests for one process
+		start();
+		getStatus1();
+		finish1();
+		getStatus2();
+		finish2();
+		getStatus3();
+	}
+
+	private void start() throws Exception {
 		final SynthetizationResponse response = new SynthetizationResponse();
 		response.setPid("123");
 		mockBackEnd.enqueue(new MockResponse.Builder()
@@ -96,30 +119,20 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .code(200)
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
-		mockBackEnd.enqueue(new MockResponse.Builder()
-				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-				                    .code(200)
-				                    .body("status")
-				                    .build());
-		mockBackEnd.enqueue(new MockResponse.Builder()
-				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-				                    .code(200)
-				                    .body("status")
-				                    .build());
 
-		mockMvc.perform(post("/api/process/start")
-				                .param("stepName", Step.SYNTHETIZATION.name())
-				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configurationName", "configurationName")
-				                .param("configuration", "configuration")
-				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		mockMvc.perform(post("/api/process/start"))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("status").value(nullValue()));
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("currentStep").value(Step.ANONYMIZATION.name()))
+		       .andExpect(jsonPath("processes.ANONYMIZATION.externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("processes.ANONYMIZATION.status").value(nullValue()))
+		       .andExpect(jsonPath("processes.SYNTHETIZATION.externalProcessStatus").value(
+				       ProcessStatus.NOT_STARTED.name()))
+		       .andExpect(jsonPath("processes.SYNTHETIZATION.status").value(nullValue()));
 
 		// Test state changes
 		var updateTestProject = getTestProject();
-		var process = updateTestProject.getProcesses().get(Step.SYNTHETIZATION);
+		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
 		assertNotNull(process, "No external process has been created!");
 		assertEquals(ProcessStatus.RUNNING, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
@@ -140,7 +153,7 @@ public class ProcessControllerTest extends ControllerTest {
 		final var upload = new JakartaServletFileUpload(factory);
 		final List<DiskFileItem> fileItems = upload.parseRequest(request);
 
-		final Long id = process.getId();
+		Long id = process.getId();
 		final String callbackUrl = "http://" + callbackHost + ":8080/api/process/" + id.toString() + "/callback";
 
 		// Test request content
@@ -162,15 +175,41 @@ public class ProcessControllerTest extends ControllerTest {
 			}
 		}
 
-		// Get status
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/" + Step.SYNTHETIZATION.name()))
-		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("status").value("status"));
+	}
 
-		recordedRequest = mockBackEnd.takeRequest();
+	private void getStatus1() throws Exception {
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
+		Long id = process.getId();
+
+		// Get status
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body("status")
+				                    .build());
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/process"))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("currentStep").value(Step.ANONYMIZATION.name()))
+		       .andExpect(jsonPath("processes.ANONYMIZATION.externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("processes.ANONYMIZATION.status").value("status"))
+		       .andExpect(jsonPath("processes.SYNTHETIZATION.externalProcessStatus").value(
+				       ProcessStatus.NOT_STARTED.name()))
+		       .andExpect(jsonPath("processes.SYNTHETIZATION.status").value(nullValue()));
+
+		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("GET", recordedRequest.getMethod());
-		assertEquals("/get_status/" + id, recordedRequest.getPath());
+		assertEquals("/api/anonymization/process/" + id + "/status", recordedRequest.getPath());
+	}
+
+	private void finish1() throws Exception {
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
+		Long id = process.getId();
+
+		final SynthetizationResponse response = new SynthetizationResponse();
+		response.setPid("123");
 
 		// Send callback request
 		final MockMultipartFile resultData = new MockMultipartFile("synthetic_data", "csv.csv",
@@ -179,13 +218,21 @@ public class ProcessControllerTest extends ControllerTest {
 		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
 		                                                                 "info".getBytes());
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(response))
+				                    .build());
 		mockMvc.perform(multipart("/api/process/" + id + "/callback")
 				                .file(resultData)
 				                .file(resultAdditional))
 		       .andExpect(status().isOk());
+		var recordedRequest = mockBackEnd.takeRequest();
+		assertEquals("POST", recordedRequest.getMethod());
+		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
 
 		// Test state changes
-		process = updateTestProject.getProcesses().get(Step.SYNTHETIZATION);
+		process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
 		assertEquals(ProcessStatus.FINISHED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 		assertNotNull(process.getResultDataSet(), "Result has not been set!");
@@ -196,11 +243,73 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals("info",
 		             new String(process.getAdditionalResultFiles().get("additional.txt"), StandardCharsets.UTF_8),
 		             "Additional result has not been set correctly!");
+
+	}
+
+	private void getStatus2() throws Exception {
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.SYNTHETIZATION);
+		Long id = process.getId();
+
+		var synthStatus = new SynthetizationStatus();
+		var synthStepStatus = new SynthetizationStepStatus();
+		synthStepStatus.setStep("callback");
+		synthStepStatus.setCompleted("False");
+		synthStatus.setStatus(List.of(synthStepStatus));
+
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(synthStatus))
+				                    .build());
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/process"))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("currentStep").value(Step.SYNTHETIZATION.name()))
+		       .andExpect(jsonPath("processes.ANONYMIZATION.externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("processes.ANONYMIZATION.status").value("status"))
+		       .andExpect(jsonPath("processes.SYNTHETIZATION.externalProcessStatus").value(
+				       ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("processes.SYNTHETIZATION.status").value("{\"status\":[{\"completed\":\"False\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"));
+		var recordedRequest = mockBackEnd.takeRequest();
+		assertEquals("GET", recordedRequest.getMethod());
+		assertEquals("/get_status/" + id, recordedRequest.getPath());
+	}
+
+	private void finish2() throws Exception {
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.SYNTHETIZATION);
+		Long id = process.getId();
+
+		final MockMultipartFile resultData = new MockMultipartFile("synthetic_data", "csv.csv",
+		                                                           MediaType.TEXT_PLAIN_VALUE,
+		                                                           "data".getBytes());
+		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
+		                                                                 MediaType.TEXT_PLAIN_VALUE,
+		                                                                 "info".getBytes());
+		mockMvc.perform(multipart("/api/process/" + id + "/callback")
+				                .file(resultData)
+				                .file(resultAdditional))
+		       .andExpect(status().isOk());
+	}
+
+	private void getStatus3() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/process"))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("status").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("currentStep").value(nullValue()))
+		       .andExpect(jsonPath("processes.ANONYMIZATION.externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("processes.ANONYMIZATION.status").value("status"))
+		       .andExpect(jsonPath("processes.SYNTHETIZATION.externalProcessStatus").value(
+				       ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("processes.SYNTHETIZATION.status").value("{\"status\":[{\"completed\":\"True\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"));
 	}
 
 	@Test
 	public void startAndCancelProcess() throws Exception {
 		postData(false);
+		configure();
 
 		final SynthetizationResponse response = new SynthetizationResponse();
 		response.setPid("123");
@@ -215,24 +324,19 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		mockMvc.perform(post("/api/process/start")
-				                .param("stepName", Step.SYNTHETIZATION.name())
-				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configurationName", "configurationName")
-				                .param("configuration", "configuration")
-				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		mockMvc.perform(post("/api/process/start"))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("status").value(nullValue()));
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("currentStep").value(Step.ANONYMIZATION.name()));
 
 		mockMvc.perform(multipart("/api/process/cancel")
 				                .param("stepName", Step.SYNTHETIZATION.name()))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.CANCELED.name()))
-		       .andExpect(jsonPath("status").value(nullValue()));
+		       .andExpect(jsonPath("status").value(ProcessStatus.CANCELED.name()))
+		       .andExpect(jsonPath("currentStep").value(nullValue()));
 
 		// Test state changes
-		final ExternalProcessEntity process = getTestProject().getProcesses().get(Step.SYNTHETIZATION);
+		final ExternalProcessEntity process = getTestProject().getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
 		assertEquals(ProcessStatus.CANCELED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 	}
@@ -241,6 +345,7 @@ public class ProcessControllerTest extends ControllerTest {
 	public void startSchedule() throws Exception {
 		// Start first
 		postData(false);
+		configure();
 
 		final SynthetizationResponse response = new SynthetizationResponse();
 		response.setPid("1");
@@ -251,30 +356,35 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .build());
 
 		mockMvc.perform(post("/api/process/start")
-				                .with(httpBasic("test_user", "password"))
-				                .param("stepName", Step.SYNTHETIZATION.name())
-				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configurationName", "configurationName")
-				                .param("configuration", "configuration")
-				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+				                .with(httpBasic("test_user", "password")))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("status").value(nullValue()));
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()));
 
 		// Start second
 		final var user = userService.save("test_user_3", "changeme");
 		var project = projectService.createProject(user);
 		postData(false, "test_user_3");
-
-		mockMvc.perform(post("/api/process/start")
+		mockMvc.perform(post("/api/process/configure")
+				                .with(httpBasic("test_user_3", "changeme"))
+				                .param("stepName", Step.ANONYMIZATION.name())
+				                .param("url", "/start_synthetization_process/ctgan")
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
+		mockMvc.perform(post("/api/process/configure")
 				                .with(httpBasic("test_user_3", "changeme"))
 				                .param("stepName", Step.SYNTHETIZATION.name())
 				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configurationName", "configurationName")
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
+
+
+		mockMvc.perform(post("/api/process/start")
+				                .with(httpBasic("test_user_3", "changeme")))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.SCHEDULED.name()));
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("processes.ANONYMIZATION.externalProcessStatus").value(ProcessStatus.SCHEDULED.name()));
 
 		// Cancel first
 		mockBackEnd.enqueue(new MockResponse.Builder()
@@ -291,45 +401,35 @@ public class ProcessControllerTest extends ControllerTest {
 				                .with(httpBasic("test_user", "password"))
 				                .param("stepName", Step.SYNTHETIZATION.name()))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.CANCELED.name()));
+		       .andExpect(jsonPath("status").value(ProcessStatus.CANCELED.name()));
 
 		project = projectService.getProject(user);
 
-		// Check if second process is running
-		assertEquals(ProcessStatus.RUNNING, project.getProcesses().get(Step.SYNTHETIZATION).getExternalProcessStatus());
-	}
-
-	@Test
-	public void startInvalidStepName() throws Exception {
-		postData(false);
-
-		mockMvc.perform(post("/api/process/start")
-				                .param("stepName", "invalid")
-				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configurationName", "configurationName")
-				                .param("configuration", "configuration")
-				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage(
-				       "The step 'invalid' is not defined!"));
+		// Check if the second process is running
+		assertEquals(ProcessStatus.RUNNING, project.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION).getExternalProcessStatus());
 	}
 
 	@Test
 	public void startNoData() throws Exception {
-		mockMvc.perform(post("/api/process/start")
-				                .param("stepName", "synthetization")
-				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configurationName", "configurationName")
-				                .param("configuration", "configuration")
-				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		configure();
+		mockMvc.perform(post("/api/process/start"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
 				       "No configuration for the project with the given ID '" + getTestProject().getId() + "' found!"));
 	}
 
 	@Test
+	public void startNoConfiguration() throws Exception {
+		mockMvc.perform(post("/api/process/start"))
+		       .andExpect(status().isInternalServerError())
+		       .andExpect(errorMessage(
+				       "No configuration with name 'anonymization' required for step 'ANONYMIZATION' found!"));
+	}
+
+	@Test
 	public void startModuleUnavailable() throws Exception {
 		postData(false);
+		configure();
 
 		final SynthetizationResponse response = new SynthetizationResponse();
 		response.setMessage("Not found");
@@ -339,32 +439,17 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		mockMvc.perform(post("/api/process/start")
-				                .param("stepName", "synthetization")
-				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configurationName", "configurationName")
-				                .param("configuration", "configuration2")
-				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		mockMvc.perform(post("/api/process/start"))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorMessage(
 				       "Failed to start the process! Got status of 404 NOT_FOUND with message: 'Not found'"));
 	}
 
 	@Test
-	public void cancelInvalidStepName() throws Exception {
-		mockMvc.perform(multipart("/api/process/cancel")
-				                .param("stepName", "Invalid"))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("The step 'Invalid' is not defined!"));
-	}
-
-	@Test
 	public void cancelNotStarted() throws Exception {
-		mockMvc.perform(multipart("/api/process/cancel")
-				                .param("stepName", Step.SYNTHETIZATION.name()))
+		mockMvc.perform(post("/api/process/cancel"))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("status").value(nullValue()));
+		       .andExpect(jsonPath("status").value(ProcessStatus.NOT_STARTED.name()));
 	}
 
 	@Test

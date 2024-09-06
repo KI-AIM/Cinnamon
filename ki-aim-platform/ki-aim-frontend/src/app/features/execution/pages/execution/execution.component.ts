@@ -57,8 +57,6 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         this.statusObserver = interval(10000).pipe(tap(() => {
             this.fetchStatus();
         }));
-
-        this.fetchStatus()
     }
 
     ngOnDestroy() {
@@ -66,14 +64,7 @@ export class ExecutionComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        this.getProcess().subscribe({
-            next: process => {
-                this.setState(process.status);
-                if (this.status.status === ProcessStatus.FINISHED) {
-                    this.synthProcess = process.status === null ? null : JSON.parse(process.status);
-                }
-            },
-        });
+        this.fetchStatus();
     }
 
     /**

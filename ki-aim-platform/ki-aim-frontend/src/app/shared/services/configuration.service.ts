@@ -246,7 +246,7 @@ export class ConfigurationService {
     public fetchConfigurations(step: Steps) {
         const stepIndex = Number.parseInt(Steps[step]);
         for (const config of this.getRegisteredConfigurations()) {
-            if (config.availableAfterStep <= stepIndex) {
+            if (config.availableAfterStep < stepIndex) {
                 config.fetchConfig!(config.name).subscribe({
                     next: value => {
                         const data = new ImportPipeData();

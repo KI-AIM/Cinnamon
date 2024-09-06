@@ -166,11 +166,11 @@ public class ProcessService {
 			return executionStep;
 		}
 
+		executionStep.setStatus(ProcessStatus.RUNNING);
+
 		// Start the first step
 		startNext(executionStep);
 
-		// Update
-		executionStep.setStatus(ProcessStatus.RUNNING);
 		projectRepository.save(project);
 
 		return executionStep;
@@ -380,49 +380,63 @@ public class ProcessService {
 	private void startNext(final ExecutionStepEntity executionStep)
 			throws BadColumnNameException, BadDataSetIdException, InternalInvalidStateException, InternalDataSetPersistenceException, InternalRequestException, InternalApplicationConfigurationException, InternalIOException {
 		// Get the next step
-		final Step step;
+		Step nextStep = null;
+		ExternalProcessEntity nextProcess = null;
 
-		if (executionStep.getCurrentStep() == null) {
-			step = executionStep.getStep().getProcesses().get(0);
-		} else {
-			final var lastStepStatus = executionStep.getProcesses().get(executionStep.getCurrentStep())
-			                                        .getExternalProcessStatus();
-			if (!(lastStepStatus == ProcessStatus.FINISHED || lastStepStatus == ProcessStatus.SKIPPED)) {
-				throw new InternalInvalidStateException(InternalInvalidStateException.LAST_STEP_NOT_FINISHED,
-				                                        "Cannot start a process if the previous process is not finished or skipped!");
-			}
+		Step lastStep = executionStep.getCurrentStep();
+		Step stepCandidate;
+		ExternalProcessEntity processCandidate;
+		boolean foundNext = false;
 
-			final var stepIndex = executionStep.getStep().getProcesses().indexOf(executionStep.getCurrentStep());
-			if (stepIndex < executionStep.getStep().getProcesses().size() - 1) {
-				// Start the next process
-				step = executionStep.getStep().getProcesses().get(stepIndex + 1);
+		while (!foundNext) {
+			if (lastStep == null) {
+				stepCandidate = executionStep.getStep().getProcesses().get(0);
 			} else {
-				// Set to be finished
-				executionStep.setCurrentStep(null);
-				executionStep.setStatus(ProcessStatus.FINISHED);
-				return;
+				final var lastStepStatus = executionStep.getProcesses().get(lastStep).getExternalProcessStatus();
+				if (!(lastStepStatus == ProcessStatus.FINISHED || lastStepStatus == ProcessStatus.SKIPPED)) {
+					throw new InternalInvalidStateException(InternalInvalidStateException.LAST_STEP_NOT_FINISHED,
+					                                        "Cannot start a process if the previous process is not finished or skipped!");
+				}
+
+				final var stepIndex = executionStep.getStep().getProcesses().indexOf(lastStep);
+				if (stepIndex < executionStep.getStep().getProcesses().size() - 1) {
+					// Start the next process
+					stepCandidate = executionStep.getStep().getProcesses().get(stepIndex + 1);
+				} else {
+					break;
+				}
+			}
+
+			if (!executionStep.getProcesses().containsKey(stepCandidate)) {
+				throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
+				                                        "No process entity for stepCandidate '" + stepCandidate.name() + "' available!");
+			}
+
+			executionStep.setCurrentStep(stepCandidate);
+
+			processCandidate = executionStep.getProcesses().get(stepCandidate);
+
+			// Check if the process should be skipped
+			if (Objects.equals(processCandidate.getProcessUrl(), "skip")) {
+				processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
+				lastStep = stepCandidate;
+			} else {
+				foundNext = true;
+				nextStep = stepCandidate;
+				nextProcess = processCandidate;
 			}
 		}
 
-		if (!executionStep.getProcesses().containsKey(step)) {
-			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
-			                                        "No process entity for step '" + step.name() + "' available!");
-		}
+		// Update the execution
+		executionStep.setCurrentStep(nextStep);
 
-		executionStep.setCurrentStep(step);
-
-		final ExternalProcessEntity externalProcess = executionStep.getProcesses().get(step);
-
-		// Check if the process should be skipped
-		if (Objects.equals(externalProcess.getProcessUrl(), "skip")) {
-			externalProcess.setExternalProcessStatus(ProcessStatus.SKIPPED);
-			startNext(executionStep);
-			return;
-		}
-
-		if (externalProcess.getExternalProcessStatus() != ProcessStatus.SCHEDULED &&
-		    externalProcess.getExternalProcessStatus() != ProcessStatus.RUNNING) {
-			startOrScheduleProcess(externalProcess);
+		if (nextStep != null) {
+			if (nextProcess.getExternalProcessStatus() != ProcessStatus.SCHEDULED &&
+			    nextProcess.getExternalProcessStatus() != ProcessStatus.RUNNING) {
+				startOrScheduleProcess(nextProcess);
+			}
+		} else {
+			executionStep.setStatus(ProcessStatus.FINISHED);
 		}
 	}
 

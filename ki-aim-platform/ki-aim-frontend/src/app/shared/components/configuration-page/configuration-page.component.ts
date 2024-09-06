@@ -61,11 +61,13 @@ export class ConfigurationPageComponent implements OnInit {
     private setConfig(config: ImportPipeData) {
         if (config.success) {
             this.error = null;
-            const result = this.anonService.readConfiguration(parse(config.yamlConfigString), config.configData.name);
-            this.selection.selectedOption = result.selectedAlgorithm;
-            setTimeout(() => {
-                this.forms.setConfiguration(result.config);
-            }, 100);
+            if (config.yamlConfigString !== "skip") {
+                const result = this.anonService.readConfiguration(parse(config.yamlConfigString), config.configData.name);
+                this.selection.selectedOption = result.selectedAlgorithm;
+                setTimeout(() => {
+                    this.forms.setConfiguration(result.config);
+                }, 100);
+            }
         } else {
             this.error = "Failed to load configuration";
         }
@@ -78,16 +80,7 @@ export class ConfigurationPageComponent implements OnInit {
                 formData.append("configuration", stringify(this.anonService.createConfiguration(configuration, this.selection.selectedOption)));
                 formData.append("stepName", this.anonService.getStepName());
                 formData.append("url", value.URL);
-
-                this.httpClient.post<void>(this.baseUrl + "/configure", formData).subscribe({
-                    next: () => {
-                        this.router.navigateByUrl(this.anonService.getStepName() === "ANONYMIZATION" ? '/synthetizationConfiguration' : "/execution");
-                        this.stateManagement.setNextStep(this.anonService.getStepName() === "ANONYMIZATION" ? Steps.SYNTHETIZATION : Steps.EXECUTION);
-                    },
-                    error: err => {
-                        this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
-                    }
-                });
+                this.configure(formData);
             }
         });
     }
@@ -97,7 +90,10 @@ export class ConfigurationPageComponent implements OnInit {
         formData.append("configuration", "skip");
         formData.append("stepName", this.anonService.getStepName());
         formData.append("url", "skip");
+        this.configure(formData);
+    }
 
+    private configure(formData: FormData) {
         this.httpClient.post<void>(this.baseUrl + "/configure", formData).subscribe({
             next: () => {
                 this.router.navigateByUrl(this.anonService.getStepName() === "ANONYMIZATION" ? '/synthetizationConfiguration' : "/execution");

@@ -28,6 +28,7 @@
     <modules>
         <module>ki-aim-model</module>
         <module>ki-aim-platform</module>
+        <module>ki-aim-anon</module>
         <module>ki-aim-test</module>
     </modules>
 

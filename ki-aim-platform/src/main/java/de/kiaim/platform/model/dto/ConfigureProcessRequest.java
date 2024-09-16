@@ -5,9 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-@Schema(description = "Request for starting an external process.")
+@Schema(description = "Request for configuring an external process.")
 @Getter @Setter
-public class StartProcessRequest {
+public class ConfigureProcessRequest {
 
 	@Schema(description = "Name of the step.", example = "SYNTHETIZATION")
 	@NotBlank

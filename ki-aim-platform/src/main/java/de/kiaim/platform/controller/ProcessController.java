@@ -3,7 +3,7 @@ package de.kiaim.platform.controller;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.ErrorResponse;
-import de.kiaim.platform.model.dto.StartProcessRequest;
+import de.kiaim.platform.model.dto.ConfigureProcessRequest;
 import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
@@ -94,7 +94,7 @@ public class ProcessController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Void> configureProcess(
-			@ParameterObject @Valid final StartProcessRequest requestData,
+			@ParameterObject @Valid final ConfigureProcessRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user

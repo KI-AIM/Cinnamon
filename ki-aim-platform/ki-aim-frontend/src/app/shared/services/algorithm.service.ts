@@ -27,12 +27,12 @@ export abstract class AlgorithmService {
     }
 
     /**
-     * Name of the step. Must be equal to the name in application.config.
+     * Name of the step. Must be equal to the name in Spring's application.properties.
      */
-    getStepName: () => string;
+    abstract getStepName(): string;
 
     /**
-     * Creates the YAML configuration.
+     * Creates the YAML configuration object sent to the backend as well as to the external module.
      * @param arg The configuration from the form.
      * @param selectedAlgorithm The selected algorithm.
      */
@@ -75,14 +75,6 @@ export abstract class AlgorithmService {
      */
     public getAlgorithmByName(algorithmName: string): Algorithm {
         return this._algorithms?.find((value) => value.name === algorithmName)!;
-    }
-
-    /**
-     * Returns the definition for the algorithm with the given name.
-     * @param algorithmName The algorithm of which the definition should be returned.
-     */
-    public getAlgorithmDefinitionByName(algorithmName: string): Observable<AlgorithmDefinition> {
-        return this.getAlgorithmDefinition(this.getAlgorithmByName(algorithmName));
     }
 
     /**

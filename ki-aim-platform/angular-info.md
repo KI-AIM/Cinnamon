@@ -216,6 +216,118 @@ export class UploadFileComponent {
 
 To achieve the same on the root application level, the provider has to registered in the root module.
 
+# Managing and synchronizing configurations
+Managing generic configurations can be done by using the [ConfigurationsService](ki-aim-frontend/src/app/shared/services/configuration.service.ts).
+This service provides the utility to import/export configurations and automatically synchronizations with the backend.
+In order to use the ConfigurationService, the configuration has to be registered beforehand by calling the `registerConfiguration(data: ConfigurationRegisterData)` function with a configured [ConfigurationRegisterData](/ki-aim-frontend/src/app/shared/model/configuration-register-data.ts) object.
+The details are described in the documentation of the fields.
+The configurations can be registered at application start by using the provider in the module declaration.
+Below is an example from the [DataUploadModule](ki-aim-frontend/src/app/features/data-upload/data-upload.module.ts).
+
+```ts
+@NgModule({
+    // ...
+    providers: [
+        // ...
+        {
+            // Calls the useFactory function when starting the application
+            provide: APP_INITIALIZER,
+            useFactory: (service: DataConfigurationService) => function () { return service.registerConfig(); },
+            deps: [DataConfigurationService],
+            multi: true,
+        },
+    ],
+})
+export class DataUploadModule {}
+```
+
+A registered configuration gets fetched when the page is loaded.
+For this the auth guard [state-guard](ki-aim-frontend/src/app/core/guards/state.guard.ts) is used to trigger the request.
+When exporting or importing a configuration, the configuration gets pushed to the backend.
+
+# Working with configuration pages
+The [ConfigurationPage](ki-aim-frontend/src/app/shared/components/configuration-page) component and the [AlgorithmService](ki-aim-frontend/src/app/shared/services/algorithm.service.ts) together provide the utility to display a form based on a given configuration definition.
+Each step that uses this utility should have its own module.
+See the [Synthetization](ki-aim-frontend/src/app/features/synthetization) as an example.
+A minimal setup requires a module containing a component that includes the `ConfigurationPage` component and a service that extends the `AlgorithmService`.
+The module declaration and the service are used to register the configuration as shown in the previous section.
+Additionally, three functions have to be implemented in the service.
+
+```ts
+export abstract class AlgorithmService {
+    /**
+     * Name of the step. Must be equal to the name in Spring's application.properties.
+     */
+    abstract getStepName(): string;
+
+    /**
+     * Creates the YAML configuration object sent to the backend as well as to the external module.
+     * @param arg The configuration from the form.
+     * @param selectedAlgorithm The selected algorithm.
+     */
+    abstract createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object;
+
+    /**
+     * Extracts the form data and the algorithm name from the given configuration object.
+     * @param arg The configuration object.
+     * @param configurationName The key of the configuration.
+     */
+    abstract readConfiguration(arg: Object, configurationName: string): { config: Object, selectedAlgorithm: Algorithm };
+    
+    // ...
+}
+```
+
+The component is simple and requires two things.
+Inside the HTML the `ConfigurationPage` has to be included as follows.
+
+```html
+<app-configuration-page></app-configuration-page>
+```
+In the component's declarations, an implementation of the algorithm service has to be provided.
+
+```ts
+@Component({
+    // ...
+    providers: [
+        {
+            provide: AlgorithmService,
+            useExisting: SynthetizationService
+        },
+    ]
+})
+export class SynthetizationConfigurationComponent {
+    // ...
+}
+```
+
+The `ConfiguraitonPage` automatically injects the provided service.
+
+```ts
+export class ConfigurationPageComponent implements OnInit {
+    // ...
+    constructor(
+        protected readonly algorithmService: AlgorithmService,
+        // ...
+    ) {
+    }
+    
+    // ...
+}
+```
+## Internal workflow
+The page fetches the step configuration from the API using the step name defined inside the algorithm service implementation.
+Then the available algorithms are fetched and displayed in the selection input.
+When selecting an algorithm, the definition is fetched and the form is created dynamically by using the ["dynamic form"](https://angular.dev/guide/forms/dynamic-forms) pattern.
+For that, the form object and the corresponding HTML form are created with a matching structure.
+
+## New input types
+New form elements can be added by creating a new switch case inside [configuration-input.component.html](ki-aim-frontend/src/app/shared/components/configuration-input/configuration-input.component.html).
+For this, a new value of [ConfigurationInputType](ki-aim-frontend/src/app/shared/model/configuration-input-type.ts) should be created.
+In special cases, the function `setToDefault()` inside [configuration-input.component.ts](ki-aim-frontend/src/app/shared/components/configuration-input/configuration-input.component.ts) has to be adapted as well.
+New validations can be added by modifying the `createFrom` method inside [configuration-form.component.ts](ki-aim-frontend/src/app/shared/components/configuration-form/configuration-form.component.ts) and by adding new `<mat-error>` elements to the input in [configuration-input.component.html](ki-aim-frontend/src/app/shared/components/configuration-input/configuration-input.component.html)
+For complex inputs, the `createForm` method must be adapted as well to create the matching form object.
+
 # Styling conventions
 It is also possible to define component specific styles. Upon creation, every components creates its own stylesheet and links it to the class definition. If a styling should be limited to only the component and should not be applied to anything else these stylesheets should be used.
 For more general styling the global stylesheets in `src/app/styles/..` should be used. Examples for such styling could be layout specifc rules, colors, reappearing elements (that are not the component itself), etc. Currently these are rules for viewsizes, the general layout, some reusable variables, colors and icons.

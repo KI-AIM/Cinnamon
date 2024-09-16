@@ -18,7 +18,9 @@ export class SynthetizationService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName = (): string => "SYNTHETIZATION";
+    public override getStepName() {
+        return "SYNTHETIZATION";
+    }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
         return {

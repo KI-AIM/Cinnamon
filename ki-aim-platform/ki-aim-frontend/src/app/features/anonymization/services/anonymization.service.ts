@@ -18,7 +18,9 @@ export class AnonymizationService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName = (): string => "ANONYMIZATION";
+    public override getStepName() {
+        return "ANONYMIZATION";
+    }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
         // TODO

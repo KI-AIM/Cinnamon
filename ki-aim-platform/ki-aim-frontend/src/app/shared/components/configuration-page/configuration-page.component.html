@@ -1,10 +1,11 @@
+<!-- Error -->
 <app-info-card [hidden]="error === null" typeClass="card-failure">
     <div>{{ error }}</div>
 </app-info-card>
 
 <!-- Upload -->
 <div class="mb-2">
-    <app-configuration-upload [configurationNameObservable]="this.anonService.stepConfig" [disabled]="disabled">
+    <app-configuration-upload [configurationNameObservable]="this.algorithmService.stepConfig" [disabled]="disabled">
     </app-configuration-upload>
 </div>
 
@@ -24,7 +25,7 @@
         <ng-container *ngIf="selection.selectedOption.name === item.name">
             <p>{{ item.description }}</p>
 
-            <app-configuration-form #form [algorithmName]="item.name" [algorithm]="item" [disabled]="disabled"
+            <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
                                     (submitConfiguration)="onSubmit($event)">
             </app-configuration-form>
         </ng-container>

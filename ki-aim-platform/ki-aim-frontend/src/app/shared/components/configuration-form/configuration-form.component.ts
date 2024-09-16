@@ -5,6 +5,11 @@ import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { AlgorithmService } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
 
+/**
+ * HTML form and submit button for one algorithm.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Component({
     selector: 'app-configuration-form',
     templateUrl: './configuration-form.component.html',
@@ -12,13 +17,32 @@ import { Algorithm } from "../../model/algorithm";
 })
 export class ConfigurationFormComponent implements OnInit {
 
+    /**
+     * The algorithm that is configured with this form.
+     */
     @Input() public algorithm!: Algorithm;
-    @Input() public algorithmName!: string;
-    @Input() public disabled!: boolean;
-    protected algorithmDefinition: AlgorithmDefinition;
 
-    @Output() public submitConfiguration = new EventEmitter<string>();
+    /**
+     * If this form is disabled.
+     */
+    @Input() public disabled!: boolean;
+
+    /**
+     * The definition of the configuration fetched from the external API.
+     * @protected
+     */
+    protected algorithmDefinition: AlgorithmDefinition;
+    /**
+     * Dynamically created form for the configuration.
+     * @protected
+     */
     protected form: FormGroup;
+
+    /**
+     * Event for submitting the configurations.
+     * Emits the raw JSON of the form.
+     */
+    @Output() public submitConfiguration = new EventEmitter<Object>();
 
     constructor(
         private readonly anonService: AlgorithmService
@@ -27,7 +51,8 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.anonService.getAlgorithmDefinitionByName(this.algorithmName)
+        // Fetch the configuration definition.
+        this.anonService.getAlgorithmDefinition(this.algorithm)
             .subscribe(value => {
                 this.algorithmDefinition = value
                 this.form = this.createForm(value);
@@ -35,23 +60,33 @@ export class ConfigurationFormComponent implements OnInit {
             });
     }
 
+    /**
+     * Returns if the form and all its inputs are valid.
+     */
     public get valid(): boolean {
         return !this.form.invalid;
     }
 
+    /**
+     * Gets the raw JSON of the form.
+     */
     public get formData(): Object {
         return this.form.getRawValue();
     }
 
-    getConfiguration() {
-        return this.form.getRawValue();
-    }
-
-    setConfiguration(configuration: Object) {
+    /**
+     * Sets the values of the form from the given JSON object.
+     * @param configuration JSON of the form.
+     */
+    public setConfiguration(configuration: Object) {
         this.form.setValue(configuration);
     }
 
-    getGroupNames(): Array<string> {
+    /**
+     * Returns the names of the groups in the configuration definition.
+     * @protected
+     */
+    protected getGroupNames(): Array<string> {
         if (this.algorithmDefinition == undefined) {
             return [];
         }
@@ -59,6 +94,10 @@ export class ConfigurationFormComponent implements OnInit {
         return Object.keys(this.algorithmDefinition.configurations);
     }
 
+    /**
+     * Enables or disables the form based on the current value of {@link disabled}.
+     * @private
+     */
     private updateForm() {
         if (this.disabled) {
             this.form.disable();
@@ -67,10 +106,21 @@ export class ConfigurationFormComponent implements OnInit {
         }
     }
 
-    onSubmit() {
-        this.submitConfiguration.emit(this.form.getRawValue());
+    /**
+     * Emits the submit-event with the current form.
+     * @protected
+     */
+    protected onSubmit() {
+        this.submitConfiguration.emit(this.formData);
     }
 
+    /**
+     * Dynamically creates the form object based on the given definition.
+     * HTML must be created separately inside the HTML file as well.
+     *
+     * @param algorithmDefinition The definition.
+     * @private
+     */
     private createForm(algorithmDefinition: AlgorithmDefinition): FormGroup {
         const formGroup: any = {};
 
@@ -86,6 +136,7 @@ export class ConfigurationFormComponent implements OnInit {
 
                     group[inputDefinition.name] = new FormArray(controls, Validators.required)
                 } else {
+                    // Add validators of the input
                     const validators = [Validators.required];
                     if (inputDefinition.min_value !== null) {
                         validators.push(Validators.min(inputDefinition.min_value));

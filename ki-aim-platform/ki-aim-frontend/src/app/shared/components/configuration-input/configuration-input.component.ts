@@ -3,6 +3,11 @@ import { ConfigurationInputDefinition } from "../../model/configuration-input-de
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 
+/**
+ * Component for an input including the reset button and the information popup.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Component({
   selector: 'app-configuration-input',
   templateUrl: './configuration-input.component.html',
@@ -12,14 +17,31 @@ export class ConfigurationInputComponent {
     protected readonly ConfigurationInputType = ConfigurationInputType;
     protected readonly Math = Math;
 
+    /**
+     * The definition for this input.
+     */
     @Input() public configurationInputDefinition!: ConfigurationInputDefinition;
+
+    /**
+     * The parent form group of the input.
+     */
     @Input() public form!: FormGroup;
+
+    /**
+     * If the input is disabled.
+     */
     @Input() public disabled!: boolean;
 
+    /**
+     * If the input is valid.
+     */
     get isValid() {
         return !this.form.controls[this.configurationInputDefinition.name].invalid;
     }
 
+    /**
+     * Sets the value of the input to its default specified in the definition.
+     */
     setToDefault() {
         if (this.configurationInputDefinition.type === ConfigurationInputType.LIST) {
             const formArray = this.form.controls[this.configurationInputDefinition.name] as FormArray

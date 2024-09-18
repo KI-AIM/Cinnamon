@@ -1,0 +1,23 @@
+<div class="d-flex flex-row mb-2 justify-content-between">
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Column name</mat-label>
+
+            <input type="text" matInput [id]="'name_' + rowNumber" [(ngModel)]="configurationRow.name" required
+                appNoSpaceValidator #name="ngModel" />
+            <!--<mat-error *ngIf="name.errors?.['noSpace']">Name must not contain spaces</mat-error>-->
+        </mat-form-field>
+    </div>
+
+    <!-- TODO: Add new columns here. See "attribute-configuration.component.html" for examples -->
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Column type</mat-label>
+            <mat-select [id]="'type_' + rowNumber">
+                <mat-option>Option1</mat-option>
+                <mat-option>Option1</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+</div>

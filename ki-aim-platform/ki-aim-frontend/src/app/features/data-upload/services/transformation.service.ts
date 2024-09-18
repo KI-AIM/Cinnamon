@@ -42,7 +42,7 @@ export class TransformationService {
         return this.stateManagement.fetchStatus().pipe(
             concatMap(status => {
                 if (this.stateManagement.isStepCompleted(Steps.VALIDATION)) {
-                    return this.http.get<TransformationResult>(environments.apiUrl + "/api/data/transformationResult")
+                    return this.http.get<TransformationResult>(environments.apiUrl + "/api/data/validation/transformationResult")
                         .pipe(
                             tap(value => {
                                 this.transformationResult = value;

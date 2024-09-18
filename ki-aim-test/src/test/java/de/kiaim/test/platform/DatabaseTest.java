@@ -3,6 +3,7 @@ package de.kiaim.test.platform;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.repository.DataSetRepository;
 import de.kiaim.platform.repository.DataTransformationErrorRepository;
 import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.platform.repository.UserRepository;
@@ -32,6 +33,8 @@ public class DatabaseTest extends ContextRequiredTest {
 
 	@Autowired
 	protected DataTransformationErrorRepository dataTransformationErrorRepository;
+	@Autowired
+	DataSetRepository dataSetRepository;
 	@Autowired
 	ProjectRepository projectRepository;
 	@Autowired
@@ -91,8 +94,8 @@ public class DatabaseTest extends ContextRequiredTest {
 		             "The configuration has not been stored correctly!");
 	}
 
-	protected boolean existsDataConfigration(final long dataSetId) {
-		return projectRepository.existsById(dataSetId);
+	protected boolean existsDataSet(final long dataSetId) {
+		return dataSetRepository.existsById(dataSetId);
 	}
 
 	protected boolean existsTable(final long dataSetId) {
@@ -136,7 +139,7 @@ public class DatabaseTest extends ContextRequiredTest {
 							FOR _tbl  IN
 							    SELECT quote_ident(table_schema) || '.' || quote_ident(table_name)
 							    FROM   information_schema.tables
-							    WHERE  table_name LIKE 'data_set_' || '%'
+							    WHERE  table_name LIKE 'dataset_' || '%'
 							    AND    table_schema NOT LIKE 'pg\\_%'
 							LOOP
 							    EXECUTE 'DROP TABLE ' || _tbl;

@@ -4,10 +4,12 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.configuration.data.StringPatternConfiguration;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.repository.DataSetRepository;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.test.platform.ControllerTest;
 import de.kiaim.test.util.*;
@@ -32,6 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class DataControllerTest extends ControllerTest {
 
 	@Autowired ProjectService projectService;
+
+	@Autowired DataSetRepository dataSetRepository;
 
 	@BeforeEach
 	public void setUp() {
@@ -221,15 +225,16 @@ class DataControllerTest extends ControllerTest {
 		                       .andReturn().getResponse().getContentAsString();
 
 		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result.trim()));
+		final DataSetEntity dataSetEntity = dataSetRepository.findById(dataSetId).get();
 
 		UserEntity testUser = getTestUser();
 
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
+		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
 		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getProject().getId(),
-		             "User has been associated with the wrong dataset!");
+		assertEquals(dataSetId, dataSetEntity.getId(), "User has been associated with the wrong dataset!");
+		assertTrue(dataSetEntity.isStoredData(), "Flag that the data is stored should be true!");
 		// TODO fix when creating projects dynamically
 //		assertEquals(Step.ANONYMIZATION, testUser.getProject().getStatus().getCurrentStep(),
 //		             "The current step has not been updated!");
@@ -295,7 +300,7 @@ class DataControllerTest extends ControllerTest {
 	void loadData() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataAsYaml()));
@@ -303,16 +308,16 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadDataNoDataSet() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
-				       "No configuration for the project with the given ID '" + testProject.getId() + "' found!"));
+				       "The project '" + testProject.getId() + "' does not contain a data set for step 'VALIDATION'!"));
 	}
 
 	@WithAnonymousUser
 	@Test
 	void loadDataNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data"))
 		       .andExpect(status().isUnauthorized());
 	}
 
@@ -320,7 +325,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
@@ -331,7 +336,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataInvalidColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .param("columns", "invalid1,column4_integer,invalid2"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Data set does not contain columns with names: 'invalid1', 'invalid2'"));
@@ -344,7 +349,7 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 		final String formatErrorEncoding = ":(";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
@@ -359,7 +364,7 @@ class DataControllerTest extends ControllerTest {
 
 		final String defaultNullEncoding = "N/A";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", "$null"))
@@ -374,7 +379,7 @@ class DataControllerTest extends ControllerTest {
 
 		final String defaultNullEncoding = "N/A";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", "$value"))
@@ -395,7 +400,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSet() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
 		                                      .accept(CustomMediaType.APPLICATION_YAML))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsYaml()));
@@ -403,16 +408,16 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadDataSetNoDataSet() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
-				       "No configuration for the project with the given ID '" + testProject.getId() + "' found!"));
+				       "The project '" + testProject.getId() + "' does not contain a data set for step 'VALIDATION'!"));
 	}
 
 	@WithAnonymousUser
 	@Test
 	void loadDataSetNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation"))
 		       .andExpect(status().isUnauthorized());
 	}
 
@@ -420,7 +425,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
@@ -431,7 +436,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetInvalidColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
 		                                      .param("columns", "invalid1,column4_integer,invalid2"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Data set does not contain columns with names: 'invalid1', 'invalid2'"));
@@ -444,7 +449,7 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 		final String formatErrorEncoding = ":(";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
@@ -462,7 +467,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResult() throws Exception {
 		postData(true);
 
-		mockMvc.perform(get("/api/data/transformationResult"))
+		mockMvc.perform(get("/api/data/validation/transformationResult"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(oneOf(TransformationResultTestHelper.generateTransformationResultAsJsonA(),
 		                                         TransformationResultTestHelper.generateTransformationResultAsJsonB())));
@@ -483,54 +488,46 @@ class DataControllerTest extends ControllerTest {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-		final String result = mockMvc.perform(multipart("/api/data/configuration")
-				                                      .file(file)
-				                                      .param("fileConfiguration",
-				                                             objectMapper.writeValueAsString(fileConfiguration))
-				                                      .param("configuration", configuration))
-		                             .andExpect(status().isOk())
-		                             .andReturn().getResponse().getContentAsString();
-
-		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result.trim()));
+		mockMvc.perform(multipart("/api/data/configuration")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration))
+				                .param("configuration", configuration))
+		       .andExpect(status().isOk());
+		final DataSetEntity dataSetEntity = getTestProject().getDataSets().get(Step.VALIDATION);
+		final var dataSetId = dataSetEntity.getId();
 
 		UserEntity testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
+		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
 		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getProject().getId(),
-		             "User has been associated with the wrong dataset!");
 		assertEquals(".*",
-		             ((StringPatternConfiguration) testUser.getProject().getDataConfiguration()
-		                                                   .getConfigurations().get(5).getConfigurations()
-		                                                   .get(0))
+		             ((StringPatternConfiguration) testUser.getProject().getDataSets().get(Step.VALIDATION)
+		                                                   .getDataConfiguration().getConfigurations().get(5)
+		                                                   .getConfigurations().get(0))
 				             .getPattern(),
 		             "Type of first column does not match!");
 
 		final DataConfiguration configurationUpdate = DataConfigurationTestHelper.generateDataConfiguration("[0-9]*");
 
-		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
-				                                            .file(file)
-				                                            .param("fileConfiguration",
-				                                                   objectMapper.writeValueAsString(fileConfiguration))
-				                                            .param("configuration",
-				                                                   objectMapper.writeValueAsString(
-						                                                   configurationUpdate)))
-		                                   .andExpect(status().isOk())
-		                                   .andReturn().getResponse().getContentAsString();
-
-		final long dataSetIdUpdate = assertDoesNotThrow(() -> Long.parseLong(resultUpdate.trim()));
+		mockMvc.perform(multipart("/api/data/configuration")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration))
+				                .param("configuration",
+				                       objectMapper.writeValueAsString(
+						                       configurationUpdate)))
+		       .andExpect(status().isOk())
+		       .andReturn().getResponse().getContentAsString();
 
 		testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
+		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
 		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
-		assertEquals(dataSetIdUpdate, testUser.getProject().getId(),
-		             "User has been associated with the wrong dataset!");
-		assertEquals(dataSetIdUpdate, dataSetId, "Update has changed the DataSet id!");
 		assertEquals("[0-9]*",
-		             ((StringPatternConfiguration) testUser.getProject().getDataConfiguration()
-		                                                   .getConfigurations().get(5).getConfigurations()
-		                                                   .get(0)).getPattern(),
+		             ((StringPatternConfiguration) testUser.getProject().getDataSets().get(Step.VALIDATION)
+		                                                   .getDataConfiguration().getConfigurations().get(5)
+		                                                   .getConfigurations().get(0)).getPattern(),
 		             "Type of first column does not match!");
 	}
 

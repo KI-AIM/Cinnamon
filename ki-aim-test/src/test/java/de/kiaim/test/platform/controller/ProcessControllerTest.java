@@ -415,7 +415,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/start"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
-				       "No configuration for the project with the given ID '" + getTestProject().getId() + "' found!"));
+				       "The project '" + testProject.getId() + "' does not contain a data set for step 'VALIDATION'!"));
 	}
 
 	@Test

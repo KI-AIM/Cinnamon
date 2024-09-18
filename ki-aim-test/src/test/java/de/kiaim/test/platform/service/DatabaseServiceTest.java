@@ -7,9 +7,11 @@ import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Mode;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.test.platform.DatabaseTest;
@@ -43,18 +45,23 @@ class DatabaseServiceTest extends DatabaseTest {
 	void storeAndDelete() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
 
-		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult,(testProject)));
+		long dataSetId = assertDoesNotThrow(() -> databaseService.storeTransformationResult(transformationResult, testProject, Step.VALIDATION));
+
+		assertTrue(testProject.getDataSets().containsKey(Step.VALIDATION), "Data set has not been created!");
+		final DataSetEntity dataSetEntity = testProject.getDataSets().get(Step.VALIDATION);
 
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertEquals(dataSetId,(testProject).getId(), "Project has been associated with the wrong dataset!");
-		assertEquals(0, dataTransformationErrorRepository.countByProjectId((testProject).getId()),
+		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
+		assertEquals(dataSetId, dataSetEntity.getId(), "Project has been associated with the wrong dataset!");
+		assertTrue(dataSetEntity.isStoredData(), "Flag that the data is stored should be true!");
+		assertEquals(0, dataTransformationErrorRepository.countByDataSetId((testProject).getId()),
 		             "No transformation errors should have been persisted!");
 
 		assertDoesNotThrow(() -> databaseService.delete(testProject));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
+		assertFalse(dataSetEntity.isStoredData(), "Flag that the data is stored should be false!");
 
 	}
 
@@ -63,20 +70,23 @@ class DatabaseServiceTest extends DatabaseTest {
 	void storeAndDeleteWithErrors() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(true);
 
-		long dataSetId = assertDoesNotThrow(() -> databaseService.store(transformationResult, testProject));
+		long dataSetId = assertDoesNotThrow(() -> databaseService.storeTransformationResult(transformationResult, testProject, Step.VALIDATION));
+		final DataSetEntity dataSetEntity = testProject.getDataSets().get(Step.VALIDATION);
 
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(3, countEntries(dataSetId), "Number of entries wrong!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
+		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
 		assertNotNull(testProject, "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testProject.getId(), "User has been associated with the wrong dataset!");
-		assertEquals(2, dataTransformationErrorRepository.countByProjectId(testProject.getId()),
+		assertEquals(dataSetId, dataSetEntity.getId(), "User has been associated with the wrong dataset!");
+		assertTrue(dataSetEntity.isStoredData(), "Flag that the data is stored should be true!");
+		assertEquals(2, dataTransformationErrorRepository.countByDataSetId(dataSetId),
 		             "Transformation errors have not been persisted!");
 
 		assertDoesNotThrow(() -> databaseService.delete(testProject));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
-		assertEquals(0, dataTransformationErrorRepository.countByProjectId(testProject.getId()),
+		assertFalse(dataSetEntity.isStoredData(), "Flag that the data is stored should be false!");
+		assertEquals(0, dataTransformationErrorRepository.countByDataSetId(dataSetId),
 		             "Transformation errors have not been removed!");
 	}
 
@@ -139,9 +149,9 @@ class DatabaseServiceTest extends DatabaseTest {
 		final UserEntity user = getTestUser();
 		final ProjectEntity project = projectService.getProject(user);
 
-		assertDoesNotThrow(() -> databaseService.store(transformationResult, project));
+		assertDoesNotThrow(() -> databaseService.storeTransformationResult(transformationResult, project, Step.VALIDATION));
 
-		final DataSet export = assertDoesNotThrow(() -> databaseService.exportDataSet(project, new ArrayList<>()));
+		final DataSet export = assertDoesNotThrow(() -> databaseService.exportDataSet(project, new ArrayList<>(), Step.VALIDATION));
 		assertEquals(transformationResult.getDataSet(), export, "Data sets do not match!");
 
 		assertDoesNotThrow(() -> databaseService.delete(project));
@@ -153,10 +163,10 @@ class DatabaseServiceTest extends DatabaseTest {
 		final UserEntity user = getTestUser();
 		final ProjectEntity project = projectService.getProject(user);
 
-		assertDoesNotThrow(() -> databaseService.store(transformationResult, project));
+		assertDoesNotThrow(() -> databaseService.storeTransformationResult(transformationResult, project, Step.VALIDATION));
 
 		final DataSet export = assertDoesNotThrow(
-				() -> databaseService.exportDataSet(project, List.of("column4_integer", "column0_boolean")));
+				() -> databaseService.exportDataSet(project, List.of("column4_integer", "column0_boolean"), Step.VALIDATION));
 
 		// Test the data configuration
 		final DataConfiguration config = export.getDataConfiguration();

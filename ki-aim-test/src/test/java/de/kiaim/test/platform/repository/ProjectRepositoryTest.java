@@ -1,7 +1,9 @@
 package de.kiaim.test.platform.repository;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
+import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.test.platform.DatabaseTest;
 import de.kiaim.test.util.DataConfigurationTestHelper;
@@ -24,7 +26,10 @@ class ProjectRepositoryTest extends DatabaseTest {
 		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
 
 		final ProjectEntity entity = new ProjectEntity();
-		entity.setDataConfiguration(dataConfiguration);
+
+		final DataSetEntity dataSetEntity = new DataSetEntity();
+		dataSetEntity.setDataConfiguration(dataConfiguration);
+		entity.putDataSet(Step.VALIDATION, dataSetEntity);
 
 		repository.save(entity);
 
@@ -36,12 +41,15 @@ class ProjectRepositoryTest extends DatabaseTest {
 		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
 
 		final ProjectEntity entity = new ProjectEntity();
-		entity.setDataConfiguration(dataConfiguration);
+
+		final DataSetEntity dataSetEntity = new DataSetEntity();
+		dataSetEntity.setDataConfiguration(dataConfiguration);
+		entity.putDataSet(Step.VALIDATION, dataSetEntity);
 
 		repository.save(entity);
 		final Optional<ProjectEntity> loadedEntity = repository.findById(entity.getId());
 		assertTrue(loadedEntity.isPresent());
-		assertEquals(dataConfiguration, loadedEntity.get().getDataConfiguration());
+		assertEquals(dataConfiguration, loadedEntity.get().getDataSets().get(Step.VALIDATION).getDataConfiguration());
 	}
 
 	@Test
@@ -49,7 +57,10 @@ class ProjectRepositoryTest extends DatabaseTest {
 		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
 
 		final ProjectEntity entity = new ProjectEntity();
-		entity.setDataConfiguration(dataConfiguration);
+
+		final DataSetEntity dataSetEntity = new DataSetEntity();
+		dataSetEntity.setDataConfiguration(dataConfiguration);
+		entity.putDataSet(Step.VALIDATION, dataSetEntity);
 
 		repository.save(entity);
 		assertTrue(repository.existsById(entity.getId()));

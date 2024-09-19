@@ -1,4 +1,4 @@
-import { Component, ViewChild } from "@angular/core";
+import {Component, Input, ViewChild} from "@angular/core";
 import { TransformationService } from "../../services/transformation.service";
 import { DataSet } from "src/app/shared/model/data-set";
 import { MatTableDataSource } from "@angular/material/table";
@@ -14,6 +14,8 @@ import { DataRowTransformationError } from "src/app/shared/model/data-row-transf
 })
 export class DataTableComponent {
 
+    @Input() public trSe!: TransformationService;
+
 	dataSource = new MatTableDataSource<TableElement>();
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	displayedColumns: string[] = ['position'];
@@ -28,7 +30,7 @@ export class DataTableComponent {
 	ngAfterViewInit() {
 		this.dataSource.paginator = this.paginator;
 
-        this.transformationService.fetchTransformationResult().subscribe({
+        this.trSe.fetchTransformationResult().subscribe({
             next: transformationResult => {
                 this.displayedColumns = this.displayedColumns.concat(this.getColumnNames(transformationResult.dataSet))
 

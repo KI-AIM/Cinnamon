@@ -8,7 +8,6 @@ import { Router } from '@angular/router';
 import { StateManagementService } from 'src/app/core/services/state-management.service';
 import { Steps } from 'src/app/core/enums/steps';
 import { plainToClass, plainToInstance } from 'class-transformer';
-import { TransformationService } from '../../services/transformation.service';
 import { TransformationResult } from 'src/app/shared/model/transformation-result';
 import { LoadingService } from 'src/app/shared/services/loading.service';
 import {
@@ -21,6 +20,7 @@ import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
 import { ErrorResponse } from 'src/app/shared/model/error-response';
 import { ErrorMessageService } from 'src/app/shared/services/error-message.service';
 import { FileType } from 'src/app/shared/model/file-configuration';
+import {TransformationService} from "../../../../shared/services/transformation.service";
 
 @Component({
     selector: 'app-data-configuration',

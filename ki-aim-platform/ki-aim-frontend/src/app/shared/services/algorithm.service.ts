@@ -86,7 +86,7 @@ export abstract class AlgorithmService {
             return this.stepConfig
                 .pipe(
                     concatMap(value => {
-                        return this.loadAlgorithmDefinition(value.url, algorithm)
+                        return this.loadAlgorithmDefinition(value.urlClient, algorithm)
                     }),
                     tap(value => {
                         this.algorithmDefinitions[algorithm.name] = value;
@@ -117,7 +117,7 @@ export abstract class AlgorithmService {
             return this.stepConfig
                 .pipe(
                     concatMap(value => {
-                        return this.loadAlgorithms(value.url)
+                        return this.loadAlgorithms(value.urlClient)
                     }),
                     tap(value =>  {
                         this._algorithms = value

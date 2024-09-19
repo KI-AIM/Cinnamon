@@ -3,4 +3,5 @@ export class StepConfiguration {
     configurationName: string;
     statusEndpoint: string;
     url: string;
+    urlClient: string;
 }

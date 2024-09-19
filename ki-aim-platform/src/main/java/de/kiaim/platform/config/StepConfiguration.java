@@ -67,4 +67,12 @@ public class StepConfiguration {
 	@Schema(description = "URL of the corresponding server.", example = "https://my-anonymization-server.de")
 	@NotBlank
 	private String url;
+
+	/**
+	 * URL of the server for clients.
+	 */
+	@Schema(description = "URL of the corresponding server for the client.",
+	        example = "https://my-anonymization-server.de")
+	@NotBlank
+	private String urlClient;
 }

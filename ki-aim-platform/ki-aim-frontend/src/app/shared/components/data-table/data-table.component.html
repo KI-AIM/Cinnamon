@@ -20,12 +20,11 @@
                 <td mat-cell *matCellDef="let element">{{element.position + 1}}</td>
             </ng-container>
             <!-- Dynamic columns -->
-            <ng-container
-                *ngFor="let column of transformationService.getTransformationResult().dataSet.dataConfiguration.configurations; let columnIndex = index"
-                [matColumnDef]="column.name.toString()">
-                <th mat-header-cell *matHeaderCellDef>{{column.name}}</th>
+            <ng-container *ngFor="let column of displayedColumns | slice:1; let columnIndex = index"
+                          [matColumnDef]="column">
+                <th mat-header-cell *matHeaderCellDef>{{column}}</th>
                 <td mat-cell *matCellDef="let element" [ngClass]="{ 'errorColumn': element.errorsInRow.includes(columnIndex) }">
-                    {{element[column.name.toString()]}}
+                    {{element[column]}}
                 </td>
             </ng-container>
 

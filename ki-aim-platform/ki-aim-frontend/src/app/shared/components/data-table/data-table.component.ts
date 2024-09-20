@@ -24,6 +24,7 @@ export class DataTableComponent {
 	dataSource = new MatTableDataSource<TableElement>();
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	displayedColumns: string[] = ['position'];
+    protected rowIndexOffset: number = 0;
 	filterCriteria = "ALL";
 
     protected isLoading: boolean = false;
@@ -79,6 +80,7 @@ export class DataTableComponent {
                                if (value == null) {
                                    return [];
                                }
+                               this.rowIndexOffset = (value.page - 1) * value.perPage;
                                this.isLoading = false;
                                this.total = value.total;
                                return value.data;
@@ -88,19 +90,7 @@ export class DataTableComponent {
                                 const dataSet = new DataSet()
                                 dataSet.data = value;
                                 dataSet.dataConfiguration = dataConfiguration;
-                                // const transformationResult = new TransformationResult();
-                                // transformationResult.dataSet = dataSet;
                                 this.dataSource = new MatTableDataSource<TableElement>(this.transformDataSet(dataSet));
-
-                                // this.dataSource.data = this.addColumnErrorsToTableData(
-                                //     this.transformDataSet(
-                                //         this.readdTransformationErrors(
-                                //             this.removeRowsWithErrorsFromDataSet(transformationResult),
-                                //             transformationResult.transformationErrors
-                                //         )
-                                //     ),
-                                //     transformationResult.transformationErrors
-                                // );
                             }
                         });
                     }

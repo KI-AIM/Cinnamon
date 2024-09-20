@@ -486,8 +486,7 @@ public class DatabaseService {
 		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"").toList();
 		String query = "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId);
 		if (pagination) {
-			// TODO page - 1?
-			query += " LIMIT " + pageSize + " OFFSET " + pageNumber * pageSize;
+			query += " LIMIT " + pageSize + " OFFSET " + (pageNumber - 1) * pageSize;
 		}
 		query += ";";
 		return query;

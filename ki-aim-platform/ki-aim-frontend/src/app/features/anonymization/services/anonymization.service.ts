@@ -42,7 +42,7 @@ export class AnonymizationService extends AlgorithmService {
                 configReg.name = value.configurationName;
                 configReg.orderNumber = 1;
                 configReg.storeConfig = null;
-                configReg.getConfigCallback = () => this.doGetConfig();
+                configReg.getConfigCallback = () => this.getConfig();
                 configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
                 this.configurationService.registerConfiguration(configReg);

@@ -11,7 +11,8 @@
 
 <h3>Algorithm Selection</h3>
 
-<app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"></app-configuration-selection>
+<app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled" (change)="updateSelectCache()">
+</app-configuration-selection>
 
 <h3>Algorithm Configuration</h3>
 
@@ -25,7 +26,7 @@
         <ng-container *ngIf="selection.selectedOption.name === item.name">
             <p>{{ item.description }}</p>
 
-            <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
+            <app-configuration-form #form [algorithm]="item" [disabled]="disabled" (onChange)="updateConfigCache()"
                                     (submitConfiguration)="onSubmit($event)">
             </app-configuration-form>
         </ng-container>

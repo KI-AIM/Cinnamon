@@ -59,11 +59,6 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         synthProcess.externalProcessStatus = ProcessStatus.NOT_STARTED;
         this.status.processes['SYNTHETIZATION'] = synthProcess;
 
-        this.def = new TransformationService(http, stateManagementService);
-        this.def.setStep('anonymization');
-        this.abc = new TransformationService(http, stateManagementService);
-        this.abc.setStep('synthetization');
-
         // Create the status observer
         this.statusObserver = interval(10000).pipe(tap(() => {
             this.fetchStatus();

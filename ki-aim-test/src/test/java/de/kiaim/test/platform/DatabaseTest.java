@@ -108,13 +108,9 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	protected int countEntries(final long dataSetId) {
-		final String countQuery = "SELECT count(*) FROM " + databaseService.getTableName(dataSetId);
-		try (final Statement countStatement = connection.createStatement()) {
-			try (ResultSet resultSet = countStatement.executeQuery(countQuery)) {
-				resultSet.next();
-				return resultSet.getInt(1);
-			}
-		} catch (SQLException e) {
+		try {
+			return databaseService.countEntries(dataSetId);
+		} catch (InternalDataSetPersistenceException e) {
 			fail(e);
 			return 0;
 		}

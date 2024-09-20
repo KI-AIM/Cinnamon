@@ -16,12 +16,6 @@ import {MatExpansionModule} from "@angular/material/expansion";
         SharedModule,
         MatExpansionModule
     ],
-    providers: [
-        {
-            provide: TransformationService,
-            useExisting: false,
-        },
-    ]
 })
 export class ExecutionModule {
 }

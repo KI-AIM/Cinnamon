@@ -29,6 +29,7 @@ import {
 import {DataTableComponent} from "./components/data-table/data-table.component";
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
+import {MatProgressBarModule} from "@angular/material/progress-bar";
 
 @NgModule({
     declarations: [
@@ -62,6 +63,7 @@ import {MatPaginatorModule} from "@angular/material/paginator";
         MatSelectModule,
         MatTableModule,
         ReactiveFormsModule,
+        MatProgressBarModule,
     ],
     exports: [
         ConfigurationFormComponent,

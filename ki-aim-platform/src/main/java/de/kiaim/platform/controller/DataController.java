@@ -5,14 +5,11 @@ import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
-import de.kiaim.platform.model.dto.EstimateDataTypesRequest;
-import de.kiaim.platform.model.dto.LoadDataRequest;
-import de.kiaim.platform.model.dto.ReadDataRequest;
+import de.kiaim.platform.model.dto.*;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.*;
@@ -309,6 +306,18 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_DATA, null, null, null, stepName, request, user);
 	}
 
+	@GetMapping(value = "/{stepName}/dataTable",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<Object> loadDataTable(
+			@PathVariable final String stepName,
+			@RequestParam(required = true) final Integer page,
+			@RequestParam(required = true) final Integer perPage,
+			@ParameterObject LoadDataRequest request,
+			@AuthenticationPrincipal UserEntity user
+	) throws ApiException {
+		return handleRequest(RequestType.LOAD_DATA_PAGE, null, null, null, stepName, request, user, page, perPage);
+	}
+
 	@Operation(summary = "Returns the data set.",
 	           description = "Returns the data set.")
 	@ApiResponses(value = {
@@ -381,6 +390,18 @@ public class DataController {
 		return handleRequest(RequestType.DELETE, null, null, null, null, null, user);
 	}
 
+
+	private ResponseEntity<Object> handleRequest(
+			final RequestType requestType,
+			@Nullable final MultipartFile file,
+			@Nullable final FileConfiguration fileConfiguration,
+			@Nullable final DataConfiguration configuration,
+			@Nullable final String stepName,
+			@Nullable final LoadDataRequest loadDataRequest,
+			final UserEntity requestUser) throws ApiException {
+		return handleRequest(requestType, file, fileConfiguration, configuration, stepName, loadDataRequest, requestUser, null, null);
+	}
+
 	/**
 	 * Handles a request of the given type.
 	 * For each RequestType, different attributes must not be null:
@@ -411,7 +432,9 @@ public class DataController {
 			@Nullable final DataConfiguration configuration,
 			@Nullable final String stepName,
 			@Nullable final LoadDataRequest loadDataRequest,
-			final UserEntity requestUser
+			final UserEntity requestUser,
+			final Integer page,
+			final Integer perPage
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
@@ -441,6 +464,10 @@ public class DataController {
 				result = dataSetService.encodeDataRows(dataSet, projectEntity.getDataSets().get(step)
 				                                                             .getDataTransformationErrors(),
 				                                       loadDataRequest);
+			}
+			case LOAD_DATA_PAGE -> {
+				final Step step = Step.getStepOrThrow(stepName);
+				result = databaseService.exportDataSetPage(projectEntity, columnNames, step, page, perPage, loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
 				final Step step = Step.getStepOrThrow(stepName);
@@ -495,6 +522,7 @@ public class DataController {
 		DELETE,
 		LOAD_CONFIG,
 		LOAD_DATA,
+		LOAD_DATA_PAGE,
 		LOAD_DATA_SET,
 		LOAD_TRANSFORMATION_RESULT,
 		STORE_CONFIG,

@@ -13,6 +13,8 @@ import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.dto.DataSetPage;
+import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
@@ -51,19 +53,21 @@ public class DatabaseService {
 	private final DataschemeGenerator dataschemeGenerator;
 	private final ObjectMapper jsonMapper;
 
+	private final DataSetService dataSetService;
 	private final StepService stepService;
 
 	@Autowired
 	public DatabaseService(final DataSource dataSource, final SerializationConfig serializationConfig,
-	                       final DataSetRepository dataSetRepository,
-	                       final ProjectRepository projectRepository,
-	                       final DataschemeGenerator dataschemeGenerator, StepService stepService) {
+	                       final DataSetRepository dataSetRepository, final ProjectRepository projectRepository,
+	                       final DataschemeGenerator dataschemeGenerator, final DataSetService dataSetService,
+	                       final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		jsonMapper = serializationConfig.jsonMapper();
 		this.dataSetRepository = dataSetRepository;
 		this.projectRepository = projectRepository;
 		this.dataschemeGenerator = dataschemeGenerator;
 		this.stepService = stepService;
+		this.dataSetService = dataSetService;
 	}
 
 	/**
@@ -231,41 +235,21 @@ public class DatabaseService {
 	public DataSet exportDataSet(final ProjectEntity project, List<String> columnNames, final Step step)
 			throws InternalDataSetPersistenceException, BadColumnNameException, BadDataSetIdException, InternalIOException {
 		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
+		return exportDataSet(dataSetEntity, columnNames, false, 0, 0);
+	}
 
-		DataConfiguration dataConfiguration = getDetachedDataConfiguration(dataSetEntity);
+	@Transactional
+	public DataSetPage exportDataSetPage(final ProjectEntity project, List<String> columnNames, final Step step,
+	                                     final int pageNumber, final int pageSize, final LoadDataRequest loadDataRequest
+	) throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
+		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
 
-		if (columnNames.isEmpty()) {
-			columnNames = dataConfiguration.getColumnNames();
-		} else {
-			existColumnsOrThrow(dataConfiguration, columnNames);
-			dataConfiguration = extractColumns(dataConfiguration, columnNames);
-		}
+		var dataSet = exportDataSet(dataSetEntity, columnNames, true, pageNumber, pageSize);
 
-		// Export the data from the database
-		final List<DataRow> dataRows = new ArrayList<>();
-		try (final Statement exportStatement = connection.createStatement()) {
-
-			final String exportQuery = createSelectQuery(dataSetEntity.getId(), columnNames);
-
-			try (final ResultSet resultSet = exportStatement.executeQuery(exportQuery)) {
-				while (resultSet.next()) {
-					final List<Data> data = new ArrayList<>();
-					for (int columnIndex = 0;
-					     columnIndex < dataConfiguration.getConfigurations().size(); ++columnIndex) {
-						final ColumnConfiguration columnConfiguration = dataConfiguration.getConfigurations()
-						                                                                 .get(columnIndex);
-						data.add(convertResultToData(resultSet, columnIndex + 1, columnConfiguration.getType()));
-					}
-					dataRows.add(new DataRow(data));
-				}
-			}
-		} catch (SQLException e) {
-			LOGGER.error("The DataSet could not be exported!", e);
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_EXPORT,
-			                                              "The DataSet could not be exported!", e);
-		}
-
-		return new DataSet(dataRows, dataConfiguration);
+		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, dataSetEntity.getDataTransformationErrors(), loadDataRequest);
+		final int numberRows = countEntries(dataSetEntity.getId());
+		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
+		return new DataSetPage(data, pageNumber, pageSize, numberRows, numberPages);
 	}
 
 	@Transactional
@@ -334,6 +318,20 @@ public class DatabaseService {
 
 		// Delete transformation errors
 		projectRepository.save(project);
+	}
+
+	public int countEntries(final long dataSetId) throws InternalDataSetPersistenceException {
+		final String countQuery = "SELECT count(*) FROM " + getTableName(dataSetId) + ";";
+		try (final Statement countStatement = connection.createStatement()) {
+			try (ResultSet resultSet = countStatement.executeQuery(countQuery)) {
+				resultSet.next();
+				return resultSet.getInt(1);
+			}
+		} catch (SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_COUNT,
+			                                              "Failed to count rows for dataset with ID '" + dataSetId +
+			                                              "'!", e);
+		}
 	}
 
 	/**
@@ -409,6 +407,45 @@ public class DatabaseService {
 		};
 	}
 
+	private DataSet exportDataSet(final DataSetEntity dataSetEntity, List<String> columnNames, final boolean pagination,
+	                              final int pageNumber, final int pageSize)
+			throws BadColumnNameException, InternalDataSetPersistenceException, InternalIOException {
+		DataConfiguration dataConfiguration = getDetachedDataConfiguration(dataSetEntity);
+
+		if (columnNames.isEmpty()) {
+			columnNames = dataConfiguration.getColumnNames();
+		} else {
+			existColumnsOrThrow(dataConfiguration, columnNames);
+			dataConfiguration = extractColumns(dataConfiguration, columnNames);
+		}
+
+		// Export the data from the database
+		final List<DataRow> dataRows = new ArrayList<>();
+		try (final Statement exportStatement = connection.createStatement()) {
+
+			final String exportQuery = createSelectQuery(dataSetEntity.getId(), columnNames, pagination, pageNumber, pageSize);
+
+			try (final ResultSet resultSet = exportStatement.executeQuery(exportQuery)) {
+				while (resultSet.next()) {
+					final List<Data> data = new ArrayList<>();
+					for (int columnIndex = 0;
+					     columnIndex < dataConfiguration.getConfigurations().size(); ++columnIndex) {
+						final ColumnConfiguration columnConfiguration = dataConfiguration.getConfigurations()
+						                                                                 .get(columnIndex);
+						data.add(convertResultToData(resultSet, columnIndex + 1, columnConfiguration.getType()));
+					}
+					dataRows.add(new DataRow(data));
+				}
+			}
+		} catch (SQLException e) {
+			LOGGER.error("The DataSet could not be exported!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_EXPORT,
+			                                              "The DataSet could not be exported!", e);
+		}
+
+		return new DataSet(dataRows, dataConfiguration);
+	}
+
 	private void existColumnsOrThrow(final DataConfiguration dataConfiguration, final List<String> columnNames)
 			throws BadColumnNameException {
 		final List<String> dataSetColumns = dataConfiguration.getColumnNames();
@@ -445,9 +482,15 @@ public class DatabaseService {
 		}
 	}
 
-	private String createSelectQuery(final Long dataSetId, final List<String> columnNames) {
+	private String createSelectQuery(final Long dataSetId, final List<String> columnNames, final boolean pagination, final int pageNumber, final int pageSize) {
 		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"").toList();
-		return "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId) + ";";
+		String query = "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId);
+		if (pagination) {
+			// TODO page - 1?
+			query += " LIMIT " + pageSize + " OFFSET " + pageNumber * pageSize;
+		}
+		query += ";";
+		return query;
 	}
 
 	private Data convertResultToData(final ResultSet resultSet, final int columnIndex,

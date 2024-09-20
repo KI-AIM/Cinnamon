@@ -1,6 +1,6 @@
 <div class="d-flex align-items-center flex-column mat-elevation-z8">
     <div class="d-flex justify-content-between align-items-center bg-white w-100 p-2 table-control-row">
-        <mat-paginator id="tableHeader" [pageSizeOptions]="[50, 100, 1000]" showFirstLastButtons
+        <mat-paginator id="tableHeader" [length]="total" [pageSizeOptions]="[10, 50, 100, 1000]" showFirstLastButtons
             aria-label="Select page of periodic elements">
         </mat-paginator>
         <mat-form-field>
@@ -38,5 +38,6 @@
                 [ngClass]="{ 'errorRow': rowHasErrors(row.errorsInRow) }">
             </tr>
         </table>
+        <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
     </div>
 </div>

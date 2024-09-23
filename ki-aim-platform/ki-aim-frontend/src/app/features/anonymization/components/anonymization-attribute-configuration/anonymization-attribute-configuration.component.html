@@ -1,0 +1,27 @@
+<!--<app-anonymization-attribute-row 
+    *ngFor="let row of this.dataConfiguration.configurations, index as i"
+    [configurationRow]="row" [rowNumber]="i"
+></app-anonymization-attribute-row>-->
+
+<div class="d-flex flex-row mb-2 justify-content-between">
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Select an attribute to configure</mat-label>
+            <mat-select
+                #attributeDropdown
+                (valueChange)="onSelectionChange($event)"
+            >
+                <mat-option
+                    *ngFor="let row of this.availableConfigurations"
+                    [value]="row.index"
+                    >{{ row.name }}</mat-option
+                >
+            </mat-select>
+        </mat-form-field>
+
+        <div
+            #attributeRowTarget
+            appAnonymizationAttributeConfigurationDirective
+        ></div>
+    </div>
+</div>

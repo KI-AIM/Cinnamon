@@ -1,0 +1,62 @@
+<div class="d-flex flex-row mb-2 justify-content-between">
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Column name</mat-label>
+
+            <input
+                type="text"
+                matInput
+                [id]="'name_' + configurationRow.index"
+                [(ngModel)]="anonymizationRowConfiguration.attributeName"
+                [value]="configurationRow.name"
+                #name="ngModel"
+                readonly="true"
+            />
+            <!--<mat-error *ngIf="name.errors?.['noSpace']">Name must not contain spaces</mat-error>-->
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Attribute Type</mat-label>
+            <mat-select
+                [id]="'type_' + configurationRow.index"
+                [(ngModel)]="anonymizationRowConfiguration.attributeType"
+            >
+                <mat-option
+                    *ngFor="let type of getAllTypes().getAll()"
+                    [value]="type"
+                    >{{ type }}</mat-option
+                >
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Transformation Type</mat-label>
+            <mat-select
+                [id]="'transformation_' + configurationRow.index"
+                [(ngModel)]="anonymizationRowConfiguration.transformation"
+            >
+                <mat-option
+                    *ngFor="
+                        let transformation of getAllTransformations().getAll()
+                    "
+                    [value]="transformation"
+                    >{{ transformation }}</mat-option
+                >
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <!-- TODO: Add new columns here. See "attribute-configuration.component.html" for examples -->
+
+    <div class="d-flex flex-column px-2">
+        <div class="h-100 d-flex justify-content-center align-items-center">
+            <a title="Remove configuration" (click)="removeCurrentRow()">
+                <mat-icon fontIcon="delete_forever"></mat-icon>
+            </a>
+        </div>
+    </div>
+</div>

@@ -54,11 +54,10 @@ export class SynthetizationService extends AlgorithmService {
                 configReg.lockedAfterStep = null;
                 configReg.displayName = "Synthetization Configuration";
                 configReg.fetchConfig = null;
-                // configReg.name = "synthetization_configuration";
                 configReg.name = value.configurationName;
                 configReg.orderNumber = 2;
                 configReg.storeConfig = null;
-                configReg.getConfigCallback = () => this.doGetConfig();
+                configReg.getConfigCallback = () => this.getConfig();
                 configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
                 this.configurationService.registerConfiguration(configReg);

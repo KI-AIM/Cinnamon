@@ -69,12 +69,12 @@ export class DataConfigurationService {
         return this.httpClient.get<DataConfiguration>(this.baseUrl + "?format=json");
     }
 
-    public postDataConfiguration(): Observable<Number> {
+    public postDataConfiguration(): Observable<void> {
         const configString = JSON.stringify(instanceToPlain(this._dataConfiguration));
         return this.postDataConfigurationString(configString);
     }
 
-    public postDataConfigurationString(configString: string): Observable<Number> {
+    public postDataConfigurationString(configString: string): Observable<void> {
         const formData = new FormData();
 
         formData.append("file", this.fileService.getFile());
@@ -83,7 +83,7 @@ export class DataConfigurationService {
 
         formData.append("configuration", configString);
 
-        return this.httpClient.post<Number>(this.baseUrl, formData);
+        return this.httpClient.post<void>(this.baseUrl, formData);
     }
 
     private getConfigurationCallback(): Object {

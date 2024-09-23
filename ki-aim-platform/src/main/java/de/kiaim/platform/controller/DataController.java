@@ -1,23 +1,20 @@
 package de.kiaim.platform.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
-import de.kiaim.platform.model.dto.EstimateDataTypesRequest;
-import de.kiaim.platform.model.dto.LoadDataRequest;
-import de.kiaim.platform.model.dto.ReadDataRequest;
+import de.kiaim.platform.model.dto.*;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -134,7 +131,7 @@ public class DataController {
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
 		return handleRequest(RequestType.DATA_TYPES, requestData.getFile(), requestData.getFileConfiguration(), null,
-		                     null, user);
+		                     null, null, user);
 	}
 
 	@Operation(summary = "Converts and validates the uploaded file into a tabular representation.",
@@ -168,7 +165,7 @@ public class DataController {
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
 		return handleRequest(RequestType.VALIDATE, requestData.getFile(), requestData.getFileConfiguration(),
-		                     requestData.getConfiguration(), null, user);
+		                     requestData.getConfiguration(), null, null, user);
 	}
 
 	@Operation(summary = "Stores or updates the given configuration.",
@@ -200,7 +197,7 @@ public class DataController {
 			@ParameterObject @Valid final ReadDataRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.STORE_CONFIG, null, null, requestData.getConfiguration(), null, user);
+		return handleRequest(RequestType.STORE_CONFIG, null, null, requestData.getConfiguration(), null, null, user);
 	}
 
 	@Operation(summary = "Stores the given data into the internal database for further processing.",
@@ -233,7 +230,7 @@ public class DataController {
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
 		return handleRequest(RequestType.STORE_DATE_SET, requestData.getFile(), requestData.getFileConfiguration(),
-		                     requestData.getConfiguration(), null, user);
+		                     requestData.getConfiguration(), null, null, user);
 	}
 
 	@Operation(summary = "Returns the configuration of the data set.",
@@ -262,9 +259,9 @@ public class DataController {
 	@GetMapping(value = "/configuration",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadConfig(
-			@AuthenticationPrincipal UserEntity user
-	) throws ApiException, JsonProcessingException {
-		return handleRequest(RequestType.LOAD_CONFIG, null, null, null, null, user);
+			@AuthenticationPrincipal final UserEntity user
+	) throws ApiException {
+		return handleRequest(RequestType.LOAD_CONFIG, null, null, null, null, null, user);
 	}
 
 	@Operation(summary = "Returns the data of the data set.",
@@ -300,13 +297,54 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/data",
+	@GetMapping(value = "/{stepName}/data",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadData(
+			@Parameter(description = "Step the requested data belongs to.")
+			@PathVariable final String stepName,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_DATA, null, null, null, request, user);
+		return handleRequest(RequestType.LOAD_DATA, null, null, null, stepName, request, user);
+	}
+
+	@Operation(summary = "Returns a page of the data of the data set.",
+	           description = "Returns the specified page considering the specified page size of the data of the data.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully found the data and returns the data.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+											 schema = @Schema(implementation = DataSetPage.class)
+			                                 ),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = DataSetPage.class)
+			                                 )}),
+			@ApiResponse(responseCode = "400",
+			             description = "The user has no stored data.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "An internal error occurred.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))})
+	})
+	@GetMapping(value = "/{stepName}/dataTable",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<Object> loadDataTable(
+			@Parameter(description = "Step the requested data belongs to.")
+			@PathVariable final String stepName,
+			@Parameter(description = "Page number starting at 1.")
+			@RequestParam(required = true) final Integer page,
+			@Parameter(description = "Number of items per page.")
+			@RequestParam(required = true) final Integer perPage,
+			@ParameterObject LoadDataRequest request,
+			@AuthenticationPrincipal UserEntity user
+	) throws ApiException {
+		return handleRequest(RequestType.LOAD_DATA_PAGE, null, null, null, stepName, request, user, page, perPage);
 	}
 
 	@Operation(summary = "Returns the data set.",
@@ -332,24 +370,28 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "",
+	@GetMapping(value = "/{stepName}",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadDataSet(
+			@Parameter(description = "Step the requested data belongs to.")
+			@PathVariable final String stepName,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, request, user);
+		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, stepName, request, user);
 	}
 
 	@Operation(summary = "Returns the transformation result.",
 	           description = "Returns the transformation result.")
-	@GetMapping(value = "/transformationResult",
+	@GetMapping(value = "/{stepName}/transformationResult",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadTransformationResult(
+			@Parameter(description = "Step the requested data belongs to.")
+			@PathVariable final String stepName,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT, null, null, null, request, user);
+		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT, null, null, null, stepName, request, user);
 	}
 
 	@Operation(summary = "Deletes the data set from the internal data base.",
@@ -376,7 +418,19 @@ public class DataController {
 	public ResponseEntity<Object> deleteData(
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.DELETE, null, null, null, null, user);
+		return handleRequest(RequestType.DELETE, null, null, null, null, null, user);
+	}
+
+
+	private ResponseEntity<Object> handleRequest(
+			final RequestType requestType,
+			@Nullable final MultipartFile file,
+			@Nullable final FileConfiguration fileConfiguration,
+			@Nullable final DataConfiguration configuration,
+			@Nullable final String stepName,
+			@Nullable final LoadDataRequest loadDataRequest,
+			final UserEntity requestUser) throws ApiException {
+		return handleRequest(requestType, file, fileConfiguration, configuration, stepName, loadDataRequest, requestUser, null, null);
 	}
 
 	/**
@@ -407,8 +461,11 @@ public class DataController {
 			@Nullable final MultipartFile file,
 			@Nullable final FileConfiguration fileConfiguration,
 			@Nullable final DataConfiguration configuration,
+			@Nullable final String stepName,
 			@Nullable final LoadDataRequest loadDataRequest,
-			final UserEntity requestUser
+			final UserEntity requestUser,
+			final Integer page,
+			final Integer perPage
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
@@ -423,41 +480,55 @@ public class DataController {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration);
-				databaseService.store((DataConfiguration) result, projectEntity);
+				databaseService.storeDataConfiguration((DataConfiguration) result, projectEntity, Step.VALIDATION);
 			}
 			case DELETE -> {
 				databaseService.delete(projectEntity);
 				result = null;
 			}
 			case LOAD_CONFIG -> {
-				result = databaseService.exportDataConfiguration(projectEntity);
+				result = databaseService.exportDataConfiguration(projectEntity, Step.VALIDATION);
 			}
 			case LOAD_DATA -> {
-				final DataSet dataSet = databaseService.exportDataSet(projectEntity, columnNames);
-				result = dataSetService.encodeDataRows(dataSet, projectEntity, loadDataRequest);
+				final Step step = Step.getStepOrThrow(stepName);
+				final DataSet dataSet = databaseService.exportDataSet(projectEntity, columnNames, step);
+				result = dataSetService.encodeDataRows(dataSet, projectEntity.getDataSets().get(step)
+				                                                             .getDataTransformationErrors(),
+				                                       loadDataRequest);
+			}
+			case LOAD_DATA_PAGE -> {
+				final Step step = Step.getStepOrThrow(stepName);
+				result = databaseService.exportDataSetPage(projectEntity, columnNames, step, page, perPage, loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
-				result = databaseService.exportDataSet(projectEntity, columnNames);
+				final Step step = Step.getStepOrThrow(stepName);
+				result = databaseService.exportDataSet(projectEntity, columnNames, step);
 			}
 			case LOAD_TRANSFORMATION_RESULT -> {
-				result = databaseService.exportTransformationResult(projectEntity);
+				final Step step = Step.getStepOrThrow(stepName);
+				result = databaseService.exportTransformationResult(projectEntity, step);
 			}
 			case STORE_CONFIG -> {
-				result = databaseService.store(configuration, projectEntity);
+				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
+				result = null;
 			}
 			case STORE_DATE_SET -> {
+				// Store configuration
+				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
+
+				// Store data set
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
 				final TransformationResult transformationResult = dataProcessor.read(inputStream, fileConfiguration,
 				                                                                     configuration);
-				result = databaseService.store(transformationResult, projectEntity);
+				result = databaseService.storeTransformationResult(transformationResult, projectEntity, Step.VALIDATION);
 
 				statusService.updateCurrentStep(projectEntity, Step.ANONYMIZATION);
 			}
 			case VALIDATE -> {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
-				databaseService.store(configuration, projectEntity);
+				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
 				result = dataProcessor.read(inputStream, fileConfiguration, configuration);
 			}
 			default -> {
@@ -482,6 +553,7 @@ public class DataController {
 		DELETE,
 		LOAD_CONFIG,
 		LOAD_DATA,
+		LOAD_DATA_PAGE,
 		LOAD_DATA_SET,
 		LOAD_TRANSFORMATION_RESULT,
 		STORE_CONFIG,

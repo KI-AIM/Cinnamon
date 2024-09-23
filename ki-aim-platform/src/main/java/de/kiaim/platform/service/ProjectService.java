@@ -125,7 +125,7 @@ public class ProjectService {
 	public void createZipFile(final ProjectEntity project, final OutputStream outputStream)
 			throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
-			final DataSet dataSet = databaseService.exportDataSet(project, new ArrayList<>());
+			final DataSet dataSet = databaseService.exportDataSet(project, new ArrayList<>(), Step.VALIDATION);
 
 			// Add data configuration
 			final ZipEntry attributeConfigZipEntry = new ZipEntry("attribute_config.yaml");
@@ -143,20 +143,7 @@ public class ProjectService {
 			}
 
 			// Add data set
-			final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(zipOut, StandardCharsets.UTF_8);
-			final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
-					dataSet.getDataConfiguration().getColumnNames().toArray(new String[0])).build();
-
-			final ZipEntry dataZipEntry = new ZipEntry("real_data.csv");
-			zipOut.putNextEntry(dataZipEntry);
-
-			final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
-			for (final DataRow dataRow : dataSet.getDataRows()) {
-				csvPrinter.printRecord(dataRow.getRow());
-			}
-			csvPrinter.flush();
-
-			zipOut.closeEntry();
+			addCsvToZip(zipOut, dataSet, "original");
 
 			// Add results
 			for (final ExecutionStepEntity executionStep : project.getExecutions().values()) {
@@ -184,4 +171,20 @@ public class ProjectService {
 		}
 	}
 
+	private void addCsvToZip(final ZipOutputStream zipOut, final DataSet dataSet, final String name) throws IOException {
+		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(zipOut, StandardCharsets.UTF_8);
+		final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
+				dataSet.getDataConfiguration().getColumnNames().toArray(new String[0])).build();
+
+		final ZipEntry dataZipEntry = new ZipEntry(name + ".csv");
+		zipOut.putNextEntry(dataZipEntry);
+
+		final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
+		for (final DataRow dataRow : dataSet.getDataRows()) {
+			csvPrinter.printRecord(dataRow.getRow());
+		}
+		csvPrinter.flush();
+
+		zipOut.closeEntry();
+	}
 }

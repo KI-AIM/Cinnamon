@@ -7,6 +7,8 @@ import { HttpClient } from "@angular/common/http";
 import { ExecutionStep } from "../../../../shared/model/execution-step";
 import { ExternalProcess } from "../../../../shared/model/external-process";
 import { TitleService } from "../../../../core/services/title-service.service";
+import {TransformationService} from "../../../../shared/services/transformation.service";
+import {StateManagementService} from "../../../../core/services/state-management.service";
 
 @Component({
   selector: 'app-execution',
@@ -21,6 +23,9 @@ export class ExecutionComponent implements OnInit, OnDestroy {
 
     // TODO implement for anonymization
     protected synthProcess: SynthetizationProcess | null = null;
+
+    protected abc: TransformationService;
+    protected def: TransformationService;
 
     protected error: string | null = null;
 
@@ -37,6 +42,7 @@ export class ExecutionComponent implements OnInit, OnDestroy {
 
     constructor(
         private readonly http: HttpClient,
+        readonly stateManagementService: StateManagementService,
         private readonly titleService: TitleService,
     ) {
         this.titleService.setPageTitle("Execution");
@@ -178,4 +184,6 @@ export class ExecutionComponent implements OnInit, OnDestroy {
             }
         });
     }
+
+    protected readonly ProcessStatus = ProcessStatus;
 }

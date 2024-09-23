@@ -39,6 +39,11 @@ export class ConfigurationFormComponent implements OnInit {
     protected form: FormGroup;
 
     /**
+     * Event that gets triggered on every change.
+     */
+    @Output() public onChange: EventEmitter<void> = new EventEmitter();
+
+    /**
      * Event for submitting the configurations.
      * Emits the raw JSON of the form.
      */
@@ -57,6 +62,10 @@ export class ConfigurationFormComponent implements OnInit {
                 this.algorithmDefinition = value
                 this.form = this.createForm(value);
                 this.updateForm();
+
+                this.form.valueChanges.subscribe(value => {
+                    this.onChange.emit();
+                });
             });
     }
 

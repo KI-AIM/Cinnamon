@@ -2,6 +2,7 @@ package de.kiaim.platform.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.configuration.data.DateFormatConfiguration;
 import de.kiaim.model.configuration.data.DateTimeFormatConfiguration;
 import de.kiaim.model.data.DataRow;
@@ -11,12 +12,17 @@ import de.kiaim.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.config.StepConfiguration;
 import de.kiaim.platform.exception.*;
+import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.dto.SynthetizationResponse;
 import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.file.CsvFileConfiguration;
+import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.model.file.FileType;
+import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.repository.ExternalProcessRepository;
 import de.kiaim.platform.repository.ProjectRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -58,13 +64,14 @@ public class ProcessService {
 	private final ExternalProcessRepository externalProcessRepository;
 	private final ProjectRepository projectRepository;
 
+	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
 	private final StepService stepService;
 
 	public ProcessService(final SerializationConfig serializationConfig,
 	                      @Value("${server.port}") final int port,
 	                      final ExternalProcessRepository externalProcessRepository,
-	                      final ProjectRepository projectRepository,
+	                      final ProjectRepository projectRepository, CsvProcessor csvProcessor,
 	                      final DatabaseService databaseService,
 	                      final StepService stepService
 	) {
@@ -74,6 +81,7 @@ public class ProcessService {
 		this.port = port;
 		this.externalProcessRepository = externalProcessRepository;
 		this.projectRepository = projectRepository;
+		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
 		this.stepService = stepService;
 	}
@@ -223,6 +231,10 @@ public class ProcessService {
 			                                "' exists!");
 		}
 
+		final var executionStep = process.get().getExecutionStep();
+		final ProjectEntity project = executionStep.getProject();
+
+
 		final var files = process.get().getAdditionalResultFiles();
 		files.clear();
 
@@ -230,6 +242,16 @@ public class ProcessService {
 			try {
 				final var value = entry.getValue();
 				if (entry.getKey().equals("synthetic_data")) {
+					final FileConfiguration fileConfiguration = new FileConfiguration();
+					fileConfiguration.setFileType(FileType.CSV);
+					fileConfiguration.setCsvFileConfiguration(new CsvFileConfiguration());
+
+					final DataConfiguration resultDataConfiguration = csvProcessor.estimateDatatypes(value.getInputStream(), fileConfiguration);
+					final Step step = process.get().getStep();
+					final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),
+					                                                                    fileConfiguration,
+					                                                                    resultDataConfiguration);
+					databaseService.storeTransformationResult(transformationResult, project, step);
 					process.get().setResultDataSet(value.getBytes());
 				} else {
 					files.put(value.getOriginalFilename(), value.getBytes());
@@ -263,12 +285,9 @@ public class ProcessService {
 		// Start the next process of the same step
 		startScheduledProcess(process.get().getStep());
 
-		final var executionStep = process.get().getExecutionStep();
-
 		// Start the next step of this process
 		startNext(executionStep);
 
-		final ProjectEntity project = executionStep.getProject();
 		projectRepository.save(project);
 	}
 
@@ -562,7 +581,28 @@ public class ProcessService {
 		// Prepare body
 		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
 
-		final DataSet dataSet = databaseService.exportDataSet(project, new ArrayList<>());
+		// Get the data set from the last finished step
+		final var executionStep = externalProcess.getExecutionStep();
+		var abc = executionStep.getStep();
+
+		var indexOfSourceStep = abc.getProcesses().indexOf(executionStep.getCurrentStep()) - 1;
+
+		Step dataSetSourceStep = null;
+		while (dataSetSourceStep == null) {
+
+			if (indexOfSourceStep <= 0) {
+				dataSetSourceStep = Step.VALIDATION;
+			} else {
+				var stepCandidate = abc.getProcesses().get(indexOfSourceStep);
+				if (executionStep.getProcesses().get(stepCandidate).getExternalProcessStatus() == ProcessStatus.FINISHED) {
+					dataSetSourceStep = stepCandidate;
+				} else {
+					indexOfSourceStep--;
+				}
+			}
+		}
+
+		final DataSet dataSet = databaseService.exportDataSet(project, new ArrayList<>(), dataSetSourceStep);
 
 		// TODO put somewhere else
 		// Set date format

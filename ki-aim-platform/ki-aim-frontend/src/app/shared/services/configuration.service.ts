@@ -117,8 +117,8 @@ export class ConfigurationService {
      * @param configuration Configuration to store in form of a string.
      * @returns Observable returning containing the ID of the dataset.
      */
-    public storeConfig(configurationName: String, configuration: String): Observable<Number> {
-        return this.httpClient.post<Number>(this.baseUrl + "?name=" + configurationName, configuration);
+    public storeConfig(configurationName: String, configuration: String): Observable<void> {
+        return this.httpClient.post<void>(this.baseUrl + "?name=" + configurationName, configuration);
     }
 
     /**
@@ -200,15 +200,15 @@ export class ConfigurationService {
                         let ob;
                         if (object.configData == null || yamlConfigString === null) {
                             // If the config is not in the config file, use 0 as a placeholder
-                            ob = of(0 as Number);
+                            ob = of(void 0);
                         } else {
                             // Cannot be null after registering
                             ob = object.configData.storeConfig!(name, yamlConfigString);
                         }
 
                         return ob.pipe(
-                            map(number => {
-                                object.success = number !== 0;
+                            map(() => {
+                                object.success = true;
                                 return object as ImportPipeData;
                             }),
                             catchError((error) => {

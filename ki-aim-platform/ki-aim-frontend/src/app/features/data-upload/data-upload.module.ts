@@ -12,8 +12,6 @@ import { DateformatComponent } from "./components/configurationSettings/dateform
 import { DatetimeformatComponent } from "./components/configurationSettings/datetimeformat/datetimeformat.component";
 import { StringpatternComponent } from "./components/configurationSettings/stringpattern/stringpattern.component";
 import { AddedConfigurationListComponent } from "./components/added-configuration-list/added-configuration-list.component";
-import { DataTableComponent } from "./components/data-table/data-table.component";
-import { TransformationService } from "./services/transformation.service";
 import { MatTableModule } from "@angular/material/table";
 import { MatPaginatorModule } from "@angular/material/paginator";
 import { MatDialogModule } from "@angular/material/dialog";
@@ -28,6 +26,7 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { RangeComponent } from './components/configurationSettings/range/range.component';
 import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
+import { TransformationService } from "../../shared/services/transformation.service";
 
 @NgModule({
 	declarations: [
@@ -40,16 +39,13 @@ import { DataConfigurationService } from "src/app/shared/services/data-configura
 		DatetimeformatComponent,
 		StringpatternComponent,
 		AddedConfigurationListComponent,
-		DataTableComponent,
-  RangeComponent,
+        RangeComponent,
 	],
     imports: [
         CommonModule,
         FormsModule,
         RouterModule,
         SharedModule,
-        MatTableModule,
-        MatPaginatorModule,
         MatDialogModule,
         MatButtonModule,
         MatExpansionModule,
@@ -68,7 +64,6 @@ import { DataConfigurationService } from "src/app/shared/services/data-configura
 	],
 	providers: [
 		FileService,
-		TransformationService,
 		CdkColumnDef,
 		{
 			// Calls the useFactory function when starting the application

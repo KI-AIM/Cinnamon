@@ -1,19 +1,14 @@
 package de.kiaim.platform.model.entity;
 
-import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.platform.model.enumeration.Step;
-import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Type;
 import org.springframework.lang.Nullable;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Class to represent a project in the database.
@@ -40,12 +35,12 @@ public class ProjectEntity {
 	private StatusEntity status = new StatusEntity(this);
 
 	/**
-	 * The data configuration
+	 * Datasets of the project.
 	 */
-	@Type(JsonType.class)
-	@Column(columnDefinition = "json")
-	@Setter
-	private DataConfiguration dataConfiguration;
+	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+	@MapKeyEnumerated(EnumType.STRING)
+	@MapKeyColumn(name = "step")
+	private final Map<Step, DataSetEntity> dataSets = new HashMap<>();
 
 	/**
 	 * Other configurations for the platform.
@@ -73,11 +68,20 @@ public class ProjectEntity {
 	@OneToOne(mappedBy = "project", optional = false, orphanRemoval = false, cascade = CascadeType.PERSIST)
 	private UserEntity user;
 
-	/**
-	 * List of transformation errors during the import.
-	 */
-	@OneToMany(mappedBy = "project", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-	private final Set<DataTransformationErrorEntity> dataTransformationErrors = new HashSet<>();
+	public void putDataSet(final Step step, final DataSetEntity dataSet) {
+		if (!dataSets.containsKey(step)) {
+			dataSet.setProject(this);
+			dataSet.setStep(step);
+			dataSets.put(step, dataSet);
+		}
+	}
+
+	public void removeDataSet(final Step step) {
+		if (dataSets.containsKey(step)) {
+			dataSets.get(step).setProject(null);
+			dataSets.remove(step);
+		}
+	}
 
 	public void putExecutionStep(final Step step, final ExecutionStepEntity executionStep) {
 		if (!executions.containsKey(step)) {
@@ -99,14 +103,6 @@ public class ProjectEntity {
 		}
 		if (newUser != null && newUser.getProject() != this) {
 			newUser.setProject(this);
-		}
-	}
-
-	public void addDataRowTransformationError(final DataTransformationErrorEntity dataTransformationError) {
-		dataTransformationErrors.add(dataTransformationError);
-
-		if (dataTransformationError.getProject() != this) {
-			dataTransformationError.setProject(this);
 		}
 	}
 }

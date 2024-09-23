@@ -1,4 +1,4 @@
-import { Component, ViewChild } from "@angular/core";
+import {Component, Input, ViewChild} from "@angular/core";
 import { TransformationService } from "../../services/transformation.service";
 import { DataSet } from "src/app/shared/model/data-set";
 import { MatTableDataSource } from "@angular/material/table";
@@ -6,6 +6,11 @@ import { MatPaginator } from "@angular/material/paginator";
 import { TransformationResult } from "src/app/shared/model/transformation-result";
 import { List } from "src/app/core/utils/list";
 import { DataRowTransformationError } from "src/app/shared/model/data-row-transformation-error";
+import {catchError, map, of, startWith, switchMap} from "rxjs";
+import {DataConfigurationService} from "../../services/data-configuration.service";
+import {DataConfiguration} from "../../model/data-configuration";
+import {HttpClient} from "@angular/common/http";
+import {environments} from "../../../../environments/environment";
 
 @Component({
 	selector: "app-data-table",
@@ -14,13 +19,20 @@ import { DataRowTransformationError } from "src/app/shared/model/data-row-transf
 })
 export class DataTableComponent {
 
+    @Input() public step!: string;
+
 	dataSource = new MatTableDataSource<TableElement>();
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	displayedColumns: string[] = ['position'];
+    protected rowIndexOffset: number = 0;
 	filterCriteria = "ALL";
 
+    protected isLoading: boolean = false;
+    protected total: number;
 
 	constructor(
+        private readonly dataConfigurationService: DataConfigurationService,
+        private readonly http: HttpClient,
 		public transformationService: TransformationService,
 	) {
 	}
@@ -28,24 +40,63 @@ export class DataTableComponent {
 	ngAfterViewInit() {
 		this.dataSource.paginator = this.paginator;
 
-        this.transformationService.fetchTransformationResult().subscribe({
-            next: transformationResult => {
-                this.displayedColumns = this.displayedColumns.concat(this.getColumnNames(transformationResult.dataSet))
+        if (this.step === 'validation') {
+            this.transformationService.fetchTransformationResult().subscribe({
+                next: transformationResult => {
+                    this.displayedColumns = this.displayedColumns.concat(this.getColumnNames(transformationResult.dataSet.dataConfiguration))
 
-                this.dataSource.data = this.addColumnErrorsToTableData(
-                    this.transformDataSet(
-                        this.readdTransformationErrors(
-                            this.removeRowsWithErrorsFromDataSet(transformationResult),
-                            transformationResult.transformationErrors
-                        )
-                    ),
-                    transformationResult.transformationErrors
-                );
+                    this.dataSource.data = this.addColumnErrorsToTableData(
+                        this.transformDataSet(
+                            this.readdTransformationErrors(
+                                this.removeRowsWithErrorsFromDataSet(transformationResult),
+                                transformationResult.transformationErrors
+                            )
+                        ),
+                        transformationResult.transformationErrors
+                    );
 
-            }, error: error => {
-                console.log(error());
-            }
-        });
+                }, error: error => {
+                    console.log(error());
+                }
+            });
+        } else {
+            this.dataConfigurationService.downloadDataConfigurationAsJson().subscribe(
+                {
+                    next: dataConfiguration => {
+                        this.displayedColumns = this.displayedColumns.concat(this.getColumnNames(dataConfiguration));
+
+                        this.paginator.page.pipe(
+                            startWith({}),
+                            switchMap(() => {
+                                this.isLoading = true;
+                                return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/" + this.step + "/dataTable", {
+                                    params: {
+                                        page: this.paginator.pageIndex + 1,
+                                        perPage: this.paginator.pageSize
+                                    }
+                                }).pipe(catchError(() => of(null)));
+                            }),
+                            map(value => {
+                               if (value == null) {
+                                   return [];
+                               }
+                               this.rowIndexOffset = (value.page - 1) * value.perPage;
+                               this.isLoading = false;
+                               this.total = value.total;
+                               return value.data;
+                            }),
+                        ).subscribe({
+                            next: value => {
+                                const dataSet = new DataSet()
+                                dataSet.data = value;
+                                dataSet.dataConfiguration = dataConfiguration;
+                                this.dataSource = new MatTableDataSource<TableElement>(this.transformDataSet(dataSet));
+                            }
+                        });
+                    }
+                }
+            );
+        }
 	}
 
 	/**
@@ -191,10 +242,10 @@ export class DataTableComponent {
 	 * @param dataSet to be processed
 	 * @returns Array<string>
 	 */
-	getColumnNames(dataSet: DataSet): string[] {
+	getColumnNames(dataConfiguration: DataConfiguration): string[] {
 		var result: string[] = [];
 
-		dataSet.dataConfiguration.configurations.forEach((column) => {
+		dataConfiguration.configurations.forEach((column) => {
 			result.push(column.name as string);
 		});
 
@@ -247,4 +298,12 @@ interface TableElement {
 	position: number;
 	[key: string]: any;
 	errorsInRow: Array<any>;
+}
+
+interface DataSetPage {
+    data: Array<Array<any>>;
+    page: number;
+    perPage: number;
+    total: number;
+    totalPages: number;
 }

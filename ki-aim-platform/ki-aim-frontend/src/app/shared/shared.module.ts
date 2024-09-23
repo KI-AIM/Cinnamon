@@ -26,6 +26,10 @@ import { ConfigurationUploadComponent } from "./components/configuration-upload/
 import {
     ConfigurationManagementComponent
 } from "./components/configuration-management/configuration-management.component";
+import {DataTableComponent} from "./components/data-table/data-table.component";
+import {MatTableModule} from "@angular/material/table";
+import {MatPaginatorModule} from "@angular/material/paginator";
+import {MatProgressBarModule} from "@angular/material/progress-bar";
 
 @NgModule({
     declarations: [
@@ -38,6 +42,7 @@ import {
         ConfigurationPageComponent,
         ConfigurationSelectionComponent,
         ConfigurationUploadComponent,
+        DataTableComponent,
         InfoCardComponent,
         InformationDialogComponent,
         LoadingSpinnerComponent,
@@ -53,9 +58,12 @@ import {
         MatFormFieldModule,
         MatIconModule,
         MatInputModule,
+        MatPaginatorModule,
         MatProgressSpinnerModule,
         MatSelectModule,
+        MatTableModule,
         ReactiveFormsModule,
+        MatProgressBarModule,
     ],
     exports: [
         ConfigurationFormComponent,
@@ -63,6 +71,7 @@ import {
         ConfigurationManagementComponent,
         ConfigurationPageComponent,
         ConfigurationUploadComponent,
+        DataTableComponent,
         InfoCardComponent,
         LoadingSpinnerComponent,
         NoSpaceValidatorDirective,

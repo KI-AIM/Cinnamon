@@ -1,5 +1,4 @@
 import { Component } from "@angular/core";
-import { TransformationService } from "../../services/transformation.service";
 import { LoadingService } from "src/app/shared/services/loading.service";
 import { Router } from "@angular/router";
 import { StateManagementService } from "src/app/core/services/state-management.service";
@@ -12,6 +11,7 @@ import { TitleService } from "src/app/core/services/title-service.service";
 import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
 import { ErrorMessageService } from "src/app/shared/services/error-message.service";
+import {TransformationService} from "../../../../shared/services/transformation.service";
 
 @Component({
 	selector: "app-data-validation",

@@ -3,7 +3,7 @@ import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
 import { concatMap, map, Observable, of, tap } from "rxjs";
-import { parse } from "yaml";
+import { parse, stringify } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
 import { ImportPipeData } from "../model/import-pipe-data";
@@ -17,8 +17,13 @@ export abstract class AlgorithmService {
 
     private _cachedImportPipeData: ImportPipeData | null = null;
 
-    public doGetConfig: () => Object | string = () => '';
-    protected doSetConfig: (config: ImportPipeData) => void = () => { };
+    private doGetConfig: () => ConfigData = () => {
+        return {formData: {}, selectedAlgorithm: new Algorithm()}
+    };
+    private doSetConfig: (error: string | null) => void = () => { };
+
+    public selectCache: Algorithm | null = null;
+    public configCache: {[algorithmName: string]: Object} = {};
 
     protected constructor(
         private readonly http: HttpClient,
@@ -46,10 +51,37 @@ export abstract class AlgorithmService {
     abstract readConfiguration(arg: Object, configurationName: string): { config: Object, selectedAlgorithm: Algorithm };
 
     /**
+     * Returns the YAML configuration as a string.
+     */
+    public getConfig(): string {
+        const config = this.doGetConfig();
+        return stringify(this.createConfiguration(config.formData, config.selectedAlgorithm));
+    }
+
+    /**
+     * Sets the configuration form the given data to the UI.
+     * @param data Data containing the result of the import.
+     */
+    public setConfig(data: ImportPipeData): void {
+        let error = null;
+        if (data.success) {
+            if (data.yamlConfigString !== "skip") {
+                const result = this.readConfiguration(parse(data.yamlConfigString), data.configData.name);
+                this.selectCache = result.selectedAlgorithm;
+                this.configCache[result.selectedAlgorithm.name] = result.config;
+            }
+        } else {
+            error = "Failed to load configuration";
+        }
+
+        this.doSetConfig(error);
+    }
+
+    /**
      * Sets the callback function for retrieving the configuration from the UI.
      * @param func The function that is getting called.
      */
-    public setDoGetConfig(func: () => string) {
+    public setDoGetConfig(func: () => ConfigData) {
         this.doGetConfig = func;
     }
 
@@ -57,13 +89,19 @@ export abstract class AlgorithmService {
      * Sets the callback function for setting the configuration to the UI.
      * @param func The function that is getting called.
      */
-    public setDoSetConfig(func: (data: ImportPipeData) => void) {
+    public setDoSetConfig(func: (error: string | null) => void) {
         this.doSetConfig = func;
     }
 
+    /**
+     * Sets the configuration if the page is loaded, otherwise caches the result,
+     * so it can be loaded after the page is loaded.
+     * @param value Result of the configuration import.
+     */
     public setConfigWait(value: ImportPipeData) {
+        this._cachedImportPipeData = value;
         if (this._algorithms !== null) {
-            this.doSetConfig(value);
+            this.setConfig(value);
         } else {
             this._cachedImportPipeData = value;
         }
@@ -86,7 +124,7 @@ export abstract class AlgorithmService {
             return this.stepConfig
                 .pipe(
                     concatMap(value => {
-                        return this.loadAlgorithmDefinition(value.url, algorithm)
+                        return this.loadAlgorithmDefinition(value.urlClient, algorithm)
                     }),
                     tap(value => {
                         this.algorithmDefinitions[algorithm.name] = value;
@@ -117,18 +155,20 @@ export abstract class AlgorithmService {
             return this.stepConfig
                 .pipe(
                     concatMap(value => {
-                        return this.loadAlgorithms(value.url)
+                        return this.loadAlgorithms(value.urlClient)
                     }),
                     tap(value =>  {
                         this._algorithms = value
                         if (this._cachedImportPipeData !== null) {
-                            this.doSetConfig(this._cachedImportPipeData);
+                            // Fallback if the page load was slower than the request
+                            this.setConfig(this._cachedImportPipeData);
                             this._cachedImportPipeData = null;
                         }
                     }),
                 );
+        } else {
+            return of(this._algorithms);
         }
-        return of(this._algorithms);
     }
 
     private loadAlgorithms(url: string): Observable<Algorithm[]> {
@@ -155,4 +195,9 @@ export abstract class AlgorithmService {
     private loadStepConfig(stepName: string): Observable<StepConfiguration> {
         return this.http.get<StepConfiguration>(environments.apiUrl + `/api/step/${stepName}`);
     }
+}
+
+export interface ConfigData {
+    formData: Object,
+    selectedAlgorithm: Algorithm
 }

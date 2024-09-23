@@ -19,12 +19,12 @@ public class DataTransformationErrorEntity {
 	private Long id;
 
 	/**
-	 * Project this transformation error corresponds to.
+	 * DataSet this transformation error corresponds to.
 	 */
 	@ManyToOne
 	@JoinColumn(nullable = false)
 	@Setter
-	private ProjectEntity project;
+	private DataSetEntity dataSet;
 
 	/**
 	 * Index of the row in the data set this transformation error corresponds to.

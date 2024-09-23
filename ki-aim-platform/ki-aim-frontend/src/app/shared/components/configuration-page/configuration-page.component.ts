@@ -1,10 +1,9 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import { Algorithm } from "../../model/algorithm";
-import { AlgorithmService } from "../../services/algorithm.service";
-import { parse, stringify } from "yaml";
+import { AlgorithmService, ConfigData } from "../../services/algorithm.service";
+import { stringify } from "yaml";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
-import { ImportPipeData } from "../../model/import-pipe-data";
 import { Steps } from "../../../core/enums/steps";
 import { Router } from "@angular/router";
 import { StateManagementService } from "../../../core/services/state-management.service";
@@ -49,6 +48,7 @@ export class ConfigurationPageComponent implements OnInit {
 
     constructor(
         protected readonly algorithmService: AlgorithmService,
+        private readonly changeDetectorRef: ChangeDetectorRef,
         private httpClient: HttpClient,
         private readonly router: Router,
         private readonly stateManagement: StateManagementService,
@@ -58,7 +58,7 @@ export class ConfigurationPageComponent implements OnInit {
     ngOnInit() {
         // Set callback functions
         this.algorithmService.setDoGetConfig(() => this.getConfig());
-        this.algorithmService.setDoSetConfig((data: ImportPipeData) => this.setConfig(data));
+        this.algorithmService.setDoSetConfig((error: string | null) => this.setConfig(error));
 
         // Get available algorithms
         this.algorithmService.algorithms.subscribe({
@@ -72,35 +72,70 @@ export class ConfigurationPageComponent implements OnInit {
         });
     }
 
+    ngAfterViewInit() {
+        this.readFromCache();
+        this.changeDetectorRef.detectChanges();
+    }
+
     /**
-     * Retrieves the configuration from the form and transforms it into the specified structure.
+     * Updates the cached value of the current selected form.
+     * @protected
+     */
+    protected updateConfigCache(): void
+    {
+        this.algorithmService.configCache[this.selection.selectedOption.name] = this.forms.formData;
+    }
+
+    /**
+     * Updates the cached value of the selected algorithm and sets the form to the last cached value.
+     * @protected
+     */
+    protected updateSelectCache(): void {
+        this.algorithmService.selectCache = this.selection.selectedOption;
+        this.readFromCache();
+    }
+
+    /**
+     * Reads the values of the configuration page from the cache.
+     */
+    public readFromCache(): void {
+        if (this.algorithmService.selectCache) {
+            this.selection.selectedOption = this.algorithmService.selectCache;
+            if (this.algorithmService.configCache[this.selection.selectedOption.name]) {
+                setTimeout(() => {
+                    this.forms.setConfiguration(this.algorithmService.configCache[this.algorithmService.selectCache!.name]);
+                }, 100);
+            }
+        }
+    }
+
+    /**
+     * Retrieves the configuration from the form.
      * @private
      */
-    private getConfig(): string {
+    private getConfig(): ConfigData {
         if (!this.forms) {
-            return '';
+            return {
+                formData: {},
+                selectedAlgorithm: this.selection.selectedOption
+            };
         } else {
-            return stringify(this.algorithmService.createConfiguration(this.forms.formData, this.selection.selectedOption))
+            return {
+                formData: this.forms.formData,
+                selectedAlgorithm: this.selection.selectedOption
+            };
         }
     }
 
     /**
      * Sets the given configuration to the form.
-     * @param config Result of the configuration import.
+     * @param error message if an error occurred, null if no error occurred.
      * @private
      */
-    private setConfig(config: ImportPipeData) {
-        if (config.success) {
-            this.error = null;
-            if (config.yamlConfigString !== "skip") {
-                const result = this.algorithmService.readConfiguration(parse(config.yamlConfigString), config.configData.name);
-                this.selection.selectedOption = result.selectedAlgorithm;
-                setTimeout(() => {
-                    this.forms.setConfiguration(result.config);
-                }, 100);
-            }
-        } else {
-            this.error = "Failed to load configuration";
+    private setConfig(error: string | null) {
+        this.error = error;
+        if (error === null) {
+            this.readFromCache();
         }
     }
 

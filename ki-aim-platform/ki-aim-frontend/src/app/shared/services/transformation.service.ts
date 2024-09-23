@@ -1,10 +1,10 @@
 import { TransformationResult } from "src/app/shared/model/transformation-result";
-import { StateManagementService } from "../../../core/services/state-management.service";
 import { Injectable } from "@angular/core";
-import { Steps } from "../../../core/enums/steps";
 import { HttpClient } from "@angular/common/http";
 import { concatMap, Observable, of, tap } from "rxjs";
-import { environments } from "../../../../environments/environment";
+import {StateManagementService} from "../../core/services/state-management.service";
+import {Steps} from "../../core/enums/steps";
+import {environments} from "../../../environments/environment";
 
 @Injectable({
     providedIn: "root"
@@ -42,7 +42,7 @@ export class TransformationService {
         return this.stateManagement.fetchStatus().pipe(
             concatMap(status => {
                 if (this.stateManagement.isStepCompleted(Steps.VALIDATION)) {
-                    return this.http.get<TransformationResult>(environments.apiUrl + "/api/data/transformationResult")
+                    return this.http.get<TransformationResult>(environments.apiUrl + "/api/data/validation/transformationResult")
                         .pipe(
                             tap(value => {
                                 this.transformationResult = value;

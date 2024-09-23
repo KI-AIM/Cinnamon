@@ -396,7 +396,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataPage() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/validation/dataTable")
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
 				                .param("page", "2")
 				                .param("perPage", "1"))
 		       .andExpect(status().isOk())
@@ -408,7 +408,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataPageErrors() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/validation/dataTable")
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
 				                .param("page", "2")
 				                .param("perPage", "2"))
 		       .andExpect(status().isOk())
@@ -420,7 +420,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataPageEncodedErrors() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/validation/dataTable")
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
 				                .param("page", "3")
 				                .param("perPage", "1")
 				                .param("formatErrorEncoding", "$value"))

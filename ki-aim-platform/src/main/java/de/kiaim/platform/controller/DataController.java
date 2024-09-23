@@ -308,45 +308,6 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_DATA, null, null, null, stepName, request, user);
 	}
 
-	@Operation(summary = "Returns a page of the data of the data set.",
-	           description = "Returns the specified page considering the specified page size of the data of the data.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200",
-			             description = "Successfully found the data and returns the data.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-											 schema = @Schema(implementation = DataSetPage.class)
-			                                 ),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = DataSetPage.class)
-			                                 )}),
-			@ApiResponse(responseCode = "400",
-			             description = "The user has no stored data.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
-			@ApiResponse(responseCode = "500",
-			             description = "An internal error occurred.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))})
-	})
-	@GetMapping(value = "/{stepName}/dataTable",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ResponseEntity<Object> loadDataTable(
-			@Parameter(description = "Step the requested data belongs to.")
-			@PathVariable final String stepName,
-			@Parameter(description = "Page number starting at 1.")
-			@RequestParam(required = true) final Integer page,
-			@Parameter(description = "Number of items per page.")
-			@RequestParam(required = true) final Integer perPage,
-			@ParameterObject LoadDataRequest request,
-			@AuthenticationPrincipal UserEntity user
-	) throws ApiException {
-		return handleRequest(RequestType.LOAD_DATA_PAGE, null, null, null, stepName, request, user, page, perPage);
-	}
-
 	@Operation(summary = "Returns the data set.",
 	           description = "Returns the data set.")
 	@ApiResponses(value = {
@@ -381,8 +342,30 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, stepName, request, user);
 	}
 
-	@Operation(summary = "Returns the transformation result.",
-	           description = "Returns the transformation result.")
+	@Operation(summary = "Returns a page of the data of the data set.",
+	           description = "Returns the specified page considering the specified page size of the data of the data.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully found the data and returns the data.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = TransformationResultPage.class)
+			             ),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = TransformationResultPage.class)
+			                        )}),
+			@ApiResponse(responseCode = "400",
+			             description = "The user has no stored data.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "An internal error occurred.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))})
+	})
 	@GetMapping(value = "/{stepName}/transformationResult",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadTransformationResult(
@@ -392,6 +375,23 @@ public class DataController {
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
 		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT, null, null, null, stepName, request, user);
+	}
+
+	@Operation(summary = "Returns a page the transformation result.",
+	           description = "Returns the page of the transformation result.")
+	@GetMapping(value = "/{stepName}/transformationResult/page",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<Object> loadTransformationResultPage(
+			@Parameter(description = "Step the requested data belongs to.")
+			@PathVariable final String stepName,
+			@Parameter(description = "Page number starting at 1.")
+			@RequestParam(required = true) final Integer page,
+			@Parameter(description = "Number of items per page.")
+			@RequestParam(required = true) final Integer perPage,
+			@ParameterObject LoadDataRequest request,
+			@AuthenticationPrincipal UserEntity user
+	) throws ApiException {
+		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT_PAGE, null, null, null, stepName, request, user, page, perPage);
 	}
 
 	@Operation(summary = "Deletes the data set from the internal data base.",
@@ -496,10 +496,6 @@ public class DataController {
 				                                                             .getDataTransformationErrors(),
 				                                       loadDataRequest);
 			}
-			case LOAD_DATA_PAGE -> {
-				final Step step = Step.getStepOrThrow(stepName);
-				result = databaseService.exportDataSetPage(projectEntity, columnNames, step, page, perPage, loadDataRequest);
-			}
 			case LOAD_DATA_SET -> {
 				final Step step = Step.getStepOrThrow(stepName);
 				result = databaseService.exportDataSet(projectEntity, columnNames, step);
@@ -507,6 +503,10 @@ public class DataController {
 			case LOAD_TRANSFORMATION_RESULT -> {
 				final Step step = Step.getStepOrThrow(stepName);
 				result = databaseService.exportTransformationResult(projectEntity, step);
+			}
+			case LOAD_TRANSFORMATION_RESULT_PAGE -> {
+				final Step step = Step.getStepOrThrow(stepName);
+				result = databaseService.exportTransformationResultPage(projectEntity, step, columnNames, page, perPage, loadDataRequest);
 			}
 			case STORE_CONFIG -> {
 				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
@@ -553,9 +553,9 @@ public class DataController {
 		DELETE,
 		LOAD_CONFIG,
 		LOAD_DATA,
-		LOAD_DATA_PAGE,
 		LOAD_DATA_SET,
 		LOAD_TRANSFORMATION_RESULT,
+		LOAD_TRANSFORMATION_RESULT_PAGE,
 		STORE_CONFIG,
 		STORE_DATE_SET,
 		VALIDATE;

@@ -13,7 +13,7 @@ import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.dto.DataSetPage;
+import de.kiaim.platform.model.dto.TransformationResultPage;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
@@ -211,43 +211,6 @@ public class DatabaseService {
 		return exportDataSet(dataSetEntity, columnNames, false, 0, 0);
 	}
 
-	/**
-	 * Exports a page of the data set associated with the given step in the given project.
-	 * Starts at the given page number taking the given page size into account.
-	 * Returns the columns with the given names in the given order.
-	 * If no column names are provided, all columns are exported.
-	 *
-	 * @param project The project of which the data set should be exported.
-	 * @param columnNames Names of the columns to export. If empty, all columns will be exported.
-	 * @param step The step of which the data should be exported.
-	 * @param pageNumber The number of the page to be exported.
-	 * @param pageSize The number of items per page.
-	 * @param loadDataRequest Export settings.
-	 * @return The page containing the data and meta-data about the page.
-	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
-	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
-	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
-	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
-	 */
-	@Transactional
-	public DataSetPage exportDataSetPage(final ProjectEntity project, List<String> columnNames, final Step step,
-	                                     final int pageNumber, final int pageSize, final LoadDataRequest loadDataRequest
-	) throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
-		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
-
-		final var startRow = (pageNumber - 1) * pageSize;
-		final var endRow = startRow + pageSize;
-
-		final DataSet dataSet = exportDataSet(dataSetEntity, columnNames, true, startRow, pageSize);
-		final Set<DataTransformationErrorEntity> errors = errorRepository.findByDataSetIdAndRowIndexBetween(
-				dataSetEntity.getId(), startRow, endRow);
-
-		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, loadDataRequest);
-		final int numberRows = countEntries(dataSetEntity.getId());
-		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
-		return new DataSetPage(data, pageNumber, pageSize, numberRows, numberPages);
-	}
-
 	@Transactional
 	public TransformationResult exportTransformationResult(final ProjectEntity project, final Step step)
 			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException, InternalIOException {
@@ -272,6 +235,64 @@ public class DatabaseService {
 		}
 
 		return new TransformationResult(dataSet, rowErrors.values().stream().toList());
+	}
+
+	/**
+	 * Exports a page of the transformation result associated with the given step in the given project.
+	 * Starts at the given page number taking the given page size into account.
+	 * Returns the columns with the given names in the given order.
+	 * If no column names are provided, all columns are exported.
+	 *
+	 * @param project The project of which the data set should be exported.
+	 * @param columnNames Names of the columns to export. If empty, all columns will be exported.
+	 * @param step The step of which the data should be exported.
+	 * @param pageNumber The number of the page to be exported.
+	 * @param pageSize The number of items per page.
+	 * @param loadDataRequest Export settings.
+	 * @return The page containing the data and meta-data about the page.
+	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
+	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
+	 */
+	@Transactional
+	public TransformationResultPage exportTransformationResultPage(final ProjectEntity project, final Step step,
+	                                                               final List<String> columnNames, final int pageNumber,
+	                                                               final int pageSize,
+	                                                               final LoadDataRequest loadDataRequest)
+			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException, InternalIOException {
+		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
+
+		final var startRow = (pageNumber - 1) * pageSize;
+		final var endRow = startRow + pageSize;
+
+		final DataSet dataSet = exportDataSet(dataSetEntity, columnNames, true, startRow, pageSize);
+		final Set<DataTransformationErrorEntity> errors = errorRepository.findByDataSetIdAndRowIndexBetween(
+				dataSetEntity.getId(), startRow, endRow - 1);
+
+		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, loadDataRequest);
+		final int numberRows = countEntries(dataSetEntity.getId());
+		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
+
+		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
+		for (final var error : errors) {
+			if (!rowErrors.containsKey(error.getRowIndex())) {
+				final List<String> o = dataSet.getDataRows()
+				                              .get(error.getRowIndex() - startRow)
+				                              .getData()
+				                              .stream()
+				                              .map(value -> Objects.toString(value, ""))
+				                              .collect(Collectors.toList());
+				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex() - startRow, o));
+			}
+			final var rowError = rowErrors.get(error.getRowIndex());
+			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType()));
+			rowError.getRawValues().set(error.getColumnIndex(), error.getOriginalValue());
+		}
+
+		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();
+
+		return new TransformationResultPage(data, transformationErrors, pageNumber, pageSize, numberRows, numberPages);
 	}
 
 	/**

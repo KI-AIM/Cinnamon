@@ -1,10 +1,7 @@
 import {Component, Input, ViewChild} from "@angular/core";
-import { TransformationService } from "../../services/transformation.service";
 import { DataSet } from "src/app/shared/model/data-set";
 import { MatTableDataSource } from "@angular/material/table";
 import { MatPaginator } from "@angular/material/paginator";
-import { TransformationResult } from "src/app/shared/model/transformation-result";
-import { List } from "src/app/core/utils/list";
 import { DataRowTransformationError } from "src/app/shared/model/data-row-transformation-error";
 import {catchError, map, of, startWith, switchMap} from "rxjs";
 import {DataConfigurationService} from "../../services/data-configuration.service";
@@ -33,70 +30,49 @@ export class DataTableComponent {
 	constructor(
         private readonly dataConfigurationService: DataConfigurationService,
         private readonly http: HttpClient,
-		public transformationService: TransformationService,
 	) {
 	}
 
 	ngAfterViewInit() {
 		this.dataSource.paginator = this.paginator;
 
-        if (this.step === 'validation') {
-            this.transformationService.fetchTransformationResult().subscribe({
-                next: transformationResult => {
-                    this.displayedColumns = this.displayedColumns.concat(this.getColumnNames(transformationResult.dataSet.dataConfiguration))
+        this.dataConfigurationService.downloadDataConfigurationAsJson().subscribe(
+            {
+                next: dataConfiguration => {
+                    this.displayedColumns = this.displayedColumns.concat(this.getColumnNames(dataConfiguration));
 
-                    this.dataSource.data = this.addColumnErrorsToTableData(
-                        this.transformDataSet(
-                            this.readdTransformationErrors(
-                                this.removeRowsWithErrorsFromDataSet(transformationResult),
-                                transformationResult.transformationErrors
-                            )
-                        ),
-                        transformationResult.transformationErrors
-                    );
-
-                }, error: error => {
-                    console.log(error());
-                }
-            });
-        } else {
-            this.dataConfigurationService.downloadDataConfigurationAsJson().subscribe(
-                {
-                    next: dataConfiguration => {
-                        this.displayedColumns = this.displayedColumns.concat(this.getColumnNames(dataConfiguration));
-
-                        this.paginator.page.pipe(
-                            startWith({}),
-                            switchMap(() => {
-                                this.isLoading = true;
-                                return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/" + this.step + "/dataTable", {
-                                    params: {
-                                        page: this.paginator.pageIndex + 1,
-                                        perPage: this.paginator.pageSize
-                                    }
-                                }).pipe(catchError(() => of(null)));
-                            }),
-                            map(value => {
-                               if (value == null) {
-                                   return [];
-                               }
-                               this.rowIndexOffset = (value.page - 1) * value.perPage;
-                               this.isLoading = false;
-                               this.total = value.total;
-                               return value.data;
-                            }),
-                        ).subscribe({
-                            next: value => {
-                                const dataSet = new DataSet()
-                                dataSet.data = value;
-                                dataSet.dataConfiguration = dataConfiguration;
-                                this.dataSource = new MatTableDataSource<TableElement>(this.transformDataSet(dataSet));
+                    this.paginator.page.pipe(
+                        startWith({}),
+                        switchMap(() => {
+                            this.isLoading = true;
+                            return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/" + this.step + "/transformationResult/page", {
+                                params: {
+                                    defaultNullEncoding: "$value",
+                                    page: this.paginator.pageIndex + 1,
+                                    perPage: this.paginator.pageSize
+                                }
+                            }).pipe(catchError(() => of(null)));
+                        }),
+                        map(value => {
+                            if (value == null) {
+                                return null;
                             }
-                        });
-                    }
+                            this.rowIndexOffset = (value.page - 1) * value.perPage;
+                            this.isLoading = false;
+                            this.total = value.total;
+                            return value;
+                        }),
+                    ).subscribe({
+                        next: value => {
+                            const dataSet = new DataSet()
+                            dataSet.data = value!.data;
+                            dataSet.dataConfiguration = dataConfiguration;
+                            this.dataSource = new MatTableDataSource<TableElement>(this.addColumnErrorsToTableData(this.transformDataSet(dataSet), value!.transformationErrors));
+                        }
+                    });
                 }
-            );
-        }
+            }
+        );
 	}
 
 	/**
@@ -120,83 +96,6 @@ export class DataTableComponent {
 		});
 
 		return transformedData;
-	}
-
-	/**
-	 * Function that readds the rows that were faulty upon transformation
-	 * to be displayed in the validation table
-	 * @param dataSet: The data set to which the lines should be readded to
-	 * @param transformationErrors: The transformation object that contains the error information
-	 * @returns new DataSet
-	 */
-	readdTransformationErrors(dataSet: DataSet, transformationErrors: DataRowTransformationError[]): DataSet {
-
-		var newDataSet = new DataSet();
-		var dataArray = new Array<Array<any>>;
-
-        if (transformationErrors.length === 0) {
-            // All rows are valid
-            dataSet.data.forEach((dataRow) => {
-                dataArray.push(dataRow);
-            });
-        } else if (dataSet.data.length === 0) {
-            // All rows are invalid
-            transformationErrors.forEach(error => {
-                dataArray.push(error.rawValues);
-            });
-        } else {
-            let rowIndex = 0;
-            let dataSetRowIndex = 0;
-
-            transformationErrors.forEach(transformationError => {
-                // Fill rows until the index of the transformation error is reached
-                while (rowIndex < transformationError.index) {
-                    dataArray.push(dataSet.data[dataSetRowIndex]);
-                    rowIndex += 1;
-                    dataSetRowIndex += 1;
-                }
-                // Add the transformation error
-                dataArray.push(transformationError.rawValues);
-                rowIndex += 1;
-            });
-
-            // Add valid rows after the last transformation error
-            while (dataSetRowIndex < dataSet.data.length) {
-                dataArray.push(dataSet.data[dataSetRowIndex]);
-                dataSetRowIndex += 1;
-            }
-        }
-
-		newDataSet.data = dataArray;
-		newDataSet.dataConfiguration = dataSet.dataConfiguration;
-
-		return newDataSet;
-	}
-
-	removeRowsWithErrorsFromDataSet(transformationResult: TransformationResult): DataSet {
-		var dataSet = transformationResult.dataSet;
-
-		var newDataSet = new DataSet();
-		var dataArray = new Array<Array<any>>;
-		var errorIndices = new List<number>();
-
-		transformationResult.transformationErrors.forEach(error => {
-			if (!errorIndices.contains(rowCounter)) {
-				errorIndices.add(error.index);
-			}
-		});
-
-		var rowCounter = 0;
-		dataSet.data.forEach((dataRow) => {
-			if (!errorIndices.contains(rowCounter)) {
-				dataArray.push(dataRow);
-			}
-			rowCounter++;
-		});
-		newDataSet.data = dataArray;
-		newDataSet.dataConfiguration = dataSet.dataConfiguration;
-
-		return newDataSet;
 	}
 
 	/**
@@ -301,9 +200,15 @@ interface TableElement {
 }
 
 interface DataSetPage {
-    data: Array<Array<any>>;
+   data: Array<Array<any>>;
+
+
     page: number;
     perPage: number;
     total: number;
     totalPages: number;
+
+
+    transformationErrors: DataRowTransformationError[];
+
 }

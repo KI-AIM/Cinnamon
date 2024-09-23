@@ -20,6 +20,7 @@ import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.DataSetRepository;
+import de.kiaim.platform.repository.DataTransformationErrorRepository;
 import de.kiaim.platform.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,13 +32,11 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -48,6 +47,7 @@ public class DatabaseService {
 
 	private final Connection connection;
 	private final DataSetRepository dataSetRepository;
+	private final DataTransformationErrorRepository errorRepository;
 	private final ProjectRepository projectRepository;
 
 	private final DataschemeGenerator dataschemeGenerator;
@@ -57,11 +57,12 @@ public class DatabaseService {
 	private final StepService stepService;
 
 	@Autowired
-	public DatabaseService(final DataSource dataSource, final SerializationConfig serializationConfig,
-	                       final DataSetRepository dataSetRepository, final ProjectRepository projectRepository,
-	                       final DataschemeGenerator dataschemeGenerator, final DataSetService dataSetService,
-	                       final StepService stepService) {
+	public DatabaseService(final DataSource dataSource, final DataTransformationErrorRepository errorRepository,
+	                       final SerializationConfig serializationConfig, final DataSetRepository dataSetRepository,
+	                       final ProjectRepository projectRepository, final DataschemeGenerator dataschemeGenerator,
+	                       final DataSetService dataSetService, final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
+		this.errorRepository = errorRepository;
 		jsonMapper = serializationConfig.jsonMapper();
 		this.dataSetRepository = dataSetRepository;
 		this.projectRepository = projectRepository;
@@ -98,7 +99,8 @@ public class DatabaseService {
 
 	/**
 	 * Stores the given TransformationResult by storing the DataSet,
-	 * the DataConfiguration and the transformation errors into the database and associates them with the given project.
+	 * the DataConfiguration and the transformation errors into the database
+	 * and associates them with the given step in the given project.
 	 * The table for the DataSet will be generated automatically.
 	 * Returns an ID to access the data.
 	 *
@@ -144,43 +146,13 @@ public class DatabaseService {
 		return dataSetEntity.getId();
 	}
 
-	private void storeDataSet(final DataSet dataSet, final DataSetEntity dataSetEntity) throws InternalDataSetPersistenceException {
-		final String tableName = getTableName(dataSetEntity.getId());
-
-		// Create table
-		final String tableQuery = dataschemeGenerator.createSchema(dataSet.getDataConfiguration(), tableName);
-		try {
-			executeStatement(tableQuery);
-		} catch (final SQLException e) {
-			LOGGER.error("The Table for the DataSet could not be created!", e);
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.TABLE_CREATE,
-			                                              "The Table for the DataSet could not be created!", e);
-		}
-
-		// Insert data
-		try (final Statement insertStatement = connection.createStatement()) {
-			for (final DataRow dataRow : dataSet.getDataRows()) {
-				final List<String> stringRow = new ArrayList<>();
-				for (final Data data : dataRow.getData()) {
-					stringRow.add(convertDataToString(data));
-				}
-				final String values = String.join(",", stringRow);
-				insertStatement.execute("INSERT INTO " + tableName + " VALUES (" + values + ")");
-			}
-		} catch (SQLException e) {
-			try {
-				deleteDataSet(dataSetEntity);
-			} catch (InternalDataSetPersistenceException ignored) {
-			}
-			LOGGER.error("The DataSet could not be persisted!", e);
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_STORE,
-			                                              "The DataSet could not be persisted!", e);
-		}
-
-		dataSetEntity.setStoredData(true);
-		projectRepository.save(dataSetEntity.getProject());
-	}
-
+	/**
+	 * Stores the given algorithm configuration
+	 * @param step The step of the algorithm.
+	 * @param configuration The algorithm configuration to be stored.
+	 * @param project The project the configuration should be associated with.
+	 * @throws InternalApplicationConfigurationException If the step configuration could not be found.
+	 */
 	@Transactional
 	public void storeConfiguration(final Step step, final String configuration, final ProjectEntity project)
 			throws InternalApplicationConfigurationException {
@@ -204,7 +176,7 @@ public class DatabaseService {
 	}
 
 	/**
-	 * Exports the configuration of the data set associated with the given project.
+	 * Exports the configuration of the data set associated with the given project and step.
 	 *
 	 * @param project The project of which the configuration should be exported.
 	 * @return The configuration.
@@ -219,12 +191,13 @@ public class DatabaseService {
 	}
 
 	/**
-	 * Exports the data set associated with the given project.
+	 * Exports the data set associated with the given project and step.
 	 * Returns the columns with the given names in the given order.
 	 * If no column names are provided, all columns are exported.
 	 *
 	 * @param project The project of which the data set should be exported.
 	 * @param columnNames Names of the columns to export. If empty, all columns will be exported.
+	 * @param step The step of which the data set should be exported.
 	 * @return The DataSet.
 	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
@@ -238,15 +211,38 @@ public class DatabaseService {
 		return exportDataSet(dataSetEntity, columnNames, false, 0, 0);
 	}
 
+	/**
+	 * Exports a page of the data set associated with the given step in the given project.
+	 * Starts at the given page number taking the given page size into account.
+	 * Returns the columns with the given names in the given order.
+	 * If no column names are provided, all columns are exported.
+	 *
+	 * @param project The project of which the data set should be exported.
+	 * @param columnNames Names of the columns to export. If empty, all columns will be exported.
+	 * @param step The step of which the data should be exported.
+	 * @param pageNumber The number of the page to be exported.
+	 * @param pageSize The number of items per page.
+	 * @param loadDataRequest Export settings.
+	 * @return The page containing the data and meta-data about the page.
+	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
+	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
+	 */
 	@Transactional
 	public DataSetPage exportDataSetPage(final ProjectEntity project, List<String> columnNames, final Step step,
 	                                     final int pageNumber, final int pageSize, final LoadDataRequest loadDataRequest
 	) throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
 		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
 
-		var dataSet = exportDataSet(dataSetEntity, columnNames, true, pageNumber, pageSize);
+		final var startRow = (pageNumber - 1) * pageSize;
+		final var endRow = startRow + pageSize;
 
-		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, dataSetEntity.getDataTransformationErrors(), loadDataRequest);
+		final DataSet dataSet = exportDataSet(dataSetEntity, columnNames, true, startRow, pageSize);
+		final Set<DataTransformationErrorEntity> errors = errorRepository.findByDataSetIdAndRowIndexBetween(
+				dataSetEntity.getId(), startRow, endRow);
+
+		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, loadDataRequest);
 		final int numberRows = countEntries(dataSetEntity.getId());
 		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
 		return new DataSetPage(data, pageNumber, pageSize, numberRows, numberPages);
@@ -320,6 +316,12 @@ public class DatabaseService {
 		projectRepository.save(project);
 	}
 
+	/**
+	 * Counts the number of rows in the dataset with the given ID.
+	 * @param dataSetId The ID of the dataset.
+	 * @return The number of rows in the dataset.
+	 * @throws InternalDataSetPersistenceException If the Number could not be retrieved.
+	 */
 	public int countEntries(final long dataSetId) throws InternalDataSetPersistenceException {
 		final String countQuery = "SELECT count(*) FROM " + getTableName(dataSetId) + ";";
 		try (final Statement countStatement = connection.createStatement()) {
@@ -386,6 +388,44 @@ public class DatabaseService {
 		return project.getDataSets().get(step);
 	}
 
+	private void storeDataSet(final DataSet dataSet, final DataSetEntity dataSetEntity) throws InternalDataSetPersistenceException {
+		final String tableName = getTableName(dataSetEntity.getId());
+
+		// Create table
+		final String tableQuery = dataschemeGenerator.createSchema(dataSet.getDataConfiguration(), tableName);
+		try {
+			executeStatement(tableQuery);
+		} catch (final SQLException e) {
+			LOGGER.error("The Table for the DataSet could not be created!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.TABLE_CREATE,
+			                                              "The Table for the DataSet could not be created!", e);
+		}
+
+		// Insert data
+		try (final Statement insertStatement = connection.createStatement()) {
+			for (final DataRow dataRow : dataSet.getDataRows()) {
+				final List<String> stringRow = new ArrayList<>();
+				for (final Data data : dataRow.getData()) {
+					stringRow.add(convertDataToString(data));
+				}
+				final String values = String.join(",", stringRow);
+				insertStatement.execute("INSERT INTO " + tableName + " VALUES (" + values + ")");
+			}
+		} catch (SQLException e) {
+			try {
+				deleteDataSet(dataSetEntity);
+			} catch (InternalDataSetPersistenceException ignored) {
+			}
+			LOGGER.error("The DataSet could not be persisted!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_STORE,
+			                                              "The DataSet could not be persisted!", e);
+		}
+
+		dataSetEntity.setStoredData(true);
+		projectRepository.save(dataSetEntity.getProject());
+	}
+
+
 	private String convertDataToString(final Data data) throws InternalDataSetPersistenceException {
 		if (data.getValue() == null) {
 			return "null";
@@ -408,7 +448,7 @@ public class DatabaseService {
 	}
 
 	private DataSet exportDataSet(final DataSetEntity dataSetEntity, List<String> columnNames, final boolean pagination,
-	                              final int pageNumber, final int pageSize)
+	                              final int startRow, final int pageSize)
 			throws BadColumnNameException, InternalDataSetPersistenceException, InternalIOException {
 		DataConfiguration dataConfiguration = getDetachedDataConfiguration(dataSetEntity);
 
@@ -423,7 +463,7 @@ public class DatabaseService {
 		final List<DataRow> dataRows = new ArrayList<>();
 		try (final Statement exportStatement = connection.createStatement()) {
 
-			final String exportQuery = createSelectQuery(dataSetEntity.getId(), columnNames, pagination, pageNumber, pageSize);
+			final String exportQuery = createSelectQuery(dataSetEntity.getId(), columnNames, pagination, startRow, pageSize);
 
 			try (final ResultSet resultSet = exportStatement.executeQuery(exportQuery)) {
 				while (resultSet.next()) {
@@ -482,11 +522,12 @@ public class DatabaseService {
 		}
 	}
 
-	private String createSelectQuery(final Long dataSetId, final List<String> columnNames, final boolean pagination, final int pageNumber, final int pageSize) {
+	private String createSelectQuery(final Long dataSetId, final List<String> columnNames, final boolean pagination,
+	                                 final int startRow, final int pageSize) {
 		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"").toList();
 		String query = "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId);
 		if (pagination) {
-			query += " LIMIT " + pageSize + " OFFSET " + (pageNumber - 1) * pageSize;
+			query += " LIMIT " + pageSize + " OFFSET " + startRow;
 		}
 		query += ";";
 		return query;

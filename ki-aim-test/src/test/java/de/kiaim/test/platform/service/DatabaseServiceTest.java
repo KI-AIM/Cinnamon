@@ -241,4 +241,40 @@ class DatabaseServiceTest extends DatabaseTest {
 		             () -> databaseService.exportConfiguration(invalidConfigName, project),
 		             "Configuration should not be present!");
 	}
+
+	@Test
+	void countEntries() {
+		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
+		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
+
+		assertDoesNotThrow(() -> databaseService.storeTransformationResult(transformationResult, project, Step.VALIDATION));
+		final DataSetEntity dataSet = project.getDataSets().get(Step.VALIDATION);
+
+		final int numberRows = assertDoesNotThrow(() -> databaseService.countEntries(dataSet.getId()));
+		assertEquals(2, numberRows, "Number of entries does not match!");
+
+		assertDoesNotThrow(() -> databaseService.delete(project));
+	}
+
+	@Test
+	void existsTableTest() {
+		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
+		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
+
+		assertDoesNotThrow(() -> databaseService.storeTransformationResult(transformationResult, project, Step.VALIDATION));
+		final DataSetEntity dataSet = project.getDataSets().get(Step.VALIDATION);
+
+		final boolean exists = assertDoesNotThrow(() -> databaseService.existsTable(dataSet.getId()));
+		assertTrue(exists, "Table does not exist!");
+
+		assertDoesNotThrow(() -> databaseService.delete(project));
+	}
+
+	@Test
+	void existsTableNot() {
+		final boolean exists = assertDoesNotThrow(() -> databaseService.existsTable(0));
+		assertFalse(exists, "Table does exist!");
+	}
 }

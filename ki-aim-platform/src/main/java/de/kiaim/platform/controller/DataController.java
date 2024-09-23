@@ -14,6 +14,7 @@ import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -299,6 +300,7 @@ public class DataController {
 	@GetMapping(value = "/{stepName}/data",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadData(
+			@Parameter(description = "Step the requested data belongs to.")
 			@PathVariable final String stepName,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
@@ -306,11 +308,38 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_DATA, null, null, null, stepName, request, user);
 	}
 
+	@Operation(summary = "Returns a page of the data of the data set.",
+	           description = "Returns the specified page considering the specified page size of the data of the data.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully found the data and returns the data.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+											 schema = @Schema(implementation = DataSetPage.class)
+			                                 ),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = DataSetPage.class)
+			                                 )}),
+			@ApiResponse(responseCode = "400",
+			             description = "The user has no stored data.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "An internal error occurred.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))})
+	})
 	@GetMapping(value = "/{stepName}/dataTable",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadDataTable(
+			@Parameter(description = "Step the requested data belongs to.")
 			@PathVariable final String stepName,
+			@Parameter(description = "Page number starting at 1.")
 			@RequestParam(required = true) final Integer page,
+			@Parameter(description = "Number of items per page.")
 			@RequestParam(required = true) final Integer perPage,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
@@ -344,6 +373,7 @@ public class DataController {
 	@GetMapping(value = "/{stepName}",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadDataSet(
+			@Parameter(description = "Step the requested data belongs to.")
 			@PathVariable final String stepName,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
@@ -356,6 +386,7 @@ public class DataController {
 	@GetMapping(value = "/{stepName}/transformationResult",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadTransformationResult(
+			@Parameter(description = "Step the requested data belongs to.")
 			@PathVariable final String stepName,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user

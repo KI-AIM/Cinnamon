@@ -392,6 +392,43 @@ class DataControllerTest extends ControllerTest {
 	// endregion
 	// ================================================================================================================
 
+	@Test
+	void loadDataPage() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/dataTable")
+				                .param("page", "2")
+				                .param("perPage", "1"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'page':2,'perPage':1,total:3,'totalPages':3}"));
+	}
+
+	@Test
+	void loadDataPageErrors() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/dataTable")
+				                .param("page", "2")
+				                .param("perPage", "2"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20',null,4.2,null,'Hello World!']],'page':2,'perPage':2,total:3,'totalPages':2}"));
+	}
+
+	@Test
+	void loadDataPageEncodedErrors() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/dataTable")
+				                .param("page", "3")
+				                .param("perPage", "1")
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'page':3,'perPage':1,total:3,'totalPages':3}"));
+	}
+
 	// ================================================================================================================
 	// region loadDataSet()
 	// ================================================================================================================

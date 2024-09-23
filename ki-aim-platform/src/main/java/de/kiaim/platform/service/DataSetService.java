@@ -87,10 +87,29 @@ public class DataSetService {
 	 *
 	 * @param dataSet DataSet to encode.
 	 * @param transformationErrors The transformation errors
+	 * @param loadDataRequest Export settings.
 	 * @return Encoded data set.
 	 */
 	public List<List<Object>> encodeDataRows(final DataSet dataSet,
 	                                         final Set<DataTransformationErrorEntity> transformationErrors,
+	                                         final LoadDataRequest loadDataRequest) {
+		return encodeDataRows(dataSet, transformationErrors, 0, loadDataRequest);
+	}
+
+	/**
+	 * Encodes the given data set using the given DataConfiguration and the given encoding configuration.
+	 * Replaces all null values with the configured encoding.
+	 * Applies the given offset to the row indices of the transformation errors.
+	 *
+	 * @param dataSet DataSet to encode.
+	 * @param transformationErrors The transformation errors
+	 * @param rowOffset Start row of the data set that is applied to the indices of the transformation errors.
+	 * @param loadDataRequest Export settings.
+	 * @return Encoded data set.
+	 */
+	public List<List<Object>> encodeDataRows(final DataSet dataSet,
+	                                         final Set<DataTransformationErrorEntity> transformationErrors,
+	                                         final int rowOffset,
 	                                         final LoadDataRequest loadDataRequest) {
 		final List<List<Object>> data = dataSet.getData();
 
@@ -116,7 +135,7 @@ public class DataSetService {
 					case MISSING_VALUE -> encodeValue(missingValueEncoding, transformationError);
 					case VALUE_NOT_IN_RANGE -> encodeValue(valueNotInRangeEncoding, transformationError);
 				};
-				data.get(transformationError.getRowIndex()).set(transformationError.getColumnIndex(), encodedValue);
+				data.get(transformationError.getRowIndex() - rowOffset).set(transformationError.getColumnIndex(), encodedValue);
 			}
 		}
 

@@ -1,0 +1,106 @@
+riskThreshold:
+  - type: "AVERAGE"
+    values: 0.1
+suppressionLimit: "0.1"
+qualityModel: "LOSS"
+localGeneralization: False
+attributeConfigurations:
+  - index: 0
+    name: "death_date"
+    dataType: "DATE"
+    dateFormat: "yyyy-MM-dd"
+    attributeProtection: "DATE_GENERALIZATION"
+    intervalSize: "year"
+  - index: 1
+    name: "death_reason_icd10"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "3"  # Number of characters removed
+  - index: 2
+    name: "death_tumor"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "100"
+  - index: 3
+    name: "distant_metastasis_date"
+    dataType: "DATE"
+    scale: "DATE"
+    dateFormat: "yyyy-MM-dd"
+    attributeProtection: "DATE_GENERALIZATION"
+    intervalSize: "month/year"
+  - index: 4
+    name: "distant_metastasis_localisation"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "3"
+  - index: 5
+    name: "ecog"
+    dataType: "INTEGER"
+    attributeProtection: "MICRO_AGGREGATION"
+    scale: "ORDINAL"
+    intervalSize: "2"
+  - index: 6
+    name: "history_assessment_distant_metastasis"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "500"
+  - index: 7
+    name: "history_assessment_lymphnodes"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    attributeProtection: "MASKING"
+    type: "34"
+  - index: 8
+    name: "history_assessment_primary_tumor"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    type: "MASKING"
+    intervalSize: "500"
+  - index: 9
+    name: "history_date"
+    dataType: "DATE"
+    scale: "DATE"
+    dateFormat: "yyyy-MM-dd"
+    attributeProtection: "DATE_GENERALIZATION"
+    intervalSize: "year"
+  - index: 10
+    name: "history_overall_assessment_tumor_status"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "400"
+  - index: 11
+    name: "intention_of_operation"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "80"
+  - index: 12
+    name: "intention_of_radiotherapy"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    attributeProtection: "MASKING"
+    type: "MASKING"
+    intervalSize: "300"
+  - index: 13
+    name: "ldh"
+    dataType: "INTEGER"
+    scale: "RATIO"
+    attributeProtection: "MICROAGGREGATION"
+    intervalSize: "0.5"
+  - index: 14
+    name: "morphology_code"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "300"
+  - index: 15
+    name: "morphology_text"
+    dataType: "STRING"
+    scale: "NOMINAL"
+    attributeProtection: "MASKING"
+    type: "MASKING"

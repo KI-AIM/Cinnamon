@@ -65,7 +65,7 @@ configurations:
       - name: interval_size
         type: mixed
         label: Interval Size
-        description: Define the interval size, which depends on the protection and the data type.
+        description: Define the interval size, which depends on the protection and the data scale.
         allowed_values_by_protection:
           masking:
             description: Number of characters removed.

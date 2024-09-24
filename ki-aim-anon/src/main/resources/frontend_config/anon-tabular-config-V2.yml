@@ -1,0 +1,103 @@
+anonymization: "anonymization_tabular"
+name: "anonymization_tabular"
+version: "1.0"
+type: "tabular"
+display_name: "Anonymization for tabular data."
+description: "Anonymization for tabular dataset"
+URL: "/anonymization"
+
+configurations:
+  model_configuration:
+    risk_threshold:
+      display_name: Risk Threshold Configuration
+      description: Define the risk threshold options used for assessing risk in the dataset.
+      parameters:
+        - name: risk_threshold_type
+          display_name: Risk Threshold Type
+          type: string
+          description: Select the risk threshold type, either 'Max' for e.g. k-Anonymity enforcement or 'Avg' for an average risk threshold.
+          default_value: 'Max'
+          allowed_values: ['Max', 'Avg']
+        - name: risk_threshold_value
+          display_name: Risk Threshold Value
+          type: float
+          description: Select the threshold value based on the risk type.
+          default_value: 0.1
+          allowed_values:
+            Max: [0.5, 0.2, 0.1, 0.075, 0.05]  # KO: added larger values for k=2 and k=5 as well. at least for testing.
+            Avg: [0.5, 0.2, 0.1, 0.075, 0.05, 0.005, 0.001, 0.0005] # KO: added larger values for k=2 and k=5 as well. at least for testing.
+        - name: generalization_setting
+          display_name: Generalization Setting
+          type: string
+          description: Select the risk type, either 'Max' or 'Avg'.
+          default_value: 'Global'
+          allowed_values: [ 'Global', 'Local' ]
+        - name: suppression_limit
+          display_name: Suppression Limit
+          type: float
+          description: Maximum suppression limit.
+          default_value: 0
+          min_value: 0
+          max_value: 1
+
+  attribute_configuration:
+    display_name: Attribute Anonymization Configuration
+    description: Define anonymization settings for each attribute. Each attribute requires a protection strategy and an interval size if applicable. #TODO: better description
+    parameters:
+# QUESTION : should this be included in the config file ?
+#      - name: attribute_name
+#        type: string
+#        label: Attribute Name
+#        description: The name of the dataset attribute to be anonymized.
+#        default_value: ''
+#      - name: attribute_data_type
+#        type: enum
+#        label: Data Type
+#        description: The data type of the attribute (e.g., BOOLEAN, DATE, INTEGER, STRING).
+#        default_value: 'STRING'
+#        allowed_values: ['BOOLEAN', 'DATE', 'DECIMAL', 'INTEGER', 'STRING', 'DATE_TIME', 'UNDEFINED']
+      - name: attribute_protection
+        type: enum
+        label: Attribute Protection
+        description: The type of protection applied to the attribute.
+        default_value: 'GENERALIZATION'
+        allowed_values: ['ATTRIBUTE_DELETION', 'GENERALIZATION', 'MICRO_AGGREGATION', 'DATE_GENERALIZATION', 'VALUE_DELETION', 'MASKING']
+      - name: interval_size
+        type: mixed
+        label: Interval Size
+        description: Define the interval size, which depends on the protection and the data type.
+        allowed_values_by_protection:
+          masking:
+            description: Number of characters removed.
+            allowed_data_scales: [	'DATE', 'NOMINAL', 'ORDINAL', 'INTERVAL', 'RATIO']
+            interval_size_type: integer
+            default_value: 3
+            min_value: 2
+            max_value: 1000
+          generalization_ordinal:
+            description: Number of categories in the group.
+            allowed_data_scales: ['ORDINAL']
+            interval_size_type: integer
+            default_value: 5
+            min_value: 2
+            max_value: 100 #QUESTION :Or possible_values.length, if feasible
+          generalization_integer:
+            description: Integer range for generalization of numeric attributes.
+            allowed_data_scales: ['INTERVAL']
+            interval_size_type: integer
+            default_value: 10
+            min_value: 1
+            max_value: 1000
+          generalization_decimal:
+            description: Decimal range for generalization of numeric attributes.
+            allowed_data_scales: ['RATIO']
+            interval_size_type: float
+            default_value: 0.1
+            min_value: 0.001
+            max_value: 1000.0
+          date_generalization:
+            description: Define the granularity for date attributes.
+            allowed_data_scales: ['DATE']
+            interval_size_type: enum
+            default_value: 'year'
+            allowed_values: ['week/year', 'month/year', 'quarter/year', 'year', 'decade']

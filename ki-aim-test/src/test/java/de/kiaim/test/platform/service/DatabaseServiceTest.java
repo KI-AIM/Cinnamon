@@ -258,6 +258,21 @@ class DatabaseServiceTest extends DatabaseTest {
 	}
 
 	@Test
+	void countInvalidRows() {
+		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(true);
+		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
+
+		assertDoesNotThrow(() -> databaseService.storeTransformationResult(transformationResult, project, Step.VALIDATION));
+		final DataSetEntity dataSet = project.getDataSets().get(Step.VALIDATION);
+
+		final int numberInvalidRows = assertDoesNotThrow(() -> databaseService.countInvalidRows(dataSet.getId()));
+		assertEquals(1, numberInvalidRows, "Number of invalid rows does not match!");
+
+		assertDoesNotThrow(() -> databaseService.delete(project));
+	}
+
+	@Test
 	void existsTableTest() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
 		final UserEntity user = getTestUser();

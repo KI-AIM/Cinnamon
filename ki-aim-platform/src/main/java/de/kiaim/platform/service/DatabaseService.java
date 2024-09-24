@@ -13,6 +13,7 @@ import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.dto.DataSetInfo;
 import de.kiaim.platform.model.dto.TransformationResultPage;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.entity.DataSetEntity;
@@ -173,6 +174,22 @@ public class DatabaseService {
 	                               final ProjectEntity project) {
 		project.getConfigurations().put(configurationName, configuration);
 		projectRepository.save(project);
+	}
+
+	/**
+	 * Returns the info objects of the data set associated with the given step in the given project.
+	 * @param project The project
+	 * @param step The step the data sets is associated with.
+	 * @return The info object.
+	 * @throws BadDataSetIdException If no dataset exists.
+	 * @throws InternalDataSetPersistenceException If the internal queries failed.
+	 */
+	public DataSetInfo getInfo(final ProjectEntity project,
+	                           final Step step) throws BadDataSetIdException, InternalDataSetPersistenceException {
+		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
+		final int rows = countEntries(dataSetEntity.getId());
+		final int invalidRows = countInvalidRows(dataSetEntity.getId());
+		return new DataSetInfo(rows, invalidRows);
 	}
 
 	/**
@@ -355,6 +372,15 @@ public class DatabaseService {
 			                                              "Failed to count rows for dataset with ID '" + dataSetId +
 			                                              "'!", e);
 		}
+	}
+
+	/**
+	 * Counts the number of rows with at least one transformation error in the data set with the given ID.
+	 * @param dataSetId The ID of the dataset.
+	 * @return The number of invalid rows.
+	 */
+	public int countInvalidRows(final long dataSetId) {
+		return (int) errorRepository.countDistinctRowIndexByDataSetId(dataSetId);
 	}
 
 	/**

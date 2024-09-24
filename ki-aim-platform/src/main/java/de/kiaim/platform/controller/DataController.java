@@ -264,6 +264,38 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_CONFIG, null, null, null, null, null, user);
 	}
 
+	@Operation(summary = "Returns general information the data set.",
+	           description = "Returns general information the data set.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Returns the general information of the data set.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = DataSetInfo.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = DataSetInfo.class))}),
+			@ApiResponse(responseCode = "400",
+			             description = "The data set does not exist.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "An internal error occurred.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))})
+	})
+	@GetMapping(value = "/{stepName}/info",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<Object> info(
+			@Parameter(description = "Step the requested data belongs to.")
+			@PathVariable final String stepName,
+			@AuthenticationPrincipal final UserEntity user
+	) throws ApiException {
+		return handleRequest(RequestType.INFO, null, null, null, stepName, null, user);
+	}
+
 	@Operation(summary = "Returns the data of the data set.",
 	           description = "Returns the data of the data.")
 	@ApiResponses(value = {
@@ -422,6 +454,9 @@ public class DataController {
 	}
 
 
+	/**
+	 * See {@link #handleRequest(RequestType, MultipartFile, FileConfiguration, DataConfiguration, String, LoadDataRequest, UserEntity, Integer, Integer)}
+	 */
 	private ResponseEntity<Object> handleRequest(
 			final RequestType requestType,
 			@Nullable final MultipartFile file,
@@ -438,12 +473,14 @@ public class DataController {
 	 * For each RequestType, different attributes must not be null:
 	 * <ul>
 	 *     <li>{@link RequestType#DATA_TYPES}: file, fileConfiguration</li>
-	 *     <li>{@link RequestType#DELETE}: user</li>
-	 *     <li>{@link RequestType#LOAD_CONFIG}: user</li>
-	 *     <li>{@link RequestType#LOAD_DATA}: loadDataRequest, user</li>
-	 *     <li>{@link RequestType#LOAD_DATA_SET}: loadDataRequest, user</li>
-	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT}: user</li>
-	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, user</li>
+	 *     <li>{@link RequestType#DELETE}: requestUser</li>
+	 *     <li>{@link RequestType#INFO}: requestUser, stepName</li>
+	 *     <li>{@link RequestType#LOAD_CONFIG}: stepName, requestUser</li>
+	 *     <li>{@link RequestType#LOAD_DATA}: loadDataRequest, requestUser, stepName</li>
+	 *     <li>{@link RequestType#LOAD_DATA_SET}: loadDataRequest, requestUser, stepName</li>
+	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT}: requestUser, stepName</li>
+	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT_PAGE}: page, perPage, requestUser, stepName</li>
+	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, requestUser</li>
 	 *     <li>{@link RequestType#STORE_DATE_SET}: file, fileConfiguration, configuration, user</li>
 	 *     <li>{@link RequestType#VALIDATE}: file, fileConfiguration, configuration</li>
 	 * </ul>
@@ -453,6 +490,9 @@ public class DataController {
 	 * @param fileConfiguration Configuration describing the file.
 	 * @param configuration     Configuration describing the source data.
 	 * @param loadDataRequest   Settings for the data set export.
+	 * @param stepName          The name of the step.
+	 * @param page              The page number to be exported.
+	 * @param perPage           The number of entries per page to be exported.
 	 * @param requestUser       User of the request.
 	 * @return Response entity containing the response based on the request type or an error description.
 	 */
@@ -485,6 +525,10 @@ public class DataController {
 			case DELETE -> {
 				databaseService.delete(projectEntity);
 				result = null;
+			}
+			case INFO -> {
+				final Step step = Step.getStepOrThrow(stepName);
+				result = databaseService.getInfo(projectEntity, step);
 			}
 			case LOAD_CONFIG -> {
 				result = databaseService.exportDataConfiguration(projectEntity, Step.VALIDATION);
@@ -551,6 +595,7 @@ public class DataController {
 	private enum RequestType {
 		DATA_TYPES,
 		DELETE,
+		INFO,
 		LOAD_CONFIG,
 		LOAD_DATA,
 		LOAD_DATA_SET,

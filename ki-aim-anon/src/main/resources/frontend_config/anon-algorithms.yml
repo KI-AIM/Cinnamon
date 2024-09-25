@@ -2,5 +2,5 @@ algorithms:
   - name: "anonymization_tabular"
     description: "Anonymization for tabular dataset"
     display_name: "Anonymization for tabular data."
-    URL: "anon-tabular-privacy-model-config"
+    URL: "/api/anonymization/anon-tabular-privacy-model-config"
     type: "tabular"

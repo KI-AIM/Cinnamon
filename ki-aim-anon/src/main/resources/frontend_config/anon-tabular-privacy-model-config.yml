@@ -17,7 +17,7 @@ configurations:
           type: string
           description: Select the risk threshold type, either 'Max' for e.g. k-Anonymity enforcement or 'Avg' for an average risk threshold.
           default_value: 'Max'
-          allowed_values: ['Max', 'Avg']
+          values: ['Max', 'Avg']
         - name: risk_threshold_value
           label: Risk Threshold Value
           type: float
@@ -27,15 +27,15 @@ configurations:
             - depends_on: risk_threshold_type
               conditions:
                 - if: Max
-                  allowed_values: [0.5, 0.2, 0.1, 0.075, 0.05]  # KO: added larger values for k=2 and k=5 as well. at least for testing.
+                  values: [0.05, 0.075, 0.1, 0.2, 0.5] # KO: added larger values for k=2 and k=5 as well. at least for testing.
                 - if: Avg
-                  allowed_values: [0.5, 0.2, 0.1, 0.075, 0.05, 0.005, 0.001, 0.0005] # KO: added larger values for k=2 and k=5 as well. at least for testing.
+                  values: [0.0005, 0.001, 0.005, 0.05, 0.075, 0.1, 0.2, 0.5] # KO: added larger values for k=2 and k=5 as well. at least for testing.
         - name: generalization_setting
           label: Generalization Setting
           type: string
           description: Select the risk type, either 'Max' or 'Avg'.
           default_value: 'Global'
-          allowed_values: [ 'Global', 'Local' ]
+          values: [ 'Global', 'Local' ]
         - name: suppression_limit
           label: Suppression Limit
           type: float

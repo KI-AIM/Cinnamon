@@ -50,7 +50,7 @@ attribute_configuration:
                         default_value: 3
                         min_value: 2
                         max_value: 1000
-            - if: DATE_GENERALIZATION #Interval size values for Generalization or Micro Aggregation transformation applied to a DATE attribute
+            - if: DATE_GENERALIZATION #Interval size values for Generalization transformation applied to a DATE attribute
               switch:
                 - depends_on: attribute_data_scale
                   conditions:

@@ -33,19 +33,30 @@
 
 
             <ng-container *ngSwitchCase="ConfigurationInputType.FLOAT">
-                <mat-form-field class="input">
-                    <input type="number" [formControlName]="configurationInputDefinition.name"
-                           [id]="configurationInputDefinition.name" matInput/>
-                    <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('required')">
-                       Value must not be empty
-                    </mat-error>
-                    <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('max')">
-                        Value must be less than or equal to {{ configurationInputDefinition.max_value }}
-                    </mat-error>
-                    <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('min')">
-                        Value must be greater than or equal to {{ configurationInputDefinition.min_value }}
-                    </mat-error>
-                </mat-form-field>
+                <ng-container *ngIf="configurationInputDefinition.values; else floatInput">
+                    <mat-form-field class="input">
+                        <mat-select [formControlName]="configurationInputDefinition.name" [id]="configurationInputDefinition.name">
+                            <mat-option *ngFor="let option of configurationInputDefinition.values" [value]="option">
+                                {{ option }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </ng-container>
+                <ng-template #floatInput>
+                    <mat-form-field class="input">
+                        <input type="number" [formControlName]="configurationInputDefinition.name"
+                               [id]="configurationInputDefinition.name" matInput/>
+                        <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('required')">
+                            Value must not be empty
+                        </mat-error>
+                        <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('max')">
+                            Value must be less than or equal to {{ configurationInputDefinition.max_value }}
+                        </mat-error>
+                        <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('min')">
+                            Value must be greater than or equal to {{ configurationInputDefinition.min_value }}
+                        </mat-error>
+                    </mat-form-field>
+                </ng-template>
             </ng-container>
 
             <ng-container *ngSwitchCase="ConfigurationInputType.INTEGER">

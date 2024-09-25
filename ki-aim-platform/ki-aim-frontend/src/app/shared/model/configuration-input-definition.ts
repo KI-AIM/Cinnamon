@@ -9,4 +9,13 @@ export class ConfigurationInputDefinition {
     min_value: number | null
     max_value: number | null
     values: string[] | null
+    switch: Array<{
+        depends_on: string;
+        conditions: Array<{
+            if: string;
+            values: string[] | number[];
+            min_value?: number;
+            max_value?: number;
+        }>;
+    }> | null
 }

@@ -10,7 +10,7 @@ import { environments } from "../../../environments/environment";
     providedIn: 'root',
 })
 export class DataService {
-    private baseUrl: String = environments.apiUrl + "/api/data"
+    private baseUrl: string = environments.apiUrl + "/api/data"
 
     constructor(private httpClient: HttpClient) {
     }
@@ -51,6 +51,14 @@ export class DataService {
         var configString = JSON.stringify(instanceToPlain(config));
         formData.append("configuration", configString);
 
-        return this.httpClient.post(this.baseUrl.toString(), formData);
+        return this.httpClient.post(this.baseUrl, formData);
+    }
+
+    public confirmData(): Observable<void> {
+        return this.httpClient.post<void>(this.baseUrl + "/confirm", {});
+    }
+
+    public deleteData(): Observable<void> {
+        return this.httpClient.delete<void>(this.baseUrl);
     }
 }

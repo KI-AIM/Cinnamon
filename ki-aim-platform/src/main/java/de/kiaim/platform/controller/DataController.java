@@ -233,6 +233,32 @@ public class DataController {
 		                     requestData.getConfiguration(), null, null, user);
 	}
 
+	@Operation(summary = "Confirms that the current dataset should be used.",
+	           description = "Confirms that the current dataset should be used.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully confirmed the data set.",
+			             content = {@Content()}),
+			@ApiResponse(responseCode = "400",
+			             description = "The data set has not been stored..",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "An internal error occurred.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))})
+	})
+	@PostMapping(value = "/confirm")
+	public ResponseEntity<Object> confirmData(
+			@AuthenticationPrincipal UserEntity user
+	) throws ApiException {
+		return handleRequest(RequestType.CONFIRM_DATE_SET, null, null, null, null, null, user);
+	}
+
 	@Operation(summary = "Returns the configuration of the data set.",
 	           description = "Returns the configuration of the data set.")
 	@ApiResponses(value = {
@@ -516,6 +542,14 @@ public class DataController {
 
 		final Object result;
 		switch (requestType) {
+			case CONFIRM_DATE_SET -> {
+				if (projectEntity.getDataSets().containsKey(Step.VALIDATION) &&
+				    projectEntity.getDataSets().get(Step.VALIDATION).isStoredData()) {
+					throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET, "The data has not been stored!");
+				}
+				statusService.updateCurrentStep(projectEntity, Step.ANONYMIZATION);
+				result = null;
+			}
 			case DATA_TYPES -> {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
@@ -524,6 +558,7 @@ public class DataController {
 			}
 			case DELETE -> {
 				databaseService.delete(projectEntity);
+				statusService.updateCurrentStep(projectEntity, Step.UPLOAD);
 				result = null;
 			}
 			case INFO -> {
@@ -567,7 +602,7 @@ public class DataController {
 				                                                                     configuration);
 				result = databaseService.storeTransformationResult(transformationResult, projectEntity, Step.VALIDATION);
 
-				statusService.updateCurrentStep(projectEntity, Step.ANONYMIZATION);
+				statusService.updateCurrentStep(projectEntity, Step.VALIDATION);
 			}
 			case VALIDATE -> {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
@@ -593,6 +628,7 @@ public class DataController {
 	}
 
 	private enum RequestType {
+		CONFIRM_DATE_SET,
 		DATA_TYPES,
 		DELETE,
 		INFO,

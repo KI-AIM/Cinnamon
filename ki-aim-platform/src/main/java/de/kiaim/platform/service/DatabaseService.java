@@ -115,9 +115,8 @@ public class DatabaseService {
 	public long storeTransformationResult(final TransformationResult transformationResult, final ProjectEntity project,
 	                                      final Step step) throws InternalDataSetPersistenceException {
 		// Delete the existing data set
-		if (project.getDataSets().containsKey(step)) {
+		if (project.getDataSets().containsKey(step) && project.getDataSets().get(step).isStoredData()) {
 			deleteDataSet(project.getDataSets().get(step));
-			project.removeDataSet(step);
 		}
 
 		// Store configuration
@@ -347,6 +346,7 @@ public class DatabaseService {
 		for (final var step : List.of(Step.VALIDATION, Step.ANONYMIZATION, Step.SYNTHETIZATION)) {
 			if (project.getDataSets().containsKey(step)) {
 				deleteDataSet(project.getDataSets().get(step));
+				project.removeDataSet(step);
 			}
 		}
 

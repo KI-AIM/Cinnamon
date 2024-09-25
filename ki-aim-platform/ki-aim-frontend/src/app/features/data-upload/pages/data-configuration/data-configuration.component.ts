@@ -7,8 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { StateManagementService } from 'src/app/core/services/state-management.service';
 import { Steps } from 'src/app/core/enums/steps';
-import { plainToClass, plainToInstance } from 'class-transformer';
-import { TransformationResult } from 'src/app/shared/model/transformation-result';
+import { plainToInstance } from 'class-transformer';
 import { LoadingService } from 'src/app/shared/services/loading.service';
 import {
     AttributeConfigurationComponent
@@ -20,7 +19,6 @@ import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
 import { ErrorResponse } from 'src/app/shared/model/error-response';
 import { ErrorMessageService } from 'src/app/shared/services/error-message.service';
 import { FileType } from 'src/app/shared/model/file-configuration';
-import {TransformationService} from "../../../../shared/services/transformation.service";
 
 @Component({
     selector: 'app-data-configuration',
@@ -42,7 +40,6 @@ export class DataConfigurationComponent implements OnInit {
         private titleService: TitleService,
         private router: Router,
         private stateManagement: StateManagementService,
-        private transformationService: TransformationService,
         public loadingService: LoadingService,
 		private errorMessageService: ErrorMessageService,
     ) {
@@ -52,7 +49,7 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     protected get locked(): boolean {
-        return this.stateManagement.isStepCompleted(Steps.VALIDATION)
+        return this.stateManagement.isStepCompleted(Steps.DATA_CONFIG)
     }
 
     ngOnInit(): void {
@@ -65,13 +62,13 @@ export class DataConfigurationComponent implements OnInit {
     confirmConfiguration() {
         this.loadingService.setLoadingStatus(true);
 
-        this.dataService.readAndValidateData(this.fileService.getFile(),
-            this.fileService.getFileConfiguration(),
-            this.configuration.getDataConfiguration()
+        this.dataService.storeData(this.fileService.getFile(),
+            this.configuration.getDataConfiguration(),
+            this.fileService.getFileConfiguration()
         ).subscribe({
             next: (d) => this.handleUpload(d),
             error: (e) => this.handleError(e),
-        });
+        })
     }
 
     onValidation(isValid: boolean) {
@@ -87,7 +84,6 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     private handleUpload(data: Object) {
-        this.transformationService.setTransformationResult(plainToClass(TransformationResult, data));
         this.loadingService.setLoadingStatus(false);
 
         this.router.navigateByUrl("/dataValidation");

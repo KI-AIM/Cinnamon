@@ -84,25 +84,30 @@ configurations:
           - depends_on: attribute_protection
             conditions:
               - if: MASKING # Interval size values for Masking transformation applied to every type of attribute
-                description: Number of characters removed.
-                allowed_data_scales: [	'DATE', 'NOMINAL', 'ORDINAL', 'INTERVAL', 'RATIO']
-                interval_size_type: integer
-                default_value: 3
-                min_value: 2
-                max_value: 1000
+                switch: 
+                  - depends_on: attribute_data_scale
+                    conditions: 
+                      - if: DATE | NOMINAL | ORDNIAL | INTERVAL | RATIO 
+                        description: Number of characters removed.
+                        interval_size_type: integer
+                        default_value: 3
+                        min_value: 2
+                        max_value: 1000
               - if: DATE_GENERALIZATION #Interval size values for Generalization or Micro Aggregation transformation applied to a DATE attribute
-                description: Define the granularity for date attributes.
-                allowed_data_scales: [ 'DATE' ]
-                interval_size_type: enum
-                default_value: 'year'
-                allowed_values: [ 'week/year', 'month/year', 'quarter/year', 'year', 'decade' ]
+                switch: 
+                  - depends_on: attribute_data_scale
+                    conditions: 
+                      - if: DATE
+                        description: Define the granularity for date attributes.
+                        interval_size_type: enum
+                        default_value: 'year'
+                        allowed_values: [ 'week/year', 'month/year', 'quarter/year', 'year', 'decade' ]
               - if: GENERALIZATION
                 switch:
                   - depends_on: attribute_data_scale
                     conditions:
                       - if: ORDINAL
                         description: Number of categories in the group.
-                        allowed_data_scales: ['ORDINAL']
                         interval_size_type: integer
                         default_value: 5
                         min_value: 2
@@ -110,16 +115,22 @@ configurations:
                   - depends_on: attribute_data_type
                     conditions:
                       - if: INTEGER #Interval size values for Generalization or Micro Aggregation transformation applied to integer attribute
-                        description: Integer range for generalization of numeric attributes.
-                        allowed_data_scales: ['INTERVAL']
-                        interval_size_type: integer
-                        default_value: 10
-                        min_value: 1
-                        max_value: 1000
+                        switch: 
+                          - depends_on: attribute_data_scale
+                            conditions: 
+                              - if: INTERVAL
+                                description: Integer range for generalization of numeric attributes.
+                                interval_size_type: integer
+                                default_value: 10
+                                min_value: 1
+                                max_value: 1000
                       - if: DECIMAL #Interval size values for Generalization or Micro Aggregation transformation applied to a decimal attribute
-                        description: Decimal range for generalization of numeric attributes.
-                        allowed_data_scales: ['RATIO']
-                        interval_size_type: float
-                        default_value: 0.1
-                        min_value: 0.001
-                        max_value: 1000.0
+                        switch: 
+                          - depends_on: attribute_data_scale
+                            conditions: 
+                              - if: RATIO
+                                description: Decimal range for generalization of numeric attributes.
+                                interval_size_type: float
+                                default_value: 0.1
+                                min_value: 0.001
+                                max_value: 1000.0

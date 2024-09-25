@@ -86,6 +86,15 @@ export class DataConfigurationService {
         return this.httpClient.post<void>(this.baseUrl, formData);
     }
 
+    public getConfigurationNames(): String[] {
+        var result = new Array<String>();
+
+        this._dataConfiguration.configurations.forEach(column => {
+            result.push(column.name);
+        });
+        return result;
+    }
+
     private getConfigurationCallback(): Object {
         this.postDataConfiguration().subscribe();
         return this.getDataConfiguration();

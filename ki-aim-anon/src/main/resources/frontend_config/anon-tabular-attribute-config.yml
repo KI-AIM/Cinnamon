@@ -39,32 +39,32 @@ attribute_configuration:
       switch:
         - depends_on: attribute_protection
           conditions:
-            - if: MASKING # Interval size values for Masking transformation applied to every type of attribute
+            - if: 'MASKING' # Interval size values for Masking transformation applied to every type of attribute
               switch:
                 - depends_on: attribute_data_scale
                   conditions:
-                    - if: DATE | NOMINAL | ORDNIAL | INTERVAL | RATIO
+                    - if: [ 'DATE', 'NOMINAL', 'ORDNIAL', 'INTERVAL', 'RATIO' ]
                       condition_content:
                         description: Number of characters removed.
                         interval_size_type: integer
                         default_value: 3
                         min_value: 2
                         max_value: 1000
-            - if: DATE_GENERALIZATION #Interval size values for Generalization or Micro Aggregation transformation applied to a DATE attribute
+            - if: 'DATE_GENERALIZATION' #Interval size values for Generalization or Micro Aggregation transformation applied to a DATE attribute
               switch:
                 - depends_on: attribute_data_scale
                   conditions:
-                    - if: DATE
+                    - if: 'DATE'
                       condition_content:
                         description: Define the granularity for date attributes.
                         interval_size_type: enum
                         default_value: 'year'
                         allowed_values: [ 'week/year', 'month/year', 'quarter/year', 'year', 'decade' ]
-            - if: GENERALIZATION
+            - if: [ 'GENERALIZATION', 'MICRO_AGGREGATION' ]
               switch:
                 - depends_on: attribute_data_scale
                   conditions:
-                    - if: ORDINAL
+                    - if: 'ORDINAL'
                       condition_content:
                         description: Number of categories in the group.
                         interval_size_type: integer
@@ -73,22 +73,22 @@ attribute_configuration:
                         max_value: 100 #QUESTION :Or possible_values.length, if feasible
                 - depends_on: attribute_data_type
                   conditions:
-                    - if: INTEGER #Interval size values for Generalization or Micro Aggregation transformation applied to integer attribute
+                    - if: 'INTEGER' #Interval size values for Generalization or Micro Aggregation transformation applied to integer attribute
                       switch:
                         - depends_on: attribute_data_scale
                           conditions:
-                            - if: INTERVAL
+                            - if: 'INTERVAL'
                               condition_content:
                                 description: Integer range for generalization of numeric attributes.
                                 interval_size_type: integer
                                 default_value: 10
                                 min_value: 1
                                 max_value: 1000
-                    - if: DECIMAL #Interval size values for Generalization or Micro Aggregation transformation applied to a decimal attribute
+                    - if: 'DECIMAL' #Interval size values for Generalization or Micro Aggregation transformation applied to a decimal attribute
                       switch:
                         - depends_on: attribute_data_scale
                           conditions:
-                            - if: RATIO
+                            - if: 'RATIO'
                               condition_content:
                                 description: Decimal range for generalization of numeric attributes.
                                 interval_size_type: float

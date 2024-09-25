@@ -9,18 +9,17 @@ COPY ../ki-aim-model/pom.xml ki-aim-model/
 COPY ../ki-aim-platform/pom.xml ki-aim-platform/
 COPY ../ki-aim-test/pom.xml ki-aim-test/
 
+COPY ../ki-aim-anon/src ki-aim-anon/src
 COPY ../ki-aim-model/src ki-aim-model/src
-COPY ../ki-aim-platform/src ki-aim-platform/src
-COPY ../ki-aim-platform/ki-aim-frontend ki-aim-platform/ki-aim-frontend
 
-RUN mvn clean package -pl ki-aim-platform -am -DskipTests
+RUN mvn clean package -pl ki-aim-anon -am -DskipTests
 
 # package
 FROM tomcat:10-jdk17-temurin
 
 RUN rm -rf /usr/local/tomcat/webapps/*
 
-COPY --from=build ki-aim-platform/ki-aim-platform/target/ki-aim-platform.war /usr/local/tomcat/webapps/ROOT.war
+COPY --from=build ki-aim-platform/ki-aim-anon/target/ki-aim-anon.war /usr/local/tomcat/webapps/ROOT.war
 
 EXPOSE 8080
 

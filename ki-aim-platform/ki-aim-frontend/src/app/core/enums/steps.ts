@@ -3,6 +3,7 @@ export enum Steps {
 	UPLOAD,
 	DATA_CONFIG,
 	VALIDATION,
+	VISUALIZATION,
 	ANONYMIZATION,
     SYNTHETIZATION,
     EXECUTION,
@@ -41,13 +42,21 @@ export const StepConfiguration = {
 		dependsOn: Steps.DATA_CONFIG,
 		index: 3,
 	},
+	VISUALIZATION: {
+		path: "/dataVisualization",
+		id: "navLinkDataVisualization",
+		text: "Data Visualization",
+		enum: Steps.VISUALIZATION,
+		dependsOn: "",
+		index: 4,
+	},
 	ANONYMIZATION: {
 		path: "anonymizationConfiguration",
 		id: "navLinkAnonymizationConfiguration",
 		text: "Anonymization configuration",
 		enum: Steps.ANONYMIZATION,
 		dependsOn: Steps.VALIDATION,
-		index: 4,
+		index: 5,
 	},
     SYNTHETIZATION: {
         path: "synthetizationConfiguration",
@@ -55,7 +64,7 @@ export const StepConfiguration = {
         text: "Synthetization configuration",
         enum: Steps.SYNTHETIZATION,
         dependsOn: Steps.ANONYMIZATION,
-        index: 5,
+        index: 6,
     },
     EXECUTION: {
         path: "execution",
@@ -63,6 +72,6 @@ export const StepConfiguration = {
         text: "Execution",
         enum: Steps.EXECUTION,
         dependsOn: Steps.SYNTHETIZATION,
-        index: 6,
+        index: 7,
     },
 };

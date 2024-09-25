@@ -1,0 +1,16 @@
+.histogram-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Creates a grid with 3 columns */
+    grid-gap: 10px; /* Adjust spacing between grid items as needed */
+}
+
+svg {
+    width: 100%;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.enlarged {
+    transform: scale(2);
+    z-index: 10;
+}

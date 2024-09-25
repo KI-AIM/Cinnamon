@@ -1,0 +1,121 @@
+# First version of anon config for the frontend, not used
+anonymization: "anonymization_tabular"
+name: "anonymization_tabular"
+version: # ?
+type: "tabular"
+display_name: "Anonymization for tabular data."
+description: "Anonymization for tabular dataset"
+URL: "/anonymization"
+configurations:
+  model_parameter:
+    display_name: "Model Parameters"
+    description: "Parameters for the anonymization algorithm for a tabular dataset."
+    parameters:
+    - name: "privacyModels"
+      type: list
+      label: "Privacy Models"
+      description: "List of privacy models to apply."
+      values:
+        - name: "KAnonymity"
+          description: "Apply k-anonymity privacy model with specified value."
+          values:
+            - name: "k"
+              type: int
+              description: "k value for k-anonymity privacy model"
+              min_value: 1
+              max_value: 100
+        - name: "AverageReidentificationRisk"
+          description: "Apply average re-identifaction risk model with specified value."
+          values:
+            - name: "averageRisk"
+              type: float
+              description: ""
+              min_value: 0
+              max_value: 1
+        - name: "PopulationUniqueness"
+          description: "Apply population uniqueness model with specified values."
+          values:
+            - name: "riskThreshold"
+              type: float
+              description: "Risk threshold for population uniqueness privacy model."
+              min_value: 0
+              max_value: 1
+            - name: "populationUniquenessModel"
+              type: PopulationUniquenessModel
+              description: "Population uniqueness model."
+              values: [ ] # ?
+#            - name: "region" # The region parameter is set by default in JAL
+#              type: ARXPopulationModel.Region
+#              description: #?
+#              possible_values: [ ]
+        - name: "suppressionLimit"
+          type: float
+          label: "Suppression Limit"
+          description: "Maximum suppression limit."
+          min_value: 0
+          max_value: 100
+          default_value: 100
+        - name: "qualityModel"
+          type: string
+          label: "Quality Model"
+          description: "Quality model to use for anonymization."
+          values: ["LOSS"]
+          default_value: "LOSS"
+        - name: "localGeneralization"
+          type: boolean
+          label: "Local Generalization"
+          description: "Whether to use local generalization."
+          default_value: False
+  attributeConfigurations:
+    - display_name: "Attributes Configurations"
+    - description: "Configurations to set for each dataset attribute."
+    - name: "attribute_name" #or ID ? #suppress cause defined by platform module ?
+      type: string
+      label: "Attribute Name"
+      description: "The name of the attribute."
+    - name: "attribute_type"
+      type: string
+      label: "Attribute Type"
+      description: "Type of attribute for anoymization."
+      values: [ "IDENTIFYING_ATTRIBUTE", "QUASI_IDENTIFYING_ATTRIBUTE", "INSENSITIVE_ATTRIBUTE", "SENSITIVE_ATTRIBUTE" ]
+      default_value: "INSENSITIVE_ATTRIBUTE"
+    - name: "order"
+      type: list
+      label: "Ordered values"
+      description: "Order of values for ordinal attributes."
+      default_value: [ ]
+      attributes_concerned:
+        - data_type: [ "STRING", "INTEGER", "DECIMAL" ]
+          data_scale: [ "ORDINAL" ]
+    - name: "transformation"
+      type: string
+      label: "Transformation"
+      description: "Transformation rule for the attribute."
+      values: [ "GENERALIZATION", "MICROAGGREGATION","CLUSTERING_AND_MICROAGGREGATION" ]
+      default_value: ""
+    - name: "hierarchy"
+      type: object
+      label: "Hierarchy"
+      description: "Hierarchical details for the attribute."
+      properties:
+        - name: "type"
+          type: string
+          label: "Hierarchy Type"
+          description: "Type of hierarchy."
+          default_value: ""
+          allowed_values: [ "MASKING", "INTERVALS" ]
+        - name: "intervalSize"
+          type: string #change ?
+          label: "Interval Size"
+          description: "Interval size for the first hierarchy level."
+          default_value: ""
+        - name: "minLevel"
+          type: integer
+          label: "Minimum Level"
+          description: "Minimum level in the hierarchy."
+          default_value: 0
+        - name: "maxLevel"
+          type: integer
+          label: "Maximum Level"
+          description: "Maximum level in the hierarchy."
+          default_value: 1

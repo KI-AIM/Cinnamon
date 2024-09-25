@@ -151,7 +151,7 @@ public class AnonymizationController {
     @Cacheable("config")
     public ResponseEntity<byte[]> getTabularAnonConfig() {
         try {
-            Resource resource = new ClassPathResource("frontend_config/anon-tabular-config.yml");
+            Resource resource = new ClassPathResource("frontend_config/anon-tabular-config-V0.yml");
             byte[] fileContent = FileCopyUtils.copyToByteArray(resource.getInputStream());
 
             HttpHeaders headers = new HttpHeaders();

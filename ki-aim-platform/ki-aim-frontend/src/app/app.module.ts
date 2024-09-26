@@ -27,6 +27,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AnonymizationModule } from "./features/anonymization/anonymization.module";
 import { SynthetizationModule } from "./features/synthetization/synthetization.module";
 import { ExecutionModule } from "./features/execution/execution.module";
+import { TechnicalEvaluationModule } from "./features/technical-evaluation/technical-evaluation.module";
 
 @NgModule({
     declarations: [
@@ -42,6 +43,7 @@ import { ExecutionModule } from "./features/execution/execution.module";
         ExecutionModule,
         StartModule,
         SynthetizationModule,
+        TechnicalEvaluationModule,
         DataUploadModule,
         HttpClientModule,
         NgbModule,

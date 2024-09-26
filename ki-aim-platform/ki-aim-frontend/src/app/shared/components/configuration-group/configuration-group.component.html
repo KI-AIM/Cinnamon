@@ -2,3 +2,24 @@
     <app-configuration-input [configurationInputDefinition]="inputDefinition" [form]="formGroup" [disabled]="disabled">
     </app-configuration-input>
 </ng-container>
+
+<mat-accordion>
+    <ng-container *ngFor="let groupDefinition of group.configurations | keyvalue">
+
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+                <mat-panel-title [style]="formGroup.controls[groupDefinition.key].invalid ? 'color: red;' :''">
+                    {{ group.configurations[groupDefinition.key].display_name }}
+                </mat-panel-title>
+                <mat-panel-description>
+                    {{ group.configurations[groupDefinition.key].description }}
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <app-configuration-group [form]="formGroup" [fromGroupName]="groupDefinition.key"
+                                     [group]="groupDefinition.value" [disabled]="disabled">
+            </app-configuration-group>
+        </mat-expansion-panel>
+
+    </ng-container>
+</mat-accordion>

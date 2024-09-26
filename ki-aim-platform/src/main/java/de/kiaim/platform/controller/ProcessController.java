@@ -209,4 +209,15 @@ public class ProcessController {
 		processService.finishProcess(processId, request.getFileMap().entrySet());
 		return ResponseEntity.ok().body(null);
 	}
+
+	@PostMapping(value = "/confirm")
+	public ResponseEntity<String> confirm(
+			@AuthenticationPrincipal final UserEntity requestUser
+	) {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		statusService.updateCurrentStep(project, Step.TECHNICAL_EVALUATION);
+		return ResponseEntity.ok().body(null);
+	}
+
 }

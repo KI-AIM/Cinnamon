@@ -4,6 +4,7 @@ import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { AlgorithmService } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
+import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
 
 /**
  * HTML form and submit button for one algorithm.
@@ -132,10 +133,20 @@ export class ConfigurationFormComponent implements OnInit {
      */
     private createForm(algorithmDefinition: AlgorithmDefinition): FormGroup {
         const formGroup: any = {};
+        this.createGroups(formGroup, algorithmDefinition.configurations);
+        return new FormGroup(formGroup);
+    }
 
-        Object.entries(algorithmDefinition.configurations).forEach(([name, groupDefinition]) => {
-            const group: any = {};
+    private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }) {
+        Object.entries(configurations).forEach(([name, groupDefinition]) => {
+            formGroup[name] = this.createGroup(groupDefinition);
+        });
+    }
 
+    private createGroup(groupDefinition: ConfigurationGroupDefinition): FormGroup {
+        const group: any = {};
+
+        if (groupDefinition.parameters) {
             groupDefinition.parameters.forEach(inputDefinition => {
                 if (inputDefinition.type === ConfigurationInputType.LIST) {
                     const controls = [];
@@ -157,10 +168,12 @@ export class ConfigurationFormComponent implements OnInit {
                     group[inputDefinition.name] = new FormControl(inputDefinition.default_value, validators)
                 }
             });
+        }
 
-            formGroup[name] = new FormGroup(group);
-        });
+        if (groupDefinition.configurations) {
+            this.createGroups(group, groupDefinition.configurations);
+        }
 
-        return new FormGroup(formGroup);
+        return new FormGroup(group);
     }
 }

@@ -4,7 +4,7 @@
         <ng-container *ngFor="let groupDefinition of getGroupNames()">
             <mat-expansion-panel>
                 <mat-expansion-panel-header>
-                    <mat-panel-title>{{ algorithmDefinition.configurations[groupDefinition].display_name }}</mat-panel-title>
+                    <mat-panel-title [style]="form.controls[groupDefinition].invalid? 'color: red;' : ''">{{ algorithmDefinition.configurations[groupDefinition].display_name }}</mat-panel-title>
                     <mat-panel-description> {{ algorithmDefinition.configurations[groupDefinition].description }}</mat-panel-description>
                 </mat-expansion-panel-header>
 

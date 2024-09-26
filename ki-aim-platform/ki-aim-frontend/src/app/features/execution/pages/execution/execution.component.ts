@@ -9,6 +9,8 @@ import { ExternalProcess } from "../../../../shared/model/external-process";
 import { TitleService } from "../../../../core/services/title-service.service";
 import {TransformationService} from "../../../../shared/services/transformation.service";
 import {StateManagementService} from "../../../../core/services/state-management.service";
+import { Steps } from "../../../../core/enums/steps";
+import { Router } from "@angular/router";
 
 @Component({
   selector: 'app-execution',
@@ -17,15 +19,13 @@ import {StateManagementService} from "../../../../core/services/state-management
 })
 export class ExecutionComponent implements OnInit, OnDestroy {
     private readonly baseUrl = environments.apiUrl + "/api/process";
+    protected readonly ProcessStatus = ProcessStatus;
 
     protected disabled: boolean = false;
     protected status: ExecutionStep = new ExecutionStep();
 
     // TODO implement for anonymization
     protected synthProcess: SynthetizationProcess | null = null;
-
-    protected abc: TransformationService;
-    protected def: TransformationService;
 
     protected error: string | null = null;
 
@@ -42,6 +42,7 @@ export class ExecutionComponent implements OnInit, OnDestroy {
 
     constructor(
         private readonly http: HttpClient,
+        private readonly router: Router,
         readonly stateManagementService: StateManagementService,
         private readonly titleService: TitleService,
     ) {
@@ -185,5 +186,15 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         });
     }
 
-    protected readonly ProcessStatus = ProcessStatus;
+    protected continue() {
+        this.http.post(environments.apiUrl + "/api/process/confirm", {}).subscribe({
+            next: () => {
+                this.router.navigateByUrl("/technicalEvaluationConfiguration");
+                this.stateManagementService.setNextStep(Steps.TECHNICAL_EVALUATION);
+            },
+            error: (e) =>{
+                console.error(e);
+            }
+        });
+    }
 }

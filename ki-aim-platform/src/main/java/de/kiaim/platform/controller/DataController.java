@@ -7,6 +7,7 @@ import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.*;
 import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
@@ -400,16 +401,16 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, stepName, request, user);
 	}
 
-	@Operation(summary = "Returns a page of the data of the data set.",
-	           description = "Returns the specified page considering the specified page size of the data of the data.")
+	@Operation(summary = "Returns the entire transformation result.",
+	           description = "Returns the entire transformation result.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully found the data and returns the data.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = TransformationResultPage.class)
+			                                 schema = @Schema(implementation = TransformationResult.class)
 			             ),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = TransformationResultPage.class)
+			                                 schema = @Schema(implementation = TransformationResult.class)
 			                        )}),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored data.",
@@ -437,6 +438,27 @@ public class DataController {
 
 	@Operation(summary = "Returns a page the transformation result.",
 	           description = "Returns the page of the transformation result.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully returns the page.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = TransformationResultPage.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = TransformationResultPage.class)
+			                        )}),
+			@ApiResponse(responseCode = "400",
+			             description = "The user has no stored data.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "An internal error occurred.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))})
+	})
 	@GetMapping(value = "/{stepName}/transformationResult/page",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadTransformationResultPage(
@@ -446,10 +468,12 @@ public class DataController {
 			@RequestParam(required = true) final Integer page,
 			@Parameter(description = "Number of items per page.")
 			@RequestParam(required = true) final Integer perPage,
-			@ParameterObject LoadDataRequest request,
+			@Parameter(description = "Selector for the rows to be included.")
+			@RequestParam(required = false, defaultValue = "ALL") final RowSelector rowSelector,
+			@ParameterObject final LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT_PAGE, null, null, null, stepName, request, user, page, perPage);
+		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT_PAGE, null, null, null, stepName, request, user, page, perPage, rowSelector);
 	}
 
 	@Operation(summary = "Deletes the data set from the internal data base.",
@@ -481,7 +505,7 @@ public class DataController {
 
 
 	/**
-	 * See {@link #handleRequest(RequestType, MultipartFile, FileConfiguration, DataConfiguration, String, LoadDataRequest, UserEntity, Integer, Integer)}
+	 * See {@link #handleRequest(RequestType, MultipartFile, FileConfiguration, DataConfiguration, String, LoadDataRequest, UserEntity, Integer, Integer, RowSelector)}
 	 */
 	private ResponseEntity<Object> handleRequest(
 			final RequestType requestType,
@@ -491,7 +515,7 @@ public class DataController {
 			@Nullable final String stepName,
 			@Nullable final LoadDataRequest loadDataRequest,
 			final UserEntity requestUser) throws ApiException {
-		return handleRequest(requestType, file, fileConfiguration, configuration, stepName, loadDataRequest, requestUser, null, null);
+		return handleRequest(requestType, file, fileConfiguration, configuration, stepName, loadDataRequest, requestUser, null, null, null);
 	}
 
 	/**
@@ -505,7 +529,7 @@ public class DataController {
 	 *     <li>{@link RequestType#LOAD_DATA}: loadDataRequest, requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_DATA_SET}: loadDataRequest, requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT}: requestUser, stepName</li>
-	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT_PAGE}: page, perPage, requestUser, stepName</li>
+	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT_PAGE}: page, perPage, requestUser, rowSelector, stepName</li>
 	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, requestUser</li>
 	 *     <li>{@link RequestType#STORE_DATE_SET}: file, fileConfiguration, configuration, user</li>
 	 *     <li>{@link RequestType#VALIDATE}: file, fileConfiguration, configuration</li>
@@ -519,6 +543,7 @@ public class DataController {
 	 * @param stepName          The name of the step.
 	 * @param page              The page number to be exported.
 	 * @param perPage           The number of entries per page to be exported.
+	 * @param rowSelector       Selector for wich rows should be exported.
 	 * @param requestUser       User of the request.
 	 * @return Response entity containing the response based on the request type or an error description.
 	 */
@@ -531,7 +556,8 @@ public class DataController {
 			@Nullable final LoadDataRequest loadDataRequest,
 			final UserEntity requestUser,
 			final Integer page,
-			final Integer perPage
+			final Integer perPage,
+			final RowSelector rowSelector
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
@@ -585,7 +611,13 @@ public class DataController {
 			}
 			case LOAD_TRANSFORMATION_RESULT_PAGE -> {
 				final Step step = Step.getStepOrThrow(stepName);
-				result = databaseService.exportTransformationResultPage(projectEntity, step, columnNames, page, perPage, loadDataRequest);
+				if (rowSelector != RowSelector.ALL) {
+					result = databaseService.exportTransformationResultPage(projectEntity, step, columnNames, page, perPage,
+					                                                        rowSelector, loadDataRequest);
+				} else {
+					result = databaseService.exportTransformationResultPage(projectEntity, step, columnNames, page,
+					                                                        perPage, loadDataRequest);
+				}
 			}
 			case STORE_CONFIG -> {
 				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);

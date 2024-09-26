@@ -49,7 +49,8 @@ export class DataTableComponent {
                                 params: {
                                     defaultNullEncoding: "$value",
                                     page: this.paginator.pageIndex + 1,
-                                    perPage: this.paginator.pageSize
+                                    perPage: this.paginator.pageSize,
+                                    rowSelector: this.filterCriteria
                                 }
                             }).pipe(catchError(() => of(null)));
                         }),
@@ -67,7 +68,7 @@ export class DataTableComponent {
                             const dataSet = new DataSet()
                             dataSet.data = value!.data;
                             dataSet.dataConfiguration = dataConfiguration;
-                            this.dataSource = new MatTableDataSource<TableElement>(this.addColumnErrorsToTableData(this.transformDataSet(dataSet), value!.transformationErrors));
+                            this.dataSource = new MatTableDataSource<TableElement>(this.addColumnErrorsToTableData(this.transformDataSet(dataSet, value!.rowNumbers), value!.transformationErrors));
                         }
                     });
                 }
@@ -80,13 +81,15 @@ export class DataTableComponent {
 	 * into a format that is usable by the angular
 	 * material data tables
 	 * @param dataSet to be transformed
+     * @param rowNumbers Mapping of row numbers
 	 * @returns Array<TableElement>
 	 */
-	transformDataSet(dataSet: DataSet): TableElement[] {
+	transformDataSet(dataSet: DataSet, rowNumbers: number[] | null) : TableElement[] {
 		const transformedData: TableElement[] = [];
 
 		dataSet.data.forEach((dataRow, index) => {
-			const transformedRow: TableElement = {position: index, errorsInRow: []};
+            const position = rowNumbers === null ? index : rowNumbers[index]
+			const transformedRow: TableElement = {position: position, errorsInRow: []};
 			dataRow.forEach((dataItem, index) => {
 				const columnName =
 					dataSet.dataConfiguration.configurations[index].name;
@@ -136,9 +139,8 @@ export class DataTableComponent {
 	}
 
 	/**
-	 * Returns the column names of a DataSet in a
-	 * String Array
-	 * @param dataSet to be processed
+	 * Returns the column names of a DataConfiguration in a String Array
+	 * @param dataConfiguration to be processed
 	 * @returns Array<string>
 	 */
 	getColumnNames(dataConfiguration: DataConfiguration): string[] {
@@ -162,29 +164,15 @@ export class DataTableComponent {
 	}
 
 	/**
-	 * Applies a filter to the table based on the select menu in frontend
+	 * Applies a filter to the table based on the select menu in frontend.
 	 * Shows different data depending on the number of errors in a row.
+     * It triggers the table to fetch the data from the backend.
+     *
 	 * @param $event the selectionChange event
 	 */
 	applyFilter($event: any) {
 		this.filterCriteria = $event.value;
-		switch (this.filterCriteria) {
-			case "ALL": {
-				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0 || data.errorsInRow.length <= 0;
-				this.dataSource.filter = this.filterCriteria;
-				break;
-			}
-			case "VALID": {
-				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length == 0;
-				this.dataSource.filter = this.filterCriteria;
-				break;
-			}
-			case "ERRORS": {
-				this.dataSource.filterPredicate = (data: TableElement) => data.errorsInRow.length > 0;
-				this.dataSource.filter = this.filterCriteria;
-				break;
-			}
-		}
+        this.paginator.page.emit();
 	}
 }
 
@@ -200,15 +188,12 @@ interface TableElement {
 }
 
 interface DataSetPage {
-   data: Array<Array<any>>;
-
+    data: Array<Array<any>>;
+    transformationErrors: DataRowTransformationError[];
+    rowNumbers: number[] | null;
 
     page: number;
     perPage: number;
     total: number;
     totalPages: number;
-
-
-    transformationErrors: DataRowTransformationError[];
-
 }

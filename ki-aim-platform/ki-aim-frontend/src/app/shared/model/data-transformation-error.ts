@@ -1,4 +1,5 @@
 export class DataTransformationError {
-    index: number; 
-    errorType: String; 
+    index: number;
+    errorType: String;
+    rawValue: string;
 }

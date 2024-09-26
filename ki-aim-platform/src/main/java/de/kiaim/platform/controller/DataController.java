@@ -64,18 +64,11 @@ public class DataController {
 					,"transformationErrors": [
 					{
 					      "index": 1,
-					      "rawValues": [
-					        true,
-					        "2023-12-24",
-					        "",
-					        4.2,
-					        42,
-					        "Hello World!"
-					      ],
 					      "dataTransformationErrors": [
 					        {
 					          "index": 2,
-					          "errorType": "MISSING_VALUE"
+					          "errorType": "MISSING_VALUE",
+					          "rawValue":""
 					        }
 					      ]
 					    }

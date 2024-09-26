@@ -495,7 +495,7 @@ class DataControllerTest extends ControllerTest {
 				                .param("perPage", "2"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
-				       "{'data':[[true,'2023-11-20',null,4.2,null,'Hello World!']],'transformationErrors':[{'index':0,'rawValues':['true','2023-11-20','','4.2','forty two','Hello World!'],'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE'},{'index':4,'errorType':'FORMAT_ERROR'}]}],'rowNumbers':null,'page':2,'perPage':2,total:3,'totalPages':2}"));
+				       "{'data':[[true,'2023-11-20',null,4.2,null,'Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':2,'perPage':2,total:3,'totalPages':2}"));
 	}
 
 	@Test
@@ -508,7 +508,7 @@ class DataControllerTest extends ControllerTest {
 				                .param("formatErrorEncoding", "$value"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
-				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':0,'rawValues':['true','2023-11-20','','4.2','forty two','Hello World!'],'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE'},{'index':4,'errorType':'FORMAT_ERROR'}]}],'rowNumbers':null,'page':3,'perPage':1,total:3,'totalPages':3}"));
+				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':3,'perPage':1,total:3,'totalPages':3}"));
 	}
 
 	@Test
@@ -522,7 +522,7 @@ class DataControllerTest extends ControllerTest {
 				                .param("formatErrorEncoding", "$value"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
-				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':0,'rawValues':['true','2023-11-20','','4.2','forty two','Hello World!'],'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE'},{'index':4,'errorType':'FORMAT_ERROR'}]}],'rowNumbers':[2],'page':1,'perPage':2,total:1,'totalPages':1}"));
+				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[2],'page':1,'perPage':2,total:1,'totalPages':1}"));
 	}
 
 	@Test

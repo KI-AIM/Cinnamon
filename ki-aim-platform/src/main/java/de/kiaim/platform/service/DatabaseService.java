@@ -135,8 +135,7 @@ public class DatabaseService {
 				transformationErrorEntity.setRowIndex(rowTransformationError.getIndex());
 				transformationErrorEntity.setColumnIndex(transformationError.getIndex());
 				transformationErrorEntity.setErrorType(transformationError.getErrorType());
-				transformationErrorEntity.setOriginalValue(
-						rowTransformationError.getRawValues().get(transformationError.getIndex()));
+				transformationErrorEntity.setOriginalValue(transformationError.getRawValue());
 
 				dataSetEntity.addDataRowTransformationError(transformationErrorEntity);
 			}
@@ -251,17 +250,10 @@ public class DatabaseService {
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
 		for (final var error : dataSetEntity.getDataTransformationErrors()) {
 			if (!rowErrors.containsKey(error.getRowIndex())) {
-				final List<String> o = dataSet.getDataRows()
-				                              .get(error.getRowIndex())
-				                              .getData()
-				                              .stream()
-				                              .map(Data::toString)
-				                              .collect(Collectors.toList());
-				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex(), o));
+				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex()));
 			}
 			final var rowError = rowErrors.get(error.getRowIndex());
-			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType()));
-			rowError.getRawValues().set(error.getColumnIndex(), error.getOriginalValue());
+			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType(), error.getOriginalValue()));
 		}
 
 		return new TransformationResult(dataSet, rowErrors.values().stream().toList());
@@ -325,17 +317,10 @@ public class DatabaseService {
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
 		for (final var error : errors2) {
 			if (!rowErrors.containsKey(error.getRowIndex())) {
-				final List<String> o = dataSet.getDataRows()
-				                              .get(rowNumbers.indexOf(error.getRowIndex()))
-				                              .getData()
-				                              .stream()
-				                              .map(value -> Objects.toString(value, ""))
-				                              .collect(Collectors.toList());
-				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(rowNumbers.indexOf(error.getRowIndex()), o));
+				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(rowNumbers.indexOf(error.getRowIndex())));
 			}
 			final var rowError = rowErrors.get(error.getRowIndex());
-			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType()));
-			rowError.getRawValues().set(error.getColumnIndex(), error.getOriginalValue());
+			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType(), error.getOriginalValue()));
 		}
 
 		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();
@@ -383,17 +368,10 @@ public class DatabaseService {
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
 		for (final var error : errors) {
 			if (!rowErrors.containsKey(error.getRowIndex())) {
-				final List<String> o = dataSet.getDataRows()
-				                              .get(error.getRowIndex() - startRow)
-				                              .getData()
-				                              .stream()
-				                              .map(value -> Objects.toString(value, ""))
-				                              .collect(Collectors.toList());
-				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex() - startRow, o));
+				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex() - startRow));
 			}
 			final var rowError = rowErrors.get(error.getRowIndex());
-			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType()));
-			rowError.getRawValues().set(error.getColumnIndex(), error.getOriginalValue());
+			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType(), error.getOriginalValue()));
 		}
 
 		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();

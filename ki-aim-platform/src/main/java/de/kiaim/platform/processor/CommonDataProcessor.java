@@ -45,7 +45,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
         List<Data> transformedCol = new ArrayList<>();
 
         // Transformation error that was thrown inside the Data builders
-        DataRowTransformationError newError = new DataRowTransformationError(rowIndex, row);
+        DataRowTransformationError newError = new DataRowTransformationError(rowIndex);
 
         for (int colIndex = 0; colIndex < row.size(); colIndex++) {
             // Process every column value in a row
@@ -63,7 +63,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
                 transformedCol.add(transformedData);
             } catch (DataBuildingException e) {
                 //Resolve to error type, to easier parse information to frontend
-                newError.addError(new DataTransformationError(colIndex, e.getTransformationErrorType()));
+                newError.addError(new DataTransformationError(colIndex, e.getTransformationErrorType(), col));
 
                 //Set Flag so error will be added
                 errorInRow = true;

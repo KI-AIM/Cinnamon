@@ -8,10 +8,6 @@ import de.kiaim.model.enumeration.TransformationErrorType;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.file.CsvFileConfiguration;
-import de.kiaim.platform.model.file.FileConfiguration;
-import de.kiaim.platform.model.file.FileType;
-import de.kiaim.platform.model.file.XlsxFileConfiguration;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
@@ -116,15 +112,16 @@ public class TestModelHelper {
 	public static TransformationResult generateTransformationResult(final boolean withErrors) {
 
 		if (withErrors) {
-			final List<String> rawValues = List.of("true", "2023-11-20", "", "4.2", "forty two", "Hello World!");
-			final DataRowTransformationError dataRowTransformationError = new DataRowTransformationError(2, rawValues);
+			final DataRowTransformationError dataRowTransformationError = new DataRowTransformationError(2);
 
 			final DataTransformationError missingValueError = new DataTransformationError(2,
-			                                                                              TransformationErrorType.MISSING_VALUE);
+			                                                                              TransformationErrorType.MISSING_VALUE,
+			                                                                              "");
 			dataRowTransformationError.addError(missingValueError);
 
 			final DataTransformationError formatError = new DataTransformationError(4,
-			                                                                        TransformationErrorType.FORMAT_ERROR);
+			                                                                        TransformationErrorType.FORMAT_ERROR,
+			                                                                        "forty two");
 			dataRowTransformationError.addError(formatError);
 
 			final List<DataRowTransformationError> dataRowTransformationErrors = List.of(dataRowTransformationError);

@@ -9,6 +9,7 @@ import de.kiaim.model.helper.DataTransformationHelper;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.Pair;
+import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -148,9 +149,11 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * with the most results is used as the estimation
      * for the row.
      * @param rows List containing the rows as String[]
+     * @param algorithm Algorithm how to select the datatype of a column.
      * @return List of datatype estimations
      */
-    public List<DataType> estimateDatatypesForMultipleRows(List<String[]> rows) {
+    public List<DataType> estimateDatatypesForMultipleRows(List<String[]> rows,
+                                                           final DatatypeEstimationAlgorithm algorithm) {
         List<List<DataType>> datatypesForRows = new ArrayList<>();
         List<DataType> resultList = new ArrayList<>();
 
@@ -161,7 +164,10 @@ public abstract class CommonDataProcessor implements DataProcessor {
         List<Map<DataType, Integer>> countedEstimatedDatatypes = countEstimatedDatatypesForRows(datatypesForRows);
 
         for (Map<DataType, Integer> countedMapForColumn : countedEstimatedDatatypes) {
-            resultList.add(getMostEstimatedDatatypeFromCountMap(countedMapForColumn));
+            switch (algorithm) {
+                case MOST_ESTIMATED -> resultList.add(getMostEstimatedDatatypeFromCountMap(countedMapForColumn));
+                case MOST_GENERAL -> resultList.add(getMostGeneralDatatypeFromCountMap(countedMapForColumn));
+            }
         }
 
         return resultList;
@@ -230,6 +236,23 @@ public abstract class CommonDataProcessor implements DataProcessor {
      */
     private DataType getMostEstimatedDatatypeFromCountMap(Map<DataType, Integer> countMap) {
         return Collections.max(countMap.entrySet(), Map.Entry.comparingByValue()).getKey();
+    }
+
+    /**
+     * Filters the count maps and returns the DataType that is the most general.
+     * @param countMap The filled out count map Map<DataType, Integer>
+     * @return DataType
+     */
+    private DataType getMostGeneralDatatypeFromCountMap(final Map<DataType, Integer> countMap) {
+        final var processingOrder = getProcessingOrder();
+        for (int i = processingOrder.size() - 1; i >= 0; i--) {
+            final DataType dataType = processingOrder.get(i).element0();
+            if (countMap.get(dataType) > 0) {
+                return dataType;
+            }
+        }
+
+        return processingOrder.get(processingOrder.size() - 1).element0();
     }
 
     /**

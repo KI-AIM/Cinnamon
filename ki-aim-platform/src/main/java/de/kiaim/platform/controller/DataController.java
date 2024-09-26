@@ -7,6 +7,7 @@ import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.*;
 import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
@@ -572,7 +573,7 @@ public class DataController {
 			case DATA_TYPES -> {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
-				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration);
+				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration, DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 				databaseService.storeDataConfiguration((DataConfiguration) result, projectEntity, Step.VALIDATION);
 			}
 			case DELETE -> {

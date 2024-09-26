@@ -17,6 +17,7 @@ import de.kiaim.platform.model.dto.SynthetizationResponse;
 import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.CsvFileConfiguration;
@@ -246,7 +247,8 @@ public class ProcessService {
 					fileConfiguration.setFileType(FileType.CSV);
 					fileConfiguration.setCsvFileConfiguration(new CsvFileConfiguration());
 
-					final DataConfiguration resultDataConfiguration = csvProcessor.estimateDatatypes(value.getInputStream(), fileConfiguration);
+					final DataConfiguration resultDataConfiguration = csvProcessor.estimateDatatypes(
+							value.getInputStream(), fileConfiguration, DatatypeEstimationAlgorithm.MOST_GENERAL);
 					final Step step = process.get().getStep();
 					final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),
 					                                                                    fileConfiguration,

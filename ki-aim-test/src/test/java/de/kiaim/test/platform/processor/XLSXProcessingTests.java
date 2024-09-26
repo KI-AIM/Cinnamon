@@ -8,6 +8,7 @@ import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.PlatformApplication;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.processor.XlsxProcessor;
 import de.kiaim.test.util.FileConfigurationTestHelper;
@@ -124,18 +125,39 @@ public class XLSXProcessingTests {
 
 
     @Test
-    void testEstimation() throws FileNotFoundException {
+    void testEstimationMostEstimated() throws FileNotFoundException {
         InputStream stream = new FileInputStream(
-            new File("src/test/resources/xlsx_test.xlsx")
+                new File("src/test/resources/xlsx_test_mixed_datatype.xlsx")
         );
 
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration);
+        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration,
+                                                                                DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
         List<DataType> expectedDatatypes = expectedConfiguration.getDataTypes();
+        List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
+
+        assertEquals(expectedDatatypes, actualDatatypes);
+    }
+
+    @Test
+    void testEstimationMostGeneral() throws FileNotFoundException {
+        InputStream stream = new FileInputStream(
+                new File("src/test/resources/xlsx_test_mixed_datatype.xlsx")
+        );
+
+        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
+
+        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration,
+                                                                                DatatypeEstimationAlgorithm.MOST_GENERAL);
+
+        DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
+
+        List<DataType> expectedDatatypes = expectedConfiguration.getDataTypes();
+        expectedDatatypes.set(0, DataType.STRING);
         List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
 
         assertEquals(expectedDatatypes, actualDatatypes);
@@ -149,7 +171,8 @@ public class XLSXProcessingTests {
 
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration);
+        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration,
+                                                                                DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 

@@ -3,6 +3,7 @@ package de.kiaim.test.platform.controller;
 import de.kiaim.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.model.status.synthetization.SynthetizationStepStatus;
 import de.kiaim.platform.model.dto.SynthetizationResponse;
+import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
@@ -233,11 +234,11 @@ public class ProcessControllerTest extends ControllerTest {
 
 		// Test state changes
 		process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
+		final DataSetEntity dataSetEntity = updateTestProject.getDataSets().get(Step.ANONYMIZATION);
 		assertEquals(ProcessStatus.FINISHED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
-		assertNotNull(process.getResultDataSet(), "Result has not been set!");
-		assertEquals("data", new String(process.getResultDataSet(), StandardCharsets.UTF_8),
-		             "Result has not been set correctly!");
+		assertTrue(existsDataSet(dataSetEntity.getId()), "Dataset has not been stored!");
+		assertTrue(dataSetEntity.isStoredData(), "Dataset has not been stored!");
 		assertTrue(process.getAdditionalResultFiles().containsKey("additional.txt"),
 		           "Additional result has not been set!");
 		assertEquals("info",

@@ -252,7 +252,6 @@ public class ProcessService {
 					                                                                    fileConfiguration,
 					                                                                    resultDataConfiguration);
 					databaseService.storeTransformationResult(transformationResult, project, step);
-					process.get().setResultDataSet(value.getBytes());
 				} else {
 					files.put(value.getOriginalFilename(), value.getBytes());
 				}

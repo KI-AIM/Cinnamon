@@ -223,7 +223,7 @@ public class DatabaseService {
 	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
-	public DataSet exportDataSet(final ProjectEntity project, List<String> columnNames, final Step step)
+	public DataSet exportDataSet(final ProjectEntity project, final List<String> columnNames, final Step step)
 			throws InternalDataSetPersistenceException, BadColumnNameException, BadDataSetIdException, InternalIOException {
 		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
 		return exportDataSet(dataSetEntity, columnNames, null, false, 0, 0);

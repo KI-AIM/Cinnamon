@@ -563,7 +563,7 @@ public class DataController {
 		switch (requestType) {
 			case CONFIRM_DATE_SET -> {
 				if (projectEntity.getDataSets().containsKey(Step.VALIDATION) &&
-				    projectEntity.getDataSets().get(Step.VALIDATION).isStoredData()) {
+				    !projectEntity.getDataSets().get(Step.VALIDATION).isStoredData()) {
 					throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET, "The data has not been stored!");
 				}
 				statusService.updateCurrentStep(projectEntity, Step.ANONYMIZATION);

@@ -2,8 +2,7 @@ riskThreshold:
   - type: "AVERAGE"
     values: 0.1
 suppressionLimit: "0.1"
-qualityModel: "LOSS"
-localGeneralization: False
+generalizationSetting: "Global"
 attributeConfigurations:
   - index: 0
     name: "death_date"
@@ -41,6 +40,7 @@ attributeConfigurations:
     dataType: "INTEGER"
     attributeProtection: "MICRO_AGGREGATION"
     scale: "ORDINAL"
+    values: ['0', '1', '2', '3', '4']
     intervalSize: "2"
   - index: 6
     name: "history_assessment_distant_metastasis"

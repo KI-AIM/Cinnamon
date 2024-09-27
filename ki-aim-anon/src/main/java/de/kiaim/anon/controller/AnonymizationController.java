@@ -44,6 +44,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "409", description = "Task with the given process ID already exists.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
     })
+//    TODO : rename to "/" to fit ModuleCommunication file
     @PostMapping(value = "/process/callback/result", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> createAnonymizationTaskWithCallbackResult(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(

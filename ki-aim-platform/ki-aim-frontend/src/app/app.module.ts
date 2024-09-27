@@ -28,6 +28,7 @@ import { AnonymizationModule } from "./features/anonymization/anonymization.modu
 import { SynthetizationModule } from "./features/synthetization/synthetization.module";
 import { ExecutionModule } from "./features/execution/execution.module";
 import { TechnicalEvaluationModule } from "./features/technical-evaluation/technical-evaluation.module";
+import { EvaluationModule } from "./features/evaluation/evaluation.module";
 
 @NgModule({
     declarations: [
@@ -40,6 +41,7 @@ import { TechnicalEvaluationModule } from "./features/technical-evaluation/techn
         AnonymizationModule,
         AppRoutingModule,
         AuthModule,
+        EvaluationModule,
         ExecutionModule,
         StartModule,
         SynthetizationModule,

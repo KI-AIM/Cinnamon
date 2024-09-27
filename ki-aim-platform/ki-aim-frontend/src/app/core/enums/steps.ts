@@ -75,4 +75,12 @@ export const StepConfiguration = {
         dependsOn: Steps.EXECUTION,
         index: 7,
     },
+    EVALUATION : {
+        path: "evaluation",
+        id: "navLinkEvalution",
+        text: "Evaluation",
+        enum: Steps.EVALUATION,
+        dependsOn: Steps.TECHNICAL_EVALUATION,
+        index: 8,
+    },
 };

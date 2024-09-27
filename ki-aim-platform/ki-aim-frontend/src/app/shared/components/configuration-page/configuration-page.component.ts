@@ -175,10 +175,19 @@ export class ConfigurationPageComponent implements OnInit {
      * @private
      */
     private configure(formData: FormData) {
-        this.httpClient.post<void>(this.baseUrl + "/configure", formData).subscribe({
+        this.httpClient.post<void>(this.baseUrl + "/" + this.algorithmService.getExecStepName() + "/configure", formData).subscribe({
             next: () => {
-                this.router.navigateByUrl(this.algorithmService.getStepName() === "ANONYMIZATION" ? '/synthetizationConfiguration' : "/execution");
-                this.stateManagement.setNextStep(this.algorithmService.getStepName() === "ANONYMIZATION" ? Steps.SYNTHETIZATION : Steps.EXECUTION);
+                this.router.navigateByUrl(this.algorithmService.getStepName() === "ANONYMIZATION"
+                    ? '/synthetizationConfiguration'
+                    : this.algorithmService.getStepName() === "SYNTHETIZATION"
+                        ? "/execution"
+                        : "/evaluation");
+                this.stateManagement.setNextStep(this.algorithmService.getStepName() === "ANONYMIZATION"
+                    ? Steps.SYNTHETIZATION
+                    : this.algorithmService.getStepName() === "SYNTHETIZATION"
+                        ? Steps.EXECUTION
+                        : Steps.EVALUATION
+            );
             },
             error: err => {
                 this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;

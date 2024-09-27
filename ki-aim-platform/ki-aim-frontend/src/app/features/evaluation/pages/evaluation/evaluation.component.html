@@ -1,0 +1,40 @@
+<div class="mt-2">
+    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="evaluationService.disabled" (click)="evaluationService.start()">
+        Start
+    </button>
+
+    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="!evaluationService.disabled" (click)="evaluationService.cancel()">
+        Cancel Algorithm
+    </button>
+</div>
+
+<div class="mb-2">
+    <h2 class="me-2" style="display: inline;">Status</h2>
+    <span class="status mt-2" [ngClass]="evaluationService.status.status">
+        <span>{{ evaluationService.status.status.replace("_", " ") }}</span>
+    </span>
+</div>
+
+<mat-accordion>
+    <mat-expansion-panel>
+        <mat-expansion-panel-header>
+            <mat-panel-title>Technical Evaluation</mat-panel-title>
+            <mat-panel-description>
+                <span class="status mt-2" [ngClass]="evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus">
+                    <span>{{ evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus.replace("_", " ") }}</span>
+                </span>
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div>
+            <div *ngIf="evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+            </div>
+            <ng-template #anonNoData>
+                <div>
+                    No Data Available
+                </div>
+            </ng-template>
+        </div>
+
+    </mat-expansion-panel>
+</mat-accordion>

@@ -23,8 +23,11 @@ export class TechnicalEvaluationService extends AlgorithmService {
         return "TECHNICAL_EVALUATION";
     }
 
+    override getExecStepName(): string {
+        return "EVALUATION";
+    }
+
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
-        console.log(arg);
         return {
             evaluation_configuration: {
                 data_format: 'cross-sectional',
@@ -34,7 +37,11 @@ export class TechnicalEvaluationService extends AlgorithmService {
     }
 
     public override readConfiguration(arg: Object, configurationName: string): { config: Object; selectedAlgorithm: Algorithm; } {
-        throw new Error('Method not implemented.');
+        const selectedAlgorithm = this.getAlgorithmByName("evaluation");
+        // @ts-ignore
+        const config = arg[configurationName];
+        delete config["data_format"];
+        return {config, selectedAlgorithm};
     }
 
     protected override fetchAlgorithms(url: string): Observable<string> {
@@ -43,7 +50,7 @@ export class TechnicalEvaluationService extends AlgorithmService {
             "  class: <class 'synthetic_tabular_data_generator.algorithms.ctgan.CtganSynthesizer'>\n" +
             "  description: Metrics used to evaluate the resemblance and utility of synthetic data compared to real data.\n" +
             "  display_name: Evaluation\n" +
-            "  name: ctgan\n" +
+            "  name: evaluation\n" +
             "  type: cross-sectional\n" +
             "  version: '0.1'");
     }
@@ -53,7 +60,7 @@ export class TechnicalEvaluationService extends AlgorithmService {
             "type: cross-sectional\n" +
             "display_name: Evaluation\n" +
             "description: Metrics used to evaluate the resemblance and utility of synthetic data compared to real data.\n" +
-            "URL: /start_evaluation_process\n" +
+            "URL: /start_evaluation\n" +
             "configurations:\n" +
             "  resemblance:\n" +
             "    display_name: Resemblance Metrics\n" +

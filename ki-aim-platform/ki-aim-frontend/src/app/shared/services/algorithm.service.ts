@@ -36,6 +36,8 @@ export abstract class AlgorithmService {
      */
     abstract getStepName(): string;
 
+    abstract getExecStepName(): string;
+
     /**
      * Creates the YAML configuration object sent to the backend as well as to the external module.
      * @param arg The configuration from the form.

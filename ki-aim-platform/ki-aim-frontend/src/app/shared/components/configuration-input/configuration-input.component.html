@@ -14,7 +14,7 @@
                     <mat-form-field class="input">
                         <mat-select [formControlName]="configurationInputDefinition.name"
                                     [id]="configurationInputDefinition.name">
-                            <mat-option *ngFor="let option of dataConfigurationService.getDataConfiguration().configurations" [value]="option">
+                            <mat-option *ngFor="let option of dataConfigurationService.getDataConfiguration().configurations" [value]="option.name">
                                 {{ option.name }}
                             </mat-option>
                         </mat-select>

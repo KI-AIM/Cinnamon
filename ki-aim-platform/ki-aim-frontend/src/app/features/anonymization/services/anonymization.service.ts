@@ -22,6 +22,10 @@ export class AnonymizationService extends AlgorithmService {
         return "ANONYMIZATION";
     }
 
+    public override getExecStepName(): string {
+        return "EXECUTION";
+    }
+
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
         // TODO
         return { };

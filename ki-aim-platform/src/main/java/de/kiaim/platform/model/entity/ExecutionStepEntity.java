@@ -1,6 +1,5 @@
 package de.kiaim.platform.model.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
@@ -53,6 +52,9 @@ public class ExecutionStepEntity {
 	@Nullable
 	private Step currentStep;
 
+	/**
+	 * Processes in this step.
+	 */
 	@OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
 	@MapKeyEnumerated(EnumType.STRING)
 	@MapKeyColumn(name = "step")
@@ -67,6 +69,11 @@ public class ExecutionStepEntity {
 	@Getter @Setter
 	private ProjectEntity project;
 
+	/**
+	 * Adds a new process for the given step to this step.
+	 * @param step The step.
+	 * @param externalProcess The process to be added.
+	 */
 	public void putExternalProcess(final Step step, final ExternalProcessEntity externalProcess) {
 		if (!processes.containsKey(step)) {
 			externalProcess.setExecutionStep(this);

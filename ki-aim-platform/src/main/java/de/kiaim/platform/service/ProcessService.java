@@ -17,6 +17,7 @@ import de.kiaim.platform.model.dto.SynthetizationResponse;
 import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.CsvFileConfiguration;
@@ -87,20 +88,19 @@ public class ProcessService {
 	}
 
 	/**
-	 * Updates and returns the status of the current execution.
+	 * Updates and returns the status of the execution of the given step in the given project.
 	 * If a process is running, the status of that process will be fetched from the external server.
 	 *
 	 * @param project The project.
+	 * @param step The step.
 	 * @return The updated execution.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 * @throws InternalRequestException                  If the request to the external server failed.
 	 */
 	@Transactional
-	public ExecutionStepEntity getStatus(final ProjectEntity project)
+	public ExecutionStepEntity getStatus(final ProjectEntity project, final Step step)
 			throws InternalRequestException, InternalApplicationConfigurationException {
-		// TODO Get dynamically if multiple executable steps exist
-		final var execStep = Step.EXECUTION;
-		final var executionStep = project.getExecutions().get(execStep);
+		final var executionStep = project.getExecutions().get(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
 			updateProcessStatus(executionStep.getProcesses().get(executionStep.getCurrentStep()));
@@ -112,6 +112,7 @@ public class ProcessService {
 	/**
 	 * Saves the configuration and the URL of the selected algorithm for the process of the given step.
 	 * @param project       The project.
+	 * @param execStep      The step.
 	 * @param stepName      The name of the corresponding step.
 	 * @param url           The URL to start the algorithm.
 	 * @param configuration The configuration for the algorithm.
@@ -121,13 +122,11 @@ public class ProcessService {
 	 * @throws InternalInvalidStateException             If the process entity is missing.
 	 */
 	@Transactional
-	public void configureProcess(final ProjectEntity project, final String stepName, final String url,
+	public void configureProcess(final ProjectEntity project, final Step execStep, final String stepName, final String url,
 	                             final String configuration)
 			throws BadStepNameException, BadStateException, InternalInvalidStateException, InternalApplicationConfigurationException {
 		final Step step = Step.getStepOrThrow(stepName);
 
-		// TODO Get dynamically if multiple executable steps exist
-		final var execStep = Step.EXECUTION;
 		final var executionStep = project.getExecutions().get(execStep);
 
 		// Get process entity
@@ -152,9 +151,10 @@ public class ProcessService {
 	}
 
 	/**
-	 * Starts the execution of the given project.
+	 * Starts the execution of the given step in the given project.
 	 *
 	 * @param project The project the process corresponds to.
+	 * @param step The step the process corresponds to.
 	 * @throws BadColumnNameException                    If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
 	 * @throws InternalApplicationConfigurationException If the given step is not configured.
@@ -164,11 +164,9 @@ public class ProcessService {
 	 * @throws InternalRequestException                  If the request to start the process failed.
 	 */
 	@Transactional
-	public ExecutionStepEntity start(final ProjectEntity project)
+	public ExecutionStepEntity start(final ProjectEntity project, final Step step)
 			throws BadColumnNameException, BadDataSetIdException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalRequestException {
-		// TODO Get dynamically if multiple executable steps exist
-		final var execStep = Step.EXECUTION;
-		final var executionStep = project.getExecutions().get(execStep);
+		final var executionStep = project.getExecutions().get(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
 			return executionStep;
@@ -185,17 +183,16 @@ public class ProcessService {
 	}
 
 	/**
-	 * Cancels the execution of the given project.
+	 * Cancels the execution of the given step in the given project.
 	 * @param project The project.
+	 * @param step The step.
 	 * @return The updated execution entity.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 */
 	@Transactional
-	public ExecutionStepEntity cancel(final ProjectEntity project)
+	public ExecutionStepEntity cancel(final ProjectEntity project, final Step step)
 			throws InternalApplicationConfigurationException {
-		// TODO Get dynamically if multiple executable steps exist
-		final var execStep = Step.EXECUTION;
-		final var executionStep = project.getExecutions().get(execStep);
+		final var executionStep = project.getExecutions().get(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
 			// Get the current step
@@ -246,13 +243,13 @@ public class ProcessService {
 					fileConfiguration.setFileType(FileType.CSV);
 					fileConfiguration.setCsvFileConfiguration(new CsvFileConfiguration());
 
-					final DataConfiguration resultDataConfiguration = csvProcessor.estimateDatatypes(value.getInputStream(), fileConfiguration);
+					final DataConfiguration resultDataConfiguration = csvProcessor.estimateDatatypes(
+							value.getInputStream(), fileConfiguration, DatatypeEstimationAlgorithm.MOST_GENERAL);
 					final Step step = process.get().getStep();
 					final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),
 					                                                                    fileConfiguration,
 					                                                                    resultDataConfiguration);
 					databaseService.storeTransformationResult(transformationResult, project, step);
-					process.get().setResultDataSet(value.getBytes());
 				} else {
 					files.put(value.getOriginalFilename(), value.getBytes());
 				}
@@ -472,6 +469,11 @@ public class ProcessService {
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
 		final String serverUrl = stepConfiguration.getUrl();
 		final String statusEndpoint = stepConfiguration.getStatusEndpoint();
+
+		if (statusEndpoint.isEmpty()) {
+			return;
+		}
+
 		final String url = serverUrl + statusEndpoint.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getId().toString());
 
 		// Do the request
@@ -561,7 +563,7 @@ public class ProcessService {
 			                                        step.name() + "' found!");
 		}
 
-		doStartProcess(project, stepConfiguration, externalProcess, configuration, externalProcess.getProcessUrl());
+		doStartProcess(stepConfiguration, externalProcess, configuration, externalProcess.getProcessUrl());
 	}
 
 	/**
@@ -574,40 +576,104 @@ public class ProcessService {
 	 * @throws InternalIOException                       If the request body could not be created.
 	 * @throws InternalRequestException                  If the request to start the process failed.
 	 */
-	private void doStartProcess(final ProjectEntity project, final StepConfiguration stepConfiguration,
+	private void doStartProcess(final StepConfiguration stepConfiguration,
 	                            final ExternalProcessEntity externalProcess, final String configuration,
 	                            final String url)
-			throws InternalDataSetPersistenceException, BadColumnNameException, InternalIOException, BadDataSetIdException, InternalRequestException {
+			throws InternalDataSetPersistenceException, BadColumnNameException, InternalIOException, BadDataSetIdException, InternalRequestException, InternalApplicationConfigurationException {
 		// Prepare body
 		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
 
-		// Get the data set from the last finished step
-		final var executionStep = externalProcess.getExecutionStep();
-		var abc = executionStep.getStep();
+		addDataSets(externalProcess, stepConfiguration,bodyBuilder);
 
-		var indexOfSourceStep = abc.getProcesses().indexOf(executionStep.getCurrentStep()) - 1;
-
-		Step dataSetSourceStep = null;
-		while (dataSetSourceStep == null) {
-
-			if (indexOfSourceStep <= 0) {
-				dataSetSourceStep = Step.VALIDATION;
-			} else {
-				var stepCandidate = abc.getProcesses().get(indexOfSourceStep);
-				if (executionStep.getProcesses().get(stepCandidate).getExternalProcessStatus() == ProcessStatus.FINISHED) {
-					dataSetSourceStep = stepCandidate;
-				} else {
-					indexOfSourceStep--;
+		final var configName = externalProcess.getStep() == Step.TECHNICAL_EVALUATION ? "evaluation_config" : "algorithm_config";
+		if (configName.equals("evaluation_config")) {
+			bodyBuilder.part(configName, new ByteArrayResource(
+					"""
+							evaluation_configuration:
+							  data_format: "cross-sectional"
+							  resemblance:
+							    selected_metrics:
+							      mode:
+							        - parameters: "None"
+							      mean:
+							        - parameters: "None"
+							      standard_deviation:
+							        - parameters: "None"
+							      skewness:
+							        - parameters: "None"
+							      quantiles:
+							        - parameters:
+							            quantile_array:
+							              - 0.2
+							              - 0.4
+							              - 0.6
+							              - 0.8
+							      kurtosis:
+							        - parameters: "None"
+							      ranges:
+							        - parameters: "None"
+							      kolmogorov_smirnov:
+							        - parameters: "None"
+							      hellinger_distance:
+							        - parameters: "None"
+							      correlation:
+							        - parameters: "None"
+							      frequency:
+							        - parameters: "None"
+							""".getBytes()) {
+				@Override
+				public String getFilename() {
+					return "input_user_tabular.yaml";
 				}
-			}
+			});
+		} else {
+			bodyBuilder.part(configName, new ByteArrayResource(configuration.getBytes()) {
+				@Override
+				public String getFilename() {
+					return "synthesizer_config.yaml";
+				}
+			});
 		}
 
-		final DataSet dataSet = databaseService.exportDataSet(project, new ArrayList<>(), dataSetSourceStep);
 
-		// TODO put somewhere else
-		// Set date format
+		bodyBuilder.part("session_key", externalProcess.getId().toString());
+		final String callbackHost = stepConfiguration.getCallbackHost();
+		final var serverAddress = ServletUriComponentsBuilder.fromCurrentContextPath()
+		                                                     .host(callbackHost)
+		                                                     .port(this.port)
+		                                                     .build()
+		                                                     .toUriString();
+		bodyBuilder.part("callback",
+		                 serverAddress + "/api/process/" + externalProcess.getId().toString() + "/callback");
+
+		// Do the request
+		try {
+			final String serverUrl = stepConfiguration.getUrl();
+			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
+			final var response = webClient.post()
+			                              .uri(url)
+			                              .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
+			                              .retrieve()
+			                              .onStatus(HttpStatusCode::isError,
+			                                        errorResponse -> errorResponse.toEntity(
+					                                                                      SynthetizationResponse.class)
+			                                                                      .map(RequestRuntimeException::new))
+			                              .bodyToMono(SynthetizationResponse.class)
+			                              .block();
+			externalProcess.setExternalId(response.getPid());
+			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
+		} catch (RequestRuntimeException e) {
+			var message = "Failed to start the process! Got status of " + e.getResponse().getStatusCode();
+			if (e.getResponse().getBody() != null) {
+				message += " with message: '" + e.getResponse().getBody().getMessage() + "' and error: '" + e.getResponse().getBody().getError()  + "'";
+			}
+			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
+		}
+	}
+
+	private void preprocessDataConfiguration(final StepConfiguration stepConfiguration, final DataConfiguration dataConfiguration) {
 		if (stepConfiguration.getPreProcessors().contains("dateformat")) {
-			for (final var columnConfiguration : dataSet.getDataConfiguration().getConfigurations()) {
+			for (final var columnConfiguration : dataConfiguration.getConfigurations()) {
 				if (columnConfiguration.getType() == DataType.DATE_TIME) {
 					boolean found = false;
 					for (final var config : columnConfiguration.getConfigurations()) {
@@ -640,6 +706,45 @@ public class ProcessService {
 				}
 			}
 		}
+	}
+
+	private void addDataSets(final ExternalProcessEntity externalProcess, final StepConfiguration stepConfiguration,
+	                         final MultipartBodyBuilder bodyBuilder)
+			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, BadColumnNameException, InternalIOException, BadDataSetIdException {
+		final ProjectEntity project = externalProcess.getExecutionStep().getProject();
+
+		for (final String inputDataSet : stepConfiguration.getInputs()) {
+			switch (inputDataSet) {
+				case "original": {
+					final var dataset = databaseService.exportDataSet(project, new ArrayList<>(), Step.VALIDATION);
+					addDataSet(bodyBuilder, stepConfiguration, dataset, "real_data", "real_data.csv", "attribute_config");
+					break;
+				}
+				case "last": {
+					final var dataset = getLastOrOriginalDataSet(externalProcess.getExecutionStep());
+					addDataSet(bodyBuilder, stepConfiguration, dataset, "data", "real_data.csv", "attribute_config");
+					break;
+				}
+				case "synth": {
+					final var synthExecution = project.getExecutions().get(Step.EXECUTION);
+					final var dataset = getLastOrOriginalDataSet(synthExecution);
+					addDataSet(bodyBuilder, stepConfiguration, dataset, "synthetic_data", "synthetic_data.csv", "attribute_config_synthetic");
+					break;
+				}
+				default: {
+					throw new InternalApplicationConfigurationException(
+							InternalApplicationConfigurationException.INVALID_INPUT_DATA_SET,
+							"Input '" + inputDataSet + "' is not a valid input dateset!");
+				}
+			}
+		}
+	}
+
+	private void addDataSet(final MultipartBodyBuilder bodyBuilder, final StepConfiguration stepConfiguration,
+	                        final DataSet dataSet, final String partName, final String fileName,
+	                        final String dataConfigurationName)
+			throws InternalIOException {
+		preprocessDataConfiguration(stepConfiguration, dataSet.getDataConfiguration());
 
 		final var outputStream = new ByteArrayOutputStream();
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
@@ -656,65 +761,51 @@ public class ProcessService {
 			throw new InternalIOException(InternalIOException.CSV_CREATION, "Failed to create the CVS file!", e);
 		}
 
-		bodyBuilder.part("data", new ByteArrayResource(outputStream.toByteArray()) {
+		bodyBuilder.part(partName, new ByteArrayResource(outputStream.toByteArray()) {
 			@Override
 			public String getFilename() {
-				return "real_data.csv";
+				return fileName;
 			}
 		});
 
 		try {
-			bodyBuilder.part("attribute_config", new ByteArrayResource(
+			bodyBuilder.part(dataConfigurationName, new ByteArrayResource(
 					yamlMapper.writeValueAsString(dataSet.getDataConfiguration()).getBytes()) {
 				@Override
 				public String getFilename() {
-					return "attribute_config.yaml";
+					return dataConfigurationName + ".yaml";
 				}
 			});
 		} catch (JsonProcessingException e) {
 			throw new InternalIOException(InternalIOException.DATA_CONFIGURATION_SERIALIZATION,
 			                              "Failed to create the data configuration!", e);
 		}
-
-		bodyBuilder.part("algorithm_config", new ByteArrayResource(configuration.getBytes()) {
-			@Override
-			public String getFilename() {
-				return "synthesizer_config.yaml";
-			}
-		});
-
-		bodyBuilder.part("session_key", externalProcess.getId().toString());
-		final String callbackHost = stepConfiguration.getCallbackHost();
-		final var serverAddress = ServletUriComponentsBuilder.fromCurrentContextPath()
-		                                                     .host(callbackHost)
-		                                                     .port(this.port)
-		                                                     .build()
-		                                                     .toUriString();
-		bodyBuilder.part("callback",
-		                 serverAddress + "/api/process/" + externalProcess.getId().toString() + "/callback");
-
-		// Do the request
-		try {
-			final String serverUrl = stepConfiguration.getUrl();
-			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
-			final var response = webClient.post()
-			                              .uri(url)
-			                              .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
-			                              .retrieve()
-			                              .onStatus(HttpStatusCode::isError,
-			                                        errorResponse -> errorResponse.toEntity(
-					                                                                      SynthetizationResponse.class)
-			                                                                      .map(RequestRuntimeException::new))
-			                              .bodyToMono(SynthetizationResponse.class)
-			                              .block();
-			externalProcess.setExternalId(response.getPid());
-			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
-		} catch (RequestRuntimeException e) {
-			var message = "Failed to start the process! Got status of " + e.getResponse().getStatusCode();
-			if (e.getResponse().getBody() != null) {
-				message += " with message: '" + e.getResponse().getBody().getMessage() + "'";
-			}
-			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
-		}
 	}
+
+	private DataSet getLastOrOriginalDataSet(final ExecutionStepEntity executionStep)
+			throws InternalDataSetPersistenceException, BadColumnNameException, InternalIOException, BadDataSetIdException {
+		var abc = executionStep.getStep();
+
+		var indexOfSourceStep = executionStep.getCurrentStep() != null
+		                        ? abc.getProcesses().indexOf(executionStep.getCurrentStep()) - 1
+		                        : abc.getProcesses().size() - 1;
+
+		Step dataSetSourceStep = null;
+		while (dataSetSourceStep == null) {
+
+			if (indexOfSourceStep <= 0) {
+				dataSetSourceStep = Step.VALIDATION;
+			} else {
+				var stepCandidate = abc.getProcesses().get(indexOfSourceStep);
+				if (executionStep.getProcesses().get(stepCandidate).getExternalProcessStatus() == ProcessStatus.FINISHED) {
+					dataSetSourceStep = stepCandidate;
+				} else {
+					indexOfSourceStep--;
+				}
+			}
+		}
+
+		return databaseService.exportDataSet(executionStep.getProject(), new ArrayList<>(), dataSetSourceStep);
+	}
+
 }

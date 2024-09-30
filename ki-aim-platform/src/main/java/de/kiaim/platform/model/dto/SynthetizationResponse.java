@@ -7,6 +7,8 @@ import lombok.Setter;
 @Getter @Setter
 public class SynthetizationResponse {
 
+	private String error;
+
 	private String message;
 
 	private String pid;

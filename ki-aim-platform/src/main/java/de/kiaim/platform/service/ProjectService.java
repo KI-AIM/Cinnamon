@@ -148,11 +148,10 @@ public class ProjectService {
 			// Add results
 			for (final ExecutionStepEntity executionStep : project.getExecutions().values()) {
 				for (final ExternalProcessEntity externalProcess : executionStep.getProcesses().values()) {
-					if (externalProcess.getResultDataSet() != null) {
-						final ZipEntry resultZipEntry = new ZipEntry(externalProcess.getStep().name() + "-result.csv");
-						zipOut.putNextEntry(resultZipEntry);
-						zipOut.write(externalProcess.getResultDataSet());
-						zipOut.closeEntry();
+					if (project.getDataSets().containsKey(externalProcess.getStep()) &&
+					    project.getDataSets().get(externalProcess.getStep()).isStoredData()) {
+						addCsvToZip(zipOut, databaseService.exportDataSet(project, new ArrayList<>(), Step.VALIDATION),
+						            externalProcess.getStep().name() + "-result");
 					}
 
 					for (final var entry : externalProcess.getAdditionalResultFiles().entrySet()) {

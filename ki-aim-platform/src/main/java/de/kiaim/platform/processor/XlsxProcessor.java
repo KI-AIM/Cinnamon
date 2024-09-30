@@ -6,6 +6,7 @@ import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.platform.model.DataRowTransformationError;
+import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.file.FileType;
@@ -194,7 +195,8 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      * {@inheritDoc}
      */
     @Override
-    public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration) {
+    public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration,
+                                               final DatatypeEstimationAlgorithm algorithm) {
         final XlsxFileConfiguration xlsxFileConfiguration = fileConfiguration.getXlsxFileConfiguration();
         List<List<String>> rows;
 
@@ -227,7 +229,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         if (validRows.isEmpty()) {
             estimatedDataTypes = getUndefinedDatatypesList(numberColumns);
         } else {
-            estimatedDataTypes = estimateDatatypesForMultipleRows(validRows);
+            estimatedDataTypes = estimateDatatypesForMultipleRows(validRows, algorithm);
         }
 
         return buildConfigurationForDataTypes(estimatedDataTypes, columnNames);

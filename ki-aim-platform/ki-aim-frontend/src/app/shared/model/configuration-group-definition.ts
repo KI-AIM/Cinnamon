@@ -4,4 +4,5 @@ export class ConfigurationGroupDefinition {
     display_name: string
     description: string
     parameters: ConfigurationInputDefinition[]
+    configurations: {[name: string]: ConfigurationGroupDefinition}
 }

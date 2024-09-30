@@ -71,7 +71,7 @@ export class UploadFileComponent {
 	}
 
     protected get locked(): boolean {
-        return this.stateManagement.isStepCompleted(Steps.VALIDATION);
+        return this.stateManagement.isStepCompleted(Steps.DATA_CONFIG);
     }
 
 	onFileInput(event: Event) {

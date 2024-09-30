@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 
@@ -43,6 +44,13 @@ public class StepConfiguration {
 	private String configurationName;
 
 	/**
+	 * Input data sets.
+	 * Allowed values are: last, original, synth
+	 */
+	@JsonIgnore
+	private List<String> inputs;
+
+	/**
 	 * Maximum number of processes that are allowed to run in parallel.
 	 */
 	@JsonIgnore
@@ -58,7 +66,6 @@ public class StepConfiguration {
 	/**
 	 * Endpoint for retrieving the status.
 	 */
-	@NotBlank
 	private String statusEndpoint;
 
 	/**

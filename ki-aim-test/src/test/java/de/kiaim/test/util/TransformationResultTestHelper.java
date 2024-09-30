@@ -14,15 +14,16 @@ public class TransformationResultTestHelper {
 	public static TransformationResult generateTransformationResult(final boolean withErrors) {
 
 		if (withErrors) {
-			final List<String> rawValues = List.of("true", "2023-11-20", "", "4.2", "forty two", "Hello World!");
-			final DataRowTransformationError dataRowTransformationError = new DataRowTransformationError(2, rawValues);
+			final DataRowTransformationError dataRowTransformationError = new DataRowTransformationError(2);
 
 			final DataTransformationError missingValueError = new DataTransformationError(2,
-			                                                                              TransformationErrorType.MISSING_VALUE);
+			                                                                              TransformationErrorType.MISSING_VALUE,
+			                                                                              "");
 			dataRowTransformationError.addError(missingValueError);
 
 			final DataTransformationError formatError = new DataTransformationError(4,
-			                                                                        TransformationErrorType.FORMAT_ERROR);
+			                                                                        TransformationErrorType.FORMAT_ERROR,
+			                                                                        "forty two");
 			dataRowTransformationError.addError(formatError);
 
 			final List<DataRowTransformationError> dataRowTransformationErrors = List.of(dataRowTransformationError);
@@ -37,7 +38,7 @@ public class TransformationResultTestHelper {
 				"""
 						{"dataSet":""" + DataSetTestHelper.generateDataSetAsJson() +
 				"""
-						,"transformationErrors":[{"index":2,"rawValues":["true","2023-11-20","","4.2","forty two","Hello World!"],"dataTransformationErrors":[{"index":2,"errorType":"MISSING_VALUE"},{"index":4,"errorType":"FORMAT_ERROR"}]}]}""";
+						,"transformationErrors":[{"index":2,"dataTransformationErrors":[{"index":2,"errorType":"MISSING_VALUE","rawValue":""},{"index":4,"errorType":"FORMAT_ERROR","rawValue":"forty two"}]}]}""";
 	}
 
 	public static String generateTransformationResultAsJsonB() {
@@ -45,7 +46,7 @@ public class TransformationResultTestHelper {
 				"""
 						{"dataSet":""" + DataSetTestHelper.generateDataSetAsJson() +
 				"""
-						,"transformationErrors":[{"index":2,"rawValues":["true","2023-11-20","","4.2","forty two","Hello World!"],"dataTransformationErrors":[{"index":4,"errorType":"FORMAT_ERROR"},{"index":2,"errorType":"MISSING_VALUE"}]}]}""";
+						,"transformationErrors":[{"index":2,"dataTransformationErrors":[{"index":4,"errorType":"FORMAT_ERROR","rawValue":"forty two"},{"index":2,"errorType":"MISSING_VALUE","rawValue":""}]}]}""";
 	}
 
 	public static String generateTransformationResultAsYaml() {
@@ -56,18 +57,13 @@ public class TransformationResultTestHelper {
 				"""
 						transformationErrors:
 						- index: 2
-						  rawValues:
-						  - "true"
-						  - "2023-11-20"
-						  - ""
-						  - "4.2"
-						  - "forty two"
-						  - "Hello World!"
 						  dataTransformationErrors:
 						  - index: 2
 						    errorType: "MISSING_VALUE"
+						    rawValue: ""
 						  - index: 4
 						    errorType: "FORMAT_ERROR"
+						    rawValue: "forty two"
 						""";
 	}
 }

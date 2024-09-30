@@ -13,6 +13,10 @@ import {
 } from "./features/synthetization/pages/synthetization-configuration/synthetization-configuration.component";
 import { StateGuard } from "./core/guards/state.guard";
 import { ExecutionComponent } from "./features/execution/pages/execution/execution.component";
+import {
+    TechnicalEvaluationConfigurationComponent
+} from "./features/technical-evaluation/pages/technical-evaluation-configuration/technical-evaluation-configuration.component";
+import { EvaluationComponent } from "./features/evaluation/pages/evaluation/evaluation.component";
 
 const routes: Routes = [
     {path: '', redirectTo: '', pathMatch: 'full', canActivate: [AuthGuard, StateGuard]},
@@ -24,7 +28,9 @@ const routes: Routes = [
     {path: 'dataValidation', component: DataValidationComponent, canActivate: [AuthGuard]},
     {path: 'anonymizationConfiguration', component: AnonymizationConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'synthetizationConfiguration', component: SynthetizationConfigurationComponent, canActivate: [AuthGuard]},
-    {path: 'execution', component: ExecutionComponent, canActivate: [AuthGuard]}
+    {path: 'execution', component: ExecutionComponent, canActivate: [AuthGuard]},
+    {path: 'technicalEvaluationConfiguration', component: TechnicalEvaluationConfigurationComponent, canActivate: [AuthGuard]},
+    {path: 'evaluation', component: EvaluationComponent, canActivate: [AuthGuard]},
 ];
 
 @NgModule({

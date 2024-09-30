@@ -19,9 +19,8 @@ import java.util.List;
 @ToString
 public class DataRowTransformationError {
 
-	public DataRowTransformationError(int index, List<String> rawValues) {
+	public DataRowTransformationError(int index) {
 		this.index = index;
-		this.rawValues = rawValues;
 		this.dataTransformationErrors = new ArrayList<>();
 	}
 
@@ -30,12 +29,6 @@ public class DataRowTransformationError {
 	 */
 	@Schema(description = "Index of the row in the original data.", example = "1")
 	private final int index;
-
-	/**
-	 * List of all values represented as Strings.
-	 */
-	@Schema(description = "Raw values of the row.", example = "[true, \"2023-12-24\", \"\", 4.2, 42, \"Hello World!\"]")
-	private final List<String> rawValues;
 
 	/**
 	 * List of errors that occurred during the transformation.

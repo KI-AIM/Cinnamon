@@ -10,6 +10,17 @@
     <span style="flex: 1 1 auto;" [formGroup]="form">
         <ng-container [ngSwitch]="configurationInputDefinition.type">
             <!-- Switch cases for all supported configuration types -->
+            <ng-container *ngSwitchCase="ConfigurationInputType.ATTRIBUTE">
+                    <mat-form-field class="input">
+                        <mat-select [formControlName]="configurationInputDefinition.name"
+                                    [id]="configurationInputDefinition.name">
+                            <mat-option *ngFor="let option of dataConfigurationService.getDataConfiguration().configurations" [value]="option.name">
+                                {{ option.name }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+            </ng-container>
+
             <ng-container *ngSwitchCase="ConfigurationInputType.LIST">
                 <div class="input-array-wrapper">
                     <mat-form-field class="input-array">

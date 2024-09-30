@@ -7,6 +7,7 @@ import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Mode;
+import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.repository.DataSetRepository;
@@ -392,43 +393,6 @@ class DataControllerTest extends ControllerTest {
 	// endregion
 	// ================================================================================================================
 
-	@Test
-	void loadDataPage() throws Exception {
-		postData();
-
-		mockMvc.perform(get("/api/data/validation/dataTable")
-				                .param("page", "2")
-				                .param("perPage", "1"))
-		       .andExpect(status().isOk())
-		       .andExpect(content().json(
-				       "{'data':[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'page':2,'perPage':1,total:3,'totalPages':3}"));
-	}
-
-	@Test
-	void loadDataPageErrors() throws Exception {
-		postData();
-
-		mockMvc.perform(get("/api/data/validation/dataTable")
-				                .param("page", "2")
-				                .param("perPage", "2"))
-		       .andExpect(status().isOk())
-		       .andExpect(content().json(
-				       "{'data':[[true,'2023-11-20',null,4.2,null,'Hello World!']],'page':2,'perPage':2,total:3,'totalPages':2}"));
-	}
-
-	@Test
-	void loadDataPageEncodedErrors() throws Exception {
-		postData();
-
-		mockMvc.perform(get("/api/data/validation/dataTable")
-				                .param("page", "3")
-				                .param("perPage", "1")
-				                .param("formatErrorEncoding", "$value"))
-		       .andExpect(status().isOk())
-		       .andExpect(content().json(
-				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'page':3,'perPage':1,total:3,'totalPages':3}"));
-	}
-
 	// ================================================================================================================
 	// region loadDataSet()
 	// ================================================================================================================
@@ -509,6 +473,72 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(content().string(oneOf(TransformationResultTestHelper.generateTransformationResultAsJsonA(),
 		                                         TransformationResultTestHelper.generateTransformationResultAsJsonB())));
 	}
+
+	@Test
+	void loadTransformationResultPage() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "2")
+				                .param("perPage", "1"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':null,'page':2,'perPage':1,total:3,'totalPages':3}"));
+	}
+
+	@Test
+	void loadTransformationResultPageWithErrors() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "2")
+				                .param("perPage", "2"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20',null,4.2,null,'Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':2,'perPage':2,total:3,'totalPages':2}"));
+	}
+
+	@Test
+	void loadTransformationResultPageEncodedErrors() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "3")
+				                .param("perPage", "1")
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':3,'perPage':1,total:3,'totalPages':3}"));
+	}
+
+	@Test
+	void loadTransformationResultPageSelectErrors() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "1")
+				                .param("perPage", "2")
+				                .param("rowSelector", RowSelector.ERRORS.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[2],'page':1,'perPage':2,total:1,'totalPages':1}"));
+	}
+
+	@Test
+	void loadTransformationResultPageSelectValid() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "1")
+				                .param("perPage", "1")
+				                .param("rowSelector", RowSelector.VALID.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']],'transformationErrors':[],'rowNumbers':[0],'page':1,'perPage':1,total:2,'totalPages':2}"));
+	}
+
 
 	@Test
 	void deleteDataNoDataSet() throws Exception {

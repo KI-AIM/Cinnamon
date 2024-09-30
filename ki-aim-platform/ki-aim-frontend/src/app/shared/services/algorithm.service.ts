@@ -36,6 +36,8 @@ export abstract class AlgorithmService {
      */
     abstract getStepName(): string;
 
+    abstract getExecStepName(): string;
+
     /**
      * Creates the YAML configuration object sent to the backend as well as to the external module.
      * @param arg The configuration from the form.
@@ -174,7 +176,7 @@ export abstract class AlgorithmService {
     private loadAlgorithms(url: string): Observable<Algorithm[]> {
         return this.stepConfig.pipe(
             concatMap(value => {
-                return this.http.get<string>(url + value.algorithmEndpoint, {responseType: 'text' as 'json'})
+                return this.fetchAlgorithms(url + value.algorithmEndpoint);
             }),
             map(value => {
                 const response = parse(value) as { [available_synthesizers: string]: Object[] };
@@ -185,11 +187,24 @@ export abstract class AlgorithmService {
         );
     }
 
+    /**
+     * Fetches the list of available algorithms as a YAML string.
+     * @param url Url.
+     * @protected
+     */
+    protected fetchAlgorithms(url: string): Observable<string> {
+        return this.http.get<string>(url, {responseType: 'text' as 'json'});
+    }
+
     private loadAlgorithmDefinition(url: string, algorithm: Algorithm): Observable<AlgorithmDefinition> {
-        return this.http.get<string>(url + algorithm.URL, {responseType: 'text' as 'json'})
+        return this.fetchAlgorithmDefinition(url + algorithm.URL)
             .pipe(map(value => {
                 return plainToInstance(AlgorithmDefinition, parse(value));
             }));
+    }
+
+    protected fetchAlgorithmDefinition(url: string): Observable<string> {
+        return this.http.get<string>(url, {responseType: 'text' as 'json'});
     }
 
     private loadStepConfig(stepName: string): Observable<StepConfiguration> {

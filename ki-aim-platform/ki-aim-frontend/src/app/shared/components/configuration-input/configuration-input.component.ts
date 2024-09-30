@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { ConfigurationInputDefinition } from "../../model/configuration-input-definition";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
+import { DataConfigurationService } from "../../services/data-configuration.service";
 
 /**
  * Component for an input including the reset button and the information popup.
@@ -31,6 +32,9 @@ export class ConfigurationInputComponent {
      * If the input is disabled.
      */
     @Input() public disabled!: boolean;
+
+    constructor(protected dataConfigurationService: DataConfigurationService) {
+    }
 
     /**
      * If the input is valid.

@@ -83,14 +83,6 @@ public class ExternalProcessEntity {
 	private ExecutionStepEntity executionStep;
 
 	/**
-	 * The result data set.
-	 */
-	@JsonIgnore
-	@Lob
-	@Setter
-	private byte[] resultDataSet;
-
-	/**
 	 * Detailed status information.
 	 * Can have any form.
 	 */

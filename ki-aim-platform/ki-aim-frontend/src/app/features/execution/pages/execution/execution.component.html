@@ -1,9 +1,9 @@
 <div class="mt-2">
-    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="disabled" (click)="onSubmit()">
+    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="executionService.disabled" (click)="executionService.start()">
         Start
     </button>
 
-    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="!disabled" (click)="cancel()">
+    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="!executionService.disabled" (click)="executionService.cancel()">
         Cancel Algorithm
     </button>
 
@@ -52,7 +52,7 @@
 
         <div>
 
-            <div>
+            <div *ngIf="executionService.synthProcess !== null">
                 <table>
                     <thead>
                     <th>Step</th>
@@ -60,7 +60,7 @@
                     <th>Time</th>
                     </thead>
                     <tbody>
-                    <tr *ngFor="let step of synthProcess?.status">
+                    <tr *ngFor="let step of executionService.synthProcess.status">
                         <td>{{step.step}}</td>
                         <td>{{step?.completed}}</td>
                         <td> {{ (step?.completed === "True") ? step?.duration : step?.remaining_time }}</td>
@@ -82,3 +82,11 @@
 
     </mat-expansion-panel>
 </mat-accordion>
+
+<div class="mt-2">
+    <button type="button" mat-raised-button color="primary" [disabled]="status.status != ProcessStatus.FINISHED"
+            (click)="continue()">
+        Continue
+    </button>
+</div>
+

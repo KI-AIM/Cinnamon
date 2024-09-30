@@ -16,7 +16,7 @@ import static de.kiaim.anon.helper.DataGeneration.createDataByTypeAndValue;
 
 /**
  * Build DataSet object from String[][] result of anonymized dataset.
- * Check Data valus validity with original DataConfiguration.
+ * Check Data values validity with original DataConfiguration.
  *
  */
 @Component

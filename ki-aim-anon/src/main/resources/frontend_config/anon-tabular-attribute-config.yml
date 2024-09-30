@@ -30,7 +30,7 @@ attribute_configuration:
       label: Attribute Protection
       description: The type of protection applied to the attribute.
       default_value: 'GENERALIZATION'
-      allowed_values: ['ATTRIBUTE_DELETION', 'GENERALIZATION', 'MICRO_AGGREGATION', 'DATE_GENERALIZATION', 'VALUE_DELETION', 'MASKING']
+      allowed_values: ['NO_PROTECTION', 'ATTRIBUTE_DELETION', 'GENERALIZATION', 'MICRO_AGGREGATION', 'DATE_GENERALIZATION', 'VALUE_DELETION', 'MASKING']
     - name: interval_size
       ki_aim_injected: false
       type: mixed

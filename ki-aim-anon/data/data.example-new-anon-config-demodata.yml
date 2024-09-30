@@ -53,12 +53,12 @@ attributeConfigurations:
     dataType: "STRING"
     scale: "NOMINAL"
     attributeProtection: "MASKING"
-    type: "34"
+    intervalSize: "34"
   - index: 8
     name: "history_assessment_primary_tumor"
     dataType: "STRING"
     scale: "NOMINAL"
-    type: "MASKING"
+    attributeProtection: "MASKING"
     intervalSize: "500"
   - index: 9
     name: "history_date"
@@ -84,13 +84,12 @@ attributeConfigurations:
     dataType: "STRING"
     scale: "NOMINAL"
     attributeProtection: "MASKING"
-    type: "MASKING"
     intervalSize: "300"
   - index: 13
     name: "ldh"
     dataType: "INTEGER"
     scale: "RATIO"
-    attributeProtection: "MICROAGGREGATION"
+    attributeProtection: "MICRO_AGGREGATION"
     intervalSize: "0.5"
   - index: 14
     name: "morphology_code"

@@ -7,6 +7,9 @@ import de.kiaim.model.exception.anonymization.InvalidAttributeConfigException;
 import de.kiaim.model.exception.anonymization.InvalidGeneralizationSettingException;
 import de.kiaim.model.exception.anonymization.InvalidRiskThresholdException;
 import de.kiaim.model.exception.anonymization.InvalidSuppressionLimitException;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -14,13 +17,16 @@ import java.util.List;
  * Class to represent the anonymization configuration received from the frontend.
  * In combination with the data configuration, this object will be used to generate a JAL AnonymizationConfiguration object.
  */
+@Getter
+@Setter
+@ToString
 public class FrontendAnonConfig {
     private String riskThresholdType; // "Max" or "Avg"
     private float riskThresholdValue; // if: riskThresholdType == Max : [0.05, 0.075, 0.1, 0.2, 0.5]
                                         // if: riskThresholdType == Avg : [0.0005, 0.001, 0.005, 0.05, 0.075, 0.1, 0.2, 0.5]
     private String suppressionLimit; // [0,1]
     private String generalizationSetting; // "Global" or "Local"
-    private List<FrontendAttributeConfig> attributeFrontendConfigurations;
+    private List<FrontendAttributeConfig> attributeConfigurations;
 
     // Validate that the risk threshold value matches the type (Max or Avg)
     public void validateRiskThreshold() throws InvalidRiskThresholdException {
@@ -56,43 +62,9 @@ public class FrontendAnonConfig {
 
     // Validate attribute configurations based on DataType, AttributeProtection, and DataScale
     public void validateAttributeConfigurations() throws InvalidAttributeConfigException {
-        for (FrontendAttributeConfig attribute : attributeFrontendConfigurations) {
+        for (FrontendAttributeConfig attribute : attributeConfigurations) {
             // Each attribute is responsible for its own validation
             attribute.validate();
-        }
-    }
-
-    // Validate the interval size logic
-    private void validateIntervalSize(FrontendAttributeConfig attributeFrontendConfigurations) throws InvalidAttributeConfigException {
-
-        DataType dataType = attributeFrontendConfigurations.getDataType();
-        AttributeProtection attributeProtection = attributeFrontendConfigurations.getAttributeProtection();
-        DataScale dataScale = attributeFrontendConfigurations.getDataScale();
-
-        if (attributeProtection == AttributeProtection.MASKING) {
-            if (dataType == DataType.STRING || dataType == DataType.INTEGER) {
-                // Check for specific interval size ranges
-                int interval = Integer.parseInt(attributeFrontendConfigurations.getIntervalSize());
-                if (interval < 1 || interval > 1000) {
-                    throw new InvalidAttributeConfigException("Invalid interval size for MASKING protection. Must be between 1 and 1000.");
-                }
-            } else if (dataType == DataType.DATE) {
-                List<String> allowedDateIntervals = List.of("year", "month/year", "week/year");
-                if (!allowedDateIntervals.contains(attributeFrontendConfigurations.getIntervalSize())) {
-                    throw new InvalidAttributeConfigException("Invalid interval size for DATE_GENERALIZATION. Allowed values: " + allowedDateIntervals);
-                }
-            }
-        }
-
-        // Generalization case for integers or decimals
-        if (attributeProtection == AttributeProtection.GENERALIZATION) {
-            if (dataType == DataType.INTEGER || dataType == DataType.DECIMAL) {
-                // Example of range validation for interval size
-                float interval = Float.parseFloat(attribute.getIntervalSize());
-                if (interval < 1 || interval > 1000) {
-                    throw new InvalidAttributeConfigException("Interval size for GENERALIZATION must be between 1 and 1000.");
-                }
-            }
         }
     }
 

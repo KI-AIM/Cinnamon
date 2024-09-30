@@ -6,5 +6,6 @@ public enum AttributeProtection {
     MICRO_AGGREGATION,
     DATE_GENERALIZATION,
     VALUE_DELETION,
-    MASKING
+    MASKING,
+    NO_PROTECTION
 }

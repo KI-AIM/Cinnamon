@@ -6,12 +6,14 @@ import de.kiaim.model.enumeration.anonymization.AttributeProtection;
 import de.kiaim.model.exception.anonymization.InvalidAttributeConfigException;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.w3c.dom.Attr;
 
 import java.util.List;
 
 @Getter
 @Setter
+@ToString
 public class FrontendAttributeConfig {
     private int index;
     private String name;
@@ -28,6 +30,7 @@ public class FrontendAttributeConfig {
     public void validate() throws InvalidAttributeConfigException {
         validateIntervalSize();
         validateOrdinalValues();
+        validateDateFormat();
     }
 
     // Validate the interval size based on attribute protection and data type
@@ -47,10 +50,19 @@ public class FrontendAttributeConfig {
         }
 
         if (attributeProtection == AttributeProtection.GENERALIZATION || attributeProtection == AttributeProtection.MICRO_AGGREGATION) {
-            if (dataType == DataType.INTEGER || dataType == DataType.DECIMAL) {
+            if (dataType == DataType.INTEGER) {
                 float interval = Float.parseFloat(intervalSize);
                 if (interval < 1 || interval > 1000) {
-                    throw new InvalidAttributeConfigException("Interval size for GENERALIZATION or MICROmust be between 1 and 1000.");
+                    System.out.println(index);
+                    System.out.println(name);
+                    System.out.println(attributeProtection);
+                    System.out.println(interval);
+                    throw new InvalidAttributeConfigException("Interval size for GENERALIZATION or MICRO_AGGREGATION of a INTEGER DataType must be between 1 and 1000.");
+                }
+            } else if (dataType == DataType.DECIMAL) {
+                float interval = Float.parseFloat(intervalSize);
+                if (interval < 0.001 || interval > 1000.0) {
+                    throw new InvalidAttributeConfigException("Interval size for GENERALIZATION or MICRO_AGGREGATION of a DECIMAL DataType must be between 0.001 and 1000.0.");
                 }
             }
         }
@@ -60,6 +72,13 @@ public class FrontendAttributeConfig {
     private void validateOrdinalValues() throws InvalidAttributeConfigException {
         if (dataScale == DataScale.ORDINAL && (values == null || values.isEmpty())) {
             throw new InvalidAttributeConfigException("Values must be provided for attributes with ORDINAL scale.");
+        }
+    }
+
+    // Validate that the dateFormat is provided for DATE or DATE_TIME data types
+    private void validateDateFormat() throws InvalidAttributeConfigException {
+        if ((dataType == DataType.DATE || dataType == DataType.DATE_TIME) && (dateFormat == null || dateFormat.isEmpty())) {
+            throw new InvalidAttributeConfigException("dateFormat must be provided for DATE or DATE_TIME attributes.");
         }
     }
 }

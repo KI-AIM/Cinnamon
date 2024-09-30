@@ -2,6 +2,7 @@ package de.kiaim.anon.converter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import de.kiaim.anon.AbstractAnonymizationTests;
 import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigReader;
@@ -28,40 +29,7 @@ import java.nio.file.Paths;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-public class FrontendAnonConfigConverterTest {
-
-    @Autowired
-    protected ObjectMapper objectMapper;
-
-    @Autowired
-    protected FrontendAnonConfigReader frontendAnonConfigReader;
-
-    protected DataSet dataSet;
-    protected FrontendAnonConfig frontendAnonConfig;
-
-    @BeforeEach
-    public void setUp() throws Exception {
-        String datasetPath = "data/data.json-dataset-demo-data_DE 25k.json";
-        String frontendAnonConfigPath = "data/data.example-new-anon-config-demodata.yml";
-
-        dataSet = importDataset(datasetPath);
-        frontendAnonConfig = importFrontendAnonConfig(frontendAnonConfigPath);
-
-        assertNotNull(dataSet, "Dataset should not be null");
-        assertNotNull(frontendAnonConfig, "Frontend configuration should not be null");
-
-    }
-
-    public DataSet importDataset(String datasetPath) throws IOException {
-        String dataSetJson = new String(Files.readAllBytes(Paths.get("data/data.json-dataset-demo-data_DE 25k.json")));
-        return objectMapper.readValue(dataSetJson, DataSet.class);
-    }
-
-    // Méthode pour importer la configuration Frontend
-    public FrontendAnonConfig importFrontendAnonConfig(String frontendAnonConfigPath) throws IOException {
-        File file = ResourceUtils.getFile(frontendAnonConfigPath);
-        return frontendAnonConfigReader.readFrontendAnonConfig(file.getAbsolutePath());
-    }
+public class FrontendAnonConfigConverterTest extends AbstractAnonymizationTests {
 
     @Test
     public void testConvertFrontendConfigToAnonymizationConfig() throws InvalidSuppressionLimitException, InvalidRiskThresholdException, InvalidAttributeConfigException, InvalidGeneralizationSettingException {

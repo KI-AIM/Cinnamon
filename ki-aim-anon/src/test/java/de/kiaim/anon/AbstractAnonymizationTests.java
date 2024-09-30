@@ -5,6 +5,8 @@ import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.service.AnonymizationService;
 import de.kiaim.model.configuration.anonymization.AnonConfigReader;
 import de.kiaim.model.configuration.anonymization.AnonymizationConfig;
+import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
+import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigReader;
 import de.kiaim.model.data.DataSet;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -34,10 +36,14 @@ public class AbstractAnonymizationTests {
     @Autowired
     protected ObjectMapper objectMapper;
 
+    @Autowired
+    protected FrontendAnonConfigReader frontendAnonConfigReader;
+
     protected MockWebServer mockWebServer;
 
     protected DataSet dataSet;
     protected AnonymizationConfig kiaimAnonConfig;
+    protected FrontendAnonConfig frontendAnonConfig;
     protected String processId;
     protected AnonymizationRequest request;
     protected String mockUrl;
@@ -46,9 +52,11 @@ public class AbstractAnonymizationTests {
     public void setUp() throws Exception {
         String datasetPath = "data/data.json-dataset-demo-data_DE 25k.json";
         String anonConfigPath = "data/data.csv-anon-configuration-demodata-v1.yml";
+        String frontendAnonConfigPath = "data/data.example-new-anon-config-demodata.yml";
 
         dataSet = importDataset(datasetPath);
         kiaimAnonConfig = importAnonConfig(anonConfigPath);
+        frontendAnonConfig = importFrontendAnonConfig(frontendAnonConfigPath);
         processId = "testProcess123";
 
         if (mockWebServer == null) {
@@ -80,6 +88,11 @@ public class AbstractAnonymizationTests {
     public AnonymizationConfig importAnonConfig(String anonConfigPath) throws IOException {
         File file = ResourceUtils.getFile(anonConfigPath);
         return anonConfigReader.readAnonymizationConfig(file.getAbsolutePath());
+    }
+
+    public FrontendAnonConfig importFrontendAnonConfig(String frontendAnonConfigPath) throws IOException {
+        File file = ResourceUtils.getFile(frontendAnonConfigPath);
+        return frontendAnonConfigReader.readFrontendAnonConfig(file.getAbsolutePath());
     }
 
     @Test

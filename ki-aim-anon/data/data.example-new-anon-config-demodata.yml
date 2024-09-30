@@ -11,7 +11,7 @@ attributeConfigurations:
     name: "death_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -33,7 +33,7 @@ attributeConfigurations:
     name: "distant_metastasis_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "month/year"
 
@@ -77,7 +77,7 @@ attributeConfigurations:
     name: "history_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -105,7 +105,7 @@ attributeConfigurations:
   - index: 13
     name: "ldh"
     dataType: "INTEGER"
-    dataScale: "INTERVAL"
+    dataScale: "RATIO"
     attributeProtection: "MICRO_AGGREGATION"
     intervalSize: "5"
 
@@ -160,9 +160,9 @@ attributeConfigurations:
 
   - index: 21
     name: "operation_date"
-    dataType: "DATE"
+    dataType: "DATE_TIME"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -177,7 +177,7 @@ attributeConfigurations:
     name: "patient_birthdate"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -188,14 +188,14 @@ attributeConfigurations:
     attributeProtection: "NO_PROTECTION"
 
   - index: 25
-    name: "primary_tumor_topography_ICD"
+    name: "primary-tumor-topography_ICD"
     dataType: "STRING"
     dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "5"
 
   - index: 26
-    name: "primary_tumor_ICD"
+    name: "primary-tumor_ICD"
     dataType: "STRING"
     dataScale: "NOMINAL"
     attributeProtection: "MASKING"
@@ -226,7 +226,7 @@ attributeConfigurations:
     name: "radiotherapy_begin_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -234,7 +234,7 @@ attributeConfigurations:
     name: "radiotherapy_end_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -266,8 +266,8 @@ attributeConfigurations:
 
   - index: 36
     name: "radiotherapy_targetarea"
-    dataType: "DECIMAL"
-    dataScale: "RATIO"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
     attributeProtection: "NO_PROTECTION"
 
   - index: 37
@@ -315,7 +315,7 @@ attributeConfigurations:
     name: "systemic_therapy_begin_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -323,7 +323,7 @@ attributeConfigurations:
     name: "systemic_therapy_end_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -393,7 +393,7 @@ attributeConfigurations:
     name: "tnm_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -413,7 +413,7 @@ attributeConfigurations:
 
   - index: 57
     name: "tnm_r-symbol"
-    dataType: "STRING"
+    dataType: "BOOLEAN"
     dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "5"
@@ -427,7 +427,7 @@ attributeConfigurations:
 
   - index: 59
     name: "tnm_y-symbol"
-    dataType: "STRING"
+    dataType: "BOOLEAN"
     dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "5"
@@ -436,7 +436,7 @@ attributeConfigurations:
     name: "tumor_conference_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -451,7 +451,7 @@ attributeConfigurations:
     name: "tumor_diagnosis_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "DATE_GENERALIZATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
 
@@ -470,7 +470,7 @@ attributeConfigurations:
     intervalSize: "0.5"
 
   - index: 65
-    name: "ulceration"
+    name: "ulzeration"
     dataType: "STRING"
     dataScale: "NOMINAL"
     attributeProtection: "MASKING"

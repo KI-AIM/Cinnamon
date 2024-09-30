@@ -1,105 +1,477 @@
-riskThreshold:
-  - type: "AVERAGE"
-    values: 0.1
+riskThresholdType: "Avg"
+
+riskThresholdValue: 0.1
+
 suppressionLimit: "0.1"
+
 generalizationSetting: "Global"
+
 attributeConfigurations:
   - index: 0
     name: "death_date"
     dataType: "DATE"
-    dateFormat: "yyyy-MM-dd"
+    dataScale: "DATE"
     attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
+
   - index: 1
     name: "death_reason_icd10"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
-    intervalSize: "3"  # Number of characters removed
+    intervalSize: "3"
+
   - index: 2
     name: "death_tumor"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "100"
+
   - index: 3
     name: "distant_metastasis_date"
     dataType: "DATE"
-    scale: "DATE"
-    dateFormat: "yyyy-MM-dd"
+    dataScale: "DATE"
     attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
     intervalSize: "month/year"
+
   - index: 4
     name: "distant_metastasis_localisation"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "3"
+
   - index: 5
     name: "ecog"
     dataType: "INTEGER"
+    dataScale: "ORDINAL"
     attributeProtection: "MICRO_AGGREGATION"
-    scale: "ORDINAL"
-    values: ['0', '1', '2', '3', '4']
     intervalSize: "2"
+    values: ['0', '1', '2', '3', '4']
+
   - index: 6
     name: "history_assessment_distant_metastasis"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "500"
+
   - index: 7
     name: "history_assessment_lymphnodes"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "34"
+
   - index: 8
     name: "history_assessment_primary_tumor"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "500"
+
   - index: 9
     name: "history_date"
     dataType: "DATE"
-    scale: "DATE"
-    dateFormat: "yyyy-MM-dd"
+    dataScale: "DATE"
     attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
     intervalSize: "year"
+
   - index: 10
     name: "history_overall_assessment_tumor_status"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "400"
+
   - index: 11
     name: "intention_of_operation"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "80"
+
   - index: 12
     name: "intention_of_radiotherapy"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "300"
+
   - index: 13
     name: "ldh"
     dataType: "INTEGER"
-    scale: "RATIO"
+    dataScale: "INTERVAL"
     attributeProtection: "MICRO_AGGREGATION"
-    intervalSize: "0.5"
+    intervalSize: "5"
+
   - index: 14
     name: "morphology_code"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
     intervalSize: "300"
+
   - index: 15
     name: "morphology_text"
     dataType: "STRING"
-    scale: "NOMINAL"
+    dataScale: "NOMINAL"
     attributeProtection: "MASKING"
-    type: "MASKING"
+    intervalSize: "300"
+
+  - index: 16
+    name: "number_of_affected_lymphnodes"
+    dataType: "INTEGER"
+    dataScale: "RATIO"
+    attributeProtection: "MICRO_AGGREGATION"
+    intervalSize: "2"
+
+  - index: 17
+    name: "number_of_affected_sentinel_lymphnodes"
+    dataType: "INTEGER"
+    dataScale: "RATIO"
+    attributeProtection: "MICRO_AGGREGATION"
+    intervalSize: "2"
+
+  - index: 18
+    name: "number_of_analyzed_lymphnodes"
+    dataType: "INTEGER"
+    dataScale: "RATIO"
+    attributeProtection: "MICRO_AGGREGATION"
+    intervalSize: "2"
+
+  - index: 19
+    name: "number_of_analyzed_sentinel_lymphnodes"
+    dataType: "INTEGER"
+    dataScale: "RATIO"
+    attributeProtection: "MICRO_AGGREGATION"
+    intervalSize: "2"
+
+  - index: 20
+    name: "operation_complication"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "3"
+
+  - index: 21
+    name: "operation_date"
+    dataType: "DATE"
+    dataScale: "DATE"
+    attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
+    intervalSize: "year"
+
+  - index: 22
+    name: "ops_code"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 23
+    name: "patient_birthdate"
+    dataType: "DATE"
+    dataScale: "DATE"
+    attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
+    intervalSize: "year"
+
+  - index: 24
+    name: "patient_gender"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "NO_PROTECTION"
+
+  - index: 25
+    name: "primary_tumor_topography_ICD"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 26
+    name: "primary_tumor_ICD"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 27
+    name: "radiotherapy_adverse_events_CTCAE_code"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "3"
+
+  - index: 28
+    name: "radiotherapy_adverse_events_CTCAE_grade"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "2"
+
+  - index: 29
+    name: "radiotherapy_application_type"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 30
+    name: "radiotherapy_begin_date"
+    dataType: "DATE"
+    dataScale: "DATE"
+    attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
+    intervalSize: "year"
+
+  - index: 31
+    name: "radiotherapy_end_date"
+    dataType: "DATE"
+    dataScale: "DATE"
+    attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
+    intervalSize: "year"
+
+  - index: 32
+    name: "radiotherapy_end_reason"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 33
+    name: "radiotherapy_position_operation"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "NO_PROTECTION"
+
+  - index: 34
+    name: "radiotherapy_single_dosage"
+    dataType: "DECIMAL"
+    dataScale: "RATIO"
+    attributeProtection: "NO_PROTECTION"
+
+  - index: 35
+    name: "radiotherapy_site_targetarea"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 36
+    name: "radiotherapy_targetarea"
+    dataType: "DECIMAL"
+    dataScale: "RATIO"
+    attributeProtection: "NO_PROTECTION"
+
+  - index: 37
+    name: "radiotherapy_total_dosage"
+    dataType: "DECIMAL"
+    dataScale: "RATIO"
+    attributeProtection: "NO_PROTECTION"
+
+  - index: 38
+    name: "residual_tumor_status_operation"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 39
+    name: "residual_tumor_status_primary_therapy"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 40
+    name: "security_distance_primary_tumor"
+    dataType: "INTEGER"
+    dataScale: "INTERVAL"
+    attributeProtection: "MICRO_AGGREGATION"
+    intervalSize: "2"
+
+  - index: 41
+    name: "systemic_therapy_adverse_events_CTCAE_code"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 42
+    name: "systemic_therapy_adverse_events_CTCAE_grade"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "2"
+
+  - index: 43
+    name: "systemic_therapy_begin_date"
+    dataType: "DATE"
+    dataScale: "DATE"
+    attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
+    intervalSize: "year"
+
+  - index: 44
+    name: "systemic_therapy_end_date"
+    dataType: "DATE"
+    dataScale: "DATE"
+    attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
+    intervalSize: "year"
+
+  - index: 45
+    name: "systemic_therapy_end_reason"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 46
+    name: "systemic_therapy_position_operation"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "NO_PROTECTION"
+
+  - index: 47
+    name: "systemic_therapy_protocol"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 48
+    name: "systemic_therapy_reason"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 49
+    name: "systemic_therapy_substance"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 50
+    name: "systemic_therapy_type"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 51
+    name: "tnm_cpu_m-prefix"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "2"
+
+  - index: 52
+    name: "tnm_cpu_n-prefix"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "2"
+
+  - index: 53
+    name: "tnm_cpu_t-prefix"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "2"
+
+  - index: 54
+    name: "tnm_date"
+    dataType: "DATE"
+    dataScale: "DATE"
+    attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
+    intervalSize: "year"
+
+  - index: 55
+    name: "tnm_m_category"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 56
+    name: "tnm_n_category"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 57
+    name: "tnm_r-symbol"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 58
+    name: "tnm_t_category"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 59
+    name: "tnm_y-symbol"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 60
+    name: "tumor_conference_date"
+    dataType: "DATE"
+    dataScale: "DATE"
+    attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
+    intervalSize: "year"
+
+  - index: 61
+    name: "tumor_conference_type"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"
+
+  - index: 62
+    name: "tumor_diagnosis_date"
+    dataType: "DATE"
+    dataScale: "DATE"
+    attributeProtection: "DATE_GENERALIZATION"
+    dateFormat: "yyyy-MM-dd"
+    intervalSize: "year"
+
+  - index: 63
+    name: "tumor_localisation"
+    dataType: "INTEGER"
+    dataScale: "INTERVAL"
+    attributeProtection: "MICRO_AGGREGATION"
+    intervalSize: "886"
+
+  - index: 64
+    name: "tumor_thickness"
+    dataType: "DECIMAL"
+    dataScale: "RATIO"
+    attributeProtection: "MICRO_AGGREGATION"
+    intervalSize: "0.5"
+
+  - index: 65
+    name: "ulceration"
+    dataType: "STRING"
+    dataScale: "NOMINAL"
+    attributeProtection: "MASKING"
+    intervalSize: "5"

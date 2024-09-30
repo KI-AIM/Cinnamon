@@ -22,8 +22,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.concurrent.CompletableFuture;
 
-import static de.kiaim.anon.service.CompatibilityAssurance.checkDataSetCompatibility;
-
 @Service
 @Slf4j
 public class AnonymizationService {
@@ -55,23 +53,23 @@ public class AnonymizationService {
         this.webClient = webClientBuilder.build();
     }
 
-    /**
-     * Checks if the given dataset and configurations are consistent.
-     * This includes checks for attributes that are always NaN (null) and unsupported data types.
-     *
-     * @param dataset The dataset to check.
-     * @param config The data configuration.
-     * @param anonConfig The anonymization configuration.
-     * @return true if the configurations are valid, false otherwise.
-     */
-    protected boolean checkDataConfiguration(DataSet dataset, DataConfiguration config, AnonymizationConfig anonConfig){
-        // check if configuration and dataset is consistent, will probably be already made when creating the dataset object
-        checkDataSetCompatibility(dataset);
-        //TODO : check if any attributes are always NaN (null)
-        // check if any datatype is included, that can not be supported yet
-        // Question : must be done in platform module ?
-        return false;
-    }
+//    /**
+//     * Checks if the given dataset and configurations are consistent.
+//     * This includes checks for attributes that are always NaN (null) and unsupported data types.
+//     *
+//     * @param dataset The dataset to check.
+//     * @param config The data configuration.
+//     * @param anonConfig The anonymization configuration.
+//     * @return true if the configurations are valid, false otherwise.
+//     */
+//    protected boolean checkDataConfiguration(DataSet dataset, DataConfiguration config, AnonymizationConfig anonConfig){
+//        // check if configuration and dataset is consistent, will probably be already made when creating the dataset object
+//        checkDataSetCompatibility(dataset);
+//        //TODO : check if any attributes are always NaN (null)
+//        // check if any datatype is included, that can not be supported yet
+//        // Question : must be done in platform module ?
+//        return false;
+//    }
 
     /**
      * Asynchronously anonymizes the given dataset based on the provided anonymization configuration and process ID.

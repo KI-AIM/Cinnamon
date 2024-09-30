@@ -12,7 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 /**
- * Class to read yaml config files needed for anonymization.
+ * Class to read yaml config files needed for anonymization. For test purpose only.
  */
 
 @Slf4j

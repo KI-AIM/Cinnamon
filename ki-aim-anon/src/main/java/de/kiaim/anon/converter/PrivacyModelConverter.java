@@ -2,6 +2,7 @@ package de.kiaim.anon.converter;
 
 import de.kiaim.model.configuration.anonymization.AverageReidentificationRisk;
 import de.kiaim.model.configuration.anonymization.KAnonymity;
+import de.kiaim.model.configuration.anonymization.PopulationUniqueness;
 import org.bihmi.jal.anon.privacyModels.PrivacyModel;
 
 import java.util.ArrayList;
@@ -15,12 +16,13 @@ public class PrivacyModelConverter {
             return jalKAnonymity;
         }
 
-        if (kiPrivacyModel instanceof AverageReidentificationRisk) {
-            org.bihmi.jal.anon.privacyModels.AverageReidentificationRisk jalPrivacyModel = new org.bihmi.jal.anon.privacyModels.AverageReidentificationRisk();
-            jalPrivacyModel.setAverageRisk(((AverageReidentificationRisk) kiPrivacyModel).getAverageRisk());
-            return jalPrivacyModel;
+        else if (kiPrivacyModel instanceof AverageReidentificationRisk) {
+            org.bihmi.jal.anon.privacyModels.AverageReidentificationRisk jalAverageReidentificationRisk = new org.bihmi.jal.anon.privacyModels.AverageReidentificationRisk();
+            jalAverageReidentificationRisk.setAverageRisk(((AverageReidentificationRisk) kiPrivacyModel).getAverageRisk());
+            return jalAverageReidentificationRisk;
         }
-        // TODO (A): Add other PrivacyModel types
+
+        // TODO (A): Add other PrivacyModel types, population uniqueness
         throw new IllegalArgumentException("Unsupported PrivacyModel type: " + kiPrivacyModel.getClass().getName());
     }
 

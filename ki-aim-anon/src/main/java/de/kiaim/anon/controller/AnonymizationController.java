@@ -44,6 +44,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "409", description = "Task with the given process ID already exists.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
     })
+//    TODO : rename to "/" to fit ModuleCommunication file
     @PostMapping(value = "/process/callback/result", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> createAnonymizationTaskWithCallbackResult(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -141,27 +142,51 @@ public class AnonymizationController {
         }
     }
 
-    @Operation(summary = "Get the tabular anon config.",
-            description = "Returns the tabular anon config file needed for frontend.")
+    @Operation(summary = "Get the privacy model tabular anon configuration file for the frontend.",
+            description = "Returns the tabular anon privacy model config file needed for frontend.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "File retrieved successfully.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Error retrieving config file.", content = @Content)
     })
-    @GetMapping(value = "/config")
+    @GetMapping(value = "/anon-tabular-privacy-model-config")
     @Cacheable("config")
-    public ResponseEntity<byte[]> getTabularAnonConfig() {
+    public ResponseEntity<byte[]> getTabularAnonPrivacyModelConfig() {
         try {
-            Resource resource = new ClassPathResource("frontend_config/anon-tabular-config.yml");
+            Resource resource = new ClassPathResource("frontend_config/anon-tabular-privacy-model-config.yml");
             byte[] fileContent = FileCopyUtils.copyToByteArray(resource.getInputStream());
 
             HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=anon-tabular-config.yml");
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=anon-tabular-privacy-model-config.yml");
 
             return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @Operation(summary = "Get the anon tabular attributes configuration file for the frontend.",
+            description = "Returns the tabular anon attribute config file needed for frontend.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "File retrieved successfully.", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Error retrieving config file.", content = @Content)
+    })
+    @GetMapping(value = "/anon-tabular-attribute-config")
+    @Cacheable("config")
+    public ResponseEntity<byte[]> getAnonAttributeConfig() {
+        try {
+            Resource resource = new ClassPathResource("frontend_config/anon-tabular-attribute-config.yml");
+            byte[] fileContent = FileCopyUtils.copyToByteArray(resource.getInputStream());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=anon-tabular-attribute-config.yml");
+
+            return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 
     @Operation(summary = "Get the anonymization algorithms available.",
             description = "Returns a YML file with available anonymization algorithms.")

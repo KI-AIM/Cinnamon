@@ -1,3 +1,4 @@
+# First version of anon config for the frontend, not used
 anonymization: "anonymization_tabular"
 name: "anonymization_tabular"
 version: # ?

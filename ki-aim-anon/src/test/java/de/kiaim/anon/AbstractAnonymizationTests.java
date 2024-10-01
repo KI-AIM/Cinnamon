@@ -50,6 +50,8 @@ public class AbstractAnonymizationTests {
 
     @BeforeEach
     public void setUp() throws Exception {
+        objectMapper.findAndRegisterModules();
+
         String datasetPath = "data/data.json-dataset-demo-data_DE 25k.json";
         String anonConfigPath = "data/data.csv-anon-configuration-demodata-v1.yml";
         String frontendAnonConfigPath = "data/data.example-new-anon-config-demodata.yml";
@@ -59,12 +61,14 @@ public class AbstractAnonymizationTests {
         frontendAnonConfig = importFrontendAnonConfig(frontendAnonConfigPath);
         processId = "testProcess123";
 
+//        System.out.println(kiaimAnonConfig.toString());
+
         if (mockWebServer == null) {
             mockWebServer = new MockWebServer();
             mockWebServer.start();
         }
         mockUrl = mockWebServer.url("/test/callback").toString();
-        request = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig, mockUrl);
+        request = new AnonymizationRequest(processId, dataSet, frontendAnonConfig, mockUrl);
 
         // Check objects validity
 //        assert isDataSetCompatible(dataSet);

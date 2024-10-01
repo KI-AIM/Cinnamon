@@ -2,7 +2,7 @@ riskThresholdType: "Avg"
 
 riskThresholdValue: 0.1
 
-suppressionLimit: "0.1"
+suppressionLimit: "90"
 
 generalizationSetting: "Global"
 

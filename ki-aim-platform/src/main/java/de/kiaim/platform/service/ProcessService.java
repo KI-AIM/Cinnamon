@@ -626,7 +626,18 @@ public class ProcessService {
 					return "input_user_tabular.yaml";
 				}
 			});
-		} else {
+		} else if (externalProcess.getStep() == Step.ANONYMIZATION) {
+			DataSet dataSet = getLastOrOriginalDataSet(externalProcess.getExecutionStep());
+			try {
+				String dataSetString = jsonMapper.writeValueAsString(dataSet);
+				bodyBuilder.part("data", dataSetString);
+			} catch(Exception e) {
+				log.error("Could not convert dataset to json: " + e.getMessage());
+			}
+
+			bodyBuilder.part("anonymizationConfig", configuration);
+		}
+		else {
 			bodyBuilder.part(configName, new ByteArrayResource(configuration.getBytes()) {
 				@Override
 				public String getFilename() {
@@ -635,16 +646,16 @@ public class ProcessService {
 			});
 		}
 
-
 		bodyBuilder.part("session_key", externalProcess.getId().toString());
 		final String callbackHost = stepConfiguration.getCallbackHost();
 		final var serverAddress = ServletUriComponentsBuilder.fromCurrentContextPath()
-		                                                     .host(callbackHost)
-		                                                     .port(this.port)
-		                                                     .build()
-		                                                     .toUriString();
+			.host(callbackHost)
+			.port(this.port)
+			.build()
+			.toUriString();
+
 		bodyBuilder.part("callback",
-		                 serverAddress + "/api/process/" + externalProcess.getId().toString() + "/callback");
+			serverAddress + "/api/process/" + externalProcess.getId().toString() + "/callback");
 
 		// Do the request
 		try {

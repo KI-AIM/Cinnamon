@@ -9,6 +9,7 @@
     </app-configuration-upload>
 </div>
 
+
 <h3>Algorithm Selection</h3>
 
 <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled" (change)="updateSelectCache()">
@@ -22,6 +23,8 @@
     </div>
 </div>
 <ng-template #configurationForms>
+    <ng-content></ng-content>
+
     <div *ngFor="let item of algorithms" [id]="item">
         <ng-container *ngIf="selection.selectedOption.name === item.name">
             <p>{{ item.description }}</p>

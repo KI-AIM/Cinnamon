@@ -17,7 +17,7 @@
     </div>
 
     <div class="d-flex flex-column mb-3">
-        <div *ngFor="let column of configuration.getColumnConfigurations().getAll(), index as i">
+        <div *ngFor="let column of dataConfiguration.configurations, index as i">
             <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()" [column]="column"
                                          [disabled]="locked" (onValidation)="onValidation($event)"
                                          (onInput)="checkUniqueColumnNames()">

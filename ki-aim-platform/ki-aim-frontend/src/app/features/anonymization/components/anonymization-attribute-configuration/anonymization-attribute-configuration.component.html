@@ -1,4 +1,4 @@
-<!--<app-anonymization-attribute-row 
+<!--<app-anonymization-attribute-row
     *ngFor="let row of this.dataConfiguration.configurations, index as i"
     [configurationRow]="row" [rowNumber]="i"
 ></app-anonymization-attribute-row>-->
@@ -11,8 +11,9 @@
                 #attributeDropdown
                 (valueChange)="onSelectionChange($event)"
             >
+                <mat-option disabled [value]="undefined">Select an attribute to configure</mat-option>
                 <mat-option
-                    *ngFor="let row of this.availableConfigurations"
+                    *ngFor="let row of this.getAvailableConfigurationsSortedById()"
                     [value]="row.index"
                     >{{ row.name }}</mat-option
                 >
@@ -23,5 +24,14 @@
             #attributeRowTarget
             appAnonymizationAttributeConfigurationDirective
         ></div>
+
+        <div *ngFor="let attrConfig of this.getAttributeConfiguration()?.attributeConfiguration, index as i">
+            <app-anonymization-attribute-row
+                [anonymizationRowConfiguration]="attrConfig"
+                [configurationRow]="getConfigurationForIndex(i)"
+                (removeEvent)="removeAttributeConfigurationRow(attrConfig)"
+            >
+            </app-anonymization-attribute-row>
+        </div>
     </div>
 </div>

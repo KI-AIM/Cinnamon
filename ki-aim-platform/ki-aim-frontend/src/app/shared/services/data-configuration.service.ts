@@ -3,7 +3,7 @@ import { DataConfiguration } from '../model/data-configuration';
 import { ColumnConfiguration } from '../model/column-configuration';
 import { List } from 'src/app/core/utils/list';
 import { HttpClient } from '@angular/common/http';
-import { map, Observable, PartialObserver } from 'rxjs';
+import { finalize, map, Observable, of, PartialObserver, share, tap } from 'rxjs';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
@@ -20,15 +20,14 @@ export class DataConfigurationService {
     private readonly baseUrl: string = environments.apiUrl + "/api/data/configuration";
     public readonly CONFIGURATION_NAME = "configurations";
 
-    private _dataConfiguration: DataConfiguration;
+    private dataConfiguration: DataConfiguration | null = null;
+    private dataConfiguration$: Observable<DataConfiguration> | null = null;
 
     constructor(
         private httpClient: HttpClient,
         private configurationService: ConfigurationService,
         private fileService: FileService,
-    ) {
-        this.setDataConfiguration(new DataConfiguration());
-    }
+    ) {}
 
     public registerConfig() {
         const configReg = new ConfigurationRegisterData();
@@ -45,21 +44,40 @@ export class DataConfigurationService {
         this.configurationService.registerConfiguration(configReg);
     }
 
-    public getDataConfiguration(): DataConfiguration {
-        return this._dataConfiguration;
-    }
-    public setDataConfiguration(value: DataConfiguration) {
-        this._dataConfiguration = value;
+    public getDataConfiguration(): Observable<DataConfiguration> {
+        if (this.dataConfiguration) {
+            return of(this.dataConfiguration)
+        }
+        if (this.dataConfiguration$) {
+            return this.dataConfiguration$;
+        }
+
+        this.dataConfiguration$ = this.httpClient.get<DataConfiguration>(this.baseUrl + "?formt=json").pipe(
+            tap(value => {
+                this.dataConfiguration = value;
+            }),
+            share(),
+            finalize(() => {
+                this.dataConfiguration$ = null;
+            }),
+        );
+        return this.dataConfiguration$
     }
 
-    public getColumnConfigurations(): List<ColumnConfiguration> {
-        return new List<ColumnConfiguration>(this.getDataConfiguration().configurations);
+    public setDataConfiguration(value: DataConfiguration) {
+        this.dataConfiguration = value;
+    }
+
+    public getColumnConfigurations(): Observable<List<ColumnConfiguration>> {
+        return this.getDataConfiguration().pipe(
+            map(conf => new List(conf.configurations))
+        )
     }
 
     public validateConfiguration(dataConfig: File, observer: PartialObserver<DataConfiguration>) {
         const callback = (result: object | null) => {
             this.setDataConfiguration(result as DataConfiguration);
-            this.postDataConfiguration().pipe(map(() => this._dataConfiguration)).subscribe(observer);
+            this.postDataConfiguration().pipe(map(() => this.dataConfiguration!!)).subscribe(observer);
         };
 
         this.configurationService.extractConfig(dataConfig, this.CONFIGURATION_NAME, callback);
@@ -70,7 +88,7 @@ export class DataConfigurationService {
     }
 
     public postDataConfiguration(): Observable<void> {
-        const configString = JSON.stringify(instanceToPlain(this._dataConfiguration));
+        const configString = JSON.stringify(instanceToPlain(this.dataConfiguration));
         return this.postDataConfigurationString(configString);
     }
 

@@ -5,7 +5,7 @@ version: "1.0"
 type: "tabular"
 display_name: "Anonymization for tabular data."
 description: "Anonymization for tabular dataset"
-URL: "/anonymization"
+URL: "/api/anonymization/"
 
 configurations:
   model_configuration:

@@ -3,7 +3,7 @@ import { Directive, ViewContainerRef } from '@angular/core';
 @Directive({
   selector: '[appAnonymizationAttributeConfigurationDirective]'
 })
-export class AnonymizationAttributeConfigurationDirectiveDirective {
+export class AnonymizationAttributeConfigurationDirective {
 
   constructor(public viewContainerRef: ViewContainerRef) { }
 

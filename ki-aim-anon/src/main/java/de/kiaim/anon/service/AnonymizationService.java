@@ -6,19 +6,14 @@ import de.kiaim.anon.model.AnonymizationErrorResponse;
 import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.processor.AnonymizedDatasetProcessor;
 import de.kiaim.anon.processor.DataSetProcessor;
-import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.model.data.Data;
 import de.kiaim.model.data.DataSet;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -117,20 +112,20 @@ public class AnonymizationService {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 log.info("Start anon.");
-                AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(request.getKiaimAnonConfig(), request.getDataSet().getDataConfiguration());
-                String[][] jalData = dataSetProcessor.convertDatasetToStringArray(request.getDataSet());
+                AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(request.getAnonymizationConfig(), request.getData().getDataConfiguration());
+                String[][] jalData = dataSetProcessor.convertDatasetToStringArray(request.getData());
                 log.info("Jal data generated, start anonymize.");
-                Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig(request.getProcessId()));
+                Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig(request.getSession_key()));
                 anonymizer.anonymize();
-                DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), request.getDataSet().getDataConfiguration());
+                DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), request.getData().getDataConfiguration());
                 log.info("Anon finished.");
 
                 // Send success callback
-                sendCallbackResult(request.getCallbackURL(), result);
+                sendCallbackResult(request.getCallback(), result);
                 return result;
             } catch (Exception ex) {
                 log.error("An error occurred during data anonymization", ex);
-                sendFailureCallback(request.getCallbackURL(), ex);
+                sendFailureCallback(request.getCallback(), ex);
                 throw new RuntimeException(ex);
             }
         });
@@ -149,20 +144,20 @@ public class AnonymizationService {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 log.info("Start anon.");
-                AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(request.getKiaimAnonConfig(), request.getDataSet().getDataConfiguration());
-                String[][] jalData = dataSetProcessor.convertDatasetToStringArray(request.getDataSet());
+                AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(request.getAnonymizationConfig(), request.getData().getDataConfiguration());
+                String[][] jalData = dataSetProcessor.convertDatasetToStringArray(request.getData());
                 log.info("Jal data generated, start anonymize.");
-                Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig(request.getProcessId()));
+                Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig(request.getSession_key()));
                 anonymizer.anonymize();
-                DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), request.getDataSet().getDataConfiguration());
+                DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), request.getData().getDataConfiguration());
                 log.info("Anon finished.");
 
                 // Send success callback
-                sendCallbackProcessId(request.getCallbackURL(), request.getProcessId());
+                sendCallbackProcessId(request.getCallback(), request.getSession_key());
                 return result;
             } catch (Exception ex) {
                 log.error("An error occurred during data anonymization", ex);
-                sendFailureCallback(request.getCallbackURL(), ex);
+                sendFailureCallback(request.getCallback(), ex);
                 throw new RuntimeException(ex);
             }
         });

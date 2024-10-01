@@ -2,7 +2,6 @@ package de.kiaim.anon.converter;
 
 import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.model.data.DataSet;
 import org.bihmi.jal.anon.privacyModels.PrivacyModel;
 import org.bihmi.jal.config.AttributeConfig;
 import org.bihmi.jal.config.QualityModelConfig;
@@ -30,7 +29,7 @@ public class KiaimAnonConfigConverter {
 
         // Convert attributeConfigs
         List<AttributeConfig> attributeConfigs = AttributeConfigConverter.convertList(
-                kiaimAnonConfig.getAttributeConfigurations(), dataConfiguration);
+                kiaimAnonConfig.getAttributeConfiguration(), dataConfiguration);
 
         return new AnonymizationConfig(
                 privacyModelList,

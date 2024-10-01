@@ -24,7 +24,7 @@ public class FrontendAnonConfig {
     private String riskThresholdType; // "Max" or "Avg"
     private float riskThresholdValue; // if: riskThresholdType == Max : [0.05, 0.075, 0.1, 0.2, 0.5]
                                         // if: riskThresholdType == Avg : [0.0005, 0.001, 0.005, 0.05, 0.075, 0.1, 0.2, 0.5]
-    private String suppressionLimit; // [0,1]
+    private String suppressionLimit; // [0,100]
     private String generalizationSetting; // "Global" or "Local"
     private List<FrontendAttributeConfig> attributeConfigurations;
 
@@ -48,8 +48,8 @@ public class FrontendAnonConfig {
     // Validate the suppression limit is between 0 and 1
     public void validateSuppressionLimit() throws InvalidSuppressionLimitException {
         float suppressionValue = Float.parseFloat(suppressionLimit);
-        if (suppressionValue < 0 || suppressionValue > 1) {
-            throw new InvalidSuppressionLimitException("Suppression limit must be between 0 and 1.");
+        if (suppressionValue < 0 || suppressionValue > 100) {
+            throw new InvalidSuppressionLimitException("Suppression limit must be between 0 and 100.");
         }
     }
 

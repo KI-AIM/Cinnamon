@@ -14,6 +14,19 @@
 
             </mat-expansion-panel>
         </ng-container>
+        
+        <ng-container *ngIf="additionalConfigs">
+            <ng-container *ngFor="let additionalConfig of additionalConfigs.configs">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>{{additionalConfig.title}}</mat-panel-title>
+                        <mat-panel-description>{{additionalConfig.description}}</mat-panel-description>
+                    </mat-expansion-panel-header>
+                    
+                    <ng-container *ngComponentOutlet="additionalConfig.component;"></ng-container>
+                </mat-expansion-panel>
+            </ng-container>
+        </ng-container>
     </mat-accordion>
 
     <div class="mt-2">

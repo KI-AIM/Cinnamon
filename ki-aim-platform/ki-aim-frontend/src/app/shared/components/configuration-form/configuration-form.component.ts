@@ -5,6 +5,7 @@ import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { AlgorithmService } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
+import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 
 /**
  * HTML form and submit button for one algorithm.
@@ -17,6 +18,8 @@ import { ConfigurationGroupDefinition } from "../../model/configuration-group-de
     styleUrls: ['./configuration-form.component.less']
 })
 export class ConfigurationFormComponent implements OnInit {
+
+    @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
 
     /**
      * The algorithm that is configured with this form.

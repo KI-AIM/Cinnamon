@@ -48,6 +48,7 @@ export class AnonymizationService extends AlgorithmService {
         const selectedAlgorithm = this.getAlgorithmByName(arg["privacyModels"][0]["name"])
         const config = arg["privacyModels"][0];
         delete config["name"];
+        delete config["type"];
         return {config, selectedAlgorithm};
     }
 

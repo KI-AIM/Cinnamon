@@ -89,7 +89,10 @@ export class ConfigurationFormComponent implements OnInit {
      * @param configuration JSON of the form.
      */
     public setConfiguration(configuration: Object) {
-        this.form.setValue(configuration);
+        //Wait here so that form is loaded before updating it
+        setTimeout(() => {
+            this.form.setValue(configuration);
+        }, 100);
     }
 
     /**

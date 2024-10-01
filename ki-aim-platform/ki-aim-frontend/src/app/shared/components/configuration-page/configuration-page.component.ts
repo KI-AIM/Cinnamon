@@ -102,9 +102,10 @@ export class ConfigurationPageComponent implements OnInit {
         if (this.algorithmService.selectCache) {
             this.selection.selectedOption = this.algorithmService.selectCache;
             if (this.algorithmService.configCache[this.selection.selectedOption.name]) {
+                //Timeout is 0, so function is called before data is overwritten 
                 setTimeout(() => {
                     this.forms.setConfiguration(this.algorithmService.configCache[this.algorithmService.selectCache!.name]);
-                }, 100);
+                }, 0);
             }
         }
     }

@@ -180,7 +180,6 @@ export class AnonymizationAttributeRowComponent implements OnInit {
             else if (areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.DATE_GENERALIZATION) &&
                     areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.DATE)
             ) {
-                console.log("Switch to date")
                 this.changeIntervalSettings(null, null, 'year', true, false);
             }
             //[ 'GENERALIZATION', 'MICRO_AGGREGATION' ]

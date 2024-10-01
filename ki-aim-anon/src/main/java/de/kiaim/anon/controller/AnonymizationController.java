@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.NonNull;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -44,18 +45,17 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "409", description = "Task with the given process ID already exists.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
     })
-//    TODO : rename to "/" to fit ModuleCommunication file
-    @PostMapping(value = "/process/callback/result", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> createAnonymizationTaskWithCallbackResult(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Request containing the process ID, the dataset, the anonymization configuration and the callback URL.",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
                             schema = @Schema(implementation = AnonymizationRequest.class)),
                     required = true
             )
-            @RequestBody @NonNull AnonymizationRequest request) {
+            @ParameterObject @NonNull AnonymizationRequest request) {
         try {
-            String processId = request.getProcessId();
+            String processId = request.getSession_key();
             if (tasks.containsKey(processId)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + processId + " already exists.");
             }
@@ -86,7 +86,7 @@ public class AnonymizationController {
             )
             @RequestBody @NonNull AnonymizationRequest request) {
         try {
-            String processId = request.getProcessId();
+            String processId = request.getSession_key();
             if (tasks.containsKey(processId)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + processId + " already exists.");
             }

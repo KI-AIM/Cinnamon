@@ -24,7 +24,7 @@ public class FrontendAttributeConfig {
     private String dateFormat;
 
     // List of possible values for attributes with an ordinal scale
-    private List<String> values;
+    private String[] values;
 
     // Validate the attribute configuration based on its type, scale, and protection
     public void validate() throws InvalidAttributeConfigException {
@@ -70,7 +70,7 @@ public class FrontendAttributeConfig {
 
     // Validate that values are provided for ordinal attributes
     private void validateOrdinalValues() throws InvalidAttributeConfigException {
-        if (dataScale == DataScale.ORDINAL && (values == null || values.isEmpty())) {
+        if (dataScale == DataScale.ORDINAL && (values == null || values.length == 0)) {
             throw new InvalidAttributeConfigException("Values must be provided for attributes with ORDINAL scale.");
         }
     }

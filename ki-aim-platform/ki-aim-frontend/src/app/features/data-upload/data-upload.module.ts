@@ -12,8 +12,6 @@ import { DateformatComponent } from "./components/configurationSettings/dateform
 import { DatetimeformatComponent } from "./components/configurationSettings/datetimeformat/datetimeformat.component";
 import { StringpatternComponent } from "./components/configurationSettings/stringpattern/stringpattern.component";
 import { AddedConfigurationListComponent } from "./components/added-configuration-list/added-configuration-list.component";
-import { MatTableModule } from "@angular/material/table";
-import { MatPaginatorModule } from "@angular/material/paginator";
 import { MatDialogModule } from "@angular/material/dialog";
 import { CdkColumnDef } from "@angular/cdk/table";
 import { SharedModule } from "src/app/shared/shared.module";
@@ -26,7 +24,6 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { RangeComponent } from './components/configurationSettings/range/range.component';
 import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
-import { TransformationService } from "../../shared/services/transformation.service";
 
 @NgModule({
 	declarations: [

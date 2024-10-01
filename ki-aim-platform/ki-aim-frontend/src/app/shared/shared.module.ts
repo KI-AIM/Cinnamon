@@ -23,9 +23,7 @@ import { ConfigurationGroupComponent } from './components/configuration-group/co
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { ConfigurationUploadComponent } from "./components/configuration-upload/configuration-upload.component";
-import {
-    ConfigurationManagementComponent
-} from "./components/configuration-management/configuration-management.component";
+import { ConfigurationManagementComponent } from "./components/configuration-management/configuration-management.component";
 import {DataTableComponent} from "./components/data-table/data-table.component";
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";

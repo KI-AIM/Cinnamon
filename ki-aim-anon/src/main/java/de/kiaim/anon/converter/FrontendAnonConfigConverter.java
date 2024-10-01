@@ -5,6 +5,7 @@ import de.kiaim.anon.helper.DatasetAnalyzer;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAttributeConfig;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.enumeration.anonymization.AttributeProtection;
 import de.kiaim.model.exception.anonymization.InvalidAttributeConfigException;
@@ -117,7 +118,7 @@ public class FrontendAnonConfigConverter {
             attributeConfig.setName(frontendConfig.getName());
             attributeConfig.setDataType(frontendConfig.getDataType().toString());
             attributeConfig.setDateFormat(frontendConfig.getDateFormat());
-            attributeConfig.setPossibleEntries(frontendConfig.getValues() != null ? frontendConfig.getValues().toArray(new String[0]) : null);
+            attributeConfig.setPossibleEntries(frontendConfig.getValues() != null && frontendConfig.getValues().length > 0 ? frontendConfig.getValues() : null);
 
             // Set AttributeType based on attributeProtection
             if (frontendConfig.getAttributeProtection() == AttributeProtection.ATTRIBUTE_DELETION) {
@@ -190,6 +191,13 @@ public class FrontendAnonConfigConverter {
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0; // low generalization
             maxLevelToUse = 100; // high generalization
+        } else if ((frontendAttributeConfig.getAttributeProtection() == AttributeProtection.GENERALIZATION
+                ||frontendAttributeConfig.getAttributeProtection() == AttributeProtection.MICRO_AGGREGATION)
+                && (frontendAttributeConfig.getDataScale() == DataScale.ORDINAL)) {
+            type = "ORDERING";
+            intervalSize = frontendAttributeConfig.getIntervalSize();
+            minLevelToUse = 0; // low generalization
+            maxLevelToUse = 100; // high generalization
         } else {
             type = "";
             intervalSize= "";
@@ -197,7 +205,6 @@ public class FrontendAnonConfigConverter {
             minLevelToUse = 0;
             maxLevelToUse = 0;
         }
-        // TODO : handle ordering
 
         // Return the hierarchy configuration
         return HierarchyConfig.builder()

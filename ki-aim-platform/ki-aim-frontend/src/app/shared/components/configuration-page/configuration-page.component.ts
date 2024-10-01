@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService, ConfigData } from "../../services/algorithm.service";
@@ -9,6 +9,7 @@ import { Router } from "@angular/router";
 import { StateManagementService } from "../../../core/services/state-management.service";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../../environments/environment";
+import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 
 /**
  * Entire configuration page including the algorithm selection,
@@ -22,6 +23,8 @@ import { environments } from "../../../../environments/environment";
     styleUrls: ['./configuration-page.component.less'],
 })
 export class ConfigurationPageComponent implements OnInit {
+    @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
+    
     private baseUrl: string = environments.apiUrl + "/api/process";
 
     /**

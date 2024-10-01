@@ -45,10 +45,33 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
         mockWebServer.shutdown();
     }
 
+//    Old Version
+//    TODO : delete
+//    @Test
+//    public void testAnonymizationService() throws Exception {
+//
+//        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, kiaimAnonConfig, "processIdTest");
+//
+//        if (!future.isDone()) {
+//            for (int i = 0; i<30; i++) {
+//                Thread.sleep(100);
+//            }
+//        }
+//
+//        try {
+//            DataSet anonymizedDataset = future.get();
+//            assertNotNull(anonymizedDataset);
+//            System.out.println(anonymizedDataset.getDataRows());
+//        } catch (ExecutionException | InterruptedException e) {
+//            e.printStackTrace();
+//            throw e;
+//        }
+//    }
+
     @Test
     public void testAnonymizationService() throws Exception {
 
-        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, kiaimAnonConfig, "processIdTest");
+        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, frontendAnonConfig, "processIdTest");
 
         if (!future.isDone()) {
             for (int i = 0; i<30; i++) {

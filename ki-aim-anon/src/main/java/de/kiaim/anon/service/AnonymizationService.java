@@ -1,11 +1,13 @@
 package de.kiaim.anon.service;
 
 import de.kiaim.anon.config.AnonymizationConfig;
+import de.kiaim.anon.converter.FrontendAnonConfigConverter;
 import de.kiaim.anon.converter.KiaimAnonConfigConverter;
 import de.kiaim.anon.model.AnonymizationErrorResponse;
 import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.processor.AnonymizedDatasetProcessor;
 import de.kiaim.anon.processor.DataSetProcessor;
+import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.data.DataSet;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
@@ -66,29 +68,62 @@ public class AnonymizationService {
 //        return false;
 //    }
 
+//    /**
+//     * Asynchronously anonymizes the given dataset based on the provided anonymization configuration and process ID.
+//     *
+//     * @param dataSet The dataset to anonymize.
+//     * @param kiaimAnonConfig The KI-AIM anonymization configuration.
+//     * @param processId The process ID for the anonymization process.
+//     * @return A CompletableFuture containing the anonymized dataset.
+//     * @throws Exception If an error occurs during the anonymization process.
+//     */
+//    @Async
+//    public CompletableFuture<DataSet> anonymizeData(DataSet dataSet,
+//                                                    de.kiaim.model.configuration.anonymization.AnonymizationConfig kiaimAnonConfig,
+//                                                    String processId) throws Exception {
+//        // TODO : add quality check mechanism
+//        log.info("Start anon.");
+//        // Convert KI-AIM DatasetAnonymizationConfig to AnonymizationConfig usable by JAL
+//        AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(kiaimAnonConfig, dataSet.getDataConfiguration());
+//
+//        // Convert KI-AIM DataSet object to String[][] usable by JAL
+//        String[][] jalData = dataSetProcessor.convertDatasetToStringArray(dataSet);
+//
+//        log.info("Jal data generated, start anonymize.");
+//        // TODO : add mechanism to make anon name variable: add process ID
+//
+//        Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig(processId));
+//        anonymizer.anonymize();
+//
+//        DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), dataSet.getDataConfiguration());
+//        log.info("Anon finished.");
+//        return CompletableFuture.completedFuture(result);
+//    }
+
     /**
      * Asynchronously anonymizes the given dataset based on the provided anonymization configuration and process ID.
      *
      * @param dataSet The dataset to anonymize.
-     * @param kiaimAnonConfig The KI-AIM anonymization configuration.
+     * @param frontendAnonConfig The KI-AIM anonymization configuration.
      * @param processId The process ID for the anonymization process.
      * @return A CompletableFuture containing the anonymized dataset.
      * @throws Exception If an error occurs during the anonymization process.
      */
     @Async
     public CompletableFuture<DataSet> anonymizeData(DataSet dataSet,
-                                                    de.kiaim.model.configuration.anonymization.AnonymizationConfig kiaimAnonConfig,
+                                                    FrontendAnonConfig frontendAnonConfig,
                                                     String processId) throws Exception {
-        // TODO : add quality check mechanism
+        // Validation de la compatibilité entre le DataSet et la configuration frontend
+        CompatibilityAssurance.checkDataSetAndFrontendConfigCompatibility(dataSet, frontendAnonConfig);
+
         log.info("Start anon.");
-        // Convert KI-AIM DatasetAnonymizationConfig to AnonymizationConfig usable by JAL
-        AnonymizationConfig anonymizationConfigConverted = datasetAnonConfigConverter.convert(kiaimAnonConfig, dataSet.getDataConfiguration());
+        // Convert FrontendAnonymizationConfig to AnonymizationConfig usable by JAL
+        AnonymizationConfig anonymizationConfigConverted = FrontendAnonConfigConverter.convertToJALConfig(frontendAnonConfig, dataSet);
 
         // Convert KI-AIM DataSet object to String[][] usable by JAL
         String[][] jalData = dataSetProcessor.convertDatasetToStringArray(dataSet);
 
         log.info("Jal data generated, start anonymize.");
-        // TODO : add mechanism to make anon name variable: add process ID
 
         Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig(processId));
         anonymizer.anonymize();
@@ -97,6 +132,7 @@ public class AnonymizationService {
         log.info("Anon finished.");
         return CompletableFuture.completedFuture(result);
     }
+
 
 
     /**

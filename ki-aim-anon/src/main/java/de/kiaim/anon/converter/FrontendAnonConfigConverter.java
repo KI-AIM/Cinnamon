@@ -123,10 +123,15 @@ public class FrontendAnonConfigConverter {
             // Set AttributeType based on attributeProtection
             if (frontendConfig.getAttributeProtection() == AttributeProtection.ATTRIBUTE_DELETION) {
                 attributeConfig.setAttributeType("IDENTIFYING_ATTRIBUTE");
+                attributeConfig.setHierarchyConfig(null);
             } else if (frontendConfig.getAttributeProtection() == AttributeProtection.NO_PROTECTION) {
                 attributeConfig.setAttributeType("INSENSITIVE_ATTRIBUTE");
+                attributeConfig.setHierarchyConfig(null);
             } else {
                 attributeConfig.setAttributeType("QUASI_IDENTIFYING_ATTRIBUTE");
+                // Generate and set the hierarchy based on attribute configurations
+                HierarchyConfig hierarchy = generateHierarchy(frontendConfig);
+                attributeConfig.setHierarchyConfig(hierarchy);
             }
 
             // Handle DECIMAL and INTEGER types: Calculate min and max
@@ -151,9 +156,6 @@ public class FrontendAnonConfigConverter {
                 attributeConfig.setUseMicroAggregation(false);
             }
 
-            // Generate and set the hierarchy based on attribute configurations
-            HierarchyConfig hierarchy = generateHierarchy(frontendConfig);
-            attributeConfig.setHierarchyConfig(hierarchy);
 
             // Add the configured attribute to the list
             attributeConfigs.add(attributeConfig);

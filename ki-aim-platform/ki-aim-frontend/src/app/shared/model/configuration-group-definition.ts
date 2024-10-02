@@ -5,4 +5,5 @@ export class ConfigurationGroupDefinition {
     description: string
     parameters: ConfigurationInputDefinition[]
     configurations: {[name: string]: ConfigurationGroupDefinition}
+    options: {[name: string]: ConfigurationGroupDefinition}
 }

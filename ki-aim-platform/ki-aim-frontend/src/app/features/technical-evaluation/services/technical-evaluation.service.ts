@@ -55,6 +55,8 @@ export class TechnicalEvaluationService extends AlgorithmService {
             "  version: '0.1'");
     }
 
+    // Uncomment to use the local config definition instead of fetching it from the server
+    /*
     protected override fetchAlgorithmDefinition(url: string): Observable<string> {
         return of("name: Evaluation\n" +
             "type: cross-sectional\n" +
@@ -65,7 +67,7 @@ export class TechnicalEvaluationService extends AlgorithmService {
             "  resemblance:\n" +
             "    display_name: Resemblance Metrics\n" +
             "    description: Metrics that evaluate the resemblance between real and synthetic data.\n" +
-            "    configurations:\n" +
+            "    options:\n" +
             "      mean:\n" +
             "        display_name: Mean\n" +
             "        description: Average value of numerical variables\n" +
@@ -108,7 +110,7 @@ export class TechnicalEvaluationService extends AlgorithmService {
             "  utility:\n" +
             "    display_name: Utility Metrics\n" +
             "    description: Metrics that evaluate the utility of anonymized data in comparison with the real data.\n" +
-            "    configurations:\n" +
+            "    options:\n" +
             "      machine_learning:\n" +
             "        display_name: Machine Learning Utility\n" +
             "        description: Measures how well a machine learning model performs on synthetic data compared to real data.\n" +
@@ -130,6 +132,7 @@ export class TechnicalEvaluationService extends AlgorithmService {
             "          description: The target variable (column) in the dataset to predict.\n" +
             "          type: attribute\n");
     }
+     */
 
     public registerConfig() {
         // TODO this is a racing condition with state-guard fetching the configurations

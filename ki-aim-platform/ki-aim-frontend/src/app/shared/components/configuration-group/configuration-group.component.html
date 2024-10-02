@@ -9,15 +9,38 @@
         <mat-expansion-panel>
             <mat-expansion-panel-header>
                 <mat-panel-title [style]="formGroup.controls[groupDefinition.key].invalid ? 'color: red;' :''">
-                    {{ group.configurations[groupDefinition.key].display_name }}
+                    {{ groupDefinition.value.display_name }}
                 </mat-panel-title>
                 <mat-panel-description>
-                    {{ group.configurations[groupDefinition.key].description }}
+                    {{ groupDefinition.value.description }}
                 </mat-panel-description>
             </mat-expansion-panel-header>
 
             <app-configuration-group [form]="formGroup" [fromGroupName]="groupDefinition.key"
-                                     [group]="groupDefinition.value" [disabled]="disabled">
+                                     [group]="groupDefinition.value" [disabled]="disabled" [isOption]="false">
+            </app-configuration-group>
+        </mat-expansion-panel>
+
+    </ng-container>
+    <ng-container *ngFor="let groupDefinition of group.options | keyvalue">
+
+        <mat-expansion-panel [class.prevent-click]="isGroupEmpty(groupDefinition.value)"
+                             [hideToggle]="isGroupEmpty(groupDefinition.value)">
+            <mat-expansion-panel-header>
+
+                <mat-panel-title [style]="formGroup.controls[groupDefinition.key].invalid ? 'color: red;' :''">
+                    <mat-checkbox [value]="groupDefinition.key" (change)="toggleActive($event);" [checked]="true"
+                                  (click)="$event.stopPropagation();" class="allow-click">
+                    </mat-checkbox>
+                    {{ groupDefinition.value.display_name }}
+                </mat-panel-title>
+                <mat-panel-description>
+                    {{ groupDefinition.value.description }}
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <app-configuration-group #options [form]="formGroup" [fromGroupName]="groupDefinition.key"
+                                     [group]="groupDefinition.value" [disabled]="disabled" [isOption]="true">
             </app-configuration-group>
         </mat-expansion-panel>
 

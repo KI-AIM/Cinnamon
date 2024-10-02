@@ -586,55 +586,12 @@ public class ProcessService {
 		addDataSets(externalProcess, stepConfiguration,bodyBuilder);
 
 		final var configName = externalProcess.getStep() == Step.TECHNICAL_EVALUATION ? "evaluation_config" : "algorithm_config";
-		if (configName.equals("evaluation_config")) {
-			bodyBuilder.part(configName, new ByteArrayResource(
-					"""
-							evaluation_configuration:
-							  data_format: "cross-sectional"
-							  resemblance:
-							    selected_metrics:
-							      mode:
-							        - parameters: "None"
-							      mean:
-							        - parameters: "None"
-							      standard_deviation:
-							        - parameters: "None"
-							      skewness:
-							        - parameters: "None"
-							      quantiles:
-							        - parameters:
-							            quantile_array:
-							              - 0.2
-							              - 0.4
-							              - 0.6
-							              - 0.8
-							      kurtosis:
-							        - parameters: "None"
-							      ranges:
-							        - parameters: "None"
-							      kolmogorov_smirnov:
-							        - parameters: "None"
-							      hellinger_distance:
-							        - parameters: "None"
-							      correlation:
-							        - parameters: "None"
-							      frequency:
-							        - parameters: "None"
-							""".getBytes()) {
-				@Override
-				public String getFilename() {
-					return "input_user_tabular.yaml";
-				}
-			});
-		} else {
-			bodyBuilder.part(configName, new ByteArrayResource(configuration.getBytes()) {
-				@Override
-				public String getFilename() {
-					return "synthesizer_config.yaml";
-				}
-			});
-		}
-
+		bodyBuilder.part(configName, new ByteArrayResource(configuration.getBytes()) {
+			@Override
+			public String getFilename() {
+				return "synthesizer_config.yaml";
+			}
+		});
 
 		bodyBuilder.part("session_key", externalProcess.getId().toString());
 		final String callbackHost = stepConfiguration.getCallbackHost();

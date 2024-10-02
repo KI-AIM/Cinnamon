@@ -1,10 +1,11 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { AlgorithmService } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
+import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
 
 /**
  * HTML form and submit button for one algorithm.
@@ -50,6 +51,8 @@ export class ConfigurationFormComponent implements OnInit {
      */
     @Output() public submitConfiguration = new EventEmitter<Object>();
 
+    @ViewChildren(ConfigurationGroupComponent) private groups: QueryList<ConfigurationGroupComponent>;
+
     constructor(
         private readonly anonService: AlgorithmService
     ) {
@@ -79,9 +82,10 @@ export class ConfigurationFormComponent implements OnInit {
 
     /**
      * Gets the raw JSON of the form.
+     * Removes option groups that are not selected.
      */
     public get formData(): Object {
-        return this.form.getRawValue();
+        return this.removeUncheckedGroups(this.form.getRawValue());
     }
 
     /**
@@ -133,7 +137,12 @@ export class ConfigurationFormComponent implements OnInit {
      */
     private createForm(algorithmDefinition: AlgorithmDefinition): FormGroup {
         const formGroup: any = {};
-        this.createGroups(formGroup, algorithmDefinition.configurations);
+        if (algorithmDefinition.configurations) {
+            this.createGroups(formGroup, algorithmDefinition.configurations);
+        }
+        if (algorithmDefinition.options) {
+            this.createGroups(formGroup, algorithmDefinition.options);
+        }
         return new FormGroup(formGroup);
     }
 
@@ -151,7 +160,7 @@ export class ConfigurationFormComponent implements OnInit {
                 if (inputDefinition.type === ConfigurationInputType.LIST) {
                     const controls = [];
                     for (const defaultValue of inputDefinition.default_value as number[]) {
-                        controls.push(new FormControl(defaultValue, Validators.required));
+                        controls.push(new FormControl({value: defaultValue, disabled: this.disabled}, Validators.required));
                     }
 
                     group[inputDefinition.name] = new FormArray(controls, Validators.required)
@@ -165,7 +174,7 @@ export class ConfigurationFormComponent implements OnInit {
                         validators.push(Validators.max(inputDefinition.max_value));
                     }
 
-                    group[inputDefinition.name] = new FormControl(inputDefinition.default_value, validators)
+                    group[inputDefinition.name] = new FormControl({value: inputDefinition.default_value, disabled: this.disabled} , validators)
                 }
             });
         }
@@ -173,7 +182,23 @@ export class ConfigurationFormComponent implements OnInit {
         if (groupDefinition.configurations) {
             this.createGroups(group, groupDefinition.configurations);
         }
+        if (groupDefinition.options) {
+            this.createGroups(group, groupDefinition.options);
+        }
 
         return new FormGroup(group);
+    }
+
+    /**
+     * Removes all configuration properties of the given object that belongs to a group that is not selected.
+     * @param object The configuration object to be modified.
+     * @private
+     */
+    private removeUncheckedGroups(object: any): any {
+        for (const group of this.groups) {
+            group.removeInactiveGroups(object[group.fromGroupName]);
+        }
+
+        return object;
     }
 }

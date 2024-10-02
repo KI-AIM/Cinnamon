@@ -8,4 +8,5 @@ export class AlgorithmDefinition {
     name: string
     URL: string
     configurations: {[name: string]: ConfigurationGroupDefinition}
+    options: {[name: string]: ConfigurationGroupDefinition}
 }

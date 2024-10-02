@@ -6,13 +6,12 @@
             <input
                 type="text"
                 matInput
-                [id]="'name_' + configurationRow.index"
-                [(ngModel)]="anonymizationRowConfiguration.attributeName"
-                [value]="configurationRow.name"
+                [id]="'name_' + configurationRow?.index"
+                [(ngModel)]="anonymizationRowConfiguration.name"
+                [value]="anonymizationRowConfiguration.name"
                 #name="ngModel"
-                readonly="true"
+                disabled="true"
             />
-            <!--<mat-error *ngIf="name.errors?.['noSpace']">Name must not contain spaces</mat-error>-->
         </mat-form-field>
     </div>
 
@@ -20,14 +19,36 @@
         <mat-form-field>
             <mat-label>Attribute Type</mat-label>
             <mat-select
-                [id]="'type_' + configurationRow.index"
-                [(ngModel)]="anonymizationRowConfiguration.attributeType"
+                [id]="'type_' + configurationRow?.index"
+                (ngModelChange)="setIntervalConditions()"
+                disabled="true"
+                [(ngModel)]="anonymizationRowConfiguration.dataType"
             >
                 <mat-option
                     *ngFor="let type of getAllTypes().getAll()"
                     [value]="type"
-                    >{{ type }}</mat-option
                 >
+                    {{ type }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Attribute Scale</mat-label>
+            <mat-select
+                [id]="'scale_' + configurationRow?.scale"
+                [(ngModel)]="anonymizationRowConfiguration.scale"
+                (ngModelChange)="setIntervalConditions()"
+                disabled="true"
+            >
+                <mat-option
+                    *ngFor="let scale of getAllDataScales().getAll()"
+                    [value]="scale"
+                >
+                    {{ scale }}
+                </mat-option>
             </mat-select>
         </mat-form-field>
     </div>
@@ -36,21 +57,47 @@
         <mat-form-field>
             <mat-label>Transformation Type</mat-label>
             <mat-select
-                [id]="'transformation_' + configurationRow.index"
-                [(ngModel)]="anonymizationRowConfiguration.transformation"
+                [id]="'transformation_' + configurationRow?.index"
+                [(ngModel)]="anonymizationRowConfiguration.attributeProtection"
+                (ngModelChange)="setIntervalConditions()"
             >
                 <mat-option
-                    *ngFor="
-                        let transformation of getAllTransformations().getAll()
-                    "
+                    *ngFor="let transformation of getTransformations().getAll()"
                     [value]="transformation"
-                    >{{ transformation }}</mat-option
-                >
+                    >{{ transformation }}
+                </mat-option>
             </mat-select>
         </mat-form-field>
     </div>
 
-    <!-- TODO: Add new columns here. See "attribute-configuration.component.html" for examples -->
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Interval Size</mat-label>
+            <ng-container *ngIf="!intervalIsSelect; else selectField">
+                <input
+                    type="number"
+                    [min]="intervalMin"
+                    [max]="intervalMax"
+                    [step]="intervalMin"
+                    [(ngModel)]="anonymizationRowConfiguration.intervalSize"
+                    [disabled]="deactivateInterval"
+                    matInput
+                >
+            </ng-container>
+
+            <ng-template #selectField>
+                <mat-select [(ngModel)]="anonymizationRowConfiguration.intervalSize">
+                    <mat-option
+                        *ngFor="let interval of getIntervalEnumOptions().getAll()"
+                        [value]="interval"
+                    >
+                    {{ interval }}
+                    </mat-option>
+                </mat-select>
+            </ng-template>
+
+        </mat-form-field>
+    </div>
 
     <div class="d-flex flex-column px-2">
         <div class="h-100 d-flex justify-content-center align-items-center">

@@ -6,7 +6,7 @@ privacyModels:
 suppressionLimit: "90"
 qualityModel: "LOSS"
 localGeneralization: False
-attributeConfigurations:
+attributeConfiguration:
 - index: 0
   name: "death_date"
   dataType: "DATE"

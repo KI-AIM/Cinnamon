@@ -20,5 +20,5 @@ public class AnonymizationConfig {
     private final String suppressionLimit;
     private final String qualityModel;
     private final boolean localGeneralization;
-    private final List<AttributeConfig> attributeConfigurations;
+    private final List<AttributeConfig> attributeConfiguration;
 }

@@ -3,6 +3,8 @@ import { ConfigurationInputDefinition } from "../../model/configuration-input-de
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import {AbstractControl, FormArray, FormControl, FormGroup, Validators} from "@angular/forms";
 import { DataConfigurationService } from "../../services/data-configuration.service";
+import { map } from 'rxjs';
+import { ColumnConfiguration } from '../../model/column-configuration';
 
 /**
  * Component for an input including the reset button and the information popup.
@@ -17,6 +19,8 @@ import { DataConfigurationService } from "../../services/data-configuration.serv
 export class ConfigurationInputComponent {
     protected readonly ConfigurationInputType = ConfigurationInputType;
     protected readonly Math = Math;
+
+    public dataConfiguration: ColumnConfiguration[];
 
     /**
      * The definition for this input.
@@ -67,6 +71,11 @@ export class ConfigurationInputComponent {
 
     ngOnInit() {
         // Check if there is a `switch` for this field
+
+        this.dataConfigurationService.getDataConfiguration().subscribe(value => {
+            this.dataConfiguration = value.configurations;
+        });
+
         if (this.configurationInputDefinition.switch && this.configurationInputDefinition.switch.length > 0) {
 
             const switchDefinition = this.configurationInputDefinition.switch[0]; // Take the first switch condition

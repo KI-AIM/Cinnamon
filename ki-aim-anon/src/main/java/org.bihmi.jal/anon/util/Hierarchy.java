@@ -50,6 +50,7 @@ public class Hierarchy {
     }
 
     private HierarchyBuilder selectAndCreateHierarchy(HierarchyConfig config) {
+        System.out.println(config.toString());
         if (config == null){
             throw new RuntimeException("Hierarchy Config should not be null.");
         }

@@ -45,10 +45,33 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
         mockWebServer.shutdown();
     }
 
+//    Old Version
+//    TODO : delete
+//    @Test
+//    public void testAnonymizationService() throws Exception {
+//
+//        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, kiaimAnonConfig, "processIdTest");
+//
+//        if (!future.isDone()) {
+//            for (int i = 0; i<30; i++) {
+//                Thread.sleep(100);
+//            }
+//        }
+//
+//        try {
+//            DataSet anonymizedDataset = future.get();
+//            assertNotNull(anonymizedDataset);
+//            System.out.println(anonymizedDataset.getDataRows());
+//        } catch (ExecutionException | InterruptedException e) {
+//            e.printStackTrace();
+//            throw e;
+//        }
+//    }
+
     @Test
     public void testAnonymizationService() throws Exception {
 
-        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, kiaimAnonConfig, "processIdTest");
+        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, frontendAnonConfig, "processIdTest");
 
         if (!future.isDone()) {
             for (int i = 0; i<30; i++) {
@@ -71,7 +94,7 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
         mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
 
         String localMockUrl = mockWebServer.url("/callback/success").toString();
-        AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, kiaimAnonConfig, localMockUrl);
+        AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, frontendAnonConfig, localMockUrl);
         anonymizationService.anonymizeDataWithCallbackResult(anonRequest).join();
 
         var recordedRequest = mockWebServer.takeRequest();
@@ -112,25 +135,26 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
 //        System.out.println("Received DataSet in callback: " + receivedDataSet);
     }
 
-    @Test
-    public void testSendCallbackProcessId() throws IOException, InterruptedException {
-        // Enqueue a mock response
-        mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
-
-        // Get the full URL of the mock server
-        String mockUrl = mockWebServer.url("/callback/success").toString();
-
-        // Call the method to send the callback
-        anonymizationService.sendCallbackProcessId(mockUrl, processId);
-
-        // Verify the request
-        var recordedRequest = mockWebServer.takeRequest();
-        assertEquals("POST", recordedRequest.getMethod());
-        assertEquals("/callback/success", recordedRequest.getPath());
-
-        // Verify the request body
-        String receivedProcessId = recordedRequest.getBody().readUtf8();
-        assertNotNull(receivedProcessId);
-        assertEquals(processId, receivedProcessId);
-    }
+//    TODO: unused. Delete
+//    @Test
+//    public void testSendCallbackProcessId() throws IOException, InterruptedException {
+//        // Enqueue a mock response
+//        mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
+//
+//        // Get the full URL of the mock server
+//        String mockUrl = mockWebServer.url("/callback/success").toString();
+//
+//        // Call the method to send the callback
+//        anonymizationService.sendCallbackProcessId(mockUrl, processId);
+//
+//        // Verify the request
+//        var recordedRequest = mockWebServer.takeRequest();
+//        assertEquals("POST", recordedRequest.getMethod());
+//        assertEquals("/callback/success", recordedRequest.getPath());
+//
+//        // Verify the request body
+//        String receivedProcessId = recordedRequest.getBody().readUtf8();
+//        assertNotNull(receivedProcessId);
+//        assertEquals(processId, receivedProcessId);
+//    }
 }

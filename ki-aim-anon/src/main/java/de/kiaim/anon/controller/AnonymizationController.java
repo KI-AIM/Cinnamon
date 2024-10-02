@@ -2,13 +2,16 @@ package de.kiaim.anon.controller;
 
 import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.service.AnonymizationService;
+import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.data.DataSet;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.NonNull;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -36,64 +39,80 @@ public class AnonymizationController {
         this.anonymizationService = anonymizationService;
     }
 
-    @Operation(summary = "Creates a new anonymization task.",
-            description = "Creates a new asynchronous anonymization task based on the processId, dataset and anon configuration." +
-                    "The anonymized dataset is return via the given callback URL.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "202", description = "Task accepted for processing.", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Task with the given process ID already exists.", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
-    })
-//    TODO : rename to "/" to fit ModuleCommunication file
-    @PostMapping(value = "/process/callback/result", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> createAnonymizationTaskWithCallbackResult(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Request containing the process ID, the dataset, the anonymization configuration and the callback URL.",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AnonymizationRequest.class)),
-                    required = true
-            )
-            @RequestBody @NonNull AnonymizationRequest request) {
-        try {
-            String processId = request.getProcessId();
-            if (tasks.containsKey(processId)) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + processId + " already exists.");
-            }
-            Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);
-            tasks.put(processId, future);
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body(
-                    "Anonymization process " + processId + " has been accepted.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
-        }
-    }
+//    @Operation(summary = "Creates a new anonymization task.",
+//            description = "Creates a new asynchronous anonymization task based on the processId, dataset and anon configuration." +
+//                    "The anonymized dataset is return via the given callback URL.")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "202", description = "Task accepted for processing.", content = @Content),
+//            @ApiResponse(responseCode = "409", description = "Task with the given process ID already exists.", content = @Content),
+//            @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
+//    })
+//    @PostMapping(value = "/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+//    public ResponseEntity<String> createAnonymizationTaskWithCallbackResult(
+//            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+//                    description = "Request containing the process ID, the dataset, the anonymization configuration and the callback URL.",
+//                    content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+//                            schema = @Schema(implementation = AnonymizationRequest.class)),
+//                    required = true
+//            )
+//            @ParameterObject @NonNull AnonymizationRequest request) {
+//        try {
+//            System.out.println("Request in controller.");
+//
+//            System.out.println(request.getSession_key().toString());
+//
+//            String processId = request.getSession_key();
+//            if (tasks.containsKey(processId)) {
+//                return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + processId + " already exists.");
+//            }
+//            Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);
+////            Future<DataSet> future = null;
+//            tasks.put(processId, future);
+//            return ResponseEntity.status(HttpStatus.ACCEPTED).body(
+//                    "Anonymization process " + processId + " has been accepted.");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+//        }
+//    }
 
     @Operation(summary = "Creates a new anonymization task.",
-            description = "Creates a new asynchronous anonymization task based on the processId, dataset and anon configuration." +
-                    "A callback with the processId is sent once the process is done.")
+            description = "Creates a new asynchronous anonymization task based on the processId, dataset, and anonymization configuration. " +
+                    "The anonymized dataset is returned via the given callback URL.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "202", description = "Task accepted for processing.", content = @Content),
             @ApiResponse(responseCode = "409", description = "Task with the given process ID already exists.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
     })
-    @PostMapping(value = "/process/callback/processId", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> createAnonymizationTaskWithCallbackProcessId(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Request containing the process ID, the dataset, the anonymization configuration and the callback URL.",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AnonymizationRequest.class)),
-                    required = true
-            )
-            @RequestBody @NonNull AnonymizationRequest request) {
+    @PostMapping(value = "/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> createAnonymizationTaskWithCallbackResult(
+            @RequestParam("session_key") @Parameter(description = "The process ID for the anonymization task.", required = true) String session_key,
+            @RequestPart("data") @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "The dataset to be anonymized.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DataSet.class)),
+                    required = true) DataSet data,
+            @RequestPart("anonymizationConfig") @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "The frontend anonymization configuration.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = FrontendAnonConfig.class)),
+                    required = true) FrontendAnonConfig anonymizationConfig,
+            @RequestParam("callback") @Parameter(description = "The callback URL to return the result.", required = true) String callback) {
+
         try {
-            String processId = request.getProcessId();
-            if (tasks.containsKey(processId)) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + processId + " already exists.");
+            System.out.println("Request in controller.");
+            System.out.println("Process ID: " + session_key);
+
+            if (tasks.containsKey(session_key)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + session_key + " already exists.");
             }
-            Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackProcessId(request);
-            tasks.put(processId, future);
+
+            // Créer l'objet AnonymizationRequest à partir des différentes parties
+            AnonymizationRequest request = new AnonymizationRequest(session_key, data, anonymizationConfig, callback);
+
+            // Appeler le service d'anonymisation
+            Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);
+
+            tasks.put(session_key, future);
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(
-                    "Anonymization process " + processId + " has been accepted.");
+                    "Anonymization process " + session_key + " has been accepted.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
         }
@@ -228,4 +247,36 @@ public class AnonymizationController {
             return ResponseEntity.ok("Task " + processId + " has been cancelled successfully");
         }
     }
+
+    //    TODO: Unused, delete
+//    @Operation(summary = "Creates a new anonymization task.",
+//            description = "Creates a new asynchronous anonymization task based on the processId, dataset and anon configuration." +
+//                    "A callback with the processId is sent once the process is done.")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "202", description = "Task accepted for processing.", content = @Content),
+//            @ApiResponse(responseCode = "409", description = "Task with the given process ID already exists.", content = @Content),
+//            @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
+//    })
+//    @PostMapping(value = "/process/callback/processId", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+//    public ResponseEntity<String> createAnonymizationTaskWithCallbackProcessId(
+//            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+//                    description = "Request containing the process ID, the dataset, the anonymization configuration and the callback URL.",
+//                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+//                            schema = @Schema(implementation = AnonymizationRequest.class)),
+//                    required = true
+//            )
+//            @RequestBody @NonNull AnonymizationRequest request) {
+//        try {
+//            String processId = request.getSession_key();
+//            if (tasks.containsKey(processId)) {
+//                return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + processId + " already exists.");
+//            }
+//            Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackProcessId(request);
+//            tasks.put(processId, future);
+//            return ResponseEntity.status(HttpStatus.ACCEPTED).body(
+//                    "Anonymization process " + processId + " has been accepted.");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+//        }
+//    }
 }

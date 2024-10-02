@@ -1,6 +1,6 @@
 package de.kiaim.anon.model;
 
-import de.kiaim.model.configuration.anonymization.AnonymizationConfig;
+import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.data.DataSet;
 import lombok.*;
 
@@ -10,8 +10,8 @@ import lombok.*;
 @EqualsAndHashCode
 @ToString
 public class AnonymizationRequest {
-    private final String processId;
-    private final DataSet dataSet;
-    private final AnonymizationConfig kiaimAnonConfig;
-    private final String callbackURL;
+    private final String session_key;
+    private final DataSet data;
+    private final FrontendAnonConfig anonymizationConfig;
+    private final String callback;
 }

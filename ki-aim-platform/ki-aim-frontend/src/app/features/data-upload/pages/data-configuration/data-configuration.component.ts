@@ -19,6 +19,7 @@ import { ErrorResponse } from 'src/app/shared/model/error-response';
 import { ErrorMessageService } from 'src/app/shared/services/error-message.service';
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
+import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 
 @Component({
     selector: 'app-data-configuration',
@@ -29,6 +30,7 @@ export class DataConfigurationComponent implements OnInit {
     error: string;
     FileType = FileType;
     isValid: boolean;
+    dataConfiguration: DataConfiguration
 
     @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
@@ -53,6 +55,9 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        this.configuration.getDataConfiguration().subscribe(value => {
+            this.dataConfiguration = value;
+        });
     }
 
 	ngAfterViewInit() {
@@ -63,7 +68,7 @@ export class DataConfigurationComponent implements OnInit {
         this.loadingService.setLoadingStatus(true);
 
         this.dataService.storeData(this.fileService.getFile(),
-            this.configuration.getDataConfiguration(),
+            this.dataConfiguration,
             this.fileService.getFileConfiguration()
         ).subscribe({
             next: (d) => this.handleUpload(d),
@@ -76,7 +81,7 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     private setEmptyColumnNames() {
-        this.configuration.getDataConfiguration().configurations.forEach((column, index) => {
+        this.dataConfiguration.configurations.forEach((column, index) => {
             if (column.name == undefined || column.name == null || column.name == "") {
                 column.name = 'column_' + index;
             }

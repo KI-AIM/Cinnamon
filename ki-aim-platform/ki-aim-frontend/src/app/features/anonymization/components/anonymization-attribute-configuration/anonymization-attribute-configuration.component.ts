@@ -1,97 +1,122 @@
-import { Component, ComponentRef, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
-import { AnonymizationAttributeConfigurationDirectiveDirective } from '../../directives/anonymization-attribute-configuration-directive.directive';
-import { AnonymizationAttributeRowComponent } from '../anonymization-attribute-row/anonymization-attribute-row.component';
-import { AnonymizationAttributeRowConfiguration } from 'src/app/shared/model/anonymization-attribute-row-configuration';
+import { AnonymizationAttributeConfigurationDirective } from '../../directives/anonymization-attribute-configuration.directive';
 import { AnonymizationAttributeConfigurationService } from '../../services/anonymization-attribute-configuration.service';
 import { MatSelect } from '@angular/material/select';
+import { AnonymizationAttributeConfiguration, AnonymizationAttributeRowConfiguration } from 'src/app/shared/model/anonymization-attribute-config';
 @Component({
     selector: 'app-anonymization-attribute-configuration',
     templateUrl: './anonymization-attribute-configuration.component.html',
-    styleUrls: ['./anonymization-attribute-configuration.component.css'],
+    styleUrls: ['./anonymization-attribute-configuration.component.less'],
 })
 export class AnonymizationAttributeConfigurationComponent implements OnInit {
-    @ViewChild("attributeDropdown") attributeDropdown: MatSelect; 
-    @ViewChild(AnonymizationAttributeConfigurationDirectiveDirective, {
+    @ViewChild("attributeDropdown") attributeDropdown: MatSelect;
+    @ViewChild(AnonymizationAttributeConfigurationDirective, {
         static: true,
     })
-    target: AnonymizationAttributeConfigurationDirectiveDirective;
+    target: AnonymizationAttributeConfigurationDirective;
     dataConfiguration: DataConfiguration;
-    availableConfigurations: ColumnConfiguration[];
+    error: string | null = null;
 
     constructor(
         public configuration: DataConfigurationService,
         public attributeConfigurationService: AnonymizationAttributeConfigurationService
-    ) {}
-    
-
-    ngOnInit() {
-        this.dataConfiguration = this.configuration.getDataConfiguration();
-        this.availableConfigurations = this.dataConfiguration.configurations;
+    ) {
     }
 
+
+    ngOnInit() {
+        this.configuration.getDataConfiguration().subscribe(value => {
+            this.dataConfiguration = value
+        });
+    }
+
+    /**
+     * Returns currently stored anonymization attribute configuration
+     * @returns AnonymizationAttributeConfiguration | null
+     */
+    getAttributeConfiguration(): AnonymizationAttributeConfiguration | null {
+        return this.attributeConfigurationService.getAttributeConfiguration();
+    }
+
+    /**
+     * Filters the dataConfiguration ColumnConfiguration list
+     * by removing all entries with attributes that are currently
+     * used in the anonymization attribute configuration
+     * @returns Array<ColumnConfiguration>
+     */
+    getAvailableConfigurations() {
+        const indicesAlreadyUsed = new Set(this.attributeConfigurationService.getAttributeConfiguration()?.attributeConfiguration.map(item => item.index));
+
+        if (this.dataConfiguration !== undefined && this.dataConfiguration !== null) {
+            return this.dataConfiguration.configurations.filter(item => !indicesAlreadyUsed.has(item.index))
+        } else {
+            return new Array<ColumnConfiguration>();
+        }
+    }
+
+    /**
+     * Returns the available column configurations
+     * sorted by their index attribute
+     * @returns Array<ColumnConfiguration>
+     */
+    getAvailableConfigurationsSortedById() {
+        return this.getAvailableConfigurations().sort((a, b) => a.index - b.index);
+    }
+
+    /**
+     * Event that is triggered by selecting another
+     * column in the dropdown.
+     *
+     * Adds a new entry to the anonymization attribute
+     * configuration, thus removing it from the dropdown
+     * automatically.
+     * @param value
+     */
     onSelectionChange(value: any) {
         const selectedRowIndex = value;
-        const selectedRow = this.availableConfigurations.find(
+        const selectedRow = this.getAvailableConfigurations().find(
             (row) => row.index === selectedRowIndex
         );
 
         if (selectedRow !== null && selectedRow !== undefined) {
-            const viewContainerRef = this.target.viewContainerRef;
-            const newComponentRef = viewContainerRef.createComponent(
-                AnonymizationAttributeRowComponent
-            );
-
-            newComponentRef.instance.configurationRow = selectedRow;
-
             let newRowConfiguration =
                 new AnonymizationAttributeRowConfiguration();
 
-            newRowConfiguration.attributeIndex = selectedRow.index;
-            newRowConfiguration.attributeName = selectedRow.name;
+            newRowConfiguration.index = selectedRow.index;
+            newRowConfiguration.name = selectedRow.name;
+            newRowConfiguration.dataType = selectedRow.type;
+            newRowConfiguration.scale = selectedRow.scale;
 
-            newComponentRef.instance.anonymizationRowConfiguration =
-                newRowConfiguration;
-            this.attributeConfigurationService.addRowConfiguration(
-                newRowConfiguration
-            );
-
-            newComponentRef.instance.removeEvent.subscribe(() => {
-                this.removeSelectedAttribute(newComponentRef);
-            });
-
-            this.removeAttributeFromDropdown(selectedRow);
-            this.attributeDropdown.value = undefined; 
+            this.attributeConfigurationService.addRowConfiguration(newRowConfiguration);
         }
     }
 
-    removeAttributeFromDropdown(rowToRemove: ColumnConfiguration) {
-        this.availableConfigurations = this.availableConfigurations.filter(
-            (row) => row.index !== rowToRemove.index
-        );
-        this.sortAvailabelConfigurationById();
-    }
-
-    removeSelectedAttribute(
-        rowToRemove: ComponentRef<AnonymizationAttributeRowComponent>
-    ) {
-        this.availableConfigurations.push(
-            rowToRemove.instance.configurationRow
+    /**
+     * Returns the ColumnConfiguration for a given index
+     * @param index to search for
+     * @returns ColumnConfiguration, null if index is not found
+     */
+    getConfigurationForIndex(index: number): ColumnConfiguration | null {
+        const selectedRow = this.getAvailableConfigurations().find(
+            (row) => row.index === index
         );
 
-        let indexToDelete =
-            rowToRemove.instance.anonymizationRowConfiguration.attributeIndex;
-        this.attributeConfigurationService.removeRowConfigurationById(
-            indexToDelete
-        );
-
-        rowToRemove.destroy();
-        this.sortAvailabelConfigurationById();
+        if (selectedRow !== null && selectedRow !== undefined) {
+            return selectedRow;
+        } else {
+            return null
+        }
     }
 
-    sortAvailabelConfigurationById() {
-        this.availableConfigurations.sort((a, b) => a.index - b.index);
+    /**
+     * Event to remove a given anonymization attribute configuration
+     * @param attributeConfigurationRow to delete
+     */
+    removeAttributeConfigurationRow(attributeConfigurationRow: AnonymizationAttributeRowConfiguration) {
+        this.attributeConfigurationService.removeRowConfigurationById(attributeConfigurationRow.index);
     }
+
 }

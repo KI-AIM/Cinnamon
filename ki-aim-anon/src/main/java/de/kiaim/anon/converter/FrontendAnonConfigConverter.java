@@ -1,18 +1,24 @@
 package de.kiaim.anon.converter;
 
+import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.anon.helper.DatasetAnalyzer;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAttributeConfig;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.enumeration.anonymization.AttributeProtection;
+import de.kiaim.model.exception.anonymization.InvalidAttributeConfigException;
+import de.kiaim.model.exception.anonymization.InvalidGeneralizationSettingException;
 import de.kiaim.model.exception.anonymization.InvalidRiskThresholdException;
+import de.kiaim.model.exception.anonymization.InvalidSuppressionLimitException;
 import org.bihmi.jal.anon.privacyModels.AverageReidentificationRisk;
 import org.bihmi.jal.anon.privacyModels.KAnonymity;
 import org.bihmi.jal.anon.privacyModels.PrivacyModel;
 import org.bihmi.jal.anon.util.Hierarchy;
 import org.bihmi.jal.config.AttributeConfig;
 import org.bihmi.jal.config.HierarchyConfig;
+import org.bihmi.jal.config.QualityModelConfig;
 import org.bihmi.jal.enums.MicroAggregationFunction;
 
 import java.util.ArrayList;
@@ -20,6 +26,43 @@ import java.util.Collection;
 import java.util.List;
 
 public class FrontendAnonConfigConverter {
+
+    /**
+     * Convert a FrontendAnonConfig to a JAL AnonymizationConfig.
+     *
+     * @param frontendConfig The configuration received from the frontend.
+     * @param originalDataSet The dataset associated with this configuration.
+     * @return An AnonymizationConfigV0 object configured for JAL.
+     * @throws InvalidRiskThresholdException If the risk threshold provided is invalid.
+     */
+    public static AnonymizationConfig convertToJALConfig(FrontendAnonConfig frontendConfig, DataSet originalDataSet)
+            throws InvalidRiskThresholdException, InvalidAttributeConfigException, InvalidSuppressionLimitException, InvalidGeneralizationSettingException {
+
+        // Validate the configuration before conversion
+        frontendConfig.validateConfig();
+
+        // Convert the Risk Threshold to Privacy Models
+        Collection<PrivacyModel> privacyModels = convertPrivacyModels(
+                frontendConfig.getRiskThresholdType(), frontendConfig.getRiskThresholdValue());
+
+        // Convert the list of FrontendAttributeConfig to AttributeConfig for JAL
+        List<AttributeConfig> attributeConfigs = convertAttributeConfigs(
+                frontendConfig.getAttributeConfigurations(), originalDataSet);
+
+        // Create a QualityModelConfig with default values
+        QualityModelConfig qualityModelConfig = new QualityModelConfig();
+        qualityModelConfig.setQualityModelType(QualityModelConfig.QualityModelType.LOSS_METRIC);
+
+        // Create the AnonymizationConfig object
+
+        return new AnonymizationConfig(
+                privacyModels,
+                Double.parseDouble(frontendConfig.getSuppressionLimit()), // Suppression limit between 0 and 1
+                qualityModelConfig, // Assuming QualityModelConfig needs a setting like "Global" or "Local"
+                frontendConfig.getGeneralizationSetting().equalsIgnoreCase("Local"), // Local generalization is true if setting is "Local"
+                attributeConfigs
+        );
+    }
 
     /**
      * Convert the Risk Threshold Type and Value to a JAL PrivacyModel.
@@ -75,15 +118,20 @@ public class FrontendAnonConfigConverter {
             attributeConfig.setName(frontendConfig.getName());
             attributeConfig.setDataType(frontendConfig.getDataType().toString());
             attributeConfig.setDateFormat(frontendConfig.getDateFormat());
-            attributeConfig.setPossibleEntries(frontendConfig.getValues() != null ? frontendConfig.getValues().toArray(new String[0]) : null);
+            attributeConfig.setPossibleEntries(frontendConfig.getValues() != null && frontendConfig.getValues().length > 0 ? frontendConfig.getValues() : null);
 
             // Set AttributeType based on attributeProtection
             if (frontendConfig.getAttributeProtection() == AttributeProtection.ATTRIBUTE_DELETION) {
                 attributeConfig.setAttributeType("IDENTIFYING_ATTRIBUTE");
+                attributeConfig.setHierarchyConfig(null);
             } else if (frontendConfig.getAttributeProtection() == AttributeProtection.NO_PROTECTION) {
                 attributeConfig.setAttributeType("INSENSITIVE_ATTRIBUTE");
+                attributeConfig.setHierarchyConfig(null);
             } else {
                 attributeConfig.setAttributeType("QUASI_IDENTIFYING_ATTRIBUTE");
+                // Generate and set the hierarchy based on attribute configurations
+                HierarchyConfig hierarchy = generateHierarchy(frontendConfig);
+                attributeConfig.setHierarchyConfig(hierarchy);
             }
 
             // Handle DECIMAL and INTEGER types: Calculate min and max
@@ -108,9 +156,6 @@ public class FrontendAnonConfigConverter {
                 attributeConfig.setUseMicroAggregation(false);
             }
 
-            // Generate and set the hierarchy based on attribute configurations
-            HierarchyConfig hierarchy = generateHierarchy(frontendConfig);
-            attributeConfig.setHierarchyConfig(hierarchy);
 
             // Add the configured attribute to the list
             attributeConfigs.add(attributeConfig);
@@ -125,9 +170,9 @@ public class FrontendAnonConfigConverter {
     private static HierarchyConfig generateHierarchy(FrontendAttributeConfig frontendAttributeConfig) {
         String type;
         String intervalSize;
-        String splitLevels = ""; // TODO : Should it be set ?
+        String splitLevels = ""; // TODO : Should it be set ? not yet
         int minLevelToUse = 0;
-        int maxLevelToUse = 0; // TODO : how determine ?
+        int maxLevelToUse = 0; // TODO : how determine ? Not use now : target level = interval size
 
         // Determine hierarchy type and levels based on the attribute's protection, scale, and type
         if (frontendAttributeConfig.getAttributeProtection() == AttributeProtection.DATE_GENERALIZATION) {
@@ -148,6 +193,13 @@ public class FrontendAnonConfigConverter {
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0; // low generalization
             maxLevelToUse = 100; // high generalization
+        } else if ((frontendAttributeConfig.getAttributeProtection() == AttributeProtection.GENERALIZATION
+                ||frontendAttributeConfig.getAttributeProtection() == AttributeProtection.MICRO_AGGREGATION)
+                && (frontendAttributeConfig.getDataScale() == DataScale.ORDINAL)) {
+            type = "ORDERING";
+            intervalSize = frontendAttributeConfig.getIntervalSize();
+            minLevelToUse = 0; // low generalization
+            maxLevelToUse = 100; // high generalization
         } else {
             type = "";
             intervalSize= "";
@@ -155,7 +207,6 @@ public class FrontendAnonConfigConverter {
             minLevelToUse = 0;
             maxLevelToUse = 0;
         }
-        // TODO : handle ordering
 
         // Return the hierarchy configuration
         return HierarchyConfig.builder()

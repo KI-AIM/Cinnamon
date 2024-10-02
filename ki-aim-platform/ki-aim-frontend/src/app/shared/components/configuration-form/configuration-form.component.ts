@@ -6,6 +6,7 @@ import { AlgorithmService } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
 import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
+import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 
 /**
  * HTML form and submit button for one algorithm.
@@ -18,6 +19,8 @@ import {ConfigurationGroupComponent} from "../configuration-group/configuration-
     styleUrls: ['./configuration-form.component.less']
 })
 export class ConfigurationFormComponent implements OnInit {
+
+    @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
 
     /**
      * The algorithm that is configured with this form.
@@ -93,7 +96,10 @@ export class ConfigurationFormComponent implements OnInit {
      * @param configuration JSON of the form.
      */
     public setConfiguration(configuration: Object) {
-        this.form.setValue(configuration);
+        //Wait here so that form is loaded before updating it
+        setTimeout(() => {
+            this.form.setValue(configuration);
+        }, 100);
     }
 
     /**

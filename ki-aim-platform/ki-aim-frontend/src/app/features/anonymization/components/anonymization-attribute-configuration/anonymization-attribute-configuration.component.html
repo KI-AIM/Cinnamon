@@ -1,27 +1,27 @@
-<!--<app-anonymization-attribute-row 
-    *ngFor="let row of this.dataConfiguration.configurations, index as i"
-    [configurationRow]="row" [rowNumber]="i"
-></app-anonymization-attribute-row>-->
-
-<div class="d-flex flex-row mb-2 justify-content-between">
-    <div class="d-flex flex-column px-2 w-100">
-        <mat-form-field>
-            <mat-label>Select an attribute to configure</mat-label>
-            <mat-select
-                #attributeDropdown
-                (valueChange)="onSelectionChange($event)"
+    
+<div class="d-flex flex-column w-100">
+    <mat-form-field>
+        <mat-label>Select an attribute to configure</mat-label>
+        <mat-select
+            #attributeDropdown
+            (valueChange)="onSelectionChange($event)"
+        >
+            <mat-option disabled [value]="undefined">Select an attribute to configure</mat-option>
+            <mat-option
+                *ngFor="let row of this.getAvailableConfigurationsSortedById()"
+                [value]="row.index"
+                >{{ row.name }}</mat-option
             >
-                <mat-option
-                    *ngFor="let row of this.availableConfigurations"
-                    [value]="row.index"
-                    >{{ row.name }}</mat-option
-                >
-            </mat-select>
-        </mat-form-field>
+        </mat-select>
+    </mat-form-field>
+</div>
 
-        <div
-            #attributeRowTarget
-            appAnonymizationAttributeConfigurationDirective
-        ></div>
-    </div>
+
+<div *ngFor="let attrConfig of this.getAttributeConfiguration()?.attributeConfiguration, index as i">
+    <app-anonymization-attribute-row
+        [anonymizationRowConfiguration]="attrConfig"
+        [configurationRow]="getConfigurationForIndex(i)"
+        (removeEvent)="removeAttributeConfigurationRow(attrConfig)"
+    >
+    </app-anonymization-attribute-row>
 </div>

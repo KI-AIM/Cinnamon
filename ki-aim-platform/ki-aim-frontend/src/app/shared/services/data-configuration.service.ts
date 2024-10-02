@@ -105,7 +105,7 @@ export class DataConfigurationService {
     }
 
     private getConfigurationCallback(): Object {
-        return this.getDataConfiguration();
+        return this.dataConfiguration!;
     }
 
     private setConfigCallback(importData: ImportPipeData): void {

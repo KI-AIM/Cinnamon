@@ -4,10 +4,10 @@ import { environments } from "../../../../../environments/environment";
 import { HttpClient } from "@angular/common/http";
 import { ExecutionStep } from "../../../../shared/model/execution-step";
 import { TitleService } from "../../../../core/services/title-service.service";
-import {StateManagementService} from "../../../../core/services/state-management.service";
 import { Steps } from "../../../../core/enums/steps";
 import { Router } from "@angular/router";
 import { ExecutionService } from "../../services/execution.service";
+import { StatusService } from "../../../../shared/services/status.service";
 
 @Component({
   selector: 'app-execution',
@@ -21,7 +21,7 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         protected readonly executionService: ExecutionService,
         private readonly http: HttpClient,
         private readonly router: Router,
-        readonly stateManagementService: StateManagementService,
+        private readonly statusService: StatusService,
         private readonly titleService: TitleService,
     ) {
         this.titleService.setPageTitle("Execution");
@@ -59,7 +59,7 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         this.http.post(environments.apiUrl + "/api/process/confirm", {}).subscribe({
             next: () => {
                 this.router.navigateByUrl("/technicalEvaluationConfiguration");
-                this.stateManagementService.setNextStep(Steps.TECHNICAL_EVALUATION);
+                this.statusService.setNextStep(Steps.TECHNICAL_EVALUATION);
             },
             error: (e) =>{
                 console.error(e);

@@ -18,7 +18,7 @@
 
         <div>Download selected configurations</div>
         <button mat-raised-button color="primary" (click)="downloadAllConfigurations()"
-                [disabled]="!stateManagementService.isStepCompleted(Steps.UPLOAD)">
+                [disabled]="!statusService.isStepCompleted(Steps.UPLOAD)">
             <mat-icon>file_download</mat-icon>
             Download
         </button>

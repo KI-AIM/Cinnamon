@@ -24,8 +24,8 @@
                 customizable resulting in worse anonymization results.</p>
         </mat-card-content>
         <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-            <button mat-raised-button color="primary" (click)="stateManagement.setMode(Mode.STANDARD);
-            stateManagement.setNextStep(Steps.UPLOAD);" [disabled]="locked" routerLink="/upload">
+            <button mat-raised-button color="primary" (click)="statusService.setMode(Mode.STANDARD);
+            statusService.setNextStep(Steps.UPLOAD);" [disabled]="locked" routerLink="/upload">
                 Use standard mode
             </button>
         </mat-card-actions>
@@ -43,8 +43,8 @@
                 anonymization results.</p>
         </mat-card-content>
         <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-            <button mat-raised-button color="primary" (click)="stateManagement.setMode(Mode.EXPERT);
-            stateManagement.setNextStep(Steps.UPLOAD);" [disabled]="locked" routerLink="/upload">
+            <button mat-raised-button color="primary" (click)="statusService.setMode(Mode.EXPERT);
+            statusService.setNextStep(Steps.UPLOAD);" [disabled]="locked" routerLink="/upload">
                 Use expert mode
             </button>
         </mat-card-actions>

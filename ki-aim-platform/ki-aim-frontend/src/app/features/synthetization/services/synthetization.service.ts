@@ -55,7 +55,7 @@ export class SynthetizationService extends AlgorithmService {
 
                 const configReg = new ConfigurationRegisterData();
                 configReg.availableAfterStep = Steps.SYNTHETIZATION;
-                configReg.lockedAfterStep = null;
+                configReg.lockedAfterStep = Steps.EXECUTION;
                 configReg.displayName = "Synthetization Configuration";
                 configReg.fetchConfig = null;
                 configReg.name = value.configurationName;

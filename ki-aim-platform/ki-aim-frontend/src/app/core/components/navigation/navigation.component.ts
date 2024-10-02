@@ -1,10 +1,10 @@
 import { Component, ViewChild } from '@angular/core';
-import { StateManagementService } from '../../services/state-management.service';
 import { Mode } from '../../enums/mode';
 import { StepConfiguration, Steps } from '../../enums/steps';
 import { KeyValue } from '@angular/common';
 import { UserService } from 'src/app/shared/services/user.service';
 import { ConfigurationManagementComponent } from 'src/app/shared/components/configuration-management/configuration-management.component';
+import { StatusService } from "../../../shared/services/status.service";
 
 @Component({
     selector: 'app-navigation',
@@ -20,7 +20,7 @@ export class NavigationComponent {
     @ViewChild(ConfigurationManagementComponent) configManagement: ConfigurationManagementComponent;
 
     constructor(
-        public stateManagement: StateManagementService,
+        protected statusService: StatusService,
         public userService: UserService,
     ) { }
 

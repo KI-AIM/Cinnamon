@@ -1,7 +1,6 @@
 import {Component, OnInit, TemplateRef } from "@angular/core";
 import { LoadingService } from "src/app/shared/services/loading.service";
 import { Router } from "@angular/router";
-import { StateManagementService } from "src/app/core/services/state-management.service";
 import { DataService } from "src/app/shared/services/data.service";
 import { HttpErrorResponse } from "@angular/common/http";
 import { Steps } from "src/app/core/enums/steps";
@@ -11,6 +10,7 @@ import { InformationDialogComponent } from "src/app/shared/components/informatio
 import { ErrorMessageService } from "src/app/shared/services/error-message.service";
 import {DataSetInfoService} from "../../services/data-set-info.service";
 import {map, Observable} from "rxjs";
+import { StatusService } from "../../../../shared/services/status.service";
 
 @Component({
 	selector: "app-data-validation",
@@ -24,7 +24,7 @@ export class DataValidationComponent implements OnInit {
 	constructor(
 		private loadingService: LoadingService,
 		private router: Router,
-		private stateManagement: StateManagementService,
+        private statusService: StatusService,
         protected dataSetInfoService: DataSetInfoService,
 		private dataService: DataService,
 		private titleService: TitleService,
@@ -48,7 +48,7 @@ export class DataValidationComponent implements OnInit {
     }
 
     protected get locked(): boolean {
-        return this.stateManagement.isStepCompleted(Steps.VALIDATION);
+        return this.statusService.isStepCompleted(Steps.VALIDATION);
     }
 
     openDeleteDialog(templateRef: TemplateRef<any>) {
@@ -70,7 +70,7 @@ export class DataValidationComponent implements OnInit {
         this.dataService.deleteData().subscribe({
             next: () => {
                 this.router.navigateByUrl("/upload");
-                this.stateManagement.setNextStep(Steps.UPLOAD);
+                this.statusService.setNextStep(Steps.UPLOAD);
             }
         });
     }
@@ -78,7 +78,7 @@ export class DataValidationComponent implements OnInit {
 	private handleConfirm() {
 		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/anonymizationConfiguration");
-        this.stateManagement.setNextStep(Steps.ANONYMIZATION)
+        this.statusService.setNextStep(Steps.ANONYMIZATION)
 	}
 
 	private handleError(error: HttpErrorResponse) {

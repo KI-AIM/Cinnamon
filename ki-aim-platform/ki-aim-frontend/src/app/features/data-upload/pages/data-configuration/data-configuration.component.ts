@@ -5,7 +5,6 @@ import { DataService } from 'src/app/shared/services/data.service';
 import { FileService } from '../../services/file.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { StateManagementService } from 'src/app/core/services/state-management.service';
 import { Steps } from 'src/app/core/enums/steps';
 import { plainToInstance } from 'class-transformer';
 import { LoadingService } from 'src/app/shared/services/loading.service';
@@ -19,6 +18,7 @@ import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
 import { ErrorResponse } from 'src/app/shared/model/error-response';
 import { ErrorMessageService } from 'src/app/shared/services/error-message.service';
 import { FileType } from 'src/app/shared/model/file-configuration';
+import { StatusService } from "../../../../shared/services/status.service";
 
 @Component({
     selector: 'app-data-configuration',
@@ -39,7 +39,7 @@ export class DataConfigurationComponent implements OnInit {
         public fileService: FileService,
         private titleService: TitleService,
         private router: Router,
-        private stateManagement: StateManagementService,
+        private readonly statusService: StatusService,
         public loadingService: LoadingService,
 		private errorMessageService: ErrorMessageService,
     ) {
@@ -49,7 +49,7 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     protected get locked(): boolean {
-        return this.stateManagement.isStepCompleted(Steps.DATA_CONFIG)
+        return this.statusService.isStepCompleted(Steps.DATA_CONFIG)
     }
 
     ngOnInit(): void {
@@ -87,7 +87,7 @@ export class DataConfigurationComponent implements OnInit {
         this.loadingService.setLoadingStatus(false);
 
         this.router.navigateByUrl("/dataValidation");
-        this.stateManagement.setNextStep(Steps.VALIDATION);
+        this. statusService.setNextStep(Steps.VALIDATION);
     }
 
     private handleError(error: HttpErrorResponse) {

@@ -2,7 +2,7 @@ import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from 'src/app/shared/services/configuration.service';
-import { StateManagementService } from 'src/app/core/services/state-management.service';
+import { StatusService } from "../../services/status.service";
 
 @Component({
   selector: 'app-configuration-management',
@@ -18,7 +18,7 @@ export class ConfigurationManagementComponent {
     constructor(
         public configurationService: ConfigurationService,
         public dialog: MatDialog,
-        public stateManagementService: StateManagementService,
+        protected readonly statusService: StatusService,
     ) {
         this.error = "";
     }

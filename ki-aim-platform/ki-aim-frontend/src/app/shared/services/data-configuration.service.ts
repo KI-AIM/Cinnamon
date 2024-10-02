@@ -87,7 +87,6 @@ export class DataConfigurationService {
     }
 
     private getConfigurationCallback(): Object {
-        this.postDataConfiguration().subscribe();
         return this.getDataConfiguration();
     }
 

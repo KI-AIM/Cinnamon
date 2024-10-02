@@ -7,6 +7,7 @@ import { parse, stringify } from 'yaml';
 import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data";
 import { Steps } from "../../core/enums/steps";
 import { environments } from "../../../environments/environment";
+import { StatusService } from "./status.service";
 
 /**
  * Service for managing configurations.
@@ -21,6 +22,7 @@ export class ConfigurationService {
     constructor(
         private fileUtilityService: FileUtilityService,
         private httpClient: HttpClient,
+        private readonly statusService: StatusService,
     ) {
         this.registeredConfigurations = [];
     }
@@ -139,6 +141,10 @@ export class ConfigurationService {
                 configString += configData;
             } else {
                 configString += stringify(configData)
+            }
+
+            if (!this.statusService.isStepCompleted(config.lockedAfterStep)) {
+                config.storeConfig!(config.name, configString).subscribe();
             }
         }
 

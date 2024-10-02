@@ -9,102 +9,22 @@ import { UserService } from "../../shared/services/user.service";
 import { Observable, of, tap } from "rxjs";
 import { ConfigurationService } from "../../shared/services/configuration.service";
 import { environments } from "../../../environments/environment";
+import { StatusService } from "../../shared/services/status.service";
 
 @Injectable({
     providedIn: 'root'
 })
 export class StateManagementService {
-    private readonly baseUrl: string = environments.apiUrl + "/api/project"
-
-    private status: Status;
-    private fetched: boolean = false;
-
-    private readonly completedSteps: List<Steps>;
 
     constructor(
         private readonly configurationService: ConfigurationService,
-        private readonly http: HttpClient,
         private readonly router: Router,
         private readonly userService: UserService,
+        private readonly statusService: StatusService
     ) {
-        this.status = new Status()
-        this.status.mode = Mode.UNSET;
-        this.status.currentStep = Steps.WELCOME;
-        this.completedSteps = new List();
-
         if (this.userService.isAuthenticated()) {
             this.fetchCurrentStep();
         }
-    }
-
-    getMode(): Mode {
-        return this.status.mode;
-    }
-
-    /**
-     * Sets the mode to the given value and synchronizes the status with the backend.
-     * @param mode The selected mode.
-     */
-    setMode(mode: Mode) {
-        this.status.mode = mode;
-
-        const formData = new FormData();
-
-        formData.append("mode", mode.toString());
-        this.http.post(this.baseUrl, formData).subscribe({
-            error: err => {
-                console.log(err);
-            }
-        });
-    }
-
-    getCompletedSteps(): List<Object> {
-        return this.completedSteps;
-    }
-
-    /**
-     * Sets the given step to the current steps and marks all previous steps as completed.
-     * Steps after the given step will be removed from the list of completed steps.
-     *
-     * @param step The next step.
-     */
-    setNextStep(step: Steps): void {
-        this.status.currentStep = step;
-
-        this.completedSteps.clear();
-
-        Object.entries(Steps).forEach(([key, value]) => {
-            const currentIndex = typeof step === "number" ? step : Steps[step];
-            if (key < currentIndex) {
-                this.addCompletedStep(Steps[value as keyof typeof Steps]);
-            }
-        });
-    }
-
-    addCompletedStep(step: Steps): void {
-        if (!this.completedSteps.contains(step)) {
-            this.completedSteps.add(step);
-        }
-    }
-
-    removeCompletedStep(step: Steps): void {
-        if (this.completedSteps.contains(step)) {
-            this.completedSteps.remove(step);
-        }
-    }
-
-    /**
-     * Checks if a given step is completed.
-     * If the step is null, returns false.
-     *
-     * @param step The step to check.
-     * @returns If the given step is completed.
-     */
-    isStepCompleted(step: Steps | null) {
-        if (step == null) {
-            return false;
-        }
-        return this.completedSteps.contains(step);
     }
 
     /**
@@ -130,7 +50,7 @@ export class StateManagementService {
      */
     public routeToCurrentStep() {
         for (let [a, b] of Object.entries(StepConfiguration)) {
-            if (a === this.status.currentStep.toString()) {
+            if (a === this.statusService.currentStep.toString()) {
                 this.router.navigateByUrl(b.path);
                 return;
             }
@@ -140,30 +60,12 @@ export class StateManagementService {
     }
 
     /**
-     * Fetches the status from the backend.
-     */
-    public fetchStatus(): Observable<Status> {
-        if (this.fetched) {
-            return of(this.status);
-        }
-
-        return this.http.get<Status>(this.baseUrl + "/status")
-            .pipe(
-                tap(value => {
-                    this.fetched = true;
-                    this.status = value;
-                    this.setNextStep(value.currentStep);
-                }),
-            );
-    }
-
-    /**
      * Fetches the state and configurations from the backend.
      * @private
      */
     private doFetchCurrentStep(): Observable<Status> {
-        return this.fetchStatus().pipe(tap(value => {
-            this.configurationService.fetchConfigurations(this.status.currentStep);
+        return this.statusService.fetchStatus().pipe(tap(value => {
+            this.configurationService.fetchConfigurations(this.statusService.currentStep);
         }));
     }
 }

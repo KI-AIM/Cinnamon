@@ -1,6 +1,5 @@
 import { Component, ElementRef, TemplateRef, ViewChild } from "@angular/core";
 import { Steps } from "src/app/core/enums/steps";
-import { StateManagementService } from "src/app/core/services/state-management.service";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { DataService } from "src/app/shared/services/data.service";
 import { plainToClass } from "class-transformer";
@@ -17,6 +16,7 @@ import { LoadingService } from "src/app/shared/services/loading.service";
 import { ConfigurationService } from "../../../../shared/services/configuration.service";
 import { ErrorMessageService } from "src/app/shared/services/error-message.service";
 import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
+import { StatusService } from "../../../../shared/services/status.service";
 
 @Component({
 	selector: "app-upload-file",
@@ -55,7 +55,7 @@ export class UploadFileComponent {
 
 	constructor(
 		private titleService: TitleService,
-		public stateManagement: StateManagementService,
+        private statusService: StatusService,
 		private dataService: DataService,
 		public dataConfigurationService: DataConfigurationService,
 		private router: Router,
@@ -71,7 +71,7 @@ export class UploadFileComponent {
 	}
 
     protected get locked(): boolean {
-        return this.stateManagement.isStepCompleted(Steps.DATA_CONFIG);
+        return this.statusService.isStepCompleted(Steps.DATA_CONFIG);
     }
 
 	onFileInput(event: Event) {
@@ -180,7 +180,7 @@ export class UploadFileComponent {
 	private navigateToNextStep() {
 		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/dataConfiguration");
-        this.stateManagement.setNextStep(Steps.DATA_CONFIG);
+        this.statusService.setNextStep(Steps.DATA_CONFIG);
 	}
 
 	private handleError(error: string) {

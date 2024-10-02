@@ -6,9 +6,9 @@ import { stringify } from "yaml";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
 import { Steps } from "../../../core/enums/steps";
 import { Router } from "@angular/router";
-import { StateManagementService } from "../../../core/services/state-management.service";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../../environments/environment";
+import { StatusService } from "../../services/status.service";
 
 /**
  * Entire configuration page including the algorithm selection,
@@ -51,7 +51,7 @@ export class ConfigurationPageComponent implements OnInit {
         private readonly changeDetectorRef: ChangeDetectorRef,
         private httpClient: HttpClient,
         private readonly router: Router,
-        private readonly stateManagement: StateManagementService,
+        private readonly statusService: StatusService,
     ) {
     }
 
@@ -182,7 +182,7 @@ export class ConfigurationPageComponent implements OnInit {
                     : this.algorithmService.getStepName() === "SYNTHETIZATION"
                         ? "/execution"
                         : "/evaluation");
-                this.stateManagement.setNextStep(this.algorithmService.getStepName() === "ANONYMIZATION"
+                this.statusService.setNextStep(this.algorithmService.getStepName() === "ANONYMIZATION"
                     ? Steps.SYNTHETIZATION
                     : this.algorithmService.getStepName() === "SYNTHETIZATION"
                         ? Steps.EXECUTION

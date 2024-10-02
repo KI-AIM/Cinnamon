@@ -40,7 +40,7 @@ export class AnonymizationService extends AlgorithmService {
             next: value => {
                 const configReg = new ConfigurationRegisterData();
                 configReg.availableAfterStep = Steps.ANONYMIZATION;
-                configReg.lockedAfterStep = null;
+                configReg.lockedAfterStep = Steps.EXECUTION;
                 configReg.displayName = "Anonymization Configuration";
                 configReg.fetchConfig = null;
                 configReg.name = value.configurationName;

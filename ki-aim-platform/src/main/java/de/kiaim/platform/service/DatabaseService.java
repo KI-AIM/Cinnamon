@@ -577,6 +577,12 @@ public class DatabaseService {
 
 		// Export the data from the database
 		final List<DataRow> dataRows = new ArrayList<>();
+
+		// If only specific rows should be selected but none are given, return empty dataset
+		if (rows != null && rows.isEmpty()) {
+			return new DataSet(dataRows, dataConfiguration);
+		}
+
 		try (final Statement exportStatement = connection.createStatement()) {
 
 			final String exportQuery = rows != null

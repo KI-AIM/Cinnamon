@@ -1,6 +1,6 @@
 riskThresholdType: "Avg"
 
-riskThresholdValue: 0.1
+riskThresholdValue: 0.5
 
 suppressionLimit: "90"
 

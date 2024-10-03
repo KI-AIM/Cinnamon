@@ -1,10 +1,9 @@
 package de.kiaim.anon.service;
 
 import de.kiaim.anon.AbstractAnonymizationTests;
-import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.anon.converter.KiaimAnonConfigConverter;
 import de.kiaim.anon.model.AnonymizationRequest;
-import de.kiaim.model.configuration.data.ColumnConfiguration;
+import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -14,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import smile.data.Dataset;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -68,6 +67,7 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
 //        }
 //    }
 
+
     @Test
     public void testAnonymizationService() throws Exception {
 
@@ -83,6 +83,8 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
             DataSet anonymizedDataset = future.get();
             assertNotNull(anonymizedDataset);
             System.out.println(anonymizedDataset.getDataRows());
+
+
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
             throw e;

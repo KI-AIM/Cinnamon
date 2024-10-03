@@ -4,9 +4,14 @@ import org.bihmi.jal.config.HierarchyConfig;
 import org.deidentifier.arx.DataType;
 import org.deidentifier.arx.Data;
 import org.deidentifier.arx.aggregates.HierarchyBuilder;
+import org.deidentifier.arx.aggregates.HierarchyBuilderDate;
 import org.deidentifier.arx.aggregates.HierarchyBuilderIntervalBased;
 import org.deidentifier.arx.aggregates.HierarchyBuilderRedactionBased;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Hierarchy {
@@ -15,9 +20,6 @@ public class Hierarchy {
     private final boolean retainDataType;
     String attributeName;
     HierarchyConfig config;
-
-    HierarchyBuilder builder;
-
     Data data;
 
     public Hierarchy(Data data, String attributeName) {
@@ -46,7 +48,7 @@ public class Hierarchy {
         checkBefore();
         HierarchyBuilder builder = selectAndCreateHierarchy(config);
         checkAfter();
-        return null;
+        return builder;
     }
 
     private HierarchyBuilder selectAndCreateHierarchy(HierarchyConfig config) {
@@ -65,12 +67,49 @@ public class Hierarchy {
             case "ORDERING" -> {
                 return createWithSet();
             }
-//            case "DATES" -> {
-//                return createForDates();
-//            }
+            case "DATES" -> {
+                return createForDates();
+            }
             default -> throw new IllegalStateException("Unexpected value: " + config.getHierarchyType());
         }
     }
+
+    private HierarchyBuilder createForDates() {
+
+        HierarchyBuilderDate.Granularity granularity = null;
+        DataType<Date> dateType = DataType.createDate(config.getDateFormat());
+        switch (config.getIntervalSize()){
+            case "week/year": {
+                granularity = HierarchyBuilderDate.Granularity.WEEK_YEAR;
+            }
+            case "month/year": {
+                granularity = HierarchyBuilderDate.Granularity.MONTH_YEAR;
+            }
+            case "quarter/year": {
+                granularity = HierarchyBuilderDate.Granularity.QUARTER_YEAR;
+            }
+            case "year": {
+                granularity = HierarchyBuilderDate.Granularity.YEAR;
+            }
+            case "decade": {
+                granularity = HierarchyBuilderDate.Granularity.DECADE;
+            }
+        }
+
+        // Create the builder
+        var builder = HierarchyBuilderDate.create(dateType, granularity);
+
+        var attribute_index = data.getHandle().getColumnIndexOf(attributeName);
+        String[] values = data.getHandle().getDistinctValues(attribute_index);
+
+        builder.prepare(values);
+        builder.build();
+
+        // TODO (KO): Change Hierarchy to use dates based on DateTransformationHelper
+
+        return builder;
+    }
+
 
     // TODO: need to switch to set aggregation 
     private HierarchyBuilder createWithSet() {
@@ -140,7 +179,6 @@ public class Hierarchy {
 
     protected HierarchyBuilder createWithFixedIntervalSize() {
         HierarchyBuilder hierarchyBuilder = createIntervalBuilderByType(dataType, config.getIntervalSize());
-        hierarchyBuilder.build();
         return hierarchyBuilder;
     }
 
@@ -186,6 +224,7 @@ public class Hierarchy {
         hierarchyBuilder.addInterval(minValue, minValue + intervalRange);
 
         hierarchyBuilder.prepare(values);
+        hierarchyBuilder.build();
         return hierarchyBuilder;
     }
 
@@ -219,6 +258,7 @@ public class Hierarchy {
         hierarchyBuilder.addInterval(minValue, minValue + intervalRange);
 
         hierarchyBuilder.prepare(values);
+        hierarchyBuilder.build();
         return hierarchyBuilder;
     }
 
@@ -249,4 +289,25 @@ public class Hierarchy {
         // TODO
         return null; // new Hierarchy();
     }
+
+    static void printArray(String[][] array) {
+        System.out.print("{");
+        for (int j=0; j<array.length; j++){
+            String[] next = array[j];
+            System.out.print("{");
+            for (int i = 0; i < next.length; i++) {
+                String string = next[i];
+                System.out.print("\"" + string + "\"");
+                if (i < next.length - 1) {
+                    System.out.print(",");
+                }
+            }
+            System.out.print("}");
+            if (j<array.length-1) {
+                System.out.print(",\n");
+            }
+        }
+        System.out.println("}");
+    }
+
 }

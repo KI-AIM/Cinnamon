@@ -1,18 +1,22 @@
 package org.bihmi.jal.anon.util;
 
 import org.bihmi.jal.config.HierarchyConfig;
+import org.deidentifier.arx.AttributeType;
 import org.deidentifier.arx.DataType;
 import org.deidentifier.arx.Data;
 import org.deidentifier.arx.aggregates.HierarchyBuilder;
 import org.deidentifier.arx.aggregates.HierarchyBuilderDate;
 import org.deidentifier.arx.aggregates.HierarchyBuilderIntervalBased;
 import org.deidentifier.arx.aggregates.HierarchyBuilderRedactionBased;
+import org.w3c.dom.Attr;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import static org.bihmi.jal.anon.util.DateTransformationHelper.reverseDateEncoding;
 
 public class Hierarchy {
 
@@ -44,14 +48,14 @@ public class Hierarchy {
         this.config = config;
     }
 
-    public HierarchyBuilder createHierarchy(){
+    public AttributeType.Hierarchy createHierarchy(){
         checkBefore();
-        HierarchyBuilder builder = selectAndCreateHierarchy(config);
+        AttributeType.Hierarchy builder = selectAndCreateHierarchy(config);
         checkAfter();
         return builder;
     }
 
-    private HierarchyBuilder selectAndCreateHierarchy(HierarchyConfig config) {
+    private AttributeType.Hierarchy selectAndCreateHierarchy(HierarchyConfig config) {
         System.out.println(config.toString());
         if (config == null){
             throw new RuntimeException("Hierarchy Config should not be null.");
@@ -74,7 +78,7 @@ public class Hierarchy {
         }
     }
 
-    private HierarchyBuilder createForDates() {
+    private AttributeType.Hierarchy createForDates() {
 
         HierarchyBuilderDate.Granularity granularity = null;
         DataType<Date> dateType = DataType.createDate(config.getDateFormat());
@@ -103,16 +107,19 @@ public class Hierarchy {
         String[] values = data.getHandle().getDistinctValues(attribute_index);
 
         builder.prepare(values);
-        builder.build();
 
-        // TODO (KO): Change Hierarchy to use dates based on DateTransformationHelper
+        String[][] _hierarchy = builder.build().getHierarchy();
+        AttributeType.Hierarchy.DefaultHierarchy hierarchy = AttributeType.Hierarchy.create();
 
-        return builder;
+        for (int i=0; i<_hierarchy.length; i++) {
+            hierarchy.add(_hierarchy[i][0], reverseDateEncoding(_hierarchy[i][1], granularity));
+        }
+        return hierarchy;
     }
 
 
     // TODO: need to switch to set aggregation 
-    private HierarchyBuilder createWithSet() {
+    private AttributeType.Hierarchy createWithSet() {
         var attribute_index = data.getHandle().getColumnIndexOf(attributeName);
         String[] values = data.getHandle().getDistinctValues(attribute_index);
 
@@ -139,12 +146,11 @@ public class Hierarchy {
         builder.setAlphabetSize(alphabetSize, maxValueLength);
 
         builder.prepare(values);
-        builder.build();
 
-        return builder;
+        return builder.build();
     }
 
-    protected HierarchyBuilder createWithMasking() {
+    protected AttributeType.Hierarchy createWithMasking() {
 
         var attribute_index = data.getHandle().getColumnIndexOf(attributeName);
         String[] values = data.getHandle().getDistinctValues(attribute_index);
@@ -172,17 +178,16 @@ public class Hierarchy {
         builder.setAlphabetSize(alphabetSize, maxValueLength);
 
         builder.prepare(values);
-        builder.build();
 
-        return builder;
+        return builder.build();
     }
 
-    protected HierarchyBuilder createWithFixedIntervalSize() {
-        HierarchyBuilder hierarchyBuilder = createIntervalBuilderByType(dataType, config.getIntervalSize());
+    protected AttributeType.Hierarchy createWithFixedIntervalSize() {
+        AttributeType.Hierarchy hierarchyBuilder = createIntervalBuilderByType(dataType, config.getIntervalSize());
         return hierarchyBuilder;
     }
 
-    private HierarchyBuilder createIntervalBuilderByType(DataType<?> dataType, String intervalSize) {
+    private AttributeType.Hierarchy createIntervalBuilderByType(DataType<?> dataType, String intervalSize) {
 
         if (dataType.equals(DataType.DECIMAL)) {
             double size = Double.parseDouble(intervalSize);
@@ -194,7 +199,7 @@ public class Hierarchy {
         throw new IllegalStateException("Unexpected value: " + dataType);
     }
 
-    private HierarchyBuilderIntervalBased integerIntervalBuilder(int intervalRange) {
+    private AttributeType.Hierarchy integerIntervalBuilder(int intervalRange) {
         var attribute_index = data.getHandle().getColumnIndexOf(attributeName);
         String[] values = data.getHandle().getDistinctValues(attribute_index);
 
@@ -224,11 +229,10 @@ public class Hierarchy {
         hierarchyBuilder.addInterval(minValue, minValue + intervalRange);
 
         hierarchyBuilder.prepare(values);
-        hierarchyBuilder.build();
-        return hierarchyBuilder;
+        return hierarchyBuilder.build();
     }
 
-    private HierarchyBuilderIntervalBased decimalIntervalBuilder(double intervalRange) {
+    private AttributeType.Hierarchy decimalIntervalBuilder(double intervalRange) {
         var attribute_index = data.getHandle().getColumnIndexOf(attributeName);
         String[] values = data.getHandle().getDistinctValues(attribute_index);
 
@@ -258,8 +262,7 @@ public class Hierarchy {
         hierarchyBuilder.addInterval(minValue, minValue + intervalRange);
 
         hierarchyBuilder.prepare(values);
-        hierarchyBuilder.build();
-        return hierarchyBuilder;
+        return hierarchyBuilder.build();
     }
 
     private void checkBefore(){

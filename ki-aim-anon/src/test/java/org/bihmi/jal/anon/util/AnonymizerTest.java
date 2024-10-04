@@ -10,6 +10,7 @@ import org.bihmi.jal.anon.privacyModels.KAnonymity;
 import org.bihmi.jal.anon.privacyModels.PrivacyModel;
 import org.bihmi.jal.config.AttributeConfig;
 import org.bihmi.jal.config.HierarchyConfig;
+import org.deidentifier.arx.AttributeType;
 import org.deidentifier.arx.Data;
 import org.deidentifier.arx.DataType;
 import org.deidentifier.arx.aggregates.HierarchyBuilder;
@@ -117,7 +118,7 @@ public class AnonymizerTest {
         data.getDefinition().setDataType(column, DataType.DECIMAL);
 
         Hierarchy creator = new Hierarchy(data, column);
-        HierarchyBuilder hierarchyBuilder = creator.createWithFixedIntervalSize();
+        AttributeType.Hierarchy hierarchyBuilder = creator.createWithFixedIntervalSize();
 
     }
 }

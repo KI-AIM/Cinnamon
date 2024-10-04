@@ -10,6 +10,9 @@ import java.util.Locale;
 public class DateTransformationHelper {
 
     protected static String reverseDateEncoding(String encodedDate, HierarchyBuilderDate.Granularity granularity){
+        // guard clause if date is suppressed
+        String date1 = handleSuppressed(encodedDate);
+        if (date1 != null) return date1;
 
         return switch (granularity) {
             case WEEK_YEAR -> decodeWeekYear(encodedDate);
@@ -64,7 +67,6 @@ public class DateTransformationHelper {
     }
 
     private static String decodeDecade(String encodedDate) {
-        // Remove the brackets and split by the comma
         String cleanedInterval = encodedDate.replace("[", "").replace("[", "").replace("]", "");
         String[] bounds = cleanedInterval.split(",");
 
@@ -74,6 +76,15 @@ public class DateTransformationHelper {
         LocalDate date = LocalDate.of(middleYear, 1, 1);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return date.format(formatter);
+    }
+
+    private static String handleSuppressed(String encodedDate) {
+        if (encodedDate.contains("NULL") || encodedDate == "*"){
+            LocalDate date = LocalDate.of(1, 1, 1);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            return date.format(formatter);
+        }
+        return null;
     }
 
 }

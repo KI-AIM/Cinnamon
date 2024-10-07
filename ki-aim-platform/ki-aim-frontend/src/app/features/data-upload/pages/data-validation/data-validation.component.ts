@@ -53,6 +53,7 @@ export class DataValidationComponent implements OnInit {
 
     openDeleteDialog(templateRef: TemplateRef<any>) {
         this.dialog.open(templateRef, {
+            disableClose: true,
             width: '60%'
         });
     }

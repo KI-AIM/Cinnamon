@@ -2,7 +2,7 @@
     <div [innerHTML]="error"></div>
 </app-info-card>
 
-<div class="p-5">
+<div>
     <div
         class="mb-3 alert alert-warning" role="alert"
         *ngIf="fileService.fileConfiguration.fileType == FileType.XLSX">
@@ -15,8 +15,11 @@
                                   (onUpload)="handleConfigUpload($event);" [disabled]="locked">
         </app-configuration-upload>
     </div>
+    <div class="mt-2">
+        Configure the attributes of the dataset:
+    </div>
 
-    <div class="d-flex flex-column mb-3">
+    <div class="d-flex flex-column">
         <div *ngFor="let column of dataConfiguration.configurations, index as i">
             <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()" [column]="column"
                                          [disabled]="locked" (onValidation)="onValidation($event)"

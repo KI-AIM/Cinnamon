@@ -408,6 +408,16 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void loadDataSetJson() throws Exception {
+		postData();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
+		                                      .accept(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsJson()));
+	}
+
+	@Test
 	void loadDataSetNoDataSet() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation"))
 		       .andExpect(status().isBadRequest())
@@ -458,6 +468,22 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(
 				       content().string(DataSetTestHelper.generateDataSetAsYaml(wrapInQuotes(defaultNullEncoding),
 				                                                                wrapInQuotes(formatErrorEncoding))));
+	}
+
+	@Test
+	void loadDataSetEncodingJson() throws Exception {
+		postData(true);
+
+		final String defaultNullEncoding = "N/A";
+		final String formatErrorEncoding = ":(";
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
+		                                      .accept(MediaType.APPLICATION_JSON)
+		                                      .param("defaultNullEncoding", defaultNullEncoding)
+		                                      .param("formatErrorEncoding", formatErrorEncoding))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsJson(wrapInQuotes(defaultNullEncoding),
+		                                                                           wrapInQuotes(formatErrorEncoding))));
 	}
 
 	// ================================================================================================================

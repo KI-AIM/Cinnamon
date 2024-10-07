@@ -135,25 +135,19 @@ export class TechnicalEvaluationService extends AlgorithmService {
      */
 
     public registerConfig() {
-        // TODO this is a racing condition with state-guard fetching the configurations
-        this.stepConfig.subscribe({
-            next: value => {
+        const configReg = new ConfigurationRegisterData();
+        configReg.availableAfterStep = Steps.TECHNICAL_EVALUATION;
+        configReg.lockedAfterStep = null;
+        configReg.displayName = "Technical Evaluation Configuration";
+        configReg.fetchConfig = null;
+        // TODO fetch from server, user must be logged in for authentication
+        configReg.name = "evaluation_configuration";
+        configReg.orderNumber = 3;
+        configReg.storeConfig = null;
+        configReg.getConfigCallback = () => this.getConfig();
+        configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
-                const configReg = new ConfigurationRegisterData();
-                configReg.availableAfterStep = Steps.TECHNICAL_EVALUATION;
-                configReg.lockedAfterStep = null;
-                configReg.displayName = "Technical Evaluation Configuration";
-                configReg.fetchConfig = null;
-                configReg.name = value.configurationName;
-                configReg.orderNumber = 3;
-                configReg.storeConfig = null;
-                configReg.getConfigCallback = () => this.getConfig();
-                configReg.setConfigCallback = (config) => this.setConfigWait(config);
-
-                this.configurationService.registerConfiguration(configReg);
-
-            }
-        });
+        this.configurationService.registerConfiguration(configReg);
     }
 
 }

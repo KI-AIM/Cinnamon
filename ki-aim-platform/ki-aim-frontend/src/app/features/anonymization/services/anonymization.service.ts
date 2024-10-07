@@ -53,21 +53,18 @@ export class AnonymizationService extends AlgorithmService {
     }
 
     public registerConfig() {
-        this.stepConfig.subscribe({
-            next: value => {
-                const configReg = new ConfigurationRegisterData();
-                configReg.availableAfterStep = Steps.ANONYMIZATION;
-                configReg.lockedAfterStep = Steps.EXECUTION;
-                configReg.displayName = "Anonymization Configuration";
-                configReg.fetchConfig = null;
-                configReg.name = value.configurationName;
-                configReg.orderNumber = 1;
-                configReg.storeConfig = null;
-                configReg.getConfigCallback = () => this.getConfig();
-                configReg.setConfigCallback = (config) => this.setConfigWait(config);
+        const configReg = new ConfigurationRegisterData();
+        configReg.availableAfterStep = Steps.ANONYMIZATION;
+        configReg.lockedAfterStep = Steps.EXECUTION;
+        configReg.displayName = "Anonymization Configuration";
+        configReg.fetchConfig = null;
+        // TODO fetch from server, user must be logged in for authentication
+        configReg.name = "anonymization";
+        configReg.orderNumber = 1;
+        configReg.storeConfig = null;
+        configReg.getConfigCallback = () => this.getConfig();
+        configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
-                this.configurationService.registerConfiguration(configReg);
-            }
-        });
+        this.configurationService.registerConfiguration(configReg);
     }
 }

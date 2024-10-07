@@ -41,7 +41,7 @@ public class FrontendAnonConfigConverterTest extends AbstractAnonymizationTests 
 
 //         Check convertion
         assertNotNull(anonymizationConfig);
-        assertEquals(frontendAnonConfig.getSuppressionLimit(), String.valueOf(anonymizationConfig.getSuppressionLimit()));
+        assertEquals(frontendAnonConfig.getPrivacyModels().get(0).getModelConfiguration().getSuppressionLimit(), String.valueOf(anonymizationConfig.getSuppressionLimit()));
 
         // Check if all attributes are converted
         assertEquals(frontendAnonConfig.getAttributeConfigurations().size(), anonymizationConfig.getAttributeConfigs().size());

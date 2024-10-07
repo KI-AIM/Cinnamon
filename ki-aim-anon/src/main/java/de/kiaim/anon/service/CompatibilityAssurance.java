@@ -2,8 +2,6 @@ package de.kiaim.anon.service;
 
 import de.kiaim.anon.exception.AttributeMismatchException;
 import de.kiaim.anon.exception.ColumnNumberMismatchException;
-import de.kiaim.model.configuration.anonymization.AnonymizationConfig;
-import de.kiaim.model.configuration.anonymization.AttributeConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAttributeConfig;
 import de.kiaim.model.configuration.data.ColumnConfiguration;
@@ -11,7 +9,6 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataType;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,7 +27,7 @@ public class CompatibilityAssurance {
      */
     public static void checkDataSetAndFrontendConfigCompatibility(DataSet dataSet, FrontendAnonConfig frontendAnonConfig) {
         List<ColumnConfiguration> columnConfigurations = dataSet.getDataConfiguration().getConfigurations();
-        List<FrontendAttributeConfig> frontendAttributeConfigs = frontendAnonConfig.getAttributeConfigurations();
+        List<FrontendAttributeConfig> frontendAttributeConfigs = frontendAnonConfig.getAttributeConfiguration();
 
         // Check that the number of attributes is equal
         if (columnConfigurations.size() != frontendAttributeConfigs.size()) {

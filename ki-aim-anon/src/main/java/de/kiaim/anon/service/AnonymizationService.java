@@ -68,7 +68,7 @@ public class AnonymizationService {
      * @return A CompletableFuture containing the anonymized dataset.
      * @throws Exception If an error occurs during the anonymization process.
      */
-    @Async
+    @Async("taskExecutor")
     public CompletableFuture<DataSet> anonymizeData(DataSet dataSet,
                                                     FrontendAnonConfig frontendAnonConfig,
                                                     String processId) throws Exception {
@@ -100,7 +100,7 @@ public class AnonymizationService {
      * @param request The anonymization request containing the dataset, configuration, and callback URL.
      * @return A CompletableFuture containing the anonymized dataset.
      */
-    @Async
+    @Async("taskExecutor")
     public CompletableFuture<DataSet> anonymizeDataWithCallbackResult(AnonymizationRequest request) {
         return CompletableFuture.supplyAsync(() -> {
             try {
@@ -120,7 +120,7 @@ public class AnonymizationService {
             } catch (Exception ex) {
                 log.error("An error occurred during data anonymization", ex);
                 sendFailureCallback(request.getCallback(), ex);
-                throw new RuntimeException(ex);
+                return null;
             }
         });
     }

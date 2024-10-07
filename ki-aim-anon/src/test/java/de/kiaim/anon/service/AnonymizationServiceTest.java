@@ -155,20 +155,23 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
         frontendAnonConfig.getPrivacyModels().get(0).getModelConfiguration().setRiskThresholdType("InvalidType");
 
         String localMockUrl = mockWebServer.url("/callback/failure").toString();
-
         AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, frontendAnonConfig, localMockUrl);
 
         anonymizationService.anonymizeDataWithCallbackResult(anonRequest).join();
 
         var recordedRequest = mockWebServer.takeRequest();
+
         assertEquals("POST", recordedRequest.getMethod());
+
         assertEquals("/callback/failure", recordedRequest.getPath());
-        assertEquals("application/json", recordedRequest.getHeader("Content-Type"));
 
-        String responseBody = recordedRequest.getBody().readUtf8();
-        assertTrue(responseBody.contains("Anonymization failed"));
+        assertTrue(recordedRequest.getHeader("Content-Type").startsWith("multipart/form-data"));
 
-        System.out.println("Received error response in callback: " + responseBody);
+        String body = recordedRequest.getBody().readUtf8();
+        assertTrue(body.contains("Content-Disposition: form-data; name=\"error_message\""));
+        assertTrue(body.contains("Anonymization failed"));
+
+        System.out.println("Received error response in callback: " + body);
     }
 //    TODO: unused. Delete
 //    @Test

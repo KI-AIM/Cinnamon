@@ -234,6 +234,23 @@ export class EvaluationComponent {
         return ['mean', 'standard_deviation', 'skewness', 'quantiles', 'kurtosis'].includes(name);
     }
 
+
+    /**
+     * Downloads all files related to the project in a ZIP file.
+     * @protected
+     */
+    protected downloadResult() {
+        this.http.get(environments.apiUrl + "/api/project/zip", {responseType: 'arraybuffer'}).subscribe({
+            next: data => {
+                const blob = new Blob([data], {
+                    type: 'application/zip'
+                });
+                const url = window.URL.createObjectURL(blob);
+                window.open(url);
+            }
+        });
+    }
+
     protected readonly JSON = JSON;
     protected readonly Object = Object;
 

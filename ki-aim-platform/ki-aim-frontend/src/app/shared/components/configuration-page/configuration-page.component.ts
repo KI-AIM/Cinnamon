@@ -24,6 +24,7 @@ import { ConfigurationAdditionalConfigs } from '../../model/configuration-additi
 })
 export class ConfigurationPageComponent implements OnInit {
     @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
+    @Input() public hasAlgorithmSelection: boolean = true;
 
     private baseUrl: string = environments.apiUrl + "/api/process";
 
@@ -68,6 +69,9 @@ export class ConfigurationPageComponent implements OnInit {
             next: value => {
                 this.error = null;
                 this.algorithms = value;
+                if (!this.hasAlgorithmSelection) {
+                    this.selection.selectedOption = this.algorithms[0];
+                }
             }, error: error => {
                 console.log(error);
                 this.error = `Failed to load available algorithms. Status: ${error.status} (${error.statusText})`;

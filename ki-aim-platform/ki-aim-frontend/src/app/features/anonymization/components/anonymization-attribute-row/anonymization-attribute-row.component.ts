@@ -117,25 +117,21 @@ export class AnonymizationAttributeRowComponent implements OnInit {
 
         if (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.ORDINAL)) {
             transformations.push(AttributeProtection.GENERALIZATION);
-            transformations.push(AttributeProtection.MICRO_AGGREGATION);
         }
 
-        if (areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.INTEGER) &&
+        if (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.RATIO) ||
             areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.INTERVAL)
         ) {
-            transformations.push(AttributeProtection.GENERALIZATION);
-            transformations.push(AttributeProtection.MICRO_AGGREGATION);
-        }
-
-        if (areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.DECIMAL) &&
-            areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.RATIO)
-        ) {
-            transformations.push(AttributeProtection.GENERALIZATION);
-            transformations.push(AttributeProtection.MICRO_AGGREGATION);
+            if (areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.DECIMAL) ||
+                areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.INTEGER)
+            ) {
+                transformations.push(AttributeProtection.GENERALIZATION);
+                transformations.push(AttributeProtection.MICRO_AGGREGATION);
+            }
         }
 
         transformations.push(AttributeProtection.ATTRIBUTE_DELETION);
-        transformations.push(AttributeProtection.VALUE_DELETION);
+        // transformations.push(AttributeProtection.VALUE_DELETION); // Not supported ye
 
         return new List<String>(transformations);
     }

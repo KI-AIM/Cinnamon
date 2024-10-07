@@ -171,16 +171,17 @@ public class FrontendAnonConfigConverter {
         String type;
         String intervalSize;
         String splitLevels = ""; // TODO : Should it be set ? not yet
+        String dateformat = "";
         int minLevelToUse = 0;
-        int maxLevelToUse = 0; // TODO : how determine ? Not use now : target level = interval size
+        int maxLevelToUse = 1; // TODO : how determine ? Not use now : target level = interval size
 
         // Determine hierarchy type and levels based on the attribute's protection, scale, and type
         if (frontendAttributeConfig.getAttributeProtection() == AttributeProtection.DATE_GENERALIZATION) {
             type = "DATES";
+            dateformat = frontendAttributeConfig.getDateFormat();
             intervalSize = frontendAttributeConfig.getIntervalSize();
-//            splitLevels = "year, month/year, week/year";
             minLevelToUse = 0;
-            maxLevelToUse = 5; // TODO : Change
+            maxLevelToUse = 1; // TODO : Change
         } else if (frontendAttributeConfig.getAttributeProtection() == AttributeProtection.MASKING) {
             type = "MASKING";
             intervalSize = frontendAttributeConfig.getIntervalSize();
@@ -192,7 +193,7 @@ public class FrontendAnonConfigConverter {
             type = "INTERVALS";
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0; // low generalization
-            maxLevelToUse = 100; // high generalization
+            maxLevelToUse = 1; // high generalization
         } else if ((frontendAttributeConfig.getAttributeProtection() == AttributeProtection.GENERALIZATION
                 ||frontendAttributeConfig.getAttributeProtection() == AttributeProtection.MICRO_AGGREGATION)
                 && (frontendAttributeConfig.getDataScale() == DataScale.ORDINAL)) {
@@ -205,7 +206,7 @@ public class FrontendAnonConfigConverter {
             intervalSize= "";
             splitLevels = "";
             minLevelToUse = 0;
-            maxLevelToUse = 0;
+            maxLevelToUse = 1;
         }
 
         // Return the hierarchy configuration
@@ -213,6 +214,7 @@ public class FrontendAnonConfigConverter {
                 .attributeName(frontendAttributeConfig.getName())
                 .hierarchyType(type)
                 .intervalSize(intervalSize)
+                .dateFormat(dateformat)
                 .splitLevels(splitLevels)
                 .minLevelToUse(minLevelToUse)
                 .maxLevelToUse(maxLevelToUse)

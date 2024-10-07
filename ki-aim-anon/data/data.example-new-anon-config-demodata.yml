@@ -1,6 +1,6 @@
-riskThresholdType: "Avg"
+riskThresholdType: "Max"
 
-riskThresholdValue: 0.1
+riskThresholdValue: 0.5
 
 suppressionLimit: "90"
 
@@ -11,9 +11,9 @@ attributeConfigurations:
     name: "death_date"
     dataType: "DATE"
     dataScale: "DATE"
-    attributeProtection: "ATTRIBUTE_DELETION"
+    attributeProtection: "DATE_GENERALIZATION"
     dateFormat: "yyyy-MM-dd"
-    intervalSize: "year"
+    intervalSize: "decade"
 
   - index: 1
     name: "death_reason_icd10"
@@ -48,7 +48,7 @@ attributeConfigurations:
     name: "ecog"
     dataType: "INTEGER"
     dataScale: "ORDINAL"
-    attributeProtection: "ATTRIBUTE_DELETION"
+    attributeProtection: "GENERALIZATION"
     intervalSize: "2"
     values: ['0', '1', '2', '3', '4']
 
@@ -70,7 +70,7 @@ attributeConfigurations:
     name: "history_assessment_primary_tumor"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "500"
 
   - index: 9
@@ -92,7 +92,7 @@ attributeConfigurations:
     name: "intention_of_operation"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "MASKING"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "80"
 
   - index: 12
@@ -185,7 +185,7 @@ attributeConfigurations:
     name: "patient_gender"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "MASKING"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "2"
 
   - index: 25
@@ -269,26 +269,26 @@ attributeConfigurations:
     name: "radiotherapy_targetarea"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
 
   - index: 37
     name: "radiotherapy_total_dosage"
     dataType: "DECIMAL"
     dataScale: "RATIO"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
 
   - index: 38
     name: "residual_tumor_status_operation"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "MASKING"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "5"
 
   - index: 39
     name: "residual_tumor_status_primary_therapy"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "MASKING"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "5"
 
   - index: 40
@@ -309,7 +309,7 @@ attributeConfigurations:
     name: "systemic_therapy_adverse_events_CTCAE_grade"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "MASKING"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "2"
 
   - index: 43
@@ -352,7 +352,7 @@ attributeConfigurations:
     name: "systemic_therapy_reason"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "MASKING"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "5"
 
   - index: 49
@@ -366,28 +366,28 @@ attributeConfigurations:
     name: "systemic_therapy_type"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "MASKING"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "5"
 
   - index: 51
     name: "tnm_cpu_m-prefix"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "2"
 
   - index: 52
     name: "tnm_cpu_n-prefix"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "2"
 
   - index: 53
     name: "tnm_cpu_t-prefix"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "2"
 
   - index: 54
@@ -402,35 +402,35 @@ attributeConfigurations:
     name: "tnm_m_category"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "5"
 
   - index: 56
     name: "tnm_n_category"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "5"
 
   - index: 57
     name: "tnm_r-symbol"
     dataType: "BOOLEAN"
     dataScale: "NOMINAL"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "5"
 
   - index: 58
     name: "tnm_t_category"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "5"
 
   - index: 59
     name: "tnm_y-symbol"
     dataType: "BOOLEAN"
     dataScale: "NOMINAL"
-    attributeProtection: "NO_PROTECTION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "5"
 
   - index: 60
@@ -467,12 +467,12 @@ attributeConfigurations:
     name: "tumor_thickness"
     dataType: "DECIMAL"
     dataScale: "RATIO"
-    attributeProtection: "MICRO_AGGREGATION"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "0.5"
 
   - index: 65
     name: "ulzeration"
     dataType: "STRING"
     dataScale: "NOMINAL"
-    attributeProtection: "MASKING"
+    attributeProtection: "ATTRIBUTE_DELETION"
     intervalSize: "5"

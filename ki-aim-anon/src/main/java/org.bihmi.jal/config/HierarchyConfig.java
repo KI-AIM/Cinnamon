@@ -21,6 +21,7 @@ public class HierarchyConfig {
     private String attributeName;
     private String hierarchyType;
     private String intervalSize;
+    private String dateFormat;  // TODO: Discuss if we actually want the date format here, or get it from somewhere else?
     private String splitLevels; // splits top level further down, opposite of merge levels
     // private String mergeLevels; // merge bottom levels together, opposite of split levels
 
@@ -36,6 +37,7 @@ public class HierarchyConfig {
                 ", attributeName='" + attributeName + '\'' +
                 ", intervalSize='" + intervalSize + '\'' +
                 ", splitLevels='" + splitLevels + '\'' +
+                ", dateformat='" + dateFormat + '\'' +
                 // ", mergeLevels='" + mergeLevels + '\'' +
                 ", minLevelToUse=" + minLevelToUse +
                 ", maxLevelToUse=" + maxLevelToUse +

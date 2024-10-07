@@ -81,8 +81,11 @@ public class AnonymizedDatasetProcessor {
                 throw new IllegalArgumentException("Interval values are not allowed for numerical data.");
             }
         }
-
         return value;
+    }
+
+    private static boolean isInterval(String value) {
+        return value.contains("[") && value.contains(",");
     }
 
     private static Object parseValueByType(String value, DataType type) {

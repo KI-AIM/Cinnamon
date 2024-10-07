@@ -61,8 +61,9 @@ public class Anonymizer {
             setDataType(attributeConfig);
             setAttributeType(attributeConfig);
             setHierarchy(attributeConfig);
-            // setGeneralizationLevelLimits(attributeConfig);  TODO: for now disabled, only first level is created
+            setGeneralizationLevelLimits(attributeConfig);  // TODO: for now disabled, only first level is created
             setMicroAggregation(attributeConfig);
+
         }
     }
 
@@ -129,11 +130,6 @@ public class Anonymizer {
     }
 
     public void anonymize() throws IllegalStateException, RuntimeException {
-        // TODO (KO):make async or create async alternative
-        // TODO (KO): check if every data was set properly
-        //  - hierarchies created?
-        //  - QI and sensitive attributes defined?
-        //  - privacy model created?
 
         configureARX(this.JALConfig);
 

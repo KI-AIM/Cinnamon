@@ -15,7 +15,6 @@ import de.kiaim.model.exception.anonymization.InvalidSuppressionLimitException;
 import org.bihmi.jal.anon.privacyModels.AverageReidentificationRisk;
 import org.bihmi.jal.anon.privacyModels.KAnonymity;
 import org.bihmi.jal.anon.privacyModels.PrivacyModel;
-import org.bihmi.jal.anon.util.Hierarchy;
 import org.bihmi.jal.config.AttributeConfig;
 import org.bihmi.jal.config.HierarchyConfig;
 import org.bihmi.jal.config.QualityModelConfig;
@@ -48,7 +47,7 @@ public class FrontendAnonConfigConverter {
 
         // Convert the list of FrontendAttributeConfig to AttributeConfig for JAL
         List<AttributeConfig> attributeConfigs = convertAttributeConfigs(
-                frontendConfig.getAttributeConfigurations(), originalDataSet);
+                frontendConfig.getAttributeConfiguration(), originalDataSet);
 
         // Create a QualityModelConfig with default values
         QualityModelConfig qualityModelConfig = new QualityModelConfig();

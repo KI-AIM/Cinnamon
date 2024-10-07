@@ -43,7 +43,8 @@ public class FrontendAnonConfigConverter {
 
         // Convert the Risk Threshold to Privacy Models
         Collection<PrivacyModel> privacyModels = convertPrivacyModels(
-                frontendConfig.getRiskThresholdType(), frontendConfig.getRiskThresholdValue());
+                frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getRiskThresholdType(),
+                frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getRiskThresholdValue());
 
         // Convert the list of FrontendAttributeConfig to AttributeConfig for JAL
         List<AttributeConfig> attributeConfigs = convertAttributeConfigs(
@@ -57,9 +58,9 @@ public class FrontendAnonConfigConverter {
 
         return new AnonymizationConfig(
                 privacyModels,
-                Double.parseDouble(frontendConfig.getSuppressionLimit()), // Suppression limit between 0 and 1
+                Double.parseDouble(frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getSuppressionLimit()), // Suppression limit between 0 and 1
                 qualityModelConfig, // Assuming QualityModelConfig needs a setting like "Global" or "Local"
-                frontendConfig.getGeneralizationSetting().equalsIgnoreCase("Local"), // Local generalization is true if setting is "Local"
+                frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getGeneralizationSetting().equalsIgnoreCase("Local"), // Local generalization is true if setting is "Local"
                 attributeConfigs
         );
     }

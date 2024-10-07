@@ -1,10 +1,11 @@
-riskThresholdType: "Max"
-
-riskThresholdValue: 0.5
-
-suppressionLimit: "90"
-
-generalizationSetting: "Global"
+privacyModels:
+  - name: anonymization_tabular
+    type: tabular
+    modelConfiguration:
+      riskThresholdType: "Max"
+      riskThresholdValue: 0.5
+      suppressionLimit: "90"
+      generalizationSetting: "Global"
 
 attributeConfigurations:
   - index: 0

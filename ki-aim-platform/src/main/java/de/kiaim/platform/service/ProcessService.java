@@ -8,6 +8,7 @@ import de.kiaim.model.configuration.data.DateTimeFormatConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataType;
+import de.kiaim.model.serialization.mapper.JsonMapper;
 import de.kiaim.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.config.StepConfiguration;
@@ -32,6 +33,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -589,13 +591,13 @@ public class ProcessService {
 		if (externalProcess.getStep() == Step.ANONYMIZATION) {
 			DataSet dataSet = getLastOrOriginalDataSet(externalProcess.getExecutionStep());
 			try {
-				String dataSetString = jsonMapper.writeValueAsString(dataSet);
-				bodyBuilder.part("data", dataSetString);
+				String dataSetString = JsonMapper.jsonMapper().writeValueAsString(dataSet);
+				bodyBuilder.part("data", dataSetString, MediaType.APPLICATION_JSON);
 			} catch(Exception e) {
 				log.error("Could not convert dataset to json: " + e.getMessage());
 			}
 
-			bodyBuilder.part("anonymizationConfig", configuration);
+			bodyBuilder.part("anonymizationConfig", configuration, MediaType.APPLICATION_JSON);
 		}
 		else {
 			bodyBuilder.part(configName, new ByteArrayResource(configuration.getBytes()) {

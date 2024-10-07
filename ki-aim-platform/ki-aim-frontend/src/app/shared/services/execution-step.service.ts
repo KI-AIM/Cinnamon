@@ -79,9 +79,10 @@ export abstract class ExecutionStepService {
      * @protected
      */
     public cancel() {
-        this.http.post<ProcessStatus>(this.baseUrl + '/' + this.getStepName() + '/cancel', {}).subscribe({
-            next: (status: ProcessStatus) => {
-                this.setState(status);
+        this.http.post<ExecutionStep>(this.baseUrl + '/' + this.getStepName() + '/cancel', {}).subscribe({
+            next: (executionStep: ExecutionStep) => {
+                this._status = executionStep;
+                this.setState(executionStep.status);
             },
             error: err => {
                 this._error = `Failed to cancel the process. Status: ${err.status} (${err.statusText})`;

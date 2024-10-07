@@ -7,7 +7,7 @@ privacyModels:
       suppressionLimit: "90"
       generalizationSetting: "Global"
 
-attributeConfigurations:
+attributeConfiguration:
   - index: 0
     name: "death_date"
     dataType: "DATE"

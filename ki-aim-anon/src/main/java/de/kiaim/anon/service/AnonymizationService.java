@@ -12,12 +12,21 @@ import de.kiaim.model.data.DataSet;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import reactor.util.retry.Retry;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+
+import static org.apache.tomcat.util.buf.ByteChunk.convertToBytes;
 
 @Service
 @Slf4j
@@ -126,14 +135,31 @@ public class AnonymizationService {
         log.info("Sending callback to URL: {}", callbackUrl);
         long startTime = System.currentTimeMillis();
 
-        webClient.post()
-                .uri(callbackUrl)
-                .body(BodyInserters.fromValue(result))
-                .retrieve()
-                .bodyToMono(Void.class)
-                .doOnError(e -> log.error("Failed to send callback to URL: {}", callbackUrl, e))
-                .doFinally(signal -> log.info("Callback sent to URL: {} in {} ms", callbackUrl, System.currentTimeMillis() - startTime))
-                .subscribe();
+        try {
+            byte[] syntheticDataBytes = convertToBytes(result.toString());
+
+            // Create Multipart request
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("synthetic_data", new ByteArrayResource(syntheticDataBytes) {
+                @Override
+                public String getFilename() {
+                    return "synthetic_data.bin";
+                }
+            });
+
+            // Send request
+            webClient.post()
+                    .uri(callbackUrl)
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(body))
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .doOnError(e -> log.error("Failed to send callback to URL: {}", callbackUrl, e))
+                    .doFinally(signal -> log.info("Callback sent to URL: {} in {} ms", callbackUrl, System.currentTimeMillis() - startTime))
+                    .subscribe();
+        } catch (Exception e) {
+            log.error("Error preparing multipart request for callback", e);
+        }
     }
 
     /**
@@ -143,14 +169,41 @@ public class AnonymizationService {
      * @param ex The exception that occurred.
      */
     public void sendFailureCallback(String callbackUrl, Throwable ex) {
-        AnonymizationErrorResponse errorResponse = new AnonymizationErrorResponse("Anonymization failed", ex.getMessage());
-        webClient.post()
-                .uri(callbackUrl)
-                .body(BodyInserters.fromValue(errorResponse))
-                .retrieve()
-                .bodyToMono(Void.class)
-                .doOnError(e -> log.error("Failed to send failure callback to URL: {}", callbackUrl, e))
-                .subscribe();
+        log.info("Sending failure callback to URL: {}", callbackUrl);
+        long startTime = System.currentTimeMillis();
+
+        try {
+            String errorMessage = "Anonymization failed";
+            String exceptionMessage = ex.getMessage() != null ? ex.getMessage() : "No additional information";
+
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("error_message", new ByteArrayResource(errorMessage.getBytes(StandardCharsets.UTF_8)) {
+                @Override
+                public String getFilename() {
+                    return "error_message.txt";
+                }
+            });
+            body.add("exception_message", new ByteArrayResource(exceptionMessage.getBytes(StandardCharsets.UTF_8)) {
+                @Override
+                public String getFilename() {
+                    return "exception_message.txt";
+                }
+            });
+
+            // Envoyer la requête POST avec le corps multipart
+            webClient.post()
+                    .uri(callbackUrl)
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(body))
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(2)))
+                    .doOnError(e -> log.error("Failed to send failure callback to URL: {}", callbackUrl, e))
+                    .doFinally(signal -> log.info("Failure callback sent to URL: {} in {} ms", callbackUrl, System.currentTimeMillis() - startTime))
+                    .subscribe();
+        } catch (Exception e) {
+            log.error("Error preparing multipart request for failure callback", e);
+        }
     }
 
     //    TODO: Old version. Delete

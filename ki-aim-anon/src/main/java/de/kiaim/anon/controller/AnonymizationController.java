@@ -104,10 +104,10 @@ public class AnonymizationController {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + session_key + " already exists.");
             }
 
-            // Créer l'objet AnonymizationRequest à partir des différentes parties
+            // Create AnonymizationRequest object from request
             AnonymizationRequest request = new AnonymizationRequest(session_key, data, anonymizationConfig, callback);
 
-            // Appeler le service d'anonymisation
+            // Run anonymization service asynchronously
             Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);
 
             tasks.put(session_key, future);

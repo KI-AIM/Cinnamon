@@ -16,6 +16,8 @@ body {
     display: flex; 
     flex-direction: column;
     min-height: 100%; 
+    height: 100%;
+    overflow: hidden;
 }
 
 app-root {
@@ -42,7 +44,6 @@ app-navigation{
 
 .content-left {
     height:100%; 
-    position: fixed;
     width: 25vw; 
     //min-width: 250px;
     // padding: 20px;  
@@ -59,13 +60,10 @@ app-navigation{
 .content-right {
     flex-direction: column;
     width: 75vw;
-    margin-left:25vw;  
 }
 
 
 .title-wrapper {
-    position: fixed;
-    width: 75%; 
     display: flex; 
     background-color: @color-white;
     color: @color-black; 
@@ -81,12 +79,12 @@ app-navigation{
 }
 
 .page-content {
-    margin-top: 2.5em !important; 
     margin: 0px; 
     border: @border-width; 
     border-color: @color-gray-border;
     background-color: @mdc-grey-100;
     padding: 40px; 
     flex-grow: 1;
+    overflow: auto;
 }
 

@@ -9,6 +9,7 @@ import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.serialization.mapper.JsonMapper;
+import de.kiaim.model.serialization.mapper.YamlMapper;
 import de.kiaim.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.config.StepConfiguration;
@@ -637,7 +638,14 @@ public class ProcessService {
 				log.error("Could not convert dataset to json: " + e.getMessage());
 			}
 
-			bodyBuilder.part("anonymizationConfig", configuration, MediaType.APPLICATION_JSON);
+			//Convert yaml config to json for anonymization controller
+			try {
+				String jsonConfig = YamlMapper.toJson(configuration);
+				bodyBuilder.part("anonymizationConfig", jsonConfig, MediaType.APPLICATION_JSON);
+			} catch (JsonProcessingException e) {
+				log.error("Could not convert configuration from yaml to json: " + e.getMessage());
+            }
+
 		}
 		else {
 			bodyBuilder.part(configName, new ByteArrayResource(configuration.getBytes()) {

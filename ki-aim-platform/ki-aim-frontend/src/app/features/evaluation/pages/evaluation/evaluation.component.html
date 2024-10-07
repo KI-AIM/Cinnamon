@@ -1,9 +1,11 @@
 <div class="mt-2">
-    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="evaluationService.disabled" (click)="evaluationService.start()">
+    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="evaluationService.disabled"
+            (click)="evaluationService.start()">
         Start
     </button>
 
-    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="!evaluationService.disabled" (click)="evaluationService.cancel()">
+    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="!evaluationService.disabled"
+            (click)="evaluationService.cancel()">
         Cancel Algorithm
     </button>
 </div>
@@ -20,14 +22,112 @@
         <mat-expansion-panel-header>
             <mat-panel-title>Technical Evaluation</mat-panel-title>
             <mat-panel-description>
-                <span class="status mt-2" [ngClass]="evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus">
+                <span class="status mt-2"
+                      [ngClass]="evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus">
                     <span>{{ evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus.replace("_", " ") }}</span>
                 </span>
             </mat-panel-description>
         </mat-expansion-panel-header>
 
         <div>
-            <div *ngIf="evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+            <div
+                *ngIf="evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+
+
+                <!--                <mat-accordion>-->
+                <ng-container *ngFor="let metricsGroup of getResult() | async | keyvalue">
+
+                    <ng-container *ngFor="let metrics of getValues(metricsGroup) | keyvalue">
+                        <!--                    <mat-expansion-panel>-->
+
+                        <!--                        <mat-expansion-panel-header>-->
+                        <!--                            <mat-panel-title>-->
+                        <!--                                {{ metrics.key }}-->
+                        <!--                            </mat-panel-title>-->
+                        <!--                        </mat-expansion-panel-header>-->
+                        <div>
+
+                            <div>{{ metrics.key }}</div>
+                            <div *ngIf="isNormalTable(metrics.key)">
+                                <table class="table">
+                                    <thead>
+                                    <th>Attribute</th>
+                                    <th>Original</th>
+                                    <th>Synthetic</th>
+                                    </thead>
+                                    <tbody>
+                                    <tr *ngFor="let attribute of getReal(metrics.value) | keyvalue">
+                                        <td>{{ attribute.key }}</td>
+                                        <td>{{ attribute.value }}</td>
+                                        <td>{{ getSyntheticAttribute(metrics.value, attribute.key) }}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div *ngIf="metrics.key === 'ranges'">
+                                <table class="table">
+                                    <thead>
+                                    <th>Attribute</th>
+                                    <th>Original Min</th>
+                                    <th>Original Max</th>
+                                    <th>Synthetic Min</th>
+                                    <th>Synthetic Max</th>
+                                    </thead>
+                                    <tbody>
+                                    <tr *ngFor="let attribute of getReal(metrics.value) | keyvalue">
+                                        <td>{{ attribute.key }}</td>
+
+                                        <ng-container *ngFor="let attribute2 of getValues(attribute) | keyvalue">
+                                            <td>{{ attribute2.value }}</td>
+                                        </ng-container>
+                                        <ng-container
+                                            *ngFor="let attribute2 of getSyntheticAttribute(metrics.value, attribute.key) | keyvalue">
+                                            <td>{{ attribute2.value }}</td>
+                                        </ng-container>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div *ngIf="metrics.key === 'hellinger_distance'">
+                                <table class="table">
+                                    <thead>
+                                    <th>Attribute</th>
+                                    <th>Distance</th>
+                                    </thead>
+                                    <tbody>
+                                    <tr *ngFor="let attribute of getValues(metrics) | keyvalue">
+                                        <td>{{ attribute.key }}</td>
+                                        <td>{{ attribute.value }}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div *ngIf="metrics.key === 'kolmogorov_smirnov' || metrics.key === 'mode'">
+                                <table class="table">
+                                    <thead>
+                                    <th>Attribute</th>
+                                    <th *ngFor="let s of getValues(metrics)[Object.keys(getValues(metrics))[0]]  | keyvalue">
+                                        {{ s.key }}
+                                    </th>
+                                    </thead>
+                                    <tbody>
+                                    <tr *ngFor="let attribute of getValues(metrics) | keyvalue">
+                                        <td>{{ attribute.key }}</td>
+                                        <td *ngFor="let s of getValues(attribute) | keyvalue">
+                                            {{ s.value }}
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
+                        <!--                    </mat-expansion-panel>-->
+                    </ng-container>
+                </ng-container>
+
+                <!--                </mat-accordion>-->
             </div>
             <ng-template #anonNoData>
                 <div>

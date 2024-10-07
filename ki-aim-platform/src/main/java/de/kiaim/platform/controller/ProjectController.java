@@ -7,6 +7,7 @@ import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.StatusEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Mode;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -108,6 +110,36 @@ public class ProjectController {
 		projectService.createZipFile(project, response.getOutputStream());
 
 		return ResponseEntity.ok().build();
+	}
+
+	/**
+	 * TODO move into project or process?
+	 * @param executionStepName
+	 * @param processStepName
+	 * @param name
+	 * @param requestUser
+	 * @return
+	 * @throws BadStepNameException
+	 */
+	@GetMapping(value = "/resultFile", produces = {MediaType.ALL_VALUE})
+	@Transactional(readOnly = true)
+	public ResponseEntity<Object> getResultFile(
+			@RequestParam final String executionStepName,
+			@RequestParam final String processStepName,
+			@RequestParam final String name,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws BadStepNameException {
+		// Load user from the database because lazy loaded fields cannot be read from the injected user
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+
+		final Step executionStep = Step.getStepOrThrow(executionStepName);
+		final Step processStep = Step.getStepOrThrow(processStepName);
+
+		final var content =  project.getExecutions().get(executionStep).getProcesses().get(processStep).getAdditionalResultFiles().get(name);
+		final var s = new String(content);
+
+		return ResponseEntity.ok().body(s);
 	}
 
 }

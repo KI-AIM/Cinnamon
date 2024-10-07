@@ -1,8 +1,5 @@
 package de.kiaim.model.configuration.anonymization.frontend;
 
-import de.kiaim.model.enumeration.DataScale;
-import de.kiaim.model.enumeration.DataType;
-import de.kiaim.model.enumeration.anonymization.AttributeProtection;
 import de.kiaim.model.exception.anonymization.InvalidAttributeConfigException;
 import de.kiaim.model.exception.anonymization.InvalidGeneralizationSettingException;
 import de.kiaim.model.exception.anonymization.InvalidRiskThresholdException;
@@ -22,11 +19,11 @@ import java.util.List;
 @ToString
 public class FrontendAnonConfig {
     private List<FrontendPrivacyModelConfig> privacyModels;
-    private List<FrontendAttributeConfig> attributeConfigurations;
+    private List<FrontendAttributeConfig> attributeConfiguration;
 
     // Validate attribute configurations based on DataType, AttributeProtection, and DataScale
     public void validateAttributeConfigurations() throws InvalidAttributeConfigException {
-        for (FrontendAttributeConfig attribute : attributeConfigurations) {
+        for (FrontendAttributeConfig attribute : attributeConfiguration) {
             // Each attribute is responsible for its own validation
             attribute.validate();
         }

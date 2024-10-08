@@ -102,9 +102,9 @@ public class AnonymizationController {
             System.out.println("Process ID: " + session_key);
 
             if (tasks.containsKey(session_key)) {
-                ExternalProcessResponse response = new ExternalProcessResponse();
-                response.setMessage("Task with process ID " + session_key + " already exists.");
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+                Future<DataSet> existingTask = tasks.get(session_key);
+                existingTask.cancel(true); // Annule la tâche si elle est encore en cours
+                System.out.println("Replaced old task with session_key: " + session_key);
             }
 
             // Create AnonymizationRequest object from request

@@ -18,7 +18,7 @@ public class FrontendAttributeConfig {
     private int index;
     private String name;
     private DataType dataType;
-    private DataScale dataScale;
+    private DataScale scale;
     private AttributeProtection attributeProtection;
     private String intervalSize;
     private String dateFormat;
@@ -30,7 +30,7 @@ public class FrontendAttributeConfig {
     public void validate() throws InvalidAttributeConfigException {
         validateIntervalSize();
         validateOrdinalValues();
-        validateDateFormat();
+//        validateDateFormat();
     }
 
     // Validate the interval size based on attribute protection and data type
@@ -70,15 +70,15 @@ public class FrontendAttributeConfig {
 
     // Validate that values are provided for ordinal attributes
     private void validateOrdinalValues() throws InvalidAttributeConfigException {
-        if (dataScale == DataScale.ORDINAL && (values == null || values.length == 0)) {
+        if (scale == DataScale.ORDINAL && (values == null || values.length == 0)) {
             throw new InvalidAttributeConfigException("Values must be provided for attributes with ORDINAL scale.");
         }
     }
 
     // Validate that the dateFormat is provided for DATE or DATE_TIME data types
-    private void validateDateFormat() throws InvalidAttributeConfigException {
-        if ((dataType == DataType.DATE || dataType == DataType.DATE_TIME) && (dateFormat == null || dateFormat.isEmpty())) {
-            throw new InvalidAttributeConfigException("dateFormat must be provided for DATE or DATE_TIME attributes.");
-        }
-    }
+//    private void validateDateFormat() throws InvalidAttributeConfigException {
+//        if ((dataType == DataType.DATE || dataType == DataType.DATE_TIME) && (dateFormat == null || dateFormat.isEmpty())) {
+//            throw new InvalidAttributeConfigException("dateFormat must be provided for DATE or DATE_TIME attributes.");
+//        }
+//    }
 }

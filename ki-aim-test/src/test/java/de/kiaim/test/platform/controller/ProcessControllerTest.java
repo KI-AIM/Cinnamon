@@ -480,6 +480,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setMessage("Not found");
+		response.setError("Nicht gefunden, but in German");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 				                    .code(404)
@@ -489,7 +490,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/execution/start"))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorMessage(
-				       "Failed to start the process! Got status of 404 NOT_FOUND with message: 'Not found'"));
+				       "Failed to start the process! Got status of 404 NOT_FOUND with message: 'Not found' and error: 'Nicht gefunden, but in German'"));
 	}
 
 	@Test

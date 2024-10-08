@@ -56,10 +56,10 @@ public class CompatibilityAssurance {
             }
 
             // Check attribute DataScale
-            if (columnConfig.getScale() != frontendConfig.getDataScale()) {
+            if (columnConfig.getScale() != frontendConfig.getScale()) {
                 throw new AttributeMismatchException("DataScale mismatch at index " + i +
                         ": DataSet data scale is '" + columnConfig.getScale() +
-                        "', but FrontendConfig data scale is '" + frontendConfig.getDataScale() + "'.");
+                        "', but FrontendConfig data scale is '" + frontendConfig.getScale() + "'.");
             }
         }
     }

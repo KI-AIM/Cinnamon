@@ -196,7 +196,7 @@ public class FrontendAnonConfigConverter {
             maxLevelToUse = 1; // high generalization
         } else if ((frontendAttributeConfig.getAttributeProtection() == AttributeProtection.GENERALIZATION
                 ||frontendAttributeConfig.getAttributeProtection() == AttributeProtection.MICRO_AGGREGATION)
-                && (frontendAttributeConfig.getDataScale() == DataScale.ORDINAL)) {
+                && (frontendAttributeConfig.getScale() == DataScale.ORDINAL)) {
             type = "ORDERING";
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0; // low generalization

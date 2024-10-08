@@ -14,10 +14,20 @@
             >
         </mat-select>
     </mat-form-field>
+    <div class="d-flex w-100 justify-content-start align-content-center">
+        <a class="configuration-link" [disabled]="getAvailableConfigurations().length <= 0"
+            (click)="addAllAttributes()" mat-raised-button color="primary" title="Add all attributes">
+            <span>Add all attributes</span>
+        </a>
+        <a class="configuration-link ms-2" [disabled]="!hasAttributeConfiguration()"
+            (click)="removeAllAttributes()" mat-raised-button color="warn" title="Remove all attributes">
+            <span>Remove all attributes</span>
+        </a>
+    </div>
 </div>
 
 
-<div *ngFor="let attrConfig of this.getAttributeConfiguration()?.attributeConfiguration, index as i">
+<div class="mt-4" *ngFor="let attrConfig of this.getAttributeConfiguration()?.attributeConfiguration, index as i">
     <app-anonymization-attribute-row
         [anonymizationRowConfiguration]="attrConfig"
         [configurationRow]="getConfigurationForIndex(i)"

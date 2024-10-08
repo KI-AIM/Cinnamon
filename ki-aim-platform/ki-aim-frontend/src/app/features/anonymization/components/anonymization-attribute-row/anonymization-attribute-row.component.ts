@@ -131,6 +131,7 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         }
 
         transformations.push(AttributeProtection.ATTRIBUTE_DELETION);
+        transformations.push(AttributeProtection.NO_PROTECTION); 
         // transformations.push(AttributeProtection.VALUE_DELETION); // Not supported ye
 
         return new List<String>(transformations);

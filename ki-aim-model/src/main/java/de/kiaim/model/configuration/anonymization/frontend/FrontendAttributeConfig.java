@@ -7,7 +7,6 @@ import de.kiaim.model.exception.anonymization.InvalidAttributeConfigException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.w3c.dom.Attr;
 
 import java.util.List;
 

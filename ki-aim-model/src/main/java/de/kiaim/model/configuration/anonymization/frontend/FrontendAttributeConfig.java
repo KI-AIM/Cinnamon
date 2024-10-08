@@ -29,7 +29,7 @@ public class FrontendAttributeConfig {
     public void validate() throws InvalidAttributeConfigException {
         validateIntervalSize();
         validateOrdinalValues();
-        validateDateFormat();
+//        validateDateFormat();
     }
 
     // Validate the interval size based on attribute protection and data type
@@ -75,9 +75,9 @@ public class FrontendAttributeConfig {
     }
 
     // Validate that the dateFormat is provided for DATE or DATE_TIME data types
-    private void validateDateFormat() throws InvalidAttributeConfigException {
-        if ((dataType == DataType.DATE || dataType == DataType.DATE_TIME) && (dateFormat == null || dateFormat.isEmpty())) {
-            throw new InvalidAttributeConfigException("dateFormat must be provided for DATE or DATE_TIME attributes.");
-        }
-    }
+//    private void validateDateFormat() throws InvalidAttributeConfigException {
+//        if ((dataType == DataType.DATE || dataType == DataType.DATE_TIME) && (dateFormat == null || dateFormat.isEmpty())) {
+//            throw new InvalidAttributeConfigException("dateFormat must be provided for DATE or DATE_TIME attributes.");
+//        }
+//    }
 }

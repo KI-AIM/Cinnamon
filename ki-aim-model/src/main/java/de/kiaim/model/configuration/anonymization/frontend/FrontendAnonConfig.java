@@ -21,6 +21,13 @@ public class FrontendAnonConfig {
     private List<FrontendPrivacyModelConfig> privacyModels;
     private List<FrontendAttributeConfig> attributeConfiguration;
 
+    public FrontendAttributeConfig getAttributeConfigByIndex(int index) {
+        return attributeConfiguration.stream()
+                .filter(config -> config.getIndex() == index)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No attribute found with index  " + index));
+    }
+
     // Validate attribute configurations based on DataType, AttributeProtection, and DataScale
     public void validateAttributeConfigurations() throws InvalidAttributeConfigException {
         for (FrontendAttributeConfig attribute : attributeConfiguration) {

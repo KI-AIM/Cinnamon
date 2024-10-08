@@ -10,6 +10,7 @@ attributeConfiguration:
 - index: 0
   name: "death_date"
   dataType: "DATE"
+  scale: "DATE"
   attributeType: "IDENTIFYING_ATTRIBUTE"
   dateFormat: "yyyy-MM-dd"
 - index: 1

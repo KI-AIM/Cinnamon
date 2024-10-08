@@ -4,6 +4,7 @@ import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.anon.helper.DatasetAnalyzer;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAttributeConfig;
+import de.kiaim.model.configuration.data.*;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
@@ -110,7 +111,8 @@ public class FrontendAnonConfigConverter {
     /**
      * Convert a list of FrontendAttributeConfig to a list of JAL AttributeConfig
      */
-    public static List<AttributeConfig> convertAttributeConfigs(List<FrontendAttributeConfig> frontendAttributeConfigs, DataSet originalDataSet) {
+    public static List<AttributeConfig> convertAttributeConfigs(List<FrontendAttributeConfig> frontendAttributeConfigs,
+                                                                DataSet originalDataSet) throws InvalidAttributeConfigException {
         List<AttributeConfig> attributeConfigs = new ArrayList<>();
 
         for (FrontendAttributeConfig frontendConfig : frontendAttributeConfigs) {
@@ -130,7 +132,7 @@ public class FrontendAnonConfigConverter {
             } else {
                 attributeConfig.setAttributeType("QUASI_IDENTIFYING_ATTRIBUTE");
                 // Generate and set the hierarchy based on attribute configurations
-                HierarchyConfig hierarchy = generateHierarchy(frontendConfig);
+                HierarchyConfig hierarchy = generateHierarchy(frontendConfig, originalDataSet.getDataConfiguration());
                 attributeConfig.setHierarchyConfig(hierarchy);
             }
 
@@ -167,18 +169,37 @@ public class FrontendAnonConfigConverter {
     /**
      * Generate a hierarchy based on the frontend attribute configuration.
      */
-    private static HierarchyConfig generateHierarchy(FrontendAttributeConfig frontendAttributeConfig) {
+    private static HierarchyConfig generateHierarchy(FrontendAttributeConfig frontendAttributeConfig, DataConfiguration originalDatasetConfiguration) throws InvalidAttributeConfigException {
         String type;
         String intervalSize;
         String splitLevels = ""; // TODO : Should it be set ? not yet
-        String dateformat = "";
+        String dateformat = null;
         int minLevelToUse = 0;
         int maxLevelToUse = 1; // TODO : how determine ? Not use now : target level = interval size
 
         // Determine hierarchy type and levels based on the attribute's protection, scale, and type
         if (frontendAttributeConfig.getAttributeProtection() == AttributeProtection.DATE_GENERALIZATION) {
             type = "DATES";
-            dateformat = frontendAttributeConfig.getDateFormat();
+
+            // Retrieve DateFormat
+            ColumnConfiguration columnConfig = originalDatasetConfiguration.getColumnConfigurationByColumnName(frontendAttributeConfig.getName());
+            System.out.println("columnConfig");
+            System.out.println(columnConfig.toString());
+            System.out.println("frontendAttributeConfig");
+            System.out.println(frontendAttributeConfig.toString());
+            for (Configuration config : columnConfig.getConfigurations()) {
+                if (config instanceof DateFormatConfiguration ) {
+                    DateFormatConfiguration dateConfig = (DateFormatConfiguration) config;
+                    dateformat = dateConfig.getDateFormatter();
+                }
+                else if (config instanceof DateTimeFormatConfiguration) {
+                    DateTimeFormatConfiguration dateConfig = (DateTimeFormatConfiguration) config;
+                    dateformat = dateConfig.getDateTimeFormatter();
+                }
+            }
+            if (dateformat == null) {
+                throw new InvalidAttributeConfigException("dateFormat could not be retrieved from DataConfiguration, a DateFormat must be provided for DATE or DATE_TIME attributes.");
+            }
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0;
             maxLevelToUse = 1; // TODO : Change

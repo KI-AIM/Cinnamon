@@ -1,8 +1,8 @@
 package de.kiaim.test.platform.controller;
 
+import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.model.status.synthetization.SynthetizationStepStatus;
-import de.kiaim.platform.model.dto.SynthetizationResponse;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
@@ -113,7 +113,7 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	private void start() throws Exception {
-		final SynthetizationResponse response = new SynthetizationResponse();
+		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("123");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
@@ -209,7 +209,7 @@ public class ProcessControllerTest extends ControllerTest {
 		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
 		Long id = process.getId();
 
-		final SynthetizationResponse response = new SynthetizationResponse();
+		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("123");
 
 		// Send callback request
@@ -312,7 +312,7 @@ public class ProcessControllerTest extends ControllerTest {
 		postData(false);
 		configure();
 
-		final SynthetizationResponse response = new SynthetizationResponse();
+		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("123");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
@@ -348,7 +348,7 @@ public class ProcessControllerTest extends ControllerTest {
 		postData(false);
 		configure();
 
-		final SynthetizationResponse response = new SynthetizationResponse();
+		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("1");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
@@ -432,7 +432,7 @@ public class ProcessControllerTest extends ControllerTest {
 		postData(false);
 		configure();
 
-		final SynthetizationResponse response = new SynthetizationResponse();
+		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setMessage("Not found");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)

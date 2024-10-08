@@ -30,10 +30,6 @@ public class CompatibilityAssurance {
         List<ColumnConfiguration> columnConfigurations = dataSet.getDataConfiguration().getConfigurations();
         List<FrontendAttributeConfig> frontendAttributeConfigs = frontendAnonConfig.getAttributeConfiguration();
 
-        System.out.println("columnConfig");
-        System.out.println(columnConfigurations.toString());
-        System.out.println("frontendAttributeConfig");
-        System.out.println(frontendAttributeConfigs.toString());
         // Check if every attribute configs are compatible
         for (int i = 0; i < frontendAttributeConfigs.size(); i++) {
             FrontendAttributeConfig frontendAttributeConfig = frontendAttributeConfigs.get(i);

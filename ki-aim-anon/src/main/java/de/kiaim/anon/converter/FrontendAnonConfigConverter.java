@@ -183,7 +183,10 @@ public class FrontendAnonConfigConverter {
 
             // Retrieve DateFormat
             ColumnConfiguration columnConfig = originalDatasetConfiguration.getColumnConfigurationByColumnName(frontendAttributeConfig.getName());
-
+            System.out.println("columnConfig");
+            System.out.println(columnConfig.toString());
+            System.out.println("frontendAttributeConfig");
+            System.out.println(frontendAttributeConfig.toString());
             for (Configuration config : columnConfig.getConfigurations()) {
                 if (config instanceof DateFormatConfiguration ) {
                     DateFormatConfiguration dateConfig = (DateFormatConfiguration) config;

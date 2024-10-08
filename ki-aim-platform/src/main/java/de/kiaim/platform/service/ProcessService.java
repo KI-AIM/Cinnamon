@@ -7,6 +7,7 @@ import de.kiaim.model.configuration.data.DateFormatConfiguration;
 import de.kiaim.model.configuration.data.DateTimeFormatConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.serialization.mapper.JsonMapper;
 import de.kiaim.model.serialization.mapper.YamlMapper;
@@ -15,7 +16,6 @@ import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.config.StepConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.dto.SynthetizationResponse;
 import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
@@ -486,8 +486,7 @@ public class ProcessService {
 			                              .uri(url)
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
-			                                        errorResponse -> errorResponse.toEntity(
-					                                                                      SynthetizationResponse.class)
+			                                        errorResponse -> errorResponse.toEntity(ExternalProcessResponse.class)
 			                                                                      .map(RequestRuntimeException::new))
 			                              .bodyToMono(String.class)
 			                              .block();
@@ -676,10 +675,9 @@ public class ProcessService {
 			                              .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
-			                                        errorResponse -> errorResponse.toEntity(
-					                                                                      SynthetizationResponse.class)
+			                                        errorResponse -> errorResponse.toEntity(ExternalProcessResponse.class)
 			                                                                      .map(RequestRuntimeException::new))
-			                              .bodyToMono(SynthetizationResponse.class)
+			                              .bodyToMono(ExternalProcessResponse.class)
 			                              .block();
 			externalProcess.setExternalId(response.getPid());
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);

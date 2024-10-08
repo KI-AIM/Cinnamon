@@ -41,6 +41,16 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
         return this.attributeConfigurationService.getAttributeConfiguration();
     }
 
+    hasAttributeConfiguration(): boolean {
+        let config = this.attributeConfigurationService.getAttributeConfiguration(); 
+        if (config !== null) {
+            if (config.attributeConfiguration.length > 0) {
+                return true
+            }
+        }
+        return false; 
+    }
+
     /**
      * Filters the dataConfiguration ColumnConfiguration list
      * by removing all entries with attributes that are currently
@@ -92,6 +102,28 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
 
             this.attributeConfigurationService.addRowConfiguration(newRowConfiguration);
         }
+    }
+
+    addAllAttributes() {
+        this.getAvailableConfigurations().forEach(selectedRow => {
+            if (selectedRow !== null && selectedRow !== undefined) {
+                let newRowConfiguration =
+                    new AnonymizationAttributeRowConfiguration();
+    
+                newRowConfiguration.index = selectedRow.index;
+                newRowConfiguration.name = selectedRow.name;
+                newRowConfiguration.dataType = selectedRow.type;
+                newRowConfiguration.scale = selectedRow.scale;
+    
+                this.attributeConfigurationService.addRowConfiguration(newRowConfiguration);
+            }
+        }) ; 
+    }
+
+    removeAllAttributes() {
+        this.attributeConfigurationService.getAttributeConfiguration()?.attributeConfiguration.forEach(config => {
+            this.removeAttributeConfigurationRow(config); 
+        }); 
     }
 
     /**

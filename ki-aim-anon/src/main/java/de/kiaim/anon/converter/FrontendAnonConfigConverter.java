@@ -112,7 +112,7 @@ public class FrontendAnonConfigConverter {
      * Convert a list of FrontendAttributeConfig to a list of JAL AttributeConfig
      */
     public static List<AttributeConfig> convertAttributeConfigs(List<FrontendAttributeConfig> frontendAttributeConfigs,
-                                                                DataSet originalDataSet) {
+                                                                DataSet originalDataSet) throws InvalidAttributeConfigException {
         List<AttributeConfig> attributeConfigs = new ArrayList<>();
 
         for (FrontendAttributeConfig frontendConfig : frontendAttributeConfigs) {

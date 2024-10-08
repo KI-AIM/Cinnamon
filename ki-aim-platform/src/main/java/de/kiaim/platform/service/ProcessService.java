@@ -291,7 +291,8 @@ public class ProcessService {
 
 		if (containsError) {
 			process.get().setExternalProcessStatus(ProcessStatus.ERROR);
-			process.get().getExecutionStep().setStatus(ProcessStatus.ERROR);
+			executionStep.setStatus(ProcessStatus.ERROR);
+			executionStep.setCurrentStep(null);
 		} else {
 			process.get().setExternalProcessStatus(ProcessStatus.FINISHED);
 			// Start the next step of this process

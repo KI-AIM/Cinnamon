@@ -7,7 +7,6 @@ import de.kiaim.model.exception.anonymization.InvalidAttributeConfigException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.w3c.dom.Attr;
 
 import java.util.List;
 
@@ -18,7 +17,7 @@ public class FrontendAttributeConfig {
     private int index;
     private String name;
     private DataType dataType;
-    private DataScale dataScale;
+    private DataScale scale;
     private AttributeProtection attributeProtection;
     private String intervalSize;
     private String dateFormat;
@@ -70,7 +69,7 @@ public class FrontendAttributeConfig {
 
     // Validate that values are provided for ordinal attributes
     private void validateOrdinalValues() throws InvalidAttributeConfigException {
-        if (dataScale == DataScale.ORDINAL && (values == null || values.length == 0)) {
+        if (scale == DataScale.ORDINAL && (values == null || values.length == 0)) {
             throw new InvalidAttributeConfigException("Values must be provided for attributes with ORDINAL scale.");
         }
     }

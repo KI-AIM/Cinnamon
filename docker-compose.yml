@@ -26,6 +26,8 @@ services:
         ports:
 #            - "8080:8080"
             - "127.0.0.1:8080:8080"
+        volumes:
+            - ~/.m2:/root/.m2
         networks:
             - data-management-network
             - synthetization-network
@@ -58,3 +60,5 @@ services:
             - "127.0.0.1:8081:8080"
         networks:
             - anonymization-network
+        volumes:
+            - ~/.m2:/root/.m2

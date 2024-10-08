@@ -233,8 +233,10 @@ public class ProcessController {
 			@RequestParam(name = "train", required = false) final MultipartFile trainingData,
 			@RequestParam(name = "test", required = false) final MultipartFile test,
 			@RequestParam(name = "model", required = false) final MultipartFile model,
+			@RequestParam(name = "exception_message", required = false) final MultipartFile exceptionMessage,
+			@RequestParam(name = "error_message", required = false) final MultipartFile errorMessage,
 			final MultipartHttpServletRequest request
-	) throws ApiException {
+			) throws ApiException {
 		processService.finishProcess(processId, request.getFileMap().entrySet());
 		return ResponseEntity.ok().body(null);
 	}

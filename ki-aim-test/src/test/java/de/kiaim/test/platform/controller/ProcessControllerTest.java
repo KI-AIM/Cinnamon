@@ -411,6 +411,52 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void startAndError() throws Exception {
+		// Setup
+		postData(false);
+		configure();
+
+		// Start
+		final ExternalProcessResponse response = new ExternalProcessResponse();
+		response.setPid("1");
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(response))
+				                    .build());
+
+		mockMvc.perform(post("/api/process/execution/start")
+				                .with(httpBasic("test_user", "password")))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()));
+
+
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
+		Long id = process.getId();
+
+
+		// Send callback request with error
+		final MockMultipartFile resultData = new MockMultipartFile("error_message", "error_message.txt",
+		                                                           MediaType.TEXT_PLAIN_VALUE,
+		                                                           "An error occured!".getBytes());
+		mockMvc.perform(multipart("/api/process/" + id + "/callback")
+				                .file(resultData))
+				                .andExpect(status().isOk());
+		var recordedRequest = mockBackEnd.takeRequest();
+		assertEquals("POST", recordedRequest.getMethod());
+		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
+
+		// Test state changes
+		process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
+		assertEquals(ProcessStatus.ERROR, process.getExecutionStep().getStatus());
+		assertEquals(ProcessStatus.ERROR, process.getExternalProcessStatus(),
+		             "External process status has not been updated!");
+		assertTrue(process.getAdditionalResultFiles().containsKey("error_message.txt"),
+		           "Additional result has not been set!");
+	}
+
+	@Test
 	public void startNoData() throws Exception {
 		configure();
 		mockMvc.perform(post("/api/process/execution/start"))

@@ -143,7 +143,8 @@ public class AnonymizationController {
                 tasks.remove(processId);
                 return ResponseEntity.ok(result.toString());
             } catch (InterruptedException | ExecutionException e) {
-                System.out.println("Error retrieving task result for process ID " + processId);
+                Throwable cause = e.getCause();  // Get the underlying cause of the error
+                System.out.println("Error retrieving task result for process ID " + processId + ": " + (cause != null ? cause.getMessage() : "Unknown cause"));
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
             }
         } else {

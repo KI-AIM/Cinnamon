@@ -4,6 +4,7 @@ import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.service.AnonymizationService;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.model.dto.ExternalProcessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -84,7 +85,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
     })
     @PostMapping(value = "/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> createAnonymizationTaskWithCallbackResult(
+    public ResponseEntity<ExternalProcessResponse> createAnonymizationTaskWithCallbackResult(
             @RequestParam("session_key") @Parameter(description = "The process ID for the anonymization task.", required = true) String session_key,
             @RequestPart("data") @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "The dataset to be anonymized.",
@@ -101,7 +102,9 @@ public class AnonymizationController {
             System.out.println("Process ID: " + session_key);
 
             if (tasks.containsKey(session_key)) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + session_key + " already exists.");
+                ExternalProcessResponse response = new ExternalProcessResponse();
+                response.setMessage("Task with process ID " + session_key + " already exists.");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
             }
 
             // Create AnonymizationRequest object from request
@@ -111,10 +114,14 @@ public class AnonymizationController {
             Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);
 
             tasks.put(session_key, future);
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body(
-                    "Anonymization process " + session_key + " has been accepted.");
+            ExternalProcessResponse response = new ExternalProcessResponse();
+            response.setMessage("Anonymization process " + session_key + " has been accepted.");
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response
+                    );
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+            ExternalProcessResponse response = new ExternalProcessResponse();
+            response.setMessage("An error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 

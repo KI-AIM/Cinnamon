@@ -33,8 +33,9 @@ services:
         environment:
             - SPRING_DATASOURCE_URL=jdbc:postgresql://ki-aim-db:5432/ki_aim_db
             - KI-AIM.STEPS.SYNTHETIZATION.URL=http://ki-aim-synthetization:5000
-            - KI-AIM-STEPS.ANONYMIZATION.URL=http://ki-aim-anon:8081
+            - KI-AIM.STEPS.ANONYMIZATION.URL=http://ki-aim-anon:8080
             - KI-AIM.STEPS.SYNTHETIZATION.CALLBACKHOST=ki-aim-platform
+            - KI-AIM.STEPS.ANONYMIZATION.CALLBACKHOST=ki-aim-platform
         depends_on:
             - ki-aim-db
     ki-aim-synthetization:

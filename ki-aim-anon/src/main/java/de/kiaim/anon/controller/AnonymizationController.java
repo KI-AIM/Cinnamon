@@ -135,11 +135,20 @@ public class AnonymizationController {
     public ResponseEntity<String> getTaskStatus(@PathVariable @NonNull String processId) {
         Future<DataSet> future = tasks.get(processId);
         if (future == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task not found");
+            System.out.println("Task with process ID " + processId + " not found.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } else if (future.isDone()) {
-            return ResponseEntity.ok("Task completed");
+            try {
+                DataSet result = future.get();
+                tasks.remove(processId);
+                return ResponseEntity.ok(result.toString());
+            } catch (InterruptedException | ExecutionException e) {
+                System.out.println("Error retrieving task result for process ID " + processId);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            }
         } else {
-            return ResponseEntity.ok("Task in progress");
+            System.out.println("Task with process ID " + processId + " is not yet done.");
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(null);
         }
     }
 

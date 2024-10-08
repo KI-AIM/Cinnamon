@@ -37,7 +37,7 @@ public class CompatibilityAssurance {
             ColumnConfiguration columnConfig = columnConfigurations.get(attributeIndex);
 
             // Check attribute name
-            if (!columnConfig.getName().equals(frontendAttributeConfig.getName())) {
+            if (!columnConfig.getName().trim().equals(frontendAttributeConfig.getName().trim())) {
                 throw new AttributeMismatchException("Column name mismatch at index " + i +
                         ": DataSet column name is '" + columnConfig.getName() +
                         "', but FrontendConfig attribute name is '" + frontendAttributeConfig.getName() + "'.");

@@ -11,7 +11,7 @@ import org.bihmi.jal.config.QualityModelConfig;
 import org.bihmi.jal.enums.MicroAggregationFunction;
 import org.deidentifier.arx.*;
 import org.deidentifier.arx.criteria.PrivacyCriterion;
-import org.deidentifier.arx.exceptions.RollbackRequiredException;
+// import org.deidentifier.arx.exceptions.RollbackRequiredException;
 import org.deidentifier.arx.io.CSVDataOutput;
 import org.deidentifier.arx.metric.Metric;
 
@@ -32,7 +32,21 @@ public class Anonymizer {
 
     public Anonymizer(String[][] data, JALConfig JALConfig) {
         // creates ARX Datahandle object
-        this.originalData = Data.create(data);
+        try{
+            this.originalData = Data.create(data);
+        } catch (Exception e){
+            e.printStackTrace();
+            log.debug("ERROR when trying to create dataset");
+
+            for (int n=0; n<data.length; n++) {
+                for (int m=0; m<data[n].length; m++) {
+                    System.out.print(data[n][m]);
+                }
+                System.out.print("\n");
+            }
+
+        }
+
         updateAnonConfig(JALConfig);
     }
 
@@ -56,13 +70,17 @@ public class Anonymizer {
     public void updateAnonConfig(JALConfig config) {
         this.JALConfig = config;
         for (AttributeConfig attributeConfig : JALConfig.getAttributeConfigs()) {
-
-            // set necessary information
-            setDataType(attributeConfig);
-            setAttributeType(attributeConfig);
-            setHierarchy(attributeConfig);
-            setGeneralizationLevelLimits(attributeConfig);  // TODO: for now disabled, only first level is created
-            setMicroAggregation(attributeConfig);
+            try {
+                // set necessary information
+                setDataType(attributeConfig);
+                setAttributeType(attributeConfig);
+                setHierarchy(attributeConfig);
+                setGeneralizationLevelLimits(attributeConfig);  // TODO: for now disabled, only first level is created
+                setMicroAggregation(attributeConfig);
+            } catch (Exception e){
+                e.printStackTrace();
+                log.debug("Exception caught when trying to set the anon config");
+            }
 
         }
     }
@@ -218,7 +236,8 @@ public class Anonymizer {
                     // Define relative number of records to be generalized in each iteration
                     double oMin = 1d / (double) JALConfig.getLocalGeneralizationIterations();
                     result.optimizeIterativeFast(output, oMin);
-                } catch (RollbackRequiredException e) {
+                } catch (Exception e) {
+                    System.out.println("!!!! ASSUMED LOCAL GENERALIZATION!!! ");
                     e.printStackTrace();
                     throw new RuntimeException(e);
                 }
@@ -227,6 +246,10 @@ public class Anonymizer {
             return output;
         } catch (IOException e) {
             throw new IllegalStateException(e);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("!!! general exception caught!!!");
+            throw new RuntimeException(e);
         }
     }
 

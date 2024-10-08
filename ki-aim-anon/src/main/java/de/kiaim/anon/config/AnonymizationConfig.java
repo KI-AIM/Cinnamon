@@ -56,19 +56,32 @@ public class AnonymizationConfig {
 
     // TODO (KO): move to converter?
     public JALConfig toJalConfig(String name){
-        var jalConfig = new JALConfig();
-        jalConfig.setName(name);
-        jalConfig.setPrivacyModelList(this.privacyModelList);
-        jalConfig.setSuppressionLimit(this.suppressionLimit / 100); //needs normalization between 0 and 1
-        jalConfig.setQualityModel(this.qualityModel);
+
+
+        try {
+            System.out.println("REACHED THIS POINT!!");
+            var jalConfig = new JALConfig();
+            System.out.println(name);
+            jalConfig.setName(name);
+            System.out.println(this.privacyModelList);
+            jalConfig.setPrivacyModelList(this.privacyModelList);
+            System.out.println(this.suppressionLimit);
+            jalConfig.setSuppressionLimit(this.suppressionLimit / 100); //needs normalization between 0 and 1
+            System.out.println(this.qualityModel);
+            jalConfig.setQualityModel(this.qualityModel);
 
 //        for (AttributeConfig conf: this.attributeConfigs){
 //
 //        }
+            jalConfig.setAttributeConfigs(attributeConfigs);
+            return jalConfig;
 
-        jalConfig.setAttributeConfigs(attributeConfigs);
+        } catch (Exception e){
+            e.printStackTrace();
+            System.out.println("Exception when creating the config!!");
+        }
 
-        return jalConfig;
+        return null;
     }
 
     public JALConfig generateJalAnonymizationConfig(){

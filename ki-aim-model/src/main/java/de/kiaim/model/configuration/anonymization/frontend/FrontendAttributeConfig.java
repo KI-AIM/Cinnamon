@@ -36,7 +36,10 @@ public class FrontendAttributeConfig {
     private void validateIntervalSize() throws InvalidAttributeConfigException {
         if (attributeProtection == AttributeProtection.MASKING) {
             if (dataType == DataType.STRING || dataType == DataType.INTEGER) {
-                int interval = Integer.parseInt(intervalSize);
+                int interval = 1;
+                if (intervalSize != null && !intervalSize.isEmpty()){
+                    interval = Integer.parseInt(intervalSize);
+                }
                 if (interval < 1 || interval > 1000) {
                     throw new InvalidAttributeConfigException("Interval size for MASKING must be between 1 and 1000.");
                 }
@@ -50,7 +53,10 @@ public class FrontendAttributeConfig {
 
         if (attributeProtection == AttributeProtection.GENERALIZATION || attributeProtection == AttributeProtection.MICRO_AGGREGATION) {
             if (dataType == DataType.INTEGER) {
-                float interval = Float.parseFloat(intervalSize);
+                float interval = 1f;
+                if (intervalSize != null && !intervalSize.isEmpty()) {
+                    interval = Float.parseFloat(intervalSize);
+                }
                 if (interval < 1 || interval > 1000) {
                     System.out.println(index);
                     System.out.println(name);
@@ -59,7 +65,10 @@ public class FrontendAttributeConfig {
                     throw new InvalidAttributeConfigException("Interval size for GENERALIZATION or MICRO_AGGREGATION of a INTEGER DataType must be between 1 and 1000.");
                 }
             } else if (dataType == DataType.DECIMAL) {
-                float interval = Float.parseFloat(intervalSize);
+                float interval = 0.1f;
+                if (intervalSize != null && !intervalSize.isEmpty()) {
+                    interval = Float.parseFloat(intervalSize);
+                }
                 if (interval < 0.001 || interval > 1000.0) {
                     throw new InvalidAttributeConfigException("Interval size for GENERALIZATION or MICRO_AGGREGATION of a DECIMAL DataType must be between 0.001 and 1000.0.");
                 }

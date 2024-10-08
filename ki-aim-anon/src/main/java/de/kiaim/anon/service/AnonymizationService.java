@@ -24,6 +24,7 @@ import reactor.util.retry.Retry;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
 import static org.apache.tomcat.util.buf.ByteChunk.convertToBytes;
@@ -108,9 +109,13 @@ public class AnonymizationService {
                 CompatibilityAssurance.checkDataSetAndFrontendConfigCompatibility(request.getData(), request.getAnonymizationConfig());
                 AnonymizationConfig anonymizationConfigConverted = FrontendAnonConfigConverter.convertToJALConfig(request.getAnonymizationConfig(), request.getData());
                 String[][] jalData = dataSetProcessor.convertDatasetToStringArray(request.getData());
-                log.info("Jal data generated, start anonymize.");
+                log.info("Session key:");
+                log.info(request.getSession_key());
+
                 Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig(request.getSession_key()));
+                log.info("Instance created.");
                 anonymizer.anonymize();
+                log.info("Anon executed.");
                 DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), request.getData().getDataConfiguration());
                 log.info("Anon finished.");
 

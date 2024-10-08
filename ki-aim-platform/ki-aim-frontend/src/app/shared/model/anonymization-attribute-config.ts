@@ -8,6 +8,7 @@ export enum AttributeProtection {
     DATE_GENERALIZATION = "DATE_GENERALIZATION",
     VALUE_DELETION = "VALUE_DELETION",
     MASKING = "MASKING",
+    NO_PROTECTION = "NO_PROTECTION",
 }
 
 export class AnonymizationAttributeConfiguration {

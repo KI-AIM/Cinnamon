@@ -69,8 +69,6 @@
             <groupId>org.deidentifier.arx</groupId>
             <artifactId>arx</artifactId>
             <version>3.9.1</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/src/main/resources/lib/libarx-3.9.1.jar</systemPath>
         </dependency>
 
         <!-- OpenAPI, include Swagger -->

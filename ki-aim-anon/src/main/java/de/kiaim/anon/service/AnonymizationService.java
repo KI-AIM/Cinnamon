@@ -1,5 +1,6 @@
 package de.kiaim.anon.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.anon.converter.FrontendAnonConfigConverter;
 import de.kiaim.anon.converter.KiaimAnonConfigConverter;
@@ -142,29 +143,22 @@ public class AnonymizationService {
         long startTime = System.currentTimeMillis();
 
         try {
-            byte[] anonymizedDatasetBytes  = convertToBytes(result.toString());
+            // Convert DataSet object to JSON
+            ObjectMapper objectMapper = new ObjectMapper();
+            String anonymizedDatasetJson = objectMapper.writeValueAsString(result);
 
-            // Create Multipart request
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("anonymized_dataset", new ByteArrayResource(anonymizedDatasetBytes) {
-                @Override
-                public String getFilename() {
-                    return "anonymized_dataset.bin";
-                }
-            });
-
-            // Send request
+            // Send JSON request
             webClient.post()
                     .uri(callbackUrl)
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
-                    .body(BodyInserters.fromMultipartData(body))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(BodyInserters.fromValue(anonymizedDatasetJson))
                     .retrieve()
                     .bodyToMono(Void.class)
                     .doOnError(e -> log.error("Failed to send callback to URL: {}", callbackUrl, e))
                     .doFinally(signal -> log.info("Callback sent to URL: {} in {} ms", callbackUrl, System.currentTimeMillis() - startTime))
                     .subscribe();
         } catch (Exception e) {
-            log.error("Error preparing multipart request for callback", e);
+            log.error("Error preparing JSON request for callback", e);
         }
     }
 

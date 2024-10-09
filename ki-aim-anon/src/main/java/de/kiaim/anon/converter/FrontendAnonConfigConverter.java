@@ -275,6 +275,12 @@ public class FrontendAnonConfigConverter {
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0; // low generalization
             maxLevelToUse = 100; // high generalization
+        } else if (frontendAttributeConfig.getAttributeProtection() == AttributeProtection.RECORD_DELETION) {
+            type = "SUPPRESSION";
+            intervalSize= "";
+            splitLevels = "";
+            minLevelToUse = 0;
+            maxLevelToUse = 1;
         } else {
             type = "";
             intervalSize= "";

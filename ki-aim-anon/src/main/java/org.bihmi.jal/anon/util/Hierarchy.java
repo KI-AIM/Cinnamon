@@ -68,6 +68,9 @@ public class Hierarchy {
             case "INTERVALS" -> {
                 return createWithFixedIntervalSize();
             }
+            case "SUPPRESSION" -> {
+                return createSuppression();
+            }
             case "MASKING" -> {
                 return createWithMasking();
             }
@@ -79,6 +82,17 @@ public class Hierarchy {
             }
             default -> throw new IllegalStateException("Unexpected value: " + config.getHierarchyType());
         }
+    }
+
+    private AttributeType.Hierarchy createSuppression() {
+        var attribute_index = data.getHandle().getColumnIndexOf(attributeName);
+        String[] values = data.getHandle().getDistinctValues(attribute_index);
+
+        AttributeType.Hierarchy.DefaultHierarchy _hierarchy = AttributeType.Hierarchy.create();
+        for (int i=0; i<values.length; i++) {
+            _hierarchy.add(values[i], "*");
+        }
+        return _hierarchy;
     }
 
     private AttributeType.Hierarchy createForDates() {

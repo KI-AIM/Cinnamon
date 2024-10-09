@@ -260,7 +260,7 @@ public class ProcessService {
 					                                                                    resultDataConfiguration);
 					databaseService.storeTransformationResult(transformationResult, project, step);
 				} else if (entry.getKey().equals("anonymized_dataset")) {
-					final Step step = process.get().getStep();
+					final Step step = process.getStep();
 
 					String jsonString = IOUtils.toString(value.getInputStream(), StandardCharsets.UTF_8);
 					DataSet dataSet = jsonMapper.readValue(jsonString, DataSet.class);

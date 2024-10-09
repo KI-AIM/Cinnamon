@@ -19,6 +19,7 @@ import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
+import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.DataSetRepository;
@@ -415,6 +416,16 @@ public class DatabaseService {
 			if (project.getDataSets().containsKey(step)) {
 				deleteDataSet(project.getDataSets().get(step));
 				project.removeDataSet(step);
+			}
+		}
+		for (final var execution : project.getExecutions().values()) {
+			execution.setStatus(ProcessStatus.NOT_STARTED);
+			for (final var process : execution.getProcesses().values()) {
+				process.setStatus(null);
+				process.setExternalProcessStatus(ProcessStatus.NOT_STARTED);
+				process.setScheduledTime(null);
+				process.setProcessUrl(null);
+				process.getAdditionalResultFiles().clear();
 			}
 		}
 

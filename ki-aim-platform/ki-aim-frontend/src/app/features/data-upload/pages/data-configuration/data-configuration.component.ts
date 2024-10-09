@@ -20,6 +20,7 @@ import { ErrorMessageService } from 'src/app/shared/services/error-message.servi
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
+import { Subscription } from "rxjs";
 
 @Component({
     selector: 'app-data-configuration',
@@ -31,6 +32,7 @@ export class DataConfigurationComponent implements OnInit {
     FileType = FileType;
     isValid: boolean;
     dataConfiguration: DataConfiguration
+    private dataConfigurationSubscription: Subscription;
 
     @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
@@ -55,13 +57,17 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.configuration.getDataConfiguration().subscribe(value => {
+        this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
             this.dataConfiguration = value;
-        });
+        })
     }
 
 	ngAfterViewInit() {
         this.setEmptyColumnNames();
+    }
+
+    ngOnDestroy() {
+        this.dataConfigurationSubscription.unsubscribe();
     }
 
     confirmConfiguration() {

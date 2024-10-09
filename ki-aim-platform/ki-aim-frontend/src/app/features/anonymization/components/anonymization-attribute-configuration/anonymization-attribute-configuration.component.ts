@@ -6,6 +6,7 @@ import { AnonymizationAttributeConfigurationDirective } from '../../directives/a
 import { AnonymizationAttributeConfigurationService } from '../../services/anonymization-attribute-configuration.service';
 import { MatSelect } from '@angular/material/select';
 import { AnonymizationAttributeConfiguration, AnonymizationAttributeRowConfiguration } from 'src/app/shared/model/anonymization-attribute-config';
+import { Subscription } from "rxjs";
 @Component({
     selector: 'app-anonymization-attribute-configuration',
     templateUrl: './anonymization-attribute-configuration.component.html',
@@ -20,6 +21,8 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
     dataConfiguration: DataConfiguration;
     error: string | null = null;
 
+    private dataConfigurationSubscription: Subscription;
+
     constructor(
         public configuration: DataConfigurationService,
         public attributeConfigurationService: AnonymizationAttributeConfigurationService
@@ -28,9 +31,13 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
 
 
     ngOnInit() {
-        this.configuration.getDataConfiguration().subscribe(value => {
-            this.dataConfiguration = value
+        this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
+            this.dataConfiguration = value;
         });
+    }
+
+    ngOnDestroy() {
+        this.dataConfigurationSubscription.unsubscribe();
     }
 
     /**
@@ -42,13 +49,13 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
     }
 
     hasAttributeConfiguration(): boolean {
-        let config = this.attributeConfigurationService.getAttributeConfiguration(); 
+        let config = this.attributeConfigurationService.getAttributeConfiguration();
         if (config !== null) {
             if (config.attributeConfiguration.length > 0) {
                 return true
             }
         }
-        return false; 
+        return false;
     }
 
     /**
@@ -109,21 +116,21 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
             if (selectedRow !== null && selectedRow !== undefined) {
                 let newRowConfiguration =
                     new AnonymizationAttributeRowConfiguration();
-    
+
                 newRowConfiguration.index = selectedRow.index;
                 newRowConfiguration.name = selectedRow.name;
                 newRowConfiguration.dataType = selectedRow.type;
                 newRowConfiguration.scale = selectedRow.scale;
-    
+
                 this.attributeConfigurationService.addRowConfiguration(newRowConfiguration);
             }
-        }) ; 
+        }) ;
     }
 
     removeAllAttributes() {
         this.attributeConfigurationService.getAttributeConfiguration()?.attributeConfiguration.forEach(config => {
-            this.removeAttributeConfigurationRow(config); 
-        }); 
+            this.removeAttributeConfigurationRow(config);
+        });
     }
 
     /**

@@ -1,9 +1,7 @@
 import { Injectable } from '@angular/core';
 import { DataConfiguration } from '../model/data-configuration';
-import { ColumnConfiguration } from '../model/column-configuration';
-import { List } from 'src/app/core/utils/list';
 import { HttpClient } from '@angular/common/http';
-import { finalize, map, Observable, of, PartialObserver, share, tap } from 'rxjs';
+import { BehaviorSubject, map, Observable, PartialObserver } from 'rxjs';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
@@ -20,14 +18,21 @@ export class DataConfigurationService {
     private readonly baseUrl: string = environments.apiUrl + "/api/data/configuration";
     public readonly CONFIGURATION_NAME = "configurations";
 
-    private dataConfiguration: DataConfiguration | null = null;
-    private dataConfiguration$: Observable<DataConfiguration> | null = null;
+    private readonly _dataConfiguration$: Observable<DataConfiguration>;
+    private dataConfigurationSubject: BehaviorSubject<DataConfiguration>;
 
     constructor(
         private httpClient: HttpClient,
         private configurationService: ConfigurationService,
         private fileService: FileService,
-    ) {}
+    ) {
+        this.dataConfigurationSubject = new BehaviorSubject(new DataConfiguration());
+        this._dataConfiguration$ = this.dataConfigurationSubject.asObservable();
+    }
+
+    public get dataConfiguration$() {
+        return this._dataConfiguration$;
+    }
 
     public registerConfig() {
         const configReg = new ConfigurationRegisterData();
@@ -44,40 +49,22 @@ export class DataConfigurationService {
         this.configurationService.registerConfiguration(configReg);
     }
 
-    public getDataConfiguration(): Observable<DataConfiguration> {
-        if (this.dataConfiguration) {
-            return of(this.dataConfiguration)
-        }
-        if (this.dataConfiguration$) {
-            return this.dataConfiguration$;
-        }
-
-        this.dataConfiguration$ = this.httpClient.get<DataConfiguration>(this.baseUrl + "?formt=json").pipe(
-            tap(value => {
-                this.dataConfiguration = value;
-            }),
-            share(),
-            finalize(() => {
-                this.dataConfiguration$ = null;
-            }),
-        );
-        return this.dataConfiguration$
+    public fetchDataConfiguration() {
+        this.httpClient.get<DataConfiguration>(this.baseUrl + "?formt=json").subscribe({
+            next: value => {
+                this.setDataConfiguration(value);
+            }
+        });
     }
 
     public setDataConfiguration(value: DataConfiguration) {
-        this.dataConfiguration = value;
-    }
-
-    public getColumnConfigurations(): Observable<List<ColumnConfiguration>> {
-        return this.getDataConfiguration().pipe(
-            map(conf => new List(conf.configurations))
-        )
+        this.dataConfigurationSubject.next(value);
     }
 
     public validateConfiguration(dataConfig: File, observer: PartialObserver<DataConfiguration>) {
         const callback = (result: object | null) => {
             this.setDataConfiguration(result as DataConfiguration);
-            this.postDataConfiguration().pipe(map(() => this.dataConfiguration!!)).subscribe(observer);
+            this.postDataConfiguration().pipe(map(() => this.dataConfigurationSubject.value)).subscribe(observer);
         };
 
         this.configurationService.extractConfig(dataConfig, this.CONFIGURATION_NAME, callback);
@@ -88,7 +75,7 @@ export class DataConfigurationService {
     }
 
     public postDataConfiguration(): Observable<void> {
-        const configString = JSON.stringify(instanceToPlain(this.dataConfiguration));
+        const configString = JSON.stringify(instanceToPlain(this.dataConfigurationSubject.value));
         return this.postDataConfigurationString(configString);
     }
 
@@ -105,7 +92,7 @@ export class DataConfigurationService {
     }
 
     private getConfigurationCallback(): Object {
-        return this.dataConfiguration!;
+        return this.dataConfigurationSubject.getValue();
     }
 
     private setConfigCallback(importData: ImportPipeData): void {

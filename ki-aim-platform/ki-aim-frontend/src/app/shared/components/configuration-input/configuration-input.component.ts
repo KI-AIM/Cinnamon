@@ -3,7 +3,7 @@ import { ConfigurationInputDefinition } from "../../model/configuration-input-de
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import {AbstractControl, FormArray, FormControl, FormGroup, Validators} from "@angular/forms";
 import { DataConfigurationService } from "../../services/data-configuration.service";
-import { map } from 'rxjs';
+import { map, Subscription } from 'rxjs';
 import { ColumnConfiguration } from '../../model/column-configuration';
 
 /**
@@ -36,6 +36,8 @@ export class ConfigurationInputComponent {
      * If the input is disabled.
      */
     @Input() public disabled!: boolean;
+
+    private dataConfigurationSubscription: Subscription;
 
     constructor(protected dataConfigurationService: DataConfigurationService) {
     }
@@ -72,7 +74,7 @@ export class ConfigurationInputComponent {
     ngOnInit() {
         // Check if there is a `switch` for this field
 
-        this.dataConfigurationService.getDataConfiguration().subscribe(value => {
+        this.dataConfigurationSubscription = this.dataConfigurationService.dataConfiguration$.subscribe(value => {
             this.dataConfiguration = value.configurations;
         });
 
@@ -93,6 +95,10 @@ export class ConfigurationInputComponent {
 
             }
         }
+    }
+
+    ngOnDestroy() {
+        this.dataConfigurationSubscription.unsubscribe();
     }
 
     // Method to apply the `switch` logic in a generic way

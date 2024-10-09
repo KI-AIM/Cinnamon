@@ -40,21 +40,15 @@ export class AnonymizationAttributeRowComponent implements OnInit {
 
     ngOnInit() {
         //If row is added and Generalization is available, set it
-        if (this.anonymizationRowConfiguration.attributeProtection === null &&
-            this.getValidTransformationsForAttribute().contains(AttributeProtection.DATE_GENERALIZATION)
-        ) {
-            this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.DATE_GENERALIZATION;
+        if (this.anonymizationRowConfiguration.attributeProtection === null || this.anonymizationRowConfiguration.attributeProtection === undefined) {
+            if (this.getValidTransformationsForAttribute().contains(AttributeProtection.DATE_GENERALIZATION)) {
+                this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.DATE_GENERALIZATION;
+            } else if (this.getValidTransformationsForAttribute().contains(AttributeProtection.MICRO_AGGREGATION)) {
+                this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.MICRO_AGGREGATION;
+            } else {
+                this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.ATTRIBUTE_DELETION;
+            }
         }
-        else if (this.anonymizationRowConfiguration.attributeProtection === null &&
-            this.getValidTransformationsForAttribute().contains(AttributeProtection.MICRO_AGGREGATION)
-        ) {
-            this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.MICRO_AGGREGATION;
-        } else {
-            this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.ATTRIBUTE_DELETION;
-        }
-
-
-
 
         //Initialize the interval input field
         this.setIntervalConditions();

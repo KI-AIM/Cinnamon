@@ -40,7 +40,7 @@ export abstract class ExecutionStepService {
         }
 
         // Create the status observer
-        this.statusObserver$ = interval(10000).pipe(tap(() => {
+        this.statusObserver$ = interval(2000).pipe(tap(() => {
             this.fetchStatus();
         }));
     }

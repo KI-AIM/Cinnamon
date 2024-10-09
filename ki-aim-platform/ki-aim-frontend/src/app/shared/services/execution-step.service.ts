@@ -67,6 +67,9 @@ export abstract class ExecutionStepService {
                 this._error = null;
                 this._status = value;
                 this.setState(value.status);
+                for (const [key, status] of Object.entries(value.processes)) {
+                    this.setCustomStatus(key, status.status);
+                }
             },
             error: err => {
                 this._error = `Failed to start the process. Status: ${err.status} (${err.statusText})`;

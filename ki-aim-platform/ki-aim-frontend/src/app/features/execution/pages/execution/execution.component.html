@@ -53,11 +53,11 @@
         <div>
 
             <div *ngIf="executionService.synthProcess !== null">
-                <table>
+                <table class="table">
                     <thead>
                     <th>Step</th>
                     <th>Finished</th>
-                    <th>Time</th>
+                    <th>Remaining Time/ Duration</th>
                     </thead>
                     <tbody>
                     <tr *ngFor="let step of executionService.synthProcess.status">

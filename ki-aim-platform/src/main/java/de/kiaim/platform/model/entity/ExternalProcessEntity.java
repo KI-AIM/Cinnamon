@@ -89,6 +89,7 @@ public class ExternalProcessEntity {
 	@Schema(description = "The detailed status object retrieved from the server.")
 	@Column(length = 1000)
 	@Setter
+	@Nullable
 	private String status;
 
 	/**

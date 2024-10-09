@@ -225,20 +225,21 @@ public class ProcessService {
 	@Transactional
 	public void finishProcess(final Long processId, final Set<Map.Entry<String, MultipartFile>> resultFiles)
 			throws BadProcessIdException, InternalIOException, InternalRequestException, InternalApplicationConfigurationException, InternalInvalidStateException, InternalDataSetPersistenceException, BadColumnNameException, BadDataSetIdException {
-		final Optional<ExternalProcessEntity> process = externalProcessRepository.findById(processId);
+		final Optional<ExternalProcessEntity> processOptional = externalProcessRepository.findById(processId);
 
 		// Invalid processID
-		if (process.isEmpty()) {
+		if (processOptional.isEmpty()) {
 			throw new BadProcessIdException(BadProcessIdException.NO_PROCESS,
 			                                "No process with the given ID '" + processId +
 			                                "' exists!");
 		}
+		final var process = processOptional.get();
 
-		final var executionStep = process.get().getExecutionStep();
+		final var executionStep = process.getExecutionStep();
 		final ProjectEntity project = executionStep.getProject();
 
 
-		final var files = process.get().getAdditionalResultFiles();
+		final var files = process.getAdditionalResultFiles();
 		files.clear();
 
 		boolean containsError = false;
@@ -252,7 +253,7 @@ public class ProcessService {
 
 					final DataConfiguration resultDataConfiguration = csvProcessor.estimateDatatypes(
 							value.getInputStream(), fileConfiguration, DatatypeEstimationAlgorithm.MOST_GENERAL);
-					final Step step = process.get().getStep();
+					final Step step = process.getStep();
 					final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),
 					                                                                    fileConfiguration,
 					                                                                    resultDataConfiguration);
@@ -263,7 +264,12 @@ public class ProcessService {
 
 				if (entry.getKey().equals("error_message")) {
 					containsError = true;
-					process.get().setStatus(new String(value.getBytes()));
+					process.setStatus(new String(value.getBytes()));
+				}
+				if (entry.getKey().equals("exception_message")) {
+					containsError = true;
+					var stringValue = new String(value.getBytes());
+					process.setStatus(stringValue);
 				}
 
 			} catch (final IOException e) {
@@ -273,34 +279,31 @@ public class ProcessService {
 		}
 
 		// Hardcoded fix for synthetization callback status
-		if (process.get().getStep() == Step.SYNTHETIZATION) {
+		if (process.getStep() == Step.SYNTHETIZATION) {
 			try {
-				final var synthStatus = jsonMapper.readValue(process.get().getStatus(), SynthetizationStatus.class);
-				final var callbackStatus = synthStatus.getStatus()
-				                                      .stream()
-				                                      .filter(a -> Objects.equals(a.getStep(), "callback"))
-				                                      .findFirst();
-				if (callbackStatus.isPresent()) {
-					callbackStatus.get().setCompleted("True");
-					process.get().setStatus(jsonMapper.writeValueAsString(synthStatus));
+				updateProcessStatus(process);
+				final var synthStatus = jsonMapper.readValue(process.getStatus(), SynthetizationStatus.class);
+				for (final var abc : synthStatus.getStatus()) {
+					abc.setCompleted("True");
 				}
+				process.setStatus(jsonMapper.writeValueAsString(synthStatus));
 			} catch (JsonProcessingException e) {
 				log.warn("Schade!", e);
 			}
 		}
 
 		if (containsError) {
-			process.get().setExternalProcessStatus(ProcessStatus.ERROR);
+			process.setExternalProcessStatus(ProcessStatus.ERROR);
 			executionStep.setStatus(ProcessStatus.ERROR);
 			executionStep.setCurrentStep(null);
 		} else {
-			process.get().setExternalProcessStatus(ProcessStatus.FINISHED);
+			process.setExternalProcessStatus(ProcessStatus.FINISHED);
 			// Start the next step of this process
 			startNext(executionStep);
 		}
 
 		// Start the next process of the same step
-		startScheduledProcess(process.get().getStep());
+		startScheduledProcess(process.getStep());
 
 		projectRepository.save(project);
 	}
@@ -448,6 +451,7 @@ public class ProcessService {
 			executionStep.setCurrentStep(stepCandidate);
 
 			processCandidate = executionStep.getProcesses().get(stepCandidate);
+			processCandidate.setStatus(null);
 
 			// Check if the process should be skipped
 			if (Objects.equals(processCandidate.getProcessUrl(), "skip")) {

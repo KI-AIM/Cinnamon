@@ -44,6 +44,8 @@ public class AbstractAnonymizationTests {
     protected DataSet dataSet;
     protected AnonymizationConfig kiaimAnonConfig;
     protected FrontendAnonConfig frontendAnonConfig;
+    protected DataSet heartDataset;
+    protected FrontendAnonConfig heartFrontendAnonConfig;
     protected String processId;
     protected AnonymizationRequest request;
     protected String mockUrl;
@@ -52,12 +54,18 @@ public class AbstractAnonymizationTests {
     public void setUp() throws Exception {
         objectMapper.findAndRegisterModules();
 
-        String datasetPath = "data/data.json-dataset-demo-data_DE 25k.json";
-        String anonConfigPath = "data/data.csv-anon-configuration-demodata-v1.yml";
-        String frontendAnonConfigPath = "data/data.example-new-anon-config-demodata.yml";
+        String datasetPath = "data/oncology/data.json-dataset-demo-data_DE 25k.json";
+        String anonConfigPath = "data/oncology/data.csv-anon-configuration-demodata-v1.yml";
+        String frontendAnonConfigPath = "data/oncology/data.example-new-anon-config-demodata.yml";
 
+        String heartDatasetPath = "data/data.json-dataset-heart-failure.json";
+        String heartFrontendAnonConfigPath = "data/data.heart-failure-anon-config.yml";
         dataSet = importDataset(datasetPath);
         kiaimAnonConfig = importAnonConfig(anonConfigPath);
+
+        heartDataset = importDataset(heartDatasetPath);
+        heartFrontendAnonConfig = importFrontendAnonConfig(heartFrontendAnonConfigPath);
+
         frontendAnonConfig = importFrontendAnonConfig(frontendAnonConfigPath);
         processId = "testProcess123";
 
@@ -85,7 +93,7 @@ public class AbstractAnonymizationTests {
     }
 
     public DataSet importDataset(String datasetPath) throws IOException {
-        String dataSetJson = new String(Files.readAllBytes(Paths.get("data/data.json-dataset-demo-data_DE 25k.json")));
+        String dataSetJson = new String(Files.readAllBytes(Paths.get(datasetPath)));
         return objectMapper.readValue(dataSetJson, DataSet.class);
     }
 

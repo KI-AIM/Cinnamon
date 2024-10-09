@@ -90,6 +90,32 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     }
 
     @Test
+    public void testAnonymizationServiceOnHeartDataset() throws Exception {
+
+//        System.out.println("Dataset heart " + heartDataset );
+//        System.out.println("Heart Dataset Frontend Anon Config "+ heartFrontendAnonConfig);
+        Future<DataSet> future = anonymizationService.anonymizeData(heartDataset, heartFrontendAnonConfig, "processIdTest");
+
+        if (!future.isDone()) {
+            for (int i = 0; i<30; i++) {
+                Thread.sleep(100);
+            }
+        }
+
+        try {
+            DataSet anonymizedDataset = future.get();
+            assertNotNull(anonymizedDataset);
+            System.out.println(anonymizedDataset.getDataRows());
+
+
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+
+    @Test
     public void testAnonymizeDataWithCallback_Success() throws Exception {
         mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
 

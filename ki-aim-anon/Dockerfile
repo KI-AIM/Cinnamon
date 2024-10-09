@@ -25,6 +25,10 @@ RUN rm -rf /usr/local/tomcat/webapps/*
 
 COPY --from=build ki-aim-platform/ki-aim-anon/target/ki-aim-anon.war /usr/local/tomcat/webapps/ROOT.war
 
-EXPOSE 8080
+ENV JPDA_ADDRESS=*:8000
+ENV JPDA_TRANSPORT=dt_socket
 
-ENTRYPOINT ["catalina.sh", "run"]
+EXPOSE 8080
+EXPOSE 8000
+
+ENTRYPOINT ["catalina.sh", "jpda","run"]

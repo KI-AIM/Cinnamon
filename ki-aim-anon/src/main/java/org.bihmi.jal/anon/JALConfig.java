@@ -46,10 +46,10 @@ public class JALConfig {
     private ARXConfiguration.AnonymizationAlgorithm anonymizationAlgorithm = ARXConfiguration.AnonymizationAlgorithm.BEST_EFFORT_BOTTOM_UP;
     
     /** Parameter for heuristic algorithms in ARX. Only used for heuristic algorithms. */
-    private Integer heuristicSearchTimeLimit = Integer.MAX_VALUE;
+    private Integer heuristicSearchTimeLimit = 100;
 
     /** Parameter for heuristic algorithms in ARX. Only used for heuristic algorithms. */
-    private Integer heuristicSearchStepLimit = Integer.MAX_VALUE;
+    private Integer heuristicSearchStepLimit = 10000;
 
     /** Parameter for differential privacy algorithms in ARX */
     private Double differentialPrivacySearchBudget = 0.1;

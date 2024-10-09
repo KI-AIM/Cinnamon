@@ -230,6 +230,7 @@ public class ProcessController {
 			@Parameter(description = "Id of the process to mark as finished.")
 			@PathVariable final Long processId,
 			@RequestParam(name = "synthetic_data", required = false) final MultipartFile syntheticData,
+			@RequestParam(name = "anonymized_dataset", required = false) final MultipartFile anonData,
 			@RequestParam(name = "train", required = false) final MultipartFile trainingData,
 			@RequestParam(name = "test", required = false) final MultipartFile test,
 			@RequestParam(name = "model", required = false) final MultipartFile model,

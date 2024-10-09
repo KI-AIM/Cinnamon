@@ -26,6 +26,7 @@ services:
         ports:
 #            - "8080:8080"
             - "127.0.0.1:8080:8080"
+            - "127.0.0.1:9000:8000"
         volumes:
             - ~/.m2:/root/.m2
         networks:
@@ -58,6 +59,7 @@ services:
         restart: always
         ports:
             - "127.0.0.1:8081:8080"
+            - "127.0.0.1:9001:8000"
         networks:
             - anonymization-network
         volumes:

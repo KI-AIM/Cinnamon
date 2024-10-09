@@ -90,7 +90,9 @@ export class ConfigurationPageComponent implements OnInit {
      */
     protected updateConfigCache(): void
     {
-        this.algorithmService.configCache[this.selection.selectedOption.name] = this.forms.formData;
+        if (this.selection.selectedOption) {
+            this.algorithmService.configCache[this.selection.selectedOption.name] = this.forms.formData;
+        }
     }
 
     /**
@@ -177,7 +179,14 @@ export class ConfigurationPageComponent implements OnInit {
         this.updateConfigCache();
 
         const formData = new FormData();
-        formData.append("configuration", stringify(this.algorithmService.createConfiguration(this.forms.formData, this.selection.selectedOption)));
+
+        if (!this.selection.selectedOption) {
+            formData.append("configuration", "skip");
+        } else {
+            const config = this.forms ? this.forms.formData : '';
+            formData.append("configuration", stringify(this.algorithmService.createConfiguration(config, this.selection.selectedOption)));
+        }
+
         formData.append("stepName", this.algorithmService.getStepName());
         formData.append("url", "skip");
         this.configure(formData);

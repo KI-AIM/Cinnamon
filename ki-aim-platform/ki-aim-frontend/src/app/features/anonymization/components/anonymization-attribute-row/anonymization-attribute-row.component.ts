@@ -41,10 +41,20 @@ export class AnonymizationAttributeRowComponent implements OnInit {
     ngOnInit() {
         //If row is added and Generalization is available, set it
         if (this.anonymizationRowConfiguration.attributeProtection === null &&
-            this.getValidTransformationsForAttribute().contains(AttributeProtection.GENERALIZATION)
+            this.getValidTransformationsForAttribute().contains(AttributeProtection.DATE_GENERALIZATION)
         ) {
-            this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.GENERALIZATION;
+            this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.DATE_GENERALIZATION;
         }
+        else if (this.anonymizationRowConfiguration.attributeProtection === null &&
+            this.getValidTransformationsForAttribute().contains(AttributeProtection.MICRO_AGGREGATION)
+        ) {
+            this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.MICRO_AGGREGATION;
+        } else {
+            this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.ATTRIBUTE_DELETION;
+        }
+
+
+
 
         //Initialize the interval input field
         this.setIntervalConditions();
@@ -131,7 +141,8 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         }
 
         transformations.push(AttributeProtection.ATTRIBUTE_DELETION);
-        transformations.push(AttributeProtection.NO_PROTECTION); 
+        transformations.push(AttributeProtection.RECORD_DELETION);
+        transformations.push(AttributeProtection.NO_PROTECTION);
         // transformations.push(AttributeProtection.VALUE_DELETION); // Not supported ye
 
         return new List<String>(transformations);
@@ -197,12 +208,13 @@ export class AnonymizationAttributeRowComponent implements OnInit {
                 else if (areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.DECIMAL) &&
                         areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.RATIO)
                 ) {
-                    this.changeIntervalSettings(0.001, 1000.0, 0.1, false, false);
+                    this.changeIntervalSettings(0.001, 1000.0, 1, false, false);
                 }
             }
             // [ 'ATTRIBUTE_DELETION', 'VALUE_DELETION']
             else if (areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.ATTRIBUTE_DELETION) ||
                     areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.VALUE_DELETION) ||
+                    areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.RECORD_DELETION) ||
                     areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.NO_PROTECTION)
             ) {
                 this.changeIntervalSettings(null, null, null, false, true);

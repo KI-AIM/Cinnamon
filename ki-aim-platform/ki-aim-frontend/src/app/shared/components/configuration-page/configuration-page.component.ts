@@ -70,7 +70,7 @@ export class ConfigurationPageComponent implements OnInit {
                 this.error = null;
                 this.algorithms = value;
                 if (!this.hasAlgorithmSelection) {
-                    this.selection.selectedOption = this.algorithms[0];
+                    this.algorithmService.selectCache = this.algorithms[0];
                 }
             }, error: error => {
                 console.log(error);

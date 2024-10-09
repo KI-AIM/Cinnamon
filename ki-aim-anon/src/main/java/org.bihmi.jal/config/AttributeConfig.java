@@ -40,7 +40,7 @@ public class AttributeConfig {
     private Object min; // min of all possible values (may exceed data range from sample)
     private Object max; // max of all possible values (may exceed data range from sample)
     private HierarchyConfig hierarchyConfig;
-    private boolean useMicroAggregation = false; // if true, use micro aggregation for this attribute
+    private boolean useMicroAggregation = true; // if true, use micro aggregation for this attribute
     private MicroAggregationFunction microAggregationFunction; // = MicroAggregationFunction.ARITHMETIC_MEAN; // parameter for micro aggregation
     private boolean performClustering = true; // parameter for micro aggregation
     private boolean ignoreMissingData = true; // parameter for micro aggregation

@@ -150,7 +150,7 @@ public class Hierarchy {
 
         builder.prepare(values);
 
-        return builder.build();
+        return addFullSuppressedColumn(builder.build());
     }
 
     protected AttributeType.Hierarchy createWithMasking() {
@@ -182,7 +182,7 @@ public class Hierarchy {
 
         builder.prepare(values);
 
-        return builder.build();
+        return addFullSuppressedColumn(builder.build());
     }
 
     protected AttributeType.Hierarchy createWithFixedIntervalSize() {
@@ -193,7 +193,7 @@ public class Hierarchy {
     private AttributeType.Hierarchy createIntervalBuilderByType(DataType<?> dataType, String intervalSize) {
 
         if (intervalSize==null || intervalSize.isEmpty()){
-            intervalSize = "2";  // TODO: maybe set before and replace this with exception. 
+            intervalSize = "2";  // TODO: maybe set before and replace this with exception.
         }
         if (dataType.equals(DataType.DECIMAL)) {
             double size = Double.parseDouble(intervalSize);
@@ -235,7 +235,7 @@ public class Hierarchy {
         hierarchyBuilder.addInterval(minValue, minValue + intervalRange);
 
         hierarchyBuilder.prepare(values);
-        return hierarchyBuilder.build();
+        return addFullSuppressedColumn(hierarchyBuilder.build());
     }
 
     private AttributeType.Hierarchy decimalIntervalBuilder(double intervalRange) {
@@ -253,6 +253,7 @@ public class Hierarchy {
         double_values = Arrays.stream(double_values).sorted().toArray();
         double minValue = Math.floor(double_values[0]);
         double maxValue = Math.ceil(double_values[double_values.length - 1]) + 0.1;
+        System.out.println("Maximum value in generalization hierarchy " + maxValue);
 
 
         HierarchyBuilderIntervalBased<Double> hierarchyBuilder = HierarchyBuilderIntervalBased.create(
@@ -268,7 +269,16 @@ public class Hierarchy {
         hierarchyBuilder.addInterval(minValue, minValue + intervalRange);
 
         hierarchyBuilder.prepare(values);
-        return hierarchyBuilder.build();
+        return addFullSuppressedColumn(hierarchyBuilder.build());
+    }
+
+    private AttributeType.Hierarchy addFullSuppressedColumn(AttributeType.Hierarchy hierarchy){
+        String[][] _hierarchy = hierarchy.getHierarchy();
+        AttributeType.Hierarchy.DefaultHierarchy newHierarchy = AttributeType.Hierarchy.create();
+        for (int i=0; i<_hierarchy.length; i++) {
+            newHierarchy.add(_hierarchy[i][0], _hierarchy[i][1], "*");
+        }
+        return newHierarchy;
     }
 
     private void checkBefore(){

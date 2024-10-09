@@ -267,7 +267,7 @@ public class FrontendAnonConfigConverter {
             type = "INTERVALS";
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0; // low generalization
-            maxLevelToUse = 1; // high generalization
+            maxLevelToUse = 2; // high generalization
         } else if ((frontendAttributeConfig.getAttributeProtection() == AttributeProtection.GENERALIZATION
                 ||frontendAttributeConfig.getAttributeProtection() == AttributeProtection.MICRO_AGGREGATION)
                 && (frontendAttributeConfig.getScale() == DataScale.ORDINAL)) {
@@ -280,7 +280,7 @@ public class FrontendAnonConfigConverter {
             intervalSize= "";
             splitLevels = "";
             minLevelToUse = 0;
-            maxLevelToUse = 1;
+            maxLevelToUse = 2;
         }
 
         // Return the hierarchy configuration

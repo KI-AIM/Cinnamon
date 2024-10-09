@@ -29,6 +29,10 @@
         </mat-expansion-panel-header>
 
         <div>
+            <div *ngIf="executionService.anonProcess !== null">
+                {{ executionService.anonProcess}}
+            </div>
+
             <div *ngIf="status.processes['ANONYMIZATION'].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
                 <app-data-table step="anonymization"></app-data-table>
             </div>

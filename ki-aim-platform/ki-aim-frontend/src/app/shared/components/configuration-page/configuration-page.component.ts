@@ -71,6 +71,7 @@ export class ConfigurationPageComponent implements OnInit {
                 this.algorithms = value;
                 if (!this.hasAlgorithmSelection) {
                     this.algorithmService.selectCache = this.algorithms[0];
+                    this.readFromCache();
                 }
             }, error: error => {
                 console.log(error);
@@ -108,7 +109,7 @@ export class ConfigurationPageComponent implements OnInit {
      * Reads the values of the configuration page from the cache.
      */
     public readFromCache(): void {
-        if (this.algorithmService.selectCache) {
+        if (this.algorithmService.selectCache && this.selection) {
             this.selection.selectedOption = this.algorithmService.selectCache;
             if (this.algorithmService.configCache[this.selection.selectedOption.name]) {
                 //Timeout is 0, so function is called before data is overwritten

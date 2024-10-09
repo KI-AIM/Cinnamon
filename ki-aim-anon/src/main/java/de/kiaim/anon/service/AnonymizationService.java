@@ -89,6 +89,7 @@ public class AnonymizationService {
         anonymizer.anonymize();
 
         DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), dataSet.getDataConfiguration());
+        log.info(result.toString());
         log.info("Anon finished.");
         return CompletableFuture.completedFuture(result);
     }

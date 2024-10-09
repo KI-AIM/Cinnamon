@@ -40,7 +40,7 @@ public class JALConfig {
     private Collection<PrivacyModel> privacyModelList;
 
     /** Suppression limit */
-    private double suppressionLimit = 1d;
+    private double suppressionLimit = 0.5d;
 
     /** Which  ARXConfiguration.AnonymizationAlgorithm will be used for anonymization*/
     private ARXConfiguration.AnonymizationAlgorithm anonymizationAlgorithm = ARXConfiguration.AnonymizationAlgorithm.BEST_EFFORT_BOTTOM_UP;

@@ -36,7 +36,7 @@ public class AnonymizationConfig {
     private boolean localGeneralization = false;
 
     /** Iteration performed for local generalization */
-    private int localGeneralizationIterations = 100;
+    private int localGeneralizationIterations = 1000;
 
     /** List of attributes and their config */
     private final List<AttributeConfig> attributeConfigs;
@@ -65,8 +65,9 @@ public class AnonymizationConfig {
             jalConfig.setName(name);
             System.out.println(this.privacyModelList);
             jalConfig.setPrivacyModelList(this.privacyModelList);
+            jalConfig.setHeuristicSearchStepLimit(1000);
             System.out.println(this.suppressionLimit);
-            jalConfig.setSuppressionLimit(this.suppressionLimit / 100); //needs normalization between 0 and 1
+            jalConfig.setSuppressionLimit(this.suppressionLimit);
             System.out.println(this.qualityModel);
             jalConfig.setQualityModel(this.qualityModel);
 

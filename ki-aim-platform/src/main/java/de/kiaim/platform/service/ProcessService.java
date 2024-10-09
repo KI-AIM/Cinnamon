@@ -31,6 +31,7 @@ import de.kiaim.platform.repository.ProjectRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
@@ -256,6 +257,14 @@ public class ProcessService {
 					final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),
 					                                                                    fileConfiguration,
 					                                                                    resultDataConfiguration);
+					databaseService.storeTransformationResult(transformationResult, project, step);
+				} else if (entry.getKey().equals("anonymized_dataset")) {
+					final Step step = process.get().getStep();
+
+					String jsonString = IOUtils.toString(value.getInputStream(), StandardCharsets.UTF_8);
+					DataSet dataSet = jsonMapper.readValue(jsonString, DataSet.class);
+
+					TransformationResult transformationResult = new TransformationResult(dataSet, new ArrayList<>());
 					databaseService.storeTransformationResult(transformationResult, project, step);
 				} else {
 					files.put(value.getOriginalFilename(), value.getBytes());

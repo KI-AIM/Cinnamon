@@ -142,14 +142,14 @@ public class AnonymizationService {
         long startTime = System.currentTimeMillis();
 
         try {
-            byte[] syntheticDataBytes = convertToBytes(result.toString());
+            byte[] anonymizedDatasetBytes  = convertToBytes(result.toString());
 
             // Create Multipart request
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("synthetic_data", new ByteArrayResource(syntheticDataBytes) {
+            body.add("anonymized_dataset", new ByteArrayResource(anonymizedDatasetBytes) {
                 @Override
                 public String getFilename() {
-                    return "synthetic_data.bin";
+                    return "anonymized_dataset.bin";
                 }
             });
 

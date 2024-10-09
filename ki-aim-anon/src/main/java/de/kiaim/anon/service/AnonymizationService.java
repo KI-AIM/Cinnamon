@@ -10,6 +10,7 @@ import de.kiaim.anon.processor.AnonymizedDatasetProcessor;
 import de.kiaim.anon.processor.DataSetProcessor;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.model.serialization.mapper.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -144,14 +145,23 @@ public class AnonymizationService {
 
         try {
             // Convert DataSet object to JSON
-            ObjectMapper objectMapper = new ObjectMapper();
-            String anonymizedDatasetJson = objectMapper.writeValueAsString(result);
+            ObjectMapper jsonMapper = JsonMapper.jsonMapper();
+            String anonymizedDatasetJson = jsonMapper.writeValueAsString(result);
+
+            // Create Multipart request
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("anonymized_dataset", new ByteArrayResource(anonymizedDatasetJson.getBytes()) {
+                @Override
+                public String getFilename() {
+                    return "anonymized_dataset.bin";
+                }
+            });
 
             // Send JSON request
             webClient.post()
                     .uri(callbackUrl)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(BodyInserters.fromValue(anonymizedDatasetJson))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(body))
                     .retrieve()
                     .bodyToMono(Void.class)
                     .doOnError(e -> log.error("Failed to send callback to URL: {}", callbackUrl, e))

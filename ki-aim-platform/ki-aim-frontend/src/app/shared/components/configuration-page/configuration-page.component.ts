@@ -171,7 +171,7 @@ export class ConfigurationPageComponent implements OnInit {
      */
     protected skip() {
         const formData = new FormData();
-        formData.append("configuration", "skip");
+        formData.append("configuration", stringify(this.algorithmService.createConfiguration(this.forms.formData, this.selection.selectedOption)));
         formData.append("stepName", this.algorithmService.getStepName());
         formData.append("url", "skip");
         this.configure(formData);

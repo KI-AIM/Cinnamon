@@ -98,7 +98,10 @@ export class ConfigurationFormComponent implements OnInit {
     public setConfiguration(configuration: Object) {
         //Wait here so that form is loaded before updating it
         setTimeout(() => {
-            this.form.setValue(configuration);
+            for (const group of this.groups) {
+                group.handleMissingOptions(configuration);
+            }
+            this.form.patchValue(configuration);
         }, 100);
     }
 

@@ -1,9 +1,8 @@
-import {Component, Input, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {Component, Input, QueryList, ViewChildren} from '@angular/core';
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
-import {Form, FormGroup} from "@angular/forms";
-import {ConfigurationFormComponent} from "../configuration-form/configuration-form.component";
+import { FormGroup } from "@angular/forms";
 import {ConfigurationInputComponent} from "../configuration-input/configuration-input.component";
-import {MatCheckboxChange} from "@angular/material/checkbox";
+import { MatCheckbox, MatCheckboxChange } from "@angular/material/checkbox";
 
 /**
  * Component for a collapsable input group.
@@ -53,6 +52,12 @@ export class ConfigurationGroupComponent {
     @ViewChildren(ConfigurationInputComponent) private inputs: QueryList<ConfigurationInputComponent>;
 
     /**
+     * List of all checkboxes for option groups.
+     * @private
+     */
+    @ViewChildren('optionCheckboxes') private matCheckboxes: QueryList<MatCheckbox>;
+
+    /**
      * List of all group components that are options.
      * @private
      */
@@ -87,6 +92,31 @@ export class ConfigurationGroupComponent {
         }
 
         return groupConfig;
+    }
+
+    /**
+     * Deactivates options that are not provided in the given configuration.
+     * @param configuration The configuration object.
+     */
+    public handleMissingOptions(configuration: any) {
+        const configGroup = configuration[this.fromGroupName];
+        for (const group of this.groups) {
+            group.handleMissingOptions(configGroup);
+        }
+
+        if (this.group.options) {
+            for (const def of this.groups) {
+                if (!Object.hasOwn(configGroup, def.fromGroupName)) {
+                    for (const cb of this.matCheckboxes) {
+                        if (cb.id === 'isActive' + def.fromGroupName) {
+                            cb.checked = false;
+                            break;
+                        }
+                    }
+                    def.setActive(false);
+                }
+            }
+        }
     }
 
     /**

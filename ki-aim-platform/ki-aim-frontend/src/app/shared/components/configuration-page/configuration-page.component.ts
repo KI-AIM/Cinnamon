@@ -153,6 +153,9 @@ export class ConfigurationPageComponent implements OnInit {
      * @protected
      */
     protected onSubmit(configuration: Object) {
+        this.updateSelectCache();
+        this.updateConfigCache();
+
         this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).subscribe({
             next: value => {
                 const formData = new FormData();
@@ -170,6 +173,9 @@ export class ConfigurationPageComponent implements OnInit {
      * @protected
      */
     protected skip() {
+        this.updateSelectCache();
+        this.updateConfigCache();
+
         const formData = new FormData();
         formData.append("configuration", stringify(this.algorithmService.createConfiguration(this.forms.formData, this.selection.selectedOption)));
         formData.append("stepName", this.algorithmService.getStepName());

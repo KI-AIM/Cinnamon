@@ -228,8 +228,10 @@ public class Anonymizer {
 
         // Anonymize
         ARXAnonymizer anonymizer = new ARXAnonymizer();
+        System.out.println("Anonymizer created");
         try {
             ARXResult result = anonymizer.anonymize(this.originalData, this.arxConfig);
+            System.out.println("Optimum found? " + result.getOptimumFound());
             DataHandle output = result.getOutput();
             if (JALConfig.isLocalGeneralization() && result.isResultAvailable()) {
                 try {

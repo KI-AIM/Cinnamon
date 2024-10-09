@@ -26,40 +26,35 @@ public class CompatibilityAssurance {
      * @throws IllegalArgumentException If there is a mismatch in the number of data elements or data types.
      */
     public static void checkDataSetAndFrontendConfigCompatibility(DataSet dataSet, FrontendAnonConfig frontendAnonConfig) {
+
         List<ColumnConfiguration> columnConfigurations = dataSet.getDataConfiguration().getConfigurations();
         List<FrontendAttributeConfig> frontendAttributeConfigs = frontendAnonConfig.getAttributeConfiguration();
 
-        // Check that the number of attributes is equal
-        if (columnConfigurations.size() != frontendAttributeConfigs.size()) {
-            throw new ColumnNumberMismatchException("Number of columns in DataSet (" + columnConfigurations.size() +
-                    ") does not match the number of attribute configurations in FrontendConfig (" +
-                    frontendAttributeConfigs.size() + ").");
-        }
-
         // Check if every attribute configs are compatible
-        for (int i = 0; i < columnConfigurations.size(); i++) {
-            ColumnConfiguration columnConfig = columnConfigurations.get(i);
-            FrontendAttributeConfig frontendConfig = frontendAttributeConfigs.get(i);
+        for (int i = 0; i < frontendAttributeConfigs.size(); i++) {
+            FrontendAttributeConfig frontendAttributeConfig = frontendAttributeConfigs.get(i);
+            int attributeIndex = frontendAttributeConfig.getIndex();
+            ColumnConfiguration columnConfig = columnConfigurations.get(attributeIndex);
 
             // Check attribute name
-            if (!columnConfig.getName().equals(frontendConfig.getName())) {
+            if (!columnConfig.getName().trim().equals(frontendAttributeConfig.getName().trim())) {
                 throw new AttributeMismatchException("Column name mismatch at index " + i +
                         ": DataSet column name is '" + columnConfig.getName() +
-                        "', but FrontendConfig attribute name is '" + frontendConfig.getName() + "'.");
+                        "', but FrontendConfig attribute name is '" + frontendAttributeConfig.getName() + "'.");
             }
 
             // Check attribute dataType
-            if (columnConfig.getType() != frontendConfig.getDataType()) {
+            if (columnConfig.getType() != frontendAttributeConfig.getDataType()) {
                 throw new AttributeMismatchException("DataType mismatch at index " + i +
                         ": DataSet data type is '" + columnConfig.getType() +
-                        "', but FrontendConfig data type is '" + frontendConfig.getDataType() + "'.");
+                        "', but FrontendConfig data type is '" + frontendAttributeConfig.getDataType() + "'.");
             }
 
             // Check attribute DataScale
-            if (columnConfig.getScale() != frontendConfig.getDataScale()) {
+            if (columnConfig.getScale() != frontendAttributeConfig.getScale()) {
                 throw new AttributeMismatchException("DataScale mismatch at index " + i +
                         ": DataSet data scale is '" + columnConfig.getScale() +
-                        "', but FrontendConfig data scale is '" + frontendConfig.getDataScale() + "'.");
+                        "', but FrontendConfig data scale is '" + frontendAttributeConfig.getScale() + "'.");
             }
         }
     }

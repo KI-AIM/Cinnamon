@@ -7,6 +7,7 @@ import de.kiaim.model.configuration.data.DateFormatConfiguration;
 import de.kiaim.model.configuration.data.DateTimeFormatConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.serialization.mapper.JsonMapper;
 import de.kiaim.model.serialization.mapper.YamlMapper;
@@ -15,7 +16,6 @@ import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.config.StepConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.dto.SynthetizationResponse;
 import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
@@ -214,7 +214,10 @@ public class ProcessService {
 
 	/**
 	 * Finishes the process with the given process ID.
-	 * Sets the status to 'finished' and deletes the ExternalProcess object.
+	 * Checks if the result files contain an error message with key 'error_message'.
+	 * If no error message is present, sets the status to 'finished'
+	 * and starts the next process of the execution step as well as the next scheduled process of the same step.
+	 * If an error is present, aborts the current execution step and stets the status to 'error'.
 	 *
 	 * @param processId The ID of the process to finish.
 	 * @throws BadProcessIdException If the given process ID is not valid.
@@ -238,6 +241,7 @@ public class ProcessService {
 		final var files = process.get().getAdditionalResultFiles();
 		files.clear();
 
+		boolean containsError = false;
 		for (final var entry : resultFiles) {
 			try {
 				final var value = entry.getValue();
@@ -257,13 +261,16 @@ public class ProcessService {
 					files.put(value.getOriginalFilename(), value.getBytes());
 				}
 
+				if (entry.getKey().equals("error_message")) {
+					containsError = true;
+					process.get().setStatus(new String(value.getBytes()));
+				}
+
 			} catch (final IOException e) {
 				throw new InternalIOException(InternalIOException.MULTIPART_READING,
 				                              "Failed to read result file '" + entry.getKey() + "'!", e);
 			}
 		}
-
-		process.get().setExternalProcessStatus(ProcessStatus.FINISHED);
 
 		// Hardcoded fix for synthetization callback status
 		if (process.get().getStep() == Step.SYNTHETIZATION) {
@@ -282,11 +289,18 @@ public class ProcessService {
 			}
 		}
 
+		if (containsError) {
+			process.get().setExternalProcessStatus(ProcessStatus.ERROR);
+			executionStep.setStatus(ProcessStatus.ERROR);
+			executionStep.setCurrentStep(null);
+		} else {
+			process.get().setExternalProcessStatus(ProcessStatus.FINISHED);
+			// Start the next step of this process
+			startNext(executionStep);
+		}
+
 		// Start the next process of the same step
 		startScheduledProcess(process.get().getStep());
-
-		// Start the next step of this process
-		startNext(executionStep);
 
 		projectRepository.save(project);
 	}
@@ -486,8 +500,7 @@ public class ProcessService {
 			                              .uri(url)
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
-			                                        errorResponse -> errorResponse.toEntity(
-					                                                                      SynthetizationResponse.class)
+			                                        errorResponse -> errorResponse.toEntity(ExternalProcessResponse.class)
 			                                                                      .map(RequestRuntimeException::new))
 			                              .bodyToMono(String.class)
 			                              .block();
@@ -636,10 +649,9 @@ public class ProcessService {
 			                              .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
-			                                        errorResponse -> errorResponse.toEntity(
-					                                                                      SynthetizationResponse.class)
+			                                        errorResponse -> errorResponse.toEntity(ExternalProcessResponse.class)
 			                                                                      .map(RequestRuntimeException::new))
-			                              .bodyToMono(SynthetizationResponse.class)
+			                              .bodyToMono(ExternalProcessResponse.class)
 			                              .block();
 			externalProcess.setExternalId(response.getPid());
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);

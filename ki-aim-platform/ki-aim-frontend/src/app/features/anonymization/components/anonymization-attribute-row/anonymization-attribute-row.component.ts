@@ -117,25 +117,22 @@ export class AnonymizationAttributeRowComponent implements OnInit {
 
         if (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.ORDINAL)) {
             transformations.push(AttributeProtection.GENERALIZATION);
-            transformations.push(AttributeProtection.MICRO_AGGREGATION);
         }
 
-        if (areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.INTEGER) &&
+        if (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.RATIO) ||
             areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.INTERVAL)
         ) {
-            transformations.push(AttributeProtection.GENERALIZATION);
-            transformations.push(AttributeProtection.MICRO_AGGREGATION);
-        }
-
-        if (areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.DECIMAL) &&
-            areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.RATIO)
-        ) {
-            transformations.push(AttributeProtection.GENERALIZATION);
-            transformations.push(AttributeProtection.MICRO_AGGREGATION);
+            if (areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.DECIMAL) ||
+                areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.INTEGER)
+            ) {
+                transformations.push(AttributeProtection.GENERALIZATION);
+                transformations.push(AttributeProtection.MICRO_AGGREGATION);
+            }
         }
 
         transformations.push(AttributeProtection.ATTRIBUTE_DELETION);
-        transformations.push(AttributeProtection.VALUE_DELETION);
+        transformations.push(AttributeProtection.NO_PROTECTION); 
+        // transformations.push(AttributeProtection.VALUE_DELETION); // Not supported ye
 
         return new List<String>(transformations);
     }
@@ -144,7 +141,7 @@ export class AnonymizationAttributeRowComponent implements OnInit {
     intervalMax: number | null = null;
     intervalInitialValue: number | null = null;
     intervalIsSelect = false; // To determine whether to render an input or select element
-    deactivateInterval = true;
+    deactivateInterval = false;
 
     /**
      * Returns the valid options for a DATE_TRANSFORMATION
@@ -205,13 +202,14 @@ export class AnonymizationAttributeRowComponent implements OnInit {
             }
             // [ 'ATTRIBUTE_DELETION', 'VALUE_DELETION']
             else if (areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.ATTRIBUTE_DELETION) ||
-                    areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.VALUE_DELETION)
+                    areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.VALUE_DELETION) ||
+                    areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.NO_PROTECTION)
             ) {
                 this.changeIntervalSettings(null, null, null, false, true);
             }
             // SET FALLBACK VALUES
             else {
-                this.changeIntervalSettings(null, null, null, false, true);
+                this.changeIntervalSettings(null, null, null, false, false);
             }
         }
     }

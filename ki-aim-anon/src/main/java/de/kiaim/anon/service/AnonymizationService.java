@@ -12,12 +12,22 @@ import de.kiaim.model.data.DataSet;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import reactor.util.retry.Retry;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+
+import static org.apache.tomcat.util.buf.ByteChunk.convertToBytes;
 
 @Service
 @Slf4j
@@ -59,7 +69,7 @@ public class AnonymizationService {
      * @return A CompletableFuture containing the anonymized dataset.
      * @throws Exception If an error occurs during the anonymization process.
      */
-    @Async
+    @Async("taskExecutor")
     public CompletableFuture<DataSet> anonymizeData(DataSet dataSet,
                                                     FrontendAnonConfig frontendAnonConfig,
                                                     String processId) throws Exception {
@@ -79,6 +89,7 @@ public class AnonymizationService {
         anonymizer.anonymize();
 
         DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), dataSet.getDataConfiguration());
+        log.info(result.toString());
         log.info("Anon finished.");
         return CompletableFuture.completedFuture(result);
     }
@@ -91,7 +102,7 @@ public class AnonymizationService {
      * @param request The anonymization request containing the dataset, configuration, and callback URL.
      * @return A CompletableFuture containing the anonymized dataset.
      */
-    @Async
+    @Async("taskExecutor")
     public CompletableFuture<DataSet> anonymizeDataWithCallbackResult(AnonymizationRequest request) {
         return CompletableFuture.supplyAsync(() -> {
             try {
@@ -99,9 +110,13 @@ public class AnonymizationService {
                 CompatibilityAssurance.checkDataSetAndFrontendConfigCompatibility(request.getData(), request.getAnonymizationConfig());
                 AnonymizationConfig anonymizationConfigConverted = FrontendAnonConfigConverter.convertToJALConfig(request.getAnonymizationConfig(), request.getData());
                 String[][] jalData = dataSetProcessor.convertDatasetToStringArray(request.getData());
-                log.info("Jal data generated, start anonymize.");
+                log.info("Session key:");
+                log.info(request.getSession_key());
+
                 Anonymizer anonymizer = new Anonymizer(jalData, anonymizationConfigConverted.toJalConfig(request.getSession_key()));
+                log.info("Instance created.");
                 anonymizer.anonymize();
+                log.info("Anon executed.");
                 DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizer.AnonymizedData(), request.getData().getDataConfiguration());
                 log.info("Anon finished.");
 
@@ -111,7 +126,7 @@ public class AnonymizationService {
             } catch (Exception ex) {
                 log.error("An error occurred during data anonymization", ex);
                 sendFailureCallback(request.getCallback(), ex);
-                throw new RuntimeException(ex);
+                return null;
             }
         });
     }
@@ -126,14 +141,31 @@ public class AnonymizationService {
         log.info("Sending callback to URL: {}", callbackUrl);
         long startTime = System.currentTimeMillis();
 
-        webClient.post()
-                .uri(callbackUrl)
-                .body(BodyInserters.fromValue(result))
-                .retrieve()
-                .bodyToMono(Void.class)
-                .doOnError(e -> log.error("Failed to send callback to URL: {}", callbackUrl, e))
-                .doFinally(signal -> log.info("Callback sent to URL: {} in {} ms", callbackUrl, System.currentTimeMillis() - startTime))
-                .subscribe();
+        try {
+            byte[] syntheticDataBytes = convertToBytes(result.toString());
+
+            // Create Multipart request
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("synthetic_data", new ByteArrayResource(syntheticDataBytes) {
+                @Override
+                public String getFilename() {
+                    return "synthetic_data.bin";
+                }
+            });
+
+            // Send request
+            webClient.post()
+                    .uri(callbackUrl)
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(body))
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .doOnError(e -> log.error("Failed to send callback to URL: {}", callbackUrl, e))
+                    .doFinally(signal -> log.info("Callback sent to URL: {} in {} ms", callbackUrl, System.currentTimeMillis() - startTime))
+                    .subscribe();
+        } catch (Exception e) {
+            log.error("Error preparing multipart request for callback", e);
+        }
     }
 
     /**
@@ -143,14 +175,41 @@ public class AnonymizationService {
      * @param ex The exception that occurred.
      */
     public void sendFailureCallback(String callbackUrl, Throwable ex) {
-        AnonymizationErrorResponse errorResponse = new AnonymizationErrorResponse("Anonymization failed", ex.getMessage());
-        webClient.post()
-                .uri(callbackUrl)
-                .body(BodyInserters.fromValue(errorResponse))
-                .retrieve()
-                .bodyToMono(Void.class)
-                .doOnError(e -> log.error("Failed to send failure callback to URL: {}", callbackUrl, e))
-                .subscribe();
+        log.info("Sending failure callback to URL: {}", callbackUrl);
+        long startTime = System.currentTimeMillis();
+
+        try {
+            String errorMessage = "Anonymization failed";
+            String exceptionMessage = ex.getMessage() != null ? ex.getMessage() : "No additional information";
+
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("error_message", new ByteArrayResource(errorMessage.getBytes(StandardCharsets.UTF_8)) {
+                @Override
+                public String getFilename() {
+                    return "error_message.txt";
+                }
+            });
+            body.add("exception_message", new ByteArrayResource(exceptionMessage.getBytes(StandardCharsets.UTF_8)) {
+                @Override
+                public String getFilename() {
+                    return "exception_message.txt";
+                }
+            });
+
+            // Envoyer la requête POST avec le corps multipart
+            webClient.post()
+                    .uri(callbackUrl)
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(body))
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(2)))
+                    .doOnError(e -> log.error("Failed to send failure callback to URL: {}", callbackUrl, e))
+                    .doFinally(signal -> log.info("Failure callback sent to URL: {} in {} ms", callbackUrl, System.currentTimeMillis() - startTime))
+                    .subscribe();
+        } catch (Exception e) {
+            log.error("Error preparing multipart request for failure callback", e);
+        }
     }
 
     //    TODO: Old version. Delete

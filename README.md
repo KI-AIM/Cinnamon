@@ -11,6 +11,9 @@ For more information, read the README.md of the submodules.
 ### KI-AIM-Model
 
 This submodule contains commonly used model classes like configurations.
+```bash
+mvn install:install-file -Dfile=ki-aim-anon/src/main/resources/lib/libarx-3.9.1.jar -DgroupId=org.deidentifier -DartifactId=arx -Dversion=3.9.1 -Dpackaging=jar
+```
 
 ### KI-AIM-Platform
 

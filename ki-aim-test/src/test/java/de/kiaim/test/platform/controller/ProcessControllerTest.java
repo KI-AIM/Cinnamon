@@ -1,8 +1,8 @@
 package de.kiaim.test.platform.controller;
 
+import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.model.status.synthetization.SynthetizationStepStatus;
-import de.kiaim.platform.model.dto.SynthetizationResponse;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
@@ -113,7 +113,7 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	private void start() throws Exception {
-		final SynthetizationResponse response = new SynthetizationResponse();
+		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("123");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
@@ -209,7 +209,7 @@ public class ProcessControllerTest extends ControllerTest {
 		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
 		Long id = process.getId();
 
-		final SynthetizationResponse response = new SynthetizationResponse();
+		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("123");
 
 		// Send callback request
@@ -312,7 +312,7 @@ public class ProcessControllerTest extends ControllerTest {
 		postData(false);
 		configure();
 
-		final SynthetizationResponse response = new SynthetizationResponse();
+		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("123");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
@@ -348,7 +348,7 @@ public class ProcessControllerTest extends ControllerTest {
 		postData(false);
 		configure();
 
-		final SynthetizationResponse response = new SynthetizationResponse();
+		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("1");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
@@ -411,6 +411,52 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void startAndError() throws Exception {
+		// Setup
+		postData(false);
+		configure();
+
+		// Start
+		final ExternalProcessResponse response = new ExternalProcessResponse();
+		response.setPid("1");
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(response))
+				                    .build());
+
+		mockMvc.perform(post("/api/process/execution/start")
+				                .with(httpBasic("test_user", "password")))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()));
+
+
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
+		Long id = process.getId();
+
+
+		// Send callback request with error
+		final MockMultipartFile resultData = new MockMultipartFile("error_message", "error_message.txt",
+		                                                           MediaType.TEXT_PLAIN_VALUE,
+		                                                           "An error occured!".getBytes());
+		mockMvc.perform(multipart("/api/process/" + id + "/callback")
+				                .file(resultData))
+				                .andExpect(status().isOk());
+		var recordedRequest = mockBackEnd.takeRequest();
+		assertEquals("POST", recordedRequest.getMethod());
+		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
+
+		// Test state changes
+		process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
+		assertEquals(ProcessStatus.ERROR, process.getExecutionStep().getStatus());
+		assertEquals(ProcessStatus.ERROR, process.getExternalProcessStatus(),
+		             "External process status has not been updated!");
+		assertTrue(process.getAdditionalResultFiles().containsKey("error_message.txt"),
+		           "Additional result has not been set!");
+	}
+
+	@Test
 	public void startNoData() throws Exception {
 		configure();
 		mockMvc.perform(post("/api/process/execution/start"))
@@ -432,8 +478,9 @@ public class ProcessControllerTest extends ControllerTest {
 		postData(false);
 		configure();
 
-		final SynthetizationResponse response = new SynthetizationResponse();
+		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setMessage("Not found");
+		response.setError("Nicht gefunden, but in German");
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 				                    .code(404)
@@ -443,7 +490,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/execution/start"))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorMessage(
-				       "Failed to start the process! Got status of 404 NOT_FOUND with message: 'Not found'"));
+				       "Failed to start the process! Got status of 404 NOT_FOUND with message: 'Not found' and error: 'Nicht gefunden, but in German'"));
 	}
 
 	@Test

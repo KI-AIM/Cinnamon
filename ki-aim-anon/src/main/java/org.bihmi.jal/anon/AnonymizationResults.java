@@ -94,6 +94,10 @@ public class AnonymizationResults {
      * @param handle anonymized data
      */
     private HashMap<String, Double> fillDatasetPrivacyMetrics(DataHandle handle, String suffix) {
+        if (handle==null){
+            throw new RuntimeException("ARX DataHandle should not be null.");
+        }
+
         datasetPrivacyMetrics = new HashMap<>();
 
         datasetPrivacyMetrics.put("JournalistRisk" + suffix,

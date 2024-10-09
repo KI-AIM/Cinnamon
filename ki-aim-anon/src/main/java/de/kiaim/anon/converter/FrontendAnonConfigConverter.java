@@ -4,6 +4,7 @@ import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.anon.helper.DatasetAnalyzer;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAttributeConfig;
+import de.kiaim.model.configuration.data.*;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
@@ -110,75 +111,148 @@ public class FrontendAnonConfigConverter {
     /**
      * Convert a list of FrontendAttributeConfig to a list of JAL AttributeConfig
      */
-    public static List<AttributeConfig> convertAttributeConfigs(List<FrontendAttributeConfig> frontendAttributeConfigs, DataSet originalDataSet) {
+    public static List<AttributeConfig> convertAttributeConfigs(List<FrontendAttributeConfig> frontendAttributeConfigs,
+                                                                DataSet originalDataSet)
+            throws InvalidAttributeConfigException {
         List<AttributeConfig> attributeConfigs = new ArrayList<>();
 
-        for (FrontendAttributeConfig frontendConfig : frontendAttributeConfigs) {
-            AttributeConfig attributeConfig = new AttributeConfig();
-            attributeConfig.setName(frontendConfig.getName());
-            attributeConfig.setDataType(frontendConfig.getDataType().toString());
-            attributeConfig.setDateFormat(frontendConfig.getDateFormat());
-            attributeConfig.setPossibleEntries(frontendConfig.getValues() != null && frontendConfig.getValues().length > 0 ? frontendConfig.getValues() : null);
+        for (ColumnConfiguration columnConfig : originalDataSet.getDataConfiguration().getConfigurations()) {
+            // Check if attribute configured by user
+            FrontendAttributeConfig matchingFrontendConfig = frontendAttributeConfigs.stream()
+                    .filter(frontendConfig -> frontendConfig.getName().equals(columnConfig.getName()))
+                    .findFirst()
+                    .orElse(null);
 
-            // Set AttributeType based on attributeProtection
-            if (frontendConfig.getAttributeProtection() == AttributeProtection.ATTRIBUTE_DELETION) {
-                attributeConfig.setAttributeType("IDENTIFYING_ATTRIBUTE");
-                attributeConfig.setHierarchyConfig(null);
-            } else if (frontendConfig.getAttributeProtection() == AttributeProtection.NO_PROTECTION) {
-                attributeConfig.setAttributeType("INSENSITIVE_ATTRIBUTE");
-                attributeConfig.setHierarchyConfig(null);
+            // If attribute is in frontend config, generate JAL config from frontend config
+            if (matchingFrontendConfig != null) {
+                AttributeConfig attributeConfig = createAttributeConfigFromFrontendConfig(matchingFrontendConfig, originalDataSet);
+                attributeConfigs.add(attributeConfig);
             } else {
-                attributeConfig.setAttributeType("QUASI_IDENTIFYING_ATTRIBUTE");
-                // Generate and set the hierarchy based on attribute configurations
-                HierarchyConfig hierarchy = generateHierarchy(frontendConfig);
-                attributeConfig.setHierarchyConfig(hierarchy);
+                // If attribute not in frontend config, generate a default JAL attribute config
+                AttributeConfig defaultConfig = createDefaultAttributeConfig(columnConfig);
+                attributeConfigs.add(defaultConfig);
             }
-
-            // Handle DECIMAL and INTEGER types: Calculate min and max
-            if (frontendConfig.getDataType() == DataType.DECIMAL || frontendConfig.getDataType() == DataType.INTEGER) {
-                int columnIndex = frontendConfig.getIndex();
-                Number[] minMax = DatasetAnalyzer.findMinMaxForColumn(originalDataSet, columnIndex);
-
-                // Set min and max based on the calculated values
-                attributeConfig.setMin(minMax[0] != null ? minMax[0] : null);
-                attributeConfig.setMax(minMax[1] != null ? minMax[1] : null);
-            } else {
-                attributeConfig.setMin(null);
-                attributeConfig.setMax(null);
-            }
-
-            // Handle Micro-Aggregation logic
-            if (frontendConfig.getAttributeProtection() == AttributeProtection.MICRO_AGGREGATION) {
-                attributeConfig.setUseMicroAggregation(true);
-                // Default value ARITHMETIC_MEAN
-                attributeConfig.setMicroAggregationFunction(MicroAggregationFunction.ARITHMETIC_MEAN);
-            } else {
-                attributeConfig.setUseMicroAggregation(false);
-            }
-
-
-            // Add the configured attribute to the list
-            attributeConfigs.add(attributeConfig);
         }
 
         return attributeConfigs;
     }
 
+    private static AttributeConfig createAttributeConfigFromFrontendConfig(FrontendAttributeConfig frontendConfig,
+                                                                           DataSet originalDataSet)
+            throws InvalidAttributeConfigException {
+        AttributeConfig attributeConfig = new AttributeConfig();
+        attributeConfig.setName(frontendConfig.getName());
+        attributeConfig.setDataType(frontendConfig.getDataType().toString());
+        attributeConfig.setDateFormat(frontendConfig.getDateFormat());
+        attributeConfig.setPossibleEntries(frontendConfig.getValues() != null && frontendConfig.getValues().length > 0 ? frontendConfig.getValues() : null);
+
+        // Set AttributeType based on attributeProtection
+        if (frontendConfig.getAttributeProtection() == AttributeProtection.ATTRIBUTE_DELETION) {
+            attributeConfig.setAttributeType("IDENTIFYING_ATTRIBUTE");
+            attributeConfig.setHierarchyConfig(null);
+        } else if (frontendConfig.getAttributeProtection() == AttributeProtection.NO_PROTECTION) {
+            attributeConfig.setAttributeType("INSENSITIVE_ATTRIBUTE");
+            attributeConfig.setHierarchyConfig(null);
+        } else {
+            attributeConfig.setAttributeType("QUASI_IDENTIFYING_ATTRIBUTE");
+            // Generate and set the hierarchy based on attribute configurations
+            HierarchyConfig hierarchy = generateHierarchy(frontendConfig, originalDataSet.getDataConfiguration());
+            attributeConfig.setHierarchyConfig(hierarchy);
+        }
+
+        // Handle DECIMAL and INTEGER types: Calculate min and max
+        if (frontendConfig.getDataType() == DataType.DECIMAL || frontendConfig.getDataType() == DataType.INTEGER) {
+            int columnIndex = frontendConfig.getIndex();
+            Number[] minMax = DatasetAnalyzer.findMinMaxForColumn(originalDataSet, columnIndex);
+
+            attributeConfig.setMin(minMax[0] != null ? minMax[0] : null);
+            attributeConfig.setMax(minMax[1] != null ? minMax[1] : null);
+        } else {
+            attributeConfig.setMin(null);
+            attributeConfig.setMax(null);
+        }
+
+        // Handle Micro-Aggregation logic
+        if (frontendConfig.getAttributeProtection() == AttributeProtection.MICRO_AGGREGATION) {
+            attributeConfig.setUseMicroAggregation(true);
+            attributeConfig.setMicroAggregationFunction(MicroAggregationFunction.ARITHMETIC_MEAN); // Default Value
+        } else {
+            attributeConfig.setUseMicroAggregation(false);
+        }
+
+        return attributeConfig;
+    }
+
+    private static AttributeConfig createDefaultAttributeConfig(ColumnConfiguration columnConfig) throws InvalidAttributeConfigException {
+        AttributeConfig defaultConfig = new AttributeConfig();
+        defaultConfig.setName(columnConfig.getName());
+        defaultConfig.setDataType(columnConfig.getType().toString());
+
+        defaultConfig.setAttributeType("QUASI_IDENTIFYING_ATTRIBUTE");
+        defaultConfig.setHierarchyConfig(null);
+
+        if (columnConfig.getType() == DataType.INTEGER || columnConfig.getType() == DataType.DECIMAL) {
+            defaultConfig.setMin(null);
+            defaultConfig.setMax(null);
+        }
+
+        String dateformat = null;
+        if ((columnConfig.getType() == DataType.DATE) ||
+                (columnConfig.getType() == DataType.DATE_TIME)) {
+            for (Configuration config : columnConfig.getConfigurations()) {
+                if (config instanceof DateFormatConfiguration ) {
+                    DateFormatConfiguration dateConfig = (DateFormatConfiguration) config;
+                    dateformat = dateConfig.getDateFormatter();
+                }
+                else if (config instanceof DateTimeFormatConfiguration) {
+                    DateTimeFormatConfiguration dateConfig = (DateTimeFormatConfiguration) config;
+                    dateformat = dateConfig.getDateTimeFormatter();
+                }
+            }
+            if (dateformat == null) {
+                throw new InvalidAttributeConfigException("dateFormat could not be retrieved from DataConfiguration, a DateFormat must be provided for DATE or DATE_TIME attributes.");
+            }
+        }
+        defaultConfig.setDateFormat(dateformat);
+
+        // TODO : handle Categorical data
+
+        defaultConfig.setUseMicroAggregation(false);
+
+        return defaultConfig;
+    }
+
     /**
      * Generate a hierarchy based on the frontend attribute configuration.
      */
-    private static HierarchyConfig generateHierarchy(FrontendAttributeConfig frontendAttributeConfig) {
+    private static HierarchyConfig generateHierarchy(FrontendAttributeConfig frontendAttributeConfig, DataConfiguration originalDatasetConfiguration) throws InvalidAttributeConfigException {
         String type;
         String intervalSize;
         String splitLevels = ""; // TODO : Should it be set ? not yet
-        String dateformat = "";
+        String dateformat = null;
         int minLevelToUse = 0;
         int maxLevelToUse = 1; // TODO : how determine ? Not use now : target level = interval size
 
         // Determine hierarchy type and levels based on the attribute's protection, scale, and type
         if (frontendAttributeConfig.getAttributeProtection() == AttributeProtection.DATE_GENERALIZATION) {
             type = "DATES";
-            dateformat = frontendAttributeConfig.getDateFormat();
+
+            // Retrieve DateFormat
+            ColumnConfiguration columnConfig = originalDatasetConfiguration.getColumnConfigurationByColumnName(frontendAttributeConfig.getName());
+
+            for (Configuration config : columnConfig.getConfigurations()) {
+                if (config instanceof DateFormatConfiguration ) {
+                    DateFormatConfiguration dateConfig = (DateFormatConfiguration) config;
+                    dateformat = dateConfig.getDateFormatter();
+                }
+                else if (config instanceof DateTimeFormatConfiguration) {
+                    DateTimeFormatConfiguration dateConfig = (DateTimeFormatConfiguration) config;
+                    dateformat = dateConfig.getDateTimeFormatter();
+                }
+            }
+            if (dateformat == null) {
+                throw new InvalidAttributeConfigException("dateFormat could not be retrieved from DataConfiguration, a DateFormat must be provided for DATE or DATE_TIME attributes.");
+            }
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0;
             maxLevelToUse = 1; // TODO : Change
@@ -196,7 +270,7 @@ public class FrontendAnonConfigConverter {
             maxLevelToUse = 1; // high generalization
         } else if ((frontendAttributeConfig.getAttributeProtection() == AttributeProtection.GENERALIZATION
                 ||frontendAttributeConfig.getAttributeProtection() == AttributeProtection.MICRO_AGGREGATION)
-                && (frontendAttributeConfig.getDataScale() == DataScale.ORDINAL)) {
+                && (frontendAttributeConfig.getScale() == DataScale.ORDINAL)) {
             type = "ORDERING";
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0; // low generalization

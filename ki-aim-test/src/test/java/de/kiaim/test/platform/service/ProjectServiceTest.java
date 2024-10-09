@@ -28,7 +28,8 @@ public class ProjectServiceTest extends DatabaseTest {
 		assertNotNull(user.getProject(), "No project has been created!");
 		var project = user.getProject();
 
-		assertEquals(1, project.getExecutions().size(), "Unexpected number of created executions!");
+		assertEquals(2, project.getExecutions().size(), "Unexpected number of created executions!");
+		assertTrue(project.getExecutions().containsKey(Step.EVALUATION), "No execution has been created for step 'EVALUATION'!");
 		assertTrue(project.getExecutions().containsKey(Step.EXECUTION), "No execution has been created for step 'EXECUTION'!");
 		var exec = project.getExecutions().get(Step.EXECUTION);
 

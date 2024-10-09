@@ -4,6 +4,7 @@ import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.service.AnonymizationService;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.model.dto.ExternalProcessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -84,7 +85,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "500", description = "Internal server error.", content = @Content)
     })
     @PostMapping(value = "/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> createAnonymizationTaskWithCallbackResult(
+    public ResponseEntity<ExternalProcessResponse> createAnonymizationTaskWithCallbackResult(
             @RequestParam("session_key") @Parameter(description = "The process ID for the anonymization task.", required = true) String session_key,
             @RequestPart("data") @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "The dataset to be anonymized.",
@@ -101,20 +102,26 @@ public class AnonymizationController {
             System.out.println("Process ID: " + session_key);
 
             if (tasks.containsKey(session_key)) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Task with process ID " + session_key + " already exists.");
+                Future<DataSet> existingTask = tasks.get(session_key);
+                existingTask.cancel(true); // Annule la tâche si elle est encore en cours
+                System.out.println("Replaced old task with session_key: " + session_key);
             }
 
-            // Créer l'objet AnonymizationRequest à partir des différentes parties
+            // Create AnonymizationRequest object from request
             AnonymizationRequest request = new AnonymizationRequest(session_key, data, anonymizationConfig, callback);
 
-            // Appeler le service d'anonymisation
+            // Run anonymization service asynchronously
             Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);
 
             tasks.put(session_key, future);
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body(
-                    "Anonymization process " + session_key + " has been accepted.");
+            ExternalProcessResponse response = new ExternalProcessResponse();
+            response.setMessage("Anonymization process " + session_key + " has been accepted.");
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response
+                    );
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+            ExternalProcessResponse response = new ExternalProcessResponse();
+            response.setMessage("An error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
@@ -128,11 +135,22 @@ public class AnonymizationController {
     public ResponseEntity<String> getTaskStatus(@PathVariable @NonNull String processId) {
         Future<DataSet> future = tasks.get(processId);
         if (future == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task not found");
+            System.out.println("Task with process ID " + processId + " not found.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } else if (future.isDone()) {
-            return ResponseEntity.ok("Task completed");
+            try {
+                DataSet result = future.get();
+                tasks.remove(processId);
+                return ResponseEntity.ok(result.toString());
+            } catch (InterruptedException | ExecutionException e) {
+                Throwable cause = e.getCause();  // Get the underlying cause of the error
+                e.printStackTrace();
+                System.out.println("Error retrieving task result for process ID " + processId + ": " + (cause != null ? cause.getMessage() : "Unknown cause"));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            }
         } else {
-            return ResponseEntity.ok("Task in progress");
+            System.out.println("Task with process ID " + processId + " is not yet done.");
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(null);
         }
     }
 

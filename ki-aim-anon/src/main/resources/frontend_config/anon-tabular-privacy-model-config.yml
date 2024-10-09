@@ -8,35 +8,35 @@ description: "Anonymization for tabular dataset"
 URL: "/api/anonymization/"
 
 configurations:
-  model_configuration:
+  modelConfiguration:
       display_name: Privacy Model Configuration
       description: Define the risk threshold, generalization setting and suppression limit which will be used to run the anonymization.
       parameters:
-        - name: risk_threshold_type
+        - name: riskThresholdType
           label: Risk Threshold Type
           type: string
           description: Select the risk threshold type, either 'Max' for e.g. k-Anonymity enforcement or 'Avg' for an average risk threshold.
           default_value: 'Max'
           values: ['Max', 'Avg']
-        - name: risk_threshold_value
+        - name: riskThresholdValue
           label: Risk Threshold Value
           type: float
           description: Select the threshold value based on the risk type.
           default_value: 0.1
           switch:
-            - depends_on: risk_threshold_type
+            - depends_on: riskThresholdType
               conditions:
                 - if: Max
                   values: [0.05, 0.075, 0.1, 0.2, 0.5] # KO: added larger values for k=2 and k=5 as well. at least for testing.
                 - if: Avg
                   values: [0.0005, 0.001, 0.005, 0.05, 0.075, 0.1, 0.2, 0.5] # KO: added larger values for k=2 and k=5 as well. at least for testing.
-        - name: generalization_setting
+        - name: generalizationSetting
           label: Generalization Setting
           type: string
           description: Select the risk type, either 'Max' or 'Avg'.
           default_value: 'Global'
           values: [ 'Global', 'Local' ]
-        - name: suppression_limit
+        - name: suppressionLimit
           label: Suppression Limit
           type: float
           description: Maximum suppression limit.

@@ -60,7 +60,10 @@ public class Hierarchy {
         if (config == null){
             throw new RuntimeException("Hierarchy Config should not be null.");
         }
-        
+
+        System.out.println("Hierarchy Type:");
+        System.out.println(config.getHierarchyType());
+
         switch (config.getHierarchyType()){
             case "INTERVALS" -> {
                 return createWithFixedIntervalSize();
@@ -189,6 +192,9 @@ public class Hierarchy {
 
     private AttributeType.Hierarchy createIntervalBuilderByType(DataType<?> dataType, String intervalSize) {
 
+        if (intervalSize==null || intervalSize.isEmpty()){
+            intervalSize = "2";  // TODO: maybe set before and replace this with exception. 
+        }
         if (dataType.equals(DataType.DECIMAL)) {
             double size = Double.parseDouble(intervalSize);
             return decimalIntervalBuilder(size);

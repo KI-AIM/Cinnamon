@@ -19,9 +19,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static util.GenerateTestDatasets.generateDataSetWithConfig;
 
 @SpringBootTest
@@ -92,23 +90,27 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     }
 
     @Test
-    public void testAnonymizeDataWithCallback() throws Exception {
+    public void testAnonymizeDataWithCallback_Success() throws Exception {
         mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
 
         String localMockUrl = mockWebServer.url("/callback/success").toString();
         AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, frontendAnonConfig, localMockUrl);
+
         anonymizationService.anonymizeDataWithCallbackResult(anonRequest).join();
 
         var recordedRequest = mockWebServer.takeRequest();
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals("/callback/success", recordedRequest.getPath());
 
-        // Convert the request body back to DataSet and verify its content
-        DataSet receivedDataSet = objectMapper.readValue(recordedRequest.getBody().readUtf8(), DataSet.class);
-        assertNotNull(receivedDataSet);
-//        // Log the received data for verification
-        System.out.println("Received DataSet in callback: " + receivedDataSet);
+        // Check content
+        assertTrue(recordedRequest.getHeader("Content-Type").contains("multipart/form-data"));
+
+        String body = recordedRequest.getBody().readUtf8();
+        assertTrue(body.contains("Content-Disposition: form-data; name=\"synthetic_data\""));
+
+        System.out.println("Received multipart content in callback: " + body);
     }
+
 
     @Test
     public void testSendCallbackResult() throws IOException, InterruptedException {
@@ -122,21 +124,55 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
         String mockUrl = mockWebServer.url("/callback/success").toString();
 
         // Call the method to send the callback
-        anonymizationService.sendCallbackResult(mockUrl, dataSet);
+        anonymizationService.sendCallbackResult(mockUrl, mockDataSet);
 
-        // Verify the request
+        // Get the recorded request from the mock server
         var recordedRequest = mockWebServer.takeRequest();
+
+        // Verify the HTTP method and endpoint
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals("/callback/success", recordedRequest.getPath());
-        assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader("Content-Type"));
 
-        // Convert the request body back to DataSet and verify its content
-//        DataSet receivedDataSet = objectMapper.readValue(recordedRequest.getBody().readUtf8(), DataSet.class);
-//        assertNotNull(receivedDataSet);
-//        // Log the received data for verification
-//        System.out.println("Received DataSet in callback: " + receivedDataSet);
+        // Ensure the content type is multipart/form-data
+        String contentType = recordedRequest.getHeader("Content-Type");
+        assertNotNull(contentType);
+        assertTrue(contentType.startsWith("multipart/form-data"));
+
+        // Read the body of the request as a string
+        String requestBody = recordedRequest.getBody().readUtf8();
+
+        // Basic validation checks for multipart content
+        assertTrue(requestBody.contains("Content-Disposition: form-data; name=\"synthetic_data\""));
+
+        // Optionally, log the received data for verification
+        System.out.println("Received multipart body: " + requestBody);
     }
 
+    @Test
+    public void testAnonymizeDataWithCallback_Failure() throws Exception {
+        mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
+
+        frontendAnonConfig.getPrivacyModels().get(0).getModelConfiguration().setRiskThresholdType("InvalidType");
+
+        String localMockUrl = mockWebServer.url("/callback/failure").toString();
+        AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, frontendAnonConfig, localMockUrl);
+
+        anonymizationService.anonymizeDataWithCallbackResult(anonRequest).join();
+
+        var recordedRequest = mockWebServer.takeRequest();
+
+        assertEquals("POST", recordedRequest.getMethod());
+
+        assertEquals("/callback/failure", recordedRequest.getPath());
+
+        assertTrue(recordedRequest.getHeader("Content-Type").startsWith("multipart/form-data"));
+
+        String body = recordedRequest.getBody().readUtf8();
+        assertTrue(body.contains("Content-Disposition: form-data; name=\"error_message\""));
+        assertTrue(body.contains("Anonymization failed"));
+
+        System.out.println("Received error response in callback: " + body);
+    }
 //    TODO: unused. Delete
 //    @Test
 //    public void testSendCallbackProcessId() throws IOException, InterruptedException {

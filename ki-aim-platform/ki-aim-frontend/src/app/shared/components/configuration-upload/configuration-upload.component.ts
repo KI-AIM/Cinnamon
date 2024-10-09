@@ -88,6 +88,7 @@ export class ConfigurationUploadComponent implements OnInit{
     this.configurationService.uploadAllConfigurations(files[0], included).subscribe(result => {
         this.onUpload.emit(result);
     });
+    this.closeDialog();
   }
 
 }

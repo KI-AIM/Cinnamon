@@ -7,7 +7,7 @@ import {
     ViewChild,
 } from '@angular/core';
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
-import { NgModel } from '@angular/forms';
+import { FormControl, FormGroup, NgModel, Validators } from '@angular/forms';
 import { List } from 'src/app/core/utils/list';
 import {
     AnonymizationAttributeRowConfiguration,
@@ -17,6 +17,20 @@ import { DataType } from 'src/app/shared/model/data-type';
 import { DataScale } from 'src/app/shared/model/data-scale';
 import { areEnumValuesEqual, getEnumKeysByValues, getEnumIndexForString, getEnumKeyByValue } from 'src/app/shared/helper/enum-helper';
 
+type FormField = {
+    name: string;
+    disabled: boolean;
+    value: any | null; 
+};
+  
+type FormElements = {
+    name: FormField;
+    scale: FormField;
+    dataType: FormField;
+    transformationType: FormField;
+    interval: FormField;
+};
+
 @Component({
     selector: 'app-anonymization-attribute-row',
     templateUrl: './anonymization-attribute-row.component.html',
@@ -25,6 +39,7 @@ import { areEnumValuesEqual, getEnumKeysByValues, getEnumIndexForString, getEnum
 export class AnonymizationAttributeRowComponent implements OnInit {
     @Input() configurationRow: ColumnConfiguration | null;
     @Input() anonymizationRowConfiguration: AnonymizationAttributeRowConfiguration;
+    @Input() form: FormGroup; 
 
     @Output() removeEvent = new EventEmitter<string>();
 
@@ -36,9 +51,47 @@ export class AnonymizationAttributeRowComponent implements OnInit {
     getEnumIndexForString = getEnumIndexForString;
     getEnumKeyForValue = getEnumKeyByValue
 
-    constructor() {}
+    intervalMin: number | null = null;
+    intervalMax: number | null = null;
+    intervalInitialValue: number | null = null;
+    intervalIsSelect = false; // To determine whether to render an input or select element
+
+
+    formElements: FormElements = {
+        name: {
+            name: "",
+            disabled: true,
+            value: null,
+        },
+        scale: {
+            name: "",
+            disabled: true,
+            value: null,
+        },
+        dataType: {
+            name: "",
+            disabled: true,
+            value: null,
+        },
+        transformationType: {
+            name: "",
+            disabled: false,
+            value: null,
+        },
+        interval: {
+            name: "",
+            disabled: false,
+            value: null,
+        },
+    }
+
+    constructor() {
+    }
 
     ngOnInit() {
+        this.initParameterNames(); 
+        this.initParameterValues(); 
+        this.initFormControlElements();
         //If row is added and Generalization is available, set it
         if (this.anonymizationRowConfiguration.attributeProtection === null || this.anonymizationRowConfiguration.attributeProtection === undefined) {
             if (this.getValidTransformationsForAttribute().contains(AttributeProtection.DATE_GENERALIZATION)) {
@@ -142,11 +195,6 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         return new List<String>(transformations);
     }
 
-    intervalMin: number | null = null;
-    intervalMax: number | null = null;
-    intervalInitialValue: number | null = null;
-    intervalIsSelect = false; // To determine whether to render an input or select element
-    deactivateInterval = false;
 
     /**
      * Returns the valid options for a DATE_TRANSFORMATION
@@ -240,7 +288,61 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         this.intervalMax = intervalMax;
         this.intervalIsSelect = intervalIsSelect;
         this.anonymizationRowConfiguration.intervalSize = intervalInitialValue;
-        this.deactivateInterval = deactivateInterval;
+        this.toggleIntervalField(deactivateInterval); 
+    }
+
+    initParameterNames() {
+        this.formElements.name.name = this.configurationRow?.index + "_name"; 
+        this.formElements.dataType.name = this.configurationRow?.index + "_dataType"; 
+        this.formElements.scale.name = this.configurationRow?.index + "_scale"; 
+        this.formElements.transformationType.name = this.configurationRow?.index + "_transformationType"; 
+        this.formElements.interval.name = this.configurationRow?.index + "_interval"; 
+    }
+
+    initParameterValues() {
+        this.formElements.name.value = this.anonymizationRowConfiguration.name; 
+        this.formElements.dataType.value = this.anonymizationRowConfiguration.dataType; 
+        this.formElements.scale.value = this.anonymizationRowConfiguration.scale; 
+        this.formElements.transformationType.value = this.anonymizationRowConfiguration.attributeProtection; 
+        this.formElements.interval.value = this.anonymizationRowConfiguration.intervalSize; 
+    }
+
+    initFormControlElements() {
+
+        Object.values(this.formElements).forEach(element => {
+            let validators = [];
+
+            validators.push(Validators.required); 
+
+            if (this.intervalMin !== null) {
+                validators.push(Validators.min(this.intervalMin));
+            }
+            if (this.intervalMax !== null) {
+                validators.push(Validators.max(this.intervalMax));
+            }
+
+            this.form.controls[element.name] = new FormControl({value: element.value, disabled: element.disabled}, validators)
+        }); 
+    }
+
+    toggleIntervalField(disable: boolean) {
+        if (disable) {
+            this.disableIntervalField(); 
+        } else {
+            this.enableIntervalField(); 
+        }
+    }
+
+    enableIntervalField() {
+        this.form.controls[this.formElements.interval.name].enable(); 
+    } 
+    
+    disableIntervalField() {
+        this.form.controls[this.formElements.interval.name].disable(); 
+    }
+
+    isElementValid(name: string) {
+        return this.form.controls[name].valid; 
     }
 
 }

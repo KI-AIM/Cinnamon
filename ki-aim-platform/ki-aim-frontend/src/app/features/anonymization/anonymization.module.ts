@@ -4,8 +4,6 @@ import { AnonymizationConfigurationComponent } from './pages/anonymization-confi
 import { SharedModule } from '../../shared/shared.module';
 import { AnonymizationService } from './services/anonymization.service';
 import { DataUploadModule } from '../data-upload/data-upload.module';
-import { AnonymizationAttributeConfigurationComponent } from './components/anonymization-attribute-configuration/anonymization-attribute-configuration.component';
-import { AnonymizationAttributeRowComponent } from './components/anonymization-attribute-row/anonymization-attribute-row.component';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -16,6 +14,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { AnonymizationAttributeConfigurationComponent } from './components/anonymization-attribute-configuration/anonymization-attribute-configuration.component';
+import { AnonymizationAttributeRowComponent } from './components/anonymization-attribute-row/anonymization-attribute-row.component';
 import { AnonymizationAttributeConfigurationDirective } from './directives/anonymization-attribute-configuration.directive';
 
 @NgModule({

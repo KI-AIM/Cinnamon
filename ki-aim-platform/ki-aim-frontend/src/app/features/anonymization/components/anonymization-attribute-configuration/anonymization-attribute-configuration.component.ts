@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
@@ -7,12 +7,16 @@ import { AnonymizationAttributeConfigurationService } from '../../services/anony
 import { MatSelect } from '@angular/material/select';
 import { AnonymizationAttributeConfiguration, AnonymizationAttributeRowConfiguration } from 'src/app/shared/model/anonymization-attribute-config';
 import { Subscription } from "rxjs";
+import { FormGroup } from '@angular/forms';
 @Component({
     selector: 'app-anonymization-attribute-configuration',
     templateUrl: './anonymization-attribute-configuration.component.html',
     styleUrls: ['./anonymization-attribute-configuration.component.less'],
 })
 export class AnonymizationAttributeConfigurationComponent implements OnInit {
+
+    @Input() public form!: FormGroup;
+
     @ViewChild("attributeDropdown") attributeDropdown: MatSelect;
     @ViewChild(AnonymizationAttributeConfigurationDirective, {
         static: true,
@@ -139,7 +143,7 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
      * @returns ColumnConfiguration, null if index is not found
      */
     getConfigurationForIndex(index: number): ColumnConfiguration | null {
-        const selectedRow = this.getAvailableConfigurations().find(
+        const selectedRow = this.dataConfiguration.configurations.find(
             (row) => row.index === index
         );
 
@@ -156,6 +160,37 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
      */
     removeAttributeConfigurationRow(attributeConfigurationRow: AnonymizationAttributeRowConfiguration) {
         this.attributeConfigurationService.removeRowConfigurationById(attributeConfigurationRow.index);
+    }
+
+    get valid(): boolean {
+        var result = true;
+        var attrConfig = this.getAttributeConfiguration()?.attributeConfiguration;  
+
+        if (attrConfig !== null && attrConfig !== undefined) {
+            for(let i = 0; i < attrConfig.length; i++) {
+                let config = attrConfig[i]; 
+                if (!this.isAttributeRowConfigurationValid(config)) {
+                    result = false; 
+                    break; 
+                }
+            }
+        }
+
+        return result; 
+    }
+
+    isAttributeRowConfigurationValid(rowConfig: AnonymizationAttributeRowConfiguration): boolean {
+        if (rowConfig.name !== null && rowConfig.name !== undefined &&
+            rowConfig.index !== null && rowConfig.index !== undefined &&
+            rowConfig.dataType !== null && rowConfig.dataType !== undefined &&
+            rowConfig.scale !== null && rowConfig.scale !== undefined &&
+            rowConfig.attributeProtection !== null && rowConfig.attributeProtection !== undefined &&
+            rowConfig.intervalSize !== null && rowConfig.intervalSize !== undefined
+        ) {
+            return true; 
+        } else {
+            return false; 
+        }
     }
 
 }

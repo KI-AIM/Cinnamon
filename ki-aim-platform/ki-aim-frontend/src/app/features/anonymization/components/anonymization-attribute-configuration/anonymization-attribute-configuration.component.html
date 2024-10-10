@@ -24,6 +24,9 @@
             <span>Remove all attributes</span>
         </a>
     </div>
+
+    <span *ngIf="valid" style="color:green;">Valid</span>
+    <span *ngIf="!valid" style="color: red;">Invalid</span>
 </div>
 
 
@@ -31,6 +34,7 @@
     <app-anonymization-attribute-row
         [anonymizationRowConfiguration]="attrConfig"
         [configurationRow]="getConfigurationForIndex(i)"
+        [form]="form"
         (removeEvent)="removeAttributeConfigurationRow(attrConfig)"
     >
     </app-anonymization-attribute-row>

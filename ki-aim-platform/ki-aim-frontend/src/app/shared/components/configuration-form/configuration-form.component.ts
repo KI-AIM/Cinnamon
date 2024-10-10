@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Component, ComponentFactoryResolver, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren, ViewChild, ViewContainerRef } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
@@ -16,7 +16,7 @@ import { ConfigurationAdditionalConfigs } from '../../model/configuration-additi
 @Component({
     selector: 'app-configuration-form',
     templateUrl: './configuration-form.component.html',
-    styleUrls: ['./configuration-form.component.less']
+    styleUrls: ['./configuration-form.component.less'],
 })
 export class ConfigurationFormComponent implements OnInit {
 
@@ -43,6 +43,8 @@ export class ConfigurationFormComponent implements OnInit {
      */
     protected form: FormGroup;
 
+    public formInput: {form: FormGroup};
+
     /**
      * Event that gets triggered on every change.
      */
@@ -56,8 +58,10 @@ export class ConfigurationFormComponent implements OnInit {
 
     @ViewChildren(ConfigurationGroupComponent) private groups: QueryList<ConfigurationGroupComponent>;
 
+    @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
+
     constructor(
-        private readonly anonService: AlgorithmService
+        private readonly anonService: AlgorithmService,
     ) {
        this.form = new FormGroup({});
     }
@@ -69,6 +73,12 @@ export class ConfigurationFormComponent implements OnInit {
                 this.algorithmDefinition = value
                 this.form = this.createForm(value);
                 this.updateForm();
+
+                this.formInput = {
+                    form: this.form,
+                };
+
+                this.loadComponents();
 
                 this.form.valueChanges.subscribe(value => {
                     this.onChange.emit();
@@ -209,5 +219,13 @@ export class ConfigurationFormComponent implements OnInit {
         }
 
         return object;
+    }
+
+    loadComponents() {
+        this.additionalConfigs?.configs.forEach(config => {
+            this.componentContainer.clear();
+            var componentRef: any = this.componentContainer.createComponent(config.component);
+            componentRef.instance.form = this.formInput.form;
+        });
     }
 }

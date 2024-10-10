@@ -121,6 +121,15 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     /**
+     * Handles the given error by displaying the error on top of the page.
+     * @param err The error message.
+     * @protected
+     */
+    protected handleError(err: string) {
+        this.error = err;
+    }
+
+    /**
      * Retrieves the configuration from the form.
      * @private
      */

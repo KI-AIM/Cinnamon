@@ -32,7 +32,8 @@
             <p>{{ item.description }}</p>
 
             <app-configuration-form #form [algorithm]="item" [disabled]="disabled" (onChange)="updateConfigCache()"
-                                    (submitConfiguration)="onSubmit($event)" [additionalConfigs]="additionalConfigs">
+                                    (submitConfiguration)="onSubmit($event)" (onError)="handleError($event)"
+                                    [additionalConfigs]="additionalConfigs">
             </app-configuration-form>
         </ng-container>
     </div>

@@ -7,6 +7,7 @@ import { Algorithm } from "../../model/algorithm";
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
 import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
+import { HttpErrorResponse } from "@angular/common/http";
 
 /**
  * HTML form and submit button for one algorithm.
@@ -56,6 +57,11 @@ export class ConfigurationFormComponent implements OnInit {
      */
     @Output() public submitConfiguration = new EventEmitter<Object>();
 
+    /**
+     * Event that gets triggered when an error occurs in the form.
+     */
+    @Output() public onError: EventEmitter<string> = new EventEmitter();
+
     @ViewChildren(ConfigurationGroupComponent) private groups: QueryList<ConfigurationGroupComponent>;
 
     @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
@@ -69,20 +75,26 @@ export class ConfigurationFormComponent implements OnInit {
     ngOnInit() {
         // Fetch the configuration definition.
         this.anonService.getAlgorithmDefinition(this.algorithm)
-            .subscribe(value => {
-                this.algorithmDefinition = value
-                this.form = this.createForm(value);
-                this.updateForm();
+            .subscribe({
+                next:
+                    value => {
+                        this.algorithmDefinition = value
+                        this.form = this.createForm(value);
+                        this.updateForm();
 
-                this.formInput = {
-                    form: this.form,
-                };
+                        this.formInput = {
+                            form: this.form,
+                        };
 
-                this.loadComponents();
+                        this.loadComponents();
 
-                this.form.valueChanges.subscribe(value => {
-                    this.onChange.emit();
-                });
+                        this.form.valueChanges.subscribe(value => {
+                            this.onChange.emit();
+                        });
+                    },
+                error: (err: HttpErrorResponse) => {
+                    this.onError.emit(`Failed to load algorithm definition! Status: ${err.status} (${err.statusText})`);
+                },
             });
     }
 

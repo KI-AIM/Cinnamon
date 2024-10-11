@@ -437,9 +437,9 @@ public class ProcessControllerTest extends ControllerTest {
 
 
 		// Send callback request with error
-		final MockMultipartFile resultData = new MockMultipartFile("error_message", "error_message.txt",
+		final MockMultipartFile resultData = new MockMultipartFile("exception_message", "exception_message.txt",
 		                                                           MediaType.TEXT_PLAIN_VALUE,
-		                                                           "An error occured!".getBytes());
+		                                                           "An error occurred!".getBytes());
 		mockMvc.perform(multipart("/api/process/" + id + "/callback")
 				                .file(resultData))
 				                .andExpect(status().isOk());
@@ -452,8 +452,9 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals(ProcessStatus.ERROR, process.getExecutionStep().getStatus());
 		assertEquals(ProcessStatus.ERROR, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
-		assertTrue(process.getAdditionalResultFiles().containsKey("error_message.txt"),
-		           "Additional result has not been set!");
+		assertEquals("An error occurred!", process.getStatus());
+		assertFalse(process.getAdditionalResultFiles().containsKey("exception_message.txt"),
+		           "Exception message should not have been set!");
 	}
 
 	@Test

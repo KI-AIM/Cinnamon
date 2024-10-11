@@ -72,7 +72,7 @@ export abstract class ExecutionStepService {
                 }
             },
             error: err => {
-                this._error = `Failed to start the process. Status: ${err.status} (${err.statusText})`;
+                this.fetchStatus();
             }
         });
     }

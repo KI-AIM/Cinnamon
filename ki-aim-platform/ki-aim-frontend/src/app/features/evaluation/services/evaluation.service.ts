@@ -7,10 +7,16 @@ import { HttpClient } from "@angular/common/http";
 })
 export class EvaluationService extends ExecutionStepService {
 
+    private _technicalEvaluationStatus: string | null = null;
+
     constructor(
         http: HttpClient,
     ) {
         super(http);
+    }
+
+    public get technicalEvaluationStatus(): string | null {
+        return this._technicalEvaluationStatus;
     }
 
     protected override getStepName(): string {
@@ -18,6 +24,7 @@ export class EvaluationService extends ExecutionStepService {
     }
 
     protected override setCustomStatus(key: string, status: string | null): void {
+        this._technicalEvaluationStatus = status;
     }
 
     protected override getSteps(): string[] {

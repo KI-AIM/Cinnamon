@@ -8,7 +8,7 @@ import { SynthetizationProcess } from "../../../shared/model/synthetization-proc
 })
 export class ExecutionService extends ExecutionStepService {
     // TODO implement for anonymization
-    public _synthProcess: SynthetizationProcess | null = null;
+    public _synthProcess: SynthetizationProcess | string | null = null;
     public _anonProcess: string | null = null;
 
     constructor(
@@ -21,7 +21,7 @@ export class ExecutionService extends ExecutionStepService {
         return this._anonProcess;
     };
 
-    public get synthProcess(): SynthetizationProcess | null {
+    public get synthProcess(): SynthetizationProcess | string | null {
         return this._synthProcess;
     };
 
@@ -31,7 +31,15 @@ export class ExecutionService extends ExecutionStepService {
 
     protected override setCustomStatus(key: string, status: string | null): void {
         if (key === "SYNTHETIZATION") {
-            this._synthProcess = status === null ? null : JSON.parse(status);
+            if (status === null) {
+                this._synthProcess = null;
+            } else {
+                try {
+                    this._synthProcess = JSON.parse(status)
+                } catch (e) {
+                    this._synthProcess = status
+                }
+            }
         } else if (key === "ANONYMIZATION") {
             this._anonProcess = status;
         }

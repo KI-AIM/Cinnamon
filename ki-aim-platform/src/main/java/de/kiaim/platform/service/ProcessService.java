@@ -44,6 +44,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.*;
@@ -244,6 +245,8 @@ public class ProcessService {
 		files.clear();
 
 		boolean containsError = false;
+		String errorMessage = null;
+
 		for (final var entry : resultFiles) {
 			try {
 				final var value = entry.getValue();
@@ -267,18 +270,11 @@ public class ProcessService {
 
 					TransformationResult transformationResult = new TransformationResult(dataSet, new ArrayList<>());
 					databaseService.storeTransformationResult(transformationResult, project, step);
-				} else {
+				} else if (entry.getKey().equals("exception_message")) {
+					containsError = true;
+					errorMessage = new String(value.getBytes());
+				} else if(!entry.getKey().equals("error_message")) {
 					files.put(value.getOriginalFilename(), value.getBytes());
-				}
-
-				if (entry.getKey().equals("error_message")) {
-					containsError = true;
-					process.setStatus(new String(value.getBytes()));
-				}
-				if (entry.getKey().equals("exception_message")) {
-					containsError = true;
-					var stringValue = new String(value.getBytes());
-					process.setStatus(stringValue);
 				}
 
 			} catch (final IOException e) {
@@ -297,14 +293,12 @@ public class ProcessService {
 				}
 				process.setStatus(jsonMapper.writeValueAsString(synthStatus));
 			} catch (JsonProcessingException e) {
-				log.warn("Schade!", e);
+				log.warn("Failed to update detailed status!", e);
 			}
 		}
 
 		if (containsError) {
-			process.setExternalProcessStatus(ProcessStatus.ERROR);
-			executionStep.setStatus(ProcessStatus.ERROR);
-			executionStep.setCurrentStep(null);
+			setProcessError(process, errorMessage);
 		} else {
 			process.setExternalProcessStatus(ProcessStatus.FINISHED);
 			// Start the next step of this process
@@ -523,6 +517,11 @@ public class ProcessService {
 			if (e.getResponse().getBody() != null) {
 				message += " with message: '" + e.getResponse().getBody().getMessage() + "'";
 			}
+			setProcessError(externalProcess, message);
+			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
+		} catch (WebClientRequestException e) {
+			var message = "Failed to fetch the status! " + e.getMessage();
+			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
 		}
 
@@ -673,6 +672,11 @@ public class ProcessService {
 			if (e.getResponse().getBody() != null) {
 				message += " with message: '" + e.getResponse().getBody().getMessage() + "' and error: '" + e.getResponse().getBody().getError()  + "'";
 			}
+			setProcessError(externalProcess, message);
+			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
+		} catch (WebClientRequestException e) {
+			final var message = "Failed to start the process! " + e.getMessage();
+			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		}
 	}
@@ -812,6 +816,15 @@ public class ProcessService {
 		}
 
 		return databaseService.exportDataSet(executionStep.getProject(), new ArrayList<>(), dataSetSourceStep);
+	}
+
+	private void setProcessError(final ExternalProcessEntity process, final String message) {
+		process.setExternalProcessStatus(ProcessStatus.ERROR);
+		process.setStatus(message);
+
+		final ExecutionStepEntity executionStep = process.getExecutionStep();
+		executionStep.setStatus(ProcessStatus.ERROR);
+		executionStep.setCurrentStep(null);
 	}
 
 }

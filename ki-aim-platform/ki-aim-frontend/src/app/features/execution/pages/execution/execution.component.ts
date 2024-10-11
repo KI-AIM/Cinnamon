@@ -66,4 +66,12 @@ export class ExecutionComponent implements OnInit, OnDestroy {
             }
         });
     }
+
+    protected isObject(value: string | object) {
+        return typeof value === 'object';
+    }
+
+    protected castObject(value: any): any {
+        return value as any;
+    }
 }

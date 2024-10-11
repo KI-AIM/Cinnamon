@@ -1,3 +1,8 @@
+<!-- Error -->
+<app-info-card [hidden]="evaluationService.error === null" typeClass="card-failure">
+    <div>{{ evaluationService.error }}</div>
+</app-info-card>
+
 <div class="mt-2">
     <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="evaluationService.disabled"
             (click)="evaluationService.start()">
@@ -34,8 +39,11 @@
         </mat-expansion-panel-header>
 
         <div>
-            <div
-                *ngIf="evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+            <ng-template *ngIf="evaluationService.technicalEvaluationStatus !== null">
+                {{ evaluationService.technicalEvaluationStatus }}
+            </ng-template>
+
+            <div *ngIf="evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
 
 
                 <!--                <mat-accordion>-->

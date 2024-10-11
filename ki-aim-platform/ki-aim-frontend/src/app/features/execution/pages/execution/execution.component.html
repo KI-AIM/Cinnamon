@@ -1,3 +1,8 @@
+<!-- Error -->
+<app-info-card [hidden]="executionService.error === null" typeClass="card-failure">
+    <div>{{ executionService.error }}</div>
+</app-info-card>
+
 <div class="mt-2">
     <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="executionService.disabled" (click)="executionService.start()">
         Start
@@ -55,22 +60,26 @@
         </mat-expansion-panel-header>
 
         <div>
-
             <div *ngIf="executionService.synthProcess !== null">
-                <table class="table">
-                    <thead>
-                    <th>Step</th>
-                    <th>Finished</th>
-                    <th>Remaining Time/ Duration</th>
-                    </thead>
-                    <tbody>
-                    <tr *ngFor="let step of executionService.synthProcess.status">
-                        <td>{{step.step}}</td>
-                        <td>{{step?.completed}}</td>
-                        <td> {{ (step?.completed === "True") ? step?.duration : step?.remaining_time }}</td>
-                    </tr>
-                    </tbody>
-                </table>
+                <div *ngIf="isObject(executionService.synthProcess); else statusIsString">
+                    <table class="table">
+                        <thead>
+                        <th>Step</th>
+                        <th>Finished</th>
+                        <th>Remaining Time/ Duration</th>
+                        </thead>
+                        <tbody>
+                        <tr *ngFor="let step of castObject(executionService.synthProcess).status">
+                            <td>{{ step.step }}</td>
+                            <td>{{ step?.completed }}</td>
+                            <td>{{ (step?.completed === "True") ? step?.duration : step?.remaining_time }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <ng-template #statusIsString>
+                    {{ executionService.synthProcess }}
+                </ng-template>
             </div>
 
 

@@ -233,6 +233,11 @@ export class ConfigurationFormComponent implements OnInit {
         return object;
     }
 
+    /**
+     * Loads additional config components 
+     * and injects them into the component container.
+     * Also attaches the form to the component
+     */
     loadComponents() {
         this.additionalConfigs?.configs.forEach(config => {
             this.componentContainer.clear();

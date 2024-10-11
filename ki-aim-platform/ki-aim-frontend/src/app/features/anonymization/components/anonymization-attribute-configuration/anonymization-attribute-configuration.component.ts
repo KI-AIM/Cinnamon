@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
@@ -8,6 +8,7 @@ import { MatSelect } from '@angular/material/select';
 import { AnonymizationAttributeConfiguration, AnonymizationAttributeRowConfiguration } from 'src/app/shared/model/anonymization-attribute-config';
 import { Subscription } from "rxjs";
 import { FormGroup } from '@angular/forms';
+import { AnonymizationAttributeRowComponent } from '../anonymization-attribute-row/anonymization-attribute-row.component';
 @Component({
     selector: 'app-anonymization-attribute-configuration',
     templateUrl: './anonymization-attribute-configuration.component.html',
@@ -20,8 +21,9 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
     @ViewChild("attributeDropdown") attributeDropdown: MatSelect;
     @ViewChild(AnonymizationAttributeConfigurationDirective, {
         static: true,
-    })
-    target: AnonymizationAttributeConfigurationDirective;
+    }) target: AnonymizationAttributeConfigurationDirective;
+
+    @ViewChildren('configRow') inputComponents: QueryList<AnonymizationAttributeRowComponent>;
     dataConfiguration: DataConfiguration;
     error: string | null = null;
 
@@ -128,13 +130,17 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
 
                 this.attributeConfigurationService.addRowConfiguration(newRowConfiguration);
             }
-        }) ;
+        });
     }
 
     removeAllAttributes() {
         this.attributeConfigurationService.getAttributeConfiguration()?.attributeConfiguration.forEach(config => {
             this.removeAttributeConfigurationRow(config);
         });
+
+        this.inputComponents.forEach(component => {
+            component.removeFormControlElements(); 
+        }); 
     }
 
     /**
@@ -163,34 +169,7 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
     }
 
     get valid(): boolean {
-        var result = true;
-        var attrConfig = this.getAttributeConfiguration()?.attributeConfiguration;  
-
-        if (attrConfig !== null && attrConfig !== undefined) {
-            for(let i = 0; i < attrConfig.length; i++) {
-                let config = attrConfig[i]; 
-                if (!this.isAttributeRowConfigurationValid(config)) {
-                    result = false; 
-                    break; 
-                }
-            }
-        }
-
-        return result; 
-    }
-
-    isAttributeRowConfigurationValid(rowConfig: AnonymizationAttributeRowConfiguration): boolean {
-        if (rowConfig.name !== null && rowConfig.name !== undefined &&
-            rowConfig.index !== null && rowConfig.index !== undefined &&
-            rowConfig.dataType !== null && rowConfig.dataType !== undefined &&
-            rowConfig.scale !== null && rowConfig.scale !== undefined &&
-            rowConfig.attributeProtection !== null && rowConfig.attributeProtection !== undefined &&
-            rowConfig.intervalSize !== null && rowConfig.intervalSize !== undefined
-        ) {
-            return true; 
-        } else {
-            return false; 
-        }
+        return !this.form.invalid;
     }
 
 }

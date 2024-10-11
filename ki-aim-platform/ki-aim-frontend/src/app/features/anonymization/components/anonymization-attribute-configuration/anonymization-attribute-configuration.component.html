@@ -24,14 +24,13 @@
             <span>Remove all attributes</span>
         </a>
     </div>
-
-    <span *ngIf="valid" style="color:green;">Valid</span>
-    <span *ngIf="!valid" style="color: red;">Invalid</span>
 </div>
 
 
-<div class="mt-4" *ngFor="let attrConfig of this.getAttributeConfiguration()?.attributeConfiguration, index as i">
+<div class="mt-4" >
     <app-anonymization-attribute-row
+        *ngFor="let attrConfig of this.getAttributeConfiguration()?.attributeConfiguration, index as i"
+        #configRow
         [anonymizationRowConfiguration]="attrConfig"
         [configurationRow]="getConfigurationForIndex(i)"
         [form]="form"

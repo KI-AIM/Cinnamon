@@ -7,6 +7,11 @@ import { ConfigurationService } from "../../../shared/services/configuration.ser
 import { Algorithm } from "../../../shared/model/algorithm";
 import { AnonymizationAttributeConfigurationService } from './anonymization-attribute-configuration.service';
 
+interface AnonymizationFormConfig {
+    modelConfiguration: any; // Specify the type of `modelConfiguration` as needed.
+    [key: string]: any; // This allows the object to have any other properties dynamically.
+}
+
 @Injectable({
     providedIn: 'root',
 })
@@ -30,23 +35,25 @@ export class AnonymizationService extends AlgorithmService {
         return "EXECUTION";
     }
 
-    public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
+    public override createConfiguration(arg: AnonymizationFormConfig, selectedAlgorithm: Algorithm): Object {
+
         return {
             privacyModels: [
                 {
                     name: selectedAlgorithm.name,
                     type: selectedAlgorithm.type,
                     version: selectedAlgorithm.version,
-                    ...arg
+                    modelConfiguration: arg["modelConfiguration"]
                 },
             ],
             ...this.attributeService.createConfiguration()
          };
     }
     public override readConfiguration(arg: any, configurationName: string): {config: Object, selectedAlgorithm: Algorithm} {
-        this.attributeService.setAttributeConfiguration(arg[configurationName]);
-        const selectedAlgorithm = this.getAlgorithmByName(arg[configurationName]["privacyModels"][0]["name"])
-        const config = arg[configurationName]["privacyModels"][0];
+        console.log(arg); 
+        this.attributeService.setAttributeConfiguration(arg);
+        const selectedAlgorithm = this.getAlgorithmByName(arg["privacyModels"][0]["name"])
+        const config = arg["privacyModels"][0];
         delete config["name"];
         delete config["type"];
         return {config, selectedAlgorithm};

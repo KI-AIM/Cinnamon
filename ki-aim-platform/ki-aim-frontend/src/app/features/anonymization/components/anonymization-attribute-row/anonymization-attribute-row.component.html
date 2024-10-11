@@ -4,15 +4,14 @@
             <mat-label
                 [style.color]="isElementValid(this.formElements.name.name) ? '' : 'red'" style="transition: color .1s linear"
             >
-            Column name
+                Column name
             </mat-label>
 
             <input
                 type="text"
                 matInput
-                [id]="'name_' + configurationRow?.index"
+                [id]="formElements.name.name"
                 [(ngModel)]="anonymizationRowConfiguration.name"
-                [value]="anonymizationRowConfiguration.name"
                 [formControlName]="formElements.name.name"
             />
         </mat-form-field>
@@ -26,7 +25,7 @@
                 Attribute Type
             </mat-label>
             <mat-select
-                [id]="'type_' + configurationRow?.index"
+                [id]="formElements.dataType.name"
                 (ngModelChange)="setIntervalConditions()"
                 [formControlName]="formElements.dataType.name"
                 [(ngModel)]="anonymizationRowConfiguration.dataType"
@@ -49,7 +48,7 @@
                 Attribute Scale
             </mat-label>
             <mat-select
-                [id]="'scale_' + configurationRow?.scale"
+                [id]="formElements.scale.name"
                 [(ngModel)]="anonymizationRowConfiguration.scale"
                 (ngModelChange)="setIntervalConditions()"
                 [formControlName]="formElements.scale.name"
@@ -72,9 +71,9 @@
                 Transformation Type
             </mat-label>
             <mat-select
-                [id]="'transformation_' + configurationRow?.index"
+                [id]="formElements.transformationType.name"
                 [(ngModel)]="anonymizationRowConfiguration.attributeProtection"
-                (ngModelChange)="setIntervalConditions()"
+                (ngModelChange)="setIntervalConditions(); updateForm()"
                 [formControlName]="formElements.transformationType.name"
             >
                 <mat-option
@@ -83,6 +82,9 @@
                     >{{ transformation }}
                 </mat-option>
             </mat-select>
+            <mat-error *ngIf="form.controls[formElements.transformationType.name].hasError('required')">
+                Value must not be empty
+             </mat-error>
         </mat-form-field>
     </div>
 
@@ -99,7 +101,9 @@
                     [min]="intervalMin"
                     [max]="intervalMax"
                     [step]="intervalMin"
+                    [id]="formElements.interval.name"
                     [(ngModel)]="anonymizationRowConfiguration.intervalSize"
+                    (ngModelChange)="updateForm()"
                     [formControlName]="formElements.interval.name"
                     matInput
                 >
@@ -108,6 +112,8 @@
             <ng-template #selectField>
                 <mat-select 
                     [(ngModel)]="anonymizationRowConfiguration.intervalSize"
+                    [id]="formElements.interval.name"
+                    (ngModelChange)="updateForm()"
                     [formControlName]="formElements.interval.name"    
                 >
                     <mat-option
@@ -119,6 +125,15 @@
                 </mat-select>
             </ng-template>
 
+            <mat-error *ngIf="form.controls[formElements.interval.name].hasError('required')">
+                Value must not be empty
+             </mat-error>
+             <mat-error *ngIf="form.controls[formElements.interval.name].hasError('max')">
+                 Value must be less than or equal to {{ this.intervalMax }}
+             </mat-error>
+             <mat-error *ngIf="form.controls[formElements.interval.name].hasError('min')">
+                 Value must be greater than or equal to {{ this.intervalMin }}
+             </mat-error>
         </mat-form-field>
     </div>
 

@@ -112,7 +112,16 @@ export class AnonymizationAttributeRowComponent implements OnInit {
      * Can be used to bubble up the event to a parent component
      */
     removeCurrentRow() {
+        this.removeFormControlElements(); 
         this.removeEvent.emit('removeEvent');
+    }
+
+    /**
+     * Manually triggers the update and
+     * validity check of the form 
+     */
+    updateForm() {
+        this.form.updateValueAndValidity(); 
     }
 
     /**
@@ -291,6 +300,11 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         this.toggleIntervalField(deactivateInterval); 
     }
 
+    /**
+     * Helper function to init the names of the 
+     * form control elements by using the index of the
+     * configuration row
+     */
     initParameterNames() {
         this.formElements.name.name = this.configurationRow?.index + "_name"; 
         this.formElements.dataType.name = this.configurationRow?.index + "_dataType"; 
@@ -299,6 +313,11 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         this.formElements.interval.name = this.configurationRow?.index + "_interval"; 
     }
 
+    /**
+     * Helper function to init the values of the 
+     * form control elements by using the values of the
+     * anonymization attribute row config
+     */
     initParameterValues() {
         this.formElements.name.value = this.anonymizationRowConfiguration.name; 
         this.formElements.dataType.value = this.anonymizationRowConfiguration.dataType; 
@@ -307,6 +326,12 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         this.formElements.interval.value = this.anonymizationRowConfiguration.intervalSize; 
     }
 
+    /**
+     * Helper function to init the form control elements 
+     * Automatically adds validators for required, min and max
+     * and disables the element if configured in the formElements 
+     * object
+     */
     initFormControlElements() {
 
         Object.values(this.formElements).forEach(element => {
@@ -322,9 +347,25 @@ export class AnonymizationAttributeRowComponent implements OnInit {
             }
 
             this.form.controls[element.name] = new FormControl({value: element.value, disabled: element.disabled}, validators)
+            this.form.controls[element.name].markAsTouched();
         }); 
     }
 
+    /**
+     * Helper function to remove all FormControl elements
+     * for this row. To be used when removing the row
+     */
+    removeFormControlElements() {
+        Object.values(this.formElements).forEach(element => {
+            this.form.removeControl(element.name);  
+        }); 
+    }
+
+    /**
+     * Helper function to trigger the interval fields
+     * "enabled" attribute, by chaning the FormControl element
+     * @param disable: boolean - if true disables the element; enables it otherwise
+     */
     toggleIntervalField(disable: boolean) {
         if (disable) {
             this.disableIntervalField(); 
@@ -333,16 +374,27 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         }
     }
 
+    /**
+     * Helper function to enable the interval field
+     */
     enableIntervalField() {
         this.form.controls[this.formElements.interval.name].enable(); 
     } 
     
+    /**
+     * Helper function to disable the interval field
+     */
     disableIntervalField() {
         this.form.controls[this.formElements.interval.name].disable(); 
     }
 
+    /**
+     * Function to check if the input field is valid
+     * @param name of the input field (must match to FormControl name)
+     * @returns true if valid; false otherwise
+     */
     isElementValid(name: string) {
-        return this.form.controls[name].valid; 
+        return !this.form.controls[name].invalid; 
     }
 
 }

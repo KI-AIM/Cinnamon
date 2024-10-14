@@ -7,6 +7,8 @@ import de.kiaim.model.configuration.anonymization.AnonConfigReader;
 import de.kiaim.model.configuration.anonymization.AnonymizationConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigReader;
+import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
+import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigWrapperReader;
 import de.kiaim.model.data.DataSet;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -37,15 +39,15 @@ public class AbstractAnonymizationTests {
     protected ObjectMapper objectMapper;
 
     @Autowired
-    protected FrontendAnonConfigReader frontendAnonConfigReader;
+    protected FrontendAnonConfigWrapperReader frontendAnonConfigWrapperReader;
 
     protected MockWebServer mockWebServer;
 
     protected DataSet dataSet;
     protected AnonymizationConfig kiaimAnonConfig;
-    protected FrontendAnonConfig frontendAnonConfig;
+    protected FrontendAnonConfigWrapper frontendAnonConfig;
     protected DataSet heartDataset;
-    protected FrontendAnonConfig heartFrontendAnonConfig;
+    protected FrontendAnonConfigWrapper heartFrontendAnonConfig;
     protected String processId;
     protected AnonymizationRequest request;
     protected String mockUrl;
@@ -69,14 +71,16 @@ public class AbstractAnonymizationTests {
         frontendAnonConfig = importFrontendAnonConfig(frontendAnonConfigPath);
         processId = "testProcess123";
 
-//        System.out.println(kiaimAnonConfig.toString());
+
+        System.out.println("FrontendAnonConfigWrapper");
+        System.out.println(heartFrontendAnonConfig.toString());
 
         if (mockWebServer == null) {
             mockWebServer = new MockWebServer();
             mockWebServer.start();
         }
         mockUrl = mockWebServer.url("/test/callback").toString();
-        request = new AnonymizationRequest(processId, dataSet, frontendAnonConfig, mockUrl);
+        request = new AnonymizationRequest(processId, dataSet, frontendAnonConfig.getAnonymization(), mockUrl);
 
         // Check objects validity
 //        assert isDataSetCompatible(dataSet);
@@ -102,9 +106,9 @@ public class AbstractAnonymizationTests {
         return anonConfigReader.readAnonymizationConfig(file.getAbsolutePath());
     }
 
-    public FrontendAnonConfig importFrontendAnonConfig(String frontendAnonConfigPath) throws IOException {
+    public FrontendAnonConfigWrapper importFrontendAnonConfig(String frontendAnonConfigPath) throws IOException {
         File file = ResourceUtils.getFile(frontendAnonConfigPath);
-        return frontendAnonConfigReader.readFrontendAnonConfig(file.getAbsolutePath());
+        return frontendAnonConfigWrapperReader.readFrontendAnonConfigWrapper(file.getAbsolutePath());
     }
 
     @Test

@@ -19,20 +19,20 @@ public class FrontendAnonConfigConverterTest extends AbstractAnonymizationTests 
     @Test
     public void testConvertFrontendConfigToAnonymizationConfig() throws InvalidSuppressionLimitException, InvalidRiskThresholdException, InvalidAttributeConfigException, InvalidGeneralizationSettingException {
         // Convert frontend config in JAL anon config
-        AnonymizationConfig anonymizationConfig = FrontendAnonConfigConverter.convertToJALConfig(frontendAnonConfig, dataSet);
+        AnonymizationConfig anonymizationConfig = FrontendAnonConfigConverter.convertToJALConfig(frontendAnonConfig.getAnonymization(), dataSet);
 
         System.out.println("Anonymization Config");
         System.out.println(anonymizationConfig);
 
 //         Check convertion
         assertNotNull(anonymizationConfig);
-        assertEquals(frontendAnonConfig.getPrivacyModels().get(0).getModelConfiguration().getSuppressionLimit(), String.valueOf(anonymizationConfig.getSuppressionLimit()));
+        assertEquals(frontendAnonConfig.getAnonymization().getPrivacyModels().get(0).getModelConfiguration().getSuppressionLimit(), String.valueOf(anonymizationConfig.getSuppressionLimit()));
 
         // Check if all attributes are converted
-        assertEquals(frontendAnonConfig.getAttributeConfiguration().size(), anonymizationConfig.getAttributeConfigs().size());
+        assertEquals(frontendAnonConfig.getAnonymization().getAttributeConfiguration().size(), anonymizationConfig.getAttributeConfigs().size());
 
-        for (int i = 0; i < frontendAnonConfig.getAttributeConfiguration().size(); i++) {
-            FrontendAttributeConfig frontendAttribute = frontendAnonConfig.getAttributeConfiguration().get(i);
+        for (int i = 0; i < frontendAnonConfig.getAnonymization().getAttributeConfiguration().size(); i++) {
+            FrontendAttributeConfig frontendAttribute = frontendAnonConfig.getAnonymization().getAttributeConfiguration().get(i);
             AttributeConfig attributeConfig = anonymizationConfig.getAttributeConfigs().get(i);
 
             assertEquals(frontendAttribute.getName(), attributeConfig.getName());

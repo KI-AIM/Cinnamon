@@ -3,6 +3,7 @@ package de.kiaim.anon.controller;
 import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.service.AnonymizationService;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
+import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.dto.ExternalProcessResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -93,8 +94,8 @@ public class AnonymizationController {
                     required = true) DataSet data,
             @RequestPart("anonymizationConfig") @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "The frontend anonymization configuration.",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = FrontendAnonConfig.class)),
-                    required = true) FrontendAnonConfig anonymizationConfig,
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = FrontendAnonConfigWrapper.class)),
+                    required = true) FrontendAnonConfigWrapper anonymizationConfig,
             @RequestParam("callback") @Parameter(description = "The callback URL to return the result.", required = true) String callback) {
 
         try {
@@ -103,12 +104,12 @@ public class AnonymizationController {
 
             if (tasks.containsKey(session_key)) {
                 Future<DataSet> existingTask = tasks.get(session_key);
-                existingTask.cancel(true); // Annule la tâche si elle est encore en cours
+                existingTask.cancel(true);
                 System.out.println("Replaced old task with session_key: " + session_key);
             }
 
             // Create AnonymizationRequest object from request
-            AnonymizationRequest request = new AnonymizationRequest(session_key, data, anonymizationConfig, callback);
+            AnonymizationRequest request = new AnonymizationRequest(session_key, data, anonymizationConfig.getAnonymization(), callback);
 
             // Run anonymization service asynchronously
             Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);

@@ -69,7 +69,7 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     @Test
     public void testAnonymizationService() throws Exception {
 
-        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, frontendAnonConfig, "processIdTest");
+        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, frontendAnonConfig.getAnonymization(), "processIdTest");
 
         if (!future.isDone()) {
             for (int i = 0; i<30; i++) {
@@ -94,7 +94,7 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
 
 //        System.out.println("Dataset heart " + heartDataset );
 //        System.out.println("Heart Dataset Frontend Anon Config "+ heartFrontendAnonConfig);
-        Future<DataSet> future = anonymizationService.anonymizeData(heartDataset, heartFrontendAnonConfig, "processIdTest");
+        Future<DataSet> future = anonymizationService.anonymizeData(heartDataset, heartFrontendAnonConfig.getAnonymization(), "processIdTest");
 
         if (!future.isDone()) {
             for (int i = 0; i<30; i++) {
@@ -120,7 +120,7 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
         mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
 
         String localMockUrl = mockWebServer.url("/callback/success").toString();
-        AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, frontendAnonConfig, localMockUrl);
+        AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, frontendAnonConfig.getAnonymization(), localMockUrl);
 
         anonymizationService.anonymizeDataWithCallbackResult(anonRequest).join();
 
@@ -178,10 +178,10 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     public void testAnonymizeDataWithCallback_Failure() throws Exception {
         mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
 
-        frontendAnonConfig.getPrivacyModels().get(0).getModelConfiguration().setRiskThresholdType("InvalidType");
+        frontendAnonConfig.getAnonymization().getPrivacyModels().get(0).getModelConfiguration().setRiskThresholdType("InvalidType");
 
         String localMockUrl = mockWebServer.url("/callback/failure").toString();
-        AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, frontendAnonConfig, localMockUrl);
+        AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, frontendAnonConfig.getAnonymization(), localMockUrl);
 
         anonymizationService.anonymizeDataWithCallbackResult(anonRequest).join();
 

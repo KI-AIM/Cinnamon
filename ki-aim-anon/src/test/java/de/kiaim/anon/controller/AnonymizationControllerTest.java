@@ -42,7 +42,7 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     @Test
     public void testCreateAnonymizationTaskWithCallbackResult() throws Exception {
         byte[] dataSetBytes = objectMapper.writeValueAsBytes(request.getData());
-        byte[] frontendConfigBytes = objectMapper.writeValueAsBytes(request.getAnonymizationConfig());
+        byte[] frontendConfigBytes = objectMapper.writeValueAsBytes(frontendAnonConfig);
 
         // Create multipart file with MockMultipartFile
         MockMultipartFile dataSetFile = new MockMultipartFile(

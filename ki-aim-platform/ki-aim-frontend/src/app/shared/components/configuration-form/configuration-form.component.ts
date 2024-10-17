@@ -1,4 +1,4 @@
-import {Component, ComponentFactoryResolver, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren, ViewChild, ViewContainerRef } from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren, ViewChild, ViewContainerRef } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
@@ -8,6 +8,7 @@ import { ConfigurationGroupDefinition } from "../../model/configuration-group-de
 import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { HttpErrorResponse } from "@angular/common/http";
+import { LoadingService } from '../../services/loading.service';
 
 /**
  * HTML form and submit button for one algorithm.
@@ -43,8 +44,6 @@ export class ConfigurationFormComponent implements OnInit {
      * @protected
      */
     protected form: FormGroup;
-
-    public formInput: {form: FormGroup};
 
     /**
      * Event that gets triggered on every change.
@@ -82,11 +81,12 @@ export class ConfigurationFormComponent implements OnInit {
                         this.form = this.createForm(value);
                         this.updateForm();
 
-                        this.formInput = {
-                            form: this.form,
-                        };
-
-                        this.loadComponents();
+                        setTimeout(() => {
+                            if (this.componentContainer) {
+                                this.componentContainer.clear();
+                            }
+                            this.loadComponents();
+                        }, 200);
 
                         this.form.valueChanges.subscribe(value => {
                             this.onChange.emit();
@@ -96,6 +96,8 @@ export class ConfigurationFormComponent implements OnInit {
                     this.onError.emit(`Failed to load algorithm definition! Status: ${err.status} (${err.statusText})`);
                 },
             });
+
+
     }
 
     /**
@@ -234,15 +236,14 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     /**
-     * Loads additional config components 
+     * Loads additional config components
      * and injects them into the component container.
      * Also attaches the form to the component
      */
     loadComponents() {
         this.additionalConfigs?.configs.forEach(config => {
-            this.componentContainer.clear();
             var componentRef: any = this.componentContainer.createComponent(config.component);
-            componentRef.instance.form = this.formInput.form;
+            componentRef.instance.form = this.form;
         });
     }
 }

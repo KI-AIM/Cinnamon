@@ -20,9 +20,9 @@ import { areEnumValuesEqual, getEnumKeysByValues, getEnumIndexForString, getEnum
 type FormField = {
     name: string;
     disabled: boolean;
-    value: any | null; 
+    value: any | null;
 };
-  
+
 type FormElements = {
     name: FormField;
     scale: FormField;
@@ -39,11 +39,9 @@ type FormElements = {
 export class AnonymizationAttributeRowComponent implements OnInit {
     @Input() configurationRow: ColumnConfiguration | null;
     @Input() anonymizationRowConfiguration: AnonymizationAttributeRowConfiguration;
-    @Input() form: FormGroup; 
+    @Input() form: FormGroup;
 
     @Output() removeEvent = new EventEmitter<string>();
-
-    @ViewChild('name') nameInput: NgModel;
 
     DataType = DataType;
     AttributeProtection = AttributeProtection;
@@ -56,6 +54,7 @@ export class AnonymizationAttributeRowComponent implements OnInit {
     intervalInitialValue: number | null = null;
     intervalIsSelect = false; // To determine whether to render an input or select element
 
+    validTransformations: List<String> | null = null;
 
     formElements: FormElements = {
         name: {
@@ -89,8 +88,8 @@ export class AnonymizationAttributeRowComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.initParameterNames(); 
-        this.initParameterValues(); 
+        this.initParameterNames();
+        this.initParameterValues();
         this.initFormControlElements();
         //If row is added and Generalization is available, set it
         if (this.anonymizationRowConfiguration.attributeProtection === null || this.anonymizationRowConfiguration.attributeProtection === undefined) {
@@ -102,7 +101,6 @@ export class AnonymizationAttributeRowComponent implements OnInit {
                 this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.ATTRIBUTE_DELETION;
             }
         }
-
         //Initialize the interval input field
         this.setIntervalConditions();
     }
@@ -112,16 +110,16 @@ export class AnonymizationAttributeRowComponent implements OnInit {
      * Can be used to bubble up the event to a parent component
      */
     removeCurrentRow() {
-        this.removeFormControlElements(); 
+        this.removeFormControlElements();
         this.removeEvent.emit('removeEvent');
     }
 
     /**
      * Manually triggers the update and
-     * validity check of the form 
+     * validity check of the form
      */
     updateForm() {
-        this.form.updateValueAndValidity(); 
+        this.form.updateValueAndValidity();
     }
 
     /**
@@ -158,6 +156,13 @@ export class AnonymizationAttributeRowComponent implements OnInit {
     }
 
 
+    getValidTransformationsForAttribute(): List<String> {
+        if (!this.validTransformations) {
+            this.setValidTransformationsForAttribute();
+        }
+        return this.validTransformations!!;
+    }
+
 
     /**
      * Determines the valid transformations that can be applied
@@ -165,7 +170,7 @@ export class AnonymizationAttributeRowComponent implements OnInit {
      *
      * @returns Array<AttributeProtection>
      */
-    private getValidTransformationsForAttribute(): List<String> {
+    private setValidTransformationsForAttribute() {
         var transformations = [];
 
         if (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.DATE) ||
@@ -201,7 +206,7 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         transformations.push(AttributeProtection.NO_PROTECTION);
         // transformations.push(AttributeProtection.VALUE_DELETION); // Not supported ye
 
-        return new List<String>(transformations);
+        this.validTransformations = new List<String>(transformations);
     }
 
 
@@ -297,39 +302,39 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         this.intervalMax = intervalMax;
         this.intervalIsSelect = intervalIsSelect;
         this.anonymizationRowConfiguration.intervalSize = intervalInitialValue;
-        this.toggleIntervalField(deactivateInterval); 
+        this.toggleIntervalField(deactivateInterval);
     }
 
     /**
-     * Helper function to init the names of the 
+     * Helper function to init the names of the
      * form control elements by using the index of the
      * configuration row
      */
     initParameterNames() {
-        this.formElements.name.name = this.configurationRow?.index + "_name"; 
-        this.formElements.dataType.name = this.configurationRow?.index + "_dataType"; 
-        this.formElements.scale.name = this.configurationRow?.index + "_scale"; 
-        this.formElements.transformationType.name = this.configurationRow?.index + "_transformationType"; 
-        this.formElements.interval.name = this.configurationRow?.index + "_interval"; 
+        this.formElements.name.name = this.configurationRow?.index + "_name";
+        this.formElements.dataType.name = this.configurationRow?.index + "_dataType";
+        this.formElements.scale.name = this.configurationRow?.index + "_scale";
+        this.formElements.transformationType.name = this.configurationRow?.index + "_transformationType";
+        this.formElements.interval.name = this.configurationRow?.index + "_interval";
     }
 
     /**
-     * Helper function to init the values of the 
+     * Helper function to init the values of the
      * form control elements by using the values of the
      * anonymization attribute row config
      */
     initParameterValues() {
-        this.formElements.name.value = this.anonymizationRowConfiguration.name; 
-        this.formElements.dataType.value = this.anonymizationRowConfiguration.dataType; 
-        this.formElements.scale.value = this.anonymizationRowConfiguration.scale; 
-        this.formElements.transformationType.value = this.anonymizationRowConfiguration.attributeProtection; 
-        this.formElements.interval.value = this.anonymizationRowConfiguration.intervalSize; 
+        this.formElements.name.value = this.anonymizationRowConfiguration.name;
+        this.formElements.dataType.value = this.anonymizationRowConfiguration.dataType;
+        this.formElements.scale.value = this.anonymizationRowConfiguration.scale;
+        this.formElements.transformationType.value = this.anonymizationRowConfiguration.attributeProtection;
+        this.formElements.interval.value = this.anonymizationRowConfiguration.intervalSize;
     }
 
     /**
-     * Helper function to init the form control elements 
+     * Helper function to init the form control elements
      * Automatically adds validators for required, min and max
-     * and disables the element if configured in the formElements 
+     * and disables the element if configured in the formElements
      * object
      */
     initFormControlElements() {
@@ -337,7 +342,7 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         Object.values(this.formElements).forEach(element => {
             let validators = [];
 
-            validators.push(Validators.required); 
+            validators.push(Validators.required);
 
             if (this.intervalMin !== null) {
                 validators.push(Validators.min(this.intervalMin));
@@ -348,7 +353,7 @@ export class AnonymizationAttributeRowComponent implements OnInit {
 
             this.form.controls[element.name] = new FormControl({value: element.value, disabled: element.disabled}, validators)
             this.form.controls[element.name].markAsTouched();
-        }); 
+        });
     }
 
     /**
@@ -357,8 +362,8 @@ export class AnonymizationAttributeRowComponent implements OnInit {
      */
     removeFormControlElements() {
         Object.values(this.formElements).forEach(element => {
-            this.form.removeControl(element.name);  
-        }); 
+            this.form.removeControl(element.name);
+        });
     }
 
     /**
@@ -368,9 +373,9 @@ export class AnonymizationAttributeRowComponent implements OnInit {
      */
     toggleIntervalField(disable: boolean) {
         if (disable) {
-            this.disableIntervalField(); 
+            this.disableIntervalField();
         } else {
-            this.enableIntervalField(); 
+            this.enableIntervalField();
         }
     }
 
@@ -378,14 +383,14 @@ export class AnonymizationAttributeRowComponent implements OnInit {
      * Helper function to enable the interval field
      */
     enableIntervalField() {
-        this.form.controls[this.formElements.interval.name].enable(); 
-    } 
-    
+        this.form.controls[this.formElements.interval.name].enable();
+    }
+
     /**
      * Helper function to disable the interval field
      */
     disableIntervalField() {
-        this.form.controls[this.formElements.interval.name].disable(); 
+        this.form.controls[this.formElements.interval.name].disable();
     }
 
     /**
@@ -394,7 +399,7 @@ export class AnonymizationAttributeRowComponent implements OnInit {
      * @returns true if valid; false otherwise
      */
     isElementValid(name: string) {
-        return !this.form.controls[name].invalid; 
+        return !this.form.controls[name].invalid;
     }
 
 }

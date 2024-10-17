@@ -1,9 +1,7 @@
 <div class="d-flex flex-row mb-2 justify-content-between" [formGroup]="form">
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
-            <mat-label
-                [style.color]="isElementValid(this.formElements.name.name) ? '' : 'red'" style="transition: color .1s linear"
-            >
+            <mat-label>
                 Column name
             </mat-label>
 
@@ -19,14 +17,11 @@
 
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
-            <mat-label
-                [style.color]="isElementValid(this.formElements.dataType.name) ? '' : 'red'" style="transition: color .1s linear"
-            >
+            <mat-label>
                 Attribute Type
             </mat-label>
             <mat-select
                 [id]="formElements.dataType.name"
-                (ngModelChange)="setIntervalConditions()"
                 [formControlName]="formElements.dataType.name"
                 [(ngModel)]="anonymizationRowConfiguration.dataType"
             >
@@ -42,14 +37,11 @@
 
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
-            <mat-label
-                [style.color]="isElementValid(this.formElements.scale.name) ? '' : 'red'" style="transition: color .1s linear"
-            >
+            <mat-label>
                 Attribute Scale
             </mat-label>
             <mat-select
                 [id]="formElements.scale.name"
-                [(ngModel)]="anonymizationRowConfiguration.scale"
                 (ngModelChange)="setIntervalConditions()"
                 [formControlName]="formElements.scale.name"
             >
@@ -65,9 +57,7 @@
 
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
-            <mat-label
-                [style.color]="isElementValid(this.formElements.transformationType.name) ? '' : 'red'" style="transition: color .1s linear"
-            >
+            <mat-label>
                 Transformation Type
             </mat-label>
             <mat-select
@@ -90,9 +80,7 @@
 
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
-            <mat-label
-                [style.color]="isElementValid(this.formElements.interval.name) ? '' : 'red'" style="transition: color .1s linear"
-            >
+            <mat-label>
                 Interval Size
             </mat-label>
             <ng-container *ngIf="!intervalIsSelect; else selectField">
@@ -110,11 +98,11 @@
             </ng-container>
 
             <ng-template #selectField>
-                <mat-select 
+                <mat-select
                     [(ngModel)]="anonymizationRowConfiguration.intervalSize"
                     [id]="formElements.interval.name"
                     (ngModelChange)="updateForm()"
-                    [formControlName]="formElements.interval.name"    
+                    [formControlName]="formElements.interval.name"
                 >
                     <mat-option
                         *ngFor="let interval of getIntervalEnumOptions().getAll()"

@@ -53,8 +53,8 @@ export class AnonymizationService extends AlgorithmService {
     }
     public override readConfiguration(arg: any, configurationName: string): {config: Object, selectedAlgorithm: Algorithm} {
         this.attributeService.setAttributeConfiguration(arg);
-        const selectedAlgorithm = this.getAlgorithmByName(arg["privacyModels"][0]["name"])
-        const config = arg["privacyModels"][0];
+        const selectedAlgorithm = this.getAlgorithmByName(arg["anonymization"]["privacyModels"][0]["name"])
+        const config = arg["anonymization"]["privacyModels"][0];
         delete config["name"];
         delete config["type"];
         return {config, selectedAlgorithm};

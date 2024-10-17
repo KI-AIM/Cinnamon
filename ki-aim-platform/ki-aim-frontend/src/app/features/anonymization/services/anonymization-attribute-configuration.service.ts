@@ -103,8 +103,9 @@ export class AnonymizationAttributeConfigurationService {
 	 * the requested configuration for the anonymization.
 	 * @param config object from the anonymization
 	 */
-	setAttributeConfiguration(config: {privacyModels: Object, attributeConfiguration: AnonymizationAttributeRowConfiguration[]}) {
-		let attributeConfigs = config.attributeConfiguration;
+	setAttributeConfiguration(config: {anonymization: {privacyModels: Object, attributeConfiguration: AnonymizationAttributeRowConfiguration[]}}) {
+		console.log(config); 
+		let attributeConfigs = config.anonymization.attributeConfiguration;
 		this.initConfig(attributeConfigs);
 
 		if (this.attributeConfiguration !== null) {

@@ -3,8 +3,6 @@ package de.kiaim.anon;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.service.AnonymizationService;
-import de.kiaim.model.configuration.anonymization.AnonConfigReader;
-import de.kiaim.model.configuration.anonymization.AnonymizationConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigWrapperReader;
 import de.kiaim.model.data.DataSet;
@@ -31,9 +29,6 @@ public class AbstractAnonymizationTests {
     protected AnonymizationService anonymizationService;
 
     @Autowired
-    protected AnonConfigReader anonConfigReader;
-
-    @Autowired
     protected ObjectMapper objectMapper;
 
     @Autowired
@@ -42,7 +37,6 @@ public class AbstractAnonymizationTests {
     protected MockWebServer mockWebServer;
 
     protected DataSet dataSet;
-    protected AnonymizationConfig kiaimAnonConfig;
     protected FrontendAnonConfigWrapper frontendAnonConfig;
     protected DataSet heartDataset;
     protected FrontendAnonConfigWrapper heartFrontendAnonConfig;
@@ -55,13 +49,11 @@ public class AbstractAnonymizationTests {
         objectMapper.findAndRegisterModules();
 
         String datasetPath = "data/oncology/data.json-dataset-demo-data_DE 25k.json";
-        String anonConfigPath = "data/oncology/data.csv-anon-configuration-demodata-v1.yml";
         String frontendAnonConfigPath = "data/oncology/data.example-new-anon-config-demodata.yml";
 
         String heartDatasetPath = "data/data.json-dataset-heart-failure.json";
         String heartFrontendAnonConfigPath = "data/data.heart-failure-anon-config.yml";
         dataSet = importDataset(datasetPath);
-        kiaimAnonConfig = importAnonConfig(anonConfigPath);
 
         heartDataset = importDataset(heartDatasetPath);
         heartFrontendAnonConfig = importFrontendAnonConfig(heartFrontendAnonConfigPath);
@@ -99,11 +91,6 @@ public class AbstractAnonymizationTests {
         return objectMapper.readValue(dataSetJson, DataSet.class);
     }
 
-    public AnonymizationConfig importAnonConfig(String anonConfigPath) throws IOException {
-        File file = ResourceUtils.getFile(anonConfigPath);
-        return anonConfigReader.readAnonymizationConfig(file.getAbsolutePath());
-    }
-
     public FrontendAnonConfigWrapper importFrontendAnonConfig(String frontendAnonConfigPath) throws IOException {
         File file = ResourceUtils.getFile(frontendAnonConfigPath);
         return frontendAnonConfigWrapperReader.readFrontendAnonConfigWrapper(file.getAbsolutePath());
@@ -112,7 +99,6 @@ public class AbstractAnonymizationTests {
     @Test
     public void testProcessAnonymization() throws Exception {
         assertNotNull(dataSet);
-        assertNotNull(kiaimAnonConfig);
 //        System.out.println(kiaimAnonConfig);
     }
 }

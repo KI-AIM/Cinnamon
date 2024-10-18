@@ -39,7 +39,6 @@ public class DatasetAnalyzerTest {
 //        System.out.println(dataSet.getDataConfiguration().getDataTypes().toString());
         Number[] minMax = DatasetAnalyzer.findMinMaxForColumn(dataSet, 13);
 
-        // Vérifier que le min est 5 et le max est 15
         assertEquals(210, minMax[0]);
         assertEquals(245, minMax[1]);
     }

@@ -5,8 +5,6 @@ import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.service.AnonymizationService;
 import de.kiaim.model.configuration.anonymization.AnonConfigReader;
 import de.kiaim.model.configuration.anonymization.AnonymizationConfig;
-import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
-import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigReader;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigWrapperReader;
 import de.kiaim.model.data.DataSet;

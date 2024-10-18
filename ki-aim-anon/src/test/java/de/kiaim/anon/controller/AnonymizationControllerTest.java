@@ -32,7 +32,6 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
     @Test
     public void testObject() throws Exception {
-        // Convertir l'objet AnonymizationRequest en JSON
         String jsonRequest = objectMapper.writeValueAsString(request);
         System.out.println("JSON Request");
         System.out.println(request.getSession_key());
@@ -161,24 +160,4 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
         String fileContentAsString = new String(fileContent);
         System.out.println("Config File Content: " + fileContentAsString);
     }
-
-//    @Test
-//    public void testProcessAnonymization() throws Exception {
-//        assertNotNull(dataSet);
-//        assertNotNull(kiaimAnonConfig);
-//
-//        AnonymizationRequest request = new AnonymizationRequest(dataSet, kiaimAnonConfig);
-//        String jsonRequest = objectMapper.writeValueAsString(request);
-//
-//        MvcResult result = mockMvc.perform(post("/api/anonymization/anonymization_tabular")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(jsonRequest))
-//                .andExpect(status().isOk())// Display result in console
-//                .andReturn();
-//
-//        String responseContent = result.getResponse().getContentAsString();
-//        System.out.println("Response content: " + responseContent.substring(0, 3000) + "...");
-//
-//        assertNotNull(responseContent);
-//    }
 }

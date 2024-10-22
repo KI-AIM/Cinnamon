@@ -24,7 +24,7 @@ public class AnonymizedDatasetProcessorTest extends AbstractAnonymizationTests {
 
     @BeforeEach
     public void setAnonymizedDataset() throws Exception {
-        String anonymizedDatasetPath = "data/anonymized-dataset-demo-data_DE 25k-anon-config-v1.json";
+        String anonymizedDatasetPath = "data/oncology/anonymized-dataset-demo-data_DE 25k-anon-config-v1.json";
         anonymizedDataset = importAnonymizedDataset(anonymizedDatasetPath);
     }
 

@@ -10,39 +10,42 @@ import { StateManagementService } from './core/services/state-management.service
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { DataService } from './shared/services/data.service';
 import { DataConfigurationService } from './shared/services/data-configuration.service';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DataUploadModule } from './features/data-upload/data-upload.module';
 import { StartModule } from './features/start/start.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatFormFieldModule } from "@angular/material/form-field";
-import { MatInputModule } from "@angular/material/input";
 import { MatButtonModule } from "@angular/material/button";
-import { MatCardModule } from "@angular/material/card";
 import { UserService } from './shared/services/user.service';
 import { XhrInterceptor } from './core/interceptor/xhr.interceptor';
 import { MatIconModule } from '@angular/material/icon';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './features/auth/auth.module';
-import { AnonymizationConfigurationComponent } from './features/anonymization/anonymization-configuration/anonymization-configuration.component';
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatOptionModule } from "@angular/material/core";
 import { MatSelectModule } from "@angular/material/select";
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { ConfigurationModule } from './features/configuration/configuration.module';
+import { AnonymizationModule } from "./features/anonymization/anonymization.module";
+import { SynthetizationModule } from "./features/synthetization/synthetization.module";
+import { ExecutionModule } from "./features/execution/execution.module";
+import { TechnicalEvaluationModule } from "./features/technical-evaluation/technical-evaluation.module";
+import { EvaluationModule } from "./features/evaluation/evaluation.module";
 
 @NgModule({
     declarations: [
         AppComponent,
         NavigationComponent,
-        AnonymizationConfigurationComponent,
     ],
     imports: [
         BrowserModule,
-        ConfigurationModule,
         SharedModule,
+        AnonymizationModule,
         AppRoutingModule,
         AuthModule,
+        EvaluationModule,
+        ExecutionModule,
         StartModule,
+        SynthetizationModule,
+        TechnicalEvaluationModule,
         DataUploadModule,
         HttpClientModule,
         NgbModule,

@@ -1,5 +1,6 @@
 package de.kiaim.model.serialization.mapper;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -24,5 +25,12 @@ public abstract class YamlMapper {
 		yamlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
 		return yamlMapper;
+	}
+
+	public static String toJson(String yamlString) throws JsonProcessingException {
+		Object obj = yamlMapper().readValue(yamlString, Object.class);
+
+		ObjectMapper jsonMapper = JsonMapper.jsonMapper();
+		return jsonMapper.writeValueAsString(obj);
 	}
 }

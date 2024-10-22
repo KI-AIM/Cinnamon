@@ -1,0 +1,33 @@
+<a *ngIf="!disabled" title="Additional Settings" (click)="openDialog(inputArrayDialog)"
+   style="vertical-align: middle; color: black;">
+    <mat-icon fontIcon="settings"></mat-icon>
+</a>
+<span *ngIf="disabled" title="Additional Settings" style="vertical-align: middle; color: gray;">
+    <mat-icon fontIcon="settings"></mat-icon>
+</span>
+
+<ng-template #inputArrayDialog>
+    <mat-dialog-content class="mat-typography" [formGroup]="parentForm">
+        <div [formArrayName]="configurationInputDefinition.name">
+            <div class="value-row" *ngFor="let control of formArray.controls; index as i">
+                <mat-form-field>
+                    <input type="number" [formControlName]="i" matInput/>
+                    <mat-error *ngIf="formArray.at(i).hasError('required')">
+                        Value must not be empty
+                    </mat-error>
+                </mat-form-field>
+                <div class="remove-button">
+                    <button mat-raised-button color="primary" (click)="removeValue(i)">remove</button>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <button mat-raised-button color="primary" (click)="addValue()">Add value</button>
+        </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

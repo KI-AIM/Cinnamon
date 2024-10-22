@@ -53,7 +53,7 @@ export class LoginComponent implements OnInit {
 			this.loginForm.value as { email: string; password: string },
 			(error) => {
 				if (error === "") {
-					this.router.navigateByUrl("/start");
+					this.router.navigateByUrl("/");
 				} else {
 					this.router.navigate(["/login", { mode: "fail" }]);
 				}

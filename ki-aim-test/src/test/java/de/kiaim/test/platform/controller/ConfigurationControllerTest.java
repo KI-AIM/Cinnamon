@@ -1,9 +1,11 @@
 package de.kiaim.test.platform.controller;
 
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.service.ProjectService;
 import de.kiaim.test.platform.ControllerTest;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -17,6 +19,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @WithUserDetails("test_user")
 class ConfigurationControllerTest extends ControllerTest {
+
+	@Autowired
+	ProjectService projectService;
 
 	@Test
 	void store() throws Exception {
@@ -37,7 +42,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		final UserEntity user = getTestUser();
-		final PlatformConfigurationEntity dataConfiguration = user.getPlatformConfiguration();
+		final ProjectEntity dataConfiguration = user.getProject();
 		assertNotNull(dataConfiguration, "The configuration has not been created!");
 		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
@@ -69,10 +74,13 @@ class ConfigurationControllerTest extends ControllerTest {
 	void loadNoConfiguration() throws Exception {
 		final String configName = "testConfigName";
 
+		final ProjectEntity project = projectService.getProject(getTestUser());
+
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
 		                                      .param("name", configName))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("User has no configuration!"));
+		       .andExpect(errorMessage("Project with ID '" + project.getId() +
+		                               "' has no configuration with the name 'testConfigName'!"));
 	}
 
 	@Test
@@ -90,9 +98,13 @@ class ConfigurationControllerTest extends ControllerTest {
 
 		storeConfiguration(configName, config);
 
+		final ProjectEntity project = projectService.getProject(getTestUser());
+
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
 		                                      .param("name", invalidConfigName))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("User has no configuration with the name '" + invalidConfigName + "'!"));
+		       .andExpect(errorMessage(
+				       "Project with ID '" + project.getId() + "' has no configuration with the name '" +
+				       invalidConfigName + "'!"));
 	}
 }

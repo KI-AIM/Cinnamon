@@ -17,6 +17,12 @@ export class ConfigurationRegisterData {
     displayName: string;
 
     /**
+     * Function that gets called to fetch the configuration YAML string from the backend.
+     * If null when registering, it will be overwritten with the default function.
+     */
+    fetchConfig: ((configName: string) => Observable<string>) | null;
+
+    /**
      * Step until the configuration upload and download should be available.
      */
     lockedAfterStep: Steps | null;
@@ -35,7 +41,7 @@ export class ConfigurationRegisterData {
      * Function that gets called to store the configuration string with the backend.
      * If null when registering, it will be overwritten with the default function.
      */
-    storeConfig: ((configName: string, yamlConfigString: string) => Observable<Number>) | null;
+    storeConfig: ((configName: string, yamlConfigString: string) => Observable<void>) | null;
 
     /**
      * Function that should retrieve the configuration as a javascript object a YAML string.

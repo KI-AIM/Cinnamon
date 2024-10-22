@@ -45,6 +45,11 @@ public class InternalDataSetPersistenceException extends InternalException {
 	 */
 	public static final String VALUE_CONVERSION = "8";
 
+	/**
+	 * Exception code for errors during the count of rows.
+	 */
+	public static final String DATA_SET_COUNT= "9";
+
 	public InternalDataSetPersistenceException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

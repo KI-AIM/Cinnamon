@@ -11,6 +11,7 @@ import { Configuration } from "src/app/shared/model/configuration";
 })
 export class AddedConfigurationListComponent {
 	@Input() column: ColumnConfiguration;
+    @Input() disabled: boolean = false;
 
     instanceToPlain = instanceToPlain;
 
@@ -27,12 +28,12 @@ export class AddedConfigurationListComponent {
     }
 
     hasConfiguration(): boolean {
-        return this.column.configurations.length > 0; 
+        return this.column.configurations.length > 0;
     }
 
     showRemovalDialog(templateRef: TemplateRef<any>) {
         this.dialog.open(templateRef, {
             width: '55%'
-        }); 
+        });
     }
 }

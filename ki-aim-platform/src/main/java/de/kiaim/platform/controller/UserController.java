@@ -3,6 +3,8 @@ package de.kiaim.platform.controller;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.dto.RegisterRequest;
+import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,10 +28,12 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
 	private final UserService userService;
+	private final ProjectService projectService;
 
 	@Autowired
-	public UserController(UserService userService) {
+	public UserController(final UserService userService, final ProjectService projectService) {
 		this.userService = userService;
+		this.projectService = projectService;
 	}
 
 	@Operation(summary = "Check if the user credentials belong to an authorized user.",
@@ -48,7 +53,11 @@ public class UserController {
 	})
 	@GetMapping(value = "/login",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public boolean login() {
+	public boolean login(
+			@AuthenticationPrincipal UserEntity user
+	) {
+		// TODO move somewhere else
+		projectService.createProject(user);
 		return true;
 	}
 

@@ -7,6 +7,7 @@ import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.PlatformApplication;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.test.util.FileConfigurationTestHelper;
@@ -133,12 +134,12 @@ public class CSVProcessingTests {
 
 
     @Test
-    void testEstimation() {
+    void testEstimationMostEstimated() {
         String csvData =
                 """
                650390,Tonisha Swift,1975-05-08,no,303.23 €
                208589,Wilson Maggio,1994-02-28,no,23623.18 €
-               452159,Bill Hintz,1987-05-17,no,38.41 €
+               string,Bill Hintz,1987-05-17,no,38.41 €
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
@@ -146,11 +147,38 @@ public class CSVProcessingTests {
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration);
+        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration,
+                                                                               DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
 
         List<DataType> expectedDatatypes = expectedConfiguration.getDataTypes();
+        List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
+
+        assertEquals(expectedDatatypes, actualDatatypes);
+    }
+
+    @Test
+    void testEstimationMostGeneral() {
+        String csvData =
+                """
+               650390,Tonisha Swift,1975-05-08,no,303.23 €
+               208589,Wilson Maggio,1994-02-28,no,23623.18 €
+               string,Bill Hintz,1987-05-17,no,38.41 €
+               730160,Nelia Heathcote,1959-02-03,yes,21.01 €
+               614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
+                """.trim();
+        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
+
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration,
+                                                                               DatatypeEstimationAlgorithm.MOST_GENERAL);
+
+        DataConfiguration expectedConfiguration = getDataConfiguration();
+
+        List<DataType> expectedDatatypes = expectedConfiguration.getDataTypes();
+        expectedDatatypes.set(0, DataType.STRING);
         List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
 
         assertEquals(expectedDatatypes, actualDatatypes);
@@ -170,7 +198,8 @@ public class CSVProcessingTests {
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration);
+        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration,
+                                                                               DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
 

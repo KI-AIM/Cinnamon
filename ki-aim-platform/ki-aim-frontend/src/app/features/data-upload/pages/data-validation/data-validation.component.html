@@ -13,22 +13,35 @@
 </p>
 
 <p class="mt-5">
-    <span class="h2">Rows in the dataset:
-        {{transformationService.getTransformationResult().dataSet.data.length}} rows
-    </span>
+    <span class="h2">Rows in the dataset: {{ numberRows$ | async }} rows</span>
 </p>
 <p class="mt-1">
-    <span class="h2">Rows that will be adjusted:
-        {{transformationService.getTransformationResult().transformationErrors.length}} rows
-    </span>
+    <span class="h2">Rows that will be adjusted: {{ numberInvalidRows$ | async }} rows</span>
 </p>
 
 <div class="d-flex align-items-center justify-content-start my-2">
-    <button mat-raised-button color="primary"
-        (click)="uploadData()">
-        Continue and upload data
+    <button mat-raised-button color="primary" class="me-2" (click)="confirmData()" [disabled]="locked">
+        Continue
         <mat-icon>arrow_forward</mat-icon>
+    </button>
+    <button mat-raised-button color="warn" (click)="openDeleteDialog(deleteDialog)">
+        <mat-icon>delete</mat-icon>
+        Delete Data
     </button>
 </div>
 
-<app-data-table></app-data-table>
+<app-data-table step="validation"></app-data-table>
+
+<ng-template #deleteDialog>
+    <mat-dialog-content class="mat-typography">
+        <h1>Delete Data</h1>
+        <div>
+            Do you really want to delete the data.
+            This will also delete the data and result of all following steps.
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Keep Data</button>
+        <button mat-raised-button mat-dialog-close color="warn" (click)="deleteData()">Delete Data</button>
+    </mat-dialog-actions>
+</ng-template>

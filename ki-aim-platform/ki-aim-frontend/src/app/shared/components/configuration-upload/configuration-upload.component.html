@@ -1,0 +1,39 @@
+<div>
+    <div>Upload an existing configuration:</div>
+    <div class="btn-group">
+        <div class="px-1">
+            <button mat-raised-button color="primary" (click)="openDialog(configurationUpload)" [disabled]="disabled">
+                Upload
+            </button>
+        </div>
+    </div>
+</div>
+
+<ng-template #configurationUpload>
+    <mat-dialog-content class="mat-typography">
+
+        <!-- Error -->
+        <app-info-card [hidden]="error === ''" typeClass="card-failure">
+            <div>{{error}}</div>
+        </app-info-card>
+
+        <div>Select a file to upload</div>
+
+        <div class="mb-2">
+            <input id="configInput" type="file" accept=".yml,.yaml">
+        </div>
+        <div *ngIf="configurationName !== null">
+            <div>Click to upload</div>
+            <div>
+                <button mat-raised-button color="primary" (click)="uploadConfiguration()">
+                    <mat-icon>file_upload</mat-icon>
+                    Upload
+                </button>
+            </div>
+        </div>
+
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

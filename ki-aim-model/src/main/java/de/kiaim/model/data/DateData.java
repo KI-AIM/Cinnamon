@@ -9,7 +9,6 @@ import de.kiaim.model.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
 import org.springframework.lang.Nullable;
 
 import java.time.LocalDate;
@@ -19,7 +18,6 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@ToString
 public class DateData extends Data {
 
 	@Nullable

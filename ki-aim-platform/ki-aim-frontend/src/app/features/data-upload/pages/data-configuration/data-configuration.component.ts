@@ -5,22 +5,22 @@ import { DataService } from 'src/app/shared/services/data.service';
 import { FileService } from '../../services/file.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { StateManagementService } from 'src/app/core/services/state-management.service';
 import { Steps } from 'src/app/core/enums/steps';
-import { plainToClass, plainToInstance } from 'class-transformer';
-import { TransformationService } from '../../services/transformation.service';
-import { TransformationResult } from 'src/app/shared/model/transformation-result';
+import { plainToInstance } from 'class-transformer';
 import { LoadingService } from 'src/app/shared/services/loading.service';
 import {
     AttributeConfigurationComponent
 } from "../../components/attribute-configuration/attribute-configuration.component";
 import {
     ConfigurationUploadComponent
-} from "../../../configuration/components/configuration-upload/configuration-upload.component";
+} from "../../../../shared/components/configuration-upload/configuration-upload.component";
 import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
 import { ErrorResponse } from 'src/app/shared/model/error-response';
 import { ErrorMessageService } from 'src/app/shared/services/error-message.service';
 import { FileType } from 'src/app/shared/model/file-configuration';
+import { StatusService } from "../../../../shared/services/status.service";
+import { DataConfiguration } from 'src/app/shared/model/data-configuration';
+import { Subscription } from "rxjs";
 
 @Component({
     selector: 'app-data-configuration',
@@ -31,6 +31,8 @@ export class DataConfigurationComponent implements OnInit {
     error: string;
     FileType = FileType;
     isValid: boolean;
+    dataConfiguration: DataConfiguration
+    private dataConfigurationSubscription: Subscription;
 
     @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
@@ -41,8 +43,7 @@ export class DataConfigurationComponent implements OnInit {
         public fileService: FileService,
         private titleService: TitleService,
         private router: Router,
-        private stateManagement: StateManagementService,
-        private transformationService: TransformationService,
+        private readonly statusService: StatusService,
         public loadingService: LoadingService,
 		private errorMessageService: ErrorMessageService,
     ) {
@@ -51,23 +52,34 @@ export class DataConfigurationComponent implements OnInit {
         this.titleService.setPageTitle("Data configuration");
     }
 
+    protected get locked(): boolean {
+        return this.statusService.isStepCompleted(Steps.DATA_CONFIG)
+    }
+
     ngOnInit(): void {
+        this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
+            this.dataConfiguration = value;
+        })
     }
 
 	ngAfterViewInit() {
         this.setEmptyColumnNames();
     }
 
+    ngOnDestroy() {
+        this.dataConfigurationSubscription.unsubscribe();
+    }
+
     confirmConfiguration() {
         this.loadingService.setLoadingStatus(true);
 
-        this.dataService.readAndValidateData(this.fileService.getFile(),
-            this.fileService.getFileConfiguration(),
-            this.configuration.getDataConfiguration()
+        this.dataService.storeData(this.fileService.getFile(),
+            this.dataConfiguration,
+            this.fileService.getFileConfiguration()
         ).subscribe({
             next: (d) => this.handleUpload(d),
             error: (e) => this.handleError(e),
-        });
+        })
     }
 
     onValidation(isValid: boolean) {
@@ -75,7 +87,7 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     private setEmptyColumnNames() {
-        this.configuration.getDataConfiguration().configurations.forEach((column, index) => {
+        this.dataConfiguration.configurations.forEach((column, index) => {
             if (column.name == undefined || column.name == null || column.name == "") {
                 column.name = 'column_' + index;
             }
@@ -83,11 +95,10 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     private handleUpload(data: Object) {
-        this.transformationService.setTransformationResult(plainToClass(TransformationResult, data));
         this.loadingService.setLoadingStatus(false);
 
         this.router.navigateByUrl("/dataValidation");
-        this.stateManagement.addCompletedStep(Steps.DATA_CONFIG);
+        this. statusService.setNextStep(Steps.VALIDATION);
     }
 
     private handleError(error: HttpErrorResponse) {

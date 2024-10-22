@@ -46,6 +46,6 @@ public abstract class ApiException extends Exception {
 	 * @return String containing the error code.
 	 */
 	public String getErrorCode() {
-		return getExceptionTypeCode() + "-" +  getExceptionClassCode() + exceptionCode;
+		return getExceptionTypeCode() + "-" +  getExceptionClassCode() + "-" + exceptionCode;
 	}
 }

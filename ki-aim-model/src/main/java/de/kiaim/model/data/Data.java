@@ -53,4 +53,13 @@ public abstract class Data {
 	public String asString() {
 		return (String) getValue();
 	}
+
+	@Override
+	public String toString() {
+		final var value = getValue();
+		if (value == null) {
+			return "";
+		}
+		return value.toString();
+	}
 }

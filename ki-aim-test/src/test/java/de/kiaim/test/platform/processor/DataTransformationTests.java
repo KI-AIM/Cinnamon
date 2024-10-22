@@ -143,23 +143,19 @@ public class DataTransformationTests {
             List.of(
                     new DataRowTransformationError(
                             3,
-                            List.of("N/A", "4"),
-                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE))
+                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE, "N/A"))
                     ),
                     new DataRowTransformationError(
                             5,
-                            List.of("null", "6"),
-                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE))
+                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE, "null"))
                     ),
                     new DataRowTransformationError(
                             8,
-                            List.of("NaN", "9"),
-                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE))
+                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE, "NaN"))
                     ),
                     new DataRowTransformationError(
                             11,
-                            List.of("", "12"),
-                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE))
+                            List.of(new DataTransformationError(0, TransformationErrorType.MISSING_VALUE, ""))
                     )
             );
         return new TransformationResult(dataSet, dataRowTransformationErrors);
@@ -230,8 +226,7 @@ public class DataTransformationTests {
                 List.of(
                         new DataRowTransformationError(
                                 2,
-                                List.of("28.03.1239"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR, "28.03.1239"))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);
@@ -299,13 +294,11 @@ public class DataTransformationTests {
                 List.of(
                         new DataRowTransformationError(
                                 0,
-                                List.of("2000-01-01"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE, "2000-01-01"))
                         ),
                         new DataRowTransformationError(
                                 3,
-                                List.of("2001-01-01"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE, "2001-01-01"))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);
@@ -375,8 +368,7 @@ public class DataTransformationTests {
                 List.of(
                         new DataRowTransformationError(
                                 4,
-                                List.of("1982-02-20T2321:24:34018"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR, "1982-02-20T2321:24:34018"))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);
@@ -443,13 +435,11 @@ public class DataTransformationTests {
                 List.of(
                         new DataRowTransformationError(
                                 0,
-                                List.of("2000-01-01T12:31:30"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE, "2000-01-01T12:31:30"))
                         ),
                         new DataRowTransformationError(
                                 3,
-                                List.of("2000-12-31T12:31:32"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE, "2000-12-31T12:31:32"))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);
@@ -517,8 +507,7 @@ public class DataTransformationTests {
                 List.of(
                         new DataRowTransformationError(
                                 4,
-                                List.of("Wrong pattern"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR, "Wrong pattern"))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);
@@ -584,8 +573,7 @@ public class DataTransformationTests {
                 List.of(
                         new DataRowTransformationError(
                                 4,
-                                List.of("No boolean value"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR, "No boolean value"))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);
@@ -651,8 +639,7 @@ public class DataTransformationTests {
                 List.of(
                         new DataRowTransformationError(
                                 4,
-                                List.of("No float value"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR, "No float value"))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);
@@ -711,13 +698,11 @@ public class DataTransformationTests {
                 List.of(
                         new DataRowTransformationError(
                                 0,
-                                List.of("0.9999"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE, "0.9999"))
                         ),
                         new DataRowTransformationError(
                                 4,
-                                List.of("1.500001"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE, "1.500001"))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);
@@ -783,8 +768,7 @@ public class DataTransformationTests {
                 List.of(
                         new DataRowTransformationError(
                                 4,
-                                List.of("No int value"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR))
+                                List.of(new DataTransformationError(0, TransformationErrorType.FORMAT_ERROR, "No int value"))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);
@@ -843,13 +827,11 @@ public class DataTransformationTests {
                 List.of(
                         new DataRowTransformationError(
                                 0,
-                                List.of("1"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE, "1"))
                         ),
                         new DataRowTransformationError(
                                 4,
-                                List.of("5"),
-                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE))
+                                List.of(new DataTransformationError(0, TransformationErrorType.VALUE_NOT_IN_RANGE, "5"))
                         )
                 );
         return new TransformationResult(dataSet, dataRowTransformationErrors);

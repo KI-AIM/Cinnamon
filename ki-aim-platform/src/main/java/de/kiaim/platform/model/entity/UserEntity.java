@@ -1,6 +1,6 @@
 package de.kiaim.platform.model.entity;
 
-import de.kiaim.platform.model.UserRole;
+import de.kiaim.platform.model.enumeration.UserRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,8 +32,23 @@ public class UserEntity implements UserDetails {
 
 	@Nullable
 	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = false, cascade = CascadeType.ALL)
-	@JoinColumn(name = "platform_configuration_id", referencedColumnName = "id")
-	private PlatformConfigurationEntity platformConfiguration = null;
+	@JoinColumn(name = "project_id", referencedColumnName = "id")
+	private ProjectEntity project = null;
+
+	/**
+	 * Links the given project with this user.
+	 * @param newProject The project to link.
+	 */
+	public void setProject(@Nullable final ProjectEntity newProject) {
+		final ProjectEntity oldProject = this.project;
+		this.project = newProject;
+		if (oldProject != null && oldProject.getUser() == this) {
+			oldProject.setUser(null);
+		}
+		if (newProject != null && newProject.getUser() != this) {
+			newProject.setUser(this);
+		}
+	}
 
 	//==============================
 	// Implementation of UserDetails

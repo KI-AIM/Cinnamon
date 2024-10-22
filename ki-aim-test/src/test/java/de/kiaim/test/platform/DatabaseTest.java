@@ -1,12 +1,14 @@
 package de.kiaim.test.platform;
 
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.repository.DataSetRepository;
 import de.kiaim.platform.repository.DataTransformationErrorRepository;
-import de.kiaim.platform.repository.PlatformConfigurationRepository;
+import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.platform.repository.UserRepository;
 import de.kiaim.platform.service.DatabaseService;
+import de.kiaim.platform.service.ProjectService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-//@Transactional // Will block the DROP TABLE statement
+@Transactional
 public class DatabaseTest extends ContextRequiredTest {
 
 	@Autowired
@@ -30,16 +32,21 @@ public class DatabaseTest extends ContextRequiredTest {
 	private Connection connection;
 
 	@Autowired
-	DatabaseService databaseService;
-
-	@Autowired
-	PlatformConfigurationRepository platformConfigurationRepository;
-
-	@Autowired
 	protected DataTransformationErrorRepository dataTransformationErrorRepository;
-
+	@Autowired
+	DataSetRepository dataSetRepository;
+	@Autowired
+	ProjectRepository projectRepository;
 	@Autowired
 	UserRepository userRepository;
+
+	@Autowired
+	DatabaseService databaseService;
+	@Autowired
+	ProjectService projectService;
+
+	protected UserEntity testUser;
+	protected ProjectEntity testProject;
 
 	protected UserEntity getTestUser() {
 		Optional<UserEntity> userOptional = userRepository.findById("test_user");
@@ -47,6 +54,10 @@ public class DatabaseTest extends ContextRequiredTest {
 			fail("Set up failed. Could not find 'test_user'!");
 		}
 		return userOptional.get();
+	}
+
+	protected ProjectEntity getTestProject() {
+		return projectService.getProject(getTestUser());
 	}
 
 	@BeforeEach
@@ -57,6 +68,9 @@ public class DatabaseTest extends ContextRequiredTest {
 			// Clean database to prevent issues with canceled tests
 			doCleanDatabase();
 		}
+
+		this.testUser = getTestUser();
+		this.testProject = projectService.createProject(testUser);
 	}
 
 	@AfterEach
@@ -68,21 +82,20 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	protected void storeConfiguration(final String configName, final String config) {
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, getTestUser()),
+		final UserEntity updatedUser = getTestUser();
+		final ProjectEntity project = projectService.getProject(updatedUser);
+
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, project),
 		                   "The configuration could not be stored!");
 
-		final UserEntity updatedUser = getTestUser();
-
-		final PlatformConfigurationEntity dataConfiguration = updatedUser.getPlatformConfiguration();
-		assertNotNull(dataConfiguration, "The configuration has not been created!");
-		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
+		assertTrue(project.getConfigurations().containsKey(configName),
 		           "The configuration has not been stored correctly under the user!");
-		assertEquals(config, dataConfiguration.getConfigurations().get(configName),
+		assertEquals(config, project.getConfigurations().get(configName),
 		             "The configuration has not been stored correctly!");
 	}
 
-	protected boolean existsDataConfigration(final long dataSetId) {
-		return platformConfigurationRepository.existsById(dataSetId);
+	protected boolean existsDataSet(final long dataSetId) {
+		return dataSetRepository.existsById(dataSetId);
 	}
 
 	protected boolean existsTable(final long dataSetId) {
@@ -95,13 +108,9 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	protected int countEntries(final long dataSetId) {
-		final String countQuery = "SELECT count(*) FROM " + databaseService.getTableName(dataSetId);
-		try (final Statement countStatement = connection.createStatement()) {
-			try (ResultSet resultSet = countStatement.executeQuery(countQuery)) {
-				resultSet.next();
-				return resultSet.getInt(1);
-			}
-		} catch (SQLException e) {
+		try {
+			return databaseService.countEntries(dataSetId);
+		} catch (InternalDataSetPersistenceException e) {
 			fail(e);
 			return 0;
 		}
@@ -109,12 +118,13 @@ public class DatabaseTest extends ContextRequiredTest {
 
 	private void doCleanDatabase() {
 		try {
-			final UserEntity testUser = getTestUser();
-			testUser.setPlatformConfiguration(null);
-			userRepository.save(testUser);
+			if (this.testUser != null) {
+				this.testUser.setProject(null);
+				userRepository.save(this.testUser);
+			}
 
-			platformConfigurationRepository.deleteAll();
-			databaseService.executeStatement("SELECT setval('platform_configuration_entity_seq', 1, true)");
+			projectRepository.deleteAll();
+			databaseService.executeStatement("SELECT setval('project_entity_seq', 1, true)");
 			databaseService.executeStatement(
 					"""
 							DO
@@ -125,7 +135,7 @@ public class DatabaseTest extends ContextRequiredTest {
 							FOR _tbl  IN
 							    SELECT quote_ident(table_schema) || '.' || quote_ident(table_name)
 							    FROM   information_schema.tables
-							    WHERE  table_name LIKE 'data_set_' || '%'
+							    WHERE  table_name LIKE 'dataset_' || '%'
 							    AND    table_schema NOT LIKE 'pg\\_%'
 							LOOP
 							    EXECUTE 'DROP TABLE ' || _tbl;
@@ -134,6 +144,7 @@ public class DatabaseTest extends ContextRequiredTest {
 							$do$;
 							""");
 		} catch (SQLException ignored) {
+			fail(ignored);
 		}
 	}
 

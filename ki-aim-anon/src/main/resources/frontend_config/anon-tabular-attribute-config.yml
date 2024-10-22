@@ -1,0 +1,97 @@
+#Attribute Configuration for the frontend form generation
+attribute_configuration:
+  display_name: Attribute Anonymization Configuration
+  description: Define anonymization settings for each attribute. Each attribute requires a protection strategy and an interval size if applicable. #TODO: better description
+  parameters:
+    # QUESTION : should this be included in the config file ?
+    - name: attribute_name
+      ki_aim_injected: true
+      type: string
+      label: Attribute Name
+      description: The name of the dataset attribute to be anonymized.
+      default_value: ''
+    - name: attribute_data_type
+      ki_aim_injected: true
+      type: enum
+      label: Data Type
+      description: The data type of the attribute (e.g., BOOLEAN, DATE, INTEGER, STRING).
+      default_value: 'STRING'
+      allowed_values: ['BOOLEAN', 'DATE', 'DECIMAL', 'INTEGER', 'STRING', 'DATE_TIME', 'UNDEFINED']
+    - name: attribute_data_scale
+      ki_aim_injected: true
+      type: enum
+      label: Data Scale
+      description: The data scale of the attribute
+      default_value: ''
+      allowed_values: ['DATE','NOMINAL','ORDINAL','INTERVAL','RATIO']
+    - name: attribute_protection
+      ki_aim_injected: false
+      type: enum
+      label: Attribute Protection
+      description: The type of protection applied to the attribute.
+      default_value: 'GENERALIZATION'
+      allowed_values: ['NO_PROTECTION', 'ATTRIBUTE_DELETION', 'GENERALIZATION', 'MICRO_AGGREGATION', 'DATE_GENERALIZATION', 'VALUE_DELETION', 'MASKING']
+    - name: interval_size
+      ki_aim_injected: false
+      type: mixed
+      label: Interval Size
+      description: Define the interval size, which depends on the protection and the data scale.
+      switch:
+        - depends_on: attribute_protection
+          conditions:
+            - if: 'MASKING' # Interval size values for Masking transformation applied to every type of attribute
+              switch:
+                - depends_on: attribute_data_scale
+                  conditions:
+                    - if: [ 'DATE', 'NOMINAL', 'ORDNIAL', 'INTERVAL', 'RATIO' ]
+                      condition_content:
+                        description: Number of characters removed.
+                        interval_size_type: integer
+                        default_value: 3
+                        min_value: 2
+                        max_value: 1000
+            - if: 'DATE_GENERALIZATION' #Interval size values for Generalization or Micro Aggregation transformation applied to a DATE attribute
+              switch:
+                - depends_on: attribute_data_scale
+                  conditions:
+                    - if: 'DATE'
+                      condition_content:
+                        description: Define the granularity for date attributes.
+                        interval_size_type: enum
+                        default_value: 'year'
+                        allowed_values: [ 'week/year', 'month/year', 'quarter/year', 'year', 'decade' ]
+            - if: [ 'GENERALIZATION', 'MICRO_AGGREGATION' ]
+              switch:
+                - depends_on: attribute_data_scale
+                  conditions:
+                    - if: 'ORDINAL'
+                      condition_content:
+                        description: Number of categories in the group.
+                        interval_size_type: integer
+                        default_value: 5
+                        min_value: 2
+                        max_value: 100 #QUESTION :Or possible_values.length, if feasible
+                - depends_on: attribute_data_type
+                  conditions:
+                    - if: 'INTEGER' #Interval size values for Generalization or Micro Aggregation transformation applied to integer attribute
+                      switch:
+                        - depends_on: attribute_data_scale
+                          conditions:
+                            - if: 'INTERVAL'
+                              condition_content:
+                                description: Integer range for generalization of numeric attributes.
+                                interval_size_type: integer
+                                default_value: 10
+                                min_value: 1
+                                max_value: 1000
+                    - if: 'DECIMAL' #Interval size values for Generalization or Micro Aggregation transformation applied to a decimal attribute
+                      switch:
+                        - depends_on: attribute_data_scale
+                          conditions:
+                            - if: 'RATIO'
+                              condition_content:
+                                description: Decimal range for generalization of numeric attributes.
+                                interval_size_type: float
+                                default_value: 0.1
+                                min_value: 0.001
+                                max_value: 1000.0

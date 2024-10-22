@@ -4,25 +4,44 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.configuration.data.StringPatternConfiguration;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.Mode;
+import de.kiaim.platform.model.enumeration.RowSelector;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.repository.DataSetRepository;
+import de.kiaim.platform.service.ProjectService;
 import de.kiaim.test.platform.ControllerTest;
 import de.kiaim.test.util.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WithUserDetails("test_user")
 class DataControllerTest extends ControllerTest {
+
+	@Autowired ProjectService projectService;
+
+	@Autowired DataSetRepository dataSetRepository;
+
+	@BeforeEach
+	public void setUp() {
+		projectService.setMode(testProject, Mode.EXPERT);
+	}
 
 	@Test
 	void estimateDatatypes() throws Exception {
@@ -41,6 +60,9 @@ class DataControllerTest extends ControllerTest {
 		final DataConfiguration expectedConfiguration = DataConfigurationTestHelper.generateEstimatedConfiguration();
 
 		assertEquals(expectedConfiguration, dataConfiguration, "Returned configuration is wrong!");
+
+		assertEquals(Step.UPLOAD, testProject.getStatus().getCurrentStep(),
+		             "The current step should not have been updated!");
 	}
 
 	@Test
@@ -110,6 +132,9 @@ class DataControllerTest extends ControllerTest {
 				                .param("configuration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(objectMapper.writeValueAsString(expected)));
+
+		assertEquals(Step.UPLOAD, testProject.getStatus().getCurrentStep(),
+		             "The current step should have not been updated!");
 	}
 
 	@Test
@@ -173,20 +198,19 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
-	@Transactional
 	void storeConfigJson() throws Exception {
 		final String jsonConfiguration = DataConfigurationTestHelper.generateDataConfigurationAsJson();
 		testStoreConfig(jsonConfiguration);
 	}
 
 	@Test
-	@Transactional
 	void storeConfigYaml() throws Exception {
 		final String yamlConfiguration = DataConfigurationTestHelper.generateDataConfigurationAsYaml();
 		testStoreConfig(yamlConfiguration);
 	}
 
 	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void storeDataAndDeleteData() throws Exception {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
@@ -202,23 +226,25 @@ class DataControllerTest extends ControllerTest {
 		                       .andReturn().getResponse().getContentAsString();
 
 		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result.trim()));
+		final DataSetEntity dataSetEntity = dataSetRepository.findById(dataSetId).get();
 
 		UserEntity testUser = getTestUser();
 
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getPlatformConfiguration().getId(),
-		             "User has been associated with the wrong dataset!");
+		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
+		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
+		assertEquals(dataSetId, dataSetEntity.getId(), "User has been associated with the wrong dataset!");
+		assertTrue(dataSetEntity.isStoredData(), "Flag that the data is stored should be true!");
+		// TODO fix when creating projects dynamically
+//		assertEquals(Step.ANONYMIZATION, testUser.getProject().getStatus().getCurrentStep(),
+//		             "The current step has not been updated!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk());
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
-		assertFalse(existsDataConfigration(dataSetId), "Configuration has not been deleted!");
-		assertNull(getTestUser().getPlatformConfiguration(), "User association with the dataset has not been removed!");
 	}
 
 	@Test
@@ -275,7 +301,7 @@ class DataControllerTest extends ControllerTest {
 	void loadData() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataAsYaml()));
@@ -283,15 +309,16 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadDataNoDataSet() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("User has no configuration!"));
+		       .andExpect(errorMessage(
+				       "The project '" + testProject.getId() + "' does not contain a data set for step 'VALIDATION'!"));
 	}
 
 	@WithAnonymousUser
 	@Test
 	void loadDataNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data"))
 		       .andExpect(status().isUnauthorized());
 	}
 
@@ -299,7 +326,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
@@ -310,7 +337,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataInvalidColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .param("columns", "invalid1,column4_integer,invalid2"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Data set does not contain columns with names: 'invalid1', 'invalid2'"));
@@ -323,7 +350,7 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 		final String formatErrorEncoding = ":(";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
@@ -338,7 +365,7 @@ class DataControllerTest extends ControllerTest {
 
 		final String defaultNullEncoding = "N/A";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", "$null"))
@@ -353,7 +380,7 @@ class DataControllerTest extends ControllerTest {
 
 		final String defaultNullEncoding = "N/A";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", "$value"))
@@ -374,23 +401,34 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSet() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
 		                                      .accept(CustomMediaType.APPLICATION_YAML))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsYaml()));
 	}
 
 	@Test
+	void loadDataSetJson() throws Exception {
+		postData();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
+		                                      .accept(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsJson()));
+	}
+
+	@Test
 	void loadDataSetNoDataSet() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("User has no configuration!"));
+		       .andExpect(errorMessage(
+				       "The project '" + testProject.getId() + "' does not contain a data set for step 'VALIDATION'!"));
 	}
 
 	@WithAnonymousUser
 	@Test
 	void loadDataSetNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation"))
 		       .andExpect(status().isUnauthorized());
 	}
 
@@ -398,7 +436,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
@@ -409,7 +447,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetInvalidColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
 		                                      .param("columns", "invalid1,column4_integer,invalid2"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Data set does not contain columns with names: 'invalid1', 'invalid2'"));
@@ -422,7 +460,7 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 		final String formatErrorEncoding = ":(";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
@@ -432,43 +470,108 @@ class DataControllerTest extends ControllerTest {
 				                                                                wrapInQuotes(formatErrorEncoding))));
 	}
 
+	@Test
+	void loadDataSetEncodingJson() throws Exception {
+		postData(true);
+
+		final String defaultNullEncoding = "N/A";
+		final String formatErrorEncoding = ":(";
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
+		                                      .accept(MediaType.APPLICATION_JSON)
+		                                      .param("defaultNullEncoding", defaultNullEncoding)
+		                                      .param("formatErrorEncoding", formatErrorEncoding))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsJson(true,
+		                                                                           wrapInQuotes(defaultNullEncoding),
+		                                                                           wrapInQuotes(formatErrorEncoding))));
+	}
+
 	// ================================================================================================================
 	// endregion loadDataSet()
 	// ================================================================================================================
 
 	@Test
+	void loadTransformationResult() throws Exception {
+		postData(true);
+
+		mockMvc.perform(get("/api/data/validation/transformationResult"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(oneOf(TransformationResultTestHelper.generateTransformationResultAsJsonA(),
+		                                         TransformationResultTestHelper.generateTransformationResultAsJsonB())));
+	}
+
+	@Test
+	void loadTransformationResultPage() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "2")
+				                .param("perPage", "1"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':null,'page':2,'perPage':1,total:3,'totalPages':3}"));
+	}
+
+	@Test
+	void loadTransformationResultPageWithErrors() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "2")
+				                .param("perPage", "2"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20',null,4.2,null,'Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':2,'perPage':2,total:3,'totalPages':2}"));
+	}
+
+	@Test
+	void loadTransformationResultPageEncodedErrors() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "3")
+				                .param("perPage", "1")
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':3,'perPage':1,total:3,'totalPages':3}"));
+	}
+
+	@Test
+	void loadTransformationResultPageSelectErrors() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "1")
+				                .param("perPage", "2")
+				                .param("rowSelector", RowSelector.ERRORS.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[2],'page':1,'perPage':2,total:1,'totalPages':1}"));
+	}
+
+	@Test
+	void loadTransformationResultPageSelectValid() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "1")
+				                .param("perPage", "1")
+				                .param("rowSelector", RowSelector.VALID.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']],'transformationErrors':[],'rowNumbers':[0],'page':1,'perPage':1,total:2,'totalPages':2}"));
+	}
+
+
+	@Test
 	void deleteDataNoDataSet() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("User has no configuration!"));
-	}
-
-	private void postData() throws Exception {
-		postData(true);
-	}
-
-	private void postData(final boolean withErrors) throws Exception {
-		MockMultipartFile file;
-		if (withErrors) {
-			file = ResourceHelper.loadCsvFileWithErrors();
-		} else {
-			file = ResourceHelper.loadCsvFile();
-		}
-
-		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
-
-		String result = mockMvc.perform(multipart("/api/data")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration))
-				                                .param("configuration",
-				                                       objectMapper.writeValueAsString(configuration)))
-		                       .andExpect(status().isOk())
-		                       .andReturn().getResponse().getContentAsString();
-
-		assertDoesNotThrow(() -> Long.parseLong(result.trim()));
+		       .andExpect(status().isOk());
 	}
 
 	private String wrapInQuotes(final String value) {
@@ -479,54 +582,46 @@ class DataControllerTest extends ControllerTest {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-		final String result = mockMvc.perform(multipart("/api/data/configuration")
-				                                      .file(file)
-				                                      .param("fileConfiguration",
-				                                             objectMapper.writeValueAsString(fileConfiguration))
-				                                      .param("configuration", configuration))
-		                             .andExpect(status().isOk())
-		                             .andReturn().getResponse().getContentAsString();
-
-		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result.trim()));
+		mockMvc.perform(multipart("/api/data/configuration")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration))
+				                .param("configuration", configuration))
+		       .andExpect(status().isOk());
+		final DataSetEntity dataSetEntity = getTestProject().getDataSets().get(Step.VALIDATION);
+		final var dataSetId = dataSetEntity.getId();
 
 		UserEntity testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetId, testUser.getPlatformConfiguration().getId(),
-		             "User has been associated with the wrong dataset!");
+		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
+		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
 		assertEquals(".*",
-		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
-		                                                   .getConfigurations().get(5).getConfigurations()
-		                                                   .get(0))
+		             ((StringPatternConfiguration) testUser.getProject().getDataSets().get(Step.VALIDATION)
+		                                                   .getDataConfiguration().getConfigurations().get(5)
+		                                                   .getConfigurations().get(0))
 				             .getPattern(),
 		             "Type of first column does not match!");
 
 		final DataConfiguration configurationUpdate = DataConfigurationTestHelper.generateDataConfiguration("[0-9]*");
 
-		final String resultUpdate = mockMvc.perform(multipart("/api/data/configuration")
-				                                            .file(file)
-				                                            .param("fileConfiguration",
-				                                                   objectMapper.writeValueAsString(fileConfiguration))
-				                                            .param("configuration",
-				                                                   objectMapper.writeValueAsString(
-						                                                   configurationUpdate)))
-		                                   .andExpect(status().isOk())
-		                                   .andReturn().getResponse().getContentAsString();
-
-		final long dataSetIdUpdate = assertDoesNotThrow(() -> Long.parseLong(resultUpdate.trim()));
+		mockMvc.perform(multipart("/api/data/configuration")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration))
+				                .param("configuration",
+				                       objectMapper.writeValueAsString(
+						                       configurationUpdate)))
+		       .andExpect(status().isOk())
+		       .andReturn().getResponse().getContentAsString();
 
 		testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
-		assertTrue(existsDataConfigration(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getPlatformConfiguration(), "User has not been associated with the dataset!");
-		assertEquals(dataSetIdUpdate, testUser.getPlatformConfiguration().getId(),
-		             "User has been associated with the wrong dataset!");
-		assertEquals(dataSetIdUpdate, dataSetId, "Update has changed the DataSet id!");
+		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
+		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
 		assertEquals("[0-9]*",
-		             ((StringPatternConfiguration) testUser.getPlatformConfiguration().getDataConfiguration()
-		                                                   .getConfigurations().get(5).getConfigurations()
-		                                                   .get(0)).getPattern(),
+		             ((StringPatternConfiguration) testUser.getProject().getDataSets().get(Step.VALIDATION)
+		                                                   .getDataConfiguration().getConfigurations().get(5)
+		                                                   .getConfigurations().get(0)).getPattern(),
 		             "Type of first column does not match!");
 	}
 

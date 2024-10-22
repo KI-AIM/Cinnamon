@@ -7,17 +7,30 @@ import { DataValidationComponent } from './features/data-upload/pages/data-valid
 import {LoginComponent} from "./features/auth/pages/login/login.component";
 import {RegisterComponent} from "./features/auth/pages/register/register.component";
 import { AuthGuard } from './core/guards/auth.guard';
-import { AnonymizationConfigurationComponent } from './features/anonymization/anonymization-configuration/anonymization-configuration.component';
+import { AnonymizationConfigurationComponent } from './features/anonymization/pages/anonymization-configuration/anonymization-configuration.component';
+import {
+    SynthetizationConfigurationComponent
+} from "./features/synthetization/pages/synthetization-configuration/synthetization-configuration.component";
+import { StateGuard } from "./core/guards/state.guard";
+import { ExecutionComponent } from "./features/execution/pages/execution/execution.component";
+import {
+    TechnicalEvaluationConfigurationComponent
+} from "./features/technical-evaluation/pages/technical-evaluation-configuration/technical-evaluation-configuration.component";
+import { EvaluationComponent } from "./features/evaluation/pages/evaluation/evaluation.component";
 
 const routes: Routes = [
-    {path: '', redirectTo: '/login', pathMatch: 'full'},
-    {path: 'login', component: LoginComponent},
+    {path: '', redirectTo: '', pathMatch: 'full', canActivate: [AuthGuard, StateGuard]},
+    {path: 'login' , component: LoginComponent},
     {path: 'register', component: RegisterComponent},
     {path: 'start', component: StartpageComponent, canActivate: [AuthGuard]},
     {path: 'upload', component: UploadFileComponent, canActivate: [AuthGuard]},
     {path: 'dataConfiguration', component: DataConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'dataValidation', component: DataValidationComponent, canActivate: [AuthGuard]},
-    {path: 'anonymizationConfiguration', component: AnonymizationConfigurationComponent, canActivate: [AuthGuard]}
+    {path: 'anonymizationConfiguration', component: AnonymizationConfigurationComponent, canActivate: [AuthGuard]},
+    {path: 'synthetizationConfiguration', component: SynthetizationConfigurationComponent, canActivate: [AuthGuard]},
+    {path: 'execution', component: ExecutionComponent, canActivate: [AuthGuard]},
+    {path: 'technicalEvaluationConfiguration', component: TechnicalEvaluationConfigurationComponent, canActivate: [AuthGuard]},
+    {path: 'evaluation', component: EvaluationComponent, canActivate: [AuthGuard]},
 ];
 
 @NgModule({

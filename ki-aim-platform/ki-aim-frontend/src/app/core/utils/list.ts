@@ -3,7 +3,7 @@ export class List<T> {
 
     constructor(items?: Array<T>) {
         if (items !== null && items !== undefined) {
-            this.items = items; 
+            this.items = items;
         } else {
             this.items = [];
         }
@@ -23,11 +23,11 @@ export class List<T> {
     }
 
     getAll(): Array<T> {
-        return this.items; 
+        return this.items;
     }
 
     contains(value: T): boolean {
-        return this.items.includes(value); 
+        return this.items.includes(value);
     }
 
     remove(value: T): void {
@@ -35,5 +35,9 @@ export class List<T> {
         if (index > -1) {
             this.items.splice(index, 1);
         }
+    }
+
+    clear(): void {
+        this.items.length = 0;
     }
 }

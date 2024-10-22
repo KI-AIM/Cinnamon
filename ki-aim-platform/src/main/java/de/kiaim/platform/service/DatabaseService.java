@@ -1,57 +1,79 @@
 package de.kiaim.platform.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataType;
-import de.kiaim.platform.exception.BadColumnNameException;
-import de.kiaim.platform.exception.BadConfigurationNameException;
+import de.kiaim.platform.config.SerializationConfig;
+import de.kiaim.platform.config.StepConfiguration;
+import de.kiaim.platform.exception.*;
 import de.kiaim.platform.helper.DataschemeGenerator;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
-import de.kiaim.platform.exception.BadDataSetIdException;
-import de.kiaim.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.platform.model.dto.DataSetInfo;
+import de.kiaim.platform.model.dto.TransformationResultPage;
+import de.kiaim.platform.model.dto.LoadDataRequest;
+import de.kiaim.platform.model.entity.DataSetEntity;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
-import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.repository.PlatformConfigurationRepository;
+import de.kiaim.platform.model.enumeration.ProcessStatus;
+import de.kiaim.platform.model.enumeration.RowSelector;
+import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.repository.DataSetRepository;
+import de.kiaim.platform.repository.DataTransformationErrorRepository;
+import de.kiaim.platform.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class DatabaseService {
 
 	private final Logger LOGGER = LoggerFactory.getLogger(DatabaseService.class);
 
-	final Connection connection;
-	final PlatformConfigurationRepository platformConfigurationRepository;
+	private final Connection connection;
+	private final DataSetRepository dataSetRepository;
+	private final DataTransformationErrorRepository errorRepository;
+	private final ProjectRepository projectRepository;
 
-	final DataschemeGenerator dataschemeGenerator;
-	final UserService userService;
+	private final DataschemeGenerator dataschemeGenerator;
+	private final ObjectMapper jsonMapper;
+
+	private final DataSetService dataSetService;
+	private final StepService stepService;
 
 	@Autowired
-	public DatabaseService(DataSource dataSource, PlatformConfigurationRepository platformConfigurationRepository,
-	                       DataschemeGenerator dataschemeGenerator, UserService userService) {
+	public DatabaseService(final DataSource dataSource, final DataTransformationErrorRepository errorRepository,
+	                       final SerializationConfig serializationConfig, final DataSetRepository dataSetRepository,
+	                       final ProjectRepository projectRepository, final DataschemeGenerator dataschemeGenerator,
+	                       final DataSetService dataSetService, final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
-		this.platformConfigurationRepository = platformConfigurationRepository;
+		this.errorRepository = errorRepository;
+		jsonMapper = serializationConfig.jsonMapper();
+		this.dataSetRepository = dataSetRepository;
+		this.projectRepository = projectRepository;
 		this.dataschemeGenerator = dataschemeGenerator;
-		this.userService = userService;
+		this.stepService = stepService;
+		this.dataSetService = dataSetService;
 	}
 
 	/**
@@ -61,78 +83,84 @@ public class DatabaseService {
 	 * @return Name of the corresponding table.
 	 */
 	public String getTableName(final long dataSetId) {
-		return "data_set_" + String.format("%08d", dataSetId);
+		return "dataset_" + String.format("%08d", dataSetId);
 	}
 
 	/**
-	 * Stores the DataConfiguration and associates the configuration with the user of the request.
+	 * Stores the DataConfiguration and associates the configuration with the data set for the given step in the given configuration.
 	 *
 	 * @param dataConfiguration The configuration to be stored.
-	 * @param user The user the configuration should be associated with.
-	 * @return The ID of the configuration.
+	 * @param project The project of the data set the configuration should be associated with.
+	 * @param step The step of the data set.
 	 * @throws BadDataSetIdException If the data has already been stored.
-	 * @throws InternalDataSetPersistenceException If the configuration could not be stored.
 	 */
 	@Transactional
-	public long store(final DataConfiguration dataConfiguration, UserEntity user)
-			throws BadDataSetIdException, InternalDataSetPersistenceException {
-		return store(dataConfiguration, new ArrayList<>(), user);
+	public void storeDataConfiguration(final DataConfiguration dataConfiguration, final ProjectEntity project,
+	                                   final Step step)
+			throws BadDataSetIdException {
+		throwIfDataSetIsStored(project, step);
+		doStoreDataConfiguration(project, dataConfiguration, step);
 	}
 
 	/**
 	 * Stores the given TransformationResult by storing the DataSet,
-	 * the DataConfiguration and the transformation errors into the database and associates them with the given user.
+	 * the DataConfiguration and the transformation errors into the database
+	 * and associates them with the given step in the given project.
 	 * The table for the DataSet will be generated automatically.
 	 * Returns an ID to access the data.
 	 *
 	 * @param transformationResult  TransformationResult to store.
-	 * @param user The user the configuration should be associated with.
+	 * @param project The project of the data set the configuration should be associated with.
+	 * @param step The step of the data set.
 	 * @return The generated ID of the DataSet.
-	 * @throws BadDataSetIdException If the data has already been stored.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
 	 */
 	@Transactional
-	public long store(final TransformationResult transformationResult, final UserEntity user)
-			throws BadDataSetIdException, InternalDataSetPersistenceException  {
+	public long storeTransformationResult(final TransformationResult transformationResult, final ProjectEntity project,
+	                                      final Step step) throws InternalDataSetPersistenceException {
+		// Delete the existing data set
+		if (project.getDataSets().containsKey(step) && project.getDataSets().get(step).isStoredData()) {
+			deleteDataSet(project.getDataSets().get(step));
+		}
 
+		// Store configuration
 		final DataSet dataSet = transformationResult.getDataSet();
+		final DataSetEntity dataSetEntity = doStoreDataConfiguration(project, dataSet.getDataConfiguration(), step);
 
-		// Store configuration and transformation errors
-		final long dataSetId = store(dataSet.getDataConfiguration(), transformationResult.getTransformationErrors(),
-		                             user);
-		final String tableName = getTableName(dataSetId);
+		// Store transformation errors
+		for (final DataRowTransformationError rowTransformationError : transformationResult.getTransformationErrors() ) {
+			for (final DataTransformationError transformationError : rowTransformationError.getDataTransformationErrors()) {
 
-		// Create table
-		final String tableQuery = dataschemeGenerator.createSchema(dataSet.getDataConfiguration(), tableName);
-		try (final Statement tableStatement = connection.createStatement()) {
-			tableStatement.execute(tableQuery);
-		} catch (final SQLException e) {
-			LOGGER.error("The Table for the DataSet could not be created!", e);
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.TABLE_CREATE,
-			                                              "The Table for the DataSet could not be created!", e);
+				final DataTransformationErrorEntity transformationErrorEntity = new DataTransformationErrorEntity();
+
+				transformationErrorEntity.setRowIndex(rowTransformationError.getIndex());
+				transformationErrorEntity.setColumnIndex(transformationError.getIndex());
+				transformationErrorEntity.setErrorType(transformationError.getErrorType());
+				transformationErrorEntity.setOriginalValue(transformationError.getRawValue());
+
+				dataSetEntity.addDataRowTransformationError(transformationErrorEntity);
+			}
 		}
 
-		// Insert data
-		try (final Statement insertStatement = connection.createStatement()) {
-			for (final DataRow dataRow : dataSet.getDataRows()) {
-				final List<String> stringRow = new ArrayList<>();
-				for (final Data data : dataRow.getData()) {
-					stringRow.add(convertDataToString(data));
-				}
-				final String values = String.join(",", stringRow);
-				insertStatement.execute("INSERT INTO " + tableName + " VALUES (" + values + ")");
-			}
-		} catch (SQLException e) {
-			try {
-				delete(user);
-			} catch (BadDataSetIdException ignored) {
-			}
-			LOGGER.error("The DataSet could not be persisted!", e);
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_STORE,
-			                                              "The DataSet could not be persisted!", e);
-		}
+		projectRepository.save(project);
 
-		return dataSetId;
+		storeDataSet(dataSet, dataSetEntity);
+
+		return dataSetEntity.getId();
+	}
+
+	/**
+	 * Stores the given algorithm configuration
+	 * @param step The step of the algorithm.
+	 * @param configuration The algorithm configuration to be stored.
+	 * @param project The project the configuration should be associated with.
+	 * @throws InternalApplicationConfigurationException If the step configuration could not be found.
+	 */
+	@Transactional
+	public void storeConfiguration(final Step step, final String configuration, final ProjectEntity project)
+			throws InternalApplicationConfigurationException {
+		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
+		storeConfiguration(stepConfiguration.getConfigurationName(), configuration, project);
 	}
 
 	/**
@@ -141,138 +169,297 @@ public class DatabaseService {
 	 *
 	 * @param configurationName Identifier for the configuration.
 	 * @param configuration Configuration to store.
-	 * @param user The user the configuration should be associated with.
-	 * @return The ID of the configuration.
+	 * @param project The project the configuration should be associated with.
 	 */
 	@Transactional
-	public long storeConfiguration(final String configurationName, final String configuration,
-	                               final UserEntity user) {
-		final PlatformConfigurationEntity platformConfigurationEntity = getPlatformConfigurationEntity(user);
-		platformConfigurationEntity.getConfigurations().put(configurationName, configuration);
-		return storeDataConfigurationEntity(platformConfigurationEntity, user);
+	public void storeConfiguration(final String configurationName, final String configuration,
+	                               final ProjectEntity project) {
+		project.getConfigurations().put(configurationName, configuration);
+		projectRepository.save(project);
 	}
 
 	/**
-	 * Exports the configuration of the data set associated with the given user.
+	 * Returns the info objects of the data set associated with the given step in the given project.
+	 * @param project The project
+	 * @param step The step the data sets is associated with.
+	 * @return The info object.
+	 * @throws BadDataSetIdException If no dataset exists.
+	 * @throws InternalDataSetPersistenceException If the internal queries failed.
+	 */
+	public DataSetInfo getInfo(final ProjectEntity project,
+	                           final Step step) throws BadDataSetIdException, InternalDataSetPersistenceException {
+		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
+		final int rows = countEntries(dataSetEntity.getId());
+		final int invalidRows = countInvalidRows(dataSetEntity.getId());
+		return new DataSetInfo(rows, invalidRows);
+	}
+
+	/**
+	 * Exports the configuration of the data set associated with the given project and step.
 	 *
-	 * @param user The user of which the configuration should be exported.
+	 * @param project The project of which the configuration should be exported.
 	 * @return The configuration.
-	 * @throws BadDataSetIdException If no data set is associated with the given user.
+	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
-	public DataConfiguration exportDataConfiguration(final UserEntity user) throws BadDataSetIdException {
-		final long dataSetId = getDataSetIdOrThrow(user);
-		return getOrThrow(dataSetId).getDataConfiguration();
+	public DataConfiguration exportDataConfiguration(final ProjectEntity project, final Step step)
+			throws BadDataSetIdException, InternalIOException {
+		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
+		return getDetachedDataConfiguration(dataSetEntity);
 	}
 
 	/**
-	 * Exports the data set associated with the given user.
+	 * Exports the data set associated with the given project and step.
 	 * Returns the columns with the given names in the given order.
 	 * If no column names are provided, all columns are exported.
 	 *
-	 * @param user The user of which the data set should be exported.
+	 * @param project The project of which the data set should be exported.
 	 * @param columnNames Names of the columns to export. If empty, all columns will be exported.
+	 * @param step The step of which the data set should be exported.
 	 * @return The DataSet.
 	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
-	 * @throws BadDataSetIdException If no data set is associated with the given user.
+	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
-	public DataSet exportDataSet(final UserEntity user, List<String> columnNames)
-			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException {
-		final long dataSetId = getDataSetIdOrThrow(user);
-		final PlatformConfigurationEntity platformConfigurationEntity = getOrThrow(dataSetId);
-		DataConfiguration dataConfiguration = platformConfigurationEntity.getDataConfiguration();
+	public DataSet exportDataSet(final ProjectEntity project, final List<String> columnNames, final Step step)
+			throws InternalDataSetPersistenceException, BadColumnNameException, BadDataSetIdException, InternalIOException {
+		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
+		return exportDataSet(dataSetEntity, columnNames, null, false, 0, 0);
+	}
 
-		if (columnNames.isEmpty()) {
-			columnNames = dataConfiguration.getColumnNames();
-		} else {
-			existColumnsOrThrow(dataConfiguration, columnNames);
-			dataConfiguration = extractColumns(dataConfiguration, columnNames);
-		}
+	/**
+	 * Exports the transformation result associated with the given project and step.
+	 *
+	 * @param project The project of which the data set should be exported.
+	 * @param step The step of which the data set should be exported.
+	 * @return The transformation result.
+	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
+	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
+	 */
+	@Transactional
+	public TransformationResult exportTransformationResult(final ProjectEntity project, final Step step)
+			throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
+		final DataSet dataSet = exportDataSet(project, new ArrayList<>(), step);
 
-		// Export the data from the database
-		final List<DataRow> dataRows = new ArrayList<>();
-		try (final Statement exportStatement = connection.createStatement()) {
+		final DataSetEntity dataSetEntity = project.getDataSets().get(step);
 
-			final String exportQuery = createSelectQuery(dataSetId, columnNames);
-
-			try (final ResultSet resultSet = exportStatement.executeQuery(exportQuery)) {
-				while (resultSet.next()) {
-					final List<Data> data = new ArrayList<>();
-					for (int columnIndex = 0;
-					     columnIndex < dataConfiguration.getConfigurations().size(); ++columnIndex) {
-						final ColumnConfiguration columnConfiguration = dataConfiguration.getConfigurations()
-						                                                                 .get(columnIndex);
-						data.add(convertResultToData(resultSet, columnIndex + 1, columnConfiguration.getType()));
-					}
-					dataRows.add(new DataRow(data));
-				}
+		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
+		for (final var error : dataSetEntity.getDataTransformationErrors()) {
+			if (!rowErrors.containsKey(error.getRowIndex())) {
+				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex()));
 			}
-		} catch (SQLException e) {
-			LOGGER.error("The DataSet could not be exported!", e);
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_EXPORT,
-			                                              "The DataSet could not be exported!", e);
+			final var rowError = rowErrors.get(error.getRowIndex());
+			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType(), error.getOriginalValue()));
 		}
 
-		return new DataSet(dataRows, dataConfiguration);
+		return new TransformationResult(dataSet, rowErrors.values().stream().toList());
+	}
+
+	/**
+	 * Exports a page of the transformation result associated with the given project and step.
+	 * Returns the columns with the given names in the given order.
+	 * If no column names are provided, all columns are exported.
+	 * Includes only the rows that macht the given row selector.
+	 * Encodes the data as specified in the given LoadDataRequest.
+	 *
+	 * @param project The project of which the data set should be exported.
+	 * @param step The step of which the data set should be exported.
+	 * @param columnNames Names of the columns to export. If empty, all columns will be exported.
+	 * @param pageNumber Number of the page to be exported.
+	 * @param pageSize Number of entries per page.
+	 * @param rowSelector Selector specifying which rows should be included.
+	 * @param loadDataRequest Export settings.
+	 * @return The page of the transformation result.
+	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
+	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
+	 */
+	@Transactional
+	public TransformationResultPage exportTransformationResultPage(final ProjectEntity project, final Step step,
+	                                                               final List<String> columnNames, final int pageNumber,
+	                                                               final int pageSize, final RowSelector rowSelector,
+	                                                               final LoadDataRequest loadDataRequest)
+			throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
+		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
+
+		final var startRow = (pageNumber - 1) * pageSize;
+		final var endRow = startRow + pageSize;
+
+		final int numberTotalRows = countEntries(dataSetEntity.getId());
+		final int numberInvalidRows = countInvalidRows(dataSetEntity.getId());
+
+		List<Integer> rowNumbers;
+		final int numberRows;
+		if (rowSelector == RowSelector.VALID) {
+			final List<Integer> invalid = errorRepository.findRowIndexByDataSetIdOrderByRowIndexAsc(dataSetEntity.getId());
+			rowNumbers = IntStream.rangeClosed(0, numberTotalRows).boxed().collect(Collectors.toList());
+			rowNumbers.removeAll(invalid);
+			rowNumbers = rowNumbers.subList(startRow, endRow);
+
+			numberRows = numberTotalRows - numberInvalidRows;
+		} else {
+			rowNumbers = errorRepository.findRowIndexByDataSetIdOrderByRowIndexAsc(dataSetEntity.getId(), pageSize, startRow);
+			numberRows = numberInvalidRows;
+		}
+
+		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
+
+		final DataSet dataSet = exportDataSet(dataSetEntity, columnNames, rowNumbers, false, 0, 0);
+		final Set<DataTransformationErrorEntity> errors2 = errorRepository.findByDataSetIdAndRowIndexIn(dataSetEntity.getId(), rowNumbers);
+
+		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors2, 0, rowNumbers, loadDataRequest);
+
+		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
+		for (final var error : errors2) {
+			if (!rowErrors.containsKey(error.getRowIndex())) {
+				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(rowNumbers.indexOf(error.getRowIndex())));
+			}
+			final var rowError = rowErrors.get(error.getRowIndex());
+			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType(), error.getOriginalValue()));
+		}
+
+		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();
+
+		return new TransformationResultPage(data, transformationErrors, rowNumbers, pageNumber, pageSize, numberRows, numberPages);
+	}
+
+	/**
+	 * Exports a page of the transformation result associated with the given step in the given project.
+	 * Starts at the given page number taking the given page size into account.
+	 * Returns the columns with the given names in the given order.
+	 * If no column names are provided, all columns are exported.
+	 *
+	 * @param project The project of which the data set should be exported.
+	 * @param columnNames Names of the columns to export. If empty, all columns will be exported.
+	 * @param step The step of which the data should be exported.
+	 * @param pageNumber The number of the page to be exported.
+	 * @param pageSize The number of items per page.
+	 * @param loadDataRequest Export settings.
+	 * @return The page containing the data and meta-data about the page.
+	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
+	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
+	 */
+	@Transactional
+	public TransformationResultPage exportTransformationResultPage(final ProjectEntity project, final Step step,
+	                                                               final List<String> columnNames, final int pageNumber,
+	                                                               final int pageSize,
+	                                                               final LoadDataRequest loadDataRequest)
+			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException, InternalIOException {
+		final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(project, step);
+
+		final var startRow = (pageNumber - 1) * pageSize;
+		final var endRow = startRow + pageSize;
+
+		final DataSet dataSet = exportDataSet(dataSetEntity, columnNames, null, true, startRow, pageSize);
+		final Set<DataTransformationErrorEntity> errors = errorRepository.findByDataSetIdAndRowIndexBetween(
+				dataSetEntity.getId(), startRow, endRow - 1);
+
+		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, null, loadDataRequest);
+		final int numberRows = countEntries(dataSetEntity.getId());
+		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
+
+		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
+		for (final var error : errors) {
+			if (!rowErrors.containsKey(error.getRowIndex())) {
+				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex() - startRow));
+			}
+			final var rowError = rowErrors.get(error.getRowIndex());
+			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType(), error.getOriginalValue()));
+		}
+
+		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();
+
+		return new TransformationResultPage(data, transformationErrors, null, pageNumber, pageSize, numberRows, numberPages);
 	}
 
 	/**
 	 * Exports the configuration with the given name
 	 * @param configurationName Name of the configuration to export.
-	 * @param user The user of which the configuration should be exported.
+	 * @param project The project of which the configuration should be exported.
 	 * @return The configuration.
-	 * @throws BadConfigurationNameException If the user does not have a configuration with the given name.
-	 * @throws BadDataSetIdException If no data set is associated with the given user.
+	 * @throws BadConfigurationNameException If the project does not have a configuration with the given name.
 	 */
 	@Transactional
-	public String exportConfiguration(final String configurationName, final UserEntity user)
-			throws BadConfigurationNameException, BadDataSetIdException {
-		final long dataSetId = getDataSetIdOrThrow(user);
-		final PlatformConfigurationEntity platformConfigurationEntity = getOrThrow(dataSetId);
-
-		if (!platformConfigurationEntity.getConfigurations().containsKey(configurationName)) {
+	public String exportConfiguration(final String configurationName, final ProjectEntity project)
+			throws BadConfigurationNameException {
+		if (!project.getConfigurations().containsKey(configurationName)) {
 			throw new BadConfigurationNameException(BadConfigurationNameException.NOT_FOUND,
-			                                        "User has no configuration with the name '" + configurationName +
+			                                        "Project with ID '" + project.getId() +
+			                                        "' has no configuration with the name '" + configurationName +
 			                                        "'!");
 		}
 
-		return platformConfigurationEntity.getConfigurations().get(configurationName);
+		return project.getConfigurations().get(configurationName);
 	}
 
 	/**
-	 * Removes the DataSet and the DataConfiguration associated with the given user from the database
+	 * Removes the DataSet and the transformation errors associated with the given project from the database
 	 * and deletes the corresponding table.
 	 *
-	 * @param user The user of which the data set should be deleted.
-	 * @throws BadDataSetIdException If no data set is associated with the given user.
+	 * @param project The project of which the data set should be deleted.
+	 * @throws BadDataSetIdException If no data set is associated with the given project.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 */
 	@Transactional
-	public void delete(final UserEntity user)
+	public void delete(final ProjectEntity project)
 			throws BadDataSetIdException, InternalDataSetPersistenceException {
-		final long dataSetId = getDataSetIdOrThrow(user);
-
-		// Check if the dataSetId is valid
-		existsOrThrow(dataSetId);
-
-		// Remove configuration from the user
-		userService.removeConfigurationFromUser(user);
-
-		// Delete the table and its data
-		if (existsTable(dataSetId)) {
-			try (final Statement statement = connection.createStatement()) {
-				statement.execute("DROP TABLE IF EXISTS " + getTableName(dataSetId) + ";");
-			} catch (SQLException e) {
-				LOGGER.error("The DataSet could not be deleted!", e);
-				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_DELETE,
-				                                              "The DataSet could not be deleted!", e);
+		// TODO do dynamically
+		for (final var step : List.of(Step.VALIDATION, Step.ANONYMIZATION, Step.SYNTHETIZATION)) {
+			if (project.getDataSets().containsKey(step)) {
+				deleteDataSet(project.getDataSets().get(step));
+				project.removeDataSet(step);
+			}
+		}
+		for (final var execution : project.getExecutions().values()) {
+			execution.setStatus(ProcessStatus.NOT_STARTED);
+			for (final var process : execution.getProcesses().values()) {
+				process.setStatus(null);
+				process.setExternalProcessStatus(ProcessStatus.NOT_STARTED);
+				process.setScheduledTime(null);
+				process.setProcessUrl(null);
+				process.getAdditionalResultFiles().clear();
 			}
 		}
 
-		// Delete the configuration
-		platformConfigurationRepository.deleteById(dataSetId);
+		// Delete transformation errors
+		projectRepository.save(project);
+	}
+
+	/**
+	 * Counts the number of rows in the dataset with the given ID.
+	 * @param dataSetId The ID of the dataset.
+	 * @return The number of rows in the dataset.
+	 * @throws InternalDataSetPersistenceException If the Number could not be retrieved.
+	 */
+	public int countEntries(final long dataSetId) throws InternalDataSetPersistenceException {
+		final String countQuery = "SELECT count(*) FROM " + getTableName(dataSetId) + ";";
+		try (final Statement countStatement = connection.createStatement()) {
+			try (ResultSet resultSet = countStatement.executeQuery(countQuery)) {
+				resultSet.next();
+				return resultSet.getInt(1);
+			}
+		} catch (SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_COUNT,
+			                                              "Failed to count rows for dataset with ID '" + dataSetId +
+			                                              "'!", e);
+		}
+	}
+
+	/**
+	 * Counts the number of rows with at least one transformation error in the data set with the given ID.
+	 * @param dataSetId The ID of the dataset.
+	 * @return The number of invalid rows.
+	 */
+	public int countInvalidRows(final long dataSetId) {
+		return (int) errorRepository.countDistinctRowIndexByDataSetId(dataSetId);
 	}
 
 	/**
@@ -303,82 +490,67 @@ public class DatabaseService {
 	@Transactional
 	public void executeStatement(final String query) throws SQLException {
 		try (final Statement statement = connection.createStatement()) {
+			statement.setQueryTimeout(20);
 			statement.execute(query);
 		}
 	}
 
-	private long getDataSetIdOrThrow(final UserEntity user) throws BadDataSetIdException {
-		if (user.getPlatformConfiguration() == null) {
-			throw new BadDataSetIdException(BadDataSetIdException.NO_CONFIGURATION, "User has no configuration!");
-		}
-		return user.getPlatformConfiguration().getId();
-	}
+	private DataSetEntity doStoreDataConfiguration(final ProjectEntity project,
+	                                               final DataConfiguration dataConfiguration,
+	                                               final Step step) {
+		final DataSetEntity dataSetEntity;
 
-	private PlatformConfigurationEntity getPlatformConfigurationEntity(final UserEntity user) {
-		final PlatformConfigurationEntity platformConfigurationEntity;
-
-		if (user.getPlatformConfiguration() != null) {
-			platformConfigurationEntity = user.getPlatformConfiguration();
+		if (!project.getDataSets().containsKey(step)) {
+			dataSetEntity = new DataSetEntity();
+			project.putDataSet(step, dataSetEntity);
 		} else {
-			platformConfigurationEntity = new PlatformConfigurationEntity();
+			dataSetEntity = project.getDataSets().get(step);
 		}
 
-		return platformConfigurationEntity;
+		dataSetEntity.setDataConfiguration(dataConfiguration);
+
+		projectRepository.save(project);
+
+		return project.getDataSets().get(step);
 	}
 
-	/**
-	 * Stores the DataConfiguration with the transformation errors
-	 * and associates the configuration with the user of the request.
-	 *
-	 * @param dataConfiguration The configuration to be stored.
-	 * @param rowTransformationErrors The transformation errors occurred during reading the corresponding data set.
-	 * @param user The user the configuration should be associated with.
-	 * @return The ID of the configuration.
-	 * @throws BadDataSetIdException If the data has already been stored.
-	 * @throws InternalDataSetPersistenceException If the configuration could not be stored.
-	 */
-	private long store(final DataConfiguration dataConfiguration,
-	                   final List<DataRowTransformationError> rowTransformationErrors, final UserEntity user)
-			throws InternalDataSetPersistenceException, BadDataSetIdException {
-		final PlatformConfigurationEntity platformConfigurationEntity = getPlatformConfigurationEntity(user);
+	private void storeDataSet(final DataSet dataSet, final DataSetEntity dataSetEntity) throws InternalDataSetPersistenceException {
+		final String tableName = getTableName(dataSetEntity.getId());
 
-		// Check if the data set already has been stored
-		if (platformConfigurationEntity.getId() != null && existsTable(platformConfigurationEntity.getId())) {
-			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been stored!");
+		// Create table
+		final String tableQuery = dataschemeGenerator.createSchema(dataSet.getDataConfiguration(), tableName);
+		try {
+			executeStatement(tableQuery);
+		} catch (final SQLException e) {
+			LOGGER.error("The Table for the DataSet could not be created!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.TABLE_CREATE,
+			                                              "The Table for the DataSet could not be created!", e);
 		}
 
-		platformConfigurationEntity.setDataConfiguration(dataConfiguration);
-
-		for (final DataRowTransformationError rowTransformationError : rowTransformationErrors) {
-			for (final DataTransformationError transformationError : rowTransformationError.getDataTransformationErrors()) {
-
-				final DataTransformationErrorEntity transformationErrorEntity = new DataTransformationErrorEntity();
-
-				transformationErrorEntity.setRowIndex(rowTransformationError.getIndex());
-				transformationErrorEntity.setColumnIndex(transformationError.getIndex());
-				transformationErrorEntity.setErrorType(transformationError.getErrorType());
-				transformationErrorEntity.setOriginalValue(
-						rowTransformationError.getRawValues().get(transformationError.getIndex()));
-
-				platformConfigurationEntity.addDataRowTransformationError(transformationErrorEntity);
+		// Insert data
+		try (final Statement insertStatement = connection.createStatement()) {
+			for (final DataRow dataRow : dataSet.getDataRows()) {
+				final List<String> stringRow = new ArrayList<>();
+				for (final Data data : dataRow.getData()) {
+					stringRow.add(convertDataToString(data));
+				}
+				final String values = String.join(",", stringRow);
+				insertStatement.execute("INSERT INTO " + tableName + " VALUES (" + values + ")");
 			}
+		} catch (SQLException e) {
+			try {
+				deleteDataSet(dataSetEntity);
+			} catch (InternalDataSetPersistenceException ignored) {
+			}
+			LOGGER.error("The DataSet could not be persisted!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_STORE,
+			                                              "The DataSet could not be persisted!", e);
 		}
 
-		return storeDataConfigurationEntity(platformConfigurationEntity, user);
+		dataSetEntity.setStoredData(true);
+		projectRepository.save(dataSetEntity.getProject());
 	}
 
-	private long storeDataConfigurationEntity(final PlatformConfigurationEntity platformConfigurationEntity,
-	                                          final UserEntity user) {
-		platformConfigurationRepository.save(platformConfigurationEntity);
-
-		// Get ID
-		final long dataSetId = platformConfigurationEntity.getId();
-
-		// Set current data configuration for the user
-		userService.setConfigurationToUser(platformConfigurationEntity, user);
-
-		return dataSetId;
-	}
 
 	private String convertDataToString(final Data data) throws InternalDataSetPersistenceException {
 		if (data.getValue() == null) {
@@ -401,12 +573,52 @@ public class DatabaseService {
 		};
 	}
 
-	private void existsOrThrow(final long dataSetId) throws BadDataSetIdException {
-		final boolean exists = platformConfigurationRepository.existsById(dataSetId);
-		if (!exists) {
-			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET,
-			                                "No DataSet with the given ID '" + dataSetId + "' found!");
+	private DataSet exportDataSet(final DataSetEntity dataSetEntity, List<String> columnNames,
+	                              @Nullable final List<Integer> rows, final boolean pagination,
+	                              final int startRow, final int pageSize)
+			throws BadColumnNameException, InternalDataSetPersistenceException, InternalIOException {
+		DataConfiguration dataConfiguration = getDetachedDataConfiguration(dataSetEntity);
+
+		if (columnNames.isEmpty()) {
+			columnNames = dataConfiguration.getColumnNames();
+		} else {
+			existColumnsOrThrow(dataConfiguration, columnNames);
+			dataConfiguration = extractColumns(dataConfiguration, columnNames);
 		}
+
+		// Export the data from the database
+		final List<DataRow> dataRows = new ArrayList<>();
+
+		// If only specific rows should be selected but none are given, return empty dataset
+		if (rows != null && rows.isEmpty()) {
+			return new DataSet(dataRows, dataConfiguration);
+		}
+
+		try (final Statement exportStatement = connection.createStatement()) {
+
+			final String exportQuery = rows != null
+			                           ? createSelectQuery(dataSetEntity.getId(), columnNames, rows)
+			                           : createSelectQuery(dataSetEntity.getId(), columnNames, pagination, startRow, pageSize);
+
+			try (final ResultSet resultSet = exportStatement.executeQuery(exportQuery)) {
+				while (resultSet.next()) {
+					final List<Data> data = new ArrayList<>();
+					for (int columnIndex = 0;
+					     columnIndex < dataConfiguration.getConfigurations().size(); ++columnIndex) {
+						final ColumnConfiguration columnConfiguration = dataConfiguration.getConfigurations()
+						                                                                 .get(columnIndex);
+						data.add(convertResultToData(resultSet, columnIndex + 1, columnConfiguration.getType()));
+					}
+					dataRows.add(new DataRow(data));
+				}
+			}
+		} catch (SQLException e) {
+			LOGGER.error("The DataSet could not be exported!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_EXPORT,
+			                                              "The DataSet could not be exported!", e);
+		}
+
+		return new DataSet(dataRows, dataConfiguration);
 	}
 
 	private void existColumnsOrThrow(final DataConfiguration dataConfiguration, final List<String> columnNames)
@@ -423,18 +635,45 @@ public class DatabaseService {
 		}
 	}
 
-	private PlatformConfigurationEntity getOrThrow(final long dataSetId) throws BadDataSetIdException {
-		final Optional<PlatformConfigurationEntity> config = platformConfigurationRepository.findById(dataSetId);
-		if (config.isEmpty()) {
-			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET,
-			                                "No DataSet with the given ID '" + dataSetId + "' found!");
+	private DataSetEntity getDataSetEntityOrThrow(final ProjectEntity project, final Step step) throws BadDataSetIdException {
+		if (!project.getDataSets().containsKey(step)) {
+			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET, "The project '" + project.getId() +
+			                                                                   "' does not contain a data set for step '" +
+			                                                                   step.name() + "'!");
 		}
-		return config.get();
+		return project.getDataSets().get(step);
 	}
 
-	private String createSelectQuery(final Long dataSetId, final List<String> columnNames) {
+	private DataConfiguration getDetachedDataConfiguration(
+			final DataSetEntity dataSetEntity) throws InternalIOException {
+		final String json = dataSetRepository.getDataConfiguration(dataSetEntity.getId());
+
+		try {
+			return jsonMapper.readValue(json, DataConfiguration.class);
+		} catch (JsonProcessingException e) {
+			throw new InternalIOException(InternalIOException.DATA_CONFIGURATION_DESERIALIZATION,
+			                              "Failed to export data configuration because of a failed deserialization!",
+			                              e);
+		}
+	}
+
+	private String createSelectQuery(final Long dataSetId, final List<String> columnNames, final List<Integer> rowNumbers) {
 		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"").toList();
-		return "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId) + ";";
+		return "SELECT " + String.join(",", quotedColumnNames) +
+		       " FROM (SELECT *, ROW_NUMBER() OVER () AS row_num FROM " +
+		       getTableName(dataSetId) + ") AS numbered_rows WHERE row_num IN (" +
+		       rowNumbers.stream().map(rowNumber -> rowNumber + 1).map(Object::toString).collect(Collectors.joining(",")) + ");";
+	}
+
+	private String createSelectQuery(final Long dataSetId, final List<String> columnNames, final boolean pagination,
+	                                 final int startRow, final int pageSize) {
+		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"").toList();
+		String query = "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId);
+		if (pagination) {
+			query += " LIMIT " + pageSize + " OFFSET " + startRow;
+		}
+		query += ";";
+		return query;
 	}
 
 	private Data convertResultToData(final ResultSet resultSet, final int columnIndex,
@@ -512,6 +751,32 @@ public class DatabaseService {
 		}
 
 		return targetConfiguration;
+	}
+
+	private void deleteDataSet(final DataSetEntity dataSet) throws InternalDataSetPersistenceException {
+		// Delete the table and its data
+		if (existsTable(dataSet.getId())) {
+			try {
+				executeStatement("DROP TABLE IF EXISTS " + getTableName(dataSet.getId()) + ";");
+			} catch (SQLException e) {
+				LOGGER.error("The DataSet could not be deleted!", e);
+				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_DELETE,
+				                                              "The DataSet could not be deleted!", e);
+			}
+		}
+
+		dataSet.getDataTransformationErrors().clear();
+		dataSet.setStoredData(false);
+		dataSetRepository.save(dataSet);
+	}
+
+	/**
+	 * Check if the data set already has been stored.
+	 */
+	private void throwIfDataSetIsStored(final ProjectEntity project, final Step step) throws BadDataSetIdException {
+		if (project.getDataSets().containsKey(step) && project.getDataSets().get(step).isStoredData()) {
+			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been stored!");
+		}
 	}
 
 }

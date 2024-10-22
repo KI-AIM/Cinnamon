@@ -1,6 +1,5 @@
 package de.kiaim.platform.service;
 
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,17 +33,7 @@ public class UserService implements UserDetailsService {
 		return userRepository.existsById(email);
 	}
 
-	public void setConfigurationToUser(PlatformConfigurationEntity platformConfigurationEntity, UserEntity user) {
-		user.setPlatformConfiguration(platformConfigurationEntity);
-		userRepository.save(user);
-	}
-
-	public void removeConfigurationFromUser(UserEntity user) {
-		user.setPlatformConfiguration(null);
-		userRepository.save(user);
-	}
-
-	public void save(final String email, final String rawPassword) {
+	public UserEntity save(final String email, final String rawPassword) {
 		Optional<UserEntity> user = userRepository.findById(email);
 		UserEntity userEntity;
 		if (user.isEmpty()) {
@@ -56,6 +45,8 @@ public class UserService implements UserDetailsService {
 		userEntity.setEmail(email);
 		userEntity.setPassword(passwordEncoder.encode(rawPassword));
 		userRepository.save(userEntity);
+
+		return userEntity;
 	}
 
 	//==============================

@@ -1,7 +1,7 @@
-version: '3.8'
-
 networks:
     data-management-network:
+    synthetization-network:
+    anonymization-network:
 
 services:
     ki-aim-db:
@@ -19,15 +19,48 @@ services:
     ki-aim-platform:
         image: ki-aim-platform:0.0.1
         build:
-            context: ./ki-aim-platform
-            dockerfile: Dockerfile
+            context: ./
+            dockerfile: ./ki-aim-platform/Dockerfile
         container_name: ki-aim-platform
         restart: always
         ports:
-            - "8080:8080"
+#            - "8080:8080"
+            - "127.0.0.1:8080:8080"
+            - "127.0.0.1:9000:8000"
+        volumes:
+            - ~/.m2:/root/.m2
         networks:
             - data-management-network
+            - synthetization-network
+            - anonymization-network
         environment:
             - SPRING_DATASOURCE_URL=jdbc:postgresql://ki-aim-db:5432/ki_aim_db
+            - KI-AIM.STEPS.SYNTHETIZATION.URL=http://ki-aim-synthetization:5000
+            - KI-AIM.STEPS.ANONYMIZATION.URL=http://ki-aim-anon:8080
+            - KI-AIM.STEPS.SYNTHETIZATION.CALLBACKHOST=ki-aim-platform
+            - KI-AIM.STEPS.ANONYMIZATION.CALLBACKHOST=ki-aim-platform
         depends_on:
             - ki-aim-db
+    ki-aim-synthetization:
+        image: synthetization_module
+        container_name: ki-aim-synthetization
+        restart: always
+        ports:
+#            - "5000:5000"
+            - "127.0.0.1:5000:5000"
+        networks:
+            - synthetization-network
+    ki-aim-anon:
+        image: ki-aim-anon
+        build:
+            context: ./
+            dockerfile: ./ki-aim-anon/Dockerfile
+        container_name: ki-aim-anon
+        restart: always
+        ports:
+            - "127.0.0.1:8081:8080"
+            - "127.0.0.1:9001:8000"
+        networks:
+            - anonymization-network
+        volumes:
+            - ~/.m2:/root/.m2

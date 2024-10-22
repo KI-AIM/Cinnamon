@@ -8,10 +8,71 @@ import { MatCardModule } from "@angular/material/card";
 import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { NoSpaceValidatorDirective } from './directives/no-space-validator.directive';
+import { ConfigurationInputComponent } from './components/configuration-input/configuration-input.component';
+import { ConfigurationInputInfoComponent } from './components/configuration-input-info/configuration-input-info.component';
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { ReactiveFormsModule } from "@angular/forms";
+import { ConfigurationFormComponent } from './components/configuration-form/configuration-form.component';
+import { MatIconModule } from "@angular/material/icon";
+import { MatSelectModule } from "@angular/material/select";
+import { ConfigurationInputArrayComponent } from './components/configuration-input-array/configuration-input-array.component';
+import { ConfigurationSelectionComponent } from './components/configuration-selection/configuration-selection.component';
+import { ConfigurationPageComponent } from "./components/configuration-page/configuration-page.component";
+import { ConfigurationGroupComponent } from './components/configuration-group/configuration-group.component';
+import { MatCheckboxModule } from "@angular/material/checkbox";
+import { MatExpansionModule } from "@angular/material/expansion";
+import { ConfigurationUploadComponent } from "./components/configuration-upload/configuration-upload.component";
+import { ConfigurationManagementComponent } from "./components/configuration-management/configuration-management.component";
+import {DataTableComponent} from "./components/data-table/data-table.component";
+import {MatTableModule} from "@angular/material/table";
+import {MatPaginatorModule} from "@angular/material/paginator";
+import {MatProgressBarModule} from "@angular/material/progress-bar";
 
 @NgModule({
-	declarations: [InformationDialogComponent, InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective],
-	imports: [CommonModule, MatDialogModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule],
-	exports: [InfoCardComponent, LoadingSpinnerComponent, NoSpaceValidatorDirective],
+    declarations: [
+        ConfigurationFormComponent,
+        ConfigurationGroupComponent,
+        ConfigurationInputArrayComponent,
+        ConfigurationInputComponent,
+        ConfigurationInputInfoComponent,
+        ConfigurationManagementComponent,
+        ConfigurationPageComponent,
+        ConfigurationSelectionComponent,
+        ConfigurationUploadComponent,
+        DataTableComponent,
+        InfoCardComponent,
+        InformationDialogComponent,
+        LoadingSpinnerComponent,
+        NoSpaceValidatorDirective,
+    ],
+    imports: [
+        CommonModule,
+        MatButtonModule,
+        MatCardModule,
+        MatCheckboxModule,
+        MatDialogModule,
+        MatExpansionModule,
+        MatFormFieldModule,
+        MatIconModule,
+        MatInputModule,
+        MatPaginatorModule,
+        MatProgressSpinnerModule,
+        MatSelectModule,
+        MatTableModule,
+        ReactiveFormsModule,
+        MatProgressBarModule,
+    ],
+    exports: [
+        ConfigurationFormComponent,
+        ConfigurationInputComponent,
+        ConfigurationManagementComponent,
+        ConfigurationPageComponent,
+        ConfigurationUploadComponent,
+        DataTableComponent,
+        InfoCardComponent,
+        LoadingSpinnerComponent,
+        NoSpaceValidatorDirective,
+    ],
 })
 export class SharedModule {}

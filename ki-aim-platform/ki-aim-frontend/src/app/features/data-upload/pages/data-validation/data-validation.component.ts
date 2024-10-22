@@ -1,32 +1,32 @@
-import { Component } from "@angular/core";
-import { TransformationService } from "../../services/transformation.service";
+import {Component, OnInit, TemplateRef } from "@angular/core";
 import { LoadingService } from "src/app/shared/services/loading.service";
 import { Router } from "@angular/router";
-import { StateManagementService } from "src/app/core/services/state-management.service";
 import { DataService } from "src/app/shared/services/data.service";
-import { FileService } from "../../services/file.service";
 import { HttpErrorResponse } from "@angular/common/http";
 import { Steps } from "src/app/core/enums/steps";
-import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
 import { ErrorMessageService } from "src/app/shared/services/error-message.service";
+import {DataSetInfoService} from "../../services/data-set-info.service";
+import {map, Observable} from "rxjs";
+import { StatusService } from "../../../../shared/services/status.service";
 
 @Component({
 	selector: "app-data-validation",
 	templateUrl: "./data-validation.component.html",
 	styleUrls: ["./data-validation.component.less"],
 })
-export class DataValidationComponent {
+export class DataValidationComponent implements OnInit {
+    protected numberRows$: Observable<number>;
+    protected numberInvalidRows$: Observable<number>;
+
 	constructor(
-		public transformationService: TransformationService,
 		private loadingService: LoadingService,
 		private router: Router,
-		private stateManagement: StateManagementService,
+        private statusService: StatusService,
+        protected dataSetInfoService: DataSetInfoService,
 		private dataService: DataService,
-		private fileService: FileService,
-		private configuration: DataConfigurationService,
 		private titleService: TitleService,
         private dialog: MatDialog,
 		private errorMessageService: ErrorMessageService,
@@ -34,26 +34,52 @@ export class DataValidationComponent {
         this.titleService.setPageTitle("Data validation");
     }
 
-	uploadData() {
+    ngOnInit(): void {
+        this.numberRows$ = this.dataSetInfoService.getDataSetInfo().pipe(
+            map(value => {
+                return value.numberRows;
+            }),
+        );
+        this.numberInvalidRows$ = this.dataSetInfoService.getDataSetInfo().pipe(
+            map(value => {
+                return value.numberInvalidRows;
+            }),
+        );
+    }
+
+    protected get locked(): boolean {
+        return this.statusService.isStepCompleted(Steps.VALIDATION);
+    }
+
+    openDeleteDialog(templateRef: TemplateRef<any>) {
+        this.dialog.open(templateRef, {
+            disableClose: true,
+            width: '60%'
+        });
+    }
+
+	confirmData() {
 		this.loadingService.setLoadingStatus(true);
 
-		this.dataService
-			.storeData(
-				this.fileService.getFile(),
-				this.configuration.getDataConfiguration(),
-				this.fileService.getFileConfiguration()
-			)
-			.subscribe({
-				next: (d) => this.handleUpload(d),
-				error: (e) => this.handleError(e),
-			});
+        this.dataService.confirmData().subscribe({
+            next: () => this.handleConfirm(),
+            error: (e) => this.handleError(e),
+        });
 	}
 
-	private handleUpload(data: Object) {
-		this.loadingService.setLoadingStatus(false);
+    protected deleteData() {
+        this.dataService.deleteData().subscribe({
+            next: () => {
+                this.router.navigateByUrl("/upload");
+                this.statusService.setNextStep(Steps.UPLOAD);
+            }
+        });
+    }
 
+	private handleConfirm() {
+		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/anonymizationConfiguration");
-		this.stateManagement.addCompletedStep(Steps.VALIDATION);
+        this.statusService.setNextStep(Steps.ANONYMIZATION)
 	}
 
 	private handleError(error: HttpErrorResponse) {
@@ -64,6 +90,6 @@ export class DataValidationComponent {
 				title: "An error occurred",
 				content: "We are sorry, something went wrong: " + this.errorMessageService.convertResponseToMessage(error),
 			}
-		}); 
+		});
 	}
 }

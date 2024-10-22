@@ -1,56 +1,71 @@
 import { Injectable } from '@angular/core';
 import { Mode } from '../enums/mode';
-import { Steps } from '../enums/steps';
+import { StepConfiguration, Steps } from '../enums/steps';
 import { List } from '../utils/list';
+import { Status } from "../../shared/model/status";
+import { HttpClient } from "@angular/common/http";
+import { Router } from "@angular/router";
+import { UserService } from "../../shared/services/user.service";
+import { Observable, of, tap } from "rxjs";
+import { ConfigurationService } from "../../shared/services/configuration.service";
+import { environments } from "../../../environments/environment";
+import { StatusService } from "../../shared/services/status.service";
 
 @Injectable({
     providedIn: 'root'
 })
 export class StateManagementService {
 
-    private mode: Mode
-    private completedSteps: List<Steps>;
-
-    constructor() {
-        this.mode = Mode.UNSET;
-        this.completedSteps = new List();
-    }
-
-    getMode(): Mode {
-        return this.mode;
-    }
-
-    setMode(mode: Mode) {
-        this.mode = mode;
-    }
-
-    getCompletedSteps(): List<Object> {
-        return this.completedSteps;
-    }
-
-    addCompletedStep(step: Steps): void {
-        if (!this.completedSteps.contains(step)) {
-            this.completedSteps.add(step);
-        }
-    }
-
-    removeCompletedStep(step: Steps): void {
-        if (this.completedSteps.contains(step)) {
-            this.completedSteps.remove(step);
+    constructor(
+        private readonly configurationService: ConfigurationService,
+        private readonly router: Router,
+        private readonly userService: UserService,
+        private readonly statusService: StatusService
+    ) {
+        if (this.userService.isAuthenticated()) {
+            this.fetchCurrentStep();
         }
     }
 
     /**
-     * Checks if a given step is completed.
-     * If step is null, returns false.
-     * 
-     * @param step The step to check.
-     * @returns If the given step is completed.
+     * Fetches the state and configurations from the backend.
      */
-    isStepCompleted(step: Steps | null) {
-        if (step == null) {
-            return false;
+    public fetchCurrentStep() {
+        this.doFetchCurrentStep().subscribe();
+    }
+
+    /**
+     * Fetches the state and configurations from the backend and routes to the current step.
+     */
+    public fetchAndRouteToCurrentStep() {
+        this.doFetchCurrentStep().subscribe({
+            next: value => {
+                this.routeToCurrentStep();
+            }
+        });
+    }
+
+    /**
+     * Routes to the page for the current step.
+     */
+    public routeToCurrentStep() {
+        for (let [a, b] of Object.entries(StepConfiguration)) {
+            if (a === this.statusService.currentStep.toString()) {
+                this.router.navigateByUrl(b.path);
+                return;
+            }
+
         }
-        return this.completedSteps.contains(step);
+        this.router.navigateByUrl("/start");
+    }
+
+    /**
+     * Fetches the state and configurations from the backend.
+     * @private
+     */
+    private doFetchCurrentStep(): Observable<Status> {
+        return this.statusService.fetchStatus().pipe(tap(value => {
+            this.configurationService.fetchConfigurations(this.statusService.currentStep);
+        }));
     }
 }

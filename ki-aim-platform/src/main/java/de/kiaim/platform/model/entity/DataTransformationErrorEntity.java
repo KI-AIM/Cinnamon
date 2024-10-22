@@ -19,12 +19,12 @@ public class DataTransformationErrorEntity {
 	private Long id;
 
 	/**
-	 * DataConfiguration of the DataSet this transformation error corresponds to.
+	 * DataSet this transformation error corresponds to.
 	 */
 	@ManyToOne
 	@JoinColumn(nullable = false)
 	@Setter
-	private PlatformConfigurationEntity platformConfiguration;
+	private DataSetEntity dataSet;
 
 	/**
 	 * Index of the row in the data set this transformation error corresponds to.

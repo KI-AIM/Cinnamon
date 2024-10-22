@@ -1,10 +1,11 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.model.data.DataSet;
+import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.model.dto.LoadDataRequest;
-import de.kiaim.platform.model.entity.PlatformConfigurationEntity;
 import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.servlet.HandlerMapping;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class DataSetService {
@@ -48,10 +53,20 @@ public class DataSetService {
 		user = userRepository.findById(user.getUsername()).get();
 
 		final LoadDataRequest loadDataRequest = new LoadDataRequest();
+		Set<DataTransformationErrorEntity> transformationErrors = new HashSet<>();
 
 		final RequestAttributes ra = RequestContextHolder.getRequestAttributes();
 		if (ra instanceof ServletRequestAttributes) {
 			final HttpServletRequest request = ((ServletRequestAttributes) ra).getRequest();
+			final Map<String, String> pathVariables = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+			final String stepName = pathVariables.get("stepName");
+
+			try {
+				final Step step = Step.getStepOrThrow(stepName);
+				transformationErrors = user.getProject().getDataSets().get(step).getDataTransformationErrors();
+			} catch (BadStepNameException ignored) {
+			}
+
 
 			final String defaultNullEncoding = request.getParameter("defaultNullEncoding");
 			if (defaultNullEncoding != null) {
@@ -63,7 +78,7 @@ public class DataSetService {
 			loadDataRequest.setValueNotInRangeEncoding(request.getParameter("valueNotInRangeEncoding"));
 		}
 
-		return encodeDataRows(dataSet, user.getPlatformConfiguration(), loadDataRequest);
+		return encodeDataRows(dataSet, transformationErrors, loadDataRequest);
 	}
 
 	/**
@@ -71,12 +86,34 @@ public class DataSetService {
 	 * Replaces all null values with the configured encoding.
 	 *
 	 * @param dataSet DataSet to encode.
-	 * @param dataConfiguration The DataConfigurationEntity containing the transformation errors
+	 * @param transformationErrors The transformation errors
+	 * @param loadDataRequest Export settings.
 	 * @return Encoded data set.
 	 */
-	public List<List<Object>> encodeDataRows(final DataSet dataSet, final PlatformConfigurationEntity dataConfiguration,
+	public List<List<Object>> encodeDataRows(final DataSet dataSet,
+	                                         final Set<DataTransformationErrorEntity> transformationErrors,
 	                                         final LoadDataRequest loadDataRequest) {
+		return encodeDataRows(dataSet, transformationErrors, 0, null, loadDataRequest);
+	}
 
+	/**
+	 * Encodes the given data set using the given DataConfiguration and the given encoding configuration.
+	 * Replaces all null values with the configured encoding.
+	 * Applies the given offset to the row indices of the transformation errors if indexMapping is null.
+	 * If indexMapping is not null, uses the value at the given position as the row index.
+	 *
+	 * @param dataSet DataSet to encode.
+	 * @param transformationErrors The transformation errors
+	 * @param rowOffset Start row of the data set that is applied to the indices of the transformation errors.
+	 * @param indexMapping Mapping for the index in the original data set.
+	 * @param loadDataRequest Export settings.
+	 * @return Encoded data set.
+	 */
+	public List<List<Object>> encodeDataRows(final DataSet dataSet,
+	                                         final Set<DataTransformationErrorEntity> transformationErrors,
+	                                         final int rowOffset,
+	                                         @Nullable final List<Integer> indexMapping,
+	                                         final LoadDataRequest loadDataRequest) {
 		final List<List<Object>> data = dataSet.getData();
 
 		String defaultNullEncoding = loadDataRequest.getDefaultNullEncoding();
@@ -93,15 +130,20 @@ public class DataSetService {
 		if (!defaultNullEncoding.equals("$null") || !missingValueEncoding.equals("$null") ||
 		    !formatErrorEncoding.equals("$null") || !valueNotInRangeEncoding.equals("$null")) {
 
-			for (final DataTransformationErrorEntity transformationError : dataConfiguration.getDataTransformationErrors()) {
+			for (final DataTransformationErrorEntity transformationError : transformationErrors) {
 
-				var blau = switch (transformationError.getErrorType()) {
+				final var encodedValue = switch (transformationError.getErrorType()) {
 					case CONFIG_ERROR, OTHER -> encodeValue(defaultNullEncoding, transformationError);
 					case FORMAT_ERROR -> encodeValue(formatErrorEncoding, transformationError);
 					case MISSING_VALUE -> encodeValue(missingValueEncoding, transformationError);
 					case VALUE_NOT_IN_RANGE -> encodeValue(valueNotInRangeEncoding, transformationError);
 				};
-				data.get(transformationError.getRowIndex()).set(transformationError.getColumnIndex(), blau);
+
+				if (indexMapping != null) {
+					data.get(indexMapping.indexOf(transformationError.getRowIndex())).set(transformationError.getColumnIndex(), encodedValue);
+				} else {
+					data.get(transformationError.getRowIndex() - rowOffset).set(transformationError.getColumnIndex(), encodedValue);
+				}
 			}
 		}
 

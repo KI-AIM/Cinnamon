@@ -3,6 +3,7 @@ import { StateManagementService } from 'src/app/core/services/state-management.s
 import { TitleService } from 'src/app/core/services/title-service.service';
 import { Mode } from 'src/app/core/enums/mode';
 import { Steps } from 'src/app/core/enums/steps';
+import { StatusService } from "../../../../shared/services/status.service";
 
 @Component({
     selector: 'app-startpage',
@@ -12,10 +13,13 @@ import { Steps } from 'src/app/core/enums/steps';
 })
 export class StartpageComponent {
     Mode = Mode;
-    Steps = Steps; 
+    Steps = Steps;
 
-    constructor(private titleService: TitleService, public stateManagement: StateManagementService) {
-        this.titleService.setPageTitle("Welcome!"); 
+    constructor(private titleService: TitleService, public statusService : StatusService) {
+        this.titleService.setPageTitle("Welcome!");
     }
 
+    protected get locked(): boolean {
+        return this.statusService.isStepCompleted(Steps.VALIDATION);
+    }
 }

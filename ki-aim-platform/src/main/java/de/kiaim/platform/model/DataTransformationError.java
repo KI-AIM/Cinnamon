@@ -28,4 +28,10 @@ public class DataTransformationError {
 	 */
 	@Schema(description = "Type of the error.", example = "MISSING_VALUE")
 	private final TransformationErrorType errorType;
+
+	/**
+	 * Raw value from the data set.
+	 */
+	@Schema(description = "Raw value from the data set.", example = "2023-12-24")
+	private final String rawValue;
 }

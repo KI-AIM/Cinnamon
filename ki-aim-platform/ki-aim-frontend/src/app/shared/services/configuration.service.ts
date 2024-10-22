@@ -2,10 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, toArray } from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
-import { FileService } from 'src/app/features/data-upload/services/file.service';
 import { FileUtilityService } from './file-utility.service';
 import { parse, stringify } from 'yaml';
 import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data";
+import { Steps } from "../../core/enums/steps";
+import { environments } from "../../../environments/environment";
+import { StatusService } from "./status.service";
 
 /**
  * Service for managing configurations.
@@ -14,13 +16,13 @@ import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data"
     providedIn: 'root'
 })
 export class ConfigurationService {
-    private baseUrl: String = "api/config";
+    private baseUrl: string = environments.apiUrl + "/api/config";
     private registeredConfigurations: Array<ConfigurationRegisterData>;
 
     constructor(
-        private fileService: FileService,
         private fileUtilityService: FileUtilityService,
         private httpClient: HttpClient,
+        private readonly statusService: StatusService,
     ) {
         this.registeredConfigurations = [];
     }
@@ -54,6 +56,9 @@ export class ConfigurationService {
      * @param data Metadata of the configuration.
      */
     public registerConfiguration(data: ConfigurationRegisterData) {
+        if (data.fetchConfig === null) {
+            data.fetchConfig = (configName) => this.loadConfig(configName);
+        }
         if (data.storeConfig == null) {
             data.storeConfig = (configName, yamlConfigString) => this.storeConfig(configName, yamlConfigString);
         }
@@ -77,7 +82,7 @@ export class ConfigurationService {
             const configData = reader.result as string;
             const configurations = parse(configData);
 
-            const result: {[a: string]: object | null} = {};
+            const result: { [a: string]: object | null } = {};
             result[configurationName] = null;
 
             for (const [name, config] of Object.entries(configurations)) {
@@ -98,8 +103,14 @@ export class ConfigurationService {
      * @param configurationName Identifier of the configuration to load.
      * @returns Observable containing the configuration as a string.
      */
-    public loadConfig(configurationName: String): Observable<String> {
-        return this.httpClient.get<String>(this.baseUrl + "?name=" + configurationName, {responseType: 'text' as 'json'});
+    public loadConfig(configurationName: String): Observable<string> {
+        return this.httpClient.get<string>(this.baseUrl + "?name=" + configurationName, {responseType: 'text' as 'json'})
+            .pipe(
+                map(value => {
+                    // Plain text has to be parsed to YAML string
+                    return parse(value)
+                }),
+            );
     }
 
     /**
@@ -108,8 +119,8 @@ export class ConfigurationService {
      * @param configuration Configuration to store in form of a string.
      * @returns Observable returning containing the ID of the dataset.
      */
-    public storeConfig(configurationName: String, configuration: String): Observable<Number> {
-        return this.httpClient.post<Number>(this.baseUrl + "?name=" + configurationName, configuration);
+    public storeConfig(configurationName: String, configuration: String): Observable<void> {
+        return this.httpClient.post<void>(this.baseUrl + "?name=" + configurationName, configuration);
     }
 
     /**
@@ -131,9 +142,14 @@ export class ConfigurationService {
             } else {
                 configString += stringify(configData)
             }
+
+            if (!this.statusService.isStepCompleted(config.lockedAfterStep)) {
+                config.storeConfig!(config.name, configString).subscribe();
+            }
         }
 
-        const fileName = this.fileService.getFile().name + "-configuration.yaml"
+        // TODO use project name
+        const fileName = "configuration.yaml"
         this.fileUtilityService.saveYamlFile(configString, fileName);
     }
 
@@ -190,15 +206,15 @@ export class ConfigurationService {
                         let ob;
                         if (object.configData == null || yamlConfigString === null) {
                             // If the config is not in the config file, use 0 as a placeholder
-                            ob = of(0 as Number);
+                            ob = of(void 0);
                         } else {
                             // Cannot be null after registering
                             ob = object.configData.storeConfig!(name, yamlConfigString);
                         }
 
                         return ob.pipe(
-                            map(number => {
-                                object.success = number !== 0;
+                            map(() => {
+                                object.success = true;
                                 return object as ImportPipeData;
                             }),
                             catchError((error) => {
@@ -226,5 +242,32 @@ export class ConfigurationService {
                 return of(null);
             }),
         );
+    }
+
+    /**
+     * Fetches all configurations from the backend for steps that are available before the given step.
+     * Calls the setConfigCallback function if a configuration is available.
+     * @param step The step up to which the configurations should be fetched.
+     */
+    public fetchConfigurations(step: Steps) {
+        const stepIndex = Number.parseInt(Steps[step]);
+        for (const config of this.getRegisteredConfigurations()) {
+            if (config.availableAfterStep < stepIndex) {
+                config.fetchConfig!(config.name).subscribe({
+                    next: value => {
+                        const data = new ImportPipeData();
+                        data.success = true;
+                        data.name = config.name;
+                        data.configData = config;
+                        data.yamlConfigString = value;
+
+                        config.setConfigCallback(data);
+                    },
+                    error: err => {
+                        console.log(err);
+                    }
+                });
+            }
+        }
     }
 }

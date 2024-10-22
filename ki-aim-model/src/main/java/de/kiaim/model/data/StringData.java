@@ -34,6 +34,14 @@ public class StringData extends Data {
 		private String value;
 
 		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public DataType getDataType() {
+			return DataType.STRING;
+		}
+
+		/**
 		 * Sets the value of the resulting StringData Object
 		 * @param value The value to be set
 		 * @param configuration The List of Configuration objects for the column

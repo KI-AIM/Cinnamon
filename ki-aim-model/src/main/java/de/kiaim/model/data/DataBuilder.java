@@ -2,8 +2,8 @@ package de.kiaim.model.data;
 
 import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.Configuration;
+import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.exception.DataBuildingException;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +12,12 @@ import java.util.List;
  * Interface for all data builder classes
  */
 public interface DataBuilder {
+
+	/**
+	 * Returns the data type of the Data object build by this builder.
+	 * @return The DataType.
+	 */
+	DataType getDataType();
 
     /**
      * Sets the value of the resulting Data Object
@@ -35,15 +41,21 @@ public interface DataBuilder {
      */
      Data buildNull();
 
-     default ImmutablePair<Boolean, List<Configuration>> estimateColumnConfiguration(String value) {
-         boolean success;
+	/**
+	 * Estimates the data type and configurations for the given value.
+	 * @param value The raw value.
+	 * @return A ColumnConfiguration containing the estimated values.
+	 */
+     default ColumnConfiguration estimateColumnConfiguration(final String value) {
+	     final var columnConfiguration = new ColumnConfiguration();
+	     columnConfiguration.setType(DataType.UNDEFINED);
+
 	     try {
 		     this.setValue(value, new ArrayList<>()).build();
-			 success = true;
-	     } catch (DataBuildingException e) {
-			 success = false;
+		     columnConfiguration.setType(getDataType());
+	     } catch (DataBuildingException ignored) {
 	     }
 
-         return ImmutablePair.of(success,new ArrayList<>());
+		 return columnConfiguration;
      }
 }

@@ -10,13 +10,11 @@ import de.kiaim.model.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.lang.Nullable;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -39,11 +37,30 @@ public class DateTimeData extends Data {
 	 * that were parsed for the column by the frontend
 	 */
 	public static class DateTimeDataBuilder implements DataBuilder {
+		/**
+		 * List of date time formats used for the estimation of the column configuration.
+		 */
+		private static final List<String> FORMATS = List.of(
+				"E, y-M-d 'at' h:m:s a z",
+				"E yyyy.MM.dd 'at' hh:mm:ss a zzz",
+				"yyyy-MM-dd hh:mm:ss",
+				"yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
+				"yyyy-MM-dd'T'HH:mm:ss"
+		);
+
 		private LocalDateTime value;
 
 		private DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 		private LocalDateTime minValue = LocalDateTime.MIN;
 		private LocalDateTime maxValue = LocalDateTime.MAX;
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public DataType getDataType() {
+			return DataType.DATE_TIME;
+		}
 
 		/**
 		 * Sets the value of the resulting DateTime Object
@@ -90,29 +107,27 @@ public class DateTimeData extends Data {
 			return new DateTimeData(null);
 		}
 
+		/**
+		 * Estimates the data type and the date time format configuration for the given value.
+		 * @param value The raw value.
+		 * @return The estimated ColumnConfiguration.
+		 */
 		@Override
-		public ImmutablePair<Boolean, List<Configuration>> estimateColumnConfiguration(final String value) {
-			final List<String> formats = List.of(
-					"E, y-M-d 'at' h:m:s a z",
-					"E yyyy.MM.dd 'at' hh:mm:ss a zzz",
-					"yyyy-MM-dd hh:mm:ss",
-					"yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
-					"yyyy-MM-dd'T'HH:mm:ss"
-			);
+		public ColumnConfiguration estimateColumnConfiguration(final String value) {
+			final var columnConfiguration = new ColumnConfiguration();
+			columnConfiguration.setType(DataType.UNDEFINED);
 
-			final List<Configuration> configurations = new ArrayList<>();
-			boolean isDateTime = false;
-			for (final String format : formats) {
+			for (final String format : FORMATS) {
 				try {
 					LocalDateTime.parse(value, DateTimeFormatter.ofPattern(format));
-					configurations.add(new DateTimeFormatConfiguration(format));
-					isDateTime = true;
+					columnConfiguration.addConfiguration(new DateTimeFormatConfiguration(format));
+					columnConfiguration.setType(DataType.DATE_TIME);
 					break;
 				} catch (final DateTimeParseException ignored) {
 				}
 			}
 
-			return ImmutablePair.of(isDateTime, configurations);
+			return columnConfiguration;
 		}
 
 		/**

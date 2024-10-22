@@ -38,6 +38,14 @@ public class IntegerData extends Data {
 		private int maxValue = Integer.MAX_VALUE;
 
 		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public DataType getDataType() {
+			return DataType.INTEGER;
+		}
+
+		/**
 		 * Sets the value of the resulting Integer Object
 		 * @param value The String value to be set
 		 * @param configuration The List of Configuration objects for the column

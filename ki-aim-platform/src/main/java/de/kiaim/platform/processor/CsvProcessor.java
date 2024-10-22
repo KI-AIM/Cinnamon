@@ -1,10 +1,9 @@
 package de.kiaim.platform.processor;
 
-import de.kiaim.model.configuration.data.Configuration;
+import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
-import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
@@ -14,7 +13,6 @@ import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.file.FileType;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -119,15 +117,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		}
 
 		List<String[]> validRows = getSubsetOfCompleteRows(recordIterator, 10);
-
-		final List<ImmutablePair<DataType, List<Configuration>>> estimatedDataTypes;
-		if (validRows.isEmpty()) {
-			estimatedDataTypes = getUndefinedDatatypesList(numberColumns);
-		} else {
-			estimatedDataTypes = estimateDatatypesForMultipleRows(validRows, algorithm);
-		}
-
-		return buildConfigurationForDataTypes(estimatedDataTypes, columnNames);
+		return estimateDataConfiguration(validRows, algorithm, numberColumns, columnNames);
 	}
 
 	/**

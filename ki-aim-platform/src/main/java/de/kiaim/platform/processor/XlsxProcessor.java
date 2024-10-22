@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.dhatim.fastexcel.reader.Cell;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
@@ -226,15 +225,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         }
 
         List<String[]> validRows = getSubsetOfCompleteRows(rows, 10);
-
-        final List<ImmutablePair<DataType, List<Configuration>>> estimatedDataTypes;
-        if (validRows.isEmpty()) {
-            estimatedDataTypes = getUndefinedDatatypesList(numberColumns);
-        } else {
-            estimatedDataTypes = estimateDatatypesForMultipleRows(validRows, algorithm);
-        }
-
-        return buildConfigurationForDataTypes(estimatedDataTypes, columnNames);
+        return estimateDataConfiguration(validRows, algorithm, numberColumns, columnNames);
     }
 
     private DataConfiguration getStringDataConfiguration(Sheet sheet) {

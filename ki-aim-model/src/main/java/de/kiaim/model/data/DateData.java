@@ -7,13 +7,11 @@ import de.kiaim.model.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.lang.Nullable;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -24,6 +22,9 @@ public class DateData extends Data {
 	@Nullable
 	private final LocalDate value;
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override public DataType getDataType() {
 		return DataType.DATE;
 	}
@@ -34,11 +35,35 @@ public class DateData extends Data {
 	 * that were parsed for the column by the frontend
 	 */
 	public static class DateDataBuilder implements DataBuilder {
+		/**
+		 * List of date formats used for the estimation of the column configuration.
+		 */
+		private static final List<String> FORMATS = List.of(
+				"EEEE, MMMM d, yyyy",
+				"yyyy-MM-dd",
+				"yyyy:MM:dd",
+				"yyyy.MM.dd",
+				"dd-MM-yyyy",
+				"dd:MM:yyyy",
+				"dd.MM.yyyy",
+				"MM-dd-yyyy",
+				"MM.dd.yyyy",
+				"MM:dd:yyyy"
+		);
+
 		private LocalDate value;
 
 		private DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
 		private LocalDate minValue = LocalDate.MIN;
 		private LocalDate maxValue = LocalDate.MAX;
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public DataType getDataType() {
+			return DataType.DATE;
+		}
 
 		/**
 		 * Sets the value of the resulting Date Object
@@ -85,34 +110,27 @@ public class DateData extends Data {
 			return new DateData(null);
 		}
 
+		/**
+		 * Estimates the data type and the date format configuration for the given value.
+		 * @param value The raw value.
+		 * @return The estimated ColumnConfiguration.
+		 */
 		@Override
-		public ImmutablePair<Boolean, List<Configuration>> estimateColumnConfiguration(final String value) {
-			final List<String> formats = List.of(
-					"EEEE, MMMM d, yyyy",
-					"yyyy-MM-dd",
-					"yyyy:MM:dd",
-					"yyyy.MM.dd",
-					"dd-MM-yyyy",
-					"dd:MM:yyyy",
-					"dd.MM.yyyy",
-					"MM-dd-yyyy",
-					"MM.dd.yyyy",
-					"MM:dd:yyyy"
-			);
+		public ColumnConfiguration estimateColumnConfiguration(final String value) {
+			final var columnConfiguration = new ColumnConfiguration();
+			columnConfiguration.setType(DataType.UNDEFINED);
 
-			final List<Configuration> configurations = new ArrayList<>();
-			boolean isDate = false;
-			for (final String format : formats) {
+			for (final String format : FORMATS) {
 				try {
 					LocalDate.parse(value, DateTimeFormatter.ofPattern(format));
-					configurations.add(new DateFormatConfiguration(format));
-					isDate = true;
+					columnConfiguration.addConfiguration(new DateFormatConfiguration(format));
+					columnConfiguration.setType(DataType.DATE);
 					break;
 				} catch (final DateTimeParseException ignored) {
 				}
 			}
 
-			return ImmutablePair.of(isDate, configurations);
+			return columnConfiguration;
 		}
 
 		/**

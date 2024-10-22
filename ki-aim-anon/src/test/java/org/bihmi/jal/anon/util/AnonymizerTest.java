@@ -43,7 +43,7 @@ public class AnonymizerTest {
 
     @Test
     void testAnonymizer_integerAnon() throws IOException {
-        String filename = ".\\data\\heart.csv";
+        String filename = "data/heart.csv";
         Data data = loadDataset(filename);
 
         AttributeConfig.AttributeConfigBuilder builder = AttributeConfig.builder()
@@ -66,7 +66,7 @@ public class AnonymizerTest {
 
     @Test
     void testAnonymizer_dateAnon() throws IOException {
-        String filename = ".\\data\\heart.csv";
+        String filename = "data/heart.csv";
         Data data = loadDataset(filename);
 
         AttributeConfig.AttributeConfigBuilder builder = AttributeConfig.builder()
@@ -105,7 +105,7 @@ public class AnonymizerTest {
         }
         return new ArrayList<>(uniqueValues);
     }
-
+//    TODO: required ? Did not pass
 //    @Test
 //    void createHierarchyEqualSizes() throws IOException {
 //

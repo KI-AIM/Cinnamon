@@ -1,8 +1,11 @@
 package de.kiaim.model.data;
 
+import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.Configuration;
 import de.kiaim.model.exception.DataBuildingException;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,4 +35,15 @@ public interface DataBuilder {
      */
      Data buildNull();
 
+     default ImmutablePair<Boolean, List<Configuration>> estimateColumnConfiguration(String value) {
+         boolean success;
+	     try {
+		     this.setValue(value, new ArrayList<>()).build();
+			 success = true;
+	     } catch (DataBuildingException e) {
+			 success = false;
+	     }
+
+         return ImmutablePair.of(success,new ArrayList<>());
+     }
 }

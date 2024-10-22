@@ -1,5 +1,6 @@
 package de.kiaim.model.data;
 
+import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.Configuration;
 import de.kiaim.model.configuration.data.DateTimeFormatConfiguration;
 import de.kiaim.model.configuration.data.RangeConfiguration;
@@ -9,10 +10,13 @@ import de.kiaim.model.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.lang.Nullable;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -84,6 +88,31 @@ public class DateTimeData extends Data {
 		@Override
 		public DateTimeData buildNull() {
 			return new DateTimeData(null);
+		}
+
+		@Override
+		public ImmutablePair<Boolean, List<Configuration>> estimateColumnConfiguration(final String value) {
+			final List<String> formats = List.of(
+					"E, y-M-d 'at' h:m:s a z",
+					"E yyyy.MM.dd 'at' hh:mm:ss a zzz",
+					"yyyy-MM-dd hh:mm:ss",
+					"yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
+					"yyyy-MM-dd'T'HH:mm:ss"
+			);
+
+			final List<Configuration> configurations = new ArrayList<>();
+			boolean isDateTime = false;
+			for (final String format : formats) {
+				try {
+					LocalDateTime.parse(value, DateTimeFormatter.ofPattern(format));
+					configurations.add(new DateTimeFormatConfiguration(format));
+					isDateTime = true;
+					break;
+				} catch (final DateTimeParseException ignored) {
+				}
+			}
+
+			return ImmutablePair.of(isDateTime, configurations);
 		}
 
 		/**

@@ -1,6 +1,7 @@
 package de.kiaim.platform.processor;
 
 import de.kiaim.model.configuration.data.ColumnConfiguration;
+import de.kiaim.model.configuration.data.Configuration;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataType;
@@ -11,6 +12,7 @@ import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.Pair;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import lombok.Getter;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
@@ -116,8 +118,8 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * @param row represented by an array with separated column values
      * @return List of DataTypes for every column
      */
-    public List<DataType> estimateDatatypesFromRow(String[] row) {
-        List<DataType> result = new ArrayList<>();
+    public List<ImmutablePair<DataType, List<Configuration>>> estimateDatatypesFromRow(String[] row) {
+        List<ImmutablePair<DataType, List<Configuration>>> result = new ArrayList<>();
 
         for (String column : row) {
             List<Pair<DataType, DataBuilder>> processingOrder = getProcessingOrder();
@@ -126,15 +128,16 @@ public abstract class CommonDataProcessor implements DataProcessor {
             for (int i = 0; i < processingOrder.size() && !foundMatchingDataType ; i++) {
                 Pair<DataType, DataBuilder> processor = processingOrder.get(i);
 
-                foundMatchingDataType = tryConvertingDataType(processor.element1(), column);
+                final var estimationResult = processor.element1().estimateColumnConfiguration(column);
 
-                if(foundMatchingDataType) {
-                    result.add(processor.element0());
+                if (estimationResult.left) {
+                    result.add(ImmutablePair.of(processor.element0(), estimationResult.right));
+                    foundMatchingDataType = true;
                 }
             }
             if (!foundMatchingDataType) {
                 // If no processor was able to transform value it is UNDEFINED
-                result.add(DataType.UNDEFINED);
+                result.add(ImmutablePair.of(DataType.UNDEFINED, new ArrayList<>()));
             }
         }
         return result;
@@ -152,9 +155,11 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * @param algorithm Algorithm how to select the datatype of a column.
      * @return List of datatype estimations
      */
-    public List<DataType> estimateDatatypesForMultipleRows(List<String[]> rows,
-                                                           final DatatypeEstimationAlgorithm algorithm) {
-        List<List<DataType>> datatypesForRows = new ArrayList<>();
+    public List<ImmutablePair<DataType, List<Configuration>>> estimateDatatypesForMultipleRows(
+            List<String[]> rows,
+            final DatatypeEstimationAlgorithm algorithm
+    ) {
+        List<List<ImmutablePair<DataType, List<Configuration>>>> datatypesForRows = new ArrayList<>();
         List<DataType> resultList = new ArrayList<>();
 
         for (String[] row : rows) {
@@ -170,7 +175,75 @@ public abstract class CommonDataProcessor implements DataProcessor {
             }
         }
 
-        return resultList;
+        final List<ImmutablePair<DataType, List<Configuration>>> result = new ArrayList<>();
+        for (int columnIndex = 0; columnIndex < resultList.size(); columnIndex++) {
+            final var configs = getMostEstimatedConfiguration(columnIndex, resultList.get(columnIndex), datatypesForRows);
+            result.add(ImmutablePair.of(resultList.get(columnIndex), configs));
+        }
+
+        return result;
+    }
+
+    private List<Configuration> getMostEstimatedConfiguration(
+            final int columnIndex,
+            final DataType estimatedDataType,
+            final List<List<ImmutablePair<DataType, List<Configuration>>>> estimationResult
+    ) {
+        Map<Class<?>, Map<Configuration, Integer>> resultMap = new HashMap<>();
+
+        // Iterate over all rows
+        for (final List<ImmutablePair<DataType, List<Configuration>>> rowEstimationResult : estimationResult) {
+            // Get the estimation of the given column in the current row
+            final var columnEstimationResult = rowEstimationResult.get(columnIndex);
+
+            // If the data type is different, the configurations can be ignored
+            if (columnEstimationResult.left != estimatedDataType) {
+                continue;
+            }
+
+            for (final var config : columnEstimationResult.right) {
+                if (!resultMap.containsKey(config.getClass())) {
+                    resultMap.put(config.getClass(), new HashMap<>());
+                }
+
+                var map = resultMap.get(config.getClass());
+                if (map.isEmpty()) {
+                    map.put(config, 1);
+                } else {
+                    var isPresent = false;
+                    for (final var existingConfig : map.entrySet()) {
+                        if (existingConfig.getKey().equals(config)) {
+                            existingConfig.setValue(existingConfig.getValue() + 1);
+                            isPresent = true;
+                            break;
+                        }
+                    }
+                    if (!isPresent) {
+                        map.put(config, 1);
+                    }
+                }
+            }
+
+        }
+
+        final List<Configuration> result = new ArrayList<>();
+        for (final var configs : resultMap.values()) {
+            Configuration mostConfig = null;
+            Integer mostConfigCount = 0;
+
+            for (final var entry : configs.entrySet()) {
+                if (entry.getValue() > mostConfigCount) {
+                    mostConfig = entry.getKey();
+                    mostConfigCount = entry.getValue();
+                }
+            }
+
+            if (mostConfig != null) {
+                result.add(mostConfig);
+            }
+        }
+
+        return result;
     }
 
     public List<String> normalizeColumnNames(final String[] columnNames) {
@@ -183,8 +256,9 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * @param datatypesForRows two-dimensional matrix; First dimension are the rows, second dimension the columns
      * @return A List of Count-Maps. For every Column a new Map entry is created
      */
-    private List<Map<DataType, Integer>> countEstimatedDatatypesForRows(List<List<DataType>> datatypesForRows) {
-        List<List<DataType>> transposedList = transpose(datatypesForRows);
+    private List<Map<DataType, Integer>> countEstimatedDatatypesForRows(
+            List<List<ImmutablePair<DataType, List<Configuration>>>> datatypesForRows) {
+        List<List<DataType>> transposedList = extractDataTypes(datatypesForRows);
         List<Map<DataType, Integer>> countedMapsForColumns = new ArrayList<>();
 
         for (List<DataType> columnResults : transposedList) {
@@ -275,7 +349,17 @@ public abstract class CommonDataProcessor implements DataProcessor {
                 .collect(Collectors.toList());
     }
 
-
+    public static List<List<DataType>> extractDataTypes(List<List<ImmutablePair<DataType, List<Configuration>>>> list) {
+        final int N = list.stream().mapToInt(List::size).max().orElse(-1);
+        List<Iterator<ImmutablePair<DataType, List<Configuration>>>> iterList = list.stream().map(List::iterator).toList();
+        return IntStream.range(0, N)
+                        .mapToObj(n -> iterList.stream()
+                                               .filter(Iterator::hasNext)
+                                               .map(Iterator::next)
+                                               .map(element -> element.left)
+                                               .collect(Collectors.toList()))
+                        .collect(Collectors.toList());
+    }
 
     /**
      * Method that tries to convert a value for a given DataBuilder
@@ -287,7 +371,12 @@ public abstract class CommonDataProcessor implements DataProcessor {
             DataBuilder builder,
             String column
     ) {
+        final var estimationResult = builder.estimateColumnConfiguration(column);
+
+
         try {
+
+
             builder.setValue(column, new ArrayList<>()).build();
             return true;
         } catch (Exception e) {
@@ -319,10 +408,10 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * @param numberOfColumns depicting the length of the list
      * @return List with DataTypes
      */
-    public List<DataType> getUndefinedDatatypesList(int numberOfColumns) {
-        List<DataType> result = new ArrayList<>();
+    public List<ImmutablePair<DataType, List<Configuration>>> getUndefinedDatatypesList(int numberOfColumns) {
+        List<ImmutablePair<DataType, List<Configuration>>> result = new ArrayList<>();
         for (int i = 0; i < numberOfColumns; i++) {
-            result.add(DataType.UNDEFINED);
+            result.add(ImmutablePair.of(DataType.UNDEFINED, new ArrayList<>()));
         }
 
         return result;
@@ -337,16 +426,20 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * @param columnNames list containing the column names
      * @return new DataConfiguration object
      */
-    public DataConfiguration buildConfigurationForDataTypes(List<DataType> dataTypes, List<String> columnNames) {
+    public DataConfiguration buildConfigurationForDataTypes(
+            final List<ImmutablePair<DataType, List<Configuration>>> dataTypes,
+            List<String> columnNames
+    ) {
         DataConfiguration resultingConfiguration = new DataConfiguration();
         List<ColumnConfiguration> resultingColumnConfigurations = new ArrayList<>();
 
         for (int i = 0; i < dataTypes.size(); i++) {
-            DataType type = dataTypes.get(i);
+            DataType type = dataTypes.get(i).getLeft();
             String columnName = columnNames.get(i);
+            List<Configuration> configurations = dataTypes.get(i).getRight();
 
             ColumnConfiguration newColumnConfiguration = new ColumnConfiguration(
-                    i, columnName, type, type.getDefaultScale(), new ArrayList<>()
+                    i, columnName, type, type.getDefaultScale(), configurations
             );
             resultingColumnConfigurations.add(newColumnConfiguration);
         }

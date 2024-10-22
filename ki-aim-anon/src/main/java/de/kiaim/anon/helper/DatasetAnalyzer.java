@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * This class is to generate the JAL anonymization attributes parameters that need to be
  * generated from the Dataset itself.
- * TODO : moove to DataSet statistics of KI-AIMPLATFORM module ?
+ * TODO : moove to DataSet statistics of KI-AIM PLATFORM module ?
  */
 public class DatasetAnalyzer {
 

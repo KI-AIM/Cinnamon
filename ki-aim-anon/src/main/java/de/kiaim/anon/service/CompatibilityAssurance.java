@@ -1,7 +1,6 @@
 package de.kiaim.anon.service;
 
 import de.kiaim.anon.exception.AttributeMismatchException;
-import de.kiaim.anon.exception.ColumnNumberMismatchException;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAttributeConfig;
 import de.kiaim.model.configuration.data.ColumnConfiguration;
@@ -13,7 +12,7 @@ import java.util.List;
 
 /**
  * Class for compatibility assurance.
- * Check that every column of the DataSet have a matching configuration.
+ * Check that every column of the DataSet has a matching anonymization configuration.
 */
 public class CompatibilityAssurance {
 
@@ -58,36 +57,7 @@ public class CompatibilityAssurance {
             }
         }
     }
-//
-//    /**
-//     * Check the compatibility between a dataset configuration and rows.
-//     * @param dataSet The DataSet to check.
-//     * @throws IllegalArgumentException If there is a mismatch in the number of data elements or data types.
-//     */
-//    public static void checkDataSetCompatibility(DataSet dataSet) {
-//        List<ColumnConfiguration> configurations = dataSet.getDataConfiguration().getConfigurations();
-//        int expectedNumberOfColumns = configurations.size();
-//
-//        for (DataRow row : dataSet.getDataRows()) {
-//            List<Data> rowData = row.getData();
-//
-//            // Check that the number of data items in the row corresponds to the number of columns in configuration
-//            if (rowData.size() != expectedNumberOfColumns) {
-//                throw new IllegalArgumentException("Mismatch in number of columns. Expected: " + expectedNumberOfColumns + ", Found: " + rowData.size());
-//            }
-//
-//            // Check the type of each data item against its column configuration
-//            for (int i = 0; i < rowData.size(); i++) {
-//                Data data = rowData.get(i);
-//                DataType expectedDataType = configurations.get(i).getType();
-//                // TODO : handle null data case
-//                if (!isDataTypeCompatible(data, expectedDataType)) {
-//                    throw new IllegalArgumentException("Data type mismatch at column " + i + ". Expected: " + expectedDataType + ", Found: " + data.getClass().getSimpleName());
-//                }
-//            }
-//        }
-//    }
-//
+
     /**
      * Check the compatibility between a dataset configuration and rows.
      * Used to check the anonymized DataSet (anonymization result).

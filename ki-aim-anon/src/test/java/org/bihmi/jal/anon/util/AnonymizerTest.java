@@ -1,6 +1,5 @@
 package org.bihmi.jal.anon.util;
 
-import de.kiaim.anon.converter.HierarchyConverter;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;

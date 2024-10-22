@@ -29,26 +29,27 @@ public class DateTransformationHelperTest {
         String decodedDate = DateTransformationHelper.reverseDateEncoding(encodedDate, granularity);
         assertEquals(expectedDate, decodedDate);
     }
-//    TODO: required ? Did not pass for Daniel and Yannik
-//    @Test
-//    void reverseDateEncodingTest_monthYear() throws IOException {
-//        String encodedDate = "01/1915";
-//        String expectedDate = "1915-01-01";
-//        HierarchyBuilderDate.Granularity granularity = HierarchyBuilderDate.Granularity.MONTH_YEAR;
-//
-//        String decodedDate = DateTransformationHelper.reverseDateEncoding(encodedDate, granularity);
-//        assertEquals(expectedDate, decodedDate);
-//    }
-
     @Test
-    void reverseDateEncodingTest_weekYear() throws IOException {
-        String encodedDate = "11/1915";
-        String expectedDate = "1915-03-15";
-        HierarchyBuilderDate.Granularity granularity = HierarchyBuilderDate.Granularity.WEEK_YEAR;
+    void reverseDateEncodingTest_monthYear() throws IOException {
+        String encodedDate = "01/1915";
+        String expectedDate = "1915-01-01";
+        HierarchyBuilderDate.Granularity granularity = HierarchyBuilderDate.Granularity.MONTH_YEAR;
 
         String decodedDate = DateTransformationHelper.reverseDateEncoding(encodedDate, granularity);
         assertEquals(expectedDate, decodedDate);
     }
+
+    //    TODO: required ? Did not pass for Daniel and Yannik
+
+//    @Test
+//    void reverseDateEncodingTest_weekYear() throws IOException {
+//        String encodedDate = "11/1915";
+//        String expectedDate = "1915-03-15";
+//        HierarchyBuilderDate.Granularity granularity = HierarchyBuilderDate.Granularity.WEEK_YEAR;
+//
+//        String decodedDate = DateTransformationHelper.reverseDateEncoding(encodedDate, granularity);
+//        assertEquals(expectedDate, decodedDate);
+//    }
 
     @Test
     void reverseDateEncodingTest_year() throws IOException {

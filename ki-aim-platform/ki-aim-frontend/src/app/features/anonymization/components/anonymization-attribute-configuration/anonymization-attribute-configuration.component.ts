@@ -114,6 +114,8 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
             newRowConfiguration.scale = selectedRow.scale;
 
             this.attributeConfigurationService.addRowConfiguration(newRowConfiguration);
+
+            this.attributeDropdown.value = null;
         }
     }
 

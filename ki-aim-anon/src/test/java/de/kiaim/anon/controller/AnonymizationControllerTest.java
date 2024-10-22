@@ -158,6 +158,6 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
         // Optionally, check file content
         String fileContentAsString = new String(fileContent);
-        System.out.println("Config File Content: " + fileContentAsString.substring(0, 300));
+        System.out.println("Config File Content: " + fileContentAsString.substring(0, 200));
     }
 }

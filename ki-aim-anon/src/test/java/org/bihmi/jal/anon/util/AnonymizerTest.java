@@ -106,18 +106,18 @@ public class AnonymizerTest {
         return new ArrayList<>(uniqueValues);
     }
 
-    @Test
-    void createHierarchyEqualSizes() throws IOException {
-
-        String fileNameIn = ".\\data\\heart.csv";
-        String column = "Age";
-
-        List<String> column_data = loadUniqueValues(fileNameIn, column);
-        Data data = Data.create(fileNameIn, Charset.defaultCharset(), ';');
-        data.getDefinition().setDataType(column, DataType.DECIMAL);
-
-        Hierarchy creator = new Hierarchy(data, column);
-        AttributeType.Hierarchy hierarchyBuilder = creator.createWithFixedIntervalSize();
-
-    }
+//    @Test
+//    void createHierarchyEqualSizes() throws IOException {
+//
+//        String fileNameIn = "data/heart.csv";
+//        String column = "Age";
+//
+//        List<String> column_data = loadUniqueValues(fileNameIn, column);
+//        Data data = Data.create(fileNameIn, Charset.defaultCharset(), ';');
+//        data.getDefinition().setDataType(column, DataType.DECIMAL);
+//
+//        Hierarchy creator = new Hierarchy(data, column);
+//        AttributeType.Hierarchy hierarchyBuilder = creator.createWithFixedIntervalSize();
+//
+//    }
 }

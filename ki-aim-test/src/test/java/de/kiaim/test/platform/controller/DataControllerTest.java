@@ -482,7 +482,8 @@ class DataControllerTest extends ControllerTest {
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsJson(wrapInQuotes(defaultNullEncoding),
+		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsJson(true,
+		                                                                           wrapInQuotes(defaultNullEncoding),
 		                                                                           wrapInQuotes(formatErrorEncoding))));
 	}
 

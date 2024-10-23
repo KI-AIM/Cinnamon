@@ -147,8 +147,8 @@ public class CSVProcessingTests {
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                               DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                       DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = removeNames(getDataConfiguration());
         assertEquals(expectedConfiguration, actualConfiguration);
@@ -168,8 +168,8 @@ public class CSVProcessingTests {
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                               DatatypeEstimationAlgorithm.MOST_GENERAL);
+        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                       DatatypeEstimationAlgorithm.MOST_GENERAL);
 
         DataConfiguration expectedConfiguration = removeNames(getDataConfiguration());
         expectedConfiguration.getConfigurations().get(0).setType(DataType.STRING);
@@ -191,8 +191,8 @@ public class CSVProcessingTests {
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                               DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                       DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
 

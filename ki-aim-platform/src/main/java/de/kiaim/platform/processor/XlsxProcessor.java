@@ -196,8 +196,8 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      * {@inheritDoc}
      */
     @Override
-    public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration,
-                                               final DatatypeEstimationAlgorithm algorithm) {
+    public DataConfiguration estimateDataConfiguration(InputStream data, FileConfiguration fileConfiguration,
+                                                       final DatatypeEstimationAlgorithm algorithm) {
         final XlsxFileConfiguration xlsxFileConfiguration = fileConfiguration.getXlsxFileConfiguration();
         List<List<String>> rows;
 

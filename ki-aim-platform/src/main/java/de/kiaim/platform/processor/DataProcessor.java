@@ -41,13 +41,11 @@ public interface DataProcessor {
     /**
      * Receives data from frontend, converts it to
      * the corresponding filetype and tries to estimate
-     * the datatypes of each column. The result will be
-     * returned in a partial DataConfiguration object
-     * where only the DataTypes are specified
+     * the datatypes and datatype dependent configurations of each column.
      * @param data the raw data InputStream
      * @param fileConfiguration Configuration describing the format of the data.
      * @return DataConfiguration, only DataConfiguration populated
      */
-    DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration, DatatypeEstimationAlgorithm algorithm);
+    DataConfiguration estimateDataConfiguration(InputStream data, FileConfiguration fileConfiguration, DatatypeEstimationAlgorithm algorithm);
 
 }

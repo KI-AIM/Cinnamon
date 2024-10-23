@@ -132,8 +132,8 @@ public class XLSXProcessingTests {
 
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                                DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -151,8 +151,8 @@ public class XLSXProcessingTests {
 
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                                DatatypeEstimationAlgorithm.MOST_GENERAL);
+        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_GENERAL);
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -171,8 +171,8 @@ public class XLSXProcessingTests {
 
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                                DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 

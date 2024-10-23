@@ -38,8 +38,8 @@ public class FhirProcessor implements DataProcessor {
      * {@inheritDoc}
      */
     @Override
-    public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration,
-                                               final DatatypeEstimationAlgorithm algorithm) {
+    public DataConfiguration estimateDataConfiguration(InputStream data, FileConfiguration fileConfiguration,
+                                                       final DatatypeEstimationAlgorithm algorithm) {
         return null;
     }
 }

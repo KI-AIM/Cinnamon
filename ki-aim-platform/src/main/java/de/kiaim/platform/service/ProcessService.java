@@ -255,7 +255,7 @@ public class ProcessService {
 					fileConfiguration.setFileType(FileType.CSV);
 					fileConfiguration.setCsvFileConfiguration(new CsvFileConfiguration());
 
-					final DataConfiguration resultDataConfiguration = csvProcessor.estimateDatatypes(
+					final DataConfiguration resultDataConfiguration = csvProcessor.estimateDataConfiguration(
 							value.getInputStream(), fileConfiguration, DatatypeEstimationAlgorithm.MOST_GENERAL);
 					final Step step = process.getStep();
 					final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),

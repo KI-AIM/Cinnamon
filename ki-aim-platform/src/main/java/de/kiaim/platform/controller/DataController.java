@@ -95,11 +95,11 @@ public class DataController {
 		this.userService = userService;
 	}
 
-	@Operation(summary = "Estimates the data types of a given data set.",
-	           description = "Estimates the data types of a given data set.")
+	@Operation(summary = "Estimates the data configuration of a given data set.",
+	           description = "Estimates the data configuration of a given data set.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "Successfully estimated the data types. Returns the estimated data types.",
+			             description = "Successfully estimated the data configuration. Returns the estimated data configuration.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = DataConfiguration.class),
 			                                 examples = @ExampleObject(DATA_CONFIGURATION_EXAMPLE)),
@@ -118,14 +118,14 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/datatypes",
+	@PostMapping(value = "/estimation",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> estimateDatatypes(
-			@ParameterObject @Valid final EstimateDataTypesRequest requestData,
+			@ParameterObject @Valid final EstimateDataConfigurationRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.DATA_TYPES, requestData.getFile(), requestData.getFileConfiguration(), null,
+		return handleRequest(RequestType.ESTIMATE, requestData.getFile(), requestData.getFileConfiguration(), null,
 		                     null, null, user);
 	}
 
@@ -516,7 +516,7 @@ public class DataController {
 	 * Handles a request of the given type.
 	 * For each RequestType, different attributes must not be null:
 	 * <ul>
-	 *     <li>{@link RequestType#DATA_TYPES}: file, fileConfiguration</li>
+	 *     <li>{@link RequestType#ESTIMATE}: file, fileConfiguration</li>
 	 *     <li>{@link RequestType#DELETE}: requestUser</li>
 	 *     <li>{@link RequestType#INFO}: requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_CONFIG}: stepName, requestUser</li>
@@ -570,10 +570,10 @@ public class DataController {
 				statusService.updateCurrentStep(projectEntity, Step.ANONYMIZATION);
 				result = null;
 			}
-			case DATA_TYPES -> {
+			case ESTIMATE -> {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
 				final InputStream inputStream = getInputStream(file);
-				result = dataProcessor.estimateDatatypes(inputStream, fileConfiguration, DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+				result = dataProcessor.estimateDataConfiguration(inputStream, fileConfiguration, DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 				databaseService.storeDataConfiguration((DataConfiguration) result, projectEntity, Step.VALIDATION);
 			}
 			case DELETE -> {
@@ -655,7 +655,7 @@ public class DataController {
 
 	private enum RequestType {
 		CONFIRM_DATE_SET,
-		DATA_TYPES,
+		ESTIMATE,
 		DELETE,
 		INFO,
 		LOAD_CONFIG,

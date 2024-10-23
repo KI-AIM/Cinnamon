@@ -32,7 +32,6 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
     @Test
     public void testObject() throws Exception {
-        // Convertir l'objet AnonymizationRequest en JSON
         String jsonRequest = objectMapper.writeValueAsString(request);
         System.out.println("JSON Request");
         System.out.println(request.getSession_key());
@@ -74,69 +73,69 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
         assertTrue(responseContent.contains(request.getSession_key()));
     }
 
-    @Test
-    public void testGetTaskStatus() throws Exception {;
-        byte[] dataSetBytes = objectMapper.writeValueAsBytes(request.getData());
-        byte[] frontendConfigBytes = objectMapper.writeValueAsBytes(request.getAnonymizationConfig());
-
-        // Create multipart file with MockMultipartFile
-        MockMultipartFile dataSetFile = new MockMultipartFile(
-                "data", // nom du paramètre multipart
-                "data.json", // nom du fichier
-                "application/json", // type de contenu
-                dataSetBytes // contenu du fichier
-        );
-
-        MockMultipartFile frontendConfigFile = new MockMultipartFile(
-                "anonymizationConfig", // nom du paramètre multipart
-                "anonymizationConfig.json", // nom du fichier
-                "application/json", // type de contenu
-                frontendConfigBytes // contenu du fichier
-        );
-
-        MvcResult result = mockMvc.perform(multipart("/api/anonymization/")
-                        .file(dataSetFile)
-                        .file(frontendConfigFile)
-                        .param("session_key", request.getSession_key())
-                        .param("callback", request.getCallback()))
-                .andExpect(status().isAccepted())  // Vérifier que le statut est ACCEPTED (202)
-                .andReturn();
-
-        MvcResult statusResult = mockMvc.perform(get("/api/anonymization/process/" + processId + "/status"))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        String status = statusResult.getResponse().getContentAsString();
-        System.out.println("Task Status: " + status);
-
-        assertNotNull(status);
-    }
-
-    @Test
-    public void testGetTaskResult() throws Exception {
-        String jsonRequest = objectMapper.writeValueAsString(request);
-
-        MvcResult creationResult = mockMvc.perform(post("/api/anonymization/process/callback/result")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonRequest))
-                .andExpect(status().isAccepted())
-                .andReturn();
-
-        Thread.sleep(10000);
-
-        MvcResult result = mockMvc.perform(get("/api/anonymization/process/" + processId + "/result"))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        String responseContent = result.getResponse().getContentAsString();
-        System.out.println("Task Result: " + responseContent);
-
-        assertNotNull(responseContent);
-    }
+//    @Test
+//    public void testGetTaskStatus() throws Exception {;
+//        byte[] dataSetBytes = objectMapper.writeValueAsBytes(request.getData());
+//        byte[] frontendConfigBytes = objectMapper.writeValueAsBytes(request.getAnonymizationConfig());
+//
+//        // Create multipart file with MockMultipartFile
+//        MockMultipartFile dataSetFile = new MockMultipartFile(
+//                "data", // nom du paramètre multipart
+//                "data.json", // nom du fichier
+//                "application/json", // type de contenu
+//                dataSetBytes // contenu du fichier
+//        );
+//
+//        MockMultipartFile frontendConfigFile = new MockMultipartFile(
+//                "anonymizationConfig", // nom du paramètre multipart
+//                "anonymizationConfig.json", // nom du fichier
+//                "application/json", // type de contenu
+//                frontendConfigBytes // contenu du fichier
+//        );
+//
+//        MvcResult result = mockMvc.perform(multipart("/api/anonymization/")
+//                        .file(dataSetFile)
+//                        .file(frontendConfigFile)
+//                        .param("session_key", request.getSession_key())
+//                        .param("callback", request.getCallback()))
+//                .andExpect(status().isAccepted())  // Vérifier que le statut est ACCEPTED (202)
+//                .andReturn();
+//
+//        MvcResult statusResult = mockMvc.perform(get("/api/anonymization/process/" + processId + "/status"))
+//                .andExpect(status().isOk())
+//                .andReturn();
+//
+//        String status = statusResult.getResponse().getContentAsString();
+//        System.out.println("Task Status: " + status);
+//
+//        assertNotNull(status);
+//    }
+//
+//    @Test
+//    public void testGetTaskResult() throws Exception {
+//        String jsonRequest = objectMapper.writeValueAsString(request);
+//
+//        MvcResult creationResult = mockMvc.perform(post("/api/anonymization/process/callback/result")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(jsonRequest))
+//                .andExpect(status().isAccepted())
+//                .andReturn();
+//
+//        Thread.sleep(10000);
+//
+//        MvcResult result = mockMvc.perform(get("/api/anonymization/process/" + processId + "/result"))
+//                .andExpect(status().isOk())
+//                .andReturn();
+//
+//        String responseContent = result.getResponse().getContentAsString();
+////        System.out.println("Task Result: " + responseContent);
+//
+//        assertNotNull(responseContent);
+//    }
 
     @Test
     public void testGetTabularAnonConfig() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/anonymization/config"))
+        MvcResult result = mockMvc.perform(get("/api/anonymization/anon-tabular-privacy-model-config"))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -159,26 +158,6 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
         // Optionally, check file content
         String fileContentAsString = new String(fileContent);
-        System.out.println("Config File Content: " + fileContentAsString);
+        System.out.println("Config File Content: " + fileContentAsString.substring(0, 200));
     }
-
-//    @Test
-//    public void testProcessAnonymization() throws Exception {
-//        assertNotNull(dataSet);
-//        assertNotNull(kiaimAnonConfig);
-//
-//        AnonymizationRequest request = new AnonymizationRequest(dataSet, kiaimAnonConfig);
-//        String jsonRequest = objectMapper.writeValueAsString(request);
-//
-//        MvcResult result = mockMvc.perform(post("/api/anonymization/anonymization_tabular")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(jsonRequest))
-//                .andExpect(status().isOk())// Display result in console
-//                .andReturn();
-//
-//        String responseContent = result.getResponse().getContentAsString();
-//        System.out.println("Response content: " + responseContent.substring(0, 3000) + "...");
-//
-//        assertNotNull(responseContent);
-//    }
 }

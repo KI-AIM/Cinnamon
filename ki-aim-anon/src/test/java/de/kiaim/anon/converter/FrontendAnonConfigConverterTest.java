@@ -24,7 +24,7 @@ public class FrontendAnonConfigConverterTest extends AbstractAnonymizationTests 
         System.out.println("Anonymization Config");
         System.out.println(anonymizationConfig);
 
-//         Check convertion
+//         Check conversion
         assertNotNull(anonymizationConfig);
         assertEquals(frontendAnonConfig.getAnonymization().getPrivacyModels().get(0).getModelConfiguration().getSuppressionLimit(), String.valueOf(anonymizationConfig.getSuppressionLimit()));
 
@@ -40,7 +40,7 @@ public class FrontendAnonConfigConverterTest extends AbstractAnonymizationTests 
             assertEquals(frontendAttribute.getDateFormat(), attributeConfig.getDateFormat());
         }
 
-        // Vérifier la conversion de PrivacyModel
+        // Check privacy model conversion
         assertNotNull(anonymizationConfig.getPrivacyModelList());
         assertFalse(anonymizationConfig.getPrivacyModelList().isEmpty());
 

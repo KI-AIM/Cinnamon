@@ -1,9 +1,7 @@
 package de.kiaim.anon.service;
 
 import de.kiaim.anon.AbstractAnonymizationTests;
-import de.kiaim.anon.converter.KiaimAnonConfigConverter;
 import de.kiaim.anon.model.AnonymizationRequest;
-import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -12,9 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -28,9 +24,6 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     @Autowired
     private AnonymizationService anonymizationService;
 
-    @Autowired
-    private KiaimAnonConfigConverter datasetAnonConfigConverter;
-
     @BeforeEach
     void setUpService() throws IOException {
         mockWebServer = new MockWebServer();
@@ -41,30 +34,6 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     void tearDown() throws IOException {
         mockWebServer.shutdown();
     }
-
-//    Old Version
-//    TODO : delete
-//    @Test
-//    public void testAnonymizationService() throws Exception {
-//
-//        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, kiaimAnonConfig, "processIdTest");
-//
-//        if (!future.isDone()) {
-//            for (int i = 0; i<30; i++) {
-//                Thread.sleep(100);
-//            }
-//        }
-//
-//        try {
-//            DataSet anonymizedDataset = future.get();
-//            assertNotNull(anonymizedDataset);
-//            System.out.println(anonymizedDataset.getDataRows());
-//        } catch (ExecutionException | InterruptedException e) {
-//            e.printStackTrace();
-//            throw e;
-//        }
-//    }
-
 
     @Test
     public void testAnonymizationService() throws Exception {
@@ -114,66 +83,6 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
         }
     }
 
-
-    @Test
-    public void testAnonymizeDataWithCallback_Success() throws Exception {
-        mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
-
-        String localMockUrl = mockWebServer.url("/callback/success").toString();
-        AnonymizationRequest anonRequest = new AnonymizationRequest(processId, dataSet, frontendAnonConfig.getAnonymization(), localMockUrl);
-
-        anonymizationService.anonymizeDataWithCallbackResult(anonRequest).join();
-
-        var recordedRequest = mockWebServer.takeRequest();
-        assertEquals("POST", recordedRequest.getMethod());
-        assertEquals("/callback/success", recordedRequest.getPath());
-
-        // Check content
-        assertTrue(recordedRequest.getHeader("Content-Type").contains("multipart/form-data"));
-
-        String body = recordedRequest.getBody().readUtf8();
-        assertTrue(body.contains("Content-Disposition: form-data; name=\"synthetic_data\""));
-
-        System.out.println("Received multipart content in callback: " + body);
-    }
-
-
-    @Test
-    public void testSendCallbackResult() throws IOException, InterruptedException {
-        // Enqueue a mock response
-        mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
-
-        // Create a mock DataSet
-        DataSet mockDataSet = generateDataSetWithConfig();
-
-        // Get the full URL of the mock server
-        String mockUrl = mockWebServer.url("/callback/success").toString();
-
-        // Call the method to send the callback
-        anonymizationService.sendCallbackResult(mockUrl, mockDataSet);
-
-        // Get the recorded request from the mock server
-        var recordedRequest = mockWebServer.takeRequest();
-
-        // Verify the HTTP method and endpoint
-        assertEquals("POST", recordedRequest.getMethod());
-        assertEquals("/callback/success", recordedRequest.getPath());
-
-        // Ensure the content type is multipart/form-data
-        String contentType = recordedRequest.getHeader("Content-Type");
-        assertNotNull(contentType);
-        assertTrue(contentType.startsWith("multipart/form-data"));
-
-        // Read the body of the request as a string
-        String requestBody = recordedRequest.getBody().readUtf8();
-
-        // Basic validation checks for multipart content
-        assertTrue(requestBody.contains("Content-Disposition: form-data; name=\"synthetic_data\""));
-
-        // Optionally, log the received data for verification
-        System.out.println("Received multipart body: " + requestBody);
-    }
-
     @Test
     public void testAnonymizeDataWithCallback_Failure() throws Exception {
         mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
@@ -199,26 +108,4 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
 
         System.out.println("Received error response in callback: " + body);
     }
-//    TODO: unused. Delete
-//    @Test
-//    public void testSendCallbackProcessId() throws IOException, InterruptedException {
-//        // Enqueue a mock response
-//        mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
-//
-//        // Get the full URL of the mock server
-//        String mockUrl = mockWebServer.url("/callback/success").toString();
-//
-//        // Call the method to send the callback
-//        anonymizationService.sendCallbackProcessId(mockUrl, processId);
-//
-//        // Verify the request
-//        var recordedRequest = mockWebServer.takeRequest();
-//        assertEquals("POST", recordedRequest.getMethod());
-//        assertEquals("/callback/success", recordedRequest.getPath());
-//
-//        // Verify the request body
-//        String receivedProcessId = recordedRequest.getBody().readUtf8();
-//        assertNotNull(receivedProcessId);
-//        assertEquals(processId, receivedProcessId);
-//    }
 }

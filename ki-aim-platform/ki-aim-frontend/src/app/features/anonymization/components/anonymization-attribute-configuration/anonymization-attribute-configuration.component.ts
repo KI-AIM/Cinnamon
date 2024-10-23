@@ -112,8 +112,11 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
             newRowConfiguration.name = selectedRow.name;
             newRowConfiguration.dataType = selectedRow.type;
             newRowConfiguration.scale = selectedRow.scale;
+            newRowConfiguration.intervalSize = 10;
 
             this.attributeConfigurationService.addRowConfiguration(newRowConfiguration);
+
+            this.attributeDropdown.value = null;
         }
     }
 
@@ -127,6 +130,7 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
                 newRowConfiguration.name = selectedRow.name;
                 newRowConfiguration.dataType = selectedRow.type;
                 newRowConfiguration.scale = selectedRow.scale;
+                newRowConfiguration.intervalSize = 10;
 
                 this.attributeConfigurationService.addRowConfiguration(newRowConfiguration);
             }

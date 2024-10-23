@@ -37,6 +37,14 @@ public class DecimalData extends Data {
 		private float maxValue = Float.MAX_VALUE;
 
 		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public DataType getDataType() {
+			return DataType.DECIMAL;
+		}
+
+		/**
 		 * Sets the value of the resulting Decimal Object
 		 * @param value The String value to be set
 		 * @param configuration The List of Configuration objects for the column

@@ -3,6 +3,7 @@ package de.kiaim.test.platform.processor;
 
 import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.DataConfiguration;
+import de.kiaim.model.configuration.data.DateFormatConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
@@ -27,8 +28,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = PlatformApplication.class)
@@ -132,8 +132,8 @@ public class XLSXProcessingTests {
 
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                                DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -151,8 +151,8 @@ public class XLSXProcessingTests {
 
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                                DatatypeEstimationAlgorithm.MOST_GENERAL);
+        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_GENERAL);
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -171,8 +171,8 @@ public class XLSXProcessingTests {
 
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                                DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -180,6 +180,7 @@ public class XLSXProcessingTests {
         List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
 
         assertEquals(expectedDatatypes, actualDatatypes);
+        assertEquals(expectedConfiguration, actualConfiguration);
     }
 
 
@@ -196,7 +197,7 @@ public class XLSXProcessingTests {
         );
 
         ColumnConfiguration column3 = new ColumnConfiguration(
-            2, "birthdate", DataType.DATE, DataScale.DATE, new ArrayList<>()
+            2, "birthdate", DataType.DATE, DataScale.DATE, List.of(new DateFormatConfiguration("yyyy-MM-dd"))
         );
 
         ColumnConfiguration column4 = new ColumnConfiguration(

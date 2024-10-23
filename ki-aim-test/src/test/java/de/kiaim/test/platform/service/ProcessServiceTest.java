@@ -31,8 +31,7 @@ import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 public class ProcessServiceTest extends ContextRequiredTest {
@@ -138,8 +137,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 			processService.getStatus(project, step);
 		});
 
-		assertEquals("Failed to fetch the status! Connection refused: getsockopt: localhost/127.0.0.1:" + mockBackEndPort,
-		             exception.getMessage());
+		// Got different error messages on different machines, so only checking a part of it
+		assertTrue(exception.getMessage().startsWith("Failed to fetch the status! Connection refused:"));
+		assertTrue(exception.getMessage().endsWith("localhost/127.0.0.1:" + mockBackEndPort));
 	}
 
 }

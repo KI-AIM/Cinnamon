@@ -23,7 +23,7 @@ export class DataService {
         const fileConfigString = JSON.stringify(fileConfig);
         formData.append("fileConfiguration", fileConfigString);
 
-        return this.httpClient.post(this.baseUrl + "/datatypes", formData);
+        return this.httpClient.post(this.baseUrl + "/estimation", formData);
     }
 
     readAndValidateData(file: File, fileConfig: FileConfiguration, config: DataConfiguration): Observable<Object> {

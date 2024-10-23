@@ -2,6 +2,7 @@ package de.kiaim.test.platform.processor;
 
 import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.DataConfiguration;
+import de.kiaim.model.configuration.data.DateFormatConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
@@ -25,8 +26,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = PlatformApplication.class)
@@ -147,15 +147,11 @@ public class CSVProcessingTests {
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                               DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                       DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
-        DataConfiguration expectedConfiguration = getDataConfiguration();
-
-        List<DataType> expectedDatatypes = expectedConfiguration.getDataTypes();
-        List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
-
-        assertEquals(expectedDatatypes, actualDatatypes);
+        DataConfiguration expectedConfiguration = removeNames(getDataConfiguration());
+        assertEquals(expectedConfiguration, actualConfiguration);
     }
 
     @Test
@@ -172,16 +168,13 @@ public class CSVProcessingTests {
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                               DatatypeEstimationAlgorithm.MOST_GENERAL);
+        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                       DatatypeEstimationAlgorithm.MOST_GENERAL);
 
-        DataConfiguration expectedConfiguration = getDataConfiguration();
-
-        List<DataType> expectedDatatypes = expectedConfiguration.getDataTypes();
-        expectedDatatypes.set(0, DataType.STRING);
-        List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
-
-        assertEquals(expectedDatatypes, actualDatatypes);
+        DataConfiguration expectedConfiguration = removeNames(getDataConfiguration());
+        expectedConfiguration.getConfigurations().get(0).setType(DataType.STRING);
+        expectedConfiguration.getConfigurations().get(0).setScale(DataScale.NOMINAL);
+        assertEquals(expectedConfiguration, actualConfiguration);
     }
 
     @Test
@@ -198,8 +191,8 @@ public class CSVProcessingTests {
         FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDatatypes(stream, fileConfiguration,
-                                                                               DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                       DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
 
@@ -220,7 +213,7 @@ public class CSVProcessingTests {
         );
 
         ColumnConfiguration column3 = new ColumnConfiguration(
-                2, "birthdate", DataType.DATE, DataScale.DATE, new ArrayList<>()
+                2, "birthdate", DataType.DATE, DataScale.DATE, List.of(new DateFormatConfiguration("yyyy-MM-dd"))
         );
 
         ColumnConfiguration column4 = new ColumnConfiguration(
@@ -232,6 +225,13 @@ public class CSVProcessingTests {
         );
 
         config.setConfigurations(List.of(column1, column2, column3, column4, column5));
+        return config;
+    }
+
+    private static DataConfiguration removeNames(final DataConfiguration config) {
+        for (var col : config.getConfigurations()) {
+            col.setName("");
+        }
         return config;
     }
 }

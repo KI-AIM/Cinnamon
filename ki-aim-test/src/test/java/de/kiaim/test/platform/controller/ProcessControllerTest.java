@@ -1,5 +1,6 @@
 package de.kiaim.test.platform.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.model.status.synthetization.SynthetizationStepStatus;
@@ -11,6 +12,7 @@ import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
 import de.kiaim.test.platform.ControllerTest;
 import de.kiaim.test.util.DataConfigurationTestHelper;
+import de.kiaim.test.util.DataSetTestHelper;
 import de.kiaim.test.util.ResourceHelper;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
@@ -160,17 +162,14 @@ public class ProcessControllerTest extends ControllerTest {
 		// Test request content
 		for (final FileItem fileItem : fileItems) {
 			if (fileItem.getFieldName().equals("data")) {
-				assertEquals(ResourceHelper.loadCsvFileAsString(), fileItem.getString(),
+				assertEquals(DataSetTestHelper.generateDataSetAsJson(false), fileItem.getString(),
 				             "Unexpected content of data!");
-			} else if (fileItem.getFieldName().equals("attribute_config")) {
-				assertEquals(DataConfigurationTestHelper.generateDataConfigurationAsYaml(), fileItem.getString(),
-				             "Unexpected content of attribute config!");
-			} else if (fileItem.getFieldName().equals("algorithm_config")) {
-				assertEquals("configuration", fileItem.getString(), "Unexpected session key!");
 			} else if (fileItem.getFieldName().equals("session_key")) {
 				assertEquals(id.toString(), fileItem.getString(), "Unexpected session key!");
 			} else if (fileItem.getFieldName().equals("callback")) {
 				assertEquals(callbackUrl, fileItem.getString(), "Unexpected callback URL!");
+			} else if (fileItem.getFieldName().equals("anonymizationConfig")) {
+				assertEquals("\"configuration\"", fileItem.getString(), "Unexpected anonymization config!");
 			} else {
 				fail("Unexpected field: " + fileItem.getFieldName());
 			}
@@ -252,17 +251,7 @@ public class ProcessControllerTest extends ControllerTest {
 		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.SYNTHETIZATION);
 		Long id = process.getId();
 
-		var synthStatus = new SynthetizationStatus();
-		var synthStepStatus = new SynthetizationStepStatus();
-		synthStepStatus.setStep("callback");
-		synthStepStatus.setCompleted("False");
-		synthStatus.setStatus(List.of(synthStepStatus));
-
-		mockBackEnd.enqueue(new MockResponse.Builder()
-				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-				                    .code(200)
-				                    .body(jsonMapper.writeValueAsString(synthStatus))
-				                    .build());
+		enqueueSynthStatus();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/execution"))
 		       .andExpect(status().isOk())
@@ -282,6 +271,8 @@ public class ProcessControllerTest extends ControllerTest {
 		var updateTestProject = getTestProject();
 		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.SYNTHETIZATION);
 		Long id = process.getId();
+
+		enqueueSynthStatus();
 
 		final MockMultipartFile resultData = new MockMultipartFile("synthetic_data", "csv.csv",
 		                                                           MediaType.TEXT_PLAIN_VALUE,
@@ -305,6 +296,19 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("processes.SYNTHETIZATION.externalProcessStatus").value(
 				       ProcessStatus.FINISHED.name()))
 		       .andExpect(jsonPath("processes.SYNTHETIZATION.status").value("{\"status\":[{\"completed\":\"True\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"));
+	}
+
+	private void enqueueSynthStatus() throws JsonProcessingException {
+		var synthStatus = new SynthetizationStatus();
+		var synthStepStatus = new SynthetizationStepStatus();
+		synthStepStatus.setStep("callback");
+		synthStepStatus.setCompleted("False");
+		synthStatus.setStatus(List.of(synthStepStatus));
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(synthStatus))
+				                    .build());
 	}
 
 	@Test

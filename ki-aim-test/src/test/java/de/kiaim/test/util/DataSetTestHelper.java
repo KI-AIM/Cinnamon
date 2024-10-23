@@ -54,24 +54,37 @@ public class DataSetTestHelper {
 	}
 
 	public static String generateDataSetAsJson() {
-		return generateDataSetAsJson("null", "null");
+		return generateDataSetAsJson(true, "null", "null");
 	}
 
-	public static String generateDataSetAsJson(final String missingValueEncoding, final String formatErrorEncoding) {
+	public static String generateDataSetAsJson(final boolean withErrors) {
+		return generateDataSetAsJson(withErrors, "null", "null");
+	}
+
+	public static String generateDataSetAsJson(final boolean withErrors, final String missingValueEncoding,
+	                                           final String formatErrorEncoding) {
 		return
 				"""
 						{"dataConfiguration":""" + DataConfigurationTestHelper.generateDataConfigurationAsJson() +
 				"""
-						,"data":""" + generateDataAsJson(missingValueEncoding, formatErrorEncoding) + "}";
+						,"data":""" + generateDataAsJson(withErrors, missingValueEncoding, formatErrorEncoding) + "}";
 	}
 
-	public static String generateDataAsJson(final String missingValueEncoding, final String formatErrorEncoding) {
-		return
-				"""
-						[[true,"2023-11-20","2023-11-20T12:50:27.123456",4.2,42,"Hello World!"],[false,"2023-11-20","2023-11-20T12:50:27.123456",2.4,24,"Bye World!"],[true,"2023-11-20","""
-				+ missingValueEncoding + ",4.2," + formatErrorEncoding +
-				"""
-						,"Hello World!"]]""";
+	public static String generateDataAsJson(final boolean withErrors, final String missingValueEncoding,
+	                                        final String formatErrorEncoding) {
+		String data = """
+				[[true,"2023-11-20","2023-11-20T12:50:27.123456",4.2,42,"Hello World!"],[false,"2023-11-20","2023-11-20T12:50:27.123456",2.4,24,"Bye World!"]""";
+
+		if (withErrors) {
+			data += """
+					        ,[true,"2023-11-20",""" + missingValueEncoding + ",4.2," + formatErrorEncoding +
+			        """
+					        ,"Hello World!"]""";
+		}
+
+		data += "]";
+
+		return data;
 	}
 
 	public static String generateDataSetAsYaml() {

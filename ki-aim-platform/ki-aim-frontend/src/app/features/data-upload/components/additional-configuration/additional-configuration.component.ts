@@ -1,10 +1,8 @@
-import { Component, ElementRef, Input, TemplateRef, ViewChild } from "@angular/core";
+import { Component, Input, TemplateRef, ViewChild } from "@angular/core";
 import {
-	ConfigurationType,
-	getConfigurationForConfigurationType,
-	getConfigurationTypeForString,
-	getConfigurationTypeStringForIndex,
-	getConfigurationsForDatatype,
+    ConfigurationType,
+    getConfigurationForConfigurationType,
+    getConfigurationsForDatatype, getConfigurationTypeForConfigurationName,
 } from "src/app/shared/model/configuration-types";
 import { List } from "src/app/core/utils/list";
 import { DateformatComponent } from "../configurationSettings/dateformat/dateformat.component";
@@ -21,8 +19,6 @@ import { DataType, dataTypeFromString } from "../../../../shared/model/data-type
 	styleUrls: ["./additional-configuration.component.less"],
 })
 export class AdditionalConfigurationComponent {
-	ConfigurationType = ConfigurationType;
-
 	@Input() attrNumber: Number;
     @Input() disabled: boolean = false;
     @Input() form!: FormGroup;
@@ -32,9 +28,9 @@ export class AdditionalConfigurationComponent {
 	@ViewChild("range") rangeComponent: RangeComponent;
 	@ViewChild("stringPattern") stringPatternComponent: StringpatternComponent;
 
-	currentConfigurationSelection: ConfigurationType | undefined;
-
     selected = "standardSelection";
+
+    private cache: Array<{name: string}> = [];
 
     constructor(
         public dialog: MatDialog,
@@ -56,14 +52,24 @@ export class AdditionalConfigurationComponent {
     }
 
     openDialog(templateRef: TemplateRef<any>) {
-        this.dialog.open(templateRef, {
+        this.cache = this.getConfigurations().value;
+        const dialogRef = this.dialog.open(templateRef, {
             width: '60%'
+        });
+
+        dialogRef.keydownEvents().subscribe(event => {
+            if (event.key === "Escape") {
+                this.cancel();
+            }
+        });
+
+        dialogRef.backdropClick().subscribe(event => {
+            this.cancel();
         });
     }
 
 	changeConfigurationSelection(event: any) {
-        this.currentConfigurationSelection = event.value;
-        this.addConfiguration();
+        this.addConfiguration(event.value);
 	}
 
     areConfigurationAvailable(type: DataType): boolean {
@@ -94,68 +100,68 @@ export class AdditionalConfigurationComponent {
         return false;
     }
 
-	getConfigurationTypeForIndex(index: number): String {
-		return getConfigurationTypeStringForIndex(index);
-	}
+    addConfiguration(configurationType: ConfigurationType) {
+        switch (configurationType) {
+            case ConfigurationType.DATEFORMAT: {
+                this.getConfigurations().push(
+                    this.formBuilder.group({
+                        name: ["DateFormatConfiguration"],
+                        dateFormatter: ["", {validators: [Validators.required]}],
+                    })
+                );
 
-	addConfiguration() {
-        if (this.currentConfigurationSelection != undefined) {
-            switch (
-                getConfigurationTypeForString(
-                    ConfigurationType[this.currentConfigurationSelection]
-                )
-            ) {
-                case ConfigurationType.DATEFORMAT: {
-                    this.getConfigurations().push(
-                      this.formBuilder.group({
-                          name: ["DateFormatConfiguration"],
-                          dateFormatter: ["", {validators: [Validators.required]}],
-                      })
-                    );
-
-                    this.currentConfigurationSelection = undefined;
-                    this.selected = "standardSelection";
-                    break;
-                }
-                case ConfigurationType.DATETIMEFORMAT: {
-                    this.getConfigurations().push(
-                        this.formBuilder.group({
-                            name: ["DateTimeFormatConfiguration"],
-                            dateTimeFormatter: ["", {validators: [Validators.required]}],
-                        })
-                    );
-                    this.currentConfigurationSelection = undefined;
-                    this.selected = "standardSelection";
-                    break;
-                }
-                case ConfigurationType.RANGE: {
-                    this.getConfigurations().push(
-                        this.formBuilder.group({
-                            name: ["RangeConfiguration"],
-                            minValue: ["", {validators: [Validators.required]}],
-                            maxValue: ["", {validators: [Validators.required]}],
-                        })
-                    );
-                    this.currentConfigurationSelection = undefined;
-                    this.selected = "standardSelection";
-                    break;
-                }
-                case ConfigurationType.STRINGPATTERN: {
-                    this.getConfigurations().push(
-                        this.formBuilder.group({
-                            name: ["StringPatternConfiguration"],
-                            pattern: ["", {validators: [Validators.required]}],
-                        })
-                    );
-                    this.currentConfigurationSelection = undefined;
-                    this.selected = "standardSelection";
-                    break;
-                }
+                this.selected = "standardSelection";
+                break;
+            }
+            case ConfigurationType.DATETIMEFORMAT: {
+                console.log("adding");
+                this.getConfigurations().push(
+                    this.formBuilder.group({
+                        name: ["DateTimeFormatConfiguration"],
+                        dateTimeFormatter: ["", {validators: [Validators.required]}],
+                    })
+                );
+                this.selected = "standardSelection";
+                break;
+            }
+            case ConfigurationType.RANGE: {
+                this.getConfigurations().push(
+                    this.formBuilder.group({
+                        name: ["RangeConfiguration"],
+                        minValue: ["", {validators: [Validators.required]}],
+                        maxValue: ["", {validators: [Validators.required]}],
+                    })
+                );
+                this.selected = "standardSelection";
+                break;
+            }
+            case ConfigurationType.STRINGPATTERN: {
+                this.getConfigurations().push(
+                    this.formBuilder.group({
+                        name: ["StringPatternConfiguration"],
+                        pattern: ["", {validators: [Validators.required]}],
+                    })
+                );
+                this.selected = "standardSelection";
+                break;
             }
         }
-	}
+    }
 
     protected removeConfiguration(index: number) {
         this.getConfigurations().removeAt(index);
+    }
+
+    protected cancel() {
+        this.getConfigurations().clear();
+
+        this.cache.forEach(config => {
+            const configurationType = getConfigurationTypeForConfigurationName(config.name);
+            if (configurationType !== null) {
+                this.addConfiguration(configurationType);
+            }
+        })
+
+        this.getConfigurations().patchValue(this.cache);
     }
 }

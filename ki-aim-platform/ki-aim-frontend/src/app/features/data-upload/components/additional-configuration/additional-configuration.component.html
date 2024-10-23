@@ -21,7 +21,7 @@
                             configuration to add...</mat-option>
                         <mat-option
                             *ngFor="let configurationType of getConfigurationsForDatatype(getType()).getAll()"
-                            [value]="configurationType">{{getConfigurationTypeForIndex(configurationType)}}</mat-option>
+                            [value]="configurationType">{{configurationType}}</mat-option>
                     </mat-select>
                 </mat-form-field>
             </div>
@@ -55,6 +55,9 @@
         </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-        <button mat-raised-button mat-dialog-close type="button" color="primary">Close</button>
+        <button mat-raised-button mat-dialog-close type="button" color="primary" (click)="cancel()">Cancel</button>
+    </mat-dialog-actions>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close type="button" color="primary">Confirm</button>
     </mat-dialog-actions>
 </ng-template>

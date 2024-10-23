@@ -6,10 +6,10 @@ import { StringPatternConfiguration } from "./string-pattern-configuration";
 import { RangeConfiguration } from "./range-configuration";
 
 export enum ConfigurationType {
-	DATEFORMAT,
-	DATETIMEFORMAT,
-	RANGE,
-	STRINGPATTERN,
+	DATEFORMAT = "DATEFORMAT",
+	DATETIMEFORMAT = "DATETIMEFORMAT",
+	RANGE = "RANGE",
+	STRINGPATTERN = "STRINGPATTERN",
 }
 
 export function getConfigurationTypeForString(
@@ -29,8 +29,23 @@ export function getConfigurationTypeForString(
 	}
 }
 
-export function getConfigurationTypeStringForIndex(index: number) {
-	return ConfigurationType[index];
+/**
+ * Returns the configuration type for the given configuration name.
+ * @param configurationName The name of the configuration.
+ */
+export function getConfigurationTypeForConfigurationName(configurationName: string): ConfigurationType | null {
+    switch (configurationName) {
+        case DateFormatConfiguration.name:
+            return ConfigurationType.DATEFORMAT;
+        case DateTimeFormatConfiguration.name:
+            return ConfigurationType.DATETIMEFORMAT;
+        case RangeConfiguration.name:
+            return ConfigurationType.RANGE;
+        case StringPatternConfiguration.name:
+            return ConfigurationType.STRINGPATTERN;
+        default:
+                return null;
+    }
 }
 
 /**

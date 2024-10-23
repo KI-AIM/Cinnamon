@@ -38,7 +38,7 @@
                     <div *ngFor="let f of getConfigurationGroups(); let i = index" [formGroupName]="i">
                         <h2>
                             <span> {{ f.controls['name'].value }} </span>
-                            <button mat-raised-button color="warn" (click)="removeConfiguration(i)">Delete</button>
+                            <button mat-raised-button [disabled]="disabled" color="warn" (click)="removeConfiguration(i)">Delete</button>
                         </h2>
                         <app-dateformat #dateFormat [form]="f"
                                         *ngIf="f.controls['name'].value === 'DateFormatConfiguration'"></app-dateformat>

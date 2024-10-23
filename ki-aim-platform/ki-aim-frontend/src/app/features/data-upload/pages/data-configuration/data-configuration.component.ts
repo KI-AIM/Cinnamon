@@ -191,7 +191,10 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                     addConfigs.push(
                         this.formBuilder.group({
                             name: ["DateFormatConfiguration"],
-                            dateFormatter: [dateFormatConfiguration.dateFormatter, {validators: [Validators.required]}],
+                            dateFormatter: [{
+                                value: dateFormatConfiguration.dateFormatter,
+                                disabled: this.locked
+                            }, {validators: [Validators.required]}],
                         })
                     );
                 } else if (addConfig.getName() === "DateTimeFormatConfiguration") {
@@ -199,7 +202,12 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                     addConfigs.push(
                         this.formBuilder.group({
                             name: ["DateTimeFormatConfiguration"],
-                            dateTimeFormatter: [dateTimeFormatConfiguration.dateTimeFormatter, {validators: [Validators.required]}],
+                            dateTimeFormatter: [{
+                                value: dateTimeFormatConfiguration.dateTimeFormatter,
+                                disabled: this.locked
+                            }, {
+                                validators: [Validators.required]
+                            }],
                         })
                     );
                 } else if (addConfig.getName() === "RangeConfiguration") {
@@ -207,8 +215,12 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                     addConfigs.push(
                         this.formBuilder.group({
                             name: ["RangeConfiguration"],
-                            minValue: [rangeConfiguration.minValue, {validators: [Validators.required]}],
-                            maxValue: [rangeConfiguration.maxValue, {validators: [Validators.required]}],
+                            minValue: [{value: rangeConfiguration.minValue, disabled: this.locked}, {
+                                validators: [Validators.required]
+                            }],
+                            maxValue: [{value: rangeConfiguration.maxValue, disabled: this.locked}, {
+                                validators: [Validators.required]
+                            }],
                         })
                     );
                 } else if (addConfig.getName() === "StringPatternConfiguration") {
@@ -216,7 +228,9 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                     addConfigs.push(
                         this.formBuilder.group({
                             name: ["StringPatternConfiguration"],
-                            pattern: [stringPatternConfiguration.pattern, {validators: [Validators.required]}],
+                            pattern: [{value: stringPatternConfiguration.pattern, disabled: this.locked}, {
+                                validators: [Validators.required]
+                            }],
                         })
                     );
                 }
@@ -224,9 +238,14 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
             const columnGroup = this.formBuilder.group({
                 index: [columnConfiguration.index],
-                name: [columnConfiguration.name, {disabled: this.locked, validators: [Validators.required, noSpaceValidator()]}],
-                type: [columnConfiguration.type],
-                scale: [columnConfiguration.scale],
+                name: [{value: columnConfiguration.name, disabled: this.locked}, {
+                    validators: [Validators.required, noSpaceValidator()]
+                }],
+                type: [{value: columnConfiguration.type, disabled: this.locked}, {validators: [Validators.required]}],
+                scale: [{value: columnConfiguration.scale, disabled: this.locked}, {
+                    disabled: this.locked,
+                    validators: [Validators.required]
+                }],
                 configurations: this.formBuilder.array(addConfigs),
             });
 

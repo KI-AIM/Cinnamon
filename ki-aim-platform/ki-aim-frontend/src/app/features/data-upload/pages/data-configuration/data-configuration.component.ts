@@ -1,4 +1,4 @@
-import { Component, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { Component, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { TitleService } from 'src/app/core/services/title-service.service';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
 import { DataService } from 'src/app/shared/services/data.service';
@@ -23,17 +23,19 @@ import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { Subscription } from "rxjs";
 import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
-import { stringify } from "yaml";
+import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
+import { DateTimeFormatConfiguration } from "../../../../shared/model/date-time-format-configuration";
+import { RangeConfiguration } from "../../../../shared/model/range-configuration";
+import { StringPatternConfiguration } from "../../../../shared/model/string-pattern-configuration";
 
 @Component({
     selector: 'app-data-configuration',
     templateUrl: './data-configuration.component.html',
     styleUrls: ['./data-configuration.component.less'],
 })
-export class DataConfigurationComponent implements OnInit {
+export class DataConfigurationComponent implements OnInit, OnDestroy {
     error: string;
     FileType = FileType;
-    dataConfiguration: DataConfiguration
     private dataConfigurationSubscription: Subscription;
 
     protected form: FormGroup;
@@ -61,11 +63,14 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     ngOnInit(): void {
+
+
         this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
+
             this.setEmptyColumnNames(value);
             this.form = this.createForm(value);
-            // this.dataConfiguration = value;
-        })
+        });
+
     }
 
     ngOnDestroy() {
@@ -73,14 +78,10 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     confirmConfiguration() {
-        console.log(this.form.getRawValue());
-        console.log(this.form.value);
-        console.log(stringify(this.form.getRawValue()));
-        console.log(stringify(this.form.value));
         this.loadingService.setLoadingStatus(true);
 
         this.dataService.storeData(this.fileService.getFile(),
-            this.dataConfiguration,
+            Object.assign(new DataConfiguration(), this.form.value),
             this.fileService.getFileConfiguration()
         ).subscribe({
             next: (d) => this.handleUpload(d),
@@ -181,44 +182,45 @@ export class DataConfigurationComponent implements OnInit {
 
     private createForm(dataConfiguration: DataConfiguration): FormGroup {
         const formArray: any[] = [];
-        console.log(dataConfiguration);
         dataConfiguration.configurations.forEach(columnConfiguration=> {
             const addConfigs = [];
 
             for (const addConfig of columnConfiguration.configurations) {
-                console.log(addConfig.getName());
                 if (addConfig.getName() === "DateFormatConfiguration") {
-                 addConfigs.push(
-                     this.formBuilder.group({
-                         name: ["DateFormatConfiguration"],
-                         dateFormatter: ["", {validators: [Validators.required]}],
-                     })
-                 );
+                    const dateFormatConfiguration = addConfig as DateFormatConfiguration;
+                    addConfigs.push(
+                        this.formBuilder.group({
+                            name: ["DateFormatConfiguration"],
+                            dateFormatter: [dateFormatConfiguration.dateFormatter, {validators: [Validators.required]}],
+                        })
+                    );
                 } else if (addConfig.getName() === "DateTimeFormatConfiguration") {
+                    const dateTimeFormatConfiguration = addConfig as DateTimeFormatConfiguration;
                     addConfigs.push(
                         this.formBuilder.group({
                             name: ["DateTimeFormatConfiguration"],
-                            dateTimeFormatter: ["", {validators: [Validators.required]}],
+                            dateTimeFormatter: [dateTimeFormatConfiguration.dateTimeFormatter, {validators: [Validators.required]}],
                         })
                     );
                 } else if (addConfig.getName() === "RangeConfiguration") {
+                    const rangeConfiguration = addConfig as RangeConfiguration;
                     addConfigs.push(
                         this.formBuilder.group({
                             name: ["RangeConfiguration"],
-                            minValue: ["", {validators: [Validators.required]}],
-                            maxValue: ["", {validators: [Validators.required]}],
+                            minValue: [rangeConfiguration.minValue, {validators: [Validators.required]}],
+                            maxValue: [rangeConfiguration.maxValue, {validators: [Validators.required]}],
                         })
                     );
                 } else if (addConfig.getName() === "StringPatternConfiguration") {
+                    const stringPatternConfiguration = addConfig as StringPatternConfiguration;
                     addConfigs.push(
                         this.formBuilder.group({
                             name: ["StringPatternConfiguration"],
-                            pattern: ["", {validators: [Validators.required]}],
+                            pattern: [stringPatternConfiguration.pattern, {validators: [Validators.required]}],
                         })
                     );
                 }
             }
-            console.log(addConfigs);
 
             const columnGroup = this.formBuilder.group({
                 index: [columnConfiguration.index],

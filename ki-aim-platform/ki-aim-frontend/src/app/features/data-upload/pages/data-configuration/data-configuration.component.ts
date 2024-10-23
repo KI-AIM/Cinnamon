@@ -36,7 +36,9 @@ import { StringPatternConfiguration } from "../../../../shared/model/string-patt
 export class DataConfigurationComponent implements OnInit, OnDestroy {
     error: string;
     FileType = FileType;
+
     private dataConfigurationSubscription: Subscription;
+    private localDataConfiguration: DataConfiguration;
 
     protected form: FormGroup;
 
@@ -64,19 +66,25 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
+            this.localDataConfiguration = value;
             this.setEmptyColumnNames(value);
             this.form = this.createForm(value);
+
+            this.form.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
+                this.localDataConfiguration = plainToInstance(DataConfiguration, value1);
+            });
         });
     }
 
     ngOnDestroy() {
         this.dataConfigurationSubscription.unsubscribe();
+        this.configuration.setDataConfiguration(this.localDataConfiguration);
     }
 
     confirmConfiguration() {
         this.loadingService.setLoadingStatus(true);
         this.dataService.storeData(this.fileService.getFile(),
-            Object.assign(new DataConfiguration(), this.form.value),
+            plainToInstance(DataConfiguration, this.form.value),
             this.fileService.getFileConfiguration()
         ).subscribe({
             next: (d) => this.handleUpload(d),

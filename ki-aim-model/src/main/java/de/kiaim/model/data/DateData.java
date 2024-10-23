@@ -46,9 +46,11 @@ public class DateData extends Data {
 				"dd-MM-yyyy",
 				"dd:MM:yyyy",
 				"dd.MM.yyyy",
+				"dd/MM/yyyy",
 				"MM-dd-yyyy",
 				"MM.dd.yyyy",
-				"MM:dd:yyyy"
+				"MM:dd:yyyy",
+				"MM/dd/yyyy"
 		);
 
 		private LocalDate value;

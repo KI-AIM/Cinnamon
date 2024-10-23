@@ -122,7 +122,6 @@ public abstract class CommonDataProcessor implements DataProcessor {
         for (String column : row) {
             List<Pair<DataType, DataBuilder>> processingOrder = getProcessingOrder();
             var columnConfiguration = new ColumnConfiguration();
-            columnConfiguration.setType(DataType.UNDEFINED);
 
 	        for (final Pair<DataType, DataBuilder> processor : processingOrder) {
 		        final var estimationResult = processor.element1().estimateColumnConfiguration(column);

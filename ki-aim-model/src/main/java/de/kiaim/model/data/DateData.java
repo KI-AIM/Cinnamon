@@ -118,7 +118,6 @@ public class DateData extends Data {
 		@Override
 		public ColumnConfiguration estimateColumnConfiguration(final String value) {
 			final var columnConfiguration = new ColumnConfiguration();
-			columnConfiguration.setType(DataType.UNDEFINED);
 
 			for (final String format : FORMATS) {
 				try {

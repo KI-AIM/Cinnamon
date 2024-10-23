@@ -48,7 +48,6 @@ public interface DataBuilder {
 	 */
      default ColumnConfiguration estimateColumnConfiguration(final String value) {
 	     final var columnConfiguration = new ColumnConfiguration();
-	     columnConfiguration.setType(DataType.UNDEFINED);
 
 	     try {
 		     this.setValue(value, new ArrayList<>()).build();

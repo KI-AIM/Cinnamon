@@ -4,23 +4,23 @@
 
 <ng-template #additionalSettings>
     <mat-dialog-content class="mat-typography">
-        <div>
+        <div >
             <h1>Add new configuration</h1>
             <div class="d-flex flex-column">
                 <mat-form-field>
                     <mat-label>Configuration</mat-label>
                     <mat-select [id]="'additionalSettingsConfigurations_' + attrNumber"
                         (selectionChange)="changeConfigurationSelection($event)"
-                        [disabled]="disabled || !areConfigurationAvailable(column.type.toString())"
+                        [disabled]="disabled || !areConfigurationAvailable(getType())"
                         [(value)]="selected">
-                        <mat-option selected disabled *ngIf="!areConfigurationAvailable(column.type.toString())"
+                        <mat-option disabled *ngIf="!areConfigurationAvailable(getType())"
                             value="standardSelection">No
                             configurations available</mat-option>
-                        <mat-option selected disabled *ngIf="areConfigurationAvailable(column.type.toString())"
+                        <mat-option disabled *ngIf="areConfigurationAvailable(getType())"
                             value="standardSelection">Select a
                             configuration to add...</mat-option>
                         <mat-option
-                            *ngFor="let configurationType of getConfigurationsForDatatype(column.type.toString()).getAll()"
+                            *ngFor="let configurationType of getConfigurationsForDatatype(getType()).getAll()"
                             [value]="configurationType">{{getConfigurationTypeForIndex(configurationType)}}</mat-option>
                     </mat-select>
                 </mat-form-field>
@@ -30,27 +30,28 @@
 
             <h1>Configuration Settings</h1>
 
-            <div *ngIf="currentConfigurationSelection == undefined">
+            <div *ngIf="getConfigurationGroups().length === 0">
                 <i>No configuration selected yet</i>
             </div>
+            <div *ngIf="getConfigurationGroups().length > 0" [formGroup]="form">
+                <div formArrayName="configurations">
+                    <div *ngFor="let f of getConfigurationGroups(); let i = index" [formGroupName]="i">
+                        <h2>
+                            <span> {{ f.controls['name'].value }} </span>
+                            <button mat-raised-button color="warn" (click)="removeConfiguration(i)">Delete</button>
+                        </h2>
+                        <app-dateformat #dateFormat [form]="f"
+                                        *ngIf="f.controls['name'].value === 'DateFormatConfiguration'"></app-dateformat>
+                        <app-datetimeformat #dateTimeFormat [form]="f"
+                                            *ngIf="f.controls['name'].value === 'DateTimeFormatConfiguration'"></app-datetimeformat>
+                        <app-range #range [type]="getType()" [form]="f"
+                                   *ngIf="f.controls['name'].value === 'RangeConfiguration'"></app-range>
+                        <app-stringpattern #stringPattern [form]="f"
+                                           *ngIf="f.controls['name'].value === 'StringPatternConfiguration'"></app-stringpattern>
 
-            <app-dateformat #dateFormat
-                *ngIf="currentConfigurationSelection == ConfigurationType.DATEFORMAT"></app-dateformat>
-            <app-datetimeformat #dateTimeFormat
-                *ngIf="currentConfigurationSelection == ConfigurationType.DATETIMEFORMAT"></app-datetimeformat>
-            <app-range #range [type]="column.type"
-                *ngIf="currentConfigurationSelection == ConfigurationType.RANGE"></app-range>
-            <app-stringpattern #stringPattern
-                *ngIf="currentConfigurationSelection == ConfigurationType.STRINGPATTERN"></app-stringpattern>
-
-            <button mat-raised-button color="primary" class="mt-3" *ngIf="currentConfigurationSelection != undefined"
-                (click)="addConfiguration()">
-                Add Configuration
-            </button>
-
-            <hr />
-
-            <app-added-configuration-list [column]="column" [disabled]="disabled"></app-added-configuration-list>
+                    </div>
+                </div>
+            </div>
         </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">

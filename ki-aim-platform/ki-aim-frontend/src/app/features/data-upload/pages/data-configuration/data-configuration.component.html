@@ -20,18 +20,22 @@
     </div>
 
     <div class="d-flex flex-column">
-        <div *ngFor="let column of dataConfiguration.configurations, index as i">
-            <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()" [column]="column"
-                                         [disabled]="locked" (onValidation)="onValidation($event)"
-                                         (onInput)="checkUniqueColumnNames()">
+        <form *ngIf="form" [formGroup]="form">
+            <div formArrayName="configurations">
+                <div *ngFor="let columnConfig of getColumnConfigurationForms(form); let i = index" [formGroupName]="i">
+                    <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()"
+                                                 [disabled]="locked" (onInput)="checkUniqueColumnNames()"
+                                                 [columnConfigurationForm]="columnConfig">
+                    </app-attribute-configuration>
+                </div>
+            </div>
 
-            </app-attribute-configuration>
-        </div>
-
+        </form>
     </div>
+
     <div class="btn-group">
         <div class="px-1">
-            <button mat-raised-button color="primary" (click)="confirmConfiguration()" [disabled]="!isValid || locked">Confirm configuration and start validation</button>
+            <button mat-raised-button color="primary" (click)="confirmConfiguration()" [disabled]="form.invalid || locked">Confirm configuration and start validation</button>
         </div>
     </div>
 </div>

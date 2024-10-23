@@ -1,5 +1,5 @@
-import { Component } from "@angular/core";
-import { StringPatternConfiguration } from "src/app/shared/model/string-pattern-configuration";
+import { Component, Input } from "@angular/core";
+import { FormGroup } from "@angular/forms";
 
 @Component({
 	selector: "app-stringpattern",
@@ -7,9 +7,5 @@ import { StringPatternConfiguration } from "src/app/shared/model/string-pattern-
 	styleUrls: ["./stringpattern.component.less"],
 })
 export class StringpatternComponent {
-    public stringpatternConfiguration = new StringPatternConfiguration(); 
-
-    getStringPatternConfiguration() {
-        return this.stringpatternConfiguration; 
-    }
+    @Input() form: FormGroup;
 }

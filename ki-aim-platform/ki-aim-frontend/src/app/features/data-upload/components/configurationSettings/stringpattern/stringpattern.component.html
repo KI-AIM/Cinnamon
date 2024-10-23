@@ -1,6 +1,6 @@
-<div class="d-flex flex-column w-100">
+<div class="d-flex flex-column w-100" [formGroup]="form">
     <mat-form-field>
         <mat-label>String pattern</mat-label>
-        <input matInput #stringpattern [(ngModel)]="stringpatternConfiguration.pattern" />
+        <input matInput formControlName="pattern"/>
     </mat-form-field>
 </div>

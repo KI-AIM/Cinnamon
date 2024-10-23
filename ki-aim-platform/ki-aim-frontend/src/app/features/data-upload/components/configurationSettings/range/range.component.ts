@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { DataType } from 'src/app/shared/model/data-type';
-import { RangeConfiguration } from 'src/app/shared/model/range-configuration';
+import { FormGroup } from "@angular/forms";
 
 @Component({
   selector: 'app-range',
@@ -8,17 +8,11 @@ import { RangeConfiguration } from 'src/app/shared/model/range-configuration';
   styleUrls: ['./range.component.less']
 })
 export class RangeComponent {
-    rangeConfiguration: RangeConfiguration = new RangeConfiguration();
-    dataType: typeof DataType = DataType;
-
     @Input() type: DataType;
-
-    getRangeConfiguration() : RangeConfiguration {
-      return this.rangeConfiguration;
-    }
+    @Input() form: FormGroup;
 
     getInputType() : string {
-      switch (+(DataType[this.type])) {
+      switch (this.type) {
         case DataType.DECIMAL:
         case DataType.INTEGER: {
           return "number";

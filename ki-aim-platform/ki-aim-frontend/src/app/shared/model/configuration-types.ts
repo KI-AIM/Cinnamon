@@ -3,7 +3,6 @@ import { DataType } from "./data-type";
 import { DateFormatConfiguration } from "./date-format-configuration";
 import { DateTimeFormatConfiguration } from "./date-time-format-configuration";
 import { StringPatternConfiguration } from "./string-pattern-configuration";
-import { dataTypeFromString } from "./data-type";
 import { RangeConfiguration } from "./range-configuration";
 
 export enum ConfigurationType {
@@ -52,10 +51,9 @@ export const DataTypeToConfigurationTypeMapping: Record<
 };
 
 export function getConfigurationsForDatatype(
-	type: String
+	type: DataType
 ): List<ConfigurationType> {
-	var datatype = dataTypeFromString(type);
-	return new List(DataTypeToConfigurationTypeMapping[datatype] || []);
+	return new List(DataTypeToConfigurationTypeMapping[type] || []);
 }
 
 export function getConfigurationForConfigurationType(

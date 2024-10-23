@@ -21,6 +21,9 @@ import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { Subscription } from "rxjs";
+import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
+import { stringify } from "yaml";
 
 @Component({
     selector: 'app-data-configuration',
@@ -30,9 +33,10 @@ import { Subscription } from "rxjs";
 export class DataConfigurationComponent implements OnInit {
     error: string;
     FileType = FileType;
-    isValid: boolean;
     dataConfiguration: DataConfiguration
     private dataConfigurationSubscription: Subscription;
+
+    protected form: FormGroup;
 
     @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
@@ -41,6 +45,7 @@ export class DataConfigurationComponent implements OnInit {
         public configuration: DataConfigurationService,
         public dataService: DataService,
         public fileService: FileService,
+        private readonly formBuilder: FormBuilder,
         private titleService: TitleService,
         private router: Router,
         private readonly statusService: StatusService,
@@ -48,7 +53,6 @@ export class DataConfigurationComponent implements OnInit {
 		private errorMessageService: ErrorMessageService,
     ) {
         this.error = "";
-        this.isValid = true;
         this.titleService.setPageTitle("Data configuration");
     }
 
@@ -58,12 +62,10 @@ export class DataConfigurationComponent implements OnInit {
 
     ngOnInit(): void {
         this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
-            this.dataConfiguration = value;
+            this.setEmptyColumnNames(value);
+            this.form = this.createForm(value);
+            // this.dataConfiguration = value;
         })
-    }
-
-	ngAfterViewInit() {
-        this.setEmptyColumnNames();
     }
 
     ngOnDestroy() {
@@ -71,6 +73,10 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     confirmConfiguration() {
+        console.log(this.form.getRawValue());
+        console.log(this.form.value);
+        console.log(stringify(this.form.getRawValue()));
+        console.log(stringify(this.form.value));
         this.loadingService.setLoadingStatus(true);
 
         this.dataService.storeData(this.fileService.getFile(),
@@ -79,16 +85,12 @@ export class DataConfigurationComponent implements OnInit {
         ).subscribe({
             next: (d) => this.handleUpload(d),
             error: (e) => this.handleError(e),
-        })
+        });
     }
 
-    onValidation(isValid: boolean) {
-        this.isValid = isValid;
-    }
-
-    private setEmptyColumnNames() {
-        this.dataConfiguration.configurations.forEach((column, index) => {
-            if (column.name == undefined || column.name == null || column.name == "") {
+    private setEmptyColumnNames(dataConfiguration: DataConfiguration) {
+        dataConfiguration.configurations.forEach((column, index) => {
+            if (column.name === undefined || column.name === null || column.name == "") {
                 column.name = 'column_' + index;
             }
         });
@@ -115,26 +117,31 @@ export class DataConfigurationComponent implements OnInit {
         const names: string[] = [];
         const duplicates: string[] = [];
 
+        const configurationsFrom = (this.form.controls['configurations'] as FormArray).controls
         // Find duplicate column names
-        for (const hun of this.attributeConfigurations) {
+        for (const f of Object.values(configurationsFrom)) {
+            const fg = (f as FormGroup).controls['name'];
 
-            if (hun.nameInput.value !== "") {
-                if (names.includes(hun.nameInput.value)) {
-                    duplicates.push(hun.nameInput.value);
+            const name = fg.value;
+            if (name !== "") {
+                if (names.includes(name)) {
+                    duplicates.push(name);
                 } else {
-                    names.push(hun.nameInput.value);
+                    names.push(name);
                 }
             }
         }
 
-        // Add errors to inputs with duplicate column names
-        for (const hun of this.attributeConfigurations) {
-            if (duplicates.includes(hun.nameInput.value)) {
-                hun.nameInput.control.setErrors({unique: true});
+        // Add errors to inputs with duplicate column namesa
+        for (const f of Object.values(configurationsFrom)) {
+            const fg = (f as FormGroup).controls['name'];
+
+            const name = fg.value;
+            if (duplicates.includes(name)) {
+                fg.setErrors({unique: true});
             } else {
-                // Delete all errors and revalidate to add existing errors
-                hun.nameInput.control.setErrors(null);
-                hun.nameInput.control.updateValueAndValidity();
+                fg.setErrors(null);
+                fg.updateValueAndValidity();
             }
         }
     }
@@ -166,5 +173,64 @@ export class DataConfigurationComponent implements OnInit {
         }
 
         this.configurationUpload.closeDialog();
+    }
+
+    protected getColumnConfigurationForms(form: FormGroup): FormGroup[] {
+        return (form.controls['configurations'] as FormArray).controls as FormGroup[];
+    }
+
+    private createForm(dataConfiguration: DataConfiguration): FormGroup {
+        const formArray: any[] = [];
+        console.log(dataConfiguration);
+        dataConfiguration.configurations.forEach(columnConfiguration=> {
+            const addConfigs = [];
+
+            for (const addConfig of columnConfiguration.configurations) {
+                console.log(addConfig.getName());
+                if (addConfig.getName() === "DateFormatConfiguration") {
+                 addConfigs.push(
+                     this.formBuilder.group({
+                         name: ["DateFormatConfiguration"],
+                         dateFormatter: ["", {validators: [Validators.required]}],
+                     })
+                 );
+                } else if (addConfig.getName() === "DateTimeFormatConfiguration") {
+                    addConfigs.push(
+                        this.formBuilder.group({
+                            name: ["DateTimeFormatConfiguration"],
+                            dateTimeFormatter: ["", {validators: [Validators.required]}],
+                        })
+                    );
+                } else if (addConfig.getName() === "RangeConfiguration") {
+                    addConfigs.push(
+                        this.formBuilder.group({
+                            name: ["RangeConfiguration"],
+                            minValue: ["", {validators: [Validators.required]}],
+                            maxValue: ["", {validators: [Validators.required]}],
+                        })
+                    );
+                } else if (addConfig.getName() === "StringPatternConfiguration") {
+                    addConfigs.push(
+                        this.formBuilder.group({
+                            name: ["StringPatternConfiguration"],
+                            pattern: ["", {validators: [Validators.required]}],
+                        })
+                    );
+                }
+            }
+            console.log(addConfigs);
+
+            const columnGroup = this.formBuilder.group({
+                index: [columnConfiguration.index],
+                name: [columnConfiguration.name, {disabled: this.locked, validators: [Validators.required, noSpaceValidator()]}],
+                type: [columnConfiguration.type],
+                scale: [columnConfiguration.scale],
+                configurations: this.formBuilder.array(addConfigs),
+            });
+
+            formArray.push(columnGroup);
+        });
+
+        return this.formBuilder.group({configurations: this.formBuilder.array(formArray)});
     }
 }

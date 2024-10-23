@@ -6,13 +6,14 @@ import {
 	getConfigurationTypeStringForIndex,
 	getConfigurationsForDatatype,
 } from "src/app/shared/model/configuration-types";
-import { ColumnConfiguration } from "src/app/shared/model/column-configuration";
 import { List } from "src/app/core/utils/list";
 import { DateformatComponent } from "../configurationSettings/dateformat/dateformat.component";
 import { DatetimeformatComponent } from "../configurationSettings/datetimeformat/datetimeformat.component";
 import { StringpatternComponent } from "../configurationSettings/stringpattern/stringpattern.component";
 import { MatDialog } from "@angular/material/dialog";
 import { RangeComponent } from "../configurationSettings/range/range.component";
+import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { DataType, dataTypeFromString } from "../../../../shared/model/data-type";
 
 @Component({
 	selector: "app-additional-configuration",
@@ -23,8 +24,8 @@ export class AdditionalConfigurationComponent {
 	ConfigurationType = ConfigurationType;
 
 	@Input() attrNumber: Number;
-	@Input() column: ColumnConfiguration;
     @Input() disabled: boolean = false;
+    @Input() form!: FormGroup;
 
 	@ViewChild("dateFormat") dateFormatComponent: DateformatComponent;
 	@ViewChild("dateTimeFormat") dateTimeFormatComponent: DatetimeformatComponent;
@@ -35,8 +36,23 @@ export class AdditionalConfigurationComponent {
 
     selected = "standardSelection";
 
-    constructor(public dialog: MatDialog) {
+    constructor(
+        public dialog: MatDialog,
+        private readonly formBuilder: FormBuilder,
+    ) {
 
+    }
+
+    protected getType(): DataType {
+        return dataTypeFromString(this.form.controls['type'].value);
+    }
+
+    protected getConfigurations(): FormArray<FormGroup> {
+       return this.form.controls['configurations'] as FormArray<FormGroup>;
+    }
+
+    protected getConfigurationGroups(): FormGroup[] {
+        return (this.form.controls['configurations'] as FormArray<FormGroup>).controls;
     }
 
     openDialog(templateRef: TemplateRef<any>) {
@@ -46,14 +62,15 @@ export class AdditionalConfigurationComponent {
     }
 
 	changeConfigurationSelection(event: any) {
-		this.currentConfigurationSelection = event.value;
+        this.currentConfigurationSelection = event.value;
+        this.addConfiguration();
 	}
 
-    areConfigurationAvailable(type: String): boolean {
+    areConfigurationAvailable(type: DataType): boolean {
         return this.getConfigurationsForDatatype(type).size() > 0;
     }
 
-	getConfigurationsForDatatype(type: String): List<ConfigurationType> {
+	getConfigurationsForDatatype(type: DataType): List<ConfigurationType> {
         var result = new List<ConfigurationType>
         var configurationTypes = getConfigurationsForDatatype(type);
 
@@ -67,14 +84,14 @@ export class AdditionalConfigurationComponent {
 	}
 
     isConfigurationAlreadyAdded(configurationType: ConfigurationType): boolean {
-        var result = false;
-        this.column.configurations.forEach(configuration => {
-            if (configuration.constructor.name == getConfigurationForConfigurationType(configurationType)) {
-                result = true;
+        for (const group of Object.values(this.getConfigurations().controls)) {
+            const name = group.controls['name'].value;
+            if (name === getConfigurationForConfigurationType(configurationType)) {
+                return true;
             }
-        });
+        }
 
-        return result;
+        return false;
     }
 
 	getConfigurationTypeForIndex(index: number): String {
@@ -89,32 +106,46 @@ export class AdditionalConfigurationComponent {
                 )
             ) {
                 case ConfigurationType.DATEFORMAT: {
-                    this.column.addConfiguration(
-                        this.dateFormatComponent.getDateFormatConfiguration()
+                    this.getConfigurations().push(
+                      this.formBuilder.group({
+                          name: ["DateFormatConfiguration"],
+                          dateFormatter: ["", {validators: [Validators.required]}],
+                      })
                     );
+
                     this.currentConfigurationSelection = undefined;
                     this.selected = "standardSelection";
                     break;
                 }
                 case ConfigurationType.DATETIMEFORMAT: {
-                    this.column.addConfiguration(
-                        this.dateTimeFormatComponent.getDateTimeFormatConfiguration()
+                    this.getConfigurations().push(
+                        this.formBuilder.group({
+                            name: ["DateTimeFormatConfiguration"],
+                            dateTimeFormatter: ["", {validators: [Validators.required]}],
+                        })
                     );
                     this.currentConfigurationSelection = undefined;
                     this.selected = "standardSelection";
                     break;
                 }
                 case ConfigurationType.RANGE: {
-                    this.column.addConfiguration(
-                        this.rangeComponent.getRangeConfiguration()
+                    this.getConfigurations().push(
+                        this.formBuilder.group({
+                            name: ["RangeConfiguration"],
+                            minValue: ["", {validators: [Validators.required]}],
+                            maxValue: ["", {validators: [Validators.required]}],
+                        })
                     );
                     this.currentConfigurationSelection = undefined;
                     this.selected = "standardSelection";
                     break;
                 }
                 case ConfigurationType.STRINGPATTERN: {
-                    this.column.addConfiguration(
-                        this.stringPatternComponent.getStringPatternConfiguration()
+                    this.getConfigurations().push(
+                        this.formBuilder.group({
+                            name: ["StringPatternConfiguration"],
+                            pattern: ["", {validators: [Validators.required]}],
+                        })
                     );
                     this.currentConfigurationSelection = undefined;
                     this.selected = "standardSelection";
@@ -123,4 +154,8 @@ export class AdditionalConfigurationComponent {
             }
         }
 	}
+
+    protected removeConfiguration(index: number) {
+        this.getConfigurations().removeAt(index);
+    }
 }

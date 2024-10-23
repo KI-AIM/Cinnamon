@@ -20,7 +20,7 @@ import { ErrorMessageService } from 'src/app/shared/services/error-message.servi
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
-import { Subscription } from "rxjs";
+import { debounceTime, distinctUntilChanged, Subscription } from "rxjs";
 import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
 import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
@@ -63,14 +63,10 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-
-
         this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
-
             this.setEmptyColumnNames(value);
             this.form = this.createForm(value);
         });
-
     }
 
     ngOnDestroy() {
@@ -79,7 +75,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     confirmConfiguration() {
         this.loadingService.setLoadingStatus(true);
-
         this.dataService.storeData(this.fileService.getFile(),
             Object.assign(new DataConfiguration(), this.form.value),
             this.fileService.getFileConfiguration()
@@ -141,8 +136,10 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
             if (duplicates.includes(name)) {
                 fg.setErrors({unique: true});
             } else {
-                fg.setErrors(null);
-                fg.updateValueAndValidity();
+                if (fg.errors && fg.errors['unique']) {
+                    fg.setErrors(null);
+                    fg.updateValueAndValidity();
+                }
             }
         }
     }

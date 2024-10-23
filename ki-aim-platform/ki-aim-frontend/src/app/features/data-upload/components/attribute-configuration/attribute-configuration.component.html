@@ -3,7 +3,7 @@
         <mat-form-field>
             <mat-label>Column name</mat-label>
 
-            <input type="text" matInput [id]="'name_' + attrNumber" (change)="trimValue('name');"
+            <input type="text" matInput [id]="'name_' + attrNumber" (blur)="trimValue('name');"
                    formControlName="name"/>
 
             <mat-error *ngIf="columnConfigurationForm.controls['name'].hasError('noSpace')">

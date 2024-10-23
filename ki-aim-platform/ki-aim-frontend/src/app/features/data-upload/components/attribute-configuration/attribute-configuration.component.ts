@@ -49,6 +49,10 @@ export class AttributeConfigurationComponent implements AfterViewInit {
     }
 
     protected trimValue(field: string) {
-        this.columnConfigurationForm.controls[field].patchValue(this.columnConfigurationForm.controls[field].value.trim());
+        const originalValue = this.columnConfigurationForm.controls[field].value;
+        const trimmedValue = originalValue.trim();
+        if (originalValue !== trimmedValue) {
+            this.columnConfigurationForm.controls[field].patchValue(trimmedValue);
+        }
     }
 }

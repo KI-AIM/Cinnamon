@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { DataConfiguration } from '../model/data-configuration';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, map, Observable, PartialObserver } from 'rxjs';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
@@ -20,6 +20,8 @@ export class DataConfigurationService {
 
     private readonly _dataConfiguration$: Observable<DataConfiguration>;
     private dataConfigurationSubject: BehaviorSubject<DataConfiguration>;
+
+    public localDataConfiguration: DataConfiguration | null = null;
 
     constructor(
         private httpClient: HttpClient,
@@ -58,16 +60,8 @@ export class DataConfigurationService {
     }
 
     public setDataConfiguration(value: DataConfiguration) {
+        this.localDataConfiguration = null;
         this.dataConfigurationSubject.next(value);
-    }
-
-    public validateConfiguration(dataConfig: File, observer: PartialObserver<DataConfiguration>) {
-        const callback = (result: object | null) => {
-            this.setDataConfiguration(result as DataConfiguration);
-            this.postDataConfiguration().pipe(map(() => this.dataConfigurationSubject.value)).subscribe(observer);
-        };
-
-        this.configurationService.extractConfig(dataConfig, this.CONFIGURATION_NAME, callback);
     }
 
     public downloadDataConfigurationAsJson(): Observable<DataConfiguration> {
@@ -92,7 +86,14 @@ export class DataConfigurationService {
     }
 
     private getConfigurationCallback(): Object {
-        return this.dataConfigurationSubject.getValue();
+        let config;
+        if (this.localDataConfiguration !== null) {
+            config = this.localDataConfiguration;
+            this.setDataConfiguration(config);
+        } else {
+            config = this.dataConfigurationSubject.getValue();
+        }
+        return config;
     }
 
     private setConfigCallback(importData: ImportPipeData): void {

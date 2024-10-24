@@ -153,6 +153,10 @@ export class AdditionalConfigurationComponent {
     }
 
     protected cancel() {
+        if (this.disabled) {
+            return;
+        }
+
         this.getConfigurations().clear();
 
         this.cache.forEach(config => {
@@ -160,7 +164,7 @@ export class AdditionalConfigurationComponent {
             if (configurationType !== null) {
                 this.addConfiguration(configurationType);
             }
-        })
+        });
 
         this.getConfigurations().patchValue(this.cache);
     }

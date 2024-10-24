@@ -10,6 +10,11 @@ public class InternalMissingHandlingException extends InternalException {
 	 */
 	public static final String REQUEST_TYPE = "1";
 
+	/**
+	 * Exception code for missing file type handling.
+	 */
+	public static final String FILE_TYPE = "2";
+
 	public InternalMissingHandlingException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

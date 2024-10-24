@@ -8,7 +8,7 @@ export enum FileType {
 
 export class FileConfiguration {
     constructor(
-        public fileType: FileType,
+        public fileType: FileType | null,
         public csvFileConfiguration: CsvFileConfiguration,
         public xlsxFileConfiguration: XlsxFileConfiguration,
     ) {}

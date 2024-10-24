@@ -16,15 +16,11 @@ import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.config.StepConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.entity.ExecutionStepEntity;
-import de.kiaim.platform.model.entity.ExternalProcessEntity;
-import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.CsvFileConfiguration;
-import de.kiaim.platform.model.file.FileConfiguration;
-import de.kiaim.platform.model.file.FileType;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.repository.ExternalProcessRepository;
 import de.kiaim.platform.repository.ProjectRepository;
@@ -251,15 +247,14 @@ public class ProcessService {
 			try {
 				final var value = entry.getValue();
 				if (entry.getKey().equals("synthetic_data")) {
-					final FileConfiguration fileConfiguration = new FileConfiguration();
-					fileConfiguration.setFileType(FileType.CSV);
-					fileConfiguration.setCsvFileConfiguration(new CsvFileConfiguration());
+					final FileConfigurationEntity fileConfigurationEntity = new CsvFileConfigurationEntity(
+							new CsvFileConfiguration());
 
 					final DataConfiguration resultDataConfiguration = csvProcessor.estimateDataConfiguration(
-							value.getInputStream(), fileConfiguration, DatatypeEstimationAlgorithm.MOST_GENERAL);
+							value.getInputStream(), fileConfigurationEntity, DatatypeEstimationAlgorithm.MOST_GENERAL);
 					final Step step = process.getStep();
 					final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),
-					                                                                    fileConfiguration,
+					                                                                    fileConfigurationEntity,
 					                                                                    resultDataConfiguration);
 					databaseService.storeTransformationResult(transformationResult, project, step);
 				} else if (entry.getKey().equals("anonymized_dataset")) {

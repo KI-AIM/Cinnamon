@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DataConfiguration } from '../model/data-configuration';
 import { instanceToPlain } from 'class-transformer';
-import { FileConfiguration } from "../model/file-configuration";
 import { environments } from "../../../environments/environment";
 
 @Injectable({
@@ -15,40 +14,14 @@ export class DataService {
     constructor(private httpClient: HttpClient) {
     }
 
-    estimateData(file: File, fileConfig: FileConfiguration): Observable<Object> {
-        const formData = new FormData();
-
-        formData.append("file", file);
-
-        const fileConfigString = JSON.stringify(fileConfig);
-        formData.append("fileConfiguration", fileConfigString);
-
-        return this.httpClient.post(this.baseUrl + "/estimation", formData);
+    estimateData(): Observable<Object> {
+        return this.httpClient.get(this.baseUrl + "/estimation");
     }
 
-    readAndValidateData(file: File, fileConfig: FileConfiguration, config: DataConfiguration): Observable<Object> {
+    storeData(config: DataConfiguration): Observable<Object> {
         const formData = new FormData();
 
-        formData.append("file", file);
-
-        const fileConfigString = JSON.stringify(fileConfig);
-        formData.append("fileConfiguration", fileConfigString);
-
-        var configString = JSON.stringify(instanceToPlain(config));
-        formData.append("configuration", configString);
-
-        return this.httpClient.post(this.baseUrl + "/validation", formData);
-    }
-
-    storeData(file: File, config: DataConfiguration, fileConfig: FileConfiguration): Observable<Object> {
-        const formData = new FormData();
-
-        formData.append("file", file);
-
-        const fileConfigString = JSON.stringify(fileConfig);
-        formData.append("fileConfiguration", fileConfigString);
-
-        var configString = JSON.stringify(instanceToPlain(config));
+        const configString = JSON.stringify(instanceToPlain(config));
         formData.append("configuration", configString);
 
         return this.httpClient.post(this.baseUrl, formData);

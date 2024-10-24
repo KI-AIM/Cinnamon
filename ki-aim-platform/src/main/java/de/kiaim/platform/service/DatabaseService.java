@@ -14,14 +14,14 @@ import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.DataTransformationError;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.dto.DataSetInfo;
+import de.kiaim.platform.model.dto.FileInformation;
 import de.kiaim.platform.model.dto.TransformationResultPage;
 import de.kiaim.platform.model.dto.LoadDataRequest;
-import de.kiaim.platform.model.entity.DataSetEntity;
-import de.kiaim.platform.model.entity.ProjectEntity;
-import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
+import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.repository.DataSetRepository;
 import de.kiaim.platform.repository.DataTransformationErrorRepository;
 import de.kiaim.platform.repository.ProjectRepository;
@@ -32,8 +32,10 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.sql.Date;
@@ -87,6 +89,44 @@ public class DatabaseService {
 	}
 
 	/**
+	 * Stores the given file.
+	 * If a data set is present and has not been confirmed, the data set will be deleted.
+	 *
+	 * @param project The project where the file should be stored.
+	 * @param file The file to be stored.
+	 * @param fileConfiguration The file configuration to be stored.
+	 * @return General information about the file.
+	 * @throws BadDataSetIdException If the data set has already been confirmed.
+	 * @throws BadFileException If the file could not be read.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
+	 */
+	public FileInformation storeFile(final ProjectEntity project, final MultipartFile file,
+	                                 final FileConfiguration fileConfiguration) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
+		deleteDataSetIfNotConfirmedOrThrow(project, Step.VALIDATION);
+
+		final FileConfigurationEntity fileConfigurationEntity = switch (fileConfiguration.getFileType()) {
+			case CSV -> new CsvFileConfigurationEntity(fileConfiguration.getCsvFileConfiguration());
+			case FHIR -> new FhirFileConfigurationEntity();
+			case XLSX -> new XlsxFileConfigurationEntity(fileConfiguration.getXlsxFileConfiguration());
+		};
+
+		final FileEntity fileEntity = new FileEntity();
+		fileEntity.setName(file.getOriginalFilename());
+		fileEntity.setFileConfiguration(fileConfigurationEntity);
+
+		try {
+			fileEntity.setFile(file.getBytes());
+		} catch (final IOException e) {
+			throw new BadFileException(BadFileException.NOT_READABLE, "Could not read file");
+		}
+
+		project.setFile(fileEntity);
+		projectRepository.save(project);
+
+		return new FileInformation(fileEntity.getName(), fileConfiguration.getFileType());
+	}
+
+	/**
 	 * Stores the DataConfiguration and associates the configuration with the data set for the given step in the given configuration.
 	 *
 	 * @param dataConfiguration The configuration to be stored.
@@ -97,8 +137,8 @@ public class DatabaseService {
 	@Transactional
 	public void storeDataConfiguration(final DataConfiguration dataConfiguration, final ProjectEntity project,
 	                                   final Step step)
-			throws BadDataSetIdException {
-		throwIfDataSetIsStored(project, step);
+			throws BadDataSetIdException, InternalDataSetPersistenceException {
+		deleteDataSetIfNotConfirmedOrThrow(project, Step.VALIDATION);
 		doStoreDataConfiguration(project, dataConfiguration, step);
 	}
 
@@ -117,11 +157,12 @@ public class DatabaseService {
 	 */
 	@Transactional
 	public long storeTransformationResult(final TransformationResult transformationResult, final ProjectEntity project,
-	                                      final Step step) throws InternalDataSetPersistenceException {
+	                                      final Step step) throws InternalDataSetPersistenceException, BadDataSetIdException {
 		// Delete the existing data set
-		if (project.getDataSets().containsKey(step) && project.getDataSets().get(step).isStoredData()) {
-			deleteDataSet(project.getDataSets().get(step));
-		}
+		deleteDataSetIfNotConfirmedOrThrow(project, step);
+//		if (project.getDataSets().containsKey(step) && project.getDataSets().get(step).isStoredData()) {
+//			deleteDataSet(project.getDataSets().get(step));
+//		}
 
 		// Store configuration
 		final DataSet dataSet = transformationResult.getDataSet();
@@ -428,6 +469,7 @@ public class DatabaseService {
 				process.getAdditionalResultFiles().clear();
 			}
 		}
+		project.setFile(null);
 
 		// Delete transformation errors
 		projectRepository.save(project);
@@ -771,11 +813,23 @@ public class DatabaseService {
 	}
 
 	/**
-	 * Check if the data set already has been stored.
+	 * Checks if the data set for the given step has been confirmed.
+	 * Otherwise, deletes the data set if present.
+	 *
+	 * @param project The project.
+	 * @param step The step.
+	 * @throws BadDataSetIdException If the data is confirmed.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
 	 */
-	private void throwIfDataSetIsStored(final ProjectEntity project, final Step step) throws BadDataSetIdException {
-		if (project.getDataSets().containsKey(step) && project.getDataSets().get(step).isStoredData()) {
-			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been stored!");
+	private void deleteDataSetIfNotConfirmedOrThrow(final ProjectEntity project,
+	                                                final Step step) throws BadDataSetIdException, InternalDataSetPersistenceException {
+		if (project.getDataSets().containsKey(step)) {
+			final DataSetEntity dataSet = project.getDataSets().get(step);
+			if (dataSet.isConfirmedData()) {
+				throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been stored!");
+			} else if (dataSet.isStoredData()) {
+				deleteDataSet(dataSet);
+			}
 		}
 	}
 

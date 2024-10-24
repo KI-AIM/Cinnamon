@@ -2,8 +2,8 @@ package de.kiaim.platform.processor;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.platform.exception.BadColumnNameException;
+import de.kiaim.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
-import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.file.FileType;
 
@@ -24,7 +24,7 @@ public interface DataProcessor {
 	 * @param fileConfiguration Configuration describing the format of the data.
 	 * @return The number of columns in the data.
 	 */
-	int getNumberColumns(InputStream data, FileConfiguration fileConfiguration);
+	int getNumberColumns(InputStream data, FileConfigurationEntity fileConfiguration);
 
     /**
      * Receives data from frontend, converts it to
@@ -35,7 +35,7 @@ public interface DataProcessor {
      * @param fileConfiguration Configuration describing the format of the data.
      * @return TransformationResult
      */
-    TransformationResult read(InputStream data, FileConfiguration fileConfiguration, DataConfiguration configuration)
+    TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration, DataConfiguration configuration)
 		    throws BadColumnNameException;
 
     /**
@@ -46,6 +46,6 @@ public interface DataProcessor {
      * @param fileConfiguration Configuration describing the format of the data.
      * @return DataConfiguration, only DataConfiguration populated
      */
-    DataConfiguration estimateDataConfiguration(InputStream data, FileConfiguration fileConfiguration, DatatypeEstimationAlgorithm algorithm);
+    DataConfiguration estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration, DatatypeEstimationAlgorithm algorithm);
 
 }

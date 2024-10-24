@@ -60,10 +60,13 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     }
 
     protected get locked(): boolean {
-        return this.statusService.isStepCompleted(Steps.DATA_CONFIG)
+        return this.statusService.isStepCompleted(Steps.VALIDATION)
     }
 
     ngOnInit(): void {
+        // Fetch file info for potential XLSX warning
+        this.fileService.fileInfo$.subscribe();
+
         this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
             if (this.configuration.localDataConfiguration !== null) {
                 this.form = this.createForm(this.configuration.localDataConfiguration);
@@ -86,9 +89,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         const config = plainToInstance(DataConfiguration, this.form.value);
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
-        this.dataService.storeData(this.fileService.getFile(),
-            config,
-            this.fileService.getFileConfiguration()
+        this.dataService.storeData(config,
         ).subscribe({
             next: (d) => this.handleUpload(d),
             error: (e) => this.handleError(e),

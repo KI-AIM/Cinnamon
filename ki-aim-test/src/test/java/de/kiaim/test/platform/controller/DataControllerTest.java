@@ -252,7 +252,7 @@ class DataControllerTest extends ControllerTest {
 	void loadConfigYaml() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration").accept(CustomMediaType.APPLICATION_YAML))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/VALIDATION/configuration").accept(CustomMediaType.APPLICATION_YAML))
 		       .andExpect(status().isOk())
 		       .andExpect(
 				       content().string(DataConfigurationTestHelper.generateDataConfigurationAsYaml()));
@@ -262,7 +262,7 @@ class DataControllerTest extends ControllerTest {
 	void loadConfigJson() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration").accept(MediaType.APPLICATION_JSON))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/VALIDATION/configuration").accept(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataConfigurationTestHelper.generateDataConfigurationAsJson()));
 	}

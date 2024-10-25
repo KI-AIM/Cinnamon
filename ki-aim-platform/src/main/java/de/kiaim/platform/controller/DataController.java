@@ -283,12 +283,14 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/configuration",
+	@GetMapping(value = "/{stepName}/configuration",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadConfig(
+			@Parameter(description = "Step the requested data configuration belongs to.")
+			@PathVariable final String stepName,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
+		return handleRequest(RequestType.LOAD_CONFIG, null, stepName, null, user);
 	}
 
 	@Operation(summary = "Returns general information the data set.",
@@ -523,7 +525,7 @@ public class DataController {
 	 *     <li>{@link RequestType#ESTIMATE}: </li>
 	 *     <li>{@link RequestType#DELETE}: requestUser</li>
 	 *     <li>{@link RequestType#INFO}: requestUser, stepName</li>
-	 *     <li>{@link RequestType#LOAD_CONFIG}: stepName, requestUser</li>
+	 *     <li>{@link RequestType#LOAD_CONFIG}: requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_DATA}: loadDataRequest, requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_DATA_SET}: loadDataRequest, requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT}: requestUser, stepName</li>
@@ -599,7 +601,8 @@ public class DataController {
 				result = databaseService.getInfo(projectEntity, step);
 			}
 			case LOAD_CONFIG -> {
-				result = databaseService.exportDataConfiguration(projectEntity, Step.VALIDATION);
+				final Step step = Step.getStepOrThrow(stepName);
+				result = databaseService.exportDataConfiguration(projectEntity, step);
 			}
 			case LOAD_DATA -> {
 				final Step step = Step.getStepOrThrow(stepName);

@@ -2,11 +2,11 @@ package de.kiaim.platform.model.entity;
 
 import de.kiaim.platform.model.file.FileType;
 import de.kiaim.platform.model.file.XlsxFileConfiguration;
-import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.lang.Nullable;
 
 /**
  * File configuration for XLSX files.
@@ -20,7 +20,7 @@ public class XlsxFileConfigurationEntity extends FileConfigurationEntity {
 	/**
 	 * If the first row of the file should be treated as the header row.
 	 */
-	@Column(nullable = false)
+	@Nullable
 	private Boolean hasHeader;
 
 	public XlsxFileConfigurationEntity() {

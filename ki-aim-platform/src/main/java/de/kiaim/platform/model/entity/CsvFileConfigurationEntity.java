@@ -2,11 +2,11 @@ package de.kiaim.platform.model.entity;
 
 import de.kiaim.platform.model.file.CsvFileConfiguration;
 import de.kiaim.platform.model.file.FileType;
-import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.lang.Nullable;
 
 /**
  * File configuration for CSV files.
@@ -19,25 +19,25 @@ public class CsvFileConfigurationEntity extends FileConfigurationEntity {
 	/**
 	 * String used for separating columns.
 	 */
-	@Column(nullable = false)
+	@Nullable
 	private String columnSeparator;
 
 	/**
 	 * String used for separating columns.
 	 */
-	@Column(nullable = false)
+	@Nullable
 	private String lineSeparator;
 
 	/**
 	 * Quote char for escaping values.
 	 */
-	@Column(nullable = false)
+	@Nullable
 	private Character quoteChar;
 
 	/**
 	 * If the first row of the file should be treated as the header row.
 	 */
-	@Column(nullable = false)
+	@Nullable
 	private Boolean hasHeader;
 
 	public CsvFileConfigurationEntity() {

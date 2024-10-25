@@ -17,6 +17,8 @@ import { ConfigurationService } from "../../../../shared/services/configuration.
 import { ErrorMessageService } from "src/app/shared/services/error-message.service";
 import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
 import { StatusService } from "../../../../shared/services/status.service";
+import { Observable } from "rxjs";
+import { FileInformation } from "../../../../shared/model/file-information";
 
 @Component({
 	selector: "app-upload-file",
@@ -28,6 +30,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     private configurationFile: File | null;
 	protected dataFile: File | null;
 	public fileConfiguration: FileConfiguration;
+
+    protected fileInfo$: Observable<FileInformation>;
 
 	@ViewChild("uploadErrorModal") errorModal: TemplateRef<NgbModal>;
 	@ViewChild("fileForm") fileInput: ElementRef;
@@ -73,7 +77,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        this.fileService.fileInfo$.subscribe();
+        this.fileInfo$ = this.fileService.fileInfo$;
     }
 
     protected get locked(): boolean {
@@ -115,6 +119,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
         this.fileService.uploadFile(this.dataFile, this.fileConfiguration).subscribe({
             next: value => {
+                this.fileService.invalidateCache();
                 if (this.configurationFile == null) {
                     // Estimate data configuration based on the data set
                     this.dataService.estimateData().subscribe({

@@ -3,7 +3,7 @@ import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "../../..
 import { XlsxFileConfiguration } from "src/app/shared/model/xlsx-file-configuration";
 import {HttpClient} from "@angular/common/http";
 import {environments} from "../../../../environments/environment";
-import {Observable, tap} from "rxjs";
+import { finalize, Observable, of, share, tap } from "rxjs";
 import {Injectable} from "@angular/core";
 import {FileInformation} from "../../../shared/model/file-information";
 
@@ -16,6 +16,7 @@ export class FileService {
     fileConfiguration: FileConfiguration;
 
     private _fileInfo: FileInformation | null = null;
+    private _fileInfo$: Observable<FileInformation> | null = null;
 
 	constructor(
         private readonly httpClient: HttpClient,
@@ -23,12 +24,26 @@ export class FileService {
 		this.fileConfiguration = new FileConfiguration(null, new CsvFileConfiguration(Delimiter.COMMA, LineEnding.LF, QuoteChar.DOUBLE_QUOTE, true), new XlsxFileConfiguration(true));
 	}
 
-    public get fileInfo(): FileInformation | null {
-        return this._fileInfo;
+    public get fileInfo$(): Observable<FileInformation> {
+        if (this._fileInfo) {
+            return of(this._fileInfo);
+        }
+        if (this._fileInfo$) {
+            return this._fileInfo$;
+        }
+
+        return this.httpClient.get<FileInformation>(this.baseUrl).pipe(
+            tap(value => this._fileInfo = value),
+            share(),
+            finalize(() => {
+                this._fileInfo$ = null;
+            })
+        );
     }
 
-    public get fileInfo$(): Observable<FileInformation> {
-        return this.httpClient.get<FileInformation>(this.baseUrl).pipe(tap(value => this._fileInfo = value));
+    public invalidateCache() {
+        this._fileInfo = null;
+        this._fileInfo$ = null;
     }
 
     public getFileConfiguration(): FileConfiguration {

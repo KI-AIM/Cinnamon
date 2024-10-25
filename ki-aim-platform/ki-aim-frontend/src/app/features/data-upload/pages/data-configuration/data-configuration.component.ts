@@ -20,7 +20,7 @@ import { ErrorMessageService } from 'src/app/shared/services/error-message.servi
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
-import {debounceTime, distinctUntilChanged, Subscription} from "rxjs";
+import { debounceTime, distinctUntilChanged, map, Observable, Subscription } from "rxjs";
 import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
 import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
@@ -36,11 +36,12 @@ import { DataSetInfoService } from "../../services/data-set-info.service";
 })
 export class DataConfigurationComponent implements OnInit, OnDestroy {
     error: string;
-    FileType = FileType;
 
     private dataConfigurationSubscription: Subscription;
 
     protected form: FormGroup;
+
+    protected isFileTypeXLSX$: Observable<boolean>;
 
     @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
@@ -66,8 +67,12 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        // Fetch file info for potential XLSX warning
-        this.fileService.fileInfo$.subscribe();
+        this.isFileTypeXLSX$ = this.fileService.fileInfo$.pipe(
+            map(value => {
+                console.log(value.type);
+               return value.type === FileType.XLSX;
+            })
+        );
 
         this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
             if (this.configuration.localDataConfiguration !== null) {

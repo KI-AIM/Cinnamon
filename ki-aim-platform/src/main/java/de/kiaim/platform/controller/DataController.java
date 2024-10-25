@@ -258,7 +258,9 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/confirm")
+	@PostMapping(value = "/confirm",
+	             consumes = MediaType.ALL_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> confirmData(
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {

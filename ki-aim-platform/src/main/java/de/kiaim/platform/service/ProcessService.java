@@ -156,7 +156,6 @@ public class ProcessService {
 	 *
 	 * @param project The project the process corresponds to.
 	 * @param step The step the process corresponds to.
-	 * @throws BadColumnNameException                    If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
 	 * @throws InternalApplicationConfigurationException If the given step is not configured.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
@@ -166,7 +165,7 @@ public class ProcessService {
 	 */
 	@Transactional
 	public ExecutionStepEntity start(final ProjectEntity project, final Step step)
-			throws BadColumnNameException, BadDataSetIdException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalRequestException {
+			throws BadDataSetIdException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalRequestException {
 		final var executionStep = project.getExecutions().get(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
@@ -219,16 +218,15 @@ public class ProcessService {
 	 *
 	 * @param processId The ID of the process to finish.
 	 * @param resultFiles All files send in the callback request.
-	 * @throws BadColumnNameException If
-	 * @throws BadProcessIdException If the given process ID is not valid.
-	 * @throws BadStateException If the file for the dataset has not been stored.
-	 * @throws InternalIOException If
-	 * @throws InternalRequestException
-	 * @throws InternalApplicationConfigurationException
-	 * @throws InternalInvalidStateException
-	 * @throws InternalDataSetPersistenceException
-	 * @throws BadDataSetIdException
-	 * @throws BadDataConfigurationException
+	 * @throws BadDataConfigurationException             If the data configuration is not valid.
+	 * @throws BadDataSetIdException                     If the data set could not be exported.
+	 * @throws BadProcessIdException                     If the given process ID is not valid.
+	 * @throws BadStateException                         If the file for the dataset has not been stored.
+	 * @throws InternalIOException                       If a result file could not be read.
+	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
+	 * @throws InternalApplicationConfigurationException If the step is not configured.
+	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
+	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
 	 */
 	@Transactional
 	public void finishProcess(final Long processId, final Set<Map.Entry<String, MultipartFile>> resultFiles)
@@ -336,7 +334,6 @@ public class ProcessService {
 	 * If no resources are available, the process will be scheduled and started if resources are available.
 	 *
 	 * @param externalProcess The process to be started.
-	 * @throws BadColumnNameException                    If the data set could not be exported.
 	 * @throws BadDataSetIdException                     If the data set could not be exported.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
@@ -345,7 +342,7 @@ public class ProcessService {
 	 * @throws InternalIOException                       If the request could not be created.
 	 */
 	private void startOrScheduleProcess(final ExternalProcessEntity externalProcess)
-			throws BadColumnNameException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException {
+			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException {
 		// Get configuration
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
 
@@ -413,7 +410,6 @@ public class ProcessService {
 	 * If the last step is finished, the execution will be finished.
 	 *
 	 * @param executionStep The execution step.
-	 * @throws BadColumnNameException                    If the data set could not be exported.
 	 * @throws BadDataSetIdException                     If the data set could not be exported.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
@@ -422,7 +418,7 @@ public class ProcessService {
 	 * @throws InternalIOException                       If the request could not be created.
 	 */
 	private void startNext(final ExecutionStepEntity executionStep)
-			throws BadColumnNameException, BadDataSetIdException, InternalInvalidStateException, InternalDataSetPersistenceException, InternalRequestException, InternalApplicationConfigurationException, InternalIOException {
+			throws BadDataSetIdException, InternalInvalidStateException, InternalDataSetPersistenceException, InternalRequestException, InternalApplicationConfigurationException, InternalIOException {
 		// Get the next step
 		Step nextStep = null;
 		ExternalProcessEntity nextProcess = null;
@@ -573,7 +569,6 @@ public class ProcessService {
 	 * Starts the given process by sending a request to the external server.
 	 *
 	 * @param externalProcess The process to be started.
-	 * @throws BadColumnNameException                    If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
 	 * @throws InternalApplicationConfigurationException If the given step is not configured.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
@@ -582,7 +577,7 @@ public class ProcessService {
 	 * @throws InternalRequestException                  If the request to start the process failed.
 	 */
 	private void doStartProcess(final ExternalProcessEntity externalProcess)
-			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, BadColumnNameException, InternalIOException, BadDataSetIdException, InternalInvalidStateException {
+			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException {
 		final Step step = externalProcess.getStep();
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
 
@@ -603,7 +598,6 @@ public class ProcessService {
 	 * Starts the given process with the given data.
 	 *
 	 * @param externalProcess The process to be started.
-	 * @throws BadColumnNameException                    If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
 	 * @throws InternalIOException                       If the request body could not be created.
@@ -612,7 +606,7 @@ public class ProcessService {
 	private void doStartProcess(final StepConfiguration stepConfiguration,
 	                            final ExternalProcessEntity externalProcess, final String configuration,
 	                            final String url)
-			throws InternalDataSetPersistenceException, BadColumnNameException, InternalIOException, BadDataSetIdException, InternalRequestException, InternalApplicationConfigurationException {
+			throws InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException, InternalRequestException, InternalApplicationConfigurationException {
 		// Prepare body
 		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
 
@@ -725,13 +719,13 @@ public class ProcessService {
 
 	private void addDataSets(final ExternalProcessEntity externalProcess, final StepConfiguration stepConfiguration,
 	                         final MultipartBodyBuilder bodyBuilder)
-			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, BadColumnNameException, InternalIOException, BadDataSetIdException {
+			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException {
 		final ProjectEntity project = externalProcess.getExecutionStep().getProject();
 
 		for (final String inputDataSet : stepConfiguration.getInputs()) {
 			switch (inputDataSet) {
 				case "original": {
-					final var dataset = databaseService.exportDataSet(project, new ArrayList<>(), Step.VALIDATION);
+					final var dataset = databaseService.exportDataSet(project, Step.VALIDATION);
 					addDataSet(bodyBuilder, stepConfiguration, dataset, "real_data", "real_data.csv", "attribute_config");
 					break;
 				}
@@ -798,7 +792,7 @@ public class ProcessService {
 	}
 
 	private DataSet getLastOrOriginalDataSet(final ExecutionStepEntity executionStep)
-			throws InternalDataSetPersistenceException, BadColumnNameException, InternalIOException, BadDataSetIdException {
+			throws InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException {
 		var abc = executionStep.getStep();
 
 		var indexOfSourceStep = executionStep.getCurrentStep() != null
@@ -820,7 +814,7 @@ public class ProcessService {
 			}
 		}
 
-		return databaseService.exportDataSet(executionStep.getProject(), new ArrayList<>(), dataSetSourceStep);
+		return databaseService.exportDataSet(executionStep.getProject(), dataSetSourceStep);
 	}
 
 	private void setProcessError(final ExternalProcessEntity process, final String message) {

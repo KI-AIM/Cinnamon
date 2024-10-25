@@ -265,6 +265,26 @@ public class DatabaseService {
 
 	/**
 	 * Exports the data set associated with the given project and step.
+	 *
+	 * @param project The project of which the data set should be exported.
+	 * @param step The step of which the data set should be exported.
+	 * @return The DataSet.
+	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
+	 */
+	@Transactional
+	public DataSet exportDataSet(final ProjectEntity project, final Step step)
+			throws InternalDataSetPersistenceException, BadDataSetIdException, InternalIOException {
+		try {
+			return exportDataSet(project, new ArrayList<>(), step);
+		} catch (final BadColumnNameException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_EXPORT, "Failed to export the dataset due to an error in the column selection!", e);
+		}
+	}
+
+	/**
+	 * Exports the data set associated with the given project and step.
 	 * Returns the columns with the given names in the given order.
 	 * If no column names are provided, all columns are exported.
 	 *
@@ -290,15 +310,14 @@ public class DatabaseService {
 	 * @param project The project of which the data set should be exported.
 	 * @param step The step of which the data set should be exported.
 	 * @return The transformation result.
-	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
 	public TransformationResult exportTransformationResult(final ProjectEntity project, final Step step)
-			throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
-		final DataSet dataSet = exportDataSet(project, new ArrayList<>(), step);
+			throws BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
+		final DataSet dataSet = exportDataSet(project, step);
 
 		final DataSetEntity dataSetEntity = project.getDataSets().get(step);
 

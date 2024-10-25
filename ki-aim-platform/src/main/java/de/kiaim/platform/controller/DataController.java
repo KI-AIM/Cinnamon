@@ -578,6 +578,10 @@ public class DataController {
 				result = null;
 			}
 			case ESTIMATE -> {
+				if (projectEntity.getFile() == null) {
+					throw new BadStateException(BadStateException.NO_DATASET_FILE, "Estimating the data configuration requires the file for the dataset to be selected!");
+				}
+
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
 						projectEntity.getFile().getFileConfiguration().getFileType());
 				final InputStream inputStream = new ByteArrayInputStream(projectEntity.getFile().getFile());
@@ -634,6 +638,10 @@ public class DataController {
 				result = null;
 			}
 			case STORE_DATE_SET -> {
+				if (projectEntity.getFile() == null) {
+					throw new BadStateException(BadStateException.NO_DATASET_FILE, "Storing the dataset requires the file for the dataset to be selected!");
+				}
+
 				// Store configuration
 				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
 

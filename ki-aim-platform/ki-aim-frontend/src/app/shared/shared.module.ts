@@ -1,5 +1,5 @@
 import { NgModule } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { InformationDialogComponent } from "./components/information-dialog/information-dialog.component";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatButtonModule } from "@angular/material/button";
@@ -28,6 +28,8 @@ import {DataTableComponent} from "./components/data-table/data-table.component";
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
+import { DataInspectionComponent } from './components/data-inspection/data-inspection.component';
+import { DataInspectionAttributeComponent } from './components/data-inspection-attribute/data-inspection-attribute.component';
 
 @NgModule({
     declarations: [
@@ -45,6 +47,8 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
         InformationDialogComponent,
         LoadingSpinnerComponent,
         NoSpaceValidatorDirective,
+        DataInspectionComponent,
+        DataInspectionAttributeComponent,
     ],
     imports: [
         CommonModule,
@@ -62,6 +66,7 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
         MatTableModule,
         ReactiveFormsModule,
         MatProgressBarModule,
+        NgOptimizedImage,
     ],
     exports: [
         ConfigurationFormComponent,
@@ -73,6 +78,7 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
         InfoCardComponent,
         LoadingSpinnerComponent,
         NoSpaceValidatorDirective,
+        DataInspectionComponent,
     ],
 })
 export class SharedModule {}

@@ -1,0 +1,75 @@
+<div>
+    Searchbox
+</div>
+
+<div>
+    <div *ngIf="(dataConfiguration$ | async) as dataConfiguration">
+        <div *ngFor="let attribute of dataConfiguration.configurations" class="d-flex flex-row" style="height: 15rem;">
+            <!-- Basic information on the right -->
+            <div class="d-flex flex-column">
+
+                <!-- Configured metadata on the top -->
+                <div style="width: 30%">
+                    <div class="fw-bold">
+                        Attribute Information
+                    </div>
+                    <div>
+                        <span>Index:</span>
+                        <span>{{ attribute.index }}</span>
+                    </div>
+                    <div>
+                        <span>Name:</span>
+                        <span>{{ attribute.name }}</span>
+                    </div>
+                    <div>
+                        <span>Type:</span>
+                        <span>{{ attribute.type}}</span>
+                    </div>
+                    <div>
+                        <span>Scale:</span>
+                        <span>{{ attribute.scale }}</span>
+                    </div>
+                </div>
+
+                <!-- Important metrics on the bottom -->
+                <div>
+                    <div class="fw-bold">
+                        Important Statistical Metrics
+                    </div>
+                    <div>
+                        <span>Mean:</span>
+                        <span class="fst-italic">Somewhat acceptable value</span>
+                    </div>
+                    <div>
+                        <span>Variance:</span>
+                        <span class="fst-italic">The greatest variance in the history of variances</span>
+                    </div>
+                    <div>
+                        <span>Standard Deviation:</span>
+                        <span class="fst-italic">Quite standard for a deviation</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Graph in the middle -->
+            <div class="h-100" style="height: 100%; width: 45%">
+                <div *ngIf="( catImage$ | async) as catImageMetadata" class="h-100">
+                    <img [ngSrc]="catImageMetadata[0].url" [width]="catImageMetadata[0].width"
+                         [height]="catImageMetadata[0].height" alt="Cat image"
+                         style="max-height: 100%; max-width: 100%; height: auto; width: auto;">
+                </div>
+            </div>
+
+            <!-- Button to open details on the right -->
+            <div class="d-flex flex-row" style="width: 15%">
+                <div class="m-auto">
+                    <button mat-raised-button mat-dialog-close color="primary" type="button">Show details</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+

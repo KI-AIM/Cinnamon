@@ -86,7 +86,6 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = FileInformation.class))}),
 	})
-	@Transactional
 	@GetMapping(value = "/file",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<FileInformation> getFile(
@@ -94,13 +93,7 @@ public class DataController {
 	) {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
-
-		final var fileInformation = new FileInformation();
-		if (projectEntity.getFile() != null) {
-			fileInformation.setName(projectEntity.getFile().getName());
-			fileInformation.setNumberOfAttributes(projectEntity.getFile().getNumberOfAttributes());
-			fileInformation.setType(projectEntity.getFile().getFileConfiguration().getFileType());
-		}
+		final var fileInformation = databaseService.getFileInformation(projectEntity);
 		return ResponseEntity.ok(fileInformation);
 	}
 

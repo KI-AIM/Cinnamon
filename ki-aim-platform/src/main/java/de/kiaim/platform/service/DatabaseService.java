@@ -106,6 +106,7 @@ public class DatabaseService {
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
 	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
 	 */
+	@Transactional
 	public FileInformation storeFile(final ProjectEntity project, final MultipartFile file,
 	                                 final FileConfiguration fileConfiguration) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalMissingHandlingException {
 		deleteDataSetIfNotConfirmedOrThrow(project, Step.VALIDATION);
@@ -135,7 +136,18 @@ public class DatabaseService {
 		project.setFile(fileEntity);
 		projectRepository.save(project);
 
-		return new FileInformation(fileEntity.getName(), fileConfiguration.getFileType(), numberOfAttributes);
+		return getFileInformation(project);
+	}
+
+	@Transactional
+	public FileInformation getFileInformation(final ProjectEntity project) {
+		final var fileInformation = new FileInformation();
+		if (project.getFile() != null) {
+			fileInformation.setName(project.getFile().getName());
+			fileInformation.setNumberOfAttributes(project.getFile().getNumberOfAttributes());
+			fileInformation.setType(project.getFile().getFileConfiguration().getFileType());
+		}
+		return fileInformation;
 	}
 
 	/**

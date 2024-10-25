@@ -218,15 +218,15 @@ public class ProcessService {
 	 *
 	 * @param processId The ID of the process to finish.
 	 * @param resultFiles All files send in the callback request.
-	 * @throws BadDataConfigurationException             If the data configuration is not valid.
 	 * @throws BadDataSetIdException                     If the data set could not be exported.
 	 * @throws BadProcessIdException                     If the given process ID is not valid.
 	 * @throws BadStateException                         If the file for the dataset has not been stored.
+	 * @throws InternalApplicationConfigurationException If the step is not configured.
+	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
+	 * @throws InternalInvalidResultException            If the estimation of the configuration produced an invalid configuration.
+	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
 	 * @throws InternalIOException                       If a result file could not be read.
 	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
-	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
 	 */
 	@Transactional
 	public void finishProcess(final Long processId, final Set<Map.Entry<String, MultipartFile>> resultFiles)
@@ -264,7 +264,13 @@ public class ProcessService {
 					final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),
 					                                                                    fileConfigurationEntity,
 					                                                                    resultDataConfiguration);
-					databaseService.storeTransformationResult(transformationResult, project, step);
+					try {
+						databaseService.storeTransformationResult(transformationResult, project, step);
+					} catch (final BadDataConfigurationException e) {
+						throw new InternalInvalidResultException(InternalInvalidResultException.INVALID_ESTIMATION,
+						                                         "Estimation created an invalid configuration!", e);
+					}
+
 				} else if (entry.getKey().equals("anonymized_dataset")) {
 					final Step step = process.getStep();
 

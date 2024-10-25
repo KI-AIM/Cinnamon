@@ -582,7 +582,13 @@ public class DataController {
 				result = dataProcessor.estimateDataConfiguration(inputStream,
 				                                                 projectEntity.getFile().getFileConfiguration(),
 				                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
-				databaseService.storeDataConfiguration((DataConfiguration) result, projectEntity, Step.VALIDATION);
+
+				try {
+					databaseService.storeDataConfiguration((DataConfiguration) result, projectEntity, Step.VALIDATION);
+				} catch (final BadDataConfigurationException e) {
+					throw new InternalInvalidResultException(InternalInvalidResultException.INVALID_ESTIMATION,
+					                                         "Estimation created an invalid configuration!", e);
+				}
 			}
 			case DELETE -> {
 				databaseService.delete(projectEntity);

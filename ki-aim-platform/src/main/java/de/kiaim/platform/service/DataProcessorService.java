@@ -38,12 +38,11 @@ public class DataProcessorService {
 	}
 
 	/**
-	 * Extracts the file extension from the file name of the given file, e.g. ".csv".
-	 * @param file File to extract the extension from.
-	 * @return The file extension.
-	 * @throws BadFileException If the file extension could not be read.
+	 * Validates the given file.
+	 * @param file File to be validated.
+	 * @throws BadFileException If the file is not valid.
 	 */
-	private String extractFileExtension(@Nullable final MultipartFile file) throws BadFileException {
+	public void validateFileOrThrow(@Nullable final MultipartFile file) throws BadFileException {
 		if (file == null) {
 			throw new BadFileException(BadFileException.MISSING_FILE, "Missing file");
 		}
@@ -57,8 +56,6 @@ public class DataProcessorService {
 		if (fileExtensionBegin == -1) {
 			throw new BadFileException(BadFileException.MISSING_FILE_EXTENSION, "Missing file extension");
 		}
-
-		return file.getOriginalFilename().substring(fileExtensionBegin);
 	}
 
 }

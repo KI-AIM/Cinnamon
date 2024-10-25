@@ -110,6 +110,8 @@ public class DatabaseService {
 	                                 final FileConfiguration fileConfiguration) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalMissingHandlingException {
 		deleteDataSetIfNotConfirmedOrThrow(project, Step.VALIDATION);
 
+		dataProcessorService.validateFileOrThrow(file);
+
 		final FileConfigurationEntity fileConfigurationEntity = switch (fileConfiguration.getFileType()) {
 			case CSV -> new CsvFileConfigurationEntity(fileConfiguration.getCsvFileConfiguration());
 			case FHIR -> new FhirFileConfigurationEntity();

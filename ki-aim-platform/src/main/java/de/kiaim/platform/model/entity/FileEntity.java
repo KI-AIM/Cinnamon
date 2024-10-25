@@ -25,6 +25,13 @@ public class FileEntity {
 	private String name;
 
 	/**
+	 * Number of attributes in the file.
+	 */
+	@Column(nullable = false)
+	@Getter @Setter
+	private int numberOfAttributes;
+
+	/**
 	 * Configuration for reading the file.
 	 */
 	@OneToOne(fetch = FetchType.EAGER, optional = false, orphanRemoval = true, cascade = CascadeType.ALL)

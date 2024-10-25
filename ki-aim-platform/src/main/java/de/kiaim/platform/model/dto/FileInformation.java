@@ -16,4 +16,7 @@ public class FileInformation {
 
 	@Schema(description = "File type of the file.", example = "CSV")
 	private FileType type;
+
+	@Schema(description = "Number of attributes in the file.", example = "CSV")
+	private int numberOfAttributes;
 }

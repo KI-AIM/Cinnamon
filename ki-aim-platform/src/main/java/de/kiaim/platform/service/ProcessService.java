@@ -218,11 +218,21 @@ public class ProcessService {
 	 * If an error is present, aborts the current execution step and stets the status to 'error'.
 	 *
 	 * @param processId The ID of the process to finish.
+	 * @param resultFiles All files send in the callback request.
+	 * @throws BadColumnNameException If
 	 * @throws BadProcessIdException If the given process ID is not valid.
+	 * @throws BadStateException If the file for the dataset has not been stored.
+	 * @throws InternalIOException If
+	 * @throws InternalRequestException
+	 * @throws InternalApplicationConfigurationException
+	 * @throws InternalInvalidStateException
+	 * @throws InternalDataSetPersistenceException
+	 * @throws BadDataSetIdException
+	 * @throws BadDataConfigurationException
 	 */
 	@Transactional
 	public void finishProcess(final Long processId, final Set<Map.Entry<String, MultipartFile>> resultFiles)
-			throws BadProcessIdException, InternalIOException, InternalRequestException, InternalApplicationConfigurationException, InternalInvalidStateException, InternalDataSetPersistenceException, BadColumnNameException, BadDataSetIdException {
+			throws ApiException {
 		final Optional<ExternalProcessEntity> processOptional = externalProcessRepository.findById(processId);
 
 		// Invalid processID

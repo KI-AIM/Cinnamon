@@ -22,6 +22,7 @@ import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.repository.DataSetRepository;
 import de.kiaim.platform.repository.DataTransformationErrorRepository;
 import de.kiaim.platform.repository.ProjectRepository;
@@ -35,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.sql.DataSource;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.*;
@@ -62,12 +64,14 @@ public class DatabaseService {
 
 	private final DataSetService dataSetService;
 	private final StepService stepService;
+	private final DataProcessorService dataProcessorService;
 
 	@Autowired
 	public DatabaseService(final DataSource dataSource, final DataTransformationErrorRepository errorRepository,
 	                       final SerializationConfig serializationConfig, final DataSetRepository dataSetRepository,
 	                       final ProjectRepository projectRepository, final DataschemeGenerator dataschemeGenerator,
-	                       final DataSetService dataSetService, final StepService stepService) {
+	                       final DataSetService dataSetService, final StepService stepService,
+	                       DataProcessorService dataProcessorService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		this.errorRepository = errorRepository;
 		jsonMapper = serializationConfig.jsonMapper();
@@ -76,6 +80,7 @@ public class DatabaseService {
 		this.dataschemeGenerator = dataschemeGenerator;
 		this.stepService = stepService;
 		this.dataSetService = dataSetService;
+		this.dataProcessorService = dataProcessorService;
 	}
 
 	/**
@@ -99,9 +104,10 @@ public class DatabaseService {
 	 * @throws BadDataSetIdException If the data set has already been confirmed.
 	 * @throws BadFileException If the file could not be read.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
 	 */
 	public FileInformation storeFile(final ProjectEntity project, final MultipartFile file,
-	                                 final FileConfiguration fileConfiguration) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException {
+	                                 final FileConfiguration fileConfiguration) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalMissingHandlingException {
 		deleteDataSetIfNotConfirmedOrThrow(project, Step.VALIDATION);
 
 		final FileConfigurationEntity fileConfigurationEntity = switch (fileConfiguration.getFileType()) {
@@ -120,10 +126,14 @@ public class DatabaseService {
 			throw new BadFileException(BadFileException.NOT_READABLE, "Could not read file");
 		}
 
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
+		final int numberOfAttributes = dataProcessor.getNumberColumns(new ByteArrayInputStream(fileEntity.getFile()), fileConfigurationEntity);
+		fileEntity.setNumberOfAttributes(numberOfAttributes);
+
 		project.setFile(fileEntity);
 		projectRepository.save(project);
 
-		return new FileInformation(fileEntity.getName(), fileConfiguration.getFileType());
+		return new FileInformation(fileEntity.getName(), fileConfiguration.getFileType(), numberOfAttributes);
 	}
 
 	/**
@@ -132,12 +142,15 @@ public class DatabaseService {
 	 * @param dataConfiguration The configuration to be stored.
 	 * @param project The project of the data set the configuration should be associated with.
 	 * @param step The step of the data set.
-	 * @throws BadDataSetIdException If the data has already been stored.
+	 * @throws BadDataConfigurationException If the data configuration is not valid.
+	 * @throws BadDataSetIdException If the data has already been confirmed.
+	 * @throws BadStateException If the file for the dataset has not been selected.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
 	 */
 	@Transactional
 	public void storeDataConfiguration(final DataConfiguration dataConfiguration, final ProjectEntity project,
 	                                   final Step step)
-			throws BadDataSetIdException, InternalDataSetPersistenceException {
+			throws BadDataConfigurationException, BadDataSetIdException,BadStateException, InternalDataSetPersistenceException {
 		deleteDataSetIfNotConfirmedOrThrow(project, Step.VALIDATION);
 		doStoreDataConfiguration(project, dataConfiguration, step);
 	}
@@ -153,16 +166,16 @@ public class DatabaseService {
 	 * @param project The project of the data set the configuration should be associated with.
 	 * @param step The step of the data set.
 	 * @return The generated ID of the DataSet.
+	 * @throws BadDataConfigurationException If the data configuration is not valid.
+	 * @throws BadDataSetIdException If the data has already been confirmed.
+	 * @throws BadStateException If the file for the dataset has not been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
 	 */
 	@Transactional
 	public long storeTransformationResult(final TransformationResult transformationResult, final ProjectEntity project,
-	                                      final Step step) throws InternalDataSetPersistenceException, BadDataSetIdException {
+	                                      final Step step) throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(project, step);
-//		if (project.getDataSets().containsKey(step) && project.getDataSets().get(step).isStoredData()) {
-//			deleteDataSet(project.getDataSets().get(step));
-//		}
 
 		// Store configuration
 		final DataSet dataSet = transformationResult.getDataSet();
@@ -539,7 +552,18 @@ public class DatabaseService {
 
 	private DataSetEntity doStoreDataConfiguration(final ProjectEntity project,
 	                                               final DataConfiguration dataConfiguration,
-	                                               final Step step) {
+	                                               final Step step) throws BadDataConfigurationException, BadStateException {
+		if (project.getFile() == null) {
+			throw new BadStateException(BadStateException.NO_DATASET_FILE, "Saving a data configuration requires the file for the dataset to be selected.");
+		}
+
+		if (dataConfiguration.getConfigurations().size() != project.getFile().getNumberOfAttributes()) {
+			throw new BadDataConfigurationException(BadDataConfigurationException.INVALID_NUMBER_OF_ATTRIBUTES,
+			                                        "Dataset contains " + project.getFile().getNumberOfAttributes() +
+			                                        " attributes, but the data configuration " +
+			                                        dataConfiguration.getConfigurations().size() + " attributes!");
+		}
+
 		final DataSetEntity dataSetEntity;
 
 		if (!project.getDataSets().containsKey(step)) {

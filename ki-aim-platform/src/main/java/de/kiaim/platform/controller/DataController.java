@@ -12,7 +12,6 @@ import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.model.file.FileType;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -96,12 +95,13 @@ public class DataController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
 
-
-		final FileType fileType = projectEntity.getFile() != null
-		                          ? projectEntity.getFile().getFileConfiguration().getFileType()
-		                          : null;
-		final String name = projectEntity.getFile() != null ? projectEntity.getFile().getName() : null;
-		return ResponseEntity.ok(new FileInformation(name, fileType));
+		final var fileInformation = new FileInformation();
+		if (projectEntity.getFile() != null) {
+			fileInformation.setName(projectEntity.getFile().getName());
+			fileInformation.setNumberOfAttributes(projectEntity.getFile().getNumberOfAttributes());
+			fileInformation.setType(projectEntity.getFile().getFileConfiguration().getFileType());
+		}
+		return ResponseEntity.ok(fileInformation);
 	}
 
 	@Operation(summary = "Stores the given file and file configuration.",

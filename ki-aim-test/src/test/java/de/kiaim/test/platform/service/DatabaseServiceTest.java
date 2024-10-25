@@ -5,16 +5,19 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataType;
-import de.kiaim.platform.exception.BadConfigurationNameException;
+import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.file.FileType;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.test.platform.DatabaseTest;
+import de.kiaim.test.util.FileConfigurationTestHelper;
+import de.kiaim.test.util.ResourceHelper;
 import de.kiaim.test.util.TransformationResultTestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,8 +40,10 @@ class DatabaseServiceTest extends DatabaseTest {
 	ProjectService projectService;
 
 	@BeforeEach
-	public void setUp() {
+	public void setUp() throws IOException, ApiException {
 		projectService.setMode(testProject, Mode.EXPERT);
+		databaseService.storeFile(testProject, ResourceHelper.loadCsvFile(),
+		                          FileConfigurationTestHelper.generateFileConfiguration());
 	}
 
 	@Test

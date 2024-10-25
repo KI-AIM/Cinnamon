@@ -8,8 +8,10 @@ import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.PlatformApplication;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.model.file.FileType;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.test.util.FileConfigurationTestHelper;
 import org.junit.jupiter.api.Test;
@@ -47,7 +49,7 @@ public class CSVProcessingTests {
                730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, false);
 
         DataConfiguration config = getDataConfiguration();
 
@@ -70,7 +72,7 @@ public class CSVProcessingTests {
                730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 
         DataConfiguration config = getDataConfiguration();
 
@@ -141,7 +143,7 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, false);
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
@@ -162,7 +164,7 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, false);
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
@@ -186,7 +188,7 @@ public class CSVProcessingTests {
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
                 """.trim();
-        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
         DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,

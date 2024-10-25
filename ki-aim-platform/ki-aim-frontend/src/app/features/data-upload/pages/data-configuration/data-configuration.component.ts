@@ -27,6 +27,7 @@ import { DateFormatConfiguration } from "../../../../shared/model/date-format-co
 import { DateTimeFormatConfiguration } from "../../../../shared/model/date-time-format-configuration";
 import { RangeConfiguration } from "../../../../shared/model/range-configuration";
 import { StringPatternConfiguration } from "../../../../shared/model/string-pattern-configuration";
+import { DataSetInfoService } from "../../services/data-set-info.service";
 
 @Component({
     selector: 'app-data-configuration',
@@ -47,6 +48,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     constructor(
         public configuration: DataConfigurationService,
         public dataService: DataService,
+        private dataSetInfoService: DataSetInfoService,
         public fileService: FileService,
         private readonly formBuilder: FormBuilder,
         private titleService: TitleService,
@@ -89,8 +91,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         const config = plainToInstance(DataConfiguration, this.form.value);
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
-        this.dataService.storeData(config,
-        ).subscribe({
+        this.dataService.storeData(config).subscribe({
             next: (d) => this.handleUpload(d),
             error: (e) => this.handleError(e),
         });
@@ -106,6 +107,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     private handleUpload(data: Object) {
         this.loadingService.setLoadingStatus(false);
+        this.dataSetInfoService.invalidateCache();
 
         this.router.navigateByUrl("/dataValidation");
         this. statusService.setNextStep(Steps.VALIDATION);

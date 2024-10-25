@@ -36,4 +36,9 @@ export class DataSetInfoService {
         );
         return this.dataSetInfo$;
     }
+
+    public invalidateCache() {
+        this.dataSetInfo = null;
+        this.dataSetInfo$ = null;
+    }
 }

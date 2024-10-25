@@ -42,6 +42,22 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void getFile() throws Exception {
+		postFile(false);
+
+		mockMvc.perform(get("/api/data/file"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+	}
+
+	@Test
+	void getFileNoFile() throws Exception {
+		mockMvc.perform(get("/api/data/file"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: null, type: null, numberOfAttributes: null}"));
+	}
+
+	@Test
 	void postFile() throws Exception {
 		postFile(false);
 	}
@@ -249,6 +265,22 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration").accept(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataConfigurationTestHelper.generateDataConfigurationAsJson()));
+	}
+
+	@Test
+	void getDataInfo() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/info"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{numberRows: 3, numberInvalidRows:  1}"));
+	}
+
+	@Test
+	void getDataInfoNoData() throws Exception {
+		mockMvc.perform(get("/api/data/validation/info"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("The project '" + testProject.getId() + "' does not contain a data set for step 'VALIDATION'!"));
 	}
 
 	// ================================================================================================================

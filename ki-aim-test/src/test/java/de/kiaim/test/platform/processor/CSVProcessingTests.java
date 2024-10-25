@@ -52,8 +52,7 @@ public class CSVProcessingTests {
         DataConfiguration config = getDataConfiguration();
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = assertDoesNotThrow(
-                () -> csvProcessor.read(stream, fileConfiguration, config));
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
 
         TransformationResult expectedResult = testReadMethodOfCsvProcessor_getExpectedTransformationResult();
 
@@ -76,8 +75,7 @@ public class CSVProcessingTests {
         DataConfiguration config = getDataConfiguration();
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        TransformationResult actualResult = assertDoesNotThrow(
-                () -> csvProcessor.read(stream, fileConfiguration, config));
+        TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
 
         TransformationResult expectedResult = testReadMethodOfCsvProcessor_getExpectedTransformationResult();
 

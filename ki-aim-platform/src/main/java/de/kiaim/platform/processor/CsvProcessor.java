@@ -3,7 +3,6 @@ package de.kiaim.platform.processor;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
-import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.platform.model.entity.FileConfigurationEntity;
@@ -52,7 +51,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 */
 	@Override
 	public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
-	                                 DataConfiguration configuration) throws BadColumnNameException {
+	                                 DataConfiguration configuration) {
 		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 

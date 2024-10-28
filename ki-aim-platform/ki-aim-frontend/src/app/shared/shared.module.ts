@@ -12,7 +12,7 @@ import { ConfigurationInputComponent } from './components/configuration-input/co
 import { ConfigurationInputInfoComponent } from './components/configuration-input-info/configuration-input-info.component';
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
-import { ReactiveFormsModule } from "@angular/forms";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import { ConfigurationFormComponent } from './components/configuration-form/configuration-form.component';
 import { MatIconModule } from "@angular/material/icon";
 import { MatSelectModule } from "@angular/material/select";
@@ -30,9 +30,11 @@ import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
 import { DataInspectionComponent } from './components/data-inspection/data-inspection.component';
 import { DataInspectionAttributeComponent } from './components/data-inspection-attribute/data-inspection-attribute.component';
+import {ColumnConfigurationNameFilter} from "./pipes/column-configuration-name-filter";
 
 @NgModule({
     declarations: [
+        // Components
         ConfigurationFormComponent,
         ConfigurationGroupComponent,
         ConfigurationInputArrayComponent,
@@ -42,13 +44,16 @@ import { DataInspectionAttributeComponent } from './components/data-inspection-a
         ConfigurationPageComponent,
         ConfigurationSelectionComponent,
         ConfigurationUploadComponent,
+        DataInspectionAttributeComponent,
+        DataInspectionComponent,
         DataTableComponent,
         InfoCardComponent,
         InformationDialogComponent,
         LoadingSpinnerComponent,
+        // Directives
         NoSpaceValidatorDirective,
-        DataInspectionComponent,
-        DataInspectionAttributeComponent,
+        // Pipes
+        ColumnConfigurationNameFilter,
     ],
     imports: [
         CommonModule,
@@ -67,6 +72,7 @@ import { DataInspectionAttributeComponent } from './components/data-inspection-a
         ReactiveFormsModule,
         MatProgressBarModule,
         NgOptimizedImage,
+        FormsModule,
     ],
     exports: [
         ConfigurationFormComponent,

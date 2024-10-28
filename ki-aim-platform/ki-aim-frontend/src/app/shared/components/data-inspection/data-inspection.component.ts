@@ -15,6 +15,8 @@ export class DataInspectionComponent implements OnInit {
     protected dataConfiguration$: Observable<DataConfiguration>;
     protected catImage$: Observable<CatImageMetadata[]>;
 
+    protected filterText: string;
+
     constructor(
         private readonly dataConfigurationService: DataConfigurationService,
         private readonly httpClient: HttpClient,

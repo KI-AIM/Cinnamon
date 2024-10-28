@@ -33,25 +33,33 @@
 <mat-accordion>
     <mat-expansion-panel>
         <mat-expansion-panel-header>
-            <mat-panel-title>Data Upload Result</mat-panel-title>
+            <mat-panel-title>
+                <h5>Data Upload Result</h5>
+            </mat-panel-title>
             <mat-panel-description>
             </mat-panel-description>
         </mat-expansion-panel-header>
 
-        <div class="mt-1">
-            <app-data-table step="validation"></app-data-table>
-        </div>
+        <ng-template matExpansionPanelContent>
+            <div class="mt-1">
+                <app-data-table step="validation"></app-data-table>
+            </div>
+        </ng-template>
     </mat-expansion-panel>
     <mat-expansion-panel>
         <mat-expansion-panel-header>
-            <mat-panel-title>Data Inspection</mat-panel-title>
+            <mat-panel-title>
+                <h5>Data Inspection</h5>
+            </mat-panel-title>
             <mat-panel-description>
             </mat-panel-description>
         </mat-expansion-panel-header>
 
-        <div class="mt-1">
-            <app-data-inspection step="VALIDATION"></app-data-inspection>
-        </div>
+        <ng-template matExpansionPanelContent>
+            <div class="mt-1">
+                <app-data-inspection step="VALIDATION"></app-data-inspection>
+            </div>
+        </ng-template>
 
     </mat-expansion-panel>
 </mat-accordion>

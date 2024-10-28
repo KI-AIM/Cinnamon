@@ -1,67 +1,74 @@
-<div class="d-flex flex-row" style="height: 15rem;">
+<div class="d-flex flex-row" style="gap: 0.5rem; height: fit-content; align-items: stretch; overflow-y: auto; padding-bottom: 0.4rem;">
     <!-- Basic information on the right -->
-    <div class="d-flex flex-column">
+    <div class="d-flex flex-column" style="flex: 0 0 auto;">
 
         <!-- Configured metadata on the top -->
-        <div style="width: 30%">
+        <div>
             <div class="fw-bold">
                 Attribute Information
             </div>
             <div>
-                <span>Index:</span>
-                <span>{{ configuration.index }}</span>
-            </div>
-            <div>
-                <span>Name:</span>
-                <span>{{ configuration.name }}</span>
-            </div>
-            <div>
-                <span>Type:</span>
-                <span>{{ configuration.type}}</span>
-            </div>
-            <div>
-                <span>Scale:</span>
-                <span>{{ configuration.scale }}</span>
+                <table>
+                    <tr>
+                        <th>Index:</th>
+                        <td>{{ configuration.index }}</td>
+                    </tr>
+                    <tr>
+                        <th>Name:</th>
+                        <td>{{ configuration.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Type:</th>
+                        <td>{{ configuration.type }}</td>
+                    </tr>
+                    <tr>
+                        <th>Scale:</th>
+                        <td>{{ configuration.scale }}</td>
+                    </tr>
+                </table>
             </div>
         </div>
 
         <!-- Important metrics on the bottom -->
-        <div>
+        <div class="mt-2">
             <div class="fw-bold">
                 Important Statistical Metrics
             </div>
             <div>
-                <span>Mean:</span>
-                <span class="fst-italic">Somewhat acceptable value</span>
-            </div>
-            <div>
-                <span>Variance:</span>
-                <span class="fst-italic">The greatest variance in the history of variances</span>
-            </div>
-            <div>
-                <span>Standard Deviation:</span>
-                <span class="fst-italic">Quite standard for a deviation</span>
+                <table>
+                    <tr>
+                        <th>Mean:</th>
+                        <td>100</td>
+                    </tr>
+                    <tr>
+                        <th>Variance:</th>
+                        <td>0.5</td>
+                    </tr>
+                    <tr>
+                        <th>Standard Deviation:</th>
+                        <td>700</td>
+                    </tr>
+                </table>
             </div>
         </div>
-
     </div>
 
     <!-- Graph in the middle -->
-    <div class="h-100" style="height: 100%; width: 45%">
+    <div class="" style="flex : 1 1 auto; min-width: 300px;">
         <div class="border border-1 w-100 h-100">
 
             Graph
+<!--                            <div *ngIf="( catImage$ | async) as catImageMetadata" class="h-100">-->
+<!--                                <img [ngSrc]="catImageMetadata[0].url" [width]="catImageMetadata[0].width"-->
+<!--                                     [height]="catImageMetadata[0].height" alt="Cat image"-->
+<!--                                     style="max-height: 100%; max-width: 100%; height: auto; width: auto;">-->
+<!--                            </div>-->
         </div>
 
-        <!--                <div *ngIf="( catImage$ | async) as catImageMetadata" class="h-100">-->
-        <!--                    <img [ngSrc]="catImageMetadata[0].url" [width]="catImageMetadata[0].width"-->
-        <!--                         [height]="catImageMetadata[0].height" alt="Cat image"-->
-        <!--                         style="max-height: 100%; max-width: 100%; height: auto; width: auto;">-->
-        <!--                </div>-->
     </div>
 
     <!-- Button to open details on the right -->
-    <div class="d-flex flex-row" style="width: 15%">
+    <div class="d-flex flex-row" style="flex: 0 0 auto;">
         <div class="m-auto">
             <button mat-raised-button mat-dialog-close color="primary" type="button">Show details</button>
         </div>

@@ -70,8 +70,19 @@
     <!-- Button to open details on the right -->
     <div class="d-flex flex-row" style="flex: 0 0 auto;">
         <div class="m-auto">
-            <button mat-raised-button mat-dialog-close color="primary" type="button">Show details</button>
+            <button mat-raised-button mat-dialog-close color="primary" type="button"
+                    (click)="openDetailsDialog(detailsDialog)">Show details
+            </button>
         </div>
     </div>
 
 </div>
+
+<ng-template #detailsDialog>
+    <mat-dialog-content class="mat-typography">
+        <app-data-inspection-attribute-details [configuration]="configuration"></app-data-inspection-attribute-details>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
+    </mat-dialog-actions>
+</ng-template>

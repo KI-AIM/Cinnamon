@@ -31,6 +31,7 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
 import { DataInspectionComponent } from './components/data-inspection/data-inspection.component';
 import { DataInspectionAttributeComponent } from './components/data-inspection-attribute/data-inspection-attribute.component';
 import {ColumnConfigurationNameFilterPipe} from "./pipes/column-configuration-name-filter.pipe";
+import { DataInspectionAttributeDetailsComponent } from './components/data-inspection-attribute-details/data-inspection-attribute-details.component';
 
 @NgModule({
     declarations: [
@@ -44,8 +45,9 @@ import {ColumnConfigurationNameFilterPipe} from "./pipes/column-configuration-na
         ConfigurationPageComponent,
         ConfigurationSelectionComponent,
         ConfigurationUploadComponent,
-        DataInspectionAttributeComponent,
         DataInspectionComponent,
+        DataInspectionAttributeComponent,
+        DataInspectionAttributeDetailsComponent,
         DataTableComponent,
         InfoCardComponent,
         InformationDialogComponent,

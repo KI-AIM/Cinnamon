@@ -1,0 +1,41 @@
+<div class="w-100 fs-4 mb-2">
+    <span class="me-2 fw-bold">Attribute</span>
+    <span>{{ configuration.name }}</span>
+</div>
+
+<div style="display: flex; flex-direction: row; width: 100%; gap: 2rem;">
+    <!-- Metrics on the left site -->
+    <div style="width: 40%; display: flex; flex-direction: column;">
+        <div *ngFor="let metric of metrics">
+            <table class="table">
+                <thead>
+                <th>A</th>
+                <th>B</th>
+                <th>C</th>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{{ metric }}</td>
+                    <td>{{ metric }}</td>
+                    <td>{{ metric }}</td>
+                </tr>
+                <tr>
+                    <td>{{ metric }}</td>
+                    <td>{{ metric }}</td>
+                    <td>{{ metric }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Graphs on the right site -->
+    <div style="display: flex; flex-direction: column; width: 60%;">
+        <div *ngFor="let graph of graphs" class="w-100">
+            <div class="border border-1" style="width: 100%; height: 200px">
+            </div>
+        </div>
+    </div>
+</div>
+

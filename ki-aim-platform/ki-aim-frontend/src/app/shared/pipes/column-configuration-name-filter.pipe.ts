@@ -1,11 +1,10 @@
-import {Injector, Pipe, PipeTransform} from "@angular/core";
+import {Pipe, PipeTransform} from "@angular/core";
 import {ColumnConfiguration} from "../model/column-configuration";
 
-@Pipe({name: 'columnConfigurationNameFilter'})
-export class ColumnConfigurationNameFilter implements PipeTransform {
-
-    public constructor(private readonly injector: Injector) {
-    }
+@Pipe({
+    name: 'columnConfigurationNameFilter',
+})
+export class ColumnConfigurationNameFilterPipe implements PipeTransform {
 
     transform(columnConfigurations: ColumnConfiguration[], filterText: string): ColumnConfiguration[] {
         if (!columnConfigurations) {
@@ -18,6 +17,5 @@ export class ColumnConfigurationNameFilter implements PipeTransform {
             return columnConfiguration.name.includes(filterText);
         });
     }
-
 
 }

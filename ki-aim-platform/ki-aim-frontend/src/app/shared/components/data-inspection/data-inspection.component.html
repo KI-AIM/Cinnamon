@@ -7,7 +7,7 @@
 
 <div>
     <div *ngIf="(dataConfiguration$ | async) as dataConfiguration">
-        <div *ngFor="let attribute of dataConfiguration.configurations | columnConfigurationNameFilter: filterText"
+        <div *ngFor="let attribute of dataConfiguration.configurations | columnConfigurationNameFilter:filterText"
              class="mb-2 border-top border-1">
             <div class="mt-2">
                 <app-data-inspection-attribute [configuration]="attribute"></app-data-inspection-attribute>

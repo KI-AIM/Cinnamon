@@ -30,7 +30,7 @@ import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
 import { DataInspectionComponent } from './components/data-inspection/data-inspection.component';
 import { DataInspectionAttributeComponent } from './components/data-inspection-attribute/data-inspection-attribute.component';
-import {ColumnConfigurationNameFilter} from "./pipes/column-configuration-name-filter";
+import {ColumnConfigurationNameFilterPipe} from "./pipes/column-configuration-name-filter.pipe";
 
 @NgModule({
     declarations: [
@@ -53,7 +53,7 @@ import {ColumnConfigurationNameFilter} from "./pipes/column-configuration-name-f
         // Directives
         NoSpaceValidatorDirective,
         // Pipes
-        ColumnConfigurationNameFilter,
+        ColumnConfigurationNameFilterPipe,
     ],
     imports: [
         CommonModule,

@@ -6,16 +6,34 @@ import {ColumnConfiguration} from "../model/column-configuration";
 })
 export class ColumnConfigurationNameFilterPipe implements PipeTransform {
 
-    transform(columnConfigurations: ColumnConfiguration[], filterText: string): ColumnConfiguration[] {
+    transform(columnConfigurations: ColumnConfiguration[], filterText: string): ColumnConfigurationFilterResult {
+        const result = new ColumnConfigurationFilterResult();
+
         if (!columnConfigurations) {
-            return [];
+            return result;
         }
+
+        result.originalCount = columnConfigurations.length
+
         if (!filterText) {
-            return columnConfigurations;
+            result.filteredList = columnConfigurations;
+            result.filteredCount = columnConfigurations.length
+        } else {
+            const filtered = columnConfigurations.filter(columnConfiguration => {
+                return columnConfiguration.name.includes(filterText);
+            });
+
+            result.filteredList = filtered;
+            result.filteredCount = filtered.length
         }
-        return columnConfigurations.filter(columnConfiguration => {
-            return columnConfiguration.name.includes(filterText);
-        });
+
+        return result;
     }
 
+}
+
+export class ColumnConfigurationFilterResult {
+    originalCount: number = 0;
+    filteredCount: number = 0;
+    filteredList: ColumnConfiguration[] = [];
 }

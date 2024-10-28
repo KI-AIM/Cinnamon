@@ -1,7 +1,7 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { Observable } from "rxjs";
-import { DataConfiguration } from "../../model/data-configuration";
-import { DataConfigurationService } from "../../services/data-configuration.service";
+import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
+import {Observable} from "rxjs";
+import {DataConfiguration} from "../../model/data-configuration";
+import {DataConfigurationService} from "../../services/data-configuration.service";
 
 @Component({
     selector: 'app-data-inspection',
@@ -14,6 +14,7 @@ export class DataInspectionComponent implements OnInit {
     protected dataConfiguration$: Observable<DataConfiguration>;
 
     protected filterText: string;
+    protected filterMetaData: {count: number} = {count: 0};
 
     constructor(
         private readonly dataConfigurationService: DataConfigurationService,

@@ -1,7 +1,7 @@
 import {Component, Input, OnInit, TemplateRef} from '@angular/core';
 import {ColumnConfiguration} from "../../model/column-configuration";
 import {MatDialog} from "@angular/material/dialog";
-import type {EChartsOption} from "echarts";
+import { ECharts, EChartsOption } from "echarts";
 
 @Component({
     selector: 'app-data-inspection-attribute',
@@ -12,6 +12,7 @@ export class DataInspectionAttributeComponent implements OnInit {
     @Input() public configuration!: ColumnConfiguration;
 
     protected options: EChartsOption;
+    private chartInstances: ECharts;
 
     constructor(
         private matDialog: MatDialog,
@@ -33,6 +34,16 @@ export class DataInspectionAttributeComponent implements OnInit {
             legend: {
                 data: ['bar', 'bar2'],
                 align: 'left',
+                top: 20,
+            },
+            grid: {
+                left: 50,
+                top: 50,
+                right: 30,
+                bottom: 50,
+                borderWidth: 1,
+                borderColor: '#ccc',
+                show: true
             },
             tooltip: {},
             xAxis: {
@@ -49,23 +60,44 @@ export class DataInspectionAttributeComponent implements OnInit {
                     type: 'bar',
                     data: data1,
                     animationDelay: idx => idx * 10,
+                    animationDelayUpdate: idx => idx * 5,
                 },
                 {
                     name: 'bar2',
                     type: 'bar',
                     data: data2,
                     animationDelay: idx => idx * 10 + 100,
+                    animationDelayUpdate: idx => idx * 5,
                 },
             ],
             animationEasing: 'elasticOut',
-            animationDelayUpdate: idx => idx * 5,
         };
     }
 
     protected openDetailsDialog(templateRef: TemplateRef<any>) {
         this.matDialog.open(templateRef, {
-            disableClose: true,
             width: '60%'
         });
+        this.downloadGraph();
+    }
+
+    protected onChartInit(event: ECharts) {
+        this.chartInstances = event;
+    }
+
+    private downloadGraph() {
+        const imageUrl = this.chartInstances.getDataURL({
+            type: 'jpeg',
+            pixelRatio: 2,
+            backgroundColor: '#fff',
+        });
+        this.downloadImage(imageUrl);
+    }
+
+    private downloadImage(dataUrl: string): void {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = this.configuration.name +  '-mean.jpeg';
+        a.click();
     }
 }

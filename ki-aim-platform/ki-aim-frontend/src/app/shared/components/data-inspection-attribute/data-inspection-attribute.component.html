@@ -55,8 +55,8 @@
 
     <!-- Graph in the middle -->
     <div class="" style="flex : 1 1 auto; min-width: 300px;">
-        <div class="border border-1 w-100 h-100">
-            <div echarts [options]="options" class="demo-chart"></div>
+        <div class="w-100 h-100">
+            <div echarts [options]="options" style="height: 300px;" (chartInit)="onChartInit($event)"></div>
         </div>
     </div>
 

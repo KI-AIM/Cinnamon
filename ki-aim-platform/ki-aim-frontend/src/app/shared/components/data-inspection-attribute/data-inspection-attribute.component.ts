@@ -1,7 +1,5 @@
 import {Component, Input, OnInit, TemplateRef} from '@angular/core';
 import {ColumnConfiguration} from "../../model/column-configuration";
-import {Observable} from "rxjs";
-import {HttpClient} from "@angular/common/http";
 import {MatDialog} from "@angular/material/dialog";
 import type {EChartsOption} from "echarts";
 
@@ -13,18 +11,14 @@ import type {EChartsOption} from "echarts";
 export class DataInspectionAttributeComponent implements OnInit {
     @Input() public configuration!: ColumnConfiguration;
 
-    protected catImage$: Observable<CatImageMetadata[]>;
     protected options: EChartsOption;
 
     constructor(
-        private readonly httpClient: HttpClient,
         private matDialog: MatDialog,
     ) {
     }
 
     ngOnInit(): void {
-        this.catImage$ = this.httpClient.get<CatImageMetadata[]>("https://api.thecatapi.com/v1/images/search");
-
         const xAxisData = [];
         const data1 = [];
         const data2 = [];
@@ -74,11 +68,4 @@ export class DataInspectionAttributeComponent implements OnInit {
             width: '60%'
         });
     }
-}
-
-class CatImageMetadata {
-    id: string;
-    url: string;
-    width: number;
-    height: number;
 }

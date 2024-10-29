@@ -32,6 +32,7 @@ import { DataInspectionComponent } from './components/data-inspection/data-inspe
 import { DataInspectionAttributeComponent } from './components/data-inspection-attribute/data-inspection-attribute.component';
 import {ColumnConfigurationNameFilterPipe} from "./pipes/column-configuration-name-filter.pipe";
 import { DataInspectionAttributeDetailsComponent } from './components/data-inspection-attribute-details/data-inspection-attribute-details.component';
+import { NgxEchartsModule } from "ngx-echarts";
 
 @NgModule({
     declarations: [
@@ -75,6 +76,9 @@ import { DataInspectionAttributeDetailsComponent } from './components/data-inspe
         MatProgressBarModule,
         NgOptimizedImage,
         FormsModule,
+        NgxEchartsModule.forRoot(({
+            echarts: () => import('echarts')
+        })),
     ],
     exports: [
         ConfigurationFormComponent,

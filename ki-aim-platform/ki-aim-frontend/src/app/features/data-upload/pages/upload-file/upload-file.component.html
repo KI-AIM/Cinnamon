@@ -2,11 +2,16 @@
     This page allows you to easily upload files to our system. Multiple file types are supported by the application.
 </p>
 
-<div *ngIf="(fileInfo$ | async) as fileInfo">
-    <ng-container *ngIf="fileInfo.name !== null">
-        <span>Current File: </span>
-        <span>{{ fileInfo.name }}</span>
+<div>
+    <span>Current File: </span>
+    <ng-container *ngIf="(fileInfo$ | async) as fileInfo">
+        <ng-container *ngIf="fileInfo.name !== null; else noFile">
+            <span>{{ fileInfo.name }}</span>
+        </ng-container>
     </ng-container>
+    <ng-template #noFile>
+        <i>No File Selected</i>
+    </ng-template>
 </div>
 
 <div>

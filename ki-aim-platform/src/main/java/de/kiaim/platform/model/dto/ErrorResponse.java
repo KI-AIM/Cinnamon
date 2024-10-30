@@ -22,7 +22,7 @@ public class ErrorResponse {
 	@Schema(description = "Path of the request.", example = "/api/data")
 	final String path;
 
-	@Schema(description = "Code specifying the exact error.", example = "1-5-1")
+	@Schema(description = "Code specifying the exact error.", example = "PLATFORM_1_5_1")
 	final String errorCode;
 
 	@Schema(description = "Short description of the error", example = "Unsupported fiel type: .txt")

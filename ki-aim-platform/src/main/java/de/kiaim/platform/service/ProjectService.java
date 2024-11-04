@@ -150,7 +150,8 @@ public class ProjectService {
 				for (final ExternalProcessEntity externalProcess : executionStep.getProcesses().values()) {
 					if (project.getDataSets().containsKey(externalProcess.getStep()) &&
 					    project.getDataSets().get(externalProcess.getStep()).isStoredData()) {
-						addCsvToZip(zipOut, databaseService.exportDataSet(project, new ArrayList<>(), Step.VALIDATION),
+						addCsvToZip(zipOut, databaseService.exportDataSet(project, new ArrayList<>(),
+						                                                  externalProcess.getStep()),
 						            externalProcess.getStep().name() + "-result");
 					}
 

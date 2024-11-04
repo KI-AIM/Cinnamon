@@ -1,21 +1,43 @@
 package de.kiaim.test.platform.service;
 
+import de.kiaim.model.configuration.data.DataConfiguration;
+import de.kiaim.platform.exception.BadColumnNameException;
+import de.kiaim.platform.exception.BadFileException;
+import de.kiaim.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.entity.ExecutionStepEntity;
+import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.repository.UserRepository;
+import de.kiaim.platform.service.DataProcessorService;
+import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
 import de.kiaim.test.platform.DatabaseTest;
+import de.kiaim.test.util.DataConfigurationTestHelper;
+import de.kiaim.test.util.FileConfigurationTestHelper;
+import de.kiaim.test.util.ResourceHelper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProjectServiceTest extends DatabaseTest {
 
 	@Autowired UserRepository userRepository;
+	@Autowired DatabaseService databaseService;
+	@Autowired DataProcessorService dataProcessorService;
 	@Autowired ProjectService projectService;
 	@Autowired UserService userService;
 
@@ -54,6 +76,69 @@ public class ProjectServiceTest extends DatabaseTest {
 
 		assertEquals(initialProject.getId(), project.getId(), "The returned project is not equal to the users project!");
 		assertEquals(project.getStatus().getCurrentStep(), Step.VALIDATION, "The initial status is wrong!");
+	}
+
+	@Test
+	public void createZipFile() throws IOException, BadFileException, BadColumnNameException, InternalDataSetPersistenceException {
+		// Preparation
+		final var project = new ProjectEntity();
+		final var file = ResourceHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
+		final TransformationResult transformationResult = dataProcessor.read(file.getInputStream(), fileConfiguration,
+		                                                                     configuration);
+		databaseService.storeTransformationResult(transformationResult, project, Step.VALIDATION);
+		databaseService.storeConfiguration("test-config", "key = value", project);
+
+		var execution = new ExecutionStepEntity();
+		project.putExecutionStep(Step.EXECUTION, execution);
+
+		for (final var processStep : Step.EXECUTION.getProcesses()) {
+			execution.putExternalProcess(processStep, new ExternalProcessEntity());
+		}
+
+		var otherFile = ResourceHelper.loadCsvFileWithErrors();
+		final TransformationResult otherTransformationResult = dataProcessor.read(otherFile.getInputStream(),
+		                                                                     fileConfiguration,
+		                                                                     configuration);
+		databaseService.storeTransformationResult(otherTransformationResult, project, Step.ANONYMIZATION);
+
+		// The test
+		var out = new ByteArrayOutputStream();
+		assertDoesNotThrow(() -> projectService.createZipFile(project, out));
+
+		try (final var zipInputStream = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
+
+			var buffer = new byte[1024];
+			int read = 0;
+			ZipEntry zipEntry;
+
+			while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+				var stringBuilder = new StringBuilder();
+				while((read = zipInputStream.read(buffer, 0 , buffer.length)) > 0) {
+					stringBuilder.append(new String(buffer, 0 , read));
+				}
+
+				if (zipEntry.getName().equals("ANONYMIZATION-result.csv")) {
+					var result = ResourceHelper.loadCsvFileWithErrorsAsString();
+					var resultBuilder = new StringBuilder(result);
+					resultBuilder.delete(result.length() - 24, result.length() - 15);
+
+					assertEquals(resultBuilder.toString(), stringBuilder.toString(), "Unexpected configuration!");
+				} else if (zipEntry.getName().equals("attribute_config.yaml")) {
+					assertEquals(DataConfigurationTestHelper.generateDataConfigurationAsYaml(), stringBuilder.toString(), "Unexpected data configuration!");
+				} else if(zipEntry.getName().equals("original.csv")) {
+					assertEquals(ResourceHelper.loadCsvFileAsString(), stringBuilder.toString(), "Unexpected configuration!");
+				} else if(zipEntry.getName().equals("test-config.yaml")) {
+					assertEquals("key = value", stringBuilder.toString(), "Unexpected configuration!");
+				} else {
+					fail("Unexpected ZIP entry: " + zipEntry.getName());
+				}
+			}
+		}
+
 	}
 
 }

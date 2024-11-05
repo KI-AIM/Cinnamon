@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ECharts, EChartsOption } from "echarts";
 import { DensityPlotData } from "../../model/statistics";
+import { number } from "echarts/types/dist/echarts";
 
 @Component({
   selector: 'app-chart-density',
@@ -39,42 +40,37 @@ export class ChartDensityComponent implements OnInit {
 
     private graphOptions() : void {
         this.options = {
-            // legend: {
-            //     data: ['bar', 'bar2'],
-            //     align: 'left',
-            //     top: 20,
-            // },
             grid: {
-                left: 50,
+                left: 100,
                 top: 50,
-                right: 30,
+                right: 100,
                 bottom: 50,
                 borderWidth: 1,
                 borderColor: '#ccc',
                 show: true
             },
-            tooltip: {},
+            // @ts-ignore
+            tooltip: {
+                valueFormatter: (value: number, dataIndex: number) => value.toFixed(3),
+            },
             xAxis: {
                 data: this.data.x_values,
                 name: this.data["x-axis"],
-                silent: false,
-                splitLine: {
-                    show: false,
+                axisLabel: {
+                    formatter: (value: string, index: number) => parseFloat(value).toFixed(3),
                 },
             },
-            yAxis: {},
+            yAxis: {
+                name: this.data["y-axis"],
+            },
             series: [
                 {
-                    name: this.data["x-axis"],
+                    name: this.data["y-axis"],
                     type: 'line',
                     data: this.data.density,
                 },
             ],
-            animationEasing: 'elasticOut',
         };
 
     }
-
-
-
 }

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit} from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { Observable, of } from "rxjs";
 import {DataConfiguration} from "../../model/data-configuration";
 import {DataConfigurationService} from "../../services/data-configuration.service";
@@ -33,7 +33,7 @@ export class DataInspectionComponent implements OnInit {
     }
     protected getStatistics2(): Statistics {
         const yaml = `resemblance:
-- id:
+  id:
     important_metrics:
       mean:
         real: 496785.71023965144

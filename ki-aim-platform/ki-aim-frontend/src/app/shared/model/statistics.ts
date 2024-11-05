@@ -3,7 +3,7 @@ import { ColumnConfiguration } from "./column-configuration";
 export class Statistics {
     // TODO Remove array
     // TODO not ordered by index
-    resemblance: Array<{[attribute: string]: AttributeStatistics}>;
+    resemblance: {[attribute: string]: AttributeStatistics};
     utility: any[];
 }
 

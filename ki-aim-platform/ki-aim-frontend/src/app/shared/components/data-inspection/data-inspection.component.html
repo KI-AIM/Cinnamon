@@ -3,31 +3,16 @@
     <input type="text" matInput [(ngModel)]="filterText"/>
 </mat-form-field>
 
-<!--<div style="margin-top: -1rem;">-->
-<!--    <div *ngIf="(dataConfiguration$ | async) as dataConfiguration">-->
-<!--        <div *ngIf="(dataConfiguration.configurations | columnConfigurationNameFilter:filterText) as cols">-->
-<!--            <div class="mb-2"> Showing {{ cols.filteredCount }} / {{ cols.originalCount }} attributes</div>-->
-
-<!--            <div *ngFor="let attribute of cols.filteredList"-->
-<!--                 class="mb-2 border-top border-1">-->
-<!--                <div class="mt-2">-->
-<!--                    <app-data-inspection-attribute [configuration]="attribute"></app-data-inspection-attribute>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--</div>-->
 
 <div style="margin-top: -1rem;">
-    <div *ngIf="(statistics$ | async) as statistics">
-        <div *ngFor="let attribute of statistics.resemblance"
-             class="mb-2 border-top border-1">
 
-            <div *ngFor="let attributeSta of attribute | keyvalue">
-                <div class="mt-2">
-                    <app-data-inspection-attribute
-                        [attributeStatistics]="attributeSta.value"></app-data-inspection-attribute>
-                </div>
+    <div *ngIf="(statistics$ | async) as statistics">
+        <app-chart-bar></app-chart-bar>
+        <div *ngFor="let attribute of statistics.resemblance | keyvalue" class="mb-2 border-top border-1">
+<!--            <app-chart-bar></app-chart-bar>-->
+
+            <div class="mt-2">
+                <app-data-inspection-attribute [attributeStatistics]="attribute.value"></app-data-inspection-attribute>
             </div>
         </div>
     </div>

@@ -34,6 +34,7 @@ import {ColumnConfigurationNameFilterPipe} from "./pipes/column-configuration-na
 import { DataInspectionAttributeDetailsComponent } from './components/data-inspection-attribute-details/data-inspection-attribute-details.component';
 import { NgxEchartsModule } from "ngx-echarts";
 import { ChartBarComponent } from './components/chart-bar/chart-bar.component';
+import { ChartDensityComponent } from './components/chart-density/chart-density.component';
 
 @NgModule({
     declarations: [
@@ -59,6 +60,7 @@ import { ChartBarComponent } from './components/chart-bar/chart-bar.component';
         // Pipes
         ColumnConfigurationNameFilterPipe,
         ChartBarComponent,
+        ChartDensityComponent,
     ],
     imports: [
         CommonModule,

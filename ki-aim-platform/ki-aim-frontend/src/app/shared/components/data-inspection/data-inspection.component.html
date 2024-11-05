@@ -5,12 +5,8 @@
 
 
 <div style="margin-top: -1rem;">
-
     <div *ngIf="(statistics$ | async) as statistics">
-        <app-chart-bar></app-chart-bar>
         <div *ngFor="let attribute of statistics.resemblance | keyvalue" class="mb-2 border-top border-1">
-<!--            <app-chart-bar></app-chart-bar>-->
-
             <div class="mt-2">
                 <app-data-inspection-attribute [attributeStatistics]="attribute.value"></app-data-inspection-attribute>
             </div>

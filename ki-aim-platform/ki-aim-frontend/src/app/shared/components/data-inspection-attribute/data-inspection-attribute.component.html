@@ -89,8 +89,13 @@
 
     <!-- Graph in the middle -->
     <div class="" style="flex : 1 1 auto; min-width: 300px;">
-        <div  style="height: 300px; width: 300px;">
-<!--            <app-chart-bar></app-chart-bar>-->
+        <div class="w-100 h-100">
+            <ng-container *ngIf="attributeStatistics.plot.density; else bar">
+                <app-chart-density [data]="attributeStatistics.plot.density.real"></app-chart-density>
+            </ng-container>
+            <ng-template #bar>
+                <app-chart-bar></app-chart-bar>
+            </ng-template>
         </div>
     </div>
 

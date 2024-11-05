@@ -11,19 +11,19 @@
                 <table>
                     <tr>
                         <th>Index:</th>
-                        <td>{{ configuration.index }}</td>
+                        <td>{{ attributeStatistics.attribute_information.index }}</td>
                     </tr>
                     <tr>
                         <th>Name:</th>
-                        <td>{{ configuration.name }}</td>
+                        <td>{{ attributeStatistics.attribute_information.name }}</td>
                     </tr>
                     <tr>
                         <th>Type:</th>
-                        <td>{{ configuration.type }}</td>
+                        <td>{{ attributeStatistics.attribute_information.type }}</td>
                     </tr>
                     <tr>
                         <th>Scale:</th>
-                        <td>{{ configuration.scale }}</td>
+                        <td>{{ attributeStatistics.attribute_information.scale }}</td>
                     </tr>
                 </table>
             </div>
@@ -35,20 +35,54 @@
                 Important Statistical Metrics
             </div>
             <div>
-                <table>
-                    <tr>
-                        <th>Mean:</th>
-                        <td>100</td>
-                    </tr>
-                    <tr>
-                        <th>Variance:</th>
-                        <td>0.5</td>
-                    </tr>
-                    <tr>
-                        <th>Standard Deviation:</th>
-                        <td>700</td>
-                    </tr>
-                </table>
+<!--                <table>-->
+<!--                    <tr>-->
+<!--                        <th>Missing values:</th>-->
+<!--                        <td>{{ attributeStatistics.important_metrics.missing_values_count.real | number: '1.0-0' }}-->
+<!--                            ({{ attributeStatistics.important_metrics.missing_values_percentage.real | number: '1.0-2' }} %)-->
+<!--                        </td>-->
+<!--                    </tr>-->
+<!--                    <tr>-->
+<!--                        <th>Ranges:</th>-->
+<!--                        <ng-template [ngIf]="attributeStatistics.important_metrics.ranges" [ngIfElse]="notAvailable">-->
+<!--                            <td>{{ attributeStatistics.important_metrics.ranges.real.min | number: '1.0-3' }}-->
+<!--                                - {{ attributeStatistics.important_metrics.ranges.real.max | number: '1.0-3'  }}-->
+<!--                            </td>-->
+<!--                        </ng-template>-->
+<!--                    </tr>-->
+<!--                    <tr>-->
+<!--                        <th>Distinct Values:</th>-->
+<!--                        <ng-template [ngIf]="attributeStatistics.important_metrics.distinct_values" [ngIfElse]="notAvailable">-->
+<!--                            <td>{{ attributeStatistics.important_metrics.distinct_values.real | number: '1.0-3' }}-->
+<!--                            </td>-->
+<!--                        </ng-template>-->
+<!--                    </tr>-->
+<!--                    <tr>-->
+<!--                        <th>Mode:</th>-->
+<!--                        <ng-template [ngIf]="attributeStatistics.important_metrics.mode" [ngIfElse]="notAvailable">-->
+<!--                            <td>{{ attributeStatistics.important_metrics.mode.real }}-->
+<!--                            </td>-->
+<!--                        </ng-template>-->
+<!--                    </tr>-->
+<!--                    <tr>-->
+<!--                        <th>Mean:</th>-->
+<!--                        <ng-template [ngIf]="attributeStatistics.important_metrics.mean" [ngIfElse]="notAvailable">-->
+<!--                            <td>{{ attributeStatistics.important_metrics.mean.real | number: '1.0-3' }}</td>-->
+<!--                        </ng-template>-->
+<!--                    </tr>-->
+<!--                    <tr>-->
+<!--                        <th>Variance:</th>-->
+<!--                        <ng-template [ngIf]="attributeStatistics.important_metrics.variance" [ngIfElse]="notAvailable">-->
+<!--                            <td>{{ attributeStatistics.important_metrics.variance.real | number: '1.0-3' }}</td>-->
+<!--                        </ng-template>-->
+<!--                    </tr>-->
+<!--                    <tr>-->
+<!--                        <th>Standard Deviation:</th>-->
+<!--                        <ng-template [ngIf]="attributeStatistics.important_metrics.standard_deviation" [ngIfElse]="notAvailable">-->
+<!--                            <td>{{ attributeStatistics.important_metrics.standard_deviation.real | number: '1.0-3' }}</td>-->
+<!--                        </ng-template>-->
+<!--                    </tr>-->
+<!--                </table>-->
             </div>
         </div>
     </div>
@@ -71,9 +105,15 @@
 
 </div>
 
+<!--<ng-template #notAvailable>-->
+<!--    <td>-->
+<!--        N/A-->
+<!--    </td>-->
+<!--</ng-template>-->
+
 <ng-template #detailsDialog>
     <mat-dialog-content class="mat-typography">
-        <app-data-inspection-attribute-details [configuration]="configuration"></app-data-inspection-attribute-details>
+        <app-data-inspection-attribute-details [attributeStatistics]="attributeStatistics"></app-data-inspection-attribute-details>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>

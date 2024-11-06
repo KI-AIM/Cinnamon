@@ -14,10 +14,6 @@ export class AttributeStatistics {
     details: DetailMetrics;
     plot: PlotData;
     attribute_information: ColumnConfiguration;
-
-    public get attributeName(): String {
-        return this.attribute_information.name;
-    }
 }
 
 export class ImportantMetrics {
@@ -44,11 +40,11 @@ export class DetailMetrics {
 
 export class QuantileMetricData {
     // TODO remove space and not start with number
-    "5th Percentile": number;
+    "5-th Percentile": number;
     Q1: number;
     Median: number;
     Q3: number;
-    "95th Percentile": number;
+    "95-th Percentile": number;
 }
 
 export class PlotData {

@@ -1,7 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ECharts, EChartsOption } from "echarts";
 import { DensityPlotData } from "../../model/statistics";
-import { number } from "echarts/types/dist/echarts";
 
 @Component({
   selector: 'app-chart-density',
@@ -41,9 +40,9 @@ export class ChartDensityComponent implements OnInit {
     private graphOptions() : void {
         this.options = {
             grid: {
-                left: 100,
+                left: 50,
                 top: 50,
-                right: 100,
+                right: 20,
                 bottom: 50,
                 borderWidth: 1,
                 borderColor: '#ccc',
@@ -55,7 +54,9 @@ export class ChartDensityComponent implements OnInit {
             },
             xAxis: {
                 data: this.data.x_values,
-                // name: this.data["x-axis"],
+                name: this.data["x-axis"],
+                nameGap: 25,
+                nameLocation: 'middle',
                 axisLabel: {
                     formatter: (value: string, index: number) => parseFloat(value).toFixed(3),
                 },

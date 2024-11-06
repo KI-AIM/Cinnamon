@@ -1,41 +1,55 @@
-<div class="w-100 fs-4 mb-2">
-    <span class="me-2 fw-bold">Attribute</span>
-    <span>{{ attributeStatistics.attributeName }}</span>
-</div>
-
-<div style="display: flex; flex-direction: row; width: 100%; gap: 2rem;">
-    <!-- Metrics on the left site -->
-    <div style="width: 40%; display: flex; flex-direction: column;">
-        <div *ngFor="let metric of metrics">
-            <table class="table">
-                <thead>
-                <th>A</th>
-                <th>B</th>
-                <th>C</th>
-                </thead>
-                <tbody>
+<div class="mt-2" style="padding-top: 20px !important;">
+    <div style="width: 100%; display: flex; flex-direction: column; gap: 0.5rem;">
+        <div class="metric-wrapper">
+            <div class="metric-name">
+                Quantiles
+            </div>
+            <table>
                 <tr>
-                    <td>{{ metric }}</td>
-                    <td>{{ metric }}</td>
-                    <td>{{ metric }}</td>
+                    <th>5th Percentile</th>
+                    <td>{{ attributeStatistics.details.quantiles.real["5-th Percentile"] }}</td>
                 </tr>
                 <tr>
-                    <td>{{ metric }}</td>
-                    <td>{{ metric }}</td>
-                    <td>{{ metric }}</td>
+                    <th>Q1</th>
+                    <td>{{ attributeStatistics.details.quantiles.real.Q1 }}</td>
                 </tr>
-                </tbody>
+                <tr>
+                    <th>Median</th>
+                    <td>{{ attributeStatistics.details.quantiles.real.Median }}</td>
+                </tr>
+                <tr>
+                    <th>Q3</th>
+                    <td>{{ attributeStatistics.details.quantiles.real.Q3 }}</td>
+                </tr>
+                <tr>
+                    <th>95th Percentile</th>
+                    <td>{{ attributeStatistics.details.quantiles.real["95-th Percentile"] }}</td>
+                </tr>
             </table>
         </div>
 
-    </div>
-
-    <!-- Graphs on the right site -->
-    <div style="display: flex; flex-direction: column; width: 60%;">
-        <div *ngFor="let graph of graphs" class="w-100">
-            <div class="border border-1" style="width: 100%; height: 200px">
+        <div class="metric-wrapper">
+            <div class="metric-name">
+                Skewness
             </div>
+            <table>
+                <tr>
+                    <th>Skewness</th>
+                    <td>{{ attributeStatistics.details.skewness.real }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="metric-wrapper">
+            <div class="metric-name">
+                Kurtosis
+            </div>
+            <table>
+                <tr>
+                    <th>Kurtosis</th>
+                    <td>{{ attributeStatistics.details.kurtosis.real }}</td>
+                </tr>
+            </table>
         </div>
     </div>
 </div>
-

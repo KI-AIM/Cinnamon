@@ -1,4 +1,4 @@
-<div class="d-flex flex-row" style="gap: 0.5rem; height: fit-content; align-items: stretch; overflow-y: auto; padding-bottom: 0.4rem;">
+<div class="wrapper">
     <!-- Basic information on the right -->
     <div class="d-flex flex-column" style="flex: 0 0 auto;">
 
@@ -122,7 +122,8 @@
 </ng-template>
 
 <ng-template #detailsDialog>
-    <mat-dialog-content class="mat-typography">
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Attribute Details "{{attributeStatistics.attribute_information.name}}"</h2>
+    <mat-dialog-content class="mat-typography" style="background-color: #F5F5F5;">
         <app-data-inspection-attribute-details [attributeStatistics]="attributeStatistics"></app-data-inspection-attribute-details>
     </mat-dialog-content>
     <mat-dialog-actions align="end">

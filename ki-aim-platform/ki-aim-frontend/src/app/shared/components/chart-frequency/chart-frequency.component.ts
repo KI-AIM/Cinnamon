@@ -42,9 +42,9 @@ export class ChartFrequencyComponent {
 
         this.options = {
             grid: {
-                left: 100,
+                left: 50,
                 top: 50,
-                right: 100,
+                right: 20,
                 bottom: 50,
                 borderWidth: 1,
                 borderColor: '#ccc',
@@ -57,6 +57,7 @@ export class ChartFrequencyComponent {
                 type: 'category',
                 data: keys,
                 name: this.data["x-axis"],
+                nameGap: 25,
                 nameLocation: 'middle',
             },
             yAxis: {

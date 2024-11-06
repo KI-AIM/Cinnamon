@@ -90,10 +90,15 @@
     <!-- Graph in the middle -->
     <div class="" style="flex : 1 1 auto; min-width: 300px;">
         <div class="w-100 h-100">
-            <ng-container *ngIf="attributeStatistics.plot.density; else bar">
+            <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
                 <app-chart-density [data]="attributeStatistics.plot.density.real"></app-chart-density>
             </ng-container>
-            <ng-template #bar>
+            <ng-template #frequency>
+                <ng-container *ngIf="attributeStatistics.plot.frequency_count; else noChart">
+                    <app-chart-frequency [data]="attributeStatistics.plot.frequency_count.real"></app-chart-frequency>
+                </ng-container>
+            </ng-template>
+            <ng-template #noChart>
                 <app-chart-bar></app-chart-bar>
             </ng-template>
         </div>

@@ -1,18 +1,17 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { ECharts, EChartsOption } from "echarts";
-import { DensityPlotData } from "../../model/statistics";
-import { number } from "echarts/types/dist/echarts";
+import {Component, Input} from '@angular/core';
+import {ECharts, EChartsOption} from "echarts";
+import {FrequencyPlotData} from "../../model/statistics";
 
 @Component({
-  selector: 'app-chart-density',
-  templateUrl: './chart-density.component.html',
-  styleUrls: ['./chart-density.component.less']
+    selector: 'app-chart-frequency',
+    templateUrl: './chart-frequency.component.html',
+    styleUrls: ['./chart-frequency.component.less']
 })
-export class ChartDensityComponent implements OnInit {
+export class ChartFrequencyComponent {
     protected options: EChartsOption;
     private chartInstances: ECharts;
 
-    @Input() data!: DensityPlotData;
+    @Input() data!: FrequencyPlotData;
 
     ngOnInit() {
         this.graphOptions();
@@ -38,7 +37,9 @@ export class ChartDensityComponent implements OnInit {
         a.click();
     }
 
-    private graphOptions() : void {
+    private graphOptions(): void {
+        const keys = Object.keys(this.data.frequencies);
+
         this.options = {
             grid: {
                 left: 100,
@@ -51,26 +52,36 @@ export class ChartDensityComponent implements OnInit {
             },
             // @ts-ignore
             tooltip: {
-                valueFormatter: (value: number, dataIndex: number) => value.toFixed(3),
             },
             xAxis: {
-                data: this.data.x_values,
-                // name: this.data["x-axis"],
-                axisLabel: {
-                    formatter: (value: string, index: number) => parseFloat(value).toFixed(3),
-                },
+                type: 'category',
+                data: keys,
+                name: this.data["x-axis"],
+                nameLocation: 'middle',
             },
             yAxis: {
                 name: this.data["y-axis"],
+                minInterval: 1,
             },
             series: [
                 {
                     name: this.data["y-axis"],
-                    type: 'line',
-                    data: this.data.density,
+                    type: 'bar',
+                    data: Object.values(this.data.frequencies),
                 },
             ],
         };
 
+        if (keys.length > 10) {
+            this.options.dataZoom = [
+                {
+                    type: 'slider',
+                    show: true,
+                    xAxisIndex: [0],
+                    start: 0,
+                    end: (10 / keys.length) * 100,
+                },
+            ];
+        }
     }
 }

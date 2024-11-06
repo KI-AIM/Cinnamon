@@ -36,6 +36,7 @@ import { NgxEchartsModule } from "ngx-echarts";
 import { ChartBarComponent } from './components/chart-bar/chart-bar.component';
 import { ChartDensityComponent } from './components/chart-density/chart-density.component';
 import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
+import { ChartFrequencyComponent } from './components/chart-frequency/chart-frequency.component';
 
 @NgModule({
     declarations: [
@@ -63,6 +64,7 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         ChartBarComponent,
         ChartDensityComponent,
         StatisticsFilterPipe,
+        ChartFrequencyComponent,
     ],
     imports: [
         CommonModule,

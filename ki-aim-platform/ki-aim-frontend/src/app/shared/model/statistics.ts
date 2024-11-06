@@ -1,7 +1,9 @@
 import { ColumnConfiguration } from "./column-configuration";
 
 export class Statistics {
-    // TODO Remove array
+    // Date handling
+
+    // TODO Remove wrapper objects
     // TODO not ordered by index
     resemblance: {[attribute: string]: AttributeStatistics};
     utility: any[];

@@ -1,53 +1,19 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { ECharts, EChartsOption } from "echarts";
-import { DensityPlotData } from "../../model/statistics";
+import {Component, Input} from '@angular/core';
+import {EChartsOption} from "echarts";
+import {DensityPlotData} from "../../model/statistics";
+import {ChartComponent} from "../chart/chart.component";
 
 @Component({
-  selector: 'app-chart-density',
-  templateUrl: './chart-density.component.html',
-  styleUrls: ['./chart-density.component.less']
+    selector: 'app-chart-density',
+    templateUrl: '../chart/chart.component.html',
+    styleUrls: ['../chart/chart.component.less'],
 })
-export class ChartDensityComponent implements OnInit {
-    protected options: EChartsOption;
-    private chartInstances: ECharts;
-
+export class ChartDensityComponent extends ChartComponent {
     @Input() data!: DensityPlotData;
 
-    ngOnInit() {
-        this.graphOptions();
-    }
-
-    protected onChartInit(event: ECharts) {
-        this.chartInstances = event;
-    }
-
-    private downloadGraph() {
-        const imageUrl = this.chartInstances.getDataURL({
-            type: 'jpeg',
-            pixelRatio: 2,
-            backgroundColor: '#fff',
-        });
-        this.downloadImage(imageUrl);
-    }
-
-    private downloadImage(dataUrl: string): void {
-        const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = '-mean.jpeg';
-        a.click();
-    }
-
-    private graphOptions() : void {
-        this.options = {
-            grid: {
-                left: 50,
-                top: 50,
-                right: 20,
-                bottom: 50,
-                borderWidth: 1,
-                borderColor: '#ccc',
-                show: true
-            },
+    protected override createChartOptions(): EChartsOption {
+        return {
+            ...this.graphOptions(),
             // @ts-ignore
             tooltip: {
                 valueFormatter: (value: number, dataIndex: number) => value.toFixed(3),
@@ -72,6 +38,6 @@ export class ChartDensityComponent implements OnInit {
                 },
             ],
         };
-
     }
+
 }

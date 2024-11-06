@@ -33,10 +33,10 @@ import { DataInspectionAttributeComponent } from './components/data-inspection-a
 import {ColumnConfigurationNameFilterPipe} from "./pipes/column-configuration-name-filter.pipe";
 import { DataInspectionAttributeDetailsComponent } from './components/data-inspection-attribute-details/data-inspection-attribute-details.component';
 import { NgxEchartsModule } from "ngx-echarts";
-import { ChartBarComponent } from './components/chart-bar/chart-bar.component';
 import { ChartDensityComponent } from './components/chart-density/chart-density.component';
 import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
 import { ChartFrequencyComponent } from './components/chart-frequency/chart-frequency.component';
+import { ChartComponent } from './components/chart/chart.component';
 
 @NgModule({
     declarations: [
@@ -61,10 +61,10 @@ import { ChartFrequencyComponent } from './components/chart-frequency/chart-freq
         NoSpaceValidatorDirective,
         // Pipes
         ColumnConfigurationNameFilterPipe,
-        ChartBarComponent,
         ChartDensityComponent,
         StatisticsFilterPipe,
         ChartFrequencyComponent,
+        ChartComponent,
     ],
     imports: [
         CommonModule,

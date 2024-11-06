@@ -69,7 +69,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.isFileTypeXLSX$ = this.fileService.fileInfo$.pipe(
             map(value => {
-                console.log(value.type);
                return value.type === FileType.XLSX;
             })
         );

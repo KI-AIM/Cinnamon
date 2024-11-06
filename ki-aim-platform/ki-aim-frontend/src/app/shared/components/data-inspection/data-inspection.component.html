@@ -6,9 +6,14 @@
 
 <div style="margin-top: -1rem;">
     <div *ngIf="(statistics$ | async) as statistics">
-        <div *ngFor="let attribute of statistics.resemblance | keyvalue" class="mb-2 border-top border-1">
-            <div class="mt-2">
-                <app-data-inspection-attribute [attributeStatistics]="attribute.value"></app-data-inspection-attribute>
+        <div *ngIf="(statistics.resemblance | statisticsFilter:filterText) as filteredAttributes">
+            <div class="mb-2">Showing {{ filteredAttributes.filteredCount }}/ {{ filteredAttributes.originalCount }}
+            </div>
+
+            <div *ngFor="let attribute of filteredAttributes.filteredList" class="mb-2 border-top border-1">
+                <div class="mt-2">
+                    <app-data-inspection-attribute [attributeStatistics]="attribute"></app-data-inspection-attribute>
+                </div>
             </div>
         </div>
     </div>

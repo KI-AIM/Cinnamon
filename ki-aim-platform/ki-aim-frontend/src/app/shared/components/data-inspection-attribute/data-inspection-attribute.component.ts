@@ -5,6 +5,7 @@ import {
 } from '@angular/core';
 import {MatDialog} from "@angular/material/dialog";
 import { AttributeStatistics } from "../../model/statistics";
+import {DataType} from "../../model/data-type";
 
 @Component({
     selector: 'app-data-inspection-attribute',
@@ -23,5 +24,13 @@ export class DataInspectionAttributeComponent {
         this.matDialog.open(templateRef, {
             width: '60%'
         });
+    }
+
+    protected formatDate(value: number, type: DataType) {
+        if (type === 'DATE') {
+            return new Date(value).toLocaleDateString();
+        } else {
+            return new Date(value).toLocaleString();
+        }
     }
 }

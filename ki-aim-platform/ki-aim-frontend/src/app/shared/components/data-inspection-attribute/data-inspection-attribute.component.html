@@ -45,9 +45,16 @@
                     <tr>
                         <th>Ranges:</th>
                         <ng-template [ngIf]="attributeStatistics.important_metrics.ranges" [ngIfElse]="notAvailable">
-                            <td>{{ attributeStatistics.important_metrics.ranges.real.min | number: '1.0-3' }}
-                                - {{ attributeStatistics.important_metrics.ranges.real.max | number: '1.0-3'  }}
+                            <td *ngIf="attributeStatistics.attribute_information.type === 'DATE' || attributeStatistics.attribute_information.type === 'DATE_TIME'; else numericRange">
+                                {{ formatDate(attributeStatistics.important_metrics.ranges.real.min, attributeStatistics.attribute_information.type) }}
+                                <br>
+                                - {{ formatDate(attributeStatistics.important_metrics.ranges.real.max, attributeStatistics.attribute_information.type) }}
                             </td>
+                            <ng-template #numericRange>
+                                <td>{{ attributeStatistics.important_metrics.ranges.real.min | number: '1.0-3' }}
+                                    - {{ attributeStatistics.important_metrics.ranges.real.max | number: '1.0-3'  }}
+                                </td>
+                            </ng-template>
                         </ng-template>
                     </tr>
                     <tr>
@@ -91,11 +98,12 @@
     <div class="" style="flex : 1 1 auto; min-width: 300px;">
         <div class="w-100 h-100">
             <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
-                <app-chart-density [data]="attributeStatistics.plot.density.real"></app-chart-density>
+                <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
+                                   [data]="attributeStatistics.plot.density"></app-chart-density>
             </ng-container>
             <ng-template #frequency>
                 <ng-container *ngIf="attributeStatistics.plot.frequency_count; else noChart">
-                    <app-chart-frequency [data]="attributeStatistics.plot.frequency_count.real"></app-chart-frequency>
+                    <app-chart-frequency [data]="attributeStatistics.plot.frequency_count"></app-chart-frequency>
                 </ng-container>
             </ng-template>
             <ng-template #noChart>

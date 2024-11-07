@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {EChartsOption} from "echarts";
-import {FrequencyPlotData} from "../../model/statistics";
+import { FrequencyPlotData, StatisticsData} from "../../model/statistics";
 import {ChartComponent} from "../chart/chart.component";
 
 @Component({
@@ -9,34 +9,46 @@ import {ChartComponent} from "../chart/chart.component";
     styleUrls: ['../chart/chart.component.less'],
 })
 export class ChartFrequencyComponent extends ChartComponent {
-    @Input() data!: FrequencyPlotData;
+    @Input() data!: StatisticsData<FrequencyPlotData>;
 
     protected override createChartOptions(): EChartsOption {
-        const keys = Object.keys(this.data.frequencies);
+        let reference: FrequencyPlotData;
+
+        const series = [];
+        for (const [key, value] of Object.entries(this.data)) {
+            series.push({
+                name: key,
+                type: 'bar',
+                data: Object.values(value.frequencies),
+            });
+            reference = value;
+        }
+
+        const keys = Object.keys(reference!.frequencies);
 
         const options: EChartsOption = {
             ...this.graphOptions(),
             tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow',
+                },
             },
             xAxis: {
                 type: 'category',
                 data: keys,
-                name: this.data["x-axis"],
+                name: reference!["x-axis"],
                 nameGap: 25,
                 nameLocation: 'middle',
             },
             yAxis: {
-                name: this.data["y-axis"],
+                name: reference!["y-axis"],
                 minInterval: 1,
             },
-            series: [
-                {
-                    name: this.data["y-axis"],
-                    type: 'bar',
-                    data: Object.values(this.data.frequencies),
-                },
-            ],
         };
+
+        // @ts-ignore
+        options.series = series;
 
         if (keys.length > 10) {
             options.dataZoom = [

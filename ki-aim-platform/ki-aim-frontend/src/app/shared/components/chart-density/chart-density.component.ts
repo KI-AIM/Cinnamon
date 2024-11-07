@@ -1,7 +1,8 @@
 import {Component, Input} from '@angular/core';
 import {EChartsOption} from "echarts";
-import {DensityPlotData} from "../../model/statistics";
+import {DensityPlotData, StatisticsData} from "../../model/statistics";
 import {ChartComponent} from "../chart/chart.component";
+import {ColumnConfiguration} from "../../model/column-configuration";
 
 @Component({
     selector: 'app-chart-density',
@@ -9,35 +10,57 @@ import {ChartComponent} from "../chart/chart.component";
     styleUrls: ['../chart/chart.component.less'],
 })
 export class ChartDensityComponent extends ChartComponent {
-    @Input() data!: DensityPlotData;
+    @Input() columnConfiguration!: ColumnConfiguration;
+    @Input() data!: StatisticsData<DensityPlotData>;
 
     protected override createChartOptions(): EChartsOption {
-        return {
+        let reference: DensityPlotData;
+
+        const series = [];
+        for (const [key, value] of Object.entries(this.data)) {
+            series.push({
+                name: key,
+                type: 'line',
+                symbol: 'none',
+                data: value.density,
+                stack: 'total',
+            });
+            reference = value;
+        }
+
+        const options: EChartsOption = {
             ...this.graphOptions(),
-            // @ts-ignore
             tooltip: {
-                valueFormatter: (value: number, dataIndex: number) => value.toFixed(3),
+                trigger: 'axis',
+                // @ts-ignore
+                valueFormatter: (value) => this.formatNumber(value, null),
             },
             xAxis: {
-                data: this.data.x_values,
-                name: this.data["x-axis"],
+                data: reference!.x_values,
+                name: reference!["x-axis"],
                 nameGap: 25,
                 nameLocation: 'middle',
                 axisLabel: {
-                    formatter: (value: string, index: number) => parseFloat(value).toFixed(3),
+                    formatter: (value: string, index: number) => this.formatNumber(value, this.columnConfiguration.type),
                 },
             },
             yAxis: {
-                name: this.data["y-axis"],
-            },
-            series: [
-                {
-                    name: this.data["y-axis"],
-                    type: 'line',
-                    data: this.data.density,
+                type: 'value',
+                name: reference!["y-axis"],
+                axisLabel: {
+                    formatter: (value: any) => this.formatNumber(value, null),
                 },
-            ],
+            },
+            axisPointer: {
+                label: {
+                    // @ts-ignore
+                    formatter: (params) => this.formatNumber(params.value, this.columnConfiguration.type),
+                }
+            }
         };
+        // @ts-ignore
+        options.series = series;
+        return options;
     }
 
 }

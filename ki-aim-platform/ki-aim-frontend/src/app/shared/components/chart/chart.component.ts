@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {ECharts, EChartsOption} from "echarts";
+import {DataType} from "../../model/data-type";
 
 @Component({
     selector: 'app-chart',
@@ -51,5 +52,29 @@ export class ChartComponent implements OnInit {
             },
         };
 
+    }
+
+    protected formatNumber(value: number | string, dataType: DataType | null): string {
+        if (typeof value === "string") {
+            value = parseFloat(value);
+        }
+
+        if (dataType) {
+            if (dataType === 'DATE') {
+                return new Date(value).toLocaleDateString();
+            } else if (dataType === 'DATE_TIME') {
+                return new Date(value).toLocaleString();
+            }
+        }
+
+        if (value === 0) {
+            return '0';
+        }
+
+        const abs = Math.abs(value);
+        if (abs > 1000 || abs < 0.001) {
+            return value.toExponential(3)
+        }
+        return value.toFixed(3);
     }
 }

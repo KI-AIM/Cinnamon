@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {EChartsOption} from "echarts";
-import {DensityPlotData, StatisticsData} from "../../model/statistics";
+import { DensityPlotData, StatisticsData } from "../../model/statistics";
 import {ChartComponent} from "../chart/chart.component";
 import {ColumnConfiguration} from "../../model/column-configuration";
 
@@ -12,6 +12,7 @@ import {ColumnConfiguration} from "../../model/column-configuration";
 export class ChartDensityComponent extends ChartComponent {
     @Input() columnConfiguration!: ColumnConfiguration;
     @Input() data!: StatisticsData<DensityPlotData>;
+    @Input() simple!: boolean;
 
     protected override createChartOptions(): EChartsOption {
         let reference: DensityPlotData;
@@ -29,7 +30,7 @@ export class ChartDensityComponent extends ChartComponent {
         }
 
         const options: EChartsOption = {
-            ...this.graphOptions(),
+            ...this.graphOptions(this.simple),
             tooltip: {
                 trigger: 'axis',
                 // @ts-ignore
@@ -37,8 +38,9 @@ export class ChartDensityComponent extends ChartComponent {
             },
             xAxis: {
                 data: reference!.x_values,
-                name: reference!["x-axis"],
+                // name: reference!["x-axis"],
                 nameGap: 25,
+                // show: !this.simple,
                 nameLocation: 'middle',
                 axisLabel: {
                     formatter: (value: string, index: number) => this.formatNumber(value, this.columnConfiguration.type),
@@ -46,8 +48,9 @@ export class ChartDensityComponent extends ChartComponent {
             },
             yAxis: {
                 type: 'value',
-                name: reference!["y-axis"],
+                // name: reference!["y-axis"],
                 axisLabel: {
+                    show: !this.simple,
                     formatter: (value: any) => this.formatNumber(value, null),
                 },
             },
@@ -58,6 +61,15 @@ export class ChartDensityComponent extends ChartComponent {
                 }
             }
         };
+
+        if (this.simple) {
+            // @ts-ignore
+            options.xAxis.axisLabel['interval'] = (index: number, value: string) => {
+                const interval = Math.floor(reference!.x_values.length / 3);
+                return index % interval === 0;
+            };
+        }
+
         // @ts-ignore
         options.series = series;
         return options;

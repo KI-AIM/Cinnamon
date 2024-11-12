@@ -10,6 +10,7 @@ import {ChartComponent} from "../chart/chart.component";
 })
 export class ChartFrequencyComponent extends ChartComponent {
     @Input() data!: StatisticsData<FrequencyPlotData>;
+    @Input() simple: boolean = false;
 
     protected override createChartOptions(): EChartsOption {
         let reference: FrequencyPlotData;
@@ -27,7 +28,7 @@ export class ChartFrequencyComponent extends ChartComponent {
         const keys = Object.keys(reference!.frequencies);
 
         const options: EChartsOption = {
-            ...this.graphOptions(),
+            ...this.graphOptions(this.simple),
             tooltip: {
                 trigger: 'axis',
                 axisPointer: {
@@ -37,13 +38,16 @@ export class ChartFrequencyComponent extends ChartComponent {
             xAxis: {
                 type: 'category',
                 data: keys,
-                name: reference!["x-axis"],
+                // name: reference!["x-axis"],
                 nameGap: 25,
                 nameLocation: 'middle',
             },
             yAxis: {
-                name: reference!["y-axis"],
+                // name: reference!["y-axis"],
                 minInterval: 1,
+                axisLabel: {
+                    show: !this.simple,
+                },
             },
         };
 

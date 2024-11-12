@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {ECharts, EChartsOption} from "echarts";
 import {DataType} from "../../model/data-type";
+import { StatisticsService } from "../../services/statistics.service";
 
 @Component({
     selector: 'app-chart',
@@ -11,6 +12,11 @@ export class ChartComponent implements OnInit {
     protected options: EChartsOption;
     private chartInstances: ECharts;
 
+    constructor(
+        protected statisticsService: StatisticsService,
+    ) {
+    }
+
     ngOnInit() {
         this.options = this.createChartOptions();
     }
@@ -20,7 +26,7 @@ export class ChartComponent implements OnInit {
     }
 
     protected createChartOptions(): EChartsOption {
-        return this.graphOptions();
+        return {};
     }
 
     private downloadGraph() {
@@ -39,13 +45,13 @@ export class ChartComponent implements OnInit {
         a.click();
     }
 
-    protected graphOptions(): EChartsOption {
+    protected graphOptions(simple: boolean): EChartsOption {
         return {
             grid: {
-                left: 50,
-                top: 50,
-                right: 20,
-                bottom: 50,
+                left: simple ? 25 : 70,
+                top: simple ? 25 : 50,
+                right: 30,
+                bottom: simple ? 20 : 50,
                 borderWidth: 1,
                 borderColor: '#ccc',
                 show: true
@@ -55,26 +61,6 @@ export class ChartComponent implements OnInit {
     }
 
     protected formatNumber(value: number | string, dataType: DataType | null): string {
-        if (typeof value === "string") {
-            value = parseFloat(value);
-        }
-
-        if (dataType) {
-            if (dataType === 'DATE') {
-                return new Date(value).toLocaleDateString();
-            } else if (dataType === 'DATE_TIME') {
-                return new Date(value).toLocaleString();
-            }
-        }
-
-        if (value === 0) {
-            return '0';
-        }
-
-        const abs = Math.abs(value);
-        if (abs > 1000 || abs < 0.001) {
-            return value.toExponential(3)
-        }
-        return value.toFixed(3);
+        return this.statisticsService.formatNumber(value, dataType);
     }
 }

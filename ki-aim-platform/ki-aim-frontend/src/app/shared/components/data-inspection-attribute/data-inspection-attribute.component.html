@@ -1,6 +1,6 @@
 <div class="wrapper">
-    <!-- Basic information on the right -->
-    <div class="d-flex flex-column" style="flex: 0 0 auto;">
+    <!-- Basic information on the left -->
+    <div class="d-flex flex-column" style="flex: 0 0 auto; min-width: 14rem;">
 
         <!-- Configured metadata on the top -->
         <div>
@@ -36,58 +36,45 @@
             </div>
             <div>
                 <table>
-                    <tr>
+                    <tr *ngIf="attributeStatistics.important_metrics.missing_values_count">
                         <th>Missing values:</th>
                         <td>{{ attributeStatistics.important_metrics.missing_values_count.real | number: '1.0-0' }}
                             ({{ attributeStatistics.important_metrics.missing_values_percentage.real | number: '1.0-2' }} %)
                         </td>
                     </tr>
-                    <tr>
-                        <th>Ranges:</th>
-                        <ng-template [ngIf]="attributeStatistics.important_metrics.ranges" [ngIfElse]="notAvailable">
-                            <td *ngIf="attributeStatistics.attribute_information.type === 'DATE' || attributeStatistics.attribute_information.type === 'DATE_TIME'; else numericRange">
-                                {{ formatDate(attributeStatistics.important_metrics.ranges.real.min, attributeStatistics.attribute_information.type) }}
+                    <tr *ngIf="attributeStatistics.important_metrics.ranges">
+                        <th style="vertical-align: top;">Ranges:</th>
+                        <td *ngIf="attributeStatistics.attribute_information.type === 'DATE' || attributeStatistics.attribute_information.type === 'DATE_TIME'; else numericRange">
+                            {{ statisticsService.formatDate(attributeStatistics.important_metrics.ranges.real.min, attributeStatistics.attribute_information.type) }}
+                            <br>
+                            {{ statisticsService.formatDate(attributeStatistics.important_metrics.ranges.real.max, attributeStatistics.attribute_information.type) }}
+                        </td>
+                        <ng-template #numericRange>
+                            <td>{{ attributeStatistics.important_metrics.ranges.real.min | number: '1.0-3' }}
                                 <br>
-                                - {{ formatDate(attributeStatistics.important_metrics.ranges.real.max, attributeStatistics.attribute_information.type) }}
+                                {{ attributeStatistics.important_metrics.ranges.real.max | number: '1.0-3' }}
                             </td>
-                            <ng-template #numericRange>
-                                <td>{{ attributeStatistics.important_metrics.ranges.real.min | number: '1.0-3' }}
-                                    - {{ attributeStatistics.important_metrics.ranges.real.max | number: '1.0-3'  }}
-                                </td>
-                            </ng-template>
                         </ng-template>
                     </tr>
-                    <tr>
+                    <tr *ngIf="attributeStatistics.important_metrics.distinct_values">
                         <th>Distinct Values:</th>
-                        <ng-template [ngIf]="attributeStatistics.important_metrics.distinct_values" [ngIfElse]="notAvailable">
-                            <td>{{ attributeStatistics.important_metrics.distinct_values.real | number: '1.0-3' }}
-                            </td>
-                        </ng-template>
+                        <td>{{ attributeStatistics.important_metrics.distinct_values.real | number: '1.0-3' }}</td>
                     </tr>
-                    <tr>
+                    <tr *ngIf="attributeStatistics.important_metrics.mode">
                         <th>Mode:</th>
-                        <ng-template [ngIf]="attributeStatistics.important_metrics.mode" [ngIfElse]="notAvailable">
-                            <td>{{ attributeStatistics.important_metrics.mode.real }}
-                            </td>
-                        </ng-template>
+                        <td>{{ attributeStatistics.important_metrics.mode.real }}</td>
                     </tr>
-                    <tr>
+                    <tr *ngIf="attributeStatistics.important_metrics.mean">
                         <th>Mean:</th>
-                        <ng-template [ngIf]="attributeStatistics.important_metrics.mean" [ngIfElse]="notAvailable">
-                            <td>{{ attributeStatistics.important_metrics.mean.real | number: '1.0-3' }}</td>
-                        </ng-template>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.mean.real, null) }}</td>
                     </tr>
-                    <tr>
+                    <tr *ngIf="attributeStatistics.important_metrics.variance">
                         <th>Variance:</th>
-                        <ng-template [ngIf]="attributeStatistics.important_metrics.variance" [ngIfElse]="notAvailable">
-                            <td>{{ attributeStatistics.important_metrics.variance.real | number: '1.0-3' }}</td>
-                        </ng-template>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.variance.real, null) }}</td>
                     </tr>
-                    <tr>
+                    <tr *ngIf="attributeStatistics.important_metrics.standard_deviation">
                         <th>Standard Deviation:</th>
-                        <ng-template [ngIf]="attributeStatistics.important_metrics.standard_deviation" [ngIfElse]="notAvailable">
-                            <td>{{ attributeStatistics.important_metrics.standard_deviation.real | number: '1.0-3' }}</td>
-                        </ng-template>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.standard_deviation.real, null) }}</td>
                     </tr>
                 </table>
             </div>
@@ -99,11 +86,11 @@
         <div class="w-100 h-100">
             <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
                 <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
-                                   [data]="attributeStatistics.plot.density"></app-chart-density>
+                                   [data]="attributeStatistics.plot.density" [simple]="true"></app-chart-density>
             </ng-container>
             <ng-template #frequency>
                 <ng-container *ngIf="attributeStatistics.plot.frequency_count; else noChart">
-                    <app-chart-frequency [data]="attributeStatistics.plot.frequency_count"></app-chart-frequency>
+                    <app-chart-frequency [data]="attributeStatistics.plot.frequency_count" [simple]="true"></app-chart-frequency>
                 </ng-container>
             </ng-template>
             <ng-template #noChart>
@@ -115,18 +102,12 @@
     <div class="d-flex flex-row" style="flex: 0 0 auto;">
         <div class="m-auto">
             <button mat-raised-button mat-dialog-close color="primary" type="button"
-                    (click)="openDetailsDialog(detailsDialog)">Show details
+                    (click)="openDetailsDialog(detailsDialog)">Details
             </button>
         </div>
     </div>
 
 </div>
-
-<ng-template #notAvailable>
-    <td>
-        N/A
-    </td>
-</ng-template>
 
 <ng-template #detailsDialog>
     <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Attribute Details "{{attributeStatistics.attribute_information.name}}"</h2>

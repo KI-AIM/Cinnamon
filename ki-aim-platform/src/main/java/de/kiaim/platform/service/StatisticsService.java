@@ -19,7 +19,7 @@ public class StatisticsService {
 	private final Resource statisticsResource;
 
 	public StatisticsService(
-			@Value("classpath:statistics.yaml") final Resource statisticsResource
+			@Value("classpath:organized_resemblance_metrics.yaml") final Resource statisticsResource
 	) {
 		this.statisticsResource = statisticsResource;
 	}

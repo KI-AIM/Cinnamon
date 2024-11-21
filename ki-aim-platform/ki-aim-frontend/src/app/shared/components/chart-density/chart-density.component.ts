@@ -38,7 +38,7 @@ export class ChartDensityComponent extends ChartComponent {
             },
             xAxis: {
                 data: reference!.x_values,
-                // name: reference!["x-axis"],
+                // name: reference!.x_axis,
                 nameGap: 25,
                 // show: !this.simple,
                 nameLocation: 'middle',
@@ -48,7 +48,7 @@ export class ChartDensityComponent extends ChartComponent {
             },
             yAxis: {
                 type: 'value',
-                // name: reference!["y-axis"],
+                // name: reference!.y_axis,
                 axisLabel: {
                     show: !this.simple,
                     formatter: (value: any) => this.formatNumber(value, null),

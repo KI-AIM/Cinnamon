@@ -6,21 +6,20 @@ import {AttributeStatistics} from "../model/statistics";
 })
 export class StatisticsFilterPipe implements PipeTransform {
 
-  transform(value: {[attribute: string]: AttributeStatistics}, filterText: string): StatisticsFilterResult {
+  transform(value: AttributeStatistics[], filterText: string): StatisticsFilterResult {
       const result = new StatisticsFilterResult();
 
       if (!value) {
           return result;
       }
 
-      const values = Object.values(value);
-      result.originalCount = values.length;
+      result.originalCount = value.length;
 
       if (!filterText) {
-          result.filteredList = values;
-          result.filteredCount = values.length;
+          result.filteredList = value;
+          result.filteredCount = value.length;
       } else {
-          const filtered = values.filter(attributeStatistic => {
+          const filtered = value.filter(attributeStatistic => {
               return attributeStatistic.attribute_information.name.includes(filterText);
           });
 

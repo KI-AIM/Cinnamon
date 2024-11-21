@@ -64,12 +64,12 @@ export class ChartFrequencyComponent extends ChartComponent {
             xAxis: {
                 type: 'category',
                 data: displayedKeys,
-                // name: reference!["x-axis"],
+                // name: reference!.x_axis,
                 nameGap: 25,
                 nameLocation: 'middle',
             },
             yAxis: {
-                // name: reference!["y-axis"],
+                // name: reference!.y_axis,
                 minInterval: 1,
                 axisLabel: {
                     show: !this.simple,

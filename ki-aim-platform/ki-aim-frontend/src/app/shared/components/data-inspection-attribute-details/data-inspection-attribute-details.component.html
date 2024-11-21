@@ -117,7 +117,7 @@
             <table *ngIf="attributeStatistics.details && attributeStatistics.details.quantiles; else notAvailable">
                 <tr>
                     <th>5th Percentile</th>
-                    <td>{{ attributeStatistics.details.quantiles.real["5-th Percentile"] }}</td>
+                    <td>{{ attributeStatistics.details.quantiles.real.Fifth_Percentile }}</td>
                 </tr>
                 <tr>
                     <th>Q1</th>
@@ -133,7 +133,7 @@
                 </tr>
                 <tr>
                     <th>95th Percentile</th>
-                    <td>{{ attributeStatistics.details.quantiles.real["95-th Percentile"] }}</td>
+                    <td>{{ attributeStatistics.details.quantiles.real.Ninety_Fifth_Percentile }}</td>
                 </tr>
             </table>
         </div>

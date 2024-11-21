@@ -1,11 +1,7 @@
 import { ColumnConfiguration } from "./column-configuration";
 
 export class Statistics {
-    // Date handling
-
-    // TODO Remove wrapper objects
-    // TODO not ordered by index
-    resemblance: {[attribute: string]: AttributeStatistics};
+    resemblance: AttributeStatistics[];
     utility: any[];
 }
 
@@ -39,12 +35,11 @@ export class DetailMetrics {
 }
 
 export class QuantileMetricData {
-    // TODO remove space and not start with number
-    "5-th Percentile": number;
+    Fifth_Percentile: number;
     Q1: number;
     Median: number;
     Q3: number;
-    "95-th Percentile": number;
+    Ninety_Fifth_Percentile: number;
 }
 
 export class PlotData {
@@ -58,16 +53,14 @@ export class StatisticsData<T> {
 }
 
 export class DensityPlotData {
-    // TODO no minus
     x_values: number[];
     density: number[];
-    "x-axis": string;
-    "y-axis": string;
+    x_axis: string;
+    y_axis: string;
 }
 
 export class FrequencyPlotData {
-    // TODO no minus
     frequencies: {[value: string]: number};
-    "x-axis": string;
-    "y-axis": string;
+    x_axis: string;
+    y_axis: string;
 }

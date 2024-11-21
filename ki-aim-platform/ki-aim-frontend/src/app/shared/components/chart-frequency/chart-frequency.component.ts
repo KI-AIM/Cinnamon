@@ -39,6 +39,7 @@ export class ChartFrequencyComponent extends ChartComponent {
                 name: key,
                 type: 'bar',
                 data: displayedValues,
+                barMinHeight: 2,
             });
             reference = value;
         }

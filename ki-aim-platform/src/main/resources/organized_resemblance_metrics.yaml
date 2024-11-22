@@ -6,47 +6,180 @@ resemblance:
     scale: NOMINAL
   important_metrics:
     mean:
-      real: 496785.71023965144
-      synthetic: 496785.71023965144
+      values:
+        real: 496785.71023965144
+        synthetic: 496785.71023965144
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
     variance:
-      real: 82248088403.2973
-      synthetic: 82248088403.2973
+      values:
+        real: 82248088403.2973
+        synthetic: 82248088403.2973
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
     standard_deviation:
-      real: 286789.2752585028
-      synthetic: 286789.2752585028
-    ranges:
-      real:
-        min: 1306.0
-        max: 999730.0
-      synthetic:
-        min: 1306.0
-        max: 999730.0
+      values:
+        real: 286789.2752585028
+        synthetic: 286789.2752585028
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+    minimum:
+      values:
+        real: 1306.0
+        synthetic: 1306.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+    maximum:
+      values:
+        real: 999730.0
+        synthetic: 999730.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
   details:
-    quantiles:
-      real:
-        Fifth_Percentile: 45866.10000000002
-        Q1: 250643.5
-        Median: 489262.0
-        Q3: 746333.0
-        Ninety_Fifth_Percentile: 946125.1
-      synthetic:
-        Fifth_Percentile: 45866.10000000002
-        Q1: 250643.5
-        Median: 489262.0
-        Q3: 746333.0
-        Ninety_Fifth_Percentile: 946125.1
+    fifth_percentile:
+      values:
+        real: 45866.10000000002
+        synthetic: 45866.10000000002
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+    q1:
+      values:
+        real: 250643.5
+        synthetic: 250643.5
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+    median:
+      values:
+        real: 489262.0
+        synthetic: 489262.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+    q3:
+      values:
+        real: 746333.0
+        synthetic: 746333.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+    ninety_fifth_percentile:
+      values:
+        real: 946125.1
+        synthetic: 946125.1
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
     skewness:
-      real: 0.013943506440715037
-      synthetic: 0.013943506440715037
+      values:
+        real: 0.013943506440715037
+        synthetic: 0.013943506440715037
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
     kurtosis:
-      real: -1.1735468371741575
-      synthetic: -1.1735468371741575
+      values:
+        real: -1.1735468371741575
+        synthetic: -1.1735468371741575
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+        synthetic:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
   plot:
     density:
       real:
@@ -154,6 +287,7 @@ resemblance:
         - 4.791495245453639e-07
         x_axis: id
         y_axis: Frequency
+        color_index: 0
       synthetic:
         x_values:
         - 1306.0
@@ -259,6 +393,94 @@ resemblance:
         - 4.791495245453639e-07
         x_axis: id
         y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - 1306.00-78107.85:
+            value: 78
+            color_index: 0
+        - 78107.85-154909.69:
+            value: 58
+            color_index: 0
+        - 154909.69-231711.54:
+            value: 69
+            color_index: 0
+        - 231711.54-308513.38:
+            value: 72
+            color_index: 0
+        - 308513.38-385315.23:
+            value: 87
+            color_index: 0
+        - 385315.23-462117.08:
+            value: 69
+            color_index: 0
+        - 462117.08-538918.92:
+            value: 70
+            color_index: 0
+        - 538918.92-615720.77:
+            value: 67
+            color_index: 0
+        - 615720.77-692522.62:
+            value: 70
+            color_index: 0
+        - 692522.62-769324.46:
+            value: 76
+            color_index: 0
+        - 769324.46-846126.31:
+            value: 70
+            color_index: 0
+        - 846126.31-922928.15:
+            value: 64
+            color_index: 0
+        - 922928.15-999730.00:
+            value: 69
+            color_index: 0
+        x_axis: id
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - 1306.00-78107.85:
+            value: 78
+            color_index: 1
+        - 78107.85-154909.69:
+            value: 58
+            color_index: 1
+        - 154909.69-231711.54:
+            value: 69
+            color_index: 1
+        - 231711.54-308513.38:
+            value: 72
+            color_index: 1
+        - 308513.38-385315.23:
+            value: 87
+            color_index: 1
+        - 385315.23-462117.08:
+            value: 69
+            color_index: 1
+        - 462117.08-538918.92:
+            value: 70
+            color_index: 1
+        - 538918.92-615720.77:
+            value: 67
+            color_index: 1
+        - 615720.77-692522.62:
+            value: 70
+            color_index: 1
+        - 692522.62-769324.46:
+            value: 76
+            color_index: 1
+        - 769324.46-846126.31:
+            value: 70
+            color_index: 1
+        - 846126.31-922928.15:
+            value: 64
+            color_index: 1
+        - 922928.15-999730.00:
+            value: 69
+            color_index: 1
+        x_axis: id
+        y_axis: Count
 - attribute_information:
     name: name
     index: 1
@@ -266,80 +488,220 @@ resemblance:
     scale: NOMINAL
   important_metrics:
     mode:
-      real: Abbie Casper
-      synthetic: Abbie Casper
+      values:
+        real: Abbie Casper
+        synthetic: Abbie Casper
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
     distinct_values:
-      real: 919
-      synthetic: 919
-  details: {}
+      values:
+        real: 919
+        synthetic: 919
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.0
+          color_index: 1
+        synthetic:
+          hellinger_distance: 0.0
+          color_index: 1
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
   plot:
     frequency_count:
       real:
         frequencies:
-          nan: 1
-          Ricarda Satterfield I: 1
-          Helaine Skiles: 1
-          Denver Schoen III: 1
-          Gary Nitzsche: 1
-          Michel Wilderman: 1
-          Carlton Heathcote PhD: 1
-          Staci Wiza: 1
-          Rana Mraz: 1
-          Minna Blick I: 1
-          Elenor Kuhlman: 1
-          Ardis Schuppe: 1
-          Arielle Gibson: 1
-          The Hon. Dexter Macejkovic: 1
-          Avery Johnson: 1
-          Josh Legros IV: 1
-          Pres. Jerry Zulauf: 1
-          Audria Kautzer: 1
-          Neil Greenfelder: 1
-          Greg Langosh DO: 1
-          Bree Harvey VM: 1
-          Elsa Muller: 1
-          Sen. Shaunta Franecki: 1
-          Noel Prohaska: 1
-          Tommy Douglas: 1
-          other: 894
+        - nan:
+            value: 1
+            color_index: 0
+        - Ricarda Satterfield I:
+            value: 1
+            color_index: 0
+        - Helaine Skiles:
+            value: 1
+            color_index: 0
+        - Denver Schoen III:
+            value: 1
+            color_index: 0
+        - Gary Nitzsche:
+            value: 1
+            color_index: 0
+        - Michel Wilderman:
+            value: 1
+            color_index: 0
+        - Carlton Heathcote PhD:
+            value: 1
+            color_index: 0
+        - Staci Wiza:
+            value: 1
+            color_index: 0
+        - Rana Mraz:
+            value: 1
+            color_index: 0
+        - Minna Blick I:
+            value: 1
+            color_index: 0
+        - Elenor Kuhlman:
+            value: 1
+            color_index: 0
+        - Ardis Schuppe:
+            value: 1
+            color_index: 0
+        - Arielle Gibson:
+            value: 1
+            color_index: 0
+        - The Hon. Dexter Macejkovic:
+            value: 1
+            color_index: 0
+        - Avery Johnson:
+            value: 1
+            color_index: 0
+        - Josh Legros IV:
+            value: 1
+            color_index: 0
+        - Pres. Jerry Zulauf:
+            value: 1
+            color_index: 0
+        - Audria Kautzer:
+            value: 1
+            color_index: 0
+        - Neil Greenfelder:
+            value: 1
+            color_index: 0
+        - Greg Langosh DO:
+            value: 1
+            color_index: 0
+        - Bree Harvey VM:
+            value: 1
+            color_index: 0
+        - Elsa Muller:
+            value: 1
+            color_index: 0
+        - Sen. Shaunta Franecki:
+            value: 1
+            color_index: 0
+        - Noel Prohaska:
+            value: 1
+            color_index: 0
+        - Tommy Douglas:
+            value: 1
+            color_index: 0
         x_axis: name
-        y_axis: Frequency
+        y_axis: Count
       synthetic:
         frequencies:
-          nan: 1
-          Ricarda Satterfield I: 1
-          Helaine Skiles: 1
-          Denver Schoen III: 1
-          Gary Nitzsche: 1
-          Michel Wilderman: 1
-          Carlton Heathcote PhD: 1
-          Staci Wiza: 1
-          Rana Mraz: 1
-          Minna Blick I: 1
-          Elenor Kuhlman: 1
-          Ardis Schuppe: 1
-          Arielle Gibson: 1
-          The Hon. Dexter Macejkovic: 1
-          Avery Johnson: 1
-          Josh Legros IV: 1
-          Pres. Jerry Zulauf: 1
-          Audria Kautzer: 1
-          Neil Greenfelder: 1
-          Greg Langosh DO: 1
-          Bree Harvey VM: 1
-          Elsa Muller: 1
-          Sen. Shaunta Franecki: 1
-          Noel Prohaska: 1
-          Tommy Douglas: 1
-          other: 894
+        - nan:
+            value: 1
+            color_index: 1
+        - Ricarda Satterfield I:
+            value: 1
+            color_index: 1
+        - Helaine Skiles:
+            value: 1
+            color_index: 1
+        - Denver Schoen III:
+            value: 1
+            color_index: 1
+        - Gary Nitzsche:
+            value: 1
+            color_index: 1
+        - Michel Wilderman:
+            value: 1
+            color_index: 1
+        - Carlton Heathcote PhD:
+            value: 1
+            color_index: 1
+        - Staci Wiza:
+            value: 1
+            color_index: 1
+        - Rana Mraz:
+            value: 1
+            color_index: 1
+        - Minna Blick I:
+            value: 1
+            color_index: 1
+        - Elenor Kuhlman:
+            value: 1
+            color_index: 1
+        - Ardis Schuppe:
+            value: 1
+            color_index: 1
+        - Arielle Gibson:
+            value: 1
+            color_index: 1
+        - The Hon. Dexter Macejkovic:
+            value: 1
+            color_index: 1
+        - Avery Johnson:
+            value: 1
+            color_index: 1
+        - Josh Legros IV:
+            value: 1
+            color_index: 1
+        - Pres. Jerry Zulauf:
+            value: 1
+            color_index: 1
+        - Audria Kautzer:
+            value: 1
+            color_index: 1
+        - Neil Greenfelder:
+            value: 1
+            color_index: 1
+        - Greg Langosh DO:
+            value: 1
+            color_index: 1
+        - Bree Harvey VM:
+            value: 1
+            color_index: 1
+        - Elsa Muller:
+            value: 1
+            color_index: 1
+        - Sen. Shaunta Franecki:
+            value: 1
+            color_index: 1
+        - Noel Prohaska:
+            value: 1
+            color_index: 1
+        - Tommy Douglas:
+            value: 1
+            color_index: 1
         x_axis: name
-        y_axis: Frequency
+        y_axis: Count
 - attribute_information:
     name: birthdate
     index: 2
@@ -347,47 +709,180 @@ resemblance:
     scale: DATE
   important_metrics:
     mean:
-      real: -1183037022.071974
-      synthetic: -1183037022.071974
+      values:
+        real: -1183037022.071974
+        synthetic: -1183037022.071974
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
     variance:
-      real: 2.8133518043450957e+17
-      synthetic: 2.8133518043450957e+17
+      values:
+        real: 2.8133518043450957e+17
+        synthetic: 2.8133518043450957e+17
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
     standard_deviation:
-      real: 530410388.69399
-      synthetic: 530410388.69399
-    ranges:
-      real:
-        min: -2175983280.0
-        max: 64800060.0
-      synthetic:
-        min: -2175983280.0
-        max: 64800060.0
+      values:
+        real: 530410388.69399
+        synthetic: 530410388.69399
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+    minimum:
+      values:
+        real: -2175983280.0
+        synthetic: -2175983280.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+    maximum:
+      values:
+        real: 64800060.0
+        synthetic: 64800060.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
   details:
-    quantiles:
-      real:
-        Fifth_Percentile: -2081142468.0
-        Q1: -1638489330.0
-        Median: -1133654340.0
-        Q3: -787449210.0
-        Ninety_Fifth_Percentile: -377481054.0
-      synthetic:
-        Fifth_Percentile: -2081142468.0
-        Q1: -1638489330.0
-        Median: -1133654340.0
-        Q3: -787449210.0
-        Ninety_Fifth_Percentile: -377481054.0
+    fifth_percentile:
+      values:
+        real: -2081142468.0
+        synthetic: -2081142468.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+    q1:
+      values:
+        real: -1638489330.0
+        synthetic: -1638489330.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+    median:
+      values:
+        real: -1133654340.0
+        synthetic: -1133654340.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+    q3:
+      values:
+        real: -787449210.0
+        synthetic: -787449210.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+    ninety_fifth_percentile:
+      values:
+        real: -377481054.0
+        synthetic: -377481054.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
     skewness:
-      real: -0.15871586439776583
-      synthetic: -0.15871586439776583
+      values:
+        real: -0.15871586439776583
+        synthetic: -0.15871586439776583
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
     kurtosis:
-      real: -0.8882578891925967
-      synthetic: -0.8882578891925967
+      values:
+        real: -0.8882578891925967
+        synthetic: -0.8882578891925967
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+        synthetic:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
   plot:
     density:
       real:
@@ -495,6 +990,7 @@ resemblance:
         - 2.6566691162262157e-11
         x_axis: birthdate
         y_axis: Frequency
+        color_index: 0
       synthetic:
         x_values:
         - -2175983280.0
@@ -600,6 +1096,118 @@ resemblance:
         - 2.6566691162262157e-11
         x_axis: birthdate
         y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - -2175983280.00--2044172495.29:
+            value: 64
+            color_index: 0
+        - -2044172495.29--1912361710.59:
+            value: 55
+            color_index: 0
+        - -1912361710.59--1780550925.88:
+            value: 63
+            color_index: 0
+        - -1780550925.88--1648740141.18:
+            value: 39
+            color_index: 0
+        - -1648740141.18--1516929356.47:
+            value: 33
+            color_index: 0
+        - -1516929356.47--1385118571.76:
+            value: 64
+            color_index: 0
+        - -1385118571.76--1253307787.06:
+            value: 57
+            color_index: 0
+        - -1253307787.06--1121497002.35:
+            value: 89
+            color_index: 0
+        - -1121497002.35--989686217.65:
+            value: 83
+            color_index: 0
+        - -989686217.65--857875432.94:
+            value: 98
+            color_index: 0
+        - -857875432.94--726064648.24:
+            value: 74
+            color_index: 0
+        - -726064648.24--594253863.53:
+            value: 70
+            color_index: 0
+        - -594253863.53--462443078.82:
+            value: 58
+            color_index: 0
+        - -462443078.82--330632294.12:
+            value: 44
+            color_index: 0
+        - -330632294.12--198821509.41:
+            value: 11
+            color_index: 0
+        - -198821509.41--67010724.71:
+            value: 13
+            color_index: 0
+        - -67010724.71-64800060.00:
+            value: 4
+            color_index: 0
+        x_axis: birthdate
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - -2175983280.00--2044172495.29:
+            value: 64
+            color_index: 1
+        - -2044172495.29--1912361710.59:
+            value: 55
+            color_index: 1
+        - -1912361710.59--1780550925.88:
+            value: 63
+            color_index: 1
+        - -1780550925.88--1648740141.18:
+            value: 39
+            color_index: 1
+        - -1648740141.18--1516929356.47:
+            value: 33
+            color_index: 1
+        - -1516929356.47--1385118571.76:
+            value: 64
+            color_index: 1
+        - -1385118571.76--1253307787.06:
+            value: 57
+            color_index: 1
+        - -1253307787.06--1121497002.35:
+            value: 89
+            color_index: 1
+        - -1121497002.35--989686217.65:
+            value: 83
+            color_index: 1
+        - -989686217.65--857875432.94:
+            value: 98
+            color_index: 1
+        - -857875432.94--726064648.24:
+            value: 74
+            color_index: 1
+        - -726064648.24--594253863.53:
+            value: 70
+            color_index: 1
+        - -594253863.53--462443078.82:
+            value: 58
+            color_index: 1
+        - -462443078.82--330632294.12:
+            value: 44
+            color_index: 1
+        - -330632294.12--198821509.41:
+            value: 11
+            color_index: 1
+        - -198821509.41--67010724.71:
+            value: 13
+            color_index: 1
+        - -67010724.71-64800060.00:
+            value: 4
+            color_index: 1
+        x_axis: birthdate
+        y_axis: Count
 - attribute_information:
     name: death_date
     index: 3
@@ -607,47 +1215,180 @@ resemblance:
     scale: DATE
   important_metrics:
     mean:
-      real: 513748345.35947716
-      synthetic: 513748345.35947716
+      values:
+        real: 513748345.35947716
+        synthetic: 513748345.35947716
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
     variance:
-      real: 3.7781932360145504e+17
-      synthetic: 3.7781932360145504e+17
+      values:
+        real: 3.7781932360145504e+17
+        synthetic: 3.7781932360145504e+17
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
     standard_deviation:
-      real: 614670093.3032736
-      synthetic: 614670093.3032736
-    ranges:
-      real:
-        min: -1134517860.0
-        max: 2493158580.0
-      synthetic:
-        min: -1134517860.0
-        max: 2493158580.0
+      values:
+        real: 614670093.3032736
+        synthetic: 614670093.3032736
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+    minimum:
+      values:
+        real: -1134517860.0
+        synthetic: -1134517860.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+    maximum:
+      values:
+        real: 2493158580.0
+        synthetic: 2493158580.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
   details:
-    quantiles:
-      real:
-        Fifth_Percentile: -539239307.9999999
-        Q1: 63374850.0
-        Median: 568166760.0
-        Q3: 978868980.0
-        Ninety_Fifth_Percentile: 1421254746.0
-      synthetic:
-        Fifth_Percentile: -539239307.9999999
-        Q1: 63374850.0
-        Median: 568166760.0
-        Q3: 978868980.0
-        Ninety_Fifth_Percentile: 1421254746.0
+    fifth_percentile:
+      values:
+        real: -539239307.9999999
+        synthetic: -539239307.9999999
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+    q1:
+      values:
+        real: 63374850.0
+        synthetic: 63374850.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+    median:
+      values:
+        real: 568166760.0
+        synthetic: 568166760.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+    q3:
+      values:
+        real: 978868980.0
+        synthetic: 978868980.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+    ninety_fifth_percentile:
+      values:
+        real: 1421254746.0
+        synthetic: 1421254746.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
     skewness:
-      real: -0.17798011137396816
-      synthetic: -0.17798011137396816
+      values:
+        real: -0.17798011137396816
+        synthetic: -0.17798011137396816
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
     kurtosis:
-      real: -0.4488073869314446
-      synthetic: -0.4488073869314446
+      values:
+        real: -0.4488073869314446
+        synthetic: -0.4488073869314446
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+        synthetic:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
   plot:
     density:
       real:
@@ -755,6 +1496,7 @@ resemblance:
         - 4.0654751522911075e-12
         x_axis: death_date
         y_axis: Frequency
+        color_index: 0
       synthetic:
         x_values:
         - -1134517860.0
@@ -860,6 +1602,166 @@ resemblance:
         - 4.0654751522911075e-12
         x_axis: death_date
         y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - -1134517860.00--989410802.40:
+            value: 3
+            color_index: 0
+        - -989410802.40--844303744.80:
+            value: 7
+            color_index: 0
+        - -844303744.80--699196687.20:
+            value: 14
+            color_index: 0
+        - -699196687.20--554089629.60:
+            value: 22
+            color_index: 0
+        - -554089629.60--408982572.00:
+            value: 25
+            color_index: 0
+        - -408982572.00--263875514.40:
+            value: 34
+            color_index: 0
+        - -263875514.40--118768456.80:
+            value: 61
+            color_index: 0
+        - -118768456.80-26338600.80:
+            value: 49
+            color_index: 0
+        - 26338600.80-171445658.40:
+            value: 55
+            color_index: 0
+        - 171445658.40-316552716.00:
+            value: 52
+            color_index: 0
+        - 316552716.00-461659773.60:
+            value: 81
+            color_index: 0
+        - 461659773.60-606766831.20:
+            value: 90
+            color_index: 0
+        - 606766831.20-751873888.80:
+            value: 75
+            color_index: 0
+        - 751873888.80-896980946.40:
+            value: 87
+            color_index: 0
+        - 896980946.40-1042088004.00:
+            value: 63
+            color_index: 0
+        - 1042088004.00-1187195061.60:
+            value: 77
+            color_index: 0
+        - 1187195061.60-1332302119.20:
+            value: 47
+            color_index: 0
+        - 1332302119.20-1477409176.80:
+            value: 39
+            color_index: 0
+        - 1477409176.80-1622516234.40:
+            value: 21
+            color_index: 0
+        - 1622516234.40-1767623292.00:
+            value: 10
+            color_index: 0
+        - 1767623292.00-1912730349.60:
+            value: 4
+            color_index: 0
+        - 1912730349.60-2057837407.20:
+            value: 0
+            color_index: 0
+        - 2057837407.20-2202944464.80:
+            value: 0
+            color_index: 0
+        - 2202944464.80-2348051522.40:
+            value: 2
+            color_index: 0
+        - 2348051522.40-2493158580.00:
+            value: 1
+            color_index: 0
+        x_axis: death_date
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - -1134517860.00--989410802.40:
+            value: 3
+            color_index: 1
+        - -989410802.40--844303744.80:
+            value: 7
+            color_index: 1
+        - -844303744.80--699196687.20:
+            value: 14
+            color_index: 1
+        - -699196687.20--554089629.60:
+            value: 22
+            color_index: 1
+        - -554089629.60--408982572.00:
+            value: 25
+            color_index: 1
+        - -408982572.00--263875514.40:
+            value: 34
+            color_index: 1
+        - -263875514.40--118768456.80:
+            value: 61
+            color_index: 1
+        - -118768456.80-26338600.80:
+            value: 49
+            color_index: 1
+        - 26338600.80-171445658.40:
+            value: 55
+            color_index: 1
+        - 171445658.40-316552716.00:
+            value: 52
+            color_index: 1
+        - 316552716.00-461659773.60:
+            value: 81
+            color_index: 1
+        - 461659773.60-606766831.20:
+            value: 90
+            color_index: 1
+        - 606766831.20-751873888.80:
+            value: 75
+            color_index: 1
+        - 751873888.80-896980946.40:
+            value: 87
+            color_index: 1
+        - 896980946.40-1042088004.00:
+            value: 63
+            color_index: 1
+        - 1042088004.00-1187195061.60:
+            value: 77
+            color_index: 1
+        - 1187195061.60-1332302119.20:
+            value: 47
+            color_index: 1
+        - 1332302119.20-1477409176.80:
+            value: 39
+            color_index: 1
+        - 1477409176.80-1622516234.40:
+            value: 21
+            color_index: 1
+        - 1622516234.40-1767623292.00:
+            value: 10
+            color_index: 1
+        - 1767623292.00-1912730349.60:
+            value: 4
+            color_index: 1
+        - 1912730349.60-2057837407.20:
+            value: 0
+            color_index: 1
+        - 2057837407.20-2202944464.80:
+            value: 0
+            color_index: 1
+        - 2202944464.80-2348051522.40:
+            value: 2
+            color_index: 1
+        - 2348051522.40-2493158580.00:
+            value: 1
+            color_index: 1
+        x_axis: death_date
+        y_axis: Count
 - attribute_information:
     name: Age
     index: 4
@@ -867,47 +1769,180 @@ resemblance:
     scale: INTERVAL
   important_metrics:
     mean:
-      real: 53.510893246187365
-      synthetic: 53.510893246187365
+      values:
+        real: 53.510893246187365
+        synthetic: 53.510893246187365
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
     variance:
-      real: 88.87733231757966
-      synthetic: 88.87733231757966
+      values:
+        real: 88.87733231757966
+        synthetic: 88.87733231757966
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
     standard_deviation:
-      real: 9.427477516153495
-      synthetic: 9.427477516153495
-    ranges:
-      real:
-        min: 28.0
-        max: 77.0
-      synthetic:
-        min: 28.0
-        max: 77.0
+      values:
+        real: 9.427477516153495
+        synthetic: 9.427477516153495
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+    minimum:
+      values:
+        real: 28.0
+        synthetic: 28.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+    maximum:
+      values:
+        real: 77.0
+        synthetic: 77.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
   details:
-    quantiles:
-      real:
-        Fifth_Percentile: 37.0
-        Q1: 47.0
-        Median: 54.0
-        Q3: 60.0
-        Ninety_Fifth_Percentile: 68.0
-      synthetic:
-        Fifth_Percentile: 37.0
-        Q1: 47.0
-        Median: 54.0
-        Q3: 60.0
-        Ninety_Fifth_Percentile: 68.0
+    fifth_percentile:
+      values:
+        real: 37.0
+        synthetic: 37.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+    q1:
+      values:
+        real: 47.0
+        synthetic: 47.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+    median:
+      values:
+        real: 54.0
+        synthetic: 54.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+    q3:
+      values:
+        real: 60.0
+        synthetic: 60.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+    ninety_fifth_percentile:
+      values:
+        real: 68.0
+        synthetic: 68.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
     skewness:
-      real: -0.19603936751803766
-      synthetic: -0.19603936751803766
+      values:
+        real: -0.19603936751803766
+        synthetic: -0.19603936751803766
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
     kurtosis:
-      real: -0.3832864096294757
-      synthetic: -0.3832864096294757
+      values:
+        real: -0.3832864096294757
+        synthetic: -0.3832864096294757
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+        synthetic:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
   plot:
     density:
       real:
@@ -1015,6 +2050,7 @@ resemblance:
         - 0.0018546114967694805
         x_axis: Age
         y_axis: Frequency
+        color_index: 0
       synthetic:
         x_values:
         - 28.0
@@ -1120,6 +2156,160 @@ resemblance:
         - 0.0018546114967694805
         x_axis: Age
         y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - 28.00-30.04:
+            value: 5
+            color_index: 0
+        - 30.04-32.08:
+            value: 7
+            color_index: 0
+        - 32.08-34.12:
+            value: 9
+            color_index: 0
+        - 34.12-36.17:
+            value: 17
+            color_index: 0
+        - 36.17-38.21:
+            value: 27
+            color_index: 0
+        - 38.21-40.25:
+            value: 28
+            color_index: 0
+        - 40.25-42.29:
+            value: 42
+            color_index: 0
+        - 42.29-44.33:
+            value: 43
+            color_index: 0
+        - 44.33-46.38:
+            value: 42
+            color_index: 0
+        - 46.38-48.42:
+            value: 50
+            color_index: 0
+        - 48.42-50.46:
+            value: 46
+            color_index: 0
+        - 50.46-52.50:
+            value: 71
+            color_index: 0
+        - 52.50-54.54:
+            value: 85
+            color_index: 0
+        - 54.54-56.58:
+            value: 79
+            color_index: 0
+        - 56.58-58.62:
+            value: 80
+            color_index: 0
+        - 58.62-60.67:
+            value: 67
+            color_index: 0
+        - 60.67-62.71:
+            value: 66
+            color_index: 0
+        - 62.71-64.75:
+            value: 52
+            color_index: 0
+        - 64.75-66.79:
+            value: 34
+            color_index: 0
+        - 66.79-68.83:
+            value: 25
+            color_index: 0
+        - 68.83-70.88:
+            value: 20
+            color_index: 0
+        - 70.88-72.92:
+            value: 9
+            color_index: 0
+        - 72.92-74.96:
+            value: 8
+            color_index: 0
+        - 74.96-77.00:
+            value: 7
+            color_index: 0
+        x_axis: Age
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - 28.00-30.04:
+            value: 5
+            color_index: 1
+        - 30.04-32.08:
+            value: 7
+            color_index: 1
+        - 32.08-34.12:
+            value: 9
+            color_index: 1
+        - 34.12-36.17:
+            value: 17
+            color_index: 1
+        - 36.17-38.21:
+            value: 27
+            color_index: 1
+        - 38.21-40.25:
+            value: 28
+            color_index: 1
+        - 40.25-42.29:
+            value: 42
+            color_index: 1
+        - 42.29-44.33:
+            value: 43
+            color_index: 1
+        - 44.33-46.38:
+            value: 42
+            color_index: 1
+        - 46.38-48.42:
+            value: 50
+            color_index: 1
+        - 48.42-50.46:
+            value: 46
+            color_index: 1
+        - 50.46-52.50:
+            value: 71
+            color_index: 1
+        - 52.50-54.54:
+            value: 85
+            color_index: 1
+        - 54.54-56.58:
+            value: 79
+            color_index: 1
+        - 56.58-58.62:
+            value: 80
+            color_index: 1
+        - 58.62-60.67:
+            value: 67
+            color_index: 1
+        - 60.67-62.71:
+            value: 66
+            color_index: 1
+        - 62.71-64.75:
+            value: 52
+            color_index: 1
+        - 64.75-66.79:
+            value: 34
+            color_index: 1
+        - 66.79-68.83:
+            value: 25
+            color_index: 1
+        - 68.83-70.88:
+            value: 20
+            color_index: 1
+        - 70.88-72.92:
+            value: 9
+            color_index: 1
+        - 72.92-74.96:
+            value: 8
+            color_index: 1
+        - 74.96-77.00:
+            value: 7
+            color_index: 1
+        x_axis: Age
+        y_axis: Count
 - attribute_information:
     name: Sex
     index: 5
@@ -1127,34 +2317,88 @@ resemblance:
     scale: NOMINAL
   important_metrics:
     mode:
-      real: M
-      synthetic: M
+      values:
+        real: M
+        synthetic: M
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
     distinct_values:
-      real: 3
-      synthetic: 3
-  details: {}
+      values:
+        real: 3
+        synthetic: 3
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.0
+          color_index: 1
+        synthetic:
+          hellinger_distance: 0.0
+          color_index: 1
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
   plot:
     frequency_count:
       real:
         frequencies:
-          M: 725
-          F: 193
-          nan: 1
+        - M:
+            value: 725
+            color_index: 0
+        - F:
+            value: 193
+            color_index: 0
+        - nan:
+            value: 1
+            color_index: 0
         x_axis: Sex
-        y_axis: Frequency
+        y_axis: Count
       synthetic:
         frequencies:
-          M: 725
-          F: 193
-          nan: 1
+        - M:
+            value: 725
+            color_index: 1
+        - F:
+            value: 193
+            color_index: 1
+        - nan:
+            value: 1
+            color_index: 1
         x_axis: Sex
-        y_axis: Frequency
+        y_axis: Count
 - attribute_information:
     name: ChestPainType
     index: 6
@@ -1162,38 +2406,100 @@ resemblance:
     scale: NOMINAL
   important_metrics:
     mode:
-      real: ASY
-      synthetic: ASY
+      values:
+        real: ASY
+        synthetic: ASY
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
     distinct_values:
-      real: 5
-      synthetic: 5
-  details: {}
+      values:
+        real: 5
+        synthetic: 5
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.0
+          color_index: 1
+        synthetic:
+          hellinger_distance: 0.0
+          color_index: 1
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
   plot:
     frequency_count:
       real:
         frequencies:
-          ASY: 496
-          NAP: 203
-          ATA: 173
-          TA: 46
-          nan: 1
+        - ASY:
+            value: 496
+            color_index: 0
+        - NAP:
+            value: 203
+            color_index: 0
+        - ATA:
+            value: 173
+            color_index: 0
+        - TA:
+            value: 46
+            color_index: 0
+        - nan:
+            value: 1
+            color_index: 0
         x_axis: ChestPainType
-        y_axis: Frequency
+        y_axis: Count
       synthetic:
         frequencies:
-          ASY: 496
-          NAP: 203
-          ATA: 173
-          TA: 46
-          nan: 1
+        - ASY:
+            value: 496
+            color_index: 1
+        - NAP:
+            value: 203
+            color_index: 1
+        - ATA:
+            value: 173
+            color_index: 1
+        - TA:
+            value: 46
+            color_index: 1
+        - nan:
+            value: 1
+            color_index: 1
         x_axis: ChestPainType
-        y_axis: Frequency
+        y_axis: Count
 - attribute_information:
     name: RestingBP
     index: 7
@@ -1201,47 +2507,180 @@ resemblance:
     scale: INTERVAL
   important_metrics:
     mean:
-      real: 132.39651416122004
-      synthetic: 132.39651416122004
+      values:
+        real: 132.39651416122004
+        synthetic: 132.39651416122004
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
     variance:
-      real: 342.400510724745
-      synthetic: 342.400510724745
+      values:
+        real: 342.400510724745
+        synthetic: 342.400510724745
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
     standard_deviation:
-      real: 18.504067410295093
-      synthetic: 18.504067410295093
-    ranges:
-      real:
-        min: 0.0
-        max: 200.0
-      synthetic:
-        min: 0.0
-        max: 200.0
+      values:
+        real: 18.504067410295093
+        synthetic: 18.504067410295093
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+    minimum:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+    maximum:
+      values:
+        real: 200.0
+        synthetic: 200.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
   details:
-    quantiles:
-      real:
-        Fifth_Percentile: 106.0
-        Q1: 120.0
-        Median: 130.0
-        Q3: 140.0
-        Ninety_Fifth_Percentile: 160.0
-      synthetic:
-        Fifth_Percentile: 106.0
-        Q1: 120.0
-        Median: 130.0
-        Q3: 140.0
-        Ninety_Fifth_Percentile: 160.0
+    fifth_percentile:
+      values:
+        real: 106.0
+        synthetic: 106.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+    q1:
+      values:
+        real: 120.0
+        synthetic: 120.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+    median:
+      values:
+        real: 130.0
+        synthetic: 130.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+    q3:
+      values:
+        real: 140.0
+        synthetic: 140.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+    ninety_fifth_percentile:
+      values:
+        real: 160.0
+        synthetic: 160.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
     skewness:
-      real: 0.1799369143410541
-      synthetic: 0.1799369143410541
+      values:
+        real: 0.1799369143410541
+        synthetic: 0.1799369143410541
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
     kurtosis:
-      real: 3.27806645322641
-      synthetic: 3.27806645322641
+      values:
+        real: 3.27806645322641
+        synthetic: 3.27806645322641
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+        synthetic:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
   plot:
     density:
       real:
@@ -1349,6 +2788,7 @@ resemblance:
         - 0.0004096049959646141
         x_axis: RestingBP
         y_axis: Frequency
+        color_index: 0
       synthetic:
         x_values:
         - 0.0
@@ -1454,6 +2894,166 @@ resemblance:
         - 0.0004096049959646141
         x_axis: RestingBP
         y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - 0.00-8.00:
+            value: 1
+            color_index: 0
+        - 8.00-16.00:
+            value: 0
+            color_index: 0
+        - 16.00-24.00:
+            value: 0
+            color_index: 0
+        - 24.00-32.00:
+            value: 0
+            color_index: 0
+        - 32.00-40.00:
+            value: 0
+            color_index: 0
+        - 40.00-48.00:
+            value: 0
+            color_index: 0
+        - 48.00-56.00:
+            value: 0
+            color_index: 0
+        - 56.00-64.00:
+            value: 0
+            color_index: 0
+        - 64.00-72.00:
+            value: 0
+            color_index: 0
+        - 72.00-80.00:
+            value: 0
+            color_index: 0
+        - 80.00-88.00:
+            value: 1
+            color_index: 0
+        - 88.00-96.00:
+            value: 9
+            color_index: 0
+        - 96.00-104.00:
+            value: 21
+            color_index: 0
+        - 104.00-112.00:
+            value: 80
+            color_index: 0
+        - 112.00-120.00:
+            value: 49
+            color_index: 0
+        - 120.00-128.00:
+            value: 195
+            color_index: 0
+        - 128.00-136.00:
+            value: 196
+            color_index: 0
+        - 136.00-144.00:
+            value: 163
+            color_index: 0
+        - 144.00-152.00:
+            value: 87
+            color_index: 0
+        - 152.00-160.00:
+            value: 24
+            color_index: 0
+        - 160.00-168.00:
+            value: 53
+            color_index: 0
+        - 168.00-176.00:
+            value: 17
+            color_index: 0
+        - 176.00-184.00:
+            value: 15
+            color_index: 0
+        - 184.00-192.00:
+            value: 3
+            color_index: 0
+        - 192.00-200.00:
+            value: 5
+            color_index: 0
+        x_axis: RestingBP
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - 0.00-8.00:
+            value: 1
+            color_index: 1
+        - 8.00-16.00:
+            value: 0
+            color_index: 1
+        - 16.00-24.00:
+            value: 0
+            color_index: 1
+        - 24.00-32.00:
+            value: 0
+            color_index: 1
+        - 32.00-40.00:
+            value: 0
+            color_index: 1
+        - 40.00-48.00:
+            value: 0
+            color_index: 1
+        - 48.00-56.00:
+            value: 0
+            color_index: 1
+        - 56.00-64.00:
+            value: 0
+            color_index: 1
+        - 64.00-72.00:
+            value: 0
+            color_index: 1
+        - 72.00-80.00:
+            value: 0
+            color_index: 1
+        - 80.00-88.00:
+            value: 1
+            color_index: 1
+        - 88.00-96.00:
+            value: 9
+            color_index: 1
+        - 96.00-104.00:
+            value: 21
+            color_index: 1
+        - 104.00-112.00:
+            value: 80
+            color_index: 1
+        - 112.00-120.00:
+            value: 49
+            color_index: 1
+        - 120.00-128.00:
+            value: 195
+            color_index: 1
+        - 128.00-136.00:
+            value: 196
+            color_index: 1
+        - 136.00-144.00:
+            value: 163
+            color_index: 1
+        - 144.00-152.00:
+            value: 87
+            color_index: 1
+        - 152.00-160.00:
+            value: 24
+            color_index: 1
+        - 160.00-168.00:
+            value: 53
+            color_index: 1
+        - 168.00-176.00:
+            value: 17
+            color_index: 1
+        - 176.00-184.00:
+            value: 15
+            color_index: 1
+        - 184.00-192.00:
+            value: 3
+            color_index: 1
+        - 192.00-200.00:
+            value: 5
+            color_index: 1
+        x_axis: RestingBP
+        y_axis: Count
 - attribute_information:
     name: Cholesterol
     index: 8
@@ -1461,47 +3061,180 @@ resemblance:
     scale: INTERVAL
   important_metrics:
     mean:
-      real: 198.7995642701525
-      synthetic: 198.7995642701525
+      values:
+        real: 198.7995642701525
+        synthetic: 198.7995642701525
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
     variance:
-      real: 11951.857429004036
-      synthetic: 11951.857429004036
+      values:
+        real: 11951.857429004036
+        synthetic: 11951.857429004036
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
     standard_deviation:
-      real: 109.32455089779256
-      synthetic: 109.32455089779256
-    ranges:
-      real:
-        min: 0.0
-        max: 603.0
-      synthetic:
-        min: 0.0
-        max: 603.0
+      values:
+        real: 109.32455089779256
+        synthetic: 109.32455089779256
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+    minimum:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+    maximum:
+      values:
+        real: 603.0
+        synthetic: 603.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
   details:
-    quantiles:
-      real:
-        Fifth_Percentile: 0.0
-        Q1: 173.5
-        Median: 223.0
-        Q3: 267.0
-        Ninety_Fifth_Percentile: 331.1999999999998
-      synthetic:
-        Fifth_Percentile: 0.0
-        Q1: 173.5
-        Median: 223.0
-        Q3: 267.0
-        Ninety_Fifth_Percentile: 331.1999999999998
+    fifth_percentile:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+    q1:
+      values:
+        real: 173.5
+        synthetic: 173.5
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+    median:
+      values:
+        real: 223.0
+        synthetic: 223.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+    q3:
+      values:
+        real: 267.0
+        synthetic: 267.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+    ninety_fifth_percentile:
+      values:
+        real: 331.1999999999998
+        synthetic: 331.1999999999998
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
     skewness:
-      real: -0.6104175432769176
-      synthetic: -0.6104175432769176
+      values:
+        real: -0.6104175432769176
+        synthetic: -0.6104175432769176
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
     kurtosis:
-      real: 0.12160807050415912
-      synthetic: 0.12160807050415912
+      values:
+        real: 0.12160807050415912
+        synthetic: 0.12160807050415912
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+        synthetic:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
   plot:
     density:
       real:
@@ -1609,6 +3342,7 @@ resemblance:
         - 2.202745494294833e-05
         x_axis: Cholesterol
         y_axis: Frequency
+        color_index: 0
       synthetic:
         x_values:
         - 0.0
@@ -1714,6 +3448,166 @@ resemblance:
         - 2.202745494294833e-05
         x_axis: Cholesterol
         y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - 0.00-24.12:
+            value: 172
+            color_index: 0
+        - 24.12-48.24:
+            value: 0
+            color_index: 0
+        - 48.24-72.36:
+            value: 0
+            color_index: 0
+        - 72.36-96.48:
+            value: 1
+            color_index: 0
+        - 96.48-120.60:
+            value: 5
+            color_index: 0
+        - 120.60-144.72:
+            value: 10
+            color_index: 0
+        - 144.72-168.84:
+            value: 31
+            color_index: 0
+        - 168.84-192.96:
+            value: 62
+            color_index: 0
+        - 192.96-217.08:
+            value: 143
+            color_index: 0
+        - 217.08-241.20:
+            value: 144
+            color_index: 0
+        - 241.20-265.32:
+            value: 115
+            color_index: 0
+        - 265.32-289.44:
+            value: 101
+            color_index: 0
+        - 289.44-313.56:
+            value: 67
+            color_index: 0
+        - 313.56-337.68:
+            value: 27
+            color_index: 0
+        - 337.68-361.80:
+            value: 19
+            color_index: 0
+        - 361.80-385.92:
+            value: 4
+            color_index: 0
+        - 385.92-410.04:
+            value: 8
+            color_index: 0
+        - 410.04-434.16:
+            value: 2
+            color_index: 0
+        - 434.16-458.28:
+            value: 1
+            color_index: 0
+        - 458.28-482.40:
+            value: 2
+            color_index: 0
+        - 482.40-506.52:
+            value: 1
+            color_index: 0
+        - 506.52-530.64:
+            value: 2
+            color_index: 0
+        - 530.64-554.76:
+            value: 0
+            color_index: 0
+        - 554.76-578.88:
+            value: 1
+            color_index: 0
+        - 578.88-603.00:
+            value: 1
+            color_index: 0
+        x_axis: Cholesterol
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - 0.00-24.12:
+            value: 172
+            color_index: 1
+        - 24.12-48.24:
+            value: 0
+            color_index: 1
+        - 48.24-72.36:
+            value: 0
+            color_index: 1
+        - 72.36-96.48:
+            value: 1
+            color_index: 1
+        - 96.48-120.60:
+            value: 5
+            color_index: 1
+        - 120.60-144.72:
+            value: 10
+            color_index: 1
+        - 144.72-168.84:
+            value: 31
+            color_index: 1
+        - 168.84-192.96:
+            value: 62
+            color_index: 1
+        - 192.96-217.08:
+            value: 143
+            color_index: 1
+        - 217.08-241.20:
+            value: 144
+            color_index: 1
+        - 241.20-265.32:
+            value: 115
+            color_index: 1
+        - 265.32-289.44:
+            value: 101
+            color_index: 1
+        - 289.44-313.56:
+            value: 67
+            color_index: 1
+        - 313.56-337.68:
+            value: 27
+            color_index: 1
+        - 337.68-361.80:
+            value: 19
+            color_index: 1
+        - 361.80-385.92:
+            value: 4
+            color_index: 1
+        - 385.92-410.04:
+            value: 8
+            color_index: 1
+        - 410.04-434.16:
+            value: 2
+            color_index: 1
+        - 434.16-458.28:
+            value: 1
+            color_index: 1
+        - 458.28-482.40:
+            value: 2
+            color_index: 1
+        - 482.40-506.52:
+            value: 1
+            color_index: 1
+        - 506.52-530.64:
+            value: 2
+            color_index: 1
+        - 530.64-554.76:
+            value: 0
+            color_index: 1
+        - 554.76-578.88:
+            value: 1
+            color_index: 1
+        - 578.88-603.00:
+            value: 1
+            color_index: 1
+        x_axis: Cholesterol
+        y_axis: Count
 - attribute_information:
     name: FastingBS
     index: 9
@@ -1721,34 +3615,88 @@ resemblance:
     scale: NOMINAL
   important_metrics:
     mode:
-      real: '0.0'
-      synthetic: '0.0'
+      values:
+        real: '0.0'
+        synthetic: '0.0'
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
     distinct_values:
-      real: 3
-      synthetic: 3
-  details: {}
+      values:
+        real: 3
+        synthetic: 3
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.0
+          color_index: 1
+        synthetic:
+          hellinger_distance: 0.0
+          color_index: 1
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
   plot:
     frequency_count:
       real:
         frequencies:
-          '0.0': 704
-          '1.0': 214
-          nan: 1
+        - '0.0':
+            value: 704
+            color_index: 0
+        - '1.0':
+            value: 214
+            color_index: 0
+        - nan:
+            value: 1
+            color_index: 0
         x_axis: FastingBS
-        y_axis: Frequency
+        y_axis: Count
       synthetic:
         frequencies:
-          '0.0': 704
-          '1.0': 214
-          nan: 1
+        - '0.0':
+            value: 704
+            color_index: 1
+        - '1.0':
+            value: 214
+            color_index: 1
+        - nan:
+            value: 1
+            color_index: 1
         x_axis: FastingBS
-        y_axis: Frequency
+        y_axis: Count
 - attribute_information:
     name: RestingECG
     index: 10
@@ -1756,36 +3704,94 @@ resemblance:
     scale: NOMINAL
   important_metrics:
     mode:
-      real: Normal
-      synthetic: Normal
+      values:
+        real: Normal
+        synthetic: Normal
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
     distinct_values:
-      real: 4
-      synthetic: 4
-  details: {}
+      values:
+        real: 4
+        synthetic: 4
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.0
+          color_index: 1
+        synthetic:
+          hellinger_distance: 0.0
+          color_index: 1
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
   plot:
     frequency_count:
       real:
         frequencies:
-          Normal: 552
-          LVH: 188
-          ST: 178
-          nan: 1
+        - Normal:
+            value: 552
+            color_index: 0
+        - LVH:
+            value: 188
+            color_index: 0
+        - ST:
+            value: 178
+            color_index: 0
+        - nan:
+            value: 1
+            color_index: 0
         x_axis: RestingECG
-        y_axis: Frequency
+        y_axis: Count
       synthetic:
         frequencies:
-          Normal: 552
-          LVH: 188
-          ST: 178
-          nan: 1
+        - Normal:
+            value: 552
+            color_index: 1
+        - LVH:
+            value: 188
+            color_index: 1
+        - ST:
+            value: 178
+            color_index: 1
+        - nan:
+            value: 1
+            color_index: 1
         x_axis: RestingECG
-        y_axis: Frequency
+        y_axis: Count
 - attribute_information:
     name: MaxHR
     index: 11
@@ -1793,47 +3799,180 @@ resemblance:
     scale: INTERVAL
   important_metrics:
     mean:
-      real: 136.80936819172115
-      synthetic: 136.80936819172115
+      values:
+        real: 136.80936819172115
+        synthetic: 136.80936819172115
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
     variance:
-      real: 647.522483043084
-      synthetic: 647.522483043084
+      values:
+        real: 647.522483043084
+        synthetic: 647.522483043084
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
     standard_deviation:
-      real: 25.446463075309385
-      synthetic: 25.446463075309385
-    ranges:
-      real:
-        min: 60.0
-        max: 202.0
-      synthetic:
-        min: 60.0
-        max: 202.0
+      values:
+        real: 25.446463075309385
+        synthetic: 25.446463075309385
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+    minimum:
+      values:
+        real: 60.0
+        synthetic: 60.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+    maximum:
+      values:
+        real: 202.0
+        synthetic: 202.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
   details:
-    quantiles:
-      real:
-        Fifth_Percentile: 96.0
-        Q1: 120.0
-        Median: 138.0
-        Q3: 156.0
-        Ninety_Fifth_Percentile: 178.0
-      synthetic:
-        Fifth_Percentile: 96.0
-        Q1: 120.0
-        Median: 138.0
-        Q3: 156.0
-        Ninety_Fifth_Percentile: 178.0
+    fifth_percentile:
+      values:
+        real: 96.0
+        synthetic: 96.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+    q1:
+      values:
+        real: 120.0
+        synthetic: 120.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+    median:
+      values:
+        real: 138.0
+        synthetic: 138.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+    q3:
+      values:
+        real: 156.0
+        synthetic: 156.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+    ninety_fifth_percentile:
+      values:
+        real: 178.0
+        synthetic: 178.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
     skewness:
-      real: -0.1444377667298132
-      synthetic: -0.1444377667298132
+      values:
+        real: -0.1444377667298132
+        synthetic: -0.1444377667298132
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
     kurtosis:
-      real: -0.4454619038133698
-      synthetic: -0.4454619038133698
+      values:
+        real: -0.4454619038133698
+        synthetic: -0.4454619038133698
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+        synthetic:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
   plot:
     density:
       real:
@@ -1941,6 +4080,7 @@ resemblance:
         - 0.00022696976734869523
         x_axis: MaxHR
         y_axis: Frequency
+        color_index: 0
       synthetic:
         x_values:
         - 60.0
@@ -2046,6 +4186,166 @@ resemblance:
         - 0.00022696976734869523
         x_axis: MaxHR
         y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - 60.00-65.68:
+            value: 2
+            color_index: 0
+        - 65.68-71.36:
+            value: 4
+            color_index: 0
+        - 71.36-77.04:
+            value: 4
+            color_index: 0
+        - 77.04-82.72:
+            value: 6
+            color_index: 0
+        - 82.72-88.40:
+            value: 11
+            color_index: 0
+        - 88.40-94.08:
+            value: 16
+            color_index: 0
+        - 94.08-99.76:
+            value: 28
+            color_index: 0
+        - 99.76-105.44:
+            value: 35
+            color_index: 0
+        - 105.44-111.12:
+            value: 47
+            color_index: 0
+        - 111.12-116.80:
+            value: 49
+            color_index: 0
+        - 116.80-122.48:
+            value: 84
+            color_index: 0
+        - 122.48-128.16:
+            value: 71
+            color_index: 0
+        - 128.16-133.84:
+            value: 60
+            color_index: 0
+        - 133.84-139.52:
+            value: 55
+            color_index: 0
+        - 139.52-145.20:
+            value: 98
+            color_index: 0
+        - 145.20-150.88:
+            value: 71
+            color_index: 0
+        - 150.88-156.56:
+            value: 57
+            color_index: 0
+        - 156.56-162.24:
+            value: 65
+            color_index: 0
+        - 162.24-167.92:
+            value: 32
+            color_index: 0
+        - 167.92-173.60:
+            value: 55
+            color_index: 0
+        - 173.60-179.28:
+            value: 32
+            color_index: 0
+        - 179.28-184.96:
+            value: 22
+            color_index: 0
+        - 184.96-190.64:
+            value: 11
+            color_index: 0
+        - 190.64-196.32:
+            value: 3
+            color_index: 0
+        - 196.32-202.00:
+            value: 1
+            color_index: 0
+        x_axis: MaxHR
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - 60.00-65.68:
+            value: 2
+            color_index: 1
+        - 65.68-71.36:
+            value: 4
+            color_index: 1
+        - 71.36-77.04:
+            value: 4
+            color_index: 1
+        - 77.04-82.72:
+            value: 6
+            color_index: 1
+        - 82.72-88.40:
+            value: 11
+            color_index: 1
+        - 88.40-94.08:
+            value: 16
+            color_index: 1
+        - 94.08-99.76:
+            value: 28
+            color_index: 1
+        - 99.76-105.44:
+            value: 35
+            color_index: 1
+        - 105.44-111.12:
+            value: 47
+            color_index: 1
+        - 111.12-116.80:
+            value: 49
+            color_index: 1
+        - 116.80-122.48:
+            value: 84
+            color_index: 1
+        - 122.48-128.16:
+            value: 71
+            color_index: 1
+        - 128.16-133.84:
+            value: 60
+            color_index: 1
+        - 133.84-139.52:
+            value: 55
+            color_index: 1
+        - 139.52-145.20:
+            value: 98
+            color_index: 1
+        - 145.20-150.88:
+            value: 71
+            color_index: 1
+        - 150.88-156.56:
+            value: 57
+            color_index: 1
+        - 156.56-162.24:
+            value: 65
+            color_index: 1
+        - 162.24-167.92:
+            value: 32
+            color_index: 1
+        - 167.92-173.60:
+            value: 55
+            color_index: 1
+        - 173.60-179.28:
+            value: 32
+            color_index: 1
+        - 179.28-184.96:
+            value: 22
+            color_index: 1
+        - 184.96-190.64:
+            value: 11
+            color_index: 1
+        - 190.64-196.32:
+            value: 3
+            color_index: 1
+        - 196.32-202.00:
+            value: 1
+            color_index: 1
+        x_axis: MaxHR
+        y_axis: Count
 - attribute_information:
     name: ExerciseAngina
     index: 12
@@ -2053,34 +4353,88 @@ resemblance:
     scale: NOMINAL
   important_metrics:
     mode:
-      real: N
-      synthetic: N
+      values:
+        real: N
+        synthetic: N
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
     distinct_values:
-      real: 3
-      synthetic: 3
-  details: {}
+      values:
+        real: 3
+        synthetic: 3
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.0
+          color_index: 1
+        synthetic:
+          hellinger_distance: 0.0
+          color_index: 1
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
   plot:
     frequency_count:
       real:
         frequencies:
-          N: 547
-          Y: 371
-          nan: 1
+        - N:
+            value: 547
+            color_index: 0
+        - Y:
+            value: 371
+            color_index: 0
+        - nan:
+            value: 1
+            color_index: 0
         x_axis: ExerciseAngina
-        y_axis: Frequency
+        y_axis: Count
       synthetic:
         frequencies:
-          N: 547
-          Y: 371
-          nan: 1
+        - N:
+            value: 547
+            color_index: 1
+        - Y:
+            value: 371
+            color_index: 1
+        - nan:
+            value: 1
+            color_index: 1
         x_axis: ExerciseAngina
-        y_axis: Frequency
+        y_axis: Count
 - attribute_information:
     name: Oldpeak
     index: 13
@@ -2088,47 +4442,180 @@ resemblance:
     scale: INTERVAL
   important_metrics:
     mean:
-      real: 0.8873638344226579
-      synthetic: 0.8873638344226579
+      values:
+        real: 0.8873638344226579
+        synthetic: 0.8873638344226579
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
     variance:
-      real: 1.136332702047171
-      synthetic: 1.136332702047171
+      values:
+        real: 1.136332702047171
+        synthetic: 1.136332702047171
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
     standard_deviation:
-      real: 1.065989072198759
-      synthetic: 1.065989072198759
-    ranges:
-      real:
-        min: -2.6
-        max: 6.2
-      synthetic:
-        min: -2.6
-        max: 6.2
+      values:
+        real: 1.065989072198759
+        synthetic: 1.065989072198759
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+    minimum:
+      values:
+        real: -2.6
+        synthetic: -2.6
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+    maximum:
+      values:
+        real: 6.2
+        synthetic: 6.2
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
   details:
-    quantiles:
-      real:
-        Fifth_Percentile: 0.0
-        Q1: 0.0
-        Median: 0.6
-        Q3: 1.5
-        Ninety_Fifth_Percentile: 3.0
-      synthetic:
-        Fifth_Percentile: 0.0
-        Q1: 0.0
-        Median: 0.6
-        Q3: 1.5
-        Ninety_Fifth_Percentile: 3.0
+    fifth_percentile:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+    q1:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+    median:
+      values:
+        real: 0.6
+        synthetic: 0.6
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+    q3:
+      values:
+        real: 1.5
+        synthetic: 1.5
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+    ninety_fifth_percentile:
+      values:
+        real: 3.0
+        synthetic: 3.0
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
     skewness:
-      real: 1.0234271657157934
-      synthetic: 1.0234271657157934
+      values:
+        real: 1.0234271657157934
+        synthetic: 1.0234271657157934
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
     kurtosis:
-      real: 1.2076385934425478
-      synthetic: 1.2076385934425478
+      values:
+        real: 1.2076385934425478
+        synthetic: 1.2076385934425478
+      difference:
+        absolute: 0.0
+        percentage: 0.0
+        color_index: 1
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+        synthetic:
+          KS_statistic: 0.0
+          p_value: 1.0
+          color_index: 1
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
   plot:
     density:
       real:
@@ -2236,6 +4723,7 @@ resemblance:
         - 0.001734897025171758
         x_axis: Oldpeak
         y_axis: Frequency
+        color_index: 0
       synthetic:
         x_values:
         - -2.6
@@ -2341,6 +4829,166 @@ resemblance:
         - 0.001734897025171758
         x_axis: Oldpeak
         y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - -2.60--2.25:
+            value: 1
+            color_index: 0
+        - -2.25--1.90:
+            value: 1
+            color_index: 0
+        - -1.90--1.54:
+            value: 0
+            color_index: 0
+        - -1.54--1.19:
+            value: 1
+            color_index: 0
+        - -1.19--0.84:
+            value: 4
+            color_index: 0
+        - -0.84--0.49:
+            value: 4
+            color_index: 0
+        - -0.49--0.14:
+            value: 0
+            color_index: 0
+        - -0.14-0.22:
+            value: 406
+            color_index: 0
+        - 0.22-0.57:
+            value: 41
+            color_index: 0
+        - 0.57-0.92:
+            value: 42
+            color_index: 0
+        - 0.92-1.27:
+            value: 119
+            color_index: 0
+        - 1.27-1.62:
+            value: 94
+            color_index: 0
+        - 1.62-1.98:
+            value: 30
+            color_index: 0
+        - 1.98-2.33:
+            value: 85
+            color_index: 0
+        - 2.33-2.68:
+            value: 27
+            color_index: 0
+        - 2.68-3.03:
+            value: 36
+            color_index: 0
+        - 3.03-3.38:
+            value: 3
+            color_index: 0
+        - 3.38-3.74:
+            value: 10
+            color_index: 0
+        - 3.74-4.09:
+            value: 9
+            color_index: 0
+        - 4.09-4.44:
+            value: 3
+            color_index: 0
+        - 4.44-4.79:
+            value: 0
+            color_index: 0
+        - 4.79-5.14:
+            value: 1
+            color_index: 0
+        - 5.14-5.50:
+            value: 0
+            color_index: 0
+        - 5.50-5.85:
+            value: 1
+            color_index: 0
+        - 5.85-6.20:
+            value: 1
+            color_index: 0
+        x_axis: Oldpeak
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - -2.60--2.25:
+            value: 1
+            color_index: 1
+        - -2.25--1.90:
+            value: 1
+            color_index: 1
+        - -1.90--1.54:
+            value: 0
+            color_index: 1
+        - -1.54--1.19:
+            value: 1
+            color_index: 1
+        - -1.19--0.84:
+            value: 4
+            color_index: 1
+        - -0.84--0.49:
+            value: 4
+            color_index: 1
+        - -0.49--0.14:
+            value: 0
+            color_index: 1
+        - -0.14-0.22:
+            value: 406
+            color_index: 1
+        - 0.22-0.57:
+            value: 41
+            color_index: 1
+        - 0.57-0.92:
+            value: 42
+            color_index: 1
+        - 0.92-1.27:
+            value: 119
+            color_index: 1
+        - 1.27-1.62:
+            value: 94
+            color_index: 1
+        - 1.62-1.98:
+            value: 30
+            color_index: 1
+        - 1.98-2.33:
+            value: 85
+            color_index: 1
+        - 2.33-2.68:
+            value: 27
+            color_index: 1
+        - 2.68-3.03:
+            value: 36
+            color_index: 1
+        - 3.03-3.38:
+            value: 3
+            color_index: 1
+        - 3.38-3.74:
+            value: 10
+            color_index: 1
+        - 3.74-4.09:
+            value: 9
+            color_index: 1
+        - 4.09-4.44:
+            value: 3
+            color_index: 1
+        - 4.44-4.79:
+            value: 0
+            color_index: 1
+        - 4.79-5.14:
+            value: 1
+            color_index: 1
+        - 5.14-5.50:
+            value: 0
+            color_index: 1
+        - 5.50-5.85:
+            value: 1
+            color_index: 1
+        - 5.85-6.20:
+            value: 1
+            color_index: 1
+        x_axis: Oldpeak
+        y_axis: Count
 - attribute_information:
     name: ST_Slope
     index: 14
@@ -2348,36 +4996,94 @@ resemblance:
     scale: NOMINAL
   important_metrics:
     mode:
-      real: Flat
-      synthetic: Flat
+      values:
+        real: Flat
+        synthetic: Flat
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
     distinct_values:
-      real: 4
-      synthetic: 4
-  details: {}
+      values:
+        real: 4
+        synthetic: 4
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.0
+          color_index: 1
+        synthetic:
+          hellinger_distance: 0.0
+          color_index: 1
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
   plot:
     frequency_count:
       real:
         frequencies:
-          Flat: 460
-          Up: 395
-          Down: 63
-          nan: 1
+        - Flat:
+            value: 460
+            color_index: 0
+        - Up:
+            value: 395
+            color_index: 0
+        - Down:
+            value: 63
+            color_index: 0
+        - nan:
+            value: 1
+            color_index: 0
         x_axis: ST_Slope
-        y_axis: Frequency
+        y_axis: Count
       synthetic:
         frequencies:
-          Flat: 460
-          Up: 395
-          Down: 63
-          nan: 1
+        - Flat:
+            value: 460
+            color_index: 1
+        - Up:
+            value: 395
+            color_index: 1
+        - Down:
+            value: 63
+            color_index: 1
+        - nan:
+            value: 1
+            color_index: 1
         x_axis: ST_Slope
-        y_axis: Frequency
+        y_axis: Count
 - attribute_information:
     name: HeartDisease
     index: 15
@@ -2385,32 +5091,85 @@ resemblance:
     scale: NOMINAL
   important_metrics:
     mode:
-      real: '1.0'
-      synthetic: '1.0'
+      values:
+        real: '1.0'
+        synthetic: '1.0'
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
     missing_values_count:
-      real: 0
-      synthetic: 0
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
     missing_values_percentage:
-      real: 0.0
-      synthetic: 0.0
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
     distinct_values:
-      real: 3
-      synthetic: 3
-  details: {}
+      values:
+        real: 3
+        synthetic: 3
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.0
+          color_index: 1
+        synthetic:
+          hellinger_distance: 0.0
+          color_index: 1
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
   plot:
     frequency_count:
       real:
         frequencies:
-          '1.0': 508
-          '0.0': 410
-          nan: 1
+        - '1.0':
+            value: 508
+            color_index: 0
+        - '0.0':
+            value: 410
+            color_index: 0
+        - nan:
+            value: 1
+            color_index: 0
         x_axis: HeartDisease
-        y_axis: Frequency
+        y_axis: Count
       synthetic:
         frequencies:
-          '1.0': 508
-          '0.0': 410
-          nan: 1
+        - '1.0':
+            value: 508
+            color_index: 1
+        - '0.0':
+            value: 410
+            color_index: 1
+        - nan:
+            value: 1
+            color_index: 1
         x_axis: HeartDisease
-        y_axis: Frequency
-utility: []
+        y_axis: Count

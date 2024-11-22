@@ -14,12 +14,15 @@ export class ChartDensityComponent extends ChartComponent {
     @Input() data!: StatisticsData<DensityPlotData>;
     @Input() simple!: boolean;
 
+    private readonly colors = ['#770000', '#007700']
+
     protected override createChartOptions(): EChartsOption {
         let reference: DensityPlotData;
 
         const series = [];
         for (const [key, value] of Object.entries(this.data)) {
             series.push({
+                color: [this.colors[value.color_index]],
                 name: key,
                 type: 'line',
                 symbol: 'none',

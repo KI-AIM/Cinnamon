@@ -36,45 +36,41 @@
             </div>
             <div>
                 <table>
-                    <tr *ngIf="attributeStatistics.important_metrics.missing_values_count">
-                        <th>Missing values:</th>
-                        <td>{{ attributeStatistics.important_metrics.missing_values_count.real | number: '1.0-0' }}
-                            ({{ attributeStatistics.important_metrics.missing_values_percentage.real | number: '1.0-2' }} %)
-                        </td>
-                    </tr>
-                    <tr *ngIf="attributeStatistics.important_metrics.ranges">
-                        <th style="vertical-align: top;">Ranges:</th>
-                        <td *ngIf="attributeStatistics.attribute_information.type === 'DATE' || attributeStatistics.attribute_information.type === 'DATE_TIME'; else numericRange">
-                            {{ statisticsService.formatDate(attributeStatistics.important_metrics.ranges.real.min, attributeStatistics.attribute_information.type) }}
-                            <br>
-                            {{ statisticsService.formatDate(attributeStatistics.important_metrics.ranges.real.max, attributeStatistics.attribute_information.type) }}
-                        </td>
-                        <ng-template #numericRange>
-                            <td>{{ attributeStatistics.important_metrics.ranges.real.min | number: '1.0-3' }}
-                                <br>
-                                {{ attributeStatistics.important_metrics.ranges.real.max | number: '1.0-3' }}
-                            </td>
-                        </ng-template>
-                    </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.distinct_values">
                         <th>Distinct Values:</th>
-                        <td>{{ attributeStatistics.important_metrics.distinct_values.real | number: '1.0-3' }}</td>
+                        <td>{{ attributeStatistics.important_metrics.distinct_values.values.real | number: '1.0-3' }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.mode">
                         <th>Mode:</th>
-                        <td>{{ attributeStatistics.important_metrics.mode.real }}</td>
+                        <td>{{ attributeStatistics.important_metrics.mode.values.real }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.mean">
                         <th>Mean:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.mean.real, null) }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.mean.values.real, null) }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.variance">
                         <th>Variance:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.variance.real, null) }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.variance.values.real, null) }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.standard_deviation">
                         <th>Standard Deviation:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.standard_deviation.real, null) }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.standard_deviation.values.real, null) }}</td>
+                    </tr>
+                    <tr *ngIf="attributeStatistics.important_metrics.minimum">
+                        <th>Minimum:</th>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.minimum.values.real, null) }}</td>
+                    </tr>
+                    <tr *ngIf="attributeStatistics.important_metrics.maximum">
+                        <th>Maximum:</th>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.maximum.values.real, null) }}</td>
+                    </tr>
+                    <tr *ngIf="attributeStatistics.important_metrics.missing_values_count">
+                        <th>Missing values (#):</th>
+                        <td>{{ attributeStatistics.important_metrics.missing_values_count.values.real | number: '1.0-0' }}</td>
+                    </tr>
+                    <tr *ngIf="attributeStatistics.important_metrics.missing_values_percentage">
+                        <th>Missing values (%):</th>
+                        <td>{{ attributeStatistics.important_metrics.missing_values_percentage.values.real | number: '1.0-0' }}</td>
                     </tr>
                 </table>
             </div>

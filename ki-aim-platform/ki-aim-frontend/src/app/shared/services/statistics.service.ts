@@ -61,7 +61,7 @@ export class StatisticsService {
      * @param value The number to be formatted.
      * @param dataType Number as string.
      */
-    public formatNumber(value: number | string, dataType: DataType | null): string {
+    public formatNumber(value: number | string, dataType?: DataType | null): string {
         if (typeof value === "string") {
             value = parseFloat(value);
         }

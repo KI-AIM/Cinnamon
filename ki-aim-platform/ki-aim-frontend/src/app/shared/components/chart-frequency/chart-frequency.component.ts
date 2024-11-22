@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {EChartsOption} from "echarts";
-import { FrequencyPlotData, StatisticsData} from "../../model/statistics";
+import { FrequenciesData, FrequencyPlotData, StatisticsData } from "../../model/statistics";
 import {ChartComponent} from "../chart/chart.component";
 
 @Component({
@@ -9,20 +9,32 @@ import {ChartComponent} from "../chart/chart.component";
     styleUrls: ['../chart/chart.component.less'],
 })
 export class ChartFrequencyComponent extends ChartComponent {
-    @Input() data!: StatisticsData<FrequencyPlotData>;
-    @Input() simple: boolean = false;
+    @Input() public data!: StatisticsData<FrequencyPlotData>;
+    @Input() public simple: boolean = false;
+    @Input() public limit: number | null = 10;
 
-    private readonly limit: number = 10;
+    private readonly colors = ['#770000', '#007700']
 
     protected override createChartOptions(): EChartsOption {
-        let reference: FrequencyPlotData;
+        let keys: string[] | null = null;
 
         const series = [];
         for (const [key, value] of Object.entries(this.data)) {
-            const allValues: number[] = Object.values(value.frequencies);
+            let m: { [value: string]: FrequenciesData } = {};
+            value.frequencies.forEach((b: { [value: string]: FrequenciesData }) => {
+               m = {
+                   ...m,
+                   ...b
+               }
+            });
+            if (keys === null) {
+                keys = Object.keys(m);
+            }
+
+            const allValues: number[] = Object.values(m).map(val => val.value);
 
             let displayedValues: number[];
-            if (allValues.length > this.limit) {
+            if (this.limit && allValues.length > this.limit) {
                 const sumAllValues = allValues.reduce((previousValue, currentValue) => previousValue + currentValue);
 
                 const mostCommonValues = allValues.slice(0, this.limit);
@@ -35,23 +47,28 @@ export class ChartFrequencyComponent extends ChartComponent {
                 displayedValues = allValues;
             }
 
+            const displayedColors: string[] = [];
+            const allColors: number[] = Object.values(m).map(val => val.color_index);
+            allColors.forEach(val => {
+               displayedColors.push(this.colors[val]);
+            });
+
             series.push({
                 name: key,
                 type: 'bar',
                 data: displayedValues,
                 barMinHeight: 2,
+                color: displayedColors,
             });
-            reference = value;
         }
 
         let displayedKeys: string[];
-        const keys = Object.keys(reference!.frequencies);
-        if (keys.length > this.limit) {
-            const mostCommonKeys = keys.splice(0, this.limit);
+        if (this.limit && keys!.length > this.limit) {
+            const mostCommonKeys = keys!.splice(0, this.limit);
             mostCommonKeys.push("Rest");
             displayedKeys = mostCommonKeys;
         } else {
-            displayedKeys = keys;
+            displayedKeys = keys!;
         }
 
         const options: EChartsOption = {

@@ -26,6 +26,9 @@
             </div>
         </div>
 
+        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.important_metrics.mean, name: 'Mean'}">
+        </ng-container>
+
         <div class="metric-wrapper">
             <div class="metric-name">
                 Important Statistical Metrics
@@ -33,57 +36,56 @@
 
             <table>
                 <tr>
-                    <th>Missing values:</th>
-                    <td>{{ attributeStatistics.important_metrics.missing_values_count.real | number: '1.0-0' }}
-                        ({{ attributeStatistics.important_metrics.missing_values_percentage.real | number: '1.0-2' }} %)
-                    </td>
-                </tr>
-                <tr>
-                    <th>Ranges:</th>
-                    <ng-template [ngIf]="attributeStatistics.important_metrics.ranges" [ngIfElse]="notAvailable">
-                        <td *ngIf="attributeStatistics.attribute_information.type === 'DATE' || attributeStatistics.attribute_information.type === 'DATE_TIME'; else numericRange">
-                            {{ statisticsService.formatDate(attributeStatistics.important_metrics.ranges.real.min, attributeStatistics.attribute_information.type) }}
-                            <br>
-                            - {{ statisticsService.formatDate(attributeStatistics.important_metrics.ranges.real.max, attributeStatistics.attribute_information.type) }}
-                        </td>
-                        <ng-template #numericRange>
-                            <td>{{ attributeStatistics.important_metrics.ranges.real.min | number: '1.0-3' }}
-                                - {{ attributeStatistics.important_metrics.ranges.real.max | number: '1.0-3'  }}
-                            </td>
-                        </ng-template>
-                    </ng-template>
-                </tr>
-                <tr>
                     <th>Distinct Values:</th>
                     <ng-template [ngIf]="attributeStatistics.important_metrics.distinct_values" [ngIfElse]="notAvailable">
-                        <td>{{ attributeStatistics.important_metrics.distinct_values.real | number: '1.0-3' }}
+                        <td>{{ attributeStatistics.important_metrics.distinct_values.values.real | number: '1.0-3' }}
                         </td>
                     </ng-template>
                 </tr>
                 <tr>
                     <th>Mode:</th>
                     <ng-template [ngIf]="attributeStatistics.important_metrics.mode" [ngIfElse]="notAvailable">
-                        <td>{{ attributeStatistics.important_metrics.mode.real }}
+                        <td>{{ attributeStatistics.important_metrics.mode.values.real }}
                         </td>
                     </ng-template>
                 </tr>
                 <tr>
                     <th>Mean:</th>
                     <ng-template [ngIf]="attributeStatistics.important_metrics.mean" [ngIfElse]="notAvailable">
-                        <td>{{ attributeStatistics.important_metrics.mean.real | number: '1.0-3' }}</td>
+                        <td>{{ attributeStatistics.important_metrics.mean.values.real | number: '1.0-3' }}</td>
                     </ng-template>
                 </tr>
                 <tr>
                     <th>Variance:</th>
                     <ng-template [ngIf]="attributeStatistics.important_metrics.variance" [ngIfElse]="notAvailable">
-                        <td>{{ attributeStatistics.important_metrics.variance.real | number: '1.0-3' }}</td>
+                        <td>{{ attributeStatistics.important_metrics.variance.values.real | number: '1.0-3' }}</td>
                     </ng-template>
                 </tr>
                 <tr>
                     <th>Standard Deviation:</th>
                     <ng-template [ngIf]="attributeStatistics.important_metrics.standard_deviation" [ngIfElse]="notAvailable">
-                        <td>{{ attributeStatistics.important_metrics.standard_deviation.real | number: '1.0-3' }}</td>
+                        <td>{{ attributeStatistics.important_metrics.standard_deviation.values.real | number: '1.0-3' }}</td>
                     </ng-template>
+                </tr>
+                <tr>
+                    <th>Minimum:</th>
+                    <ng-template [ngIf]="attributeStatistics.important_metrics.minimum" [ngIfElse]="notAvailable">
+                        <td>{{ attributeStatistics.important_metrics.minimum.values.real | number: '1.0-3' }}</td>
+                    </ng-template>
+                </tr>
+                <tr>
+                    <th>Maximum:</th>
+                    <ng-template [ngIf]="attributeStatistics.important_metrics.maximum" [ngIfElse]="notAvailable">
+                        <td>{{ attributeStatistics.important_metrics.maximum.values.real | number: '1.0-3' }}</td>
+                    </ng-template>
+                </tr>
+                <tr>
+                    <th>Missing values (#):</th>
+                    <td>{{ attributeStatistics.important_metrics.missing_values_count.values.real | number: '1.0-0' }}</td>
+                </tr>
+                <tr>
+                    <th>Missing values (%):</th>
+                    <td>{{ attributeStatistics.important_metrics.missing_values_percentage.values.real | number: '1.0-0' }}</td>
                 </tr>
             </table>
         </div>
@@ -109,60 +111,149 @@
 
         </div>
 
+        <div class="metric-wrapper">
+
+            <div class="metric-name">
+                Histogram
+            </div>
+            <div class="w-100 h-100">
+                <ng-container *ngIf="attributeStatistics.plot.histogram; else noChart">
+                    <app-chart-frequency [data]="attributeStatistics.plot.histogram" [limit]="null"></app-chart-frequency>
+                </ng-container>
+                <ng-template #noChart>
+                </ng-template>
+            </div>
+
+        </div>
+
+        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.fifth_percentile, name: '5th Percentile'}">
+        </ng-container>
+        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.fifth_percentile, name: '5th Percentile'}">
+        </ng-container>
+
+        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.q1, name: 'Q1'}">
+        </ng-container>
+        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.q1, name: 'Q1'}">
+        </ng-container>
+
+        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.median, name: 'Median'}">
+        </ng-container>
+        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.median, name: 'Median'}">
+        </ng-container>
+
+        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.q3, name: 'Q3'}">
+        </ng-container>
+        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.q3, name: 'Q3'}">
+        </ng-container>
+
+        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.ninety_fifth_percentile, name: '95th Percentile'}">
+        </ng-container>
+        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.ninety_fifth_percentile, name: '95th Percentile'}">
+        </ng-container>
+
+        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.skewness, name: 'Skewness'}">
+        </ng-container>
+        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.skewness, name: 'Skewness'}">
+        </ng-container>
+
+        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.kurtosis, name: 'Kurtosis'}">
+        </ng-container>
+        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.kurtosis, name: 'Kurtosis'}">
+        </ng-container>
 
         <div class="metric-wrapper">
             <div class="metric-name">
-                Quantiles
+                Kolmogorov-Smirnov
             </div>
-            <table *ngIf="attributeStatistics.details && attributeStatistics.details.quantiles; else notAvailable">
+            <table *ngIf="attributeStatistics.details && attributeStatistics.details.kolmogorov_smirnov; else notAvailable">
                 <tr>
-                    <th>5th Percentile</th>
-                    <td>{{ attributeStatistics.details.quantiles.real.Fifth_Percentile }}</td>
+                    <th>KS Statistic</th>
+                    <td>{{ attributeStatistics.details.kolmogorov_smirnov.values.real.KS_statistic }}</td>
                 </tr>
                 <tr>
-                    <th>Q1</th>
-                    <td>{{ attributeStatistics.details.quantiles.real.Q1 }}</td>
-                </tr>
-                <tr>
-                    <th>Median</th>
-                    <td>{{ attributeStatistics.details.quantiles.real.Median }}</td>
-                </tr>
-                <tr>
-                    <th>Q3</th>
-                    <td>{{ attributeStatistics.details.quantiles.real.Q3 }}</td>
-                </tr>
-                <tr>
-                    <th>95th Percentile</th>
-                    <td>{{ attributeStatistics.details.quantiles.real.Ninety_Fifth_Percentile }}</td>
+                    <th>p_value</th>
+                    <td>{{ attributeStatistics.details.kolmogorov_smirnov.values.real.p_value }}</td>
                 </tr>
             </table>
         </div>
 
         <div class="metric-wrapper">
             <div class="metric-name">
-                Skewness
+                Kolmogorov-Smirnov
             </div>
-            <table *ngIf="attributeStatistics.details && attributeStatistics.details.skewness; else notAvailable">
+            <table *ngIf="attributeStatistics.details && attributeStatistics.details.kolmogorov_smirnov as sm; else notAvailable">
                 <tr>
-                    <th>Skewness</th>
-                    <td>{{ attributeStatistics.details.skewness.real }}</td>
+                    <th></th>
+                    <th>Real</th>
+                    <th>Synth</th>
+                </tr>
+                <tr>
+                    <th>KS Statistic</th>
+                    <td>{{ sm.values.real.KS_statistic }}</td>
+                    <td>{{ sm.values.synthetic.KS_statistic }}</td>
+                </tr>
+                <tr>
+                    <th>p_value</th>
+                    <td>{{ sm.values.real.p_value }}</td>
+                    <td>{{ sm.values.synthetic.p_value }}</td>
                 </tr>
             </table>
         </div>
 
-        <div class="metric-wrapper">
-            <div class="metric-name">
-                Kurtosis
-            </div>
-            <table *ngIf="attributeStatistics.details && attributeStatistics.details.kurtosis; else notAvailable">
+
+    </div>
+</div>
+
+<ng-template #metric let-data='data' let-name='name'>
+    <div class="metric-wrapper">
+        <div class="metric-name">
+            {{ name }}
+        </div>
+
+        <table *ngIf="data; else notAvailable">
+            <tr>
+                <th>{{ name }}</th>
+                <td>{{ statisticsService.formatNumber(data.values.real) }}</td>
+            </tr>
+        </table>
+    </div>
+</ng-template>
+
+<ng-template #metricComparison let-data='data' let-name='name'>
+    <div class="metric-wrapper">
+        <div class="metric-name">
+            {{ name }}
+        </div>
+        <ng-container *ngTemplateOutlet="table; context: {data: data, name: name}">
+        </ng-container>
+    </div>
+</ng-template>
+
+<ng-template #table let-data='data' let-name='name'>
+    <div style="display: flex;">
+        <div [style.background-color]="colors[data.difference.color_index]"
+             style="width: 10px; border-radius: 6px; margin-right: .5rem; margin-bottom: 2px; margin-top: 2px;">
+        </div>
+        <div >
+            <table *ngIf="data; else notAvailable">
                 <tr>
-                    <th>Kurtosis</th>
-                    <td>{{ attributeStatistics.details.kurtosis.real }}</td>
+                    <th></th>
+                    <th>Real</th>
+                    <th>Synth</th>
+                    <th>Diff (#)</th>
+                    <th>Diff (%)</th>
+                </tr>
+                <tr>
+                    <th>{{ name }}</th>
+                    <td>{{ statisticsService.formatNumber(data.values.real) }}</td>
+                    <td>{{ statisticsService.formatNumber(data.values.synthetic) }}</td>
+                    <td>{{ statisticsService.formatNumber(data.difference.absolute) }}</td>
+                    <td>{{ data.difference.percentage }} %</td>
                 </tr>
             </table>
         </div>
     </div>
-</div>
+</ng-template>
 
 <ng-template #notAvailable>
     <td>

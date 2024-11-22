@@ -2,12 +2,17 @@ package de.kiaim.platform.controller;
 
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.InternalIOException;
+import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.StatisticsService;
+import de.kiaim.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,10 +28,15 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "/api/project", description = "API for managing projects.")
 public class StatisticsController {
 
+	private final ProjectService projectService;
 	private final StatisticsService statisticsService;
+	private final UserService userService;
 
-	public StatisticsController(StatisticsService statisticsService) {
+	public StatisticsController(final ProjectService projectService, final StatisticsService statisticsService,
+	                            final UserService userService) {
+		this.projectService = projectService;
 		this.statisticsService = statisticsService;
+		this.userService = userService;
 	}
 
 	@Operation(summary = "Returns the statistics as YAML.",
@@ -37,8 +47,12 @@ public class StatisticsController {
 			             content = @Content()),
 	})
 	@GetMapping(value = "", produces = CustomMediaType.APPLICATION_YAML_VALUE)
-	public String getStatistics() throws InternalIOException {
-		return statisticsService.getStatistics();
+	public String getStatistics(
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws InternalIOException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity projectEntity =  projectService.getProject(user);
+		return statisticsService.getStatistics(projectEntity);
 	}
 
 }

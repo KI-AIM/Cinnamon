@@ -44,10 +44,11 @@ public class OriginalDataEntity {
 	/**
 	 * Statistics about the original data set.
 	 */
-	@Lob
+	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+	@JoinColumn(name = "statistics", referencedColumnName = "id", nullable = true)
 	@Setter
 	@Nullable
-	private byte[] statistics = null;
+	private LobWrapperEntity statistics = null;
 
 	/**
 	 * The corresponding project.

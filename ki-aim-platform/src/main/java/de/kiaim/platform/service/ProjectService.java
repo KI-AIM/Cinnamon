@@ -11,6 +11,7 @@ import de.kiaim.platform.exception.InternalIOException;
 import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.platform.repository.UserRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -32,15 +33,18 @@ public class ProjectService {
 
 	private final ObjectMapper yamlMapper;
 	private final KiAimConfiguration kiAimConfiguration;
+	private final ProjectRepository projectRepository;
 	private final UserRepository userRepository;
 	private final DatabaseService databaseService;
 	private final StepService stepService;
 
 	public ProjectService(final ObjectMapper yamlMapper, final KiAimConfiguration kiAimConfiguration,
-	                      final UserRepository userRepository, final DatabaseService databaseService,
-	                      StepService stepService) {
+	                      final ProjectRepository projectRepository, final UserRepository userRepository,
+	                      final DatabaseService databaseService,
+	                      final StepService stepService) {
 		this.yamlMapper = yamlMapper;
 		this.kiAimConfiguration = kiAimConfiguration;
+		this.projectRepository = projectRepository;
 		this.userRepository = userRepository;
 		this.databaseService = databaseService;
 		this.stepService = stepService;
@@ -98,6 +102,15 @@ public class ProjectService {
 	}
 
 	/**
+	 * Saves the given project entity.
+	 * @param projectEntity Entity to be saved.
+	 */
+	@Transactional
+	public void saveProject(final ProjectEntity projectEntity) {
+		projectRepository.save(projectEntity);
+	}
+
+	/**
 	 * Returns the project of the user.
 	 * Creates a new project, if the user does not have one.
 	 * TODO: Add projectId parameter if multiple projects are supported
@@ -150,7 +163,7 @@ public class ProjectService {
 			if (project.getOriginalData().getStatistics() != null) {
 				final ZipEntry statisticsEntry = new ZipEntry("statistics.yaml");
 				zipOut.putNextEntry(statisticsEntry);
-				zipOut.write(project.getOriginalData().getStatistics());
+				zipOut.write(project.getOriginalData().getStatistics().getLob());
 				zipOut.closeEntry();
 			}
 

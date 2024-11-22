@@ -1,10 +1,10 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.model.data.DataSet;
+import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.model.dto.LoadDataRequest;
-import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
-import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Provides functions for working with data sets.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Service
 public class DataSetService {
 
@@ -63,8 +68,8 @@ public class DataSetService {
 
 			try {
 				final Step step = Step.getStepOrThrow(stepName);
-				transformationErrors = user.getProject().getDataSets().get(step).getDataTransformationErrors();
-			} catch (BadStepNameException ignored) {
+				transformationErrors = getDataSetEntityOrThrow(user.getProject(), step).getDataTransformationErrors();
+			} catch (BadStepNameException | BadDataSetIdException ignored) {
 			}
 
 
@@ -150,6 +155,47 @@ public class DataSetService {
 		return data;
 	}
 
+	/**
+	 * Returns for the DataSetEntity for the given Step from the given project.
+	 * Allowed steps are {@link Step#VALIDATION} and steps of the type {@link de.kiaim.platform.model.enumeration.StepType#DATA_PROCESSING}.
+	 *
+	 * @param project The project.
+	 * @param step The step.
+	 * @return The DataSetEntity
+	 * @throws BadDataSetIdException If no data set exist for the step.
+	 */
+	public DataSetEntity getDataSetEntityOrThrow(final ProjectEntity project,
+	                                             final Step step) throws BadDataSetIdException {
+		DataSetEntity dataSet = null;
+
+		if (step == Step.VALIDATION) {
+			dataSet = project.getOriginalData().getDataSet();
+		} else {
+			final ExternalProcessEntity process = project.getPipelines().get(0).getStageByStep(Step.EXECUTION)
+			                                             .getProcesses().get(step);
+			if (process instanceof DataProcessingEntity dataProcessing) {
+				dataSet = dataProcessing.getDataSet();
+			}
+		}
+
+		if (dataSet == null) {
+			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET, "The project '" + project.getId() +
+			                                                                   "' does not contain a data set for step '" +
+			                                                                   step.name() + "'!");
+		}
+		return dataSet;
+	}
+
+	/**
+	 * Encodes the value.
+	 * "$null" replaces the value with 'null'.
+	 * "$values" inserts the value from the given transformation error.
+	 * All other values will not be modified.
+	 *
+	 * @param encoding The value or encoding to be used.
+	 * @param transformationError The transformation error containing the original value.
+	 * @return The encoded value.
+	 */
 	@Nullable
 	private String encodeValue(final String encoding, final DataTransformationErrorEntity transformationError) {
 		if (encoding.equals("$null")) {

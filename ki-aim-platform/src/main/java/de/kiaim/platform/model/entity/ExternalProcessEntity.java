@@ -19,6 +19,7 @@ import java.util.Map;
  */
 @Schema(description = "Information about an external process.")
 @Entity
+@Inheritance(strategy = InheritanceType.JOINED)
 @Getter
 @NoArgsConstructor
 public class ExternalProcessEntity {
@@ -68,10 +69,20 @@ public class ExternalProcessEntity {
 	private String processUrl;
 
 	/**
+	 * The configuration for this process.
+	 */
+	@JsonIgnore
+	@Column(length = Integer.MAX_VALUE)
+	@Setter
+	@Nullable
+	private String configuration;
+
+	/**
 	 * Process id in the module.
 	 */
 	@JsonIgnore
 	@Setter
+	@Nullable
 	private String externalId;
 
 	/**

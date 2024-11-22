@@ -6,6 +6,7 @@ import de.kiaim.model.data.DataSet;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.*;
+import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.enumeration.RowSelector;
@@ -564,28 +565,25 @@ public class DataController {
 		final Object result;
 		switch (requestType) {
 			case CONFIRM_DATE_SET -> {
-				if (projectEntity.getDataSets().containsKey(Step.VALIDATION) &&
-				    !projectEntity.getDataSets().get(Step.VALIDATION).isStoredData()) {
-					throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET, "The data has not been stored!");
-				}
-				projectEntity.getDataSets().get(Step.VALIDATION).setConfirmedData(true);
+				databaseService.confirmDataSet(projectEntity);
 				statusService.updateCurrentStep(projectEntity, Step.ANONYMIZATION);
 				result = null;
 			}
 			case ESTIMATE -> {
-				if (projectEntity.getFile() == null) {
+				final var file = projectEntity.getOriginalData().getFile();
+				if (file == null) {
 					throw new BadStateException(BadStateException.NO_DATASET_FILE, "Estimating the data configuration requires the file for the dataset to be selected!");
 				}
 
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
-						projectEntity.getFile().getFileConfiguration().getFileType());
-				final InputStream inputStream = new ByteArrayInputStream(projectEntity.getFile().getFile());
+						file.getFileConfiguration().getFileType());
+				final InputStream inputStream = new ByteArrayInputStream(file.getFile());
 				result = dataProcessor.estimateDataConfiguration(inputStream,
-				                                                 projectEntity.getFile().getFileConfiguration(),
+				                                                 file.getFileConfiguration(),
 				                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
 				try {
-					databaseService.storeDataConfiguration((DataConfiguration) result, projectEntity, Step.VALIDATION);
+					databaseService.storeOriginalDataConfiguration((DataConfiguration) result, projectEntity);
 				} catch (final BadDataConfigurationException e) {
 					throw new InternalInvalidResultException(InternalInvalidResultException.INVALID_ESTIMATION,
 					                                         "Estimation created an invalid configuration!", e);
@@ -606,9 +604,9 @@ public class DataController {
 			}
 			case LOAD_DATA -> {
 				final Step step = Step.getStepOrThrow(stepName);
-				final DataSet dataSet = databaseService.exportDataSet(projectEntity, columnNames, step);
-				result = dataSetService.encodeDataRows(dataSet, projectEntity.getDataSets().get(step)
-				                                                             .getDataTransformationErrors(),
+				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity, step);
+				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames);
+				result = dataSetService.encodeDataRows(dataSet, dataSetEntity.getDataTransformationErrors(),
 				                                       loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
@@ -630,27 +628,27 @@ public class DataController {
 				}
 			}
 			case STORE_CONFIG -> {
-				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
+				databaseService.storeOriginalDataConfiguration(configuration, projectEntity);
 				result = null;
 			}
 			case STORE_DATE_SET -> {
-				if (projectEntity.getFile() == null) {
+				final var file = projectEntity.getOriginalData().getFile();
+				if (file == null) {
 					throw new BadStateException(BadStateException.NO_DATASET_FILE, "Storing the dataset requires the file for the dataset to be selected!");
 				}
 
 				// Store configuration
-				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
+				databaseService.storeOriginalDataConfiguration(configuration, projectEntity);
 
 				// Store data set
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
-						projectEntity.getFile().getFileConfiguration().getFileType());
-				final InputStream inputStream = new ByteArrayInputStream(projectEntity.getFile().getFile());
+						file.getFileConfiguration().getFileType());
+				final InputStream inputStream = new ByteArrayInputStream(file.getFile());
 
 				final TransformationResult transformationResult = dataProcessor.read(inputStream,
-				                                                                     projectEntity.getFile()
-				                                                                                  .getFileConfiguration(),
+				                                                                     file.getFileConfiguration(),
 				                                                                     configuration);
-				result = databaseService.storeTransformationResult(transformationResult, projectEntity, Step.VALIDATION);
+				result = databaseService.storeOriginalTransformationResult(transformationResult, projectEntity);
 
 				statusService.updateCurrentStep(projectEntity, Step.VALIDATION);
 			}

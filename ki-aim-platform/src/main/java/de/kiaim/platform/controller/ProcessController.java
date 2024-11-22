@@ -40,8 +40,7 @@ public class ProcessController {
 	private final UserService userService;
 
 	public ProcessController(final ProcessService processService, final ProjectService projectService,
-	                         final UserService userService, final StepService stepService,
-	                         StatusService statusService) {
+	                         final UserService userService, final StatusService statusService) {
 		this.processService = processService;
 		this.projectService = projectService;
 		this.userService = userService;

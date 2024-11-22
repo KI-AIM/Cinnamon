@@ -574,7 +574,7 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(multipart("/api/data/configuration")
 				                .param("configuration", configuration))
 		       .andExpect(status().isOk());
-		final DataSetEntity dataSetEntity = getTestProject().getDataSets().get(Step.VALIDATION);
+		final DataSetEntity dataSetEntity = getTestProject().getOriginalData().getDataSet();
 		final var dataSetId = dataSetEntity.getId();
 
 		UserEntity testUser = getTestUser();
@@ -582,7 +582,7 @@ class DataControllerTest extends ControllerTest {
 		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
 		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
 		assertEquals(".*",
-		             ((StringPatternConfiguration) testUser.getProject().getDataSets().get(Step.VALIDATION)
+		             ((StringPatternConfiguration) testUser.getProject().getOriginalData().getDataSet()
 		                                                   .getDataConfiguration().getConfigurations().get(5)
 		                                                   .getConfigurations().get(0))
 				             .getPattern(),
@@ -602,7 +602,7 @@ class DataControllerTest extends ControllerTest {
 		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
 		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
 		assertEquals("[0-9]*",
-		             ((StringPatternConfiguration) testUser.getProject().getDataSets().get(Step.VALIDATION)
+		             ((StringPatternConfiguration) testUser.getProject().getOriginalData().getDataSet()
 		                                                   .getDataConfiguration().getConfigurations().get(5)
 		                                                   .getConfigurations().get(0)).getPattern(),
 		             "Type of first column does not match!");

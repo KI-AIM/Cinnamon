@@ -62,12 +62,13 @@ public class ExecutionStepEntity {
 	private final Map<Step, ExternalProcessEntity> processes = new HashMap<>();
 
 	/**
-	 * The corresponding project.
+	 * The corresponding pipeline.
 	 */
 	@JsonIgnore
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.EAGER, optional = false)
+	@JoinColumn(name = "pipeline_id", nullable = false)
 	@Getter @Setter
-	private ProjectEntity project;
+	private PipelineEntity pipeline;
 
 	/**
 	 * Adds a new process for the given step to this step.

@@ -28,10 +28,12 @@ public class ProjectServiceTest extends DatabaseTest {
 		assertNotNull(user.getProject(), "No project has been created!");
 		var project = user.getProject();
 
-		assertEquals(2, project.getExecutions().size(), "Unexpected number of created executions!");
-		assertTrue(project.getExecutions().containsKey(Step.EVALUATION), "No execution has been created for step 'EVALUATION'!");
-		assertTrue(project.getExecutions().containsKey(Step.EXECUTION), "No execution has been created for step 'EXECUTION'!");
-		var exec = project.getExecutions().get(Step.EXECUTION);
+		assertEquals(1, project.getPipelines().size(), "Unexpected  number of created pipelines!");
+		var pipeline = project.getPipelines().get(0);
+		assertEquals(2, pipeline.getStages().size(), "Unexpected number of created executions!");
+		assertTrue(pipeline.containsStage(Step.EVALUATION), "No execution has been created for step 'EVALUATION'!");
+		assertTrue(pipeline.containsStage(Step.EXECUTION), "No execution has been created for step 'EXECUTION'!");
+		var exec = pipeline.getStageByStep(Step.EXECUTION);
 
 		assertEquals(exec.getStep(), Step.EXECUTION, "Unexpected step!");
 		assertEquals(ProcessStatus.NOT_STARTED, exec.getStatus(), "Unexpected process status!");

@@ -6,6 +6,7 @@ import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.exception.InternalRequestException;
 import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
+import de.kiaim.platform.model.entity.PipelineEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
@@ -92,8 +93,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		executionStep.putExternalProcess(curretnStep, externalProcess);
 
 		final ProjectEntity project = new ProjectEntity();
+		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
 		final Step step = Step.EXECUTION;
-		project.putExecutionStep(step, executionStep);
+		pipeline.addStage(step, executionStep);
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setError("An error occurred!");
@@ -126,8 +128,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		executionStep.putExternalProcess(curretnStep, externalProcess);
 
 		final ProjectEntity project = new ProjectEntity();
+		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
 		final Step step = Step.EXECUTION;
-		project.putExecutionStep(step, executionStep);
+		pipeline.addStage(step, executionStep);
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setError("An error occurred!");

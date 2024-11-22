@@ -1,12 +1,12 @@
 package de.kiaim.platform.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.kiaim.platform.model.enumeration.StepType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
 
 import java.util.List;
 
@@ -67,6 +67,11 @@ public class StepConfiguration {
 	 * Endpoint for retrieving the status.
 	 */
 	private String statusEndpoint;
+
+	/**
+	 * Type of this step.
+	 */
+	private StepType stepType;
 
 	/**
 	 * URL of the server.

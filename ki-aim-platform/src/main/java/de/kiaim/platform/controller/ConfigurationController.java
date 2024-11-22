@@ -3,6 +3,7 @@ package de.kiaim.platform.controller;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.exception.BadDataSetIdException;
+import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
@@ -61,7 +62,7 @@ public class ConfigurationController {
 			)
 			@RequestBody(required = true) final String configuration,
 			@AuthenticationPrincipal UserEntity requestUser
-	) {
+	) throws BadStepNameException, BadConfigurationNameException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
@@ -92,7 +93,7 @@ public class ConfigurationController {
 			           required = true)
 			@RequestParam(name = "name") final String configurationName,
 			@AuthenticationPrincipal UserEntity requestUser
-	) throws BadDataSetIdException, BadConfigurationNameException {
+	) throws BadConfigurationNameException, BadDataSetIdException, BadStepNameException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);

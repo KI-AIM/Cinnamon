@@ -2,31 +2,34 @@ package de.kiaim.platform.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.platform.model.enumeration.Step;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
+import org.springframework.lang.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Entity containing the metadata of a data set.
+ * The data is stored in a separate table.
+ *
+ * @author Daniel Preciado-Marquez
+ */
+@NoArgsConstructor
 @Getter @Entity
 public class DataSetEntity {
 
+	/**
+	 * ID of the data set.
+	 * Used for identifying the table containing the data.
+	 */
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
 	private Long id;
-
-	/**
-	 * Associated step of the data set.
-	 */
-	@JsonIgnore
-	@Column(nullable = false)
-	@Enumerated(EnumType.STRING)
-	@Setter
-	private Step step;
 
 	/**
 	 * The data configuration.
@@ -57,13 +60,43 @@ public class DataSetEntity {
 	private final Set<DataTransformationErrorEntity> dataTransformationErrors = new HashSet<>();
 
 	/**
-	 * The corresponding project.
+	 * The corresponding original data.
+	 * Only originalData or job is allowed to be set.
 	 */
 	@JsonIgnore
-	@ManyToOne(fetch = FetchType.EAGER)
-	@Setter
-	private ProjectEntity project;
+	@OneToOne(fetch = FetchType.EAGER, orphanRemoval = false, optional = true)
+	@Nullable
+	private OriginalDataEntity originalData = null;
 
+	/**
+	 * The corresponding job.
+	 * Only originalData or job is allowed to be set.
+	 */
+	@JsonIgnore
+	@OneToOne(fetch = FetchType.EAGER, orphanRemoval = false, optional = true)
+	@Nullable
+	private DataProcessingEntity job = null;
+
+	/**
+	 * Creates a new data set for th given original data.
+	 * @param originalData The original data entity.
+	 */
+	public DataSetEntity(final OriginalDataEntity originalData) {
+		this.setOriginalData(originalData);
+	}
+
+	/**
+	 * Creates a new data set for th given process.
+	 * @param dataProcessing The process.
+	 */
+	public DataSetEntity(final DataProcessingEntity dataProcessing) {
+		this.setJob(dataProcessing);
+	}
+
+	/**
+	 * Adds the given transformation error to the data set.
+	 * @param dataTransformationError The error to be added.
+	 */
 	public void addDataRowTransformationError(final DataTransformationErrorEntity dataTransformationError) {
 		dataTransformationErrors.add(dataTransformationError);
 
@@ -71,4 +104,49 @@ public class DataSetEntity {
 			dataTransformationError.setDataSet(this);
 		}
 	}
+
+	/**
+	 * Links the given original data entity with this data set.
+	 * @param newDataSet The entity to be linked.
+	 */
+	public void setOriginalData(@Nullable final OriginalDataEntity newDataSet) {
+		final OriginalDataEntity oldOriginalData = this.originalData;
+		this.originalData = newDataSet;
+		if (oldOriginalData != null && oldOriginalData.getDataSet() == this) {
+			oldOriginalData.setDataSet(null);
+		}
+		if (newDataSet != null && newDataSet.getDataSet() != this) {
+			newDataSet.setDataSet(this);
+		}
+	}
+
+	/**
+	 * Links the given process with this data set.
+	 * @param newJob The process to be linked.
+	 */
+	public void setJob(@Nullable final DataProcessingEntity newJob) {
+		final DataProcessingEntity oldJob = this.job;
+		this.job = newJob;
+		if (oldJob != null && oldJob.getDataSet() == this) {
+			oldJob.setDataSet(null);
+		}
+		if (newJob != null && newJob.getDataSet() != this) {
+			newJob.setDataSet(this);
+		}
+	}
+
+	/**
+	 * Validates that exactly one filed of original data or process is set.
+	 */
+	@PrePersist
+	@PreUpdate
+	private void validateRelation() {
+		if (this.originalData != null && this.job != null) {
+			throw new IllegalStateException("Only one of originalData and job should be set");
+		}
+		if (this.originalData == null && this.job == null) {
+			throw new IllegalStateException("One of originalData and job should be set");
+		}
+	}
+
 }

@@ -4,14 +4,11 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
-import de.kiaim.platform.exception.BadColumnNameException;
-import de.kiaim.platform.exception.BadDataSetIdException;
+import de.kiaim.platform.config.KiAimConfiguration;
+import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.exception.InternalIOException;
-import de.kiaim.platform.model.entity.ExecutionStepEntity;
-import de.kiaim.platform.model.entity.ExternalProcessEntity;
-import de.kiaim.platform.model.entity.ProjectEntity;
-import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.UserRepository;
@@ -24,7 +21,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -35,14 +31,19 @@ import java.util.zip.ZipOutputStream;
 public class ProjectService {
 
 	private final ObjectMapper yamlMapper;
+	private final KiAimConfiguration kiAimConfiguration;
 	private final UserRepository userRepository;
 	private final DatabaseService databaseService;
+	private final StepService stepService;
 
-	public ProjectService(final ObjectMapper yamlMapper, final UserRepository userRepository,
-	                      final DatabaseService databaseService) {
+	public ProjectService(final ObjectMapper yamlMapper, final KiAimConfiguration kiAimConfiguration,
+	                      final UserRepository userRepository, final DatabaseService databaseService,
+	                      StepService stepService) {
 		this.yamlMapper = yamlMapper;
+		this.kiAimConfiguration = kiAimConfiguration;
 		this.userRepository = userRepository;
 		this.databaseService = databaseService;
+		this.stepService = stepService;
 	}
 
 	/**
@@ -69,16 +70,25 @@ public class ProjectService {
 		final ProjectEntity project = new ProjectEntity();
 		user.setProject(project);
 
+		final PipelineEntity pipeline = new PipelineEntity();
+		project.addPipeline(pipeline);
+
 		// Create entities for external processes
 		for (final Step step : Step.values()) {
 			if (!step.getProcesses().isEmpty()) {
 				var exec = new ExecutionStepEntity();
 
 				for (final var processStep : step.getProcesses()) {
-					exec.putExternalProcess(processStep, new ExternalProcessEntity());
+					ExternalProcessEntity process = switch (kiAimConfiguration.getSteps()
+					                                                          .get(processStep.name())
+					                                                          .getStepType()) {
+						case DATA_PROCESSING -> new DataProcessingEntity();
+						case EVALUATION -> new ExternalProcessEntity();
+					};
+					exec.putExternalProcess(processStep, process);
 				}
 
-				project.putExecutionStep(step, exec);
+				pipeline.addStage(step, exec);
 			}
 		}
 
@@ -114,17 +124,17 @@ public class ProjectService {
 
 	/**
 	 * Writes a ZIP to the given OutputStream containing the data set and data configuration of the given project and the given configuration.
-	 * @param project The project of the data set.
+	 *
+	 * @param project      The project of the data set.
 	 * @param outputStream The OutputStream to write to.
-	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
-	 * @throws InternalIOException If the request body could not be created.
+	 * @throws InternalIOException                 If the request body could not be created.
 	 */
 	@Transactional
 	public void createZipFile(final ProjectEntity project, final OutputStream outputStream)
-			throws BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
+			throws InternalDataSetPersistenceException, InternalIOException {
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
-			final DataSet dataSet = databaseService.exportDataSet(project, Step.VALIDATION);
+			final DataSet dataSet = databaseService.exportDataSet(project.getOriginalData().getDataSet());
 
 			// Add data configuration
 			final ZipEntry attributeConfigZipEntry = new ZipEntry("attribute_config.yaml");
@@ -133,37 +143,49 @@ public class ProjectService {
 			          .writeValue(zipOut, dataSet.getDataConfiguration());
 			zipOut.closeEntry();
 
-			// Add configuration
-			for (final var configurationEntry : project.getConfigurations().entrySet()) {
-				final ZipEntry configZipEntry = new ZipEntry(configurationEntry.getKey() + ".yaml");
-				zipOut.putNextEntry(configZipEntry);
-				zipOut.write(configurationEntry.getValue().getBytes());
-				zipOut.closeEntry();
-			}
-
 			// Add data set
 			addCsvToZip(zipOut, dataSet, "original");
 
-			// Add results
-			for (final ExecutionStepEntity executionStep : project.getExecutions().values()) {
-				for (final ExternalProcessEntity externalProcess : executionStep.getProcesses().values()) {
-					if (project.getDataSets().containsKey(externalProcess.getStep()) &&
-					    project.getDataSets().get(externalProcess.getStep()).isStoredData()) {
-						addCsvToZip(zipOut, databaseService.exportDataSet(project, Step.VALIDATION),
-						            externalProcess.getStep().name() + "-result");
-					}
+			// Add statistics
+			if (project.getOriginalData().getStatistics() != null) {
+				final ZipEntry statisticsEntry = new ZipEntry("statistics.yaml");
+				zipOut.putNextEntry(statisticsEntry);
+				zipOut.write(project.getOriginalData().getStatistics());
+				zipOut.closeEntry();
+			}
 
-					for (final var entry : externalProcess.getAdditionalResultFiles().entrySet()) {
-						final ZipEntry additionalFileEntry = new ZipEntry(entry.getKey());
-						zipOut.putNextEntry(additionalFileEntry);
-						zipOut.write(entry.getValue());
+			// Add results
+			for (final PipelineEntity pipeline : project.getPipelines()) {
+				for (final ExecutionStepEntity executionStep : pipeline.getStages()) {
+					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses().values()) {
+						// Add configuration
+						final String configurationName = stepService.getStepConfiguration(externalProcess.getStep()).getConfigurationName();
+						final ZipEntry configZipEntry = new ZipEntry(configurationName + ".yaml");
+						zipOut.putNextEntry(configZipEntry);
+						zipOut.write(externalProcess.getConfiguration().getBytes());
 						zipOut.closeEntry();
+
+						// Add data set
+						if (externalProcess instanceof DataProcessingEntity dataProcessing ) {
+							if (dataProcessing.getDataSet() != null && dataProcessing.getDataSet().isStoredData()) {
+								addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet()),
+								            externalProcess.getStep().name() + "-result");
+							}
+						}
+
+						// Add additional files
+						for (final var entry : externalProcess.getAdditionalResultFiles().entrySet()) {
+							final ZipEntry additionalFileEntry = new ZipEntry(entry.getKey());
+							zipOut.putNextEntry(additionalFileEntry);
+							zipOut.write(entry.getValue());
+							zipOut.closeEntry();
+						}
 					}
 				}
 			}
 
 			zipOut.finish();
-		} catch (final IOException e) {
+		} catch (final IOException | InternalApplicationConfigurationException e) {
 			throw new InternalIOException(InternalIOException.ZIP_CREATION,
 			                              "Failed to create the ZIP file for starting an external process!", e);
 		}

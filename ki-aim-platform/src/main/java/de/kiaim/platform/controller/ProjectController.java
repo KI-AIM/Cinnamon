@@ -99,7 +99,7 @@ public class ProjectController {
 	            produces = {CustomMediaType.APPLICATION_ZIP_VALUE})
 	public ResponseEntity<StreamingResponseBody> getZip(@AuthenticationPrincipal final UserEntity requestUser,
 	                                                    final HttpServletResponse response)
-			throws IOException, InternalDataSetPersistenceException, InternalIOException, BadColumnNameException, BadDataSetIdException {
+			throws IOException, InternalDataSetPersistenceException, InternalIOException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
@@ -136,7 +136,8 @@ public class ProjectController {
 		final Step executionStep = Step.getStepOrThrow(executionStepName);
 		final Step processStep = Step.getStepOrThrow(processStepName);
 
-		final var content =  project.getExecutions().get(executionStep).getProcesses().get(processStep).getAdditionalResultFiles().get(name);
+		final var content = project.getPipelines().get(0).getStageByStep(executionStep).getProcesses()
+		                           .get(processStep).getAdditionalResultFiles().get(name);
 		final var s = new String(content);
 
 		return ResponseEntity.ok().body(s);

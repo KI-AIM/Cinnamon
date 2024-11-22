@@ -11,7 +11,7 @@ import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,7 +25,6 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Test
 	void store() throws Exception {
-		final String configName = "testConfigName";
 		final String config = """
 				configurations:
 				- index: 0
@@ -36,23 +35,19 @@ class ConfigurationControllerTest extends ControllerTest {
 				""";
 
 		mockMvc.perform(post("/api/config")
-				                .param("name", configName)
+				                .param("name", CONFIGURATION_NAME)
 				                .contentType(MediaType.TEXT_PLAIN_VALUE)
 				                .content(config))
 		       .andExpect(status().isOk());
 
 		final UserEntity user = getTestUser();
-		final ProjectEntity dataConfiguration = user.getProject();
-		assertNotNull(dataConfiguration, "The configuration has not been created!");
-		assertTrue(dataConfiguration.getConfigurations().containsKey(configName),
-		           "The configuration has not been stored correctly under the user!");
-		assertEquals(config, dataConfiguration.getConfigurations().get(configName),
-		             "The configuration has not been stored correctly!");
+		final ProjectEntity project = user.getProject();
+		assertNotNull(project, "The configuration has not been created!");
+		testConfiguration(project, config);
 	}
 
 	@Test
 	void load() throws Exception {
-		final String configName = "testConfigName";
 		final String config = """
 				configurations:
 				- index: 0
@@ -62,10 +57,10 @@ class ConfigurationControllerTest extends ControllerTest {
 				  configurations: []
 				""";
 
-		storeConfiguration(configName, config);
+		storeConfiguration(config);
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
-		                                      .param("name", configName))
+		                                      .param("name", CONFIGURATION_NAME))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(config));
 	}
@@ -85,7 +80,6 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Test
 	void loadInvalidName() throws Exception {
-		final String configName = "testConfigName";
 		final String invalidConfigName = "invalidConfigName";
 		final String config = """
 				configurations:
@@ -96,7 +90,7 @@ class ConfigurationControllerTest extends ControllerTest {
 				  configurations: []
 				""";
 
-		storeConfiguration(configName, config);
+		storeConfiguration(config);
 
 		final ProjectEntity project = projectService.getProject(getTestUser());
 

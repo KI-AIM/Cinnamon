@@ -1,18 +1,18 @@
 package de.kiaim.platform.model.entity;
 
-import de.kiaim.platform.model.enumeration.Step;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.lang.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Class to represent a project in the database.
  * Contains all configurations for the platform, for example, the data configuration or the anonymization configuration.
+ *
+ * @author Daniel Preciado-Marquez
  */
 @Getter
 @Entity
@@ -35,41 +35,17 @@ public class ProjectEntity {
 	private StatusEntity status = new StatusEntity(this);
 
 	/**
-	 * File containing the original data.
+	 * The original data.
 	 */
-	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-	@JoinColumn(name = "file_id", referencedColumnName = "id")
-	@Setter
-	@Nullable
-	private FileEntity file = null;
+	@OneToOne(optional = false, fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+	@JoinColumn(name = "original_data_id", referencedColumnName = "id")
+	private OriginalDataEntity originalData = new OriginalDataEntity(this);
 
 	/**
-	 * Datasets of the project.
+	 * Pipelines of the project.
 	 */
 	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-	@MapKeyEnumerated(EnumType.STRING)
-	@MapKeyColumn(name = "step")
-	private final Map<Step, DataSetEntity> dataSets = new HashMap<>();
-
-	/**
-	 * Other configurations for the platform.
-	 * Stored as plain strings.
-	 */
-	@ElementCollection(fetch = FetchType.LAZY)
-	@CollectionTable(name = "configuration",
-	                 joinColumns = @JoinColumn(name = "project_id", referencedColumnName = "id"))
-	@MapKeyColumn(name = "configuration_name")
-	@Column(name="configuration", length = Integer.MAX_VALUE)
-	@Setter
-	private Map<String, String> configurations = new HashMap<>();
-
-	/**
-	 * Executions of the project.
-	 */
-	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-	@MapKeyEnumerated(EnumType.STRING)
-	@MapKeyColumn(name = "step")
-	private final Map<Step, ExecutionStepEntity> executions = new HashMap<>();
+	private final List<PipelineEntity> pipelines = new ArrayList<>();
 
 	/**
 	 * User that owns this configuration and the corresponding data set.
@@ -77,27 +53,18 @@ public class ProjectEntity {
 	@OneToOne(mappedBy = "project", optional = false, orphanRemoval = false, cascade = CascadeType.PERSIST)
 	private UserEntity user;
 
-	public void putDataSet(final Step step, final DataSetEntity dataSet) {
-		if (!dataSets.containsKey(step)) {
-			dataSet.setProject(this);
-			dataSet.setStep(step);
-			dataSets.put(step, dataSet);
+	/**
+	 * Adas a new pipeline to the project and links the entities.
+	 * @param pipeline The pipeline to be added.
+	 * @return The added pipeline for further usage.
+	 */
+	public PipelineEntity addPipeline(final PipelineEntity pipeline) {
+		if (!pipelines.contains(pipeline)) {
+			pipelines.add(pipeline);
+			pipeline.setProject(this);
 		}
-	}
 
-	public void removeDataSet(final Step step) {
-		if (dataSets.containsKey(step)) {
-			dataSets.get(step).setProject(null);
-			dataSets.remove(step);
-		}
-	}
-
-	public void putExecutionStep(final Step step, final ExecutionStepEntity executionStep) {
-		if (!executions.containsKey(step)) {
-			executionStep.setProject(this);
-			executionStep.setStep(step);
-			executions.put(step, executionStep);
-		}
+		return pipeline;
 	}
 
 	/**

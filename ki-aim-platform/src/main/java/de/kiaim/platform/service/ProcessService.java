@@ -101,7 +101,7 @@ public class ProcessService {
 	@Transactional
 	public ExecutionStepEntity getStatus(final ProjectEntity project, final Step step)
 			throws InternalRequestException, InternalApplicationConfigurationException {
-		final var executionStep = project.getExecutions().get(step);
+		final var executionStep = project.getPipelines().get(0).getStageByStep(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
 			updateProcessStatus(executionStep.getProcesses().get(executionStep.getCurrentStep()));
@@ -128,7 +128,7 @@ public class ProcessService {
 			throws BadStepNameException, BadStateException, InternalInvalidStateException, InternalApplicationConfigurationException {
 		final Step step = Step.getStepOrThrow(stepName);
 
-		final var executionStep = project.getExecutions().get(execStep);
+		final var executionStep = project.getPipelines().get(0).getStageByStep(execStep);
 
 		// Get process entity
 		if (!executionStep.getProcesses().containsKey(step)) {
@@ -137,7 +137,7 @@ public class ProcessService {
 		}
 		final ExternalProcessEntity externalProcess = executionStep.getProcesses().get(step);
 
-		databaseService.storeConfiguration(step, configuration, project);
+		databaseService.storeConfiguration(configuration, externalProcess);
 
 		if (externalProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
 		    externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING) {
@@ -166,7 +166,7 @@ public class ProcessService {
 	@Transactional
 	public ExecutionStepEntity start(final ProjectEntity project, final Step step)
 			throws BadDataSetIdException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalRequestException {
-		final var executionStep = project.getExecutions().get(step);
+		final var executionStep = project.getPipelines().get(0).getStageByStep(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
 			return executionStep;
@@ -192,7 +192,7 @@ public class ProcessService {
 	@Transactional
 	public ExecutionStepEntity cancel(final ProjectEntity project, final Step step)
 			throws InternalApplicationConfigurationException {
-		final var executionStep = project.getExecutions().get(step);
+		final var executionStep = project.getPipelines().get(0).getStageByStep(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
 			// Get the current step
@@ -242,8 +242,12 @@ public class ProcessService {
 		final var process = processOptional.get();
 
 		final var executionStep = process.getExecutionStep();
-		final ProjectEntity project = executionStep.getProject();
+		final ProjectEntity project = executionStep.getPipeline().getProject();
 
+		DataProcessingEntity dataProcessing = null;
+		if (process instanceof DataProcessingEntity) {
+			dataProcessing = (DataProcessingEntity) process;
+		}
 
 		final var files = process.getAdditionalResultFiles();
 		files.clear();
@@ -260,25 +264,22 @@ public class ProcessService {
 
 					final DataConfiguration resultDataConfiguration = csvProcessor.estimateDataConfiguration(
 							value.getInputStream(), fileConfigurationEntity, DatatypeEstimationAlgorithm.MOST_GENERAL);
-					final Step step = process.getStep();
 					final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),
 					                                                                    fileConfigurationEntity,
 					                                                                    resultDataConfiguration);
 					try {
-						databaseService.storeTransformationResult(transformationResult, project, step);
+						databaseService.storeTransformationResult(transformationResult, dataProcessing);
 					} catch (final BadDataConfigurationException e) {
 						throw new InternalInvalidResultException(InternalInvalidResultException.INVALID_ESTIMATION,
 						                                         "Estimation created an invalid configuration!", e);
 					}
 
 				} else if (entry.getKey().equals("anonymized_dataset")) {
-					final Step step = process.getStep();
-
 					String jsonString = IOUtils.toString(value.getInputStream(), StandardCharsets.UTF_8);
 					DataSet dataSet = jsonMapper.readValue(jsonString, DataSet.class);
 
 					TransformationResult transformationResult = new TransformationResult(dataSet, new ArrayList<>());
-					databaseService.storeTransformationResult(transformationResult, project, step);
+					databaseService.storeTransformationResult(transformationResult, dataProcessing);
 				} else if (entry.getKey().equals("exception_message")) {
 					containsError = true;
 					errorMessage = new String(value.getBytes());
@@ -533,7 +534,7 @@ public class ProcessService {
 		}
 
 		// Update status
-		projectRepository.save(externalProcess.getExecutionStep().getProject());
+		projectRepository.save(externalProcess.getExecutionStep().getPipeline().getProject());
 	}
 
 	/**
@@ -586,15 +587,11 @@ public class ProcessService {
 			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException {
 		final Step step = externalProcess.getStep();
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
-
-		final ProjectEntity project = externalProcess.getExecutionStep().getProject();
-		final String configuration = project.getConfigurations().get(stepConfiguration.getConfigurationName());
+		final String configuration = externalProcess.getConfiguration();
 
 		if (configuration == null) {
 			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_CONFIGURATION,
-			                                        "No configuration with name '" +
-			                                        stepConfiguration.getConfigurationName() + "' required for step '" +
-			                                        step.name() + "' found!");
+			                                        "No configuration for step '" + step.name() + "' found!");
 		}
 
 		doStartProcess(stepConfiguration, externalProcess, configuration, externalProcess.getProcessUrl());
@@ -726,7 +723,7 @@ public class ProcessService {
 	private void addDataSets(final ExternalProcessEntity externalProcess, final StepConfiguration stepConfiguration,
 	                         final MultipartBodyBuilder bodyBuilder)
 			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException {
-		final ProjectEntity project = externalProcess.getExecutionStep().getProject();
+		final ProjectEntity project = externalProcess.getExecutionStep().getPipeline().getProject();
 
 		for (final String inputDataSet : stepConfiguration.getInputs()) {
 			switch (inputDataSet) {
@@ -741,7 +738,7 @@ public class ProcessService {
 					break;
 				}
 				case "synth": {
-					final var synthExecution = project.getExecutions().get(Step.EXECUTION);
+					final var synthExecution = project.getPipelines().get(0).getStageByStep(Step.EXECUTION);
 					final var dataset = getLastOrOriginalDataSet(synthExecution);
 					addDataSet(bodyBuilder, stepConfiguration, dataset, "synthetic_data", "synthetic_data.csv", "attribute_config_synthetic");
 					break;
@@ -820,7 +817,7 @@ public class ProcessService {
 			}
 		}
 
-		return databaseService.exportDataSet(executionStep.getProject(), dataSetSourceStep);
+		return databaseService.exportDataSet(executionStep.getPipeline().getProject(), dataSetSourceStep);
 	}
 
 	private void setProcessError(final ExternalProcessEntity process, final String message) {

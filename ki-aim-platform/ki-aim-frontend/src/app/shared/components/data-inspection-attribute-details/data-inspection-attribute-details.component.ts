@@ -1,5 +1,5 @@
 import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
-import { AttributeStatistics, StatisticsValues } from "../../model/statistics";
+import {AttributeStatistics, KolmogorovSmirnovData, StatisticsData, StatisticsValues} from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
 import { formatNumber } from "@angular/common";
@@ -27,10 +27,15 @@ export class DataInspectionAttributeDetailsComponent {
         return this.attributeStatistics.attribute_information.type;
     }
 
+    protected ksIndex(data: StatisticsData<KolmogorovSmirnovData>): number {
+        return Math.max(data.real.color_index, data.synthetic.color_index);
+    }
+
     protected readonly formatNumber = formatNumber;
 }
 
 interface TableContext {
     data: StatisticsValues;
     name: string;
+
 }

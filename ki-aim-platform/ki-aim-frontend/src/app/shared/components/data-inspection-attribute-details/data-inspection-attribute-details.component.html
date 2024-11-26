@@ -101,7 +101,12 @@
         <div class="metric-wrapper">
 
             <div class="metric-name">
-                Density/ Frequency
+                <ng-container *ngIf="attributeStatistics.plot.density">
+                    Density/Histogram
+                </ng-container>
+                <ng-container *ngIf="attributeStatistics.plot.frequency_count">
+                    Frequency
+                </ng-container>
             </div>
             <div class="w-100 h-100">
                 <ng-container *ngIf="attributeStatistics.plot.density; else frequency">

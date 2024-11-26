@@ -514,19 +514,27 @@ public class DatabaseService {
 		final int numberTotalRows = countEntries(dataSetEntity.getId());
 		final int numberInvalidRows = countInvalidRows(dataSetEntity.getId());
 
+		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
+
 		List<Integer> rowNumbers;
 		final int numberRows;
 		if (rowSelector == RowSelector.VALID) {
-			final List<Integer> invalid = errorRepository.findRowIndexByDataSetIdOrderByRowIndexAsc(
-					dataSetEntity.getId());
+			final List<Integer> invalid = columnNames.isEmpty()
+			                              ? errorRepository.findRowIndexByDataSetIdOrderByRowIndexAsc(
+					dataSetEntity.getId())
+			                              : errorRepository.findRowIndexByDataSetIdAndColumnIndexInOrderByRowIndexAsc(
+					                              dataSetEntity.getId(), columnIndexMapping.keySet());
 			rowNumbers = IntStream.rangeClosed(0, numberTotalRows).boxed().collect(Collectors.toList());
 			rowNumbers.removeAll(invalid);
 			rowNumbers = rowNumbers.subList(startRow, endRow);
 
 			numberRows = numberTotalRows - numberInvalidRows;
 		} else {
-			rowNumbers = errorRepository.findRowIndexByDataSetIdOrderByRowIndexAsc(dataSetEntity.getId(), pageSize,
-			                                                                       startRow);
+			rowNumbers = columnNames.isEmpty()
+			             ? errorRepository.findRowIndexByDataSetIdOrderByRowIndexAsc(dataSetEntity.getId(), pageSize,
+			                                                                         startRow)
+			             : errorRepository.findRowIndexByDataSetIdAndColumnIndexInOrderByRowIndexAsc(
+					             dataSetEntity.getId(), columnIndexMapping.keySet(), pageSize, startRow);
 			numberRows = numberInvalidRows;
 		}
 
@@ -535,8 +543,6 @@ public class DatabaseService {
 		final DataSet dataSet = exportDataSet(dataSetEntity, columnNames, rowNumbers, false, 0, 0);
 		final Set<DataTransformationErrorEntity> errors2 = errorRepository.findByDataSetIdAndRowIndexIn(
 				dataSetEntity.getId(), rowNumbers);
-
-		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
 
 		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors2, 0, rowNumbers, columnIndexMapping, loadDataRequest);
 

@@ -25,7 +25,7 @@ export class DataInspectionAttributeComponent {
 
     protected openDetailsDialog(templateRef: TemplateRef<any>) {
         this.matDialog.open(templateRef, {
-            width: '60%'
+            width: '80%',
         });
     }
 

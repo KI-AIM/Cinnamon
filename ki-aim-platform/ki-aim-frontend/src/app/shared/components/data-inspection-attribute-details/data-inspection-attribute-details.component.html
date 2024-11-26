@@ -259,7 +259,7 @@
             {{ name }}
         </div>
         <div style="display: flex; width: 100%;">
-            <div [style.background-color]="colors[data.difference.color_index]"
+            <div *ngIf="data" [style.background-color]="colors[data.difference.color_index]"
                  style="width: 10px; border-radius: 6px; margin-right: .5rem; margin-bottom: 2px; margin-top: 2px;">
             </div>
             <div style="width: 100%;">

@@ -12,7 +12,7 @@ import {ColumnConfiguration} from "../../model/column-configuration";
 export class ChartDensityComponent extends ChartComponent {
     @Input() columnConfiguration!: ColumnConfiguration;
     @Input() data!: StatisticsData<DensityPlotData>;
-    @Input() simple!: boolean;
+    @Input() simple: boolean = false;
 
     private readonly colors = ['#770000', '#007700']
 

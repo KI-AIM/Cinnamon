@@ -37,6 +37,7 @@ import { ChartDensityComponent } from './components/chart-density/chart-density.
 import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
 import { ChartFrequencyComponent } from './components/chart-frequency/chart-frequency.component';
 import { ChartComponent } from './components/chart/chart.component';
+import { ChartSelectComponent } from './components/chart-select/chart-select.component';
 
 @NgModule({
     declarations: [
@@ -65,6 +66,7 @@ import { ChartComponent } from './components/chart/chart.component';
         StatisticsFilterPipe,
         ChartFrequencyComponent,
         ChartComponent,
+        ChartSelectComponent,
     ],
     imports: [
         CommonModule,

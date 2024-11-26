@@ -15,6 +15,8 @@ import { StatisticsService } from "../../services/statistics.service";
 export class DataInspectionAttributeComponent {
     @Input() public attributeStatistics!: AttributeStatistics;
 
+    protected graphType = 'histogram';
+
     constructor(
         private matDialog: MatDialog,
         protected statisticsService: StatisticsService,
@@ -25,5 +27,9 @@ export class DataInspectionAttributeComponent {
         this.matDialog.open(templateRef, {
             width: '60%'
         });
+    }
+
+    protected changeGraph(event: Event) {
+        this.graphType = (event.target as HTMLInputElement).value;
     }
 }

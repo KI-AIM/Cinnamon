@@ -16,6 +16,7 @@ export class DataInspectionAttributeDetailsComponent {
     @ViewChild('table', {static: true}) tableTemplate!: TemplateRef<TableContext>;
 
     protected readonly colors = ['#000000', '#960d0d'];
+    protected graphType: string = 'histogram';
 
     constructor(
         protected statisticsService: StatisticsService,

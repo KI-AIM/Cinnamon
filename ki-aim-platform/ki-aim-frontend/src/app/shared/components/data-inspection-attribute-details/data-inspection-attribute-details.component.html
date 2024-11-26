@@ -97,29 +97,24 @@
             </div>
             <div class="w-100 h-100">
                 <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
-                    <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
-                                       [data]="attributeStatistics.plot.density"></app-chart-density>
+                    <div style="margin-top: .2rem;">
+                        <app-chart-select [(graph)]="graphType"></app-chart-select>
+
+                        <ng-container *ngIf="graphType === 'density'">
+                            <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
+                                               [data]="attributeStatistics.plot.density"></app-chart-density>
+                        </ng-container>
+                        <ng-container *ngIf="graphType === 'histogram'">
+                            <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null"></app-chart-frequency>
+                        </ng-container>
+                    </div>
+
                 </ng-container>
                 <ng-template #frequency>
                     <ng-container *ngIf="attributeStatistics.plot.frequency_count; else noChart">
                         <app-chart-frequency [data]="attributeStatistics.plot.frequency_count"></app-chart-frequency>
                     </ng-container>
                 </ng-template>
-                <ng-template #noChart>
-                </ng-template>
-            </div>
-
-        </div>
-
-        <div class="metric-wrapper">
-
-            <div class="metric-name">
-                Histogram
-            </div>
-            <div class="w-100 h-100">
-                <ng-container *ngIf="attributeStatistics.plot.histogram; else noChart">
-                    <app-chart-frequency [data]="attributeStatistics.plot.histogram" [limit]="null"></app-chart-frequency>
-                </ng-container>
                 <ng-template #noChart>
                 </ng-template>
             </div>

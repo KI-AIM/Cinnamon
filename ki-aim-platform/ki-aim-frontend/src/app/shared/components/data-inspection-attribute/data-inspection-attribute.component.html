@@ -79,10 +79,18 @@
 
     <!-- Graph in the middle -->
     <div class="" style="flex : 1 1 auto; min-width: 300px;">
+
         <div class="w-100 h-100">
             <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
-                <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
-                                   [data]="attributeStatistics.plot.density" [simple]="true"></app-chart-density>
+                <app-chart-select [(graph)]="graphType" [simple]="true"></app-chart-select>
+
+                <ng-container *ngIf="graphType === 'density'">
+                    <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
+                                       [data]="attributeStatistics.plot.density" [simple]="true"></app-chart-density>
+                </ng-container>
+                <ng-container *ngIf="graphType === 'histogram'">
+                    <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null" [simple]="true"></app-chart-frequency>
+                </ng-container>
             </ng-container>
             <ng-template #frequency>
                 <ng-container *ngIf="attributeStatistics.plot.frequency_count; else noChart">

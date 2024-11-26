@@ -1,0 +1,10 @@
+<div class="chart-select-outer" [style.margin-bottom]="simple ? '-20px' : '-40px'">
+    <div class="chart-select-inner">
+        <mat-form-field class="chart-select">
+            <mat-select [(value)]="graph" (selectionChange)="update($event)">
+                <mat-option value="density">Density</mat-option>
+                <mat-option value="histogram">Histogram</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+</div>

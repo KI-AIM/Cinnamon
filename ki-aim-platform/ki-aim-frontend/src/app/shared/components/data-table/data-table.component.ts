@@ -1,4 +1,4 @@
-import {Component, Input, ViewChild} from "@angular/core";
+import {AfterViewInit, Component, Input, ViewChild} from "@angular/core";
 import { DataSet } from "src/app/shared/model/data-set";
 import { MatTableDataSource } from "@angular/material/table";
 import { MatPaginator } from "@angular/material/paginator";
@@ -14,9 +14,9 @@ import {environments} from "../../../../environments/environment";
 	templateUrl: "./data-table.component.html",
 	styleUrls: ["./data-table.component.less"],
 })
-export class DataTableComponent {
-
+export class DataTableComponent implements AfterViewInit {
     @Input() public step!: string;
+    @Input() public columnIndex: number | null = null;
 
 	dataSource = new MatTableDataSource<TableElement>();
 	@ViewChild(MatPaginator) paginator: MatPaginator;
@@ -38,7 +38,15 @@ export class DataTableComponent {
 
         this.dataConfigurationService.downloadDataConfigurationAsJson().subscribe(
             {
-                next: dataConfiguration => {
+                next: (dataConfiguration: DataConfiguration) => {
+                    let columnName = '';
+                    if (this.columnIndex !== null) {
+                        const columnConfiguration = dataConfiguration.configurations[this.columnIndex];
+                        dataConfiguration = new DataConfiguration();
+                        dataConfiguration.addColumnConfiguration(columnConfiguration);
+                        columnName = columnConfiguration.name;
+                    }
+
                     this.displayedColumns = this.displayedColumns.concat(this.getColumnNames(dataConfiguration));
 
                     this.paginator.page.pipe(
@@ -48,6 +56,7 @@ export class DataTableComponent {
                             return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/" + this.step + "/transformationResult/page", {
                                 params: {
                                     defaultNullEncoding: "$value",
+                                    columns: columnName,
                                     page: this.paginator.pageIndex + 1,
                                     perPage: this.paginator.pageSize,
                                     rowSelector: this.filterCriteria
@@ -125,7 +134,7 @@ export class DataTableComponent {
 	 * @returns Array with Indices
 	 */
 	getErrorColumnIndicesForRowIndex(index: number, transformationErrors: DataRowTransformationError[]): Array<number> {
-		var resultIndices: Array<number>  = [];
+		const resultIndices: Array<number>  = [];
 
 		transformationErrors.forEach(transformationError => {
 			if (transformationError.index === index) {
@@ -144,7 +153,7 @@ export class DataTableComponent {
 	 * @returns Array<string>
 	 */
 	getColumnNames(dataConfiguration: DataConfiguration): string[] {
-		var result: string[] = [];
+		const result: string[] = [];
 
 		dataConfiguration.configurations.forEach((column) => {
 			result.push(column.name as string);

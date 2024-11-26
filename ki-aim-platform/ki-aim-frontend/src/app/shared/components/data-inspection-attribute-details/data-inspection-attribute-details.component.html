@@ -126,45 +126,62 @@
                 <ng-template #noChart>
                 </ng-template>
             </div>
-
         </div>
 
-        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.fifth_percentile, name: '5th Percentile'}">
-        </ng-container>
+        <div style="display: flex; flex-direction: row; gap: 0.5rem;">
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; flex-basis: 50%;">
+                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.fifth_percentile, name: '5th Percentile'}">
+                </ng-container>
 
-        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.q1, name: 'Q1'}">
-        </ng-container>
+                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.q1, name: 'Q1'}">
+                </ng-container>
 
-        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.median, name: 'Median'}">
-        </ng-container>
+                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.median, name: 'Median'}">
+                </ng-container>
 
-        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.q3, name: 'Q3'}">
-        </ng-container>
+                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.q3, name: 'Q3'}">
+                </ng-container>
 
-        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.ninety_fifth_percentile, name: '95th Percentile'}">
-        </ng-container>
+                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.ninety_fifth_percentile, name: '95th Percentile'}">
+                </ng-container>
 
-        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.skewness, name: 'Skewness'}">
-        </ng-container>
+                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.skewness, name: 'Skewness'}">
+                </ng-container>
 
-        <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.kurtosis, name: 'Kurtosis'}">
-        </ng-container>
+                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.kurtosis, name: 'Kurtosis'}">
+                </ng-container>
 
-        <div class="metric-wrapper">
-            <div class="metric-name">
-                Kolmogorov-Smirnov
+                <div class="metric-wrapper">
+                    <div class="metric-name">
+                        Kolmogorov-Smirnov
+                    </div>
+                    <table *ngIf="attributeStatistics.details && attributeStatistics.details.kolmogorov_smirnov; else notAvailable" class="metric-table">
+                        <tr>
+                            <th>KS Statistic</th>
+                            <td>{{ attributeStatistics.details.kolmogorov_smirnov.values.real.KS_statistic }}</td>
+                        </tr>
+                        <tr>
+                            <th>p_value</th>
+                            <td>{{ attributeStatistics.details.kolmogorov_smirnov.values.real.p_value }}</td>
+                        </tr>
+                    </table>
+                </div>
             </div>
-            <table *ngIf="attributeStatistics.details && attributeStatistics.details.kolmogorov_smirnov; else notAvailable" class="metric-table">
-                <tr>
-                    <th>KS Statistic</th>
-                    <td>{{ attributeStatistics.details.kolmogorov_smirnov.values.real.KS_statistic }}</td>
-                </tr>
-                <tr>
-                    <th>p_value</th>
-                    <td>{{ attributeStatistics.details.kolmogorov_smirnov.values.real.p_value }}</td>
-                </tr>
-            </table>
+
+            <div>
+                <div class="metric-wrapper" style="height: 100%;">
+
+                    <div class="metric-name">
+                        Values
+                    </div>
+
+                    <app-data-table step="validation" [columnIndex]="attributeStatistics.attribute_information.index"></app-data-table>
+                </div>
+            </div>
+
         </div>
+
+
 
         <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.important_metrics.mean, name: 'Mean'}">
         </ng-container>

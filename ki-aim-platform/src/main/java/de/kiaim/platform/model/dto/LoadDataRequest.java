@@ -10,6 +10,9 @@ import lombok.Setter;
 import org.springframework.http.MediaType;
 import org.springframework.lang.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -67,4 +70,10 @@ public class LoadDataRequest {
 	                              }))
 	@Nullable
 	private String valueNotInRangeEncoding = null;
+
+	public List<String> getColumnNames() {
+		return !columns.isBlank()
+		       ? List.of(columns.split(","))
+		       : new ArrayList<>();
+	}
 }

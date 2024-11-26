@@ -39,6 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 // TODO Support different languages
 @RestController
@@ -558,8 +559,8 @@ public class DataController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
 
-		final List<String> columnNames = loadDataRequest != null && !loadDataRequest.getColumns().isBlank()
-		                                 ? List.of(loadDataRequest.getColumns().split(","))
+		final List<String> columnNames = loadDataRequest != null
+		                                 ? loadDataRequest.getColumnNames()
 		                                 : new ArrayList<>();
 
 		final Object result;
@@ -606,8 +607,9 @@ public class DataController {
 				final Step step = Step.getStepOrThrow(stepName);
 				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity, step);
 				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames);
+				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
 				result = dataSetService.encodeDataRows(dataSet, dataSetEntity.getDataTransformationErrors(),
-				                                       loadDataRequest);
+													   columnIndexMapping, loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
 				final Step step = Step.getStepOrThrow(stepName);

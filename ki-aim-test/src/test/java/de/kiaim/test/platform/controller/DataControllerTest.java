@@ -556,6 +556,21 @@ class DataControllerTest extends ControllerTest {
 				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']],'transformationErrors':[],'rowNumbers':[0],'page':1,'perPage':1,total:2,'totalPages':2}"));
 	}
 
+	@Test
+	void loadTransformationResultPageSelectColumn() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+				                .param("page", "1")
+				                .param("perPage", "10")
+				                .param("columns", "column4_integer")
+				                .param("rowSelector", RowSelector.ALL.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[42],[24],['forty two']],'transformationErrors':[{'index':2,'dataTransformationErrors':[{'index':0,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':1,'perPage':10,total:3,'totalPages':1}"));
+	}
+
 
 	@Test
 	void deleteDataNoDataSet() throws Exception {

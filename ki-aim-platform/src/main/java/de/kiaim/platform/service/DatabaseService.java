@@ -536,17 +536,23 @@ public class DatabaseService {
 		final Set<DataTransformationErrorEntity> errors2 = errorRepository.findByDataSetIdAndRowIndexIn(
 				dataSetEntity.getId(), rowNumbers);
 
-		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors2, 0, rowNumbers, loadDataRequest);
+		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
+
+		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors2, 0, rowNumbers, columnIndexMapping, loadDataRequest);
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
 		for (final var error : errors2) {
+			if (!columnIndexMapping.containsKey(error.getColumnIndex())) {
+				continue;
+			}
+
 			if (!rowErrors.containsKey(error.getRowIndex())) {
 				rowErrors.put(error.getRowIndex(),
 				              new DataRowTransformationError(rowNumbers.indexOf(error.getRowIndex())));
 			}
 			final var rowError = rowErrors.get(error.getRowIndex());
-			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType(),
-			                                              error.getOriginalValue()));
+			final Integer columnIndex = columnIndexMapping.get(error.getColumnIndex());
+			rowError.addError(new DataTransformationError(columnIndex, error.getErrorType(), error.getOriginalValue()));
 		}
 
 		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();
@@ -584,22 +590,29 @@ public class DatabaseService {
 		final var startRow = (pageNumber - 1) * pageSize;
 		final var endRow = startRow + pageSize;
 
+		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
+				dataSetEntity.getDataConfiguration(), columnNames);
 		final DataSet dataSet = exportDataSet(dataSetEntity, columnNames, null, true, startRow, pageSize);
 		final Set<DataTransformationErrorEntity> errors = errorRepository.findByDataSetIdAndRowIndexBetween(
 				dataSetEntity.getId(), startRow, endRow - 1);
 
-		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, null, loadDataRequest);
+		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, null,
+		                                                              columnIndexMapping, loadDataRequest);
 		final int numberRows = countEntries(dataSetEntity.getId());
 		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
 		for (final var error : errors) {
+			if (!columnIndexMapping.containsKey(error.getColumnIndex())) {
+				continue;
+			}
+
 			if (!rowErrors.containsKey(error.getRowIndex())) {
 				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex() - startRow));
 			}
 			final var rowError = rowErrors.get(error.getRowIndex());
-			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType(),
-			                                              error.getOriginalValue()));
+			final Integer columnIndex = columnIndexMapping.get(error.getColumnIndex());
+			rowError.addError(new DataTransformationError(columnIndex, error.getErrorType(), error.getOriginalValue()));
 		}
 
 		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();

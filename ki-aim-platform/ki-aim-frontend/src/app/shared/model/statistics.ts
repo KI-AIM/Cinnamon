@@ -33,6 +33,7 @@ export class DetailMetrics {
     skewness: StatisticsValues;
     kurtosis: StatisticsValues;
     kolmogorov_smirnov: StatisticsValuesNominal<KolmogorovSmirnovData>;
+    hellinger_distance: StatisticsValuesNominal<HellingerDistanceData>;
 }
 
 export class PlotData {
@@ -53,6 +54,11 @@ export class StatisticsValues {
 export class KolmogorovSmirnovData {
     KS_statistic: number;
     p_value: number;
+    color_index: number;
+}
+
+export class HellingerDistanceData {
+    hellinger_distance: number;
     color_index: number;
 }
 

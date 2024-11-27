@@ -156,6 +156,9 @@
                 <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.kurtosis, name: 'Kurtosis'}">
                 </ng-container>
 
+                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.kurtosis, name: 'Kurtosis'}">
+                </ng-container>
+
                 <div class="metric-wrapper">
                     <div class="metric-name">
                         Kolmogorov-Smirnov
@@ -168,6 +171,18 @@
                         <tr>
                             <th>p_value</th>
                             <td>{{ attributeStatistics.details.kolmogorov_smirnov.values.real.p_value }}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="metric-wrapper">
+                    <div class="metric-name">
+                        Hellinger Distance
+                    </div>
+                    <table *ngIf="attributeStatistics.details && attributeStatistics.details.hellinger_distance; else notAvailable" class="metric-table">
+                        <tr>
+                            <th>Value</th>
+                            <td>{{ attributeStatistics.details.hellinger_distance.values.real.hellinger_distance }}</td>
                         </tr>
                     </table>
                 </div>
@@ -238,6 +253,27 @@
                     </tr>
                 </table>
             </div>
+        </div>
+        <div class="metric-wrapper">
+            <div class="metric-name">
+                Hellinger Distance
+            </div>
+            <table *ngIf="attributeStatistics.details && attributeStatistics.details.hellinger_distance as hd; else notAvailable" class="metric-table">
+                <tr>
+                    <th></th>
+                    <th>Real</th>
+                    <th>Synth</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+                <tr>
+                    <th>Value</th>
+                    <td>{{ hd.values.real.hellinger_distance }}</td>
+                    <td>{{ hd.values.synthetic.hellinger_distance }}</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
         </div>
 
     </div>

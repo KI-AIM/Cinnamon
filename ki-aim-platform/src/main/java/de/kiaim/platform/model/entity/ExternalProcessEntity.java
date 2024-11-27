@@ -34,6 +34,12 @@ public abstract class ExternalProcessEntity {
 	private Long id;
 
 	/**
+	 * Index of the job within the stage.
+	 */
+	@Getter @Setter
+	private Integer jobIndex;
+
+	/**
 	 * Associated step of the process.
 	 */
 	@JsonIgnore

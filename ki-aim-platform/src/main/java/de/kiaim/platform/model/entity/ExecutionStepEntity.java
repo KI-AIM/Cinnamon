@@ -25,6 +25,12 @@ public class ExecutionStepEntity {
 	private Long id;
 
 	/**
+	 * Index of the stage within the pipeline.
+	 */
+	@Getter @Setter
+	private Integer stageIndex;
+
+	/**
 	 * Associated step of the process.
 	 */
 	@JsonIgnore
@@ -55,6 +61,7 @@ public class ExecutionStepEntity {
 	 * TODO move these into the project and reference here
 	 */
 	@OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+	@OrderBy("jobIndex")
 	@Getter
 	private final List<ExternalProcessEntity> processes = new ArrayList<>();
 
@@ -73,6 +80,7 @@ public class ExecutionStepEntity {
 	 */
 	public void addProcess(final ExternalProcessEntity externalProcess) {
 		if (!processes.contains(externalProcess)) {
+			externalProcess.setJobIndex(processes.size());
 			externalProcess.setExecutionStep(this);
 			processes.add(externalProcess);
 		}

@@ -27,9 +27,16 @@ public class PipelineEntity {
 	private Long id;
 
 	/**
+	 * Index of the pipeline within the project.
+	 */
+	@Getter @Setter
+	private Integer pipelineIndex;
+
+	/**
 	 * Stages of this pipeline.
 	 */
 	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL, mappedBy = "pipeline")
+	@OrderBy("stageIndex")
 	@Getter
 	private final List<ExecutionStepEntity> stages = new ArrayList<>();
 
@@ -64,6 +71,7 @@ public class PipelineEntity {
 	 */
 	public void addStage(final Step step, final ExecutionStepEntity executionStep) {
 		if (!containsStage(step)) {
+			executionStep.setStageIndex(stages.size());
 			executionStep.setPipeline(this);
 			executionStep.setStep(step);
 			stages.add(executionStep);

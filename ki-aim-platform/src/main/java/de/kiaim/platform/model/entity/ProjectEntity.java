@@ -45,6 +45,7 @@ public class ProjectEntity {
 	 * Pipelines of the project.
 	 */
 	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+	@OrderBy("pipelineIndex")
 	private final List<PipelineEntity> pipelines = new ArrayList<>();
 
 	/**
@@ -60,6 +61,7 @@ public class ProjectEntity {
 	 */
 	public PipelineEntity addPipeline(final PipelineEntity pipeline) {
 		if (!pipelines.contains(pipeline)) {
+			pipeline.setPipelineIndex(pipelines.size());
 			pipelines.add(pipeline);
 			pipeline.setProject(this);
 		}

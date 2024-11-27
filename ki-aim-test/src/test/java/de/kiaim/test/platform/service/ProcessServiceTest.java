@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.exception.InternalRequestException;
-import de.kiaim.platform.model.entity.ExecutionStepEntity;
-import de.kiaim.platform.model.entity.ExternalProcessEntity;
-import de.kiaim.platform.model.entity.PipelineEntity;
-import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.processor.CsvProcessor;
@@ -80,17 +77,15 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@Test
 	public void fetchStatusError() throws IOException {
-
-		final Step curretnStep = Step.ANONYMIZATION;
-
-		final ExternalProcessEntity externalProcess = new ExternalProcessEntity();
+		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
+		externalProcess.setStep(Step.ANONYMIZATION);
 		ReflectionTestUtils.setField(externalProcess, "id", 1L);
 
 		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
-		executionStep.setCurrentStep(curretnStep);
+		executionStep.setCurrentProcessIndex(0);
 		executionStep.setStatus(ProcessStatus.RUNNING);
-		executionStep.putExternalProcess(curretnStep, externalProcess);
+		executionStep.addProcess(externalProcess);
 
 		final ProjectEntity project = new ProjectEntity();
 		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
@@ -100,7 +95,6 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setError("An error occurred!");
 		mockBackEnd.enqueue(new MockResponse.Builder()
-
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 				                    .code(500)
 				                    .body(jsonMapper.writeValueAsString(response))
@@ -116,16 +110,15 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@Test
 	public void fetchStatusUnavailable() throws IOException {
-		final Step curretnStep = Step.ANONYMIZATION;
-
-		final ExternalProcessEntity externalProcess = new ExternalProcessEntity();
+		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
+		externalProcess.setStep(Step.ANONYMIZATION);
 		ReflectionTestUtils.setField(externalProcess, "id", 1L);
 
 		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
-		executionStep.setCurrentStep(curretnStep);
+		executionStep.setCurrentProcessIndex(0);
 		executionStep.setStatus(ProcessStatus.RUNNING);
-		executionStep.putExternalProcess(curretnStep, externalProcess);
+		executionStep.addProcess(externalProcess);
 
 		final ProjectEntity project = new ProjectEntity();
 		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());

@@ -9,8 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.lang.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Entity representing an executable step.
@@ -44,22 +43,20 @@ public class ExecutionStepEntity {
 	private ProcessStatus status = ProcessStatus.NOT_STARTED;
 
 	/**
-	 * The current step of the execution.
+	 * Index of the current job.
 	 * Null if not running.
 	 */
-	@Enumerated(EnumType.STRING)
 	@Getter @Setter
 	@Nullable
-	private Step currentStep;
+	private Integer currentProcessIndex;
 
 	/**
 	 * Processes in this step.
+	 * TODO move these into the project and reference here
 	 */
 	@OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
-	@MapKeyEnumerated(EnumType.STRING)
-	@MapKeyColumn(name = "step")
 	@Getter
-	private final Map<Step, ExternalProcessEntity> processes = new HashMap<>();
+	private final List<ExternalProcessEntity> processes = new ArrayList<>();
 
 	/**
 	 * The corresponding pipeline.
@@ -71,15 +68,73 @@ public class ExecutionStepEntity {
 	private PipelineEntity pipeline;
 
 	/**
-	 * Adds a new process for the given step to this step.
-	 * @param step The step.
+	 * Adds a new process to this step.
 	 * @param externalProcess The process to be added.
 	 */
-	public void putExternalProcess(final Step step, final ExternalProcessEntity externalProcess) {
-		if (!processes.containsKey(step)) {
+	public void addProcess(final ExternalProcessEntity externalProcess) {
+		if (!processes.contains(externalProcess)) {
 			externalProcess.setExecutionStep(this);
-			externalProcess.setStep(step);
-			processes.put(step, externalProcess);
+			processes.add(externalProcess);
+		}
+	}
+
+	/**
+	 * Returns the process for the given Step.
+	 * @param step The Step.
+	 * @return The process.
+	 */
+	public Optional<ExternalProcessEntity> getProcess(final Step step) {
+		for (final ExternalProcessEntity externalProcess : processes) {
+			if (externalProcess.getStep().equals(step)) {
+				return Optional.of(externalProcess);
+			}
+		}
+
+		return Optional.empty();
+	}
+
+	public ExternalProcessEntity getProcess(final Integer index) {
+		return processes.get(index);
+	}
+
+	/**
+	 * Returns the step of the current process.
+	 * @return The step of the current process.
+	 */
+	@Nullable
+	public Step getCurrentStep() {
+		final var currentProcess = getCurrentProcess();
+		if (currentProcess != null) {
+			return currentProcess.getStep();
+		} else {
+			return null;
+		}
+	}
+
+	@JsonIgnore
+	@Nullable
+	public ExternalProcessEntity getCurrentProcess() {
+		if (currentProcessIndex == null) {
+			return null;
+		}
+		return getProcess(currentProcessIndex);
+	}
+
+	@JsonIgnore
+	public ProjectEntity getProject() {
+		return pipeline.getProject();
+	}
+
+	/**
+	 * Validates the status matches the rest of the stages state.
+	 */
+	@PrePersist @PreUpdate
+	private void validateStatus() {
+		if (this.status == ProcessStatus.RUNNING && this.currentProcessIndex == null) {
+			throw new IllegalStateException("The stage is running but the current job is not set.");
+		}
+		if (this.status != ProcessStatus.RUNNING && this.currentProcessIndex != null) {
+			throw new IllegalStateException("The current job is set but the stage is not running.");
 		}
 	}
 }

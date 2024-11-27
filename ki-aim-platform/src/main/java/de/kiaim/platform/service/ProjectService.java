@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.platform.config.KiAimConfiguration;
+import de.kiaim.platform.config.StageConfiguration;
+import de.kiaim.platform.config.StepConfiguration;
 import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.exception.InternalIOException;
@@ -65,8 +67,9 @@ public class ProjectService {
 	 * Otherwise, returns the existing project.
 	 * @param user The user.
 	 * @return The projects of the user.
+	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
 	 */
-	public ProjectEntity createProject(final UserEntity user) {
+	public ProjectEntity createProject(final UserEntity user) throws InternalApplicationConfigurationException {
 		if (hasProject(user)) {
 			return user.getProject();
 		}
@@ -78,22 +81,34 @@ public class ProjectService {
 		project.addPipeline(pipeline);
 
 		// Create entities for external processes
-		for (final Step step : Step.values()) {
-			if (!step.getProcesses().isEmpty()) {
-				var exec = new ExecutionStepEntity();
+		for (final Step stageStep : kiAimConfiguration.getPipeline().getStages()) {
+			if (!kiAimConfiguration.getStages().containsKey(stageStep)) {
+				throw new InternalApplicationConfigurationException(
+						InternalApplicationConfigurationException.MISSING_STAGE_CONFIGURATION,
+						"No configuration for stage '" + stageStep + "'!");
+			}
 
-				for (final var processStep : step.getProcesses()) {
-					ExternalProcessEntity process = switch (kiAimConfiguration.getSteps()
-					                                                          .get(processStep.name())
-					                                                          .getStepType()) {
-						case DATA_PROCESSING -> new DataProcessingEntity();
-						case EVALUATION -> new ExternalProcessEntity();
-					};
-					exec.putExternalProcess(processStep, process);
+			final StageConfiguration stageConfiguration = kiAimConfiguration.getStages().get(stageStep);
+			final ExecutionStepEntity stage = new ExecutionStepEntity();
+
+			for (final Step jobStep : stageConfiguration.getJobs()) {
+				if (!kiAimConfiguration.getSteps().containsKey(jobStep)) {
+					throw new InternalApplicationConfigurationException(
+							InternalApplicationConfigurationException.MISSING_STEP_CONFIGURATION,
+							"No configuration for step '" + jobStep + "'!");
 				}
 
-				pipeline.addStage(step, exec);
+				final StepConfiguration stepConfiguration = kiAimConfiguration.getSteps().get(jobStep);
+				ExternalProcessEntity job = switch (stepConfiguration.getStepType()) {
+					case DATA_PROCESSING -> new DataProcessingEntity();
+					case EVALUATION -> new EvaluationProcessingEntity();
+				};
+
+				job.setStep(jobStep);
+				stage.addProcess(job);
 			}
+
+			pipeline.addStage(stageStep, stage);
 		}
 
 		userRepository.save(user);
@@ -170,7 +185,7 @@ public class ProjectService {
 			// Add results
 			for (final PipelineEntity pipeline : project.getPipelines()) {
 				for (final ExecutionStepEntity executionStep : pipeline.getStages()) {
-					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses().values()) {
+					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {
 						// Add configuration
 						final String configurationName = stepService.getStepConfiguration(externalProcess.getStep()).getConfigurationName();
 						final ZipEntry configZipEntry = new ZipEntry(configurationName + ".yaml");

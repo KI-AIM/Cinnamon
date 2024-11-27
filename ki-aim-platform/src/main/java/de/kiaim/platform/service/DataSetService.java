@@ -179,7 +179,7 @@ public class DataSetService {
 			dataSet = project.getOriginalData().getDataSet();
 		} else {
 			final ExternalProcessEntity process = project.getPipelines().get(0).getStageByStep(Step.EXECUTION)
-			                                             .getProcesses().get(step);
+			                                             .getProcess(step).get();
 			if (process instanceof DataProcessingEntity dataProcessing) {
 				dataSet = dataProcessing.getDataSet();
 			}

@@ -104,7 +104,7 @@ public class ProcessService {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
-			updateProcessStatus(executionStep.getProcesses().get(executionStep.getCurrentStep()));
+			updateProcessStatus(executionStep.getCurrentProcess());
 		}
 
 		return executionStep;
@@ -131,11 +131,12 @@ public class ProcessService {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(execStep);
 
 		// Get process entity
-		if (!executionStep.getProcesses().containsKey(step)) {
+		final Optional<ExternalProcessEntity> optional = executionStep.getProcess(step);
+		if (optional.isEmpty()) {
 			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
 			                                        "No process entity for step '" + step.name() + "' available!");
 		}
-		final ExternalProcessEntity externalProcess = executionStep.getProcesses().get(step);
+		final ExternalProcessEntity externalProcess = optional.get();
 
 		databaseService.storeConfiguration(configuration, externalProcess);
 
@@ -157,15 +158,17 @@ public class ProcessService {
 	 * @param project The project the process corresponds to.
 	 * @param step The step the process corresponds to.
 	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
+	 * @throws BadStateException                         If no original data set exist.
 	 * @throws InternalApplicationConfigurationException If the given step is not configured.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
 	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
+	 *                                                   If a finished process does not contain data set.
 	 * @throws InternalIOException                       If the request body could not be created.
 	 * @throws InternalRequestException                  If the request to start the process failed.
 	 */
 	@Transactional
 	public ExecutionStepEntity start(final ProjectEntity project, final Step step)
-			throws BadDataSetIdException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalRequestException {
+			throws BadDataSetIdException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalRequestException, BadStateException {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
@@ -195,13 +198,12 @@ public class ProcessService {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
-			// Get the current step
-			final var currentStep = executionStep.getCurrentStep();
-			cancelProcess(executionStep.getProcesses().get(currentStep));
+			// Cancel the current process
+			cancelProcess(executionStep.getCurrentProcess());
 
 			// Update
 			executionStep.setStatus(ProcessStatus.CANCELED);
-			executionStep.setCurrentStep(null);
+			executionStep.setCurrentProcessIndex(null);
 
 			projectRepository.save(project);
 		}
@@ -342,14 +344,16 @@ public class ProcessService {
 	 *
 	 * @param externalProcess The process to be started.
 	 * @throws BadDataSetIdException                     If the data set could not be exported.
+	 * @throws BadStateException                         If no original data set exist.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
 	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
+	 *                                                   If a finished process does not contain data set.
 	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 * @throws InternalIOException                       If the request could not be created.
 	 */
 	private void startOrScheduleProcess(final ExternalProcessEntity externalProcess)
-			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException {
+			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException, BadStateException {
 		// Get configuration
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
 
@@ -418,67 +422,63 @@ public class ProcessService {
 	 *
 	 * @param executionStep The execution step.
 	 * @throws BadDataSetIdException                     If the data set could not be exported.
+	 * @throws BadStateException                         If no original data set exist.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
 	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
+	 *                                                   If a finished process does not contain data set.
 	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 * @throws InternalIOException                       If the request could not be created.
 	 */
 	private void startNext(final ExecutionStepEntity executionStep)
-			throws BadDataSetIdException, InternalInvalidStateException, InternalDataSetPersistenceException, InternalRequestException, InternalApplicationConfigurationException, InternalIOException {
+			throws BadDataSetIdException, InternalInvalidStateException, InternalDataSetPersistenceException, InternalRequestException, InternalApplicationConfigurationException, InternalIOException, BadStateException {
 		// Get the next step
-		Step nextStep = null;
+		Integer nextJob = null;
 		ExternalProcessEntity nextProcess = null;
 
-		Step lastStep = executionStep.getCurrentStep();
-		Step stepCandidate;
+		Integer lastJob = executionStep.getCurrentProcessIndex();
+		Integer jobCandidate;
 		ExternalProcessEntity processCandidate;
 		boolean foundNext = false;
 
 		while (!foundNext) {
-			if (lastStep == null) {
-				stepCandidate = executionStep.getStep().getProcesses().get(0);
+			if (lastJob == null) {
+				jobCandidate = 0;
 			} else {
-				final var lastStepStatus = executionStep.getProcesses().get(lastStep).getExternalProcessStatus();
+				final var lastStepStatus = executionStep.getProcess(lastJob).getExternalProcessStatus();
 				if (!(lastStepStatus == ProcessStatus.FINISHED || lastStepStatus == ProcessStatus.SKIPPED)) {
 					throw new InternalInvalidStateException(InternalInvalidStateException.LAST_STEP_NOT_FINISHED,
 					                                        "Cannot start a process if the previous process is not finished or skipped!");
 				}
 
-				final var stepIndex = executionStep.getStep().getProcesses().indexOf(lastStep);
-				if (stepIndex < executionStep.getStep().getProcesses().size() - 1) {
+				if (lastJob < executionStep.getProcesses().size() - 1) {
 					// Start the next process
-					stepCandidate = executionStep.getStep().getProcesses().get(stepIndex + 1);
+					jobCandidate = lastJob + 1;
 				} else {
 					break;
 				}
 			}
 
-			if (!executionStep.getProcesses().containsKey(stepCandidate)) {
-				throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
-				                                        "No process entity for stepCandidate '" + stepCandidate.name() + "' available!");
-			}
-
-			executionStep.setCurrentStep(stepCandidate);
-
-			processCandidate = executionStep.getProcesses().get(stepCandidate);
+			executionStep.setCurrentProcessIndex(jobCandidate);
+			processCandidate = executionStep.getProcess(jobCandidate);
+			// Reset status from potential previous execution
 			processCandidate.setStatus(null);
 
 			// Check if the process should be skipped
-			if (Objects.equals(processCandidate.getProcessUrl(), "skip")) {
+			if (processCandidate.shouldBeSkipped()) {
 				processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
-				lastStep = stepCandidate;
+				lastJob = jobCandidate;
 			} else {
 				foundNext = true;
-				nextStep = stepCandidate;
+				nextJob = jobCandidate;
 				nextProcess = processCandidate;
 			}
 		}
 
 		// Update the execution
-		executionStep.setCurrentStep(nextStep);
+		executionStep.setCurrentProcessIndex(nextJob);
 
-		if (nextStep != null) {
+		if (nextJob != null) {
 			if (nextProcess.getExternalProcessStatus() != ProcessStatus.SCHEDULED &&
 			    nextProcess.getExternalProcessStatus() != ProcessStatus.RUNNING) {
 				startOrScheduleProcess(nextProcess);
@@ -577,14 +577,16 @@ public class ProcessService {
 	 *
 	 * @param externalProcess The process to be started.
 	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
+	 * @throws BadStateException                         If no original data set exist.
 	 * @throws InternalApplicationConfigurationException If the given step is not configured.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
 	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
+	 *                                                   If a finished process does not contain data set.
 	 * @throws InternalIOException                       If the request body could not be created.
 	 * @throws InternalRequestException                  If the request to start the process failed.
 	 */
 	private void doStartProcess(final ExternalProcessEntity externalProcess)
-			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException {
+			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException, BadStateException {
 		final Step step = externalProcess.getStep();
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
 		final String configuration = externalProcess.getConfiguration();
@@ -601,15 +603,17 @@ public class ProcessService {
 	 * Starts the given process with the given data.
 	 *
 	 * @param externalProcess The process to be started.
-	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
-	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
-	 * @throws InternalIOException                       If the request body could not be created.
-	 * @throws InternalRequestException                  If the request to start the process failed.
+	 * @throws BadDataSetIdException               If no DataConfiguration is associated with the given project.
+	 * @throws BadStateException                   If no original data set exist.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalInvalidStateException       If a finished process does not contain data set.
+	 * @throws InternalIOException                 If the request body could not be created.
+	 * @throws InternalRequestException            If the request to start the process failed.
 	 */
 	private void doStartProcess(final StepConfiguration stepConfiguration,
 	                            final ExternalProcessEntity externalProcess, final String configuration,
 	                            final String url)
-			throws InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException, InternalRequestException, InternalApplicationConfigurationException {
+			throws InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException, InternalRequestException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException {
 		// Prepare body
 		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
 
@@ -722,7 +726,7 @@ public class ProcessService {
 
 	private void addDataSets(final ExternalProcessEntity externalProcess, final StepConfiguration stepConfiguration,
 	                         final MultipartBodyBuilder bodyBuilder)
-			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException {
+			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException, BadStateException, InternalInvalidStateException {
 		final ProjectEntity project = externalProcess.getExecutionStep().getPipeline().getProject();
 
 		for (final String inputDataSet : stepConfiguration.getInputs()) {
@@ -794,30 +798,54 @@ public class ProcessService {
 		}
 	}
 
+	/**
+	 * Returns the data set of the last finished step of the given execution.
+	 * If no step is finished, returns the original data set.
+	 *
+	 * @param executionStep The execution.
+	 * @return The data set.
+	 * @throws BadStateException                   If no original data set exist.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
+	 * @throws InternalInvalidStateException       If a finished process does not contain data set.
+	 * @throws InternalIOException                 If the data configuration could not be loaded.
+	 */
 	private DataSet getLastOrOriginalDataSet(final ExecutionStepEntity executionStep)
-			throws InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException {
-		var abc = executionStep.getStep();
+			throws InternalDataSetPersistenceException, InternalIOException, BadStateException, InternalInvalidStateException {
+		var indexOfSourceStep = executionStep.getCurrentProcessIndex() != null
+		                        ? executionStep.getCurrentProcessIndex()
+		                        : executionStep.getProcesses().size() - 1;
 
-		var indexOfSourceStep = executionStep.getCurrentStep() != null
-		                        ? abc.getProcesses().indexOf(executionStep.getCurrentStep()) - 1
-		                        : abc.getProcesses().size() - 1;
-
-		Step dataSetSourceStep = null;
-		while (dataSetSourceStep == null) {
+		DataSetEntity lastOrOriginalDataSet = null;
+		while (lastOrOriginalDataSet == null) {
 
 			if (indexOfSourceStep <= 0) {
-				dataSetSourceStep = Step.VALIDATION;
+				lastOrOriginalDataSet = executionStep.getProject().getOriginalData().getDataSet();
+
+				if (lastOrOriginalDataSet == null) {
+					throw new BadStateException(BadStateException.NO_DATA_SET,
+					                            "The project '" + executionStep.getProject().getId() +
+					                            "' does not contain an original data set!");
+				}
+
 			} else {
-				var stepCandidate = abc.getProcesses().get(indexOfSourceStep);
-				if (executionStep.getProcesses().get(stepCandidate).getExternalProcessStatus() == ProcessStatus.FINISHED) {
-					dataSetSourceStep = stepCandidate;
+				var candidate = executionStep.getProcess(indexOfSourceStep);
+				if (candidate.getExternalProcessStatus() == ProcessStatus.FINISHED &&
+				    candidate instanceof DataProcessingEntity dataProcessingEntity) {
+					lastOrOriginalDataSet = dataProcessingEntity.getDataSet();
+
+					if (lastOrOriginalDataSet == null) {
+						throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_DATA_STET,
+						                                        "The job for step " + dataProcessingEntity.getStep() +
+						                                        " does not contain a data set!");
+					}
+
 				} else {
 					indexOfSourceStep--;
 				}
 			}
 		}
 
-		return databaseService.exportDataSet(executionStep.getPipeline().getProject(), dataSetSourceStep);
+		return databaseService.exportDataSet(lastOrOriginalDataSet);
 	}
 
 	private void setProcessError(final ExternalProcessEntity process, final String message) {
@@ -826,7 +854,7 @@ public class ProcessService {
 
 		final ExecutionStepEntity executionStep = process.getExecutionStep();
 		executionStep.setStatus(ProcessStatus.ERROR);
-		executionStep.setCurrentStep(null);
+		executionStep.setCurrentProcessIndex(null);
 	}
 
 }

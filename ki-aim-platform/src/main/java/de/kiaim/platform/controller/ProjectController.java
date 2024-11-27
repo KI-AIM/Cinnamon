@@ -136,8 +136,9 @@ public class ProjectController {
 		final Step executionStep = Step.getStepOrThrow(executionStepName);
 		final Step processStep = Step.getStepOrThrow(processStepName);
 
-		final var content = project.getPipelines().get(0).getStageByStep(executionStep).getProcesses()
-		                           .get(processStep).getAdditionalResultFiles().get(name);
+		final var content = project.getPipelines().get(0).getStageByStep(executionStep)
+		                           .getProcess(processStep).get()
+		                           .getAdditionalResultFiles().get(name);
 		final var s = new String(content);
 
 		return ResponseEntity.ok().body(s);

@@ -1,5 +1,6 @@
 package de.kiaim.test.platform;
 
+import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
@@ -71,7 +72,11 @@ public class DatabaseTest extends ContextRequiredTest {
 		}
 
 		this.testUser = getTestUser();
-		this.testProject = projectService.createProject(testUser);
+		try {
+			this.testProject = projectService.createProject(testUser);
+		} catch (InternalApplicationConfigurationException e) {
+			fail(e);
+		}
 	}
 
 	@AfterEach

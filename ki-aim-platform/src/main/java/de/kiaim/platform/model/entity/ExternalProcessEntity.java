@@ -13,6 +13,7 @@ import org.springframework.lang.Nullable;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Entity representing a planned or running external process like the anonymization.
@@ -22,7 +23,7 @@ import java.util.Map;
 @Inheritance(strategy = InheritanceType.JOINED)
 @Getter
 @NoArgsConstructor
-public class ExternalProcessEntity {
+public abstract class ExternalProcessEntity {
 
 	/**
 	 * ID of the process.
@@ -111,4 +112,12 @@ public class ExternalProcessEntity {
 	@MapKeyColumn(name = "filename")
 	@Lob
 	private final Map<String, byte[]> additionalResultFiles = new HashMap<>();
+
+	/**
+	 * Checks if this process should be skipped.
+	 * @return If this process should be skipped.
+	 */
+	public boolean shouldBeSkipped() {
+		return Objects.equals(processUrl, "skip");
+	}
 }

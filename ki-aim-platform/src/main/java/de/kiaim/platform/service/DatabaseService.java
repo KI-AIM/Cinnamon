@@ -265,10 +265,12 @@ public class DatabaseService {
 	 * @param configurationName Identifier for the configuration.
 	 * @param configuration     Configuration to store.
 	 * @param project           The project the configuration should be associated with.
+	 * @throws BadConfigurationNameException             If the configuration name is not defined.
+	 * @throws InternalApplicationConfigurationException If the step that contains the configuration name is not used in any stage.
 	 */
 	@Transactional
 	public void storeConfiguration(final String configurationName, final String configuration,
-	                               final ProjectEntity project) throws BadStepNameException, BadConfigurationNameException {
+	                               final ProjectEntity project) throws BadConfigurationNameException, InternalApplicationConfigurationException {
 		final ExternalProcessEntity process = getExternalProcessForConfigurationName(project, configurationName);
 		this.storeConfiguration(configuration, process);
 	}
@@ -279,47 +281,45 @@ public class DatabaseService {
 	 * @param project           The project.
 	 * @param configurationName The configured configuration name.
 	 * @return The process.
-	 * @throws BadConfigurationNameException If the configuration name is not defined.
-	 * @throws BadStepNameException          If the step does not exist.
+	 * @throws BadConfigurationNameException             If the configuration name is not defined.
+	 * @throws InternalApplicationConfigurationException If the step that contains the configuration name is not used in any stage.
 	 */
 	public ExternalProcessEntity getExternalProcessForConfigurationName(final ProjectEntity project,
 	                                                                    final String configurationName)
-			throws BadConfigurationNameException, BadStepNameException {
-		// Search for the step that has the given configuraitonName
-		String stepName = null;
+			throws BadConfigurationNameException, InternalApplicationConfigurationException {
+		// Search for the step that has the given configurationName
+		Step processStep = null;
 		for (final var entry : kiAimConfiguration.getSteps().entrySet()) {
 			if (entry.getValue().getConfigurationName().equals(configurationName)) {
-				stepName = entry.getKey();
+				processStep = entry.getKey();
 				break;
 			}
 		}
 
-		if (stepName == null) {
+		if (processStep == null) {
 			throw new BadConfigurationNameException(BadConfigurationNameException.NOT_FOUND,
 			                                        "Project with ID '" + project.getId() +
 			                                        "' has no configuration with the name '" + configurationName +
 			                                        "'!");
 		}
 
-		final Step processStep = Step.getStepOrThrow(stepName);
-
 		// Get the execution for the found step
+		// TODO breaks if a job is part of multiple stages. Configuraitons/processes should be stored separatly in the project
 		Step exectionStep = null;
-		for (final var step1 : Step.values()) {
-			if (step1.getProcesses().contains(processStep)) {
-				exectionStep = step1;
+		for (final var entry : kiAimConfiguration.getStages().entrySet()) {
+			if (entry.getValue().getJobs().contains(processStep)) {
+				exectionStep = entry.getKey();
 			}
 		}
 
 		if (exectionStep == null) {
-			throw new BadConfigurationNameException(BadConfigurationNameException.NOT_FOUND,
-			                                        "Project with ID '" + project.getId() +
-			                                        "' has no configuration with the name '" + configurationName +
-			                                        "'!");
+			throw new InternalApplicationConfigurationException(
+					InternalApplicationConfigurationException.MISSING_STAGE_CONFIGURATION,
+					"Step '" + processStep + " is not used in any stage'!");
 		}
 
 		final ExecutionStepEntity executionStep = project.getPipelines().get(0).getStageByStep(exectionStep);
-		return executionStep.getProcesses().get(processStep);
+		return executionStep.getProcess(processStep).get();
 	}
 
 	/**
@@ -633,12 +633,13 @@ public class DatabaseService {
 	 * @param configurationName Name of the configuration to export.
 	 * @param project           The project of which the configuration should be exported.
 	 * @return The configuration.
-	 * @throws BadConfigurationNameException If the project does not have a configuration with the given name.
+	 * @throws BadConfigurationNameException             If the project does not have a configuration with the given name.
+	 * @throws InternalApplicationConfigurationException If the step that contains the configuration name is not used in any stage.
 	 */
 	@Transactional
 	@Nullable
 	public String exportConfiguration(final String configurationName, final ProjectEntity project)
-			throws BadConfigurationNameException, BadStepNameException {
+			throws BadConfigurationNameException, InternalApplicationConfigurationException {
 		final ExternalProcessEntity process = getExternalProcessForConfigurationName(project, configurationName);
 		return process.getConfiguration();
 	}
@@ -659,7 +660,7 @@ public class DatabaseService {
 
 		for (final var pipeline : project.getPipelines()) {
 			for (final var stage : pipeline.getStages()) {
-				for (final var job : stage.getProcesses().values()) {
+				for (final var job : stage.getProcesses()) {
 					job.setStatus(null);
 					job.setExternalProcessStatus(ProcessStatus.NOT_STARTED);
 					job.setScheduledTime(null);

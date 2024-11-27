@@ -23,7 +23,7 @@ public class ProjectServiceTest extends DatabaseTest {
 	public void createProject() {
 		var user = userService.save("email", "password");
 
-		projectService.createProject(user);
+		assertDoesNotThrow(() -> projectService.createProject(user));
 
 		assertNotNull(user.getProject(), "No project has been created!");
 		var project = user.getProject();
@@ -37,9 +37,9 @@ public class ProjectServiceTest extends DatabaseTest {
 
 		assertEquals(exec.getStep(), Step.EXECUTION, "Unexpected step!");
 		assertEquals(ProcessStatus.NOT_STARTED, exec.getStatus(), "Unexpected process status!");
-		assertNull(exec.getCurrentStep(), "No step has been created!");
+		assertNull(exec.getCurrentProcessIndex(), "No step has been created!");
 		assertEquals(2, exec.getProcesses().size(), "Unexpected number of processes!");
-		var firstProcess = exec.getProcesses().get(Step.EXECUTION.getProcesses().get(0));
+		var firstProcess = exec.getProcess(0);
 
 		assertEquals(firstProcess.getExternalProcessStatus(), ProcessStatus.NOT_STARTED , "Unexpected status!");
 	}

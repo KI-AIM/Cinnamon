@@ -15,6 +15,11 @@ public class InternalApplicationConfigurationException extends InternalException
 	 */
 	public static final String INVALID_INPUT_DATA_SET = "2";
 
+	/**
+	 * Exception code for missing step configuration.
+	 */
+	public static final String MISSING_STAGE_CONFIGURATION = "3";
+
 	public InternalApplicationConfigurationException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

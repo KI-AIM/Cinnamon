@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {EChartsOption} from "echarts";
-import { FrequenciesData, FrequencyPlotData, StatisticsData } from "../../model/statistics";
-import {ChartComponent} from "../chart/chart.component";
+import {FrequenciesData, FrequencyPlotData, StatisticsData} from "../../model/statistics";
+import {ChartComponent, Entries} from "../chart/chart.component";
 
 @Component({
     selector: 'app-chart-frequency',
@@ -12,15 +12,22 @@ export class ChartFrequencyComponent extends ChartComponent {
     @Input() public data!: StatisticsData<FrequencyPlotData>;
     @Input() public simple: boolean = false;
     @Input() public limit: number | null = 10;
+    @Input() syntheticSeriesLabel: string = "Synthetisch";
 
     private readonly colors = ['#770000', '#007700']
 
     protected override createChartOptions(): EChartsOption {
+        const dataSetLabels: StatisticsData<string> = {
+            real: "Original",
+            synthetic: this.syntheticSeriesLabel,
+        }
+
         let keys: string[] | null = null;
 
         const series = [];
-        for (const [key, value] of Object.entries(this.data)) {
+        for (const [key, value] of Object.entries(this.data) as Entries<StatisticsData<FrequencyPlotData>>) {
             let m: { [value: string]: FrequenciesData } = {};
+
             value.frequencies.forEach((b: { [value: string]: FrequenciesData }) => {
                m = {
                    ...m,
@@ -54,7 +61,7 @@ export class ChartFrequencyComponent extends ChartComponent {
             });
 
             series.push({
-                name: key,
+                name: dataSetLabels[key],
                 type: 'bar',
                 data: displayedValues,
                 barMinHeight: 2,

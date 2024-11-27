@@ -64,3 +64,8 @@ export class ChartComponent implements OnInit {
         return this.statisticsService.formatNumber(value, dataType);
     }
 }
+
+// Stolen from https://stackoverflow.com/questions/60141960/typescript-key-value-relation-preserving-object-entries-type
+export type Entries<T> = {
+    [K in keyof T]: [K, T[K]];
+}[keyof T][];

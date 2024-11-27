@@ -88,7 +88,7 @@ export class DensityPlotData {
 }
 
 export class FrequencyPlotData {
-    frequencies: {[value: string]: FrequenciesData};
+    frequencies: [{[value: string]: FrequenciesData}];
     x_axis: string;
     y_axis: string;
 }

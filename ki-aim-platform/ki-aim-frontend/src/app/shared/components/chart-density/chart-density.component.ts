@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {EChartsOption} from "echarts";
 import { DensityPlotData, StatisticsData } from "../../model/statistics";
-import {ChartComponent} from "../chart/chart.component";
+import {ChartComponent, Entries} from "../chart/chart.component";
 import {ColumnConfiguration} from "../../model/column-configuration";
 
 @Component({
@@ -13,17 +13,23 @@ export class ChartDensityComponent extends ChartComponent {
     @Input() columnConfiguration!: ColumnConfiguration;
     @Input() data!: StatisticsData<DensityPlotData>;
     @Input() simple: boolean = false;
+    @Input() syntheticSeriesLabel: string = "Synthetisch";
 
     private readonly colors = ['#770000', '#007700']
 
     protected override createChartOptions(): EChartsOption {
+        const dataSetLabels: StatisticsData<string> = {
+            real: "Original",
+            synthetic: this.syntheticSeriesLabel,
+        }
+
         let reference: DensityPlotData;
 
         const series = [];
-        for (const [key, value] of Object.entries(this.data)) {
+        for (const [key, value] of Object.entries(this.data) as Entries<StatisticsData<DensityPlotData>>) {
             series.push({
                 color: [this.colors[value.color_index]],
-                name: key,
+                name: dataSetLabels[key],
                 type: 'line',
                 symbol: 'none',
                 data: value.density,

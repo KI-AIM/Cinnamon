@@ -32,8 +32,8 @@
             <mat-panel-title>Technical Evaluation</mat-panel-title>
             <mat-panel-description>
                 <span class="status mt-2"
-                      [ngClass]="evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus">
-                    <span>{{ evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus.replace("_", " ") }}</span>
+                      [ngClass]="evaluationService.status.processes[0].externalProcessStatus">
+                    <span>{{ evaluationService.status.processes[0].externalProcessStatus.replace("_", " ") }}</span>
                 </span>
             </mat-panel-description>
         </mat-expansion-panel-header>
@@ -43,7 +43,7 @@
                 {{ evaluationService.technicalEvaluationStatus }}
             </ng-template>
 
-            <div *ngIf="evaluationService.status.processes['TECHNICAL_EVALUATION'].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+            <div *ngIf="evaluationService.status.processes[0].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
 
 
                 <!--                <mat-accordion>-->

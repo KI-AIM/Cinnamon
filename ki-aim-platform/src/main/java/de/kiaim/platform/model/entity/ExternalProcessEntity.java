@@ -17,6 +17,7 @@ import java.util.Objects;
 
 /**
  * Entity representing a planned or running external process like the anonymization.
+ * TODO move the configuration into a separate object, add directly to the project and reference here
  */
 @Schema(description = "Information about an external process.")
 @Entity
@@ -42,7 +43,6 @@ public abstract class ExternalProcessEntity {
 	/**
 	 * Associated step of the process.
 	 */
-	@JsonIgnore
 	@Setter
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)

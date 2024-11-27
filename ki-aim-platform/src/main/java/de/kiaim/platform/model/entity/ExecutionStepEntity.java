@@ -58,7 +58,6 @@ public class ExecutionStepEntity {
 
 	/**
 	 * Processes in this step.
-	 * TODO move these into the project and reference here
 	 */
 	@OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
 	@OrderBy("jobIndex")

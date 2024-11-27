@@ -3,7 +3,8 @@ import { Steps } from "../../core/enums/steps";
 import { ExternalProcess } from "./external-process";
 
 export class ExecutionStep {
+    currentProcessIndex: number;
     currentStep: Steps;
-    processes: { [stepName: string]: ExternalProcess };
+    processes: ExternalProcess[];
     status: ProcessStatus;
 }

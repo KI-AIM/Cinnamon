@@ -22,13 +22,13 @@
     <span class="status mt-2" [ngClass]="status.status"> <span>{{ status.status.replace("_", " ") }}</span> </span>
 </div>
 
-<mat-accordion>
+<mat-accordion *ngIf="status.processes.length > 0">
     <mat-expansion-panel>
         <mat-expansion-panel-header>
             <mat-panel-title>Anonymization</mat-panel-title>
             <mat-panel-description>
-    <span class="status mt-2" [ngClass]="status.processes['ANONYMIZATION'].externalProcessStatus">
-        <span>{{ status.processes['ANONYMIZATION'].externalProcessStatus.replace("_", " ") }}</span>
+    <span class="status mt-2" [ngClass]="status.processes[0].externalProcessStatus">
+        <span>{{ status.processes[0].externalProcessStatus.replace("_", " ") }}</span>
     </span>
             </mat-panel-description>
         </mat-expansion-panel-header>
@@ -38,7 +38,7 @@
                 {{ executionService.anonProcess}}
             </div>
 
-            <div *ngIf="status.processes['ANONYMIZATION'].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+            <div *ngIf="status.processes[0].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
                 <app-data-table step="anonymization"></app-data-table>
             </div>
             <ng-template #anonNoData>
@@ -53,8 +53,8 @@
         <mat-expansion-panel-header>
             <mat-panel-title>Synthetization</mat-panel-title>
             <mat-panel-description>
-    <span class="status mt-2" [ngClass]="status.processes['SYNTHETIZATION'].externalProcessStatus">
-        <span>{{ status.processes['SYNTHETIZATION'].externalProcessStatus.replace("_", " ") }}</span>
+    <span class="status mt-2" [ngClass]="status.processes[1].externalProcessStatus">
+        <span>{{ status.processes[1].externalProcessStatus.replace("_", " ") }}</span>
     </span>
             </mat-panel-description>
         </mat-expansion-panel-header>
@@ -83,7 +83,7 @@
             </div>
 
 
-            <div *ngIf="status.processes['SYNTHETIZATION'].externalProcessStatus == ProcessStatus.FINISHED; else synthNoData">
+            <div *ngIf="status.processes[1].externalProcessStatus == ProcessStatus.FINISHED; else synthNoData">
                 <app-data-table step="synthetization"></app-data-table>
             </div>
             <ng-template #synthNoData>

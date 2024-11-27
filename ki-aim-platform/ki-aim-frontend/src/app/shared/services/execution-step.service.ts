@@ -1,20 +1,25 @@
-import { Injectable } from '@angular/core';
+import {Injectable, OnInit} from '@angular/core';
 import { ExecutionStep } from "../model/execution-step";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
 import { ProcessStatus } from "../../core/enums/process-status";
-import { interval, Observable, Subscription, tap } from "rxjs";
+import {finalize, interval, Observable, of, share, Subscription, tap} from "rxjs";
 import { ExternalProcess } from "../model/external-process";
+import {StageConfiguration} from "../model/stage-configuration";
+import {Steps} from "../../core/enums/steps";
 
 @Injectable({
     providedIn: 'root'
 })
-export abstract class ExecutionStepService {
+export abstract class ExecutionStepService implements OnInit {
     private readonly baseUrl = environments.apiUrl + "/api/process";
 
     private _disabled: boolean = false;
     private _error: string | null = null;
     private _status: ExecutionStep = new ExecutionStep();
+
+    private _stageConfiguration: StageConfiguration | null = null;
+    private _stageConfiguration$: Observable<StageConfiguration> | null = null;
 
     /**
      * Observer that periodically sends requests to fetch the status
@@ -32,17 +37,24 @@ export abstract class ExecutionStepService {
     ) {
         // Create the initial status object so something can be displayed
         this._status.status = ProcessStatus.NOT_STARTED;
-        this._status.processes = {};
-        for (const step of this.getSteps()) {
-            const externalProcess = new ExternalProcess();
-            externalProcess.externalProcessStatus = ProcessStatus.NOT_STARTED;
-            this._status.processes[step] = externalProcess;
-        }
+        this._status.processes = [];
 
         // Create the status observer
         this.statusObserver$ = interval(2000).pipe(tap(() => {
             this.fetchStatus();
         }));
+    }
+
+    ngOnInit(): void {
+        this.stageConfiguration$.subscribe({
+            next: value => {
+                for (let jobIndex = 0; jobIndex < value.jobs.length; jobIndex++) {
+                    const externalProcess = new ExternalProcess();
+                    externalProcess.externalProcessStatus = ProcessStatus.NOT_STARTED;
+                    this._status.processes.push(externalProcess);
+                }
+            }
+        });
     }
 
     public get disabled(): boolean {
@@ -67,8 +79,8 @@ export abstract class ExecutionStepService {
                 this._error = null;
                 this._status = value;
                 this.setState(value.status);
-                for (const [key, status] of Object.entries(value.processes)) {
-                    this.setCustomStatus(key, status.status);
+                for (const status of value.processes) {
+                    this.setCustomStatus(status.step, status.status);
                 }
             },
             error: err => {
@@ -120,13 +132,7 @@ export abstract class ExecutionStepService {
      */
     protected abstract getStepName(): string;
 
-    protected abstract setCustomStatus(key: string, status: string | null): void;
-
-    /**
-     * TODO We could read the steps of this execution step from dynamically from the backend
-     * @protected
-     */
-    protected abstract getSteps(): string[];
+    protected abstract setCustomStatus(key: Steps, status: string | null): void;
 
     /**
      * Starts or stops listening to the status based on the given status.
@@ -153,8 +159,8 @@ export abstract class ExecutionStepService {
                 this._error = null;
                 this._status = process;
                 this.setState(process.status);
-                for (const [key, status] of Object.entries(process.processes)) {
-                    this.setCustomStatus(key, status.status);
+                for (const status of process.processes) {
+                    this.setCustomStatus(status.step, status.status);
                 }
             },
             error: err => {
@@ -169,5 +175,22 @@ export abstract class ExecutionStepService {
      */
     private getProcess(): Observable<ExecutionStep> {
         return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStepName());
+    }
+
+    protected get stageConfiguration$(): Observable<StageConfiguration> {
+        if (this._stageConfiguration) {
+            return of(this._stageConfiguration);
+        }
+        if (this._stageConfiguration$) {
+            return this._stageConfiguration$;
+        }
+
+        return this.http.get<StageConfiguration>(this.baseUrl).pipe(
+            tap(value => this._stageConfiguration = value),
+            share(),
+            finalize(() => {
+                this._stageConfiguration$ = null;
+            })
+        );
     }
 }

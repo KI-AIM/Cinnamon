@@ -1,6 +1,7 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.platform.config.KiAimConfiguration;
+import de.kiaim.platform.config.StageConfiguration;
 import de.kiaim.platform.config.StepConfiguration;
 import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.exception.InternalApplicationConfigurationException;
@@ -49,6 +50,39 @@ public class StepService {
 		} catch (final InternalApplicationConfigurationException e) {
 			throw new BadStepNameException(BadStepNameException.NOT_FOUND,
 			                               "The step '" + stepName + "' is not defined!");
+		}
+	}
+
+	/**
+	 * Returns the configuration for the given stage.
+	 *
+	 * @param stage The stage.
+	 * @return The step configuration.
+	 * @throws InternalApplicationConfigurationException If no configuration could be found.
+	 */
+	public StageConfiguration getStageConfiguration(final Step stage) throws InternalApplicationConfigurationException {
+		if (!kiAimConfiguration.getStages().containsKey(stage)) {
+			throw new InternalApplicationConfigurationException(
+					InternalApplicationConfigurationException.MISSING_STEP_CONFIGURATION,
+					"No configuration for the stage '" + stage.name() + "' found!");
+		}
+
+		return kiAimConfiguration.getStages().get(stage);
+	}
+
+	/**
+	 * Returns the configuration for the stage with the given name.
+	 *
+	 * @param stageName The name of the stage.
+	 * @return The step configuration.
+	 * @throws BadStepNameException If no configuration could be found.
+	 */
+	public StageConfiguration getStageConfiguration(final String stageName) throws BadStepNameException {
+		try {
+			return getStageConfiguration(Step.getStepOrThrow(stageName));
+		} catch (final InternalApplicationConfigurationException e) {
+			throw new BadStepNameException(BadStepNameException.NOT_FOUND,
+			                               "The step '" + stageName + "' is not defined!");
 		}
 	}
 }

@@ -28,13 +28,13 @@ public class StepService {
 	 * @throws InternalApplicationConfigurationException If no configuration could be found.
 	 */
 	public StepConfiguration getStepConfiguration(final Step step) throws InternalApplicationConfigurationException {
-		try {
-			return this.getStepConfiguration(step.name());
-		} catch (BadStepNameException e) {
+		if (!kiAimConfiguration.getSteps().containsKey(step)) {
 			throw new InternalApplicationConfigurationException(
 					InternalApplicationConfigurationException.MISSING_STEP_CONFIGURATION,
-					"No configuraiton for the step '" + step.name() + "' found!", e);
+					"No configuration for the step '" + step.name() + "' found!");
 		}
+
+		return kiAimConfiguration.getSteps().get(step);
 	}
 
 	/**
@@ -44,10 +44,11 @@ public class StepService {
 	 * @throws BadStepNameException If no configuration could be found.
 	 */
 	public StepConfiguration getStepConfiguration(final String stepName) throws BadStepNameException {
-		if (!kiAimConfiguration.getSteps().containsKey(stepName)) {
+		try {
+			return getStepConfiguration(Step.getStepOrThrow(stepName));
+		} catch (final InternalApplicationConfigurationException e) {
 			throw new BadStepNameException(BadStepNameException.NOT_FOUND,
 			                               "The step '" + stepName + "' is not defined!");
 		}
-		return kiAimConfiguration.getSteps().get(stepName);
 	}
 }

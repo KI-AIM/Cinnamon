@@ -1,10 +1,10 @@
 package de.kiaim.platform.service;
 
+import de.kiaim.platform.config.KiAimConfiguration;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.ProjectRepository;
-import org.springframework.security.access.expression.SecurityExpressionHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,12 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class StatusService {
 
-	private final ProjectRepository projectRepository;
-	private final SecurityExpressionHandler webSecurityExpressionHandler;
+	private final KiAimConfiguration kiAimConfiguration;
 
-	public StatusService(ProjectRepository projectRepository, SecurityExpressionHandler webSecurityExpressionHandler) {
+	private final ProjectRepository projectRepository;
+
+	public StatusService(final KiAimConfiguration kiAimConfiguration, final ProjectRepository projectRepository) {
+		this.kiAimConfiguration = kiAimConfiguration;
 		this.projectRepository = projectRepository;
-		this.webSecurityExpressionHandler = webSecurityExpressionHandler;
 	}
 
 	/**
@@ -32,9 +33,9 @@ public class StatusService {
 	 */
 	@Transactional
 	public void updateCurrentStep(final ProjectEntity project, final Step currentStep) {
-		final var processStatus = currentStep.getProcesses().isEmpty()
-		                          ? ProcessStatus.NOT_REQUIRED
-		                          : ProcessStatus.NOT_STARTED;
+		final var processStatus = kiAimConfiguration.getStages().containsKey(currentStep) && !kiAimConfiguration.getStages().get(currentStep).getJobs().isEmpty()
+		                          ? ProcessStatus.NOT_STARTED
+		                          : ProcessStatus.NOT_REQUIRED;
 		updateStatus(project, currentStep, processStatus);
 	}
 

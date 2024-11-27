@@ -50,7 +50,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private static final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 
-	@Value("${ki-aim.steps.SYNTHETIZATION.callbackHost}")
+	@Value("${ki-aim.steps.synthetization.callbackHost}")
 	private String callbackHost;
 
 	private MockWebServer mockBackEnd;

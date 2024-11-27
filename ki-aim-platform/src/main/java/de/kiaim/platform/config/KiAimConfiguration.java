@@ -1,5 +1,6 @@
 package de.kiaim.platform.config;
 
+import de.kiaim.platform.model.enumeration.Step;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -18,5 +19,9 @@ public class KiAimConfiguration {
 	/**
 	 * Map containing all steps.
 	 */
-	private Map<String, StepConfiguration> steps = new HashMap<>();
+	private Map<Step, StepConfiguration> steps = new HashMap<>();
+
+	private Map<Step, StageConfiguration> stages = new HashMap<>();
+
+	private PipelineConfiguration pipeline = new PipelineConfiguration();
 }

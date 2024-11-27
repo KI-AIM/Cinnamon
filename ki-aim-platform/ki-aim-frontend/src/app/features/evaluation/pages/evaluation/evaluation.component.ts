@@ -231,7 +231,14 @@ export class EvaluationComponent {
     }
 
     protected isNormalTable(name: any): boolean {
-        return ['mean', 'standard_deviation', 'skewness', 'quantiles', 'kurtosis'].includes(name);
+        return ['distinct_values', 'fifth_percentile', 'kurtosis', 'maximum', 'mean', 'median', 'minimum', 'missing_values_count', 'missing_values_percentage', 'mode', 'ninety_fifth_percentile', 'q1', 'q3', 'skewness', 'standard_deviation', 'variance'].includes(name);
+    }
+
+    protected getHellingerDistance(blub: any): string {
+        if (!blub['hellinger_distance']) {
+            return 'N/A';
+        }
+        return blub['hellinger_distance']['value'];
     }
 
 

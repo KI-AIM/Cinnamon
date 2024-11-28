@@ -38,7 +38,7 @@
                 <table>
                     <tr *ngIf="attributeStatistics.important_metrics.distinct_values">
                         <th>Distinct Values:</th>
-                        <td>{{ attributeStatistics.important_metrics.distinct_values.values.real | number: '1.0-3' }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.distinct_values.values.real, {max: 3, min: 3}) }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.mode">
                         <th>Mode:</th>
@@ -46,31 +46,31 @@
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.mean">
                         <th>Mean:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.mean.values.real, null) }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.mean.values.real, {max: 3, min: 3}) }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.variance">
                         <th>Variance:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.variance.values.real, null) }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.variance.values.real, {max: 3, min: 3}) }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.standard_deviation">
                         <th>Standard Deviation:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.standard_deviation.values.real, null) }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.standard_deviation.values.real, {max: 3, min: 3}) }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.minimum">
                         <th>Minimum:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.minimum.values.real, null) }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.minimum.values.real, {dataType, max: 3, min: 3}) }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.maximum">
                         <th>Maximum:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.maximum.values.real, null) }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.maximum.values.real, {dataType, max: 3, min: 3}) }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.missing_values_count">
                         <th>Missing values (#):</th>
-                        <td>{{ attributeStatistics.important_metrics.missing_values_count.values.real | number: '1.0-0' }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.missing_values_count.values.real, { min: 3, max: 3 }) }}</td>
                     </tr>
                     <tr *ngIf="attributeStatistics.important_metrics.missing_values_percentage">
                         <th>Missing values (%):</th>
-                        <td>{{ attributeStatistics.important_metrics.missing_values_percentage.values.real | number: '1.0-0' }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.missing_values_percentage.values.real, {min: 3, max: 3}) }}</td>
                     </tr>
                 </table>
             </div>
@@ -82,7 +82,7 @@
 
         <div class="w-100 h-100">
             <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
-                <app-chart-select [(graph)]="graphType" [simple]="true"></app-chart-select>
+                <app-chart-select [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType" [simple]="true"></app-chart-select>
 
                 <ng-container *ngIf="graphType === 'density'">
                     <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"

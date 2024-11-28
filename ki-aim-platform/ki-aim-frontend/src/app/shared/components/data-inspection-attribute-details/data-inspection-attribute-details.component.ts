@@ -23,7 +23,7 @@ export class DataInspectionAttributeDetailsComponent {
     ) {
     }
 
-    protected getDataType(): DataType {
+    protected get dataType(): DataType {
         return this.attributeStatistics.attribute_information.type;
     }
 
@@ -32,6 +32,7 @@ export class DataInspectionAttributeDetailsComponent {
     }
 
     protected readonly formatNumber = formatNumber;
+    protected readonly DataType = DataType;
 }
 
 interface TableContext {

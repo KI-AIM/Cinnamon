@@ -40,7 +40,7 @@
                         <tr>
                             <th>Distinct Values:</th>
                             <ng-template [ngIf]="attributeStatistics.important_metrics.distinct_values" [ngIfElse]="notAvailable">
-                                <td>{{ attributeStatistics.important_metrics.distinct_values.values.real | number: '1.0-3' }}
+                                <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.distinct_values.values.real) }}
                                 </td>
                             </ng-template>
                         </tr>
@@ -54,19 +54,19 @@
                         <tr>
                             <th>Mean:</th>
                             <ng-template [ngIf]="attributeStatistics.important_metrics.mean" [ngIfElse]="notAvailable">
-                                <td>{{ attributeStatistics.important_metrics.mean.values.real | number: '1.0-3' }}</td>
+                                <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.mean.values.real) }}</td>
                             </ng-template>
                         </tr>
                         <tr>
                             <th>Variance:</th>
                             <ng-template [ngIf]="attributeStatistics.important_metrics.variance" [ngIfElse]="notAvailable">
-                                <td>{{ attributeStatistics.important_metrics.variance.values.real | number: '1.0-3' }}</td>
+                                <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.variance.values.real) }}</td>
                             </ng-template>
                         </tr>
                         <tr>
                             <th>Standard Deviation:</th>
                             <ng-template [ngIf]="attributeStatistics.important_metrics.standard_deviation" [ngIfElse]="notAvailable">
-                                <td>{{ attributeStatistics.important_metrics.standard_deviation.values.real | number: '1.0-3' }}</td>
+                                <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.standard_deviation.values.real) }}</td>
                             </ng-template>
                         </tr>
                     </table>
@@ -74,22 +74,22 @@
                     <tr>
                         <th>Minimum:</th>
                         <ng-template [ngIf]="attributeStatistics.important_metrics.minimum" [ngIfElse]="notAvailable">
-                            <td>{{ attributeStatistics.important_metrics.minimum.values.real | number: '1.0-3' }}</td>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.minimum.values.real, {dataType}) }}</td>
                         </ng-template>
                     </tr>
                     <tr>
                         <th>Maximum:</th>
                         <ng-template [ngIf]="attributeStatistics.important_metrics.maximum" [ngIfElse]="notAvailable">
-                            <td>{{ attributeStatistics.important_metrics.maximum.values.real | number: '1.0-3' }}</td>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.maximum.values.real, {dataType}) }}</td>
                         </ng-template>
                     </tr>
                     <tr>
                         <th>Missing values (#):</th>
-                        <td>{{ attributeStatistics.important_metrics.missing_values_count.values.real | number: '1.0-0' }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.missing_values_count.values.real) }}</td>
                     </tr>
                     <tr>
                         <th>Missing values (%):</th>
-                        <td>{{ attributeStatistics.important_metrics.missing_values_percentage.values.real | number: '1.0-0' }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.missing_values_percentage.values.real) }}</td>
                     </tr>
                     </table>
                 </div>
@@ -111,7 +111,7 @@
             <div class="w-100 h-100">
                 <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
                     <div style="margin-top: .5rem;">
-                        <app-chart-select [(graph)]="graphType"></app-chart-select>
+                        <app-chart-select [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType"></app-chart-select>
 
                         <ng-container *ngIf="graphType === 'density'">
                             <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"

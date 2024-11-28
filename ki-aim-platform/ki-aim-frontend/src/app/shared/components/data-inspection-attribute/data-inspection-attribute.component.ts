@@ -6,6 +6,7 @@ import {
 import {MatDialog} from "@angular/material/dialog";
 import { AttributeStatistics } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
+import { DataType } from "../../model/data-type";
 
 @Component({
     selector: 'app-data-inspection-attribute',
@@ -29,7 +30,9 @@ export class DataInspectionAttributeComponent {
         });
     }
 
-    protected changeGraph(event: Event) {
-        this.graphType = (event.target as HTMLInputElement).value;
+    protected get dataType(): DataType {
+        return this.attributeStatistics.attribute_information.type;
     }
+
+    protected readonly DataType = DataType;
 }

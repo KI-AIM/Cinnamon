@@ -59,9 +59,12 @@ export class StatisticsService {
     /**
      * Formats a number.
      * @param value The number to be formatted.
-     * @param dataType Number as string.
+     * @param options Format options
      */
-    public formatNumber(value: number | string, dataType?: DataType | null): string {
+    public formatNumber(value: number | string, options?: FormatNumberOptions): string {
+        options ??= {};
+        const {dataType = null, min = null, max = null, maximumFractionDigits} = options;
+
         if (typeof value === "string") {
             value = parseFloat(value);
         }
@@ -79,10 +82,15 @@ export class StatisticsService {
         }
 
         const abs = Math.abs(value);
-        if (abs > 1000 || abs < 0.001) {
-            return value.toExponential(3)
+        if (max && abs > Math.pow(10, max)) {
+            return value.toExponential(max)
         }
-        return value.toFixed(3);
+
+        if (min && abs < -Math.pow(10, min)) {
+            return value.toExponential(min)
+        }
+
+        return value.toLocaleString(undefined, {maximumFractionDigits});
     }
 
     private fetchStatistics(): Observable<Statistics> {
@@ -93,4 +101,11 @@ export class StatisticsService {
                 }),
             );
     }
+}
+
+export interface FormatNumberOptions {
+    dataType?: DataType | null;
+    min?: number | null;
+    max?: number | null;
+    maximumFractionDigits?: number;
 }

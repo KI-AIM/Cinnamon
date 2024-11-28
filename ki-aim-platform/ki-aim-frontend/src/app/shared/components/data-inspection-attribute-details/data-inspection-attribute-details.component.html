@@ -120,6 +120,8 @@
                         <ng-container *ngIf="graphType === 'histogram'">
                             <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null"></app-chart-frequency>
                         </ng-container>
+
+                        <app-chart-calendar></app-chart-calendar>
                     </div>
 
                 </ng-container>

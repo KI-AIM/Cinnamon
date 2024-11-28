@@ -38,6 +38,7 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
 import { ChartFrequencyComponent } from './components/chart-frequency/chart-frequency.component';
 import { ChartComponent } from './components/chart/chart.component';
 import { ChartSelectComponent } from './components/chart-select/chart-select.component';
+import { ChartCalendarComponent } from './components/chart-calendar/chart-calendar.component';
 
 @NgModule({
     declarations: [
@@ -67,6 +68,7 @@ import { ChartSelectComponent } from './components/chart-select/chart-select.com
         ChartFrequencyComponent,
         ChartComponent,
         ChartSelectComponent,
+        ChartCalendarComponent,
     ],
     imports: [
         CommonModule,

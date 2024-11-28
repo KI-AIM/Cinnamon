@@ -10,7 +10,9 @@ import { StatisticsService } from "../../services/statistics.service";
 })
 export class ChartComponent implements OnInit {
     protected options: EChartsOption;
-    private chartInstances: ECharts;
+    protected chartInstances: ECharts;
+    protected zoomInstance: ECharts | null = null;
+    protected zoom: EChartsOption | null = null;
 
     constructor(
         protected statisticsService: StatisticsService,
@@ -23,6 +25,18 @@ export class ChartComponent implements OnInit {
 
     protected onChartInit(event: ECharts) {
         this.chartInstances = event;
+        this.afterChartInit();
+    }
+
+    protected afterChartInit(): void {
+    }
+
+    protected onZoomInit(event: ECharts) {
+        this.zoomInstance = event;
+        this.afterZoomInit();
+    }
+
+    protected afterZoomInit(): void {
     }
 
     protected createChartOptions(): EChartsOption {

@@ -1,1 +1,4 @@
 <div style="height: 300px;" echarts [options]="options" (chartInit)="onChartInit($event)"></div>
+<ng-container *ngIf="zoom">
+    <div style="height: 50px;" echarts [options]="zoom" (chartInit)="onZoomInit($event)"></div>
+</ng-container>

@@ -91,6 +91,9 @@
                 <ng-container *ngIf="graphType === 'histogram'">
                     <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null" [simple]="true"></app-chart-frequency>
                 </ng-container>
+                <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
+                    <app-chart-calendar [data]="attributeStatistics.plot.density" [simple]="true"></app-chart-calendar>
+                </ng-container>
             </ng-container>
             <ng-template #frequency>
                 <ng-container *ngIf="attributeStatistics.plot.frequency_count; else noChart">

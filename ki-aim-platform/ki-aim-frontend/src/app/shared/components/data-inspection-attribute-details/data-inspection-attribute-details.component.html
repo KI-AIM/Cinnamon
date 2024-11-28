@@ -121,7 +121,9 @@
                             <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null"></app-chart-frequency>
                         </ng-container>
 
-                        <app-chart-calendar></app-chart-calendar>
+                        <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
+                            <app-chart-calendar [data]="attributeStatistics.plot.density"></app-chart-calendar>
+                        </ng-container>
                     </div>
 
                 </ng-container>

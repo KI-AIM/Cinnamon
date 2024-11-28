@@ -14,9 +14,11 @@ import de.kiaim.model.serialization.mapper.YamlMapper;
 import de.kiaim.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.config.StepConfiguration;
+import de.kiaim.platform.config.StepInputConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.*;
+import de.kiaim.platform.model.enumeration.DataSetSelector;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
@@ -33,6 +35,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -93,7 +96,7 @@ public class ProcessService {
 	 * If a process is running, the status of that process will be fetched from the external server.
 	 *
 	 * @param project The project.
-	 * @param step The step.
+	 * @param step    The step.
 	 * @return The updated execution.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 * @throws InternalRequestException                  If the request to the external server failed.
@@ -112,6 +115,7 @@ public class ProcessService {
 
 	/**
 	 * Saves the configuration and the URL of the selected algorithm for the process of the given step.
+	 *
 	 * @param project       The project.
 	 * @param execStep      The step.
 	 * @param stepName      The name of the corresponding step.
@@ -119,13 +123,12 @@ public class ProcessService {
 	 * @param configuration The configuration for the algorithm.
 	 * @throws BadStepNameException                      If the step name is not valid.
 	 * @throws BadStateException                         If the corresponding process is already running or scheduled.
-	 * @throws InternalApplicationConfigurationException If the step has not been configured correctly.
 	 * @throws InternalInvalidStateException             If the process entity is missing.
 	 */
 	@Transactional
-	public void configureProcess(final ProjectEntity project, final Step execStep, final String stepName, final String url,
-	                             final String configuration)
-			throws BadStepNameException, BadStateException, InternalInvalidStateException, InternalApplicationConfigurationException {
+	public void configureProcess(final ProjectEntity project, final Step execStep, final String stepName,
+	                             final String url, final String configuration)
+			throws BadStepNameException, BadStateException, InternalInvalidStateException {
 		final Step step = Step.getStepOrThrow(stepName);
 
 		final var executionStep = project.getPipelines().get(0).getStageByStep(execStep);
@@ -156,7 +159,7 @@ public class ProcessService {
 	 * Starts the execution of the given step in the given project.
 	 *
 	 * @param project The project the process corresponds to.
-	 * @param step The step the process corresponds to.
+	 * @param step    The step the process corresponds to.
 	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
 	 * @throws BadStateException                         If no original data set exist.
 	 * @throws InternalApplicationConfigurationException If the given step is not configured.
@@ -164,11 +167,12 @@ public class ProcessService {
 	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
 	 *                                                   If a finished process does not contain data set.
 	 * @throws InternalIOException                       If the request body could not be created.
+	 * @throws InternalMissingHandlingException          If no implementation exists for a valid configuration.
 	 * @throws InternalRequestException                  If the request to start the process failed.
 	 */
 	@Transactional
 	public ExecutionStepEntity start(final ProjectEntity project, final Step step)
-			throws BadDataSetIdException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalRequestException, BadStateException {
+			throws BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(step);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
@@ -187,8 +191,9 @@ public class ProcessService {
 
 	/**
 	 * Cancels the execution of the given step in the given project.
+	 *
 	 * @param project The project.
-	 * @param step The step.
+	 * @param step    The step.
 	 * @return The updated execution entity.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 */
@@ -218,7 +223,7 @@ public class ProcessService {
 	 * and starts the next process of the execution step as well as the next scheduled process of the same step.
 	 * If an error is present, aborts the current execution step and stets the status to 'error'.
 	 *
-	 * @param processId The ID of the process to finish.
+	 * @param processId   The ID of the process to finish.
 	 * @param resultFiles All files send in the callback request.
 	 * @throws BadDataSetIdException                     If the data set could not be exported.
 	 * @throws BadProcessIdException                     If the given process ID is not valid.
@@ -285,7 +290,7 @@ public class ProcessService {
 				} else if (entry.getKey().equals("exception_message")) {
 					containsError = true;
 					errorMessage = new String(value.getBytes());
-				} else if(!entry.getKey().equals("error_message")) {
+				} else if (!entry.getKey().equals("error_message")) {
 					files.put(value.getOriginalFilename(), value.getBytes());
 				}
 
@@ -329,7 +334,7 @@ public class ProcessService {
 	 *
 	 * @param externalProcess The process which status should be updated.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalRequestException If the request for the status fails.
+	 * @throws InternalRequestException                  If the request for the status fails.
 	 */
 	private void updateProcessStatus(final ExternalProcessEntity externalProcess)
 			throws InternalApplicationConfigurationException, InternalRequestException {
@@ -349,11 +354,12 @@ public class ProcessService {
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
 	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
 	 *                                                   If a finished process does not contain data set.
-	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 * @throws InternalIOException                       If the request could not be created.
+	 * @throws InternalMissingHandlingException          If no implementation exists for a valid configuration.
+	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 */
 	private void startOrScheduleProcess(final ExternalProcessEntity externalProcess)
-			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException, BadStateException {
+			throws BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		// Get configuration
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
 
@@ -427,17 +433,18 @@ public class ProcessService {
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
 	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
 	 *                                                   If a finished process does not contain data set.
-	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 * @throws InternalIOException                       If the request could not be created.
+	 * @throws InternalMissingHandlingException          If no implementation exists for a valid configuration.
+	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 */
 	private void startNext(final ExecutionStepEntity executionStep)
-			throws BadDataSetIdException, InternalInvalidStateException, InternalDataSetPersistenceException, InternalRequestException, InternalApplicationConfigurationException, InternalIOException, BadStateException {
+			throws BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		// Get the next step
 		Integer nextJob = null;
 		ExternalProcessEntity nextProcess = null;
 
 		Integer lastJob = executionStep.getCurrentProcessIndex();
-		Integer jobCandidate;
+		int jobCandidate;
 		ExternalProcessEntity processCandidate;
 		boolean foundNext = false;
 
@@ -493,7 +500,7 @@ public class ProcessService {
 	 *
 	 * @param externalProcess The process.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalRequestException If the request failed.
+	 * @throws InternalRequestException                  If the request failed.
 	 */
 	private void fetchStatus(final ExternalProcessEntity externalProcess)
 			throws InternalApplicationConfigurationException, InternalRequestException {
@@ -506,7 +513,8 @@ public class ProcessService {
 			return;
 		}
 
-		final String url = serverUrl + statusEndpoint.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getId().toString());
+		final String url =
+				serverUrl + statusEndpoint.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getId().toString());
 
 		// Do the request
 		try {
@@ -515,7 +523,8 @@ public class ProcessService {
 			                              .uri(url)
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
-			                                        errorResponse -> errorResponse.toEntity(ExternalProcessResponse.class)
+			                                        errorResponse -> errorResponse.toEntity(
+					                                                                      ExternalProcessResponse.class)
 			                                                                      .map(RequestRuntimeException::new))
 			                              .bodyToMono(String.class)
 			                              .block();
@@ -583,10 +592,11 @@ public class ProcessService {
 	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
 	 *                                                   If a finished process does not contain data set.
 	 * @throws InternalIOException                       If the request body could not be created.
+	 * @throws InternalMissingHandlingException          If no implementation exists for a valid configuration.
 	 * @throws InternalRequestException                  If the request to start the process failed.
 	 */
 	private void doStartProcess(final ExternalProcessEntity externalProcess)
-			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException, BadStateException {
+			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, BadDataSetIdException, InternalInvalidStateException, BadStateException, InternalMissingHandlingException {
 		final Step step = externalProcess.getStep();
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(step);
 		final String configuration = externalProcess.getConfiguration();
@@ -602,61 +612,40 @@ public class ProcessService {
 	/**
 	 * Starts the given process with the given data.
 	 *
-	 * @param externalProcess The process to be started.
-	 * @throws BadDataSetIdException               If no DataConfiguration is associated with the given project.
+	 * @param stepConfiguration The configuration of the step.
+	 * @param externalProcess   The process to be started.
+	 * @param configuration     The configuration string for the process.
+	 * @param url               The request URL for starting the process
 	 * @throws BadStateException                   If no original data set exist.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 * @throws InternalInvalidStateException       If a finished process does not contain data set.
 	 * @throws InternalIOException                 If the request body could not be created.
+	 * @throws InternalMissingHandlingException    If no implementation exists for a valid configuration.
 	 * @throws InternalRequestException            If the request to start the process failed.
 	 */
 	private void doStartProcess(final StepConfiguration stepConfiguration,
 	                            final ExternalProcessEntity externalProcess, final String configuration,
 	                            final String url)
-			throws InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException, InternalRequestException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException {
+			throws InternalDataSetPersistenceException, InternalIOException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		// Prepare body
 		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
 
-		addDataSets(externalProcess, stepConfiguration,bodyBuilder);
+		// Add configured input data sets
+		addDataSets(externalProcess, stepConfiguration, bodyBuilder);
 
-		final var configName = externalProcess.getStep() == Step.TECHNICAL_EVALUATION ? "evaluation_config" : "algorithm_config";
-		if (externalProcess.getStep() == Step.ANONYMIZATION) {
-			DataSet dataSet = getLastOrOriginalDataSet(externalProcess.getExecutionStep());
-			try {
-				String dataSetString = JsonMapper.jsonMapper().writeValueAsString(dataSet);
-				bodyBuilder.part("data", dataSetString, MediaType.APPLICATION_JSON);
-			} catch(Exception e) {
-				log.error("Could not convert dataset to json: " + e.getMessage());
-			}
-
-			//Convert yaml config to json for anonymization controller
-			try {
-				String jsonConfig = YamlMapper.toJson(configuration);
-				bodyBuilder.part("anonymizationConfig", jsonConfig, MediaType.APPLICATION_JSON);
-			} catch (JsonProcessingException e) {
-				log.error("Could not convert configuration from yaml to json: " + e.getMessage());
-            }
-
-		}
-		else {
-			bodyBuilder.part(configName, new ByteArrayResource(configuration.getBytes()) {
-				@Override
-				public String getFilename() {
-					return "synthesizer_config.yaml";
-				}
-			});
-		}
+		// Add config
+		addConfig(configuration, stepConfiguration, bodyBuilder);
 
 		bodyBuilder.part("session_key", externalProcess.getId().toString());
 		final String callbackHost = stepConfiguration.getCallbackHost();
 		final var serverAddress = ServletUriComponentsBuilder.fromCurrentContextPath()
-			.host(callbackHost)
-			.port(this.port)
-			.build()
-			.toUriString();
+		                                                     .host(callbackHost)
+		                                                     .port(this.port)
+		                                                     .build()
+		                                                     .toUriString();
 
 		bodyBuilder.part("callback",
-			serverAddress + "/api/process/" + externalProcess.getId().toString() + "/callback");
+		                 serverAddress + "/api/process/" + externalProcess.getId().toString() + "/callback");
 
 		// Do the request
 		try {
@@ -667,7 +656,8 @@ public class ProcessService {
 			                              .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
-			                                        errorResponse -> errorResponse.toEntity(ExternalProcessResponse.class)
+			                                        errorResponse -> errorResponse.toEntity(
+					                                                                      ExternalProcessResponse.class)
 			                                                                      .map(RequestRuntimeException::new))
 			                              .bodyToMono(ExternalProcessResponse.class)
 			                              .block();
@@ -676,7 +666,8 @@ public class ProcessService {
 		} catch (RequestRuntimeException e) {
 			var message = "Failed to start the process! Got status of " + e.getResponse().getStatusCode();
 			if (e.getResponse().getBody() != null) {
-				message += " with message: '" + e.getResponse().getBody().getMessage() + "' and error: '" + e.getResponse().getBody().getError()  + "'";
+				message += " with message: '" + e.getResponse().getBody().getMessage() + "' and error: '" +
+				           e.getResponse().getBody().getError() + "'";
 			}
 			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
@@ -687,7 +678,8 @@ public class ProcessService {
 		}
 	}
 
-	private void preprocessDataConfiguration(final StepConfiguration stepConfiguration, final DataConfiguration dataConfiguration) {
+	private void preprocessDataConfiguration(final StepConfiguration stepConfiguration,
+	                                         final DataConfiguration dataConfiguration) {
 		if (stepConfiguration.getPreProcessors().contains("dateformat")) {
 			for (final var columnConfiguration : dataConfiguration.getConfigurations()) {
 				if (columnConfiguration.getType() == DataType.DATE_TIME) {
@@ -724,43 +716,109 @@ public class ProcessService {
 		}
 	}
 
-	private void addDataSets(final ExternalProcessEntity externalProcess, final StepConfiguration stepConfiguration,
-	                         final MultipartBodyBuilder bodyBuilder)
-			throws InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalIOException, BadDataSetIdException, BadStateException, InternalInvalidStateException {
-		final ProjectEntity project = externalProcess.getExecutionStep().getPipeline().getProject();
-
-		for (final String inputDataSet : stepConfiguration.getInputs()) {
-			switch (inputDataSet) {
-				case "original": {
-					final var dataset = databaseService.exportDataSet(project, Step.VALIDATION);
-					addDataSet(bodyBuilder, stepConfiguration, dataset, "real_data", "real_data.csv", "attribute_config");
-					break;
+	private void addConfig(final String configuration, final StepConfiguration stepConfiguration,
+	                       final MultipartBodyBuilder bodyBuilder)
+			throws InternalIOException, InternalMissingHandlingException {
+		switch (stepConfiguration.getConfigurationEncoding()) {
+			case FILE -> {
+				bodyBuilder.part(stepConfiguration.getConfigurationPartName(), new ByteArrayResource(configuration.getBytes()) {
+					@Override
+					public String getFilename() {
+						return "synthesizer_config.yaml";
+					}
+				});
+			}
+			case JSON -> {
+				//Convert yaml config to json for anonymization controller
+				try {
+					final String jsonConfig = YamlMapper.toJson(configuration);
+					bodyBuilder.part(stepConfiguration.getConfigurationPartName(), jsonConfig, MediaType.APPLICATION_JSON);
+				} catch (JsonProcessingException e) {
+					throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
+					                              "Could not convert configuration from yaml to json!", e);
 				}
-				case "last": {
-					final var dataset = getLastOrOriginalDataSet(externalProcess.getExecutionStep());
-					addDataSet(bodyBuilder, stepConfiguration, dataset, "data", "real_data.csv", "attribute_config");
-					break;
-				}
-				case "synth": {
-					final var synthExecution = project.getPipelines().get(0).getStageByStep(Step.EXECUTION);
-					final var dataset = getLastOrOriginalDataSet(synthExecution);
-					addDataSet(bodyBuilder, stepConfiguration, dataset, "synthetic_data", "synthetic_data.csv", "attribute_config_synthetic");
-					break;
-				}
-				default: {
-					throw new InternalApplicationConfigurationException(
-							InternalApplicationConfigurationException.INVALID_INPUT_DATA_SET,
-							"Input '" + inputDataSet + "' is not a valid input dateset!");
-				}
+			}
+			default -> {
+				throw new InternalMissingHandlingException(
+						InternalMissingHandlingException.STEP_INPUT_ENCODING,
+						"No handling for adding data set of type '" + stepConfiguration.getConfigurationEncoding() +
+						"'!");
 			}
 		}
 	}
 
+	private void addDataSets(final ExternalProcessEntity externalProcess, final StepConfiguration stepConfiguration,
+	                         final MultipartBodyBuilder bodyBuilder)
+			throws InternalDataSetPersistenceException, InternalIOException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
+		for (final StepInputConfiguration inputDataSet : stepConfiguration.getInputs()) {
+			final var datasetEntity = getDataSet(inputDataSet.getSelector(), externalProcess);
+			final var dataset = databaseService.exportDataSet(datasetEntity);
+			addDataSet(bodyBuilder, stepConfiguration, inputDataSet, dataset);
+		}
+	}
+
+	private DataSetEntity getDataSet(final ExternalProcessEntity externalProcess)
+			throws InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
+		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
+		// TODO Hard coded first data set
+		return getDataSet(stepConfiguration.getInputs().get(0).getSelector(), externalProcess);
+	}
+
+	private DataSetEntity getDataSet(final DataSetSelector dataSetSelector, final ExternalProcessEntity externalProcess)
+			throws BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
+		final DataSetEntity result;
+
+		switch (dataSetSelector) {
+			case LAST_OR_ORIGINAL -> {
+				result = getLastOrOriginalDataSet(externalProcess);
+			}
+			case ORIGINAL -> {
+				result = externalProcess.getProject().getOriginalData().getDataSet();
+			}
+			default -> {
+				throw new InternalMissingHandlingException(
+						InternalMissingHandlingException.DATA_SET_SELECTOR,
+						"No handling for selecting data set '" + dataSetSelector + "'!");
+			}
+		}
+
+		return result;
+	}
+
 	private void addDataSet(final MultipartBodyBuilder bodyBuilder, final StepConfiguration stepConfiguration,
-	                        final DataSet dataSet, final String partName, final String fileName,
-	                        final String dataConfigurationName)
-			throws InternalIOException {
+	                        final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
+			throws InternalIOException, InternalMissingHandlingException {
 		preprocessDataConfiguration(stepConfiguration, dataSet.getDataConfiguration());
+		switch (stepInputConfiguration.getEncoding()) {
+			case FILE -> {
+				addDataSetFile(bodyBuilder, stepInputConfiguration, dataSet);
+			}
+			case JSON -> {
+				addDataSetJson(bodyBuilder, stepInputConfiguration, dataSet);
+			}
+			default -> {
+				throw new InternalMissingHandlingException(
+						InternalMissingHandlingException.STEP_INPUT_ENCODING,
+						"No handling for adding data set of type '" + stepInputConfiguration.getEncoding() + "'!");
+			}
+		}
+	}
+
+	private void addDataSetJson(final MultipartBodyBuilder bodyBuilder,
+	                            final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
+			throws InternalIOException {
+		try {
+			final String dataSetString = JsonMapper.jsonMapper().writeValueAsString(dataSet);
+			bodyBuilder.part(stepInputConfiguration.getPartName(), dataSetString, MediaType.APPLICATION_JSON);
+		} catch (final JsonProcessingException e) {
+			throw new InternalIOException(InternalIOException.DATA_SET_SERIALIZATION,
+			                              "Could not convert dataset to json!", e);
+		}
+	}
+
+	private void addDataSetFile(final MultipartBodyBuilder bodyBuilder,
+	                            final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
+			throws InternalIOException {
 
 		final var outputStream = new ByteArrayOutputStream();
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
@@ -777,19 +835,19 @@ public class ProcessService {
 			throw new InternalIOException(InternalIOException.CSV_CREATION, "Failed to create the CVS file!", e);
 		}
 
-		bodyBuilder.part(partName, new ByteArrayResource(outputStream.toByteArray()) {
+		bodyBuilder.part(stepInputConfiguration.getPartName(), new ByteArrayResource(outputStream.toByteArray()) {
 			@Override
 			public String getFilename() {
-				return fileName;
+				return stepInputConfiguration.getFileName();
 			}
 		});
 
 		try {
-			bodyBuilder.part(dataConfigurationName, new ByteArrayResource(
+			bodyBuilder.part(stepInputConfiguration.getDataConfigurationName(), new ByteArrayResource(
 					yamlMapper.writeValueAsString(dataSet.getDataConfiguration()).getBytes()) {
 				@Override
 				public String getFilename() {
-					return dataConfigurationName + ".yaml";
+					return stepInputConfiguration.getDataConfigurationName() + ".yaml";
 				}
 			});
 		} catch (JsonProcessingException e) {
@@ -802,15 +860,43 @@ public class ProcessService {
 	 * Returns the data set of the last finished step of the given execution.
 	 * If no step is finished, returns the original data set.
 	 *
-	 * @param executionStep The execution.
+	 * @param externalProcess The external process.
 	 * @return The data set.
-	 * @throws BadStateException                   If no original data set exist.
-	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
-	 * @throws InternalInvalidStateException       If a finished process does not contain data set.
-	 * @throws InternalIOException                 If the data configuration could not be loaded.
+	 * @throws BadStateException             If no original data set exist.
+	 * @throws InternalInvalidStateException If a finished process does not contain data set.
 	 */
-	private DataSet getLastOrOriginalDataSet(final ExecutionStepEntity executionStep)
-			throws InternalDataSetPersistenceException, InternalIOException, BadStateException, InternalInvalidStateException {
+	private DataSetEntity getLastOrOriginalDataSet(final ExternalProcessEntity externalProcess)
+			throws BadStateException, InternalInvalidStateException {
+		final ExecutionStepEntity executionStep = externalProcess.getExecutionStep();
+		final var index = executionStep.getStageIndex();
+		final var pipeline = executionStep.getPipeline();
+
+		DataSetEntity result = null;
+
+		for (int i = index; i >= 0; i--) {
+			result = getLastDataSet(pipeline.getStages().get(i));
+			if (result != null) {
+				break;
+			}
+
+		}
+
+		if (result == null) {
+			result = pipeline.getProject().getOriginalData().getDataSet();
+		}
+
+		if (result == null) {
+			throw new BadStateException(BadStateException.NO_DATA_SET,
+			                            "The project '" + executionStep.getProject().getId() +
+			                            "' does not contain an original data set!");
+		}
+
+		return result;
+	}
+
+	@Nullable
+	private DataSetEntity getLastDataSet(final ExecutionStepEntity executionStep) throws InternalInvalidStateException {
+
 		var indexOfSourceStep = executionStep.getCurrentProcessIndex() != null
 		                        ? executionStep.getCurrentProcessIndex()
 		                        : executionStep.getProcesses().size() - 1;
@@ -818,15 +904,8 @@ public class ProcessService {
 		DataSetEntity lastOrOriginalDataSet = null;
 		while (lastOrOriginalDataSet == null) {
 
-			if (indexOfSourceStep <= 0) {
-				lastOrOriginalDataSet = executionStep.getProject().getOriginalData().getDataSet();
-
-				if (lastOrOriginalDataSet == null) {
-					throw new BadStateException(BadStateException.NO_DATA_SET,
-					                            "The project '" + executionStep.getProject().getId() +
-					                            "' does not contain an original data set!");
-				}
-
+			if (indexOfSourceStep < 0) {
+				break;
 			} else {
 				var candidate = executionStep.getProcess(indexOfSourceStep);
 				if (candidate.getExternalProcessStatus() == ProcessStatus.FINISHED &&
@@ -845,7 +924,7 @@ public class ProcessService {
 			}
 		}
 
-		return databaseService.exportDataSet(lastOrOriginalDataSet);
+		return lastOrOriginalDataSet;
 	}
 
 	private void setProcessError(final ExternalProcessEntity process, final String message) {

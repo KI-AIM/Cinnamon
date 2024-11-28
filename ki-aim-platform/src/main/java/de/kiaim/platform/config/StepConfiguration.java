@@ -1,6 +1,7 @@
 package de.kiaim.platform.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.kiaim.platform.model.enumeration.StepInputEncoding;
 import de.kiaim.platform.model.enumeration.StepType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -44,11 +45,22 @@ public class StepConfiguration {
 	private String configurationName;
 
 	/**
-	 * Input data sets.
-	 * Allowed values are: last, original, synth
+	 * Name of the configuration part in the request.
+	 */
+	@NotBlank
+	private String configurationPartName;
+
+	/**
+	 * Encoding of the configuration.
 	 */
 	@JsonIgnore
-	private List<String> inputs;
+	private StepInputEncoding configurationEncoding;
+
+	/**
+	 * Input data sets.
+	 */
+	@JsonIgnore
+	private List<StepInputConfiguration> inputs;
 
 	/**
 	 * Maximum number of processes that are allowed to run in parallel.

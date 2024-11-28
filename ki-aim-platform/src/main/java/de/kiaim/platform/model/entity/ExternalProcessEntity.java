@@ -126,4 +126,13 @@ public abstract class ExternalProcessEntity {
 	public boolean shouldBeSkipped() {
 		return Objects.equals(processUrl, "skip");
 	}
+
+	/**
+	 * Returns the corresponding project.
+	 * @return The corresponding project.
+	 */
+	@JsonIgnore
+	public ProjectEntity getProject() {
+		return executionStep.getProject();
+	}
 }

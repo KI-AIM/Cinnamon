@@ -15,6 +15,16 @@ public class InternalMissingHandlingException extends InternalException {
 	 */
 	public static final String FILE_TYPE = "2";
 
+	/**
+	 * Exception code for missing data set selector handling.
+	 */
+	public static final String DATA_SET_SELECTOR = "3";
+
+	/**
+	 * Exception code for missing step input encoding.
+	 */
+	public static final String STEP_INPUT_ENCODING = "4";
+
 	public InternalMissingHandlingException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

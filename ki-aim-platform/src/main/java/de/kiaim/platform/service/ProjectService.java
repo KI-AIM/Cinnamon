@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -197,7 +198,8 @@ public class ProjectService {
 						if (externalProcess instanceof DataProcessingEntity dataProcessing ) {
 							if (dataProcessing.getDataSet() != null && dataProcessing.getDataSet().isStoredData()) {
 								addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet()),
-								            externalProcess.getStep().name() + "-result");
+								            dataProcessing.getDataSet().getProcessed().stream().map(Step::name)
+								                          .collect(Collectors.joining("-")));
 							}
 						}
 

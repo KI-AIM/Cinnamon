@@ -4,6 +4,7 @@ import de.kiaim.platform.model.enumeration.Step;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -23,5 +24,6 @@ public class KiAimConfiguration {
 
 	private Map<Step, StageConfiguration> stages = new HashMap<>();
 
+	@NestedConfigurationProperty
 	private PipelineConfiguration pipeline = new PipelineConfiguration();
 }

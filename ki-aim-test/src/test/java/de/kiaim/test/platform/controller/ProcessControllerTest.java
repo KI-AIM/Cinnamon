@@ -240,6 +240,7 @@ public class ProcessControllerTest extends ControllerTest {
 		             "External process status has not been updated!");
 		assertTrue(existsDataSet(dataSetEntity.getId()), "Dataset has not been stored!");
 		assertTrue(dataSetEntity.isStoredData(), "Dataset has not been stored!");
+		assertEquals(List.of(Step.ANONYMIZATION), dataSetEntity.getProcessed(), "Unexpected previous processes!");
 		assertTrue(process.getAdditionalResultFiles().containsKey("additional.txt"),
 		           "Additional result has not been set!");
 		assertEquals("info",
@@ -285,6 +286,9 @@ public class ProcessControllerTest extends ControllerTest {
 				                .file(resultData)
 				                .file(resultAdditional))
 		       .andExpect(status().isOk());
+
+		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(updateTestProject, Step.SYNTHETIZATION);
+		assertEquals(List.of(Step.ANONYMIZATION, Step.SYNTHETIZATION), dataSetEntity.getProcessed(), "Unexpected previous processes!");
 	}
 
 	private void getStatus3() throws Exception {

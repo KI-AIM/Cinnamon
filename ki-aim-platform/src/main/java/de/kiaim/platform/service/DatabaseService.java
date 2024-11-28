@@ -220,6 +220,7 @@ public class DatabaseService {
 	 *
 	 * @param transformationResult TransformationResult to store.
 	 * @param dataProcessingEntity The job that created the data set.
+	 * @param processed            The steps that created the data set.
 	 * @throws BadDataConfigurationException       If the data configuration is not valid.
 	 * @throws BadDataSetIdException               If the data has already been confirmed.
 	 * @throws BadStateException                   If the file for the dataset has not been selected.
@@ -227,7 +228,8 @@ public class DatabaseService {
 	 */
 	@Transactional
 	public void storeTransformationResult(final TransformationResult transformationResult,
-	                                      final DataProcessingEntity dataProcessingEntity)
+	                                      final DataProcessingEntity dataProcessingEntity,
+	                                      final List<Step> processed)
 			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(dataProcessingEntity.getDataSet());
@@ -236,7 +238,7 @@ public class DatabaseService {
 		final ProjectEntity project = dataProcessingEntity.getExecutionStep().getPipeline().getProject();
 		final DataSet dataSet = transformationResult.getDataSet();
 		final DataSetEntity dataSetEntity = doStoreDataConfiguration(project, dataSet.getDataConfiguration(),
-		                                                             dataProcessingEntity);
+		                                                             dataProcessingEntity, processed);
 
 		// Store transformation errors
 		convertTransformationErrors(transformationResult, dataSetEntity);
@@ -771,7 +773,8 @@ public class DatabaseService {
 
 	private DataSetEntity doStoreDataConfiguration(final ProjectEntity project,
 	                                               final DataConfiguration dataConfiguration,
-	                                               final DataProcessingEntity dataProcessingEntity
+	                                               final DataProcessingEntity dataProcessingEntity,
+	                                               final List<Step> processed
 	) throws BadDataConfigurationException, BadStateException {
 		checkFile(project, dataConfiguration);
 
@@ -784,6 +787,7 @@ public class DatabaseService {
 		}
 
 		dataSetEntity.setDataConfiguration(dataConfiguration);
+		dataSetEntity.setProcessed(processed);
 
 		projectRepository.save(project);
 

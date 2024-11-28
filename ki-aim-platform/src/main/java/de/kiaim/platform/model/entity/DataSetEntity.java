@@ -2,6 +2,8 @@ package de.kiaim.platform.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.model.configuration.data.DataConfiguration;
+import de.kiaim.platform.converter.StepListAttributeConverter;
+import de.kiaim.platform.model.enumeration.Step;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -10,7 +12,9 @@ import lombok.Setter;
 import org.hibernate.annotations.Type;
 import org.springframework.lang.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -58,6 +62,13 @@ public class DataSetEntity {
 	 */
 	@OneToMany(mappedBy = "dataSet", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	private final Set<DataTransformationErrorEntity> dataTransformationErrors = new HashSet<>();
+
+	/**
+	 * List of steps that have modified this data set.
+	 */
+	@Convert(converter = StepListAttributeConverter.class)
+	@Setter
+	private List<Step> processed = new ArrayList<>();
 
 	/**
 	 * The corresponding original data.

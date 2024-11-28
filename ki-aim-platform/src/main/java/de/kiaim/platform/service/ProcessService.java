@@ -262,6 +262,10 @@ public class ProcessService {
 		boolean containsError = false;
 		String errorMessage = null;
 
+		var input = getDataSet(process);
+		List<Step> processed = new ArrayList<>(input.getProcessed());
+		processed.add(process.getStep());
+
 		for (final var entry : resultFiles) {
 			try {
 				final var value = entry.getValue();
@@ -275,7 +279,7 @@ public class ProcessService {
 					                                                                    fileConfigurationEntity,
 					                                                                    resultDataConfiguration);
 					try {
-						databaseService.storeTransformationResult(transformationResult, dataProcessing);
+						databaseService.storeTransformationResult(transformationResult, dataProcessing, processed);
 					} catch (final BadDataConfigurationException e) {
 						throw new InternalInvalidResultException(InternalInvalidResultException.INVALID_ESTIMATION,
 						                                         "Estimation created an invalid configuration!", e);
@@ -286,7 +290,7 @@ public class ProcessService {
 					DataSet dataSet = jsonMapper.readValue(jsonString, DataSet.class);
 
 					TransformationResult transformationResult = new TransformationResult(dataSet, new ArrayList<>());
-					databaseService.storeTransformationResult(transformationResult, dataProcessing);
+					databaseService.storeTransformationResult(transformationResult, dataProcessing, processed);
 				} else if (entry.getKey().equals("exception_message")) {
 					containsError = true;
 					errorMessage = new String(value.getBytes());

@@ -87,8 +87,8 @@ export class PlotData {
     @Type(() => StatisticsData<HistogramPlotData>)
     histogram?: StatisticsData<HistogramPlotData>;
 
-    @Type(() => StatisticsDataFrequencyPlotData)
-    frequency_count?: StatisticsDataFrequencyPlotData;
+    @Type(() => StatisticsData<HistogramPlotData>)
+    frequency_count?: StatisticsData<HistogramPlotData>;
 }
 
 
@@ -143,34 +143,12 @@ export class DensityPlotData {
     color_index: number;
 }
 
-export class StatisticsDataFrequencyPlotData {
-    @Type(() => FrequencyPlotData)
-    real: FrequencyPlotData;
-
-    @Type(() => FrequencyPlotData)
-    synthetic: FrequencyPlotData;
-}
-
-export class FrequencyPlotData {
-    @Type(() => FrequenciesData)
-    frequencies: FrequenciesData[];
-
-    x_axis: string;
-    y_axis: string;
-}
-
 export class HistogramPlotData {
     @Type(() => HistogramData)
     frequencies: HistogramData[];
 
     x_axis: string;
     y_axis: string;
-}
-
-export class FrequenciesData {
-    value: number;
-    color_index: number;
-    category: string;
 }
 
 export class HistogramData {

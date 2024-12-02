@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {EChartsOption} from "echarts";
-import {FrequencyPlotData, HistogramPlotData, StatisticsData} from "../../model/statistics";
+import {HistogramPlotData, StatisticsData} from "../../model/statistics";
 import {ChartComponent, Entries} from "../chart/chart.component";
 
 @Component({
@@ -9,7 +9,7 @@ import {ChartComponent, Entries} from "../chart/chart.component";
     styleUrls: ['../chart/chart.component.less'],
 })
 export class ChartFrequencyComponent extends ChartComponent {
-    @Input() public data!: StatisticsData<FrequencyPlotData | HistogramPlotData>;
+    @Input() public data!: StatisticsData<HistogramPlotData>;
     @Input() public simple: boolean = false;
     @Input() public limit: number | null = 10;
     @Input() syntheticSeriesLabel: string = "Synthetisch";
@@ -25,13 +25,9 @@ export class ChartFrequencyComponent extends ChartComponent {
         let keys: string[] | null = null;
 
         const series = [];
-        for (const [key, value] of Object.entries(this.data) as Entries<StatisticsData<FrequencyPlotData | HistogramPlotData>>) {
+        for (const [key, value] of Object.entries(this.data) as Entries<StatisticsData<HistogramPlotData>>) {
             if (keys === null) {
-                if (value instanceof FrequencyPlotData) {
-                    keys = value.frequencies.map(val => val.category);
-                } else {
-                    keys = value.frequencies.map(val => val.label);
-                }
+                keys = value.frequencies.map(val => val.label);
             }
 
             const allValues: number[] = value.frequencies.map(val => val.value);

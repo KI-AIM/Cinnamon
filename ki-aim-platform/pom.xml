@@ -172,6 +172,7 @@
 					<!-- TODO Remove when we fetch this -->
 					<include>**/organized_resemblance_metrics.yaml</include>
 					<include>**/organized_resemblance_metrics_2.yaml</include>
+					<include>**/organized_resemblance_metrics_3.yaml</include>
 				</includes>
 			</resource>
 		</resources>

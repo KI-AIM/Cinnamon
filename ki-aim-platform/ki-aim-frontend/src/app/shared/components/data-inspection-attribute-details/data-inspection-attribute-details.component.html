@@ -129,7 +129,7 @@
                 </ng-container>
                 <ng-template #frequency>
                     <ng-container *ngIf="attributeStatistics.plot.frequency_count; else noChart">
-                        <app-chart-frequency [data]="attributeStatistics.plot.frequency_count"></app-chart-frequency>
+                        <app-chart-frequency [data]="attributeStatistics.plot.frequency_count" [limit]="null"></app-chart-frequency>
                     </ng-container>
                 </ng-template>
                 <ng-template #noChart>

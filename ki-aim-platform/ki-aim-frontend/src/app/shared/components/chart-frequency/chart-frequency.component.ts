@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {EChartsOption} from "echarts";
-import {FrequenciesData, FrequencyPlotData, StatisticsData} from "../../model/statistics";
+import {FrequencyPlotData, HistogramPlotData, StatisticsData} from "../../model/statistics";
 import {ChartComponent, Entries} from "../chart/chart.component";
 
 @Component({
@@ -9,7 +9,7 @@ import {ChartComponent, Entries} from "../chart/chart.component";
     styleUrls: ['../chart/chart.component.less'],
 })
 export class ChartFrequencyComponent extends ChartComponent {
-    @Input() public data!: StatisticsData<FrequencyPlotData>;
+    @Input() public data!: StatisticsData<FrequencyPlotData | HistogramPlotData>;
     @Input() public simple: boolean = false;
     @Input() public limit: number | null = 10;
     @Input() syntheticSeriesLabel: string = "Synthetisch";
@@ -25,20 +25,16 @@ export class ChartFrequencyComponent extends ChartComponent {
         let keys: string[] | null = null;
 
         const series = [];
-        for (const [key, value] of Object.entries(this.data) as Entries<StatisticsData<FrequencyPlotData>>) {
-            let m: { [value: string]: FrequenciesData } = {};
-
-            value.frequencies.forEach((b: { [value: string]: FrequenciesData }) => {
-               m = {
-                   ...m,
-                   ...b
-               }
-            });
+        for (const [key, value] of Object.entries(this.data) as Entries<StatisticsData<FrequencyPlotData | HistogramPlotData>>) {
             if (keys === null) {
-                keys = Object.keys(m);
+                if (value instanceof FrequencyPlotData) {
+                    keys = value.frequencies.map(val => val.category);
+                } else {
+                    keys = value.frequencies.map(val => val.label);
+                }
             }
 
-            const allValues: number[] = Object.values(m).map(val => val.value);
+            const allValues: number[] = value.frequencies.map(val => val.value);
 
             let displayedValues: number[];
             if (this.limit && allValues.length > this.limit) {
@@ -55,7 +51,7 @@ export class ChartFrequencyComponent extends ChartComponent {
             }
 
             const displayedColors: string[] = [];
-            const allColors: number[] = Object.values(m).map(val => val.color_index);
+            const allColors: number[] = value.frequencies.map(val => val.color_index);
             allColors.forEach(val => {
                displayedColors.push(this.colors[val]);
             });

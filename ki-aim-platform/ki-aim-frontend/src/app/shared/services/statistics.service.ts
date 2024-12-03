@@ -16,6 +16,21 @@ export class StatisticsService {
     private _statistics: Statistics | null = null;
     private _statistics$: Observable<Statistics> | null = null;
 
+
+    public readonly colors = [
+        '#00aaff',
+        '#007700',
+        '#009900',
+        '#00bb00',
+        '#00dd00',
+        '#00ff00',
+        '#ff0000',
+        '#dd0000',
+        '#bb0000',
+        '#990000',
+        '#770000',
+    ]
+
     constructor(
         private readonly httpClient: HttpClient,
     ) {

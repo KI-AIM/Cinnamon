@@ -15,8 +15,6 @@ export class ChartDensityComponent extends ChartComponent {
     @Input() simple: boolean = false;
     @Input() syntheticSeriesLabel: string = "Synthetisch";
 
-    private readonly colors = ['#770000', '#007700']
-
     protected override createChartOptions(): EChartsOption {
         const dataSetLabels: StatisticsData<string> = {
             real: "Original",
@@ -28,12 +26,11 @@ export class ChartDensityComponent extends ChartComponent {
         const series = [];
         for (const [key, value] of Object.entries(this.data) as Entries<StatisticsData<DensityPlotData>>) {
             series.push({
-                color: [this.colors[value.color_index]],
+                color: [this.statisticsService.colors[value.color_index]],
                 name: dataSetLabels[key],
                 type: 'line',
                 symbol: 'none',
                 data: value.density,
-                stack: 'total',
             });
             reference = value;
         }

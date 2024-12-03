@@ -1,5 +1,11 @@
 import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
-import {AttributeStatistics, KolmogorovSmirnovData, StatisticsData, StatisticsValues} from "../../model/statistics";
+import {
+    AttributeStatistics, HellingerDistanceData,
+    KolmogorovSmirnovData,
+    StatisticsData,
+    StatisticsValues,
+    StatisticsValuesNominal
+} from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
 import { formatNumber } from "@angular/common";
@@ -15,7 +21,6 @@ export class DataInspectionAttributeDetailsComponent {
     @Input() public attributeStatistics!: AttributeStatistics;
     @ViewChild('table', {static: true}) tableTemplate!: TemplateRef<TableContext>;
 
-    protected readonly colors = ['#000000', '#960d0d'];
     protected graphType: string = 'histogram';
 
     constructor(
@@ -31,12 +36,36 @@ export class DataInspectionAttributeDetailsComponent {
         return Math.max(data.real.color_index, data.synthetic.color_index);
     }
 
-    protected readonly formatNumber = formatNumber;
+    protected hdIndex(data: StatisticsData<HellingerDistanceData>): number {
+        return Math.max(data.real.color_index, data.synthetic.color_index);
+    }
+
+    protected getImportantMetrics() {
+        return Object.entries(this.attributeStatistics.important_metrics);
+    }
+
+    protected getDetailsEntries(): [string, StatisticsValues | StatisticsValuesNominal<KolmogorovSmirnovData> | StatisticsValuesNominal<HellingerDistanceData>][] {
+        console.log(Object.entries(this.attributeStatistics.details));
+        return Object.entries(this.attributeStatistics.details);
+    }
+
+    protected isNumber(value: any): boolean {
+        return typeof value === "number";
+    }
+
+    protected isComplex(value: any): boolean {
+        return Object.keys(value).length > 2;
+    }
+
+    protected toNumber(value: any): number {
+        return parseFloat(value);
+    }
+
     protected readonly DataType = DataType;
 }
 
 interface TableContext {
-    data: StatisticsValues;
+    data: StatisticsValues | StatisticsValuesNominal<KolmogorovSmirnovData> | StatisticsValuesNominal<HellingerDistanceData>;
     name: string;
 
 }

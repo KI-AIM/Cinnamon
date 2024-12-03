@@ -205,9 +205,7 @@
 					<include>**/banner.txt</include>
 					<include>**/*.properties</include>
 					<!-- TODO Remove when we fetch this -->
-					<include>**/organized_resemblance_metrics.yaml</include>
-					<include>**/organized_resemblance_metrics_2.yaml</include>
-					<include>**/organized_resemblance_metrics_3.yaml</include>
+					<include>**/organized_resemblance_metrics_synthetic.yaml</include>
 				</includes>
 			</resource>
 		</resources>

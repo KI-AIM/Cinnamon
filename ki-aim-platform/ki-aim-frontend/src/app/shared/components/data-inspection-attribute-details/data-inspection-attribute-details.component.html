@@ -139,57 +139,12 @@
 
         <div style="display: flex; flex-direction: row; gap: 0.5rem;">
             <div style="display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; flex-basis: 50%;">
-                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.fifth_percentile, name: '5th Percentile'}">
+
+                <ng-container *ngFor="let metricData of (attributeStatistics.details | keyvalue)">
+                    <ng-container *ngTemplateOutlet="metric; context: {data: metricData.value, name: '5th Percentile'}">
+                    </ng-container>
                 </ng-container>
 
-                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.q1, name: 'Q1'}">
-                </ng-container>
-
-                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.median, name: 'Median'}">
-                </ng-container>
-
-                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.q3, name: 'Q3'}">
-                </ng-container>
-
-                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.ninety_fifth_percentile, name: '95th Percentile'}">
-                </ng-container>
-
-                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.skewness, name: 'Skewness'}">
-                </ng-container>
-
-                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.kurtosis, name: 'Kurtosis'}">
-                </ng-container>
-
-                <ng-container *ngTemplateOutlet="metric; context: {data: attributeStatistics.details.kurtosis, name: 'Kurtosis'}">
-                </ng-container>
-
-                <div class="metric-wrapper">
-                    <div class="metric-name">
-                        Kolmogorov-Smirnov
-                    </div>
-                    <table *ngIf="attributeStatistics.details && attributeStatistics.details.kolmogorov_smirnov; else notAvailable" class="metric-table">
-                        <tr>
-                            <th>KS Statistic</th>
-                            <td>{{ attributeStatistics.details.kolmogorov_smirnov.values.real.KS_statistic }}</td>
-                        </tr>
-                        <tr>
-                            <th>p_value</th>
-                            <td>{{ attributeStatistics.details.kolmogorov_smirnov.values.real.p_value }}</td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div class="metric-wrapper">
-                    <div class="metric-name">
-                        Hellinger Distance
-                    </div>
-                    <table *ngIf="attributeStatistics.details && attributeStatistics.details.hellinger_distance; else notAvailable" class="metric-table">
-                        <tr>
-                            <th>Value</th>
-                            <td>{{ attributeStatistics.details.hellinger_distance.values.real.hellinger_distance }}</td>
-                        </tr>
-                    </table>
-                </div>
             </div>
 
             <div>
@@ -205,80 +160,122 @@
 
         </div>
 
+        <ng-container *ngFor="let metricData of getImportantMetrics()">
 
+            <ng-container *ngIf="metricData[0] === 'mode'; else elseA">
 
-        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.important_metrics.mean, name: 'Mean'}">
-        </ng-container>
-        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.fifth_percentile, name: '5th Percentile'}">
-        </ng-container>
-        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.q1, name: 'Q1'}">
-        </ng-container>
-        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.median, name: 'Median'}">
-        </ng-container>
-        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.q3, name: 'Q3'}">
-        </ng-container>
-        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.ninety_fifth_percentile, name: '95th Percentile'}">
-        </ng-container>
-        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.skewness, name: 'Skewness'}">
-        </ng-container>
-        <ng-container *ngTemplateOutlet="metricComparison; context: {data: attributeStatistics.details.kurtosis, name: 'Kurtosis'}">
-        </ng-container>
-        <div class="metric-wrapper">
-            <div class="metric-name">
-                Kolmogorov-Smirnov
-            </div>
-            <div style="display: flex; width: 100%;"
-                 *ngIf="attributeStatistics.details && attributeStatistics.details.kolmogorov_smirnov as sm; else notAvailable">
-
-                <div [style.background-color]="colors[ksIndex(sm.values)]"
-                     style="width: 10px; border-radius: 6px; margin-right: .5rem; margin-bottom: 2px; margin-top: 2px;">
+                <div class="metric-wrapper">
+                    <div class="metric-name">
+                        Mode
+                    </div>
+                    <table
+                        *ngIf="attributeStatistics.important_metrics.mode as mode; else notAvailable"
+                        class="metric-table" style="margin-left: 10px;">
+                        <tr>
+                            <th></th>
+                            <th>Real</th>
+                            <th>Synth</th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        <tr>
+                            <th>Value</th>
+                            <td>{{ mode.values.real }}</td>
+                            <td>{{ mode.values.synthetic }}</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
                 </div>
-                <table class="metric-table">
-                    <tr>
-                        <th></th>
-                        <th>Real</th>
-                        <th>Synth</th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                    <tr>
-                        <th>KS Statistic</th>
-                        <td>{{ sm.values.real.KS_statistic }}</td>
-                        <td>{{ sm.values.synthetic.KS_statistic }}</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <th>p_value</th>
-                        <td>{{ sm.values.real.p_value }}</td>
-                        <td>{{ sm.values.synthetic.p_value }}</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-        <div class="metric-wrapper">
-            <div class="metric-name">
-                Hellinger Distance
-            </div>
-            <table *ngIf="attributeStatistics.details && attributeStatistics.details.hellinger_distance as hd; else notAvailable" class="metric-table">
-                <tr>
-                    <th></th>
-                    <th>Real</th>
-                    <th>Synth</th>
-                    <th></th>
-                    <th></th>
-                </tr>
-                <tr>
-                    <th>Value</th>
-                    <td>{{ hd.values.real.hellinger_distance }}</td>
-                    <td>{{ hd.values.synthetic.hellinger_distance }}</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            </table>
-        </div>
+            </ng-container>
+
+            <ng-template #elseA>
+                <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData[1], name: '5th Percentile'}">
+                </ng-container>
+            </ng-template>
+
+        </ng-container>
+        <ng-container *ngFor="let metricData of (attributeStatistics.details | keyvalue)">
+            <ng-container *ngIf="metricData.key === 'kolmogorov_smirnov'; else else1">
+
+                <div class="metric-wrapper">
+                    <div class="metric-name">
+                        Kolmogorov-Smirnov
+                    </div>
+                    <div style="display: flex; width: 100%;"
+                         *ngIf="attributeStatistics.details && attributeStatistics.details.kolmogorov_smirnov as sm; else notAvailable">
+
+                        <div [style.background-color]="statisticsService.colors[ksIndex(sm.values)]"
+                             style="width: 10px; border-radius: 6px; margin-right: .5rem; margin-bottom: 2px; margin-top: 2px;">
+                        </div>
+                        <table class="metric-table">
+                            <tr>
+                                <th></th>
+                                <th>Real</th>
+                                <th>Synth</th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                            <tr>
+                                <th>KS Statistic</th>
+                                <td>{{ sm.values.real.KS_statistic }}</td>
+                                <td>{{ sm.values.synthetic.KS_statistic }}</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th>p_value</th>
+                                <td>{{ sm.values.real.p_value }}</td>
+                                <td>{{ sm.values.synthetic.p_value }}</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+            </ng-container>
+            <ng-template #else1>
+                <ng-container *ngIf="metricData.key === 'hellinger_distance'; else else2">
+
+                    <div class="metric-wrapper">
+                        <div class="metric-name">
+                            Hellinger Distance
+                        </div>
+
+                        <div style="display: flex; width: 100%;"
+                             *ngIf="attributeStatistics.details && attributeStatistics.details.hellinger_distance as hd; else notAvailable">
+
+                            <div [style.background-color]="statisticsService.colors[hdIndex(hd.values)]"
+                                 style="width: 10px; border-radius: 6px; margin-right: .5rem; margin-bottom: 2px; margin-top: 2px;">
+                            </div>
+                            <table class="metric-table">
+                                <tr>
+                                    <th></th>
+                                    <th>Real</th>
+                                    <th>Synth</th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                                <tr>
+                                    <th>Value</th>
+                                    <td>{{ hd.values.real.hellinger_distance }}</td>
+                                    <td>{{ hd.values.synthetic.hellinger_distance }}</td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                </ng-container>
+            </ng-template>
+            <ng-template #else2>
+                <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData.value, name: '5th Percentile'}">
+                </ng-container>
+            </ng-template>
+        </ng-container>
+
 
     </div>
 </div>
@@ -286,14 +283,33 @@
 <ng-template #metric let-data='data' let-name='name'>
     <div class="metric-wrapper">
         <div class="metric-name">
-            {{ name }}
+            {{ data.display_name }}
         </div>
         <table *ngIf="data; else notAvailable" class="metric-table">
-            <tr>
-<!--                <th>{{ name }}</th>-->
-                <th>Value</th>
-                <td>{{ statisticsService.formatNumber(data.values.real) }}</td>
-            </tr>
+            <ng-container *ngIf="isNumber(data.values.real) ; else complexMetric">
+                <tr>
+                    <th>Value</th>
+                    <td>{{ statisticsService.formatNumber(data.values.real) }}</td>
+                </tr>
+            </ng-container>
+            <ng-template #complexMetric>
+                <ng-container *ngIf="isComplex(data.values.real); else nonComplexMetric">
+                    <tr *ngFor="let metricPart of data.values.real | keyvalue">
+                        <ng-container *ngIf="metricPart.key !== 'color_index'">
+                            <th>{{ metricPart.key }}</th>
+                            <td>{{ statisticsService.formatNumber(toNumber(metricPart.value)) }}</td>
+                        </ng-container>
+                    </tr>
+                </ng-container>
+                <ng-template #nonComplexMetric>
+                    <tr *ngFor="let metricPart of data.values.real | keyvalue">
+                        <ng-container *ngIf="metricPart.key !== 'color_index'">
+                            <th>Value</th>
+                            <td>{{ statisticsService.formatNumber(toNumber(metricPart.value)) }}</td>
+                        </ng-container>
+                    </tr>
+                </ng-template>
+            </ng-template>
         </table>
     </div>
 </ng-template>
@@ -301,10 +317,10 @@
 <ng-template #metricComparison let-data='data' let-name='name'>
     <div class="metric-wrapper">
         <div class="metric-name">
-            {{ name }}
+            {{ data.display_name }}
         </div>
         <div style="display: flex; width: 100%;">
-            <div *ngIf="data" [style.background-color]="colors[data.difference.color_index]"
+            <div *ngIf="data && data.difference" [style.background-color]="statisticsService.colors[data.difference.color_index]"
                  style="width: 10px; border-radius: 6px; margin-right: .5rem; margin-bottom: 2px; margin-top: 2px;">
             </div>
             <div style="width: 100%;">
@@ -325,12 +341,13 @@
             <th>Diff (%)</th>
         </tr>
         <tr>
-<!--            <th>{{ name }}</th>-->
-            <th>Value</th>
-            <td>{{ statisticsService.formatNumber(data.values.real) }}</td>
-            <td>{{ statisticsService.formatNumber(data.values.synthetic) }}</td>
-            <td>{{ statisticsService.formatNumber(data.difference.absolute) }}</td>
-            <td>{{ data.difference.percentage }} %</td>
+            <ng-container *ngIf="isNumber(data.values.real)">
+                <th>Value</th>
+                <td>{{ statisticsService.formatNumber(data.values.real) }}</td>
+                <td>{{ statisticsService.formatNumber(data.values.synthetic) }}</td>
+                <td>{{ statisticsService.formatNumber(data.difference.absolute) }}</td>
+                <td>{{ statisticsService.formatNumber(data.difference.percentage) }} %</td>
+            </ng-container>
         </tr>
     </table>
 </ng-template>

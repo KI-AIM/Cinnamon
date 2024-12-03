@@ -14,8 +14,6 @@ export class ChartFrequencyComponent extends ChartComponent {
     @Input() public limit: number | null = 10;
     @Input() syntheticSeriesLabel: string = "Synthetisch";
 
-    private readonly colors = ['#770000', '#007700']
-
     protected override createChartOptions(): EChartsOption {
         const dataSetLabels: StatisticsData<string> = {
             real: "Original",
@@ -32,30 +30,46 @@ export class ChartFrequencyComponent extends ChartComponent {
 
             const allValues: number[] = value.frequencies.map(val => val.value);
 
-            let displayedValues: number[];
+            let displayed: Array<{ value: number, itemStyle: { color: string } }> = [];
             if (this.limit && allValues.length > this.limit) {
+                displayed = value.frequencies.slice(0, this.limit).map(val => {
+                    return {
+                        value: val.value,
+                        itemStyle: {
+                            color: this.statisticsService.colors[val.color_index],
+                        }
+                    }
+                });
+
                 const sumAllValues = allValues.reduce((previousValue, currentValue) => previousValue + currentValue);
-
-                const mostCommonValues = allValues.slice(0, this.limit);
-
-                const sumMostCommon = mostCommonValues.reduce((previousValue, currentValue,) => previousValue + currentValue);
-                mostCommonValues.push(sumAllValues - sumMostCommon);
-
-                displayedValues = mostCommonValues;
+                const sumMostCommon = displayed.reduce((previousValue, currentValue,) => previousValue + currentValue.value, 0);
+                displayed.push({
+                        value: sumAllValues - sumMostCommon,
+                        itemStyle: {
+                            color: this.statisticsService.colors[5],
+                        }
+                    })
             } else {
-                displayedValues = allValues;
+                displayed = value.frequencies.map(val => {
+                   return {
+                       value: val.value,
+                       itemStyle: {
+                           color: this.statisticsService.colors[val.color_index],
+                       }
+                   }
+                });
             }
 
             const displayedColors: string[] = [];
             const allColors: number[] = value.frequencies.map(val => val.color_index);
             allColors.forEach(val => {
-               displayedColors.push(this.colors[val]);
+               displayedColors.push(this.statisticsService.colors[val]);
             });
 
             series.push({
                 name: dataSetLabels[key],
                 type: 'bar',
-                data: displayedValues,
+                data: displayed,
                 barMinHeight: 2,
                 color: displayedColors,
             });

@@ -1,0 +1,5245 @@
+resemblance:
+- attribute_information:
+    name: id
+    index: 0
+    type: INTEGER
+    scale: NOMINAL
+  important_metrics:
+    mean:
+      values:
+        real: 496785.71023965144
+        synthetic: 152411.338
+      difference:
+        absolute: 344374.37223965145
+        percentage: 69.32050683855698
+        color_index: 7
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
+      display_name: Mean
+    variance:
+      values:
+        real: 82248088403.2973
+        synthetic: 205978912495.8336
+      difference:
+        absolute: 123730824092.53629
+        percentage: 150.43610920880192
+        color_index: 10
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
+      display_name: Variance
+    standard_deviation:
+      values:
+        real: 286789.2752585028
+        synthetic: 453848.99746042583
+      difference:
+        absolute: 167059.72220192302
+        percentage: 58.25173275790758
+        color_index: 6
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+      display_name: Standard Deviation
+    minimum:
+      values:
+        real: 1306.0
+        synthetic: -335073.0
+      difference:
+        absolute: 336379.0
+        percentage: 25756.431852986218
+        color_index: 10
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+      display_name: Minimum
+    maximum:
+      values:
+        real: 999730.0
+        synthetic: 1323060.0
+      difference:
+        absolute: 323330.0
+        percentage: 32.34173226771228
+        color_index: 4
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
+      display_name: Maximum
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+  details:
+    fifth_percentile:
+      values:
+        real: 45866.10000000002
+        synthetic: -278155.15
+      difference:
+        absolute: 324021.25000000006
+        percentage: 706.4504067274086
+        color_index: 10
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+      display_name: Fifth Percentile
+    q1:
+      values:
+        real: 250643.5
+        synthetic: -209480.75
+      difference:
+        absolute: 460124.25
+        percentage: 183.5771723583496
+        color_index: 10
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+      display_name: First Quartile
+    median:
+      values:
+        real: 489262.0
+        synthetic: -72406.5
+      difference:
+        absolute: 561668.5
+        percentage: 114.79912603063389
+        color_index: 10
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+      display_name: Median
+    q3:
+      values:
+        real: 746333.0
+        synthetic: 446453.25
+      difference:
+        absolute: 299879.75
+        percentage: 40.18042214400274
+        color_index: 5
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+      display_name: Third Quartile
+    ninety_fifth_percentile:
+      values:
+        real: 946125.1
+        synthetic: 1134788.95
+      difference:
+        absolute: 188663.84999999998
+        percentage: 19.940687547555815
+        color_index: 2
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
+      display_name: Ninety Fifth Percentile
+    skewness:
+      values:
+        real: 0.013943506440715037
+        synthetic: 1.0163912122993892
+      difference:
+        absolute: 1.0024477058586743
+        percentage: 7189.351617693001
+        color_index: 10
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
+      display_name: Skewness
+    kurtosis:
+      values:
+        real: -1.1735468371741575
+        synthetic: -0.21996861730057038
+      difference:
+        absolute: 0.9535782198735872
+        percentage: 81.25608537020611
+        color_index: 9
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+      display_name: Kurtosis
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.566
+          p_value: 4.522657403143712e-142
+          color_index: 6
+        synthetic:
+          KS_statistic: 0.566
+          p_value: 4.522657403143712e-142
+          color_index: 6
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
+      display_name: Kolmogorov-Smirnov
+  plot:
+    density:
+      real:
+        x_values:
+        - -335073.0
+        - -301233.55102040817
+        - -267394.10204081633
+        - -233554.6530612245
+        - -199715.20408163266
+        - -165875.75510204083
+        - -132036.306122449
+        - -98196.85714285716
+        - -64357.408163265325
+        - -30517.95918367349
+        - 3321.4897959183436
+        - 37160.93877551018
+        - 71000.38775510201
+        - 104839.83673469385
+        - 138679.28571428568
+        - 172518.73469387752
+        - 206358.18367346935
+        - 240197.63265306118
+        - 274037.081632653
+        - 307876.53061224485
+        - 341715.9795918367
+        - 375555.4285714285
+        - 409394.87755102036
+        - 443234.3265306122
+        - 477073.775510204
+        - 510913.22448979586
+        - 544752.6734693877
+        - 578592.1224489795
+        - 612431.5714285714
+        - 646271.0204081632
+        - 680110.469387755
+        - 713949.9183673467
+        - 747789.3673469387
+        - 781628.8163265307
+        - 815468.2653061224
+        - 849307.7142857141
+        - 883147.163265306
+        - 916986.612244898
+        - 950826.0612244897
+        - 984665.5102040814
+        - 1018504.9591836734
+        - 1052344.4081632653
+        - 1086183.857142857
+        - 1120023.3061224488
+        - 1153862.7551020407
+        - 1187702.2040816327
+        - 1221541.6530612244
+        - 1255381.102040816
+        - 1289220.551020408
+        - 1323060.0
+        density:
+        - 2.8218036707303296e-12
+        - 2.3008919352579793e-11
+        - 1.52842865294867e-10
+        - 8.283981366301837e-10
+        - 3.6707277153334184e-09
+        - 1.3333886527972339e-08
+        - 3.9852842884078154e-08
+        - 9.8516338627377e-08
+        - 2.0291467951836388e-07
+        - 3.519880740861527e-07
+        - 5.223117839292297e-07
+        - 6.780033841625691e-07
+        - 7.935927523944614e-07
+        - 8.68620768496773e-07
+        - 9.206899409034899e-07
+        - 9.667277716616226e-07
+        - 1.0111358787487986e-06
+        - 1.0478582902203006e-06
+        - 1.0693029856331292e-06
+        - 1.0727676598389817e-06
+        - 1.0617837849130428e-06
+        - 1.044206520979943e-06
+        - 1.0278621053152892e-06
+        - 1.0156306634501739e-06
+        - 1.0049451327130486e-06
+        - 9.930430600632837e-07
+        - 9.818611078312154e-07
+        - 9.768410996326284e-07
+        - 9.81449698444591e-07
+        - 9.934975132878212e-07
+        - 1.0065049247053617e-06
+        - 1.01411265638549e-06
+        - 1.013335043877792e-06
+        - 1.0043401305399015e-06
+        - 9.87495326713255e-07
+        - 9.597853611981547e-07
+        - 9.126342873204364e-07
+        - 8.334651626338519e-07
+        - 7.129776598701925e-07
+        - 5.556236031264829e-07
+        - 3.8412690985795305e-07
+        - 2.3032047427811325e-07
+        - 1.176536585003971e-07
+        - 5.052130001006058e-08
+        - 1.8058649922532237e-08
+        - 5.335305332789714e-09
+        - 1.2961853873418983e-09
+        - 2.5797707582333337e-10
+        - 4.194673808354086e-11
+        - 5.5605332061035005e-12
+        x_axis: id
+        y_axis: Frequency
+        color_index: 0
+      synthetic:
+        x_values:
+        - -335073.0
+        - -301233.55102040817
+        - -267394.10204081633
+        - -233554.6530612245
+        - -199715.20408163266
+        - -165875.75510204083
+        - -132036.306122449
+        - -98196.85714285716
+        - -64357.408163265325
+        - -30517.95918367349
+        - 3321.4897959183436
+        - 37160.93877551018
+        - 71000.38775510201
+        - 104839.83673469385
+        - 138679.28571428568
+        - 172518.73469387752
+        - 206358.18367346935
+        - 240197.63265306118
+        - 274037.081632653
+        - 307876.53061224485
+        - 341715.9795918367
+        - 375555.4285714285
+        - 409394.87755102036
+        - 443234.3265306122
+        - 477073.775510204
+        - 510913.22448979586
+        - 544752.6734693877
+        - 578592.1224489795
+        - 612431.5714285714
+        - 646271.0204081632
+        - 680110.469387755
+        - 713949.9183673467
+        - 747789.3673469387
+        - 781628.8163265307
+        - 815468.2653061224
+        - 849307.7142857141
+        - 883147.163265306
+        - 916986.612244898
+        - 950826.0612244897
+        - 984665.5102040814
+        - 1018504.9591836734
+        - 1052344.4081632653
+        - 1086183.857142857
+        - 1120023.3061224488
+        - 1153862.7551020407
+        - 1187702.2040816327
+        - 1221541.6530612244
+        - 1255381.102040816
+        - 1289220.551020408
+        - 1323060.0
+        density:
+        - 8.942817427465482e-07
+        - 1.1617847102538423e-06
+        - 1.4075648170547766e-06
+        - 1.5932746745351375e-06
+        - 1.6894468596258857e-06
+        - 1.6844633025875222e-06
+        - 1.5873860471941132e-06
+        - 1.4236215701990738e-06
+        - 1.225902265735634e-06
+        - 1.0248798628666328e-06
+        - 8.428786943322608e-07
+        - 6.92019675771095e-07
+        - 5.757454393414266e-07
+        - 4.918685553059041e-07
+        - 4.3557322428765845e-07
+        - 4.015901847299242e-07
+        - 3.853876277275678e-07
+        - 3.834885373440212e-07
+        - 3.930962595712393e-07
+        - 4.1129939530228045e-07
+        - 4.342863621009294e-07
+        - 4.5708332446782784e-07
+        - 4.741434565014974e-07
+        - 4.806506654328307e-07
+        - 4.7392482062671466e-07
+        - 4.5418929021329114e-07
+        - 4.2431237585041293e-07
+        - 3.887145826995875e-07
+        - 3.5202921542575526e-07
+        - 3.180850102943248e-07
+        - 2.8945322628381765e-07
+        - 2.674561562945748e-07
+        - 2.5238138351157336e-07
+        - 2.437037869821859e-07
+        - 2.4026951571289094e-07
+        - 2.4051147775416334e-07
+        - 2.4277000655537247e-07
+        - 2.4569044635365643e-07
+        - 2.4854016989323357e-07
+        - 2.51242329607108e-07
+        - 2.540298656525902e-07
+        - 2.568410439328493e-07
+        - 2.5877187633387377e-07
+        - 2.5793131136774256e-07
+        - 2.518682384097517e-07
+        - 2.3844188332011266e-07
+        - 2.1675470348833312e-07
+        - 1.8770525468541336e-07
+        - 1.5388829295590557e-07
+        - 1.1888023408950235e-07
+        x_axis: id
+        y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - label: -335073.00 - -216634.93
+          value: 0
+          color_index: 0
+        - label: -216634.93 - -98196.86
+          value: 0
+          color_index: 0
+        - label: -98196.86 - 20241.21
+          value: 21
+          color_index: 0
+        - label: 20241.21 - 138679.29
+          value: 100
+          color_index: 0
+        - label: 138679.29 - 257117.36
+          value: 113
+          color_index: 0
+        - label: 257117.36 - 375555.43
+          value: 121
+          color_index: 0
+        - label: 375555.43 - 493993.50
+          value: 109
+          color_index: 0
+        - label: 493993.50 - 612431.57
+          value: 98
+          color_index: 0
+        - label: 612431.57 - 730869.64
+          value: 118
+          color_index: 0
+        - label: 730869.64 - 849307.71
+          value: 110
+          color_index: 0
+        - label: 849307.71 - 967745.79
+          value: 98
+          color_index: 0
+        - label: 967745.79 - 1086183.86
+          value: 31
+          color_index: 0
+        - label: 1086183.86 - 1204621.93
+          value: 0
+          color_index: 0
+        - label: 1204621.93 - 1323060.00
+          value: 0
+          color_index: 0
+        x_axis: id
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: -335073.00 - -216634.93
+          value: 172
+          color_index: 10
+        - label: -216634.93 - -98196.86
+          value: 303
+          color_index: 10
+        - label: -98196.86 - 20241.21
+          value: 100
+          color_index: 10
+        - label: 20241.21 - 138679.29
+          value: 46
+          color_index: 6
+        - label: 138679.29 - 257117.36
+          value: 39
+          color_index: 7
+        - label: 257117.36 - 375555.43
+          value: 37
+          color_index: 7
+        - label: 375555.43 - 493993.50
+          value: 81
+          color_index: 3
+        - label: 493993.50 - 612431.57
+          value: 44
+          color_index: 6
+        - label: 612431.57 - 730869.64
+          value: 31
+          color_index: 8
+        - label: 730869.64 - 849307.71
+          value: 23
+          color_index: 8
+        - label: 849307.71 - 967745.79
+          value: 35
+          color_index: 7
+        - label: 967745.79 - 1086183.86
+          value: 26
+          color_index: 2
+        - label: 1086183.86 - 1204621.93
+          value: 36
+          color_index: 10
+        - label: 1204621.93 - 1323060.00
+          value: 27
+          color_index: 10
+        x_axis: id
+        y_axis: Count
+- attribute_information:
+    name: name
+    index: 1
+    type: STRING
+    scale: NOMINAL
+  important_metrics:
+    mode:
+      values:
+        real: Abbie Casper
+        synthetic: nan
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
+      display_name: Mode
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+    distinct_values:
+      values:
+        real: 919
+        synthetic: 450
+      difference:
+        absolute: 469
+        percentage: 51.03373231773667
+        color_index: 6
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+      display_name: Distinct Values
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.6090221597019352
+          color_index: 7
+        synthetic:
+          hellinger_distance: 0.6090221597019352
+          color_index: 7
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
+      display_name: Hellinger Distance
+  plot:
+    frequency_count:
+      real:
+        frequencies:
+        - label: nan
+          value: 1
+          color_index: 0
+        - label: Ricarda Satterfield I
+          value: 1
+          color_index: 0
+        - label: Helaine Skiles
+          value: 1
+          color_index: 0
+        - label: Denver Schoen III
+          value: 1
+          color_index: 0
+        - label: Gary Nitzsche
+          value: 1
+          color_index: 0
+        - label: Michel Wilderman
+          value: 1
+          color_index: 0
+        - label: Carlton Heathcote PhD
+          value: 1
+          color_index: 0
+        - label: Staci Wiza
+          value: 1
+          color_index: 0
+        - label: Rana Mraz
+          value: 1
+          color_index: 0
+        - label: Minna Blick I
+          value: 1
+          color_index: 0
+        - label: Elenor Kuhlman
+          value: 1
+          color_index: 0
+        - label: Ardis Schuppe
+          value: 1
+          color_index: 0
+        - label: Arielle Gibson
+          value: 1
+          color_index: 0
+        - label: The Hon. Dexter Macejkovic
+          value: 1
+          color_index: 0
+        - label: Avery Johnson
+          value: 1
+          color_index: 0
+        - label: Josh Legros IV
+          value: 1
+          color_index: 0
+        - label: Pres. Jerry Zulauf
+          value: 1
+          color_index: 0
+        - label: Audria Kautzer
+          value: 1
+          color_index: 0
+        - label: Neil Greenfelder
+          value: 1
+          color_index: 0
+        - label: Greg Langosh DO
+          value: 1
+          color_index: 0
+        - label: Bree Harvey VM
+          value: 1
+          color_index: 0
+        - label: Elsa Muller
+          value: 1
+          color_index: 0
+        - label: Sen. Shaunta Franecki
+          value: 1
+          color_index: 0
+        - label: Noel Prohaska
+          value: 1
+          color_index: 0
+        - label: Tommy Douglas
+          value: 1
+          color_index: 0
+        - label: Other
+          value: 894
+          color_index: 0
+        x_axis: name
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: nan
+          value: 102
+          color_index: 10
+        - label: Ricarda Satterfield I
+          value: 1
+          color_index: 1
+        - label: Helaine Skiles
+          value: 3
+          color_index: 10
+        - label: Denver Schoen III
+          value: 0
+          color_index: 10
+        - label: Gary Nitzsche
+          value: 1
+          color_index: 1
+        - label: Michel Wilderman
+          value: 0
+          color_index: 10
+        - label: Carlton Heathcote PhD
+          value: 2
+          color_index: 10
+        - label: Staci Wiza
+          value: 1
+          color_index: 1
+        - label: Rana Mraz
+          value: 0
+          color_index: 10
+        - label: Minna Blick I
+          value: 0
+          color_index: 10
+        - label: Elenor Kuhlman
+          value: 1
+          color_index: 1
+        - label: Ardis Schuppe
+          value: 1
+          color_index: 1
+        - label: Arielle Gibson
+          value: 1
+          color_index: 1
+        - label: The Hon. Dexter Macejkovic
+          value: 0
+          color_index: 10
+        - label: Avery Johnson
+          value: 3
+          color_index: 10
+        - label: Josh Legros IV
+          value: 3
+          color_index: 10
+        - label: Pres. Jerry Zulauf
+          value: 1
+          color_index: 1
+        - label: Audria Kautzer
+          value: 0
+          color_index: 10
+        - label: Neil Greenfelder
+          value: 3
+          color_index: 10
+        - label: Greg Langosh DO
+          value: 0
+          color_index: 10
+        - label: Bree Harvey VM
+          value: 1
+          color_index: 1
+        - label: Elsa Muller
+          value: 1
+          color_index: 1
+        - label: Sen. Shaunta Franecki
+          value: 2
+          color_index: 10
+        - label: Noel Prohaska
+          value: 2
+          color_index: 10
+        - label: Tommy Douglas
+          value: 2
+          color_index: 10
+        - label: Other
+          value: 869
+          color_index: 1
+        x_axis: name
+        y_axis: Count
+- attribute_information:
+    name: birthdate
+    index: 2
+    type: DATE
+    scale: DATE
+  important_metrics:
+    mean:
+      values:
+        real: -1183037022.071974
+        synthetic: -1391716765.8
+      difference:
+        absolute: 208679743.7280259
+        percentage: 17.639324876117882
+        color_index: 2
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
+      display_name: Mean
+    variance:
+      values:
+        real: 2.8133518043450957e+17
+        synthetic: 1.1130252531122103e+18
+      difference:
+        absolute: 8.316900726777007e+17
+        percentage: 295.6224924992291
+        color_index: 10
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
+      display_name: Variance
+    standard_deviation:
+      values:
+        real: 530410388.69399
+        synthetic: 1055000119.9583867
+      difference:
+        absolute: 524589731.26439667
+        percentage: 98.90261247636471
+        color_index: 10
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+      display_name: Standard Deviation
+    minimum:
+      values:
+        real: -2175983280.0
+        synthetic: -2744322900.0
+      difference:
+        absolute: 568339620.0
+        percentage: 26.11874940509653
+        color_index: 3
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+      display_name: Minimum
+    maximum:
+      values:
+        real: 64800060.0
+        synthetic: 696297780.0
+      difference:
+        absolute: 631497720.0
+        percentage: 974.5326161735035
+        color_index: 10
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
+      display_name: Maximum
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+  details:
+    fifth_percentile:
+      values:
+        real: -2081142468.0
+        synthetic: -2649715080.0
+      difference:
+        absolute: 568572612.0
+        percentage: 27.32021573450492
+        color_index: 3
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+      display_name: Fifth Percentile
+    q1:
+      values:
+        real: -1638489330.0
+        synthetic: -2271131610.0
+      difference:
+        absolute: 632642280.0
+        percentage: 38.611315216804
+        color_index: 4
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+      display_name: First Quartile
+    median:
+      values:
+        real: -1133654340.0
+        synthetic: -1639957800.0
+      difference:
+        absolute: 506303460.0
+        percentage: 44.661184819351554
+        color_index: 5
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+      display_name: Median
+    q3:
+      values:
+        real: -787449210.0
+        synthetic: -440077830.0
+      difference:
+        absolute: 347371380.0
+        percentage: 44.113496539033925
+        color_index: 5
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+      display_name: Third Quartile
+    ninety_fifth_percentile:
+      values:
+        real: -377481054.0
+        synthetic: 473386203.0
+      difference:
+        absolute: 850867257.0
+        percentage: 225.4066125925356
+        color_index: 10
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
+      display_name: Ninety Fifth Percentile
+    skewness:
+      values:
+        real: -0.15871586439776583
+        synthetic: 0.4383912588988736
+      difference:
+        absolute: 0.5971071232966394
+        percentage: 376.21136712597246
+        color_index: 10
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
+      display_name: Skewness
+    kurtosis:
+      values:
+        real: -0.8882578891925967
+        synthetic: -1.1449247711270871
+      difference:
+        absolute: 0.2566668819344904
+        percentage: 28.89553642667828
+        color_index: 3
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+      display_name: Kurtosis
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.31676605005440694
+          p_value: 5.362464430163643e-43
+          color_index: 4
+        synthetic:
+          KS_statistic: 0.31676605005440694
+          p_value: 5.362464430163643e-43
+          color_index: 4
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
+      display_name: Kolmogorov-Smirnov
+  plot:
+    density:
+      real:
+        x_values:
+        - -2744322900.0
+        - -2674106151.428571
+        - -2603889402.857143
+        - -2533672654.285714
+        - -2463455905.714286
+        - -2393239157.142857
+        - -2323022408.571429
+        - -2252805660.0
+        - -2182588911.4285717
+        - -2112372162.857143
+        - -2042155414.2857144
+        - -1971938665.7142859
+        - -1901721917.142857
+        - -1831505168.5714288
+        - -1761288420.0
+        - -1691071671.4285715
+        - -1620854922.857143
+        - -1550638174.2857144
+        - -1480421425.7142859
+        - -1410204677.1428573
+        - -1339987928.5714288
+        - -1269771180.0
+        - -1199554431.4285715
+        - -1129337682.857143
+        - -1059120934.2857144
+        - -988904185.7142859
+        - -918687437.1428573
+        - -848470688.5714288
+        - -778253940.0
+        - -708037191.4285715
+        - -637820442.8571429
+        - -567603694.2857146
+        - -497386945.71428585
+        - -427170197.1428571
+        - -356953448.5714288
+        - -286736700.0
+        - -216519951.4285717
+        - -146303202.85714293
+        - -76086454.28571463
+        - -5869705.7142858505
+        - 64347042.85714245
+        - 134563791.42857122
+        - 204780540.0
+        - 274997288.5714283
+        - 345214037.1428571
+        - 415430785.7142854
+        - 485647534.28571415
+        - 555864282.8571424
+        - 626081031.4285712
+        - 696297780.0
+        density:
+        - 8.545394487380884e-15
+        - 7.182271865194785e-14
+        - 4.68406782200435e-13
+        - 2.378210285664034e-12
+        - 9.442451436311206e-12
+        - 2.950112731900918e-11
+        - 7.318242754360964e-11
+        - 1.460483203860172e-10
+        - 2.390553738344404e-10
+        - 3.299017288986416e-10
+        - 3.9788746812480974e-10
+        - 4.360507663332146e-10
+        - 4.479490197875309e-10
+        - 4.388725869068447e-10
+        - 4.152183873359531e-10
+        - 3.882268455486652e-10
+        - 3.7221250610016546e-10
+        - 3.7801049306214816e-10
+        - 4.079720624507162e-10
+        - 4.567707654179198e-10
+        - 5.176870885579788e-10
+        - 5.862886301375755e-10
+        - 6.558195166297567e-10
+        - 7.135227369109047e-10
+        - 7.466597643824211e-10
+        - 7.500731269201152e-10
+        - 7.264736506551102e-10
+        - 6.830835164272055e-10
+        - 6.290369383295608e-10
+        - 5.731035385623418e-10
+        - 5.208324277176862e-10
+        - 4.714292494071224e-10
+        - 4.180821526687301e-10
+        - 3.546236592280342e-10
+        - 2.829202104331605e-10
+        - 2.1261427871564048e-10
+        - 1.5331535663869425e-10
+        - 1.0787128566977624e-10
+        - 7.337428362628444e-11
+        - 4.661807357045056e-11
+        - 2.66732306135858e-11
+        - 1.3410152717881476e-11
+        - 5.831980466356751e-12
+        - 2.160923783867277e-12
+        - 6.6954010170587e-13
+        - 1.6992165611132292e-13
+        - 3.465575298679391e-14
+        - 5.594342625845975e-15
+        - 7.069375891529106e-16
+        - 6.940462255473535e-17
+        x_axis: birthdate
+        y_axis: Frequency
+        color_index: 0
+      synthetic:
+        x_values:
+        - -2744322900.0
+        - -2674106151.428571
+        - -2603889402.857143
+        - -2533672654.285714
+        - -2463455905.714286
+        - -2393239157.142857
+        - -2323022408.571429
+        - -2252805660.0
+        - -2182588911.4285717
+        - -2112372162.857143
+        - -2042155414.2857144
+        - -1971938665.7142859
+        - -1901721917.142857
+        - -1831505168.5714288
+        - -1761288420.0
+        - -1691071671.4285715
+        - -1620854922.857143
+        - -1550638174.2857144
+        - -1480421425.7142859
+        - -1410204677.1428573
+        - -1339987928.5714288
+        - -1269771180.0
+        - -1199554431.4285715
+        - -1129337682.857143
+        - -1059120934.2857144
+        - -988904185.7142859
+        - -918687437.1428573
+        - -848470688.5714288
+        - -778253940.0
+        - -708037191.4285715
+        - -637820442.8571429
+        - -567603694.2857146
+        - -497386945.71428585
+        - -427170197.1428571
+        - -356953448.5714288
+        - -286736700.0
+        - -216519951.4285717
+        - -146303202.85714293
+        - -76086454.28571463
+        - -5869705.7142858505
+        - 64347042.85714245
+        - 134563791.42857122
+        - 204780540.0
+        - 274997288.5714283
+        - 345214037.1428571
+        - 415430785.7142854
+        - 485647534.28571415
+        - 555864282.8571424
+        - 626081031.4285712
+        - 696297780.0
+        density:
+        - 3.2673950235925543e-10
+        - 3.6959307398043425e-10
+        - 3.988368227106019e-10
+        - 4.1433208571407596e-10
+        - 4.1896178085016816e-10
+        - 4.1719680320441356e-10
+        - 4.131653855286167e-10
+        - 4.091255436656594e-10
+        - 4.0498792254700383e-10
+        - 3.9897091846578364e-10
+        - 3.8892889622281077e-10
+        - 3.73658025499047e-10
+        - 3.536185408831345e-10
+        - 3.308717005904035e-10
+        - 3.0838856421091237e-10
+        - 2.890855024449157e-10
+        - 2.7494884103289797e-10
+        - 2.6649839580387655e-10
+        - 2.626977976050891e-10
+        - 2.6130014907373133e-10
+        - 2.5952508077159866e-10
+        - 2.54886658751714e-10
+        - 2.459389311277219e-10
+        - 2.3270918363200806e-10
+        - 2.166751348820613e-10
+        - 2.002970997098321e-10
+        - 1.8627655131292176e-10
+        - 1.7680069969705613e-10
+        - 1.7300792061599625e-10
+        - 1.7479524761531992e-10
+        - 1.809563917558756e-10
+        - 1.8955197355938968e-10
+        - 1.9839276037834493e-10
+        - 2.0553508481931862e-10
+        - 2.0970553048767318e-10
+        - 2.1057349066178762e-10
+        - 2.087934333490406e-10
+        - 2.0577369160833284e-10
+        - 2.0320450904152262e-10
+        - 2.0246862705214233e-10
+        - 2.0411682159463042e-10
+        - 2.0758426987386508e-10
+        - 2.1125060950583312e-10
+        - 2.1283652718069593e-10
+        - 2.100228680102234e-10
+        - 2.0110779666508031e-10
+        - 1.8550336032962871e-10
+        - 1.6392095982126896e-10
+        - 1.3819486949536753e-10
+        - 1.1081274649729818e-10
+        x_axis: birthdate
+        y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - label: -2744322900.00 - -2541933448.24
+          value: 0
+          color_index: 0
+        - label: -2541933448.24 - -2339543996.47
+          value: 0
+          color_index: 0
+        - label: -2339543996.47 - -2137154544.71
+          value: 23
+          color_index: 0
+        - label: -2137154544.71 - -1934765092.94
+          value: 86
+          color_index: 0
+        - label: -1934765092.94 - -1732375641.18
+          value: 89
+          color_index: 0
+        - label: -1732375641.18 - -1529986189.41
+          value: 56
+          color_index: 0
+        - label: -1529986189.41 - -1327596737.65
+          value: 82
+          color_index: 0
+        - label: -1327596737.65 - -1125207285.88
+          value: 128
+          color_index: 0
+        - label: -1125207285.88 - -922817834.12
+          value: 134
+          color_index: 0
+        - label: -922817834.12 - -720428382.35
+          value: 140
+          color_index: 0
+        - label: -720428382.35 - -518038930.59
+          value: 80
+          color_index: 0
+        - label: -518038930.59 - -315649478.82
+          value: 73
+          color_index: 0
+        - label: -315649478.82 - -113260027.06
+          value: 21
+          color_index: 0
+        - label: -113260027.06 - 89129424.71
+          value: 7
+          color_index: 0
+        - label: 89129424.71 - 291518876.47
+          value: 0
+          color_index: 0
+        - label: 291518876.47 - 493908328.24
+          value: 0
+          color_index: 0
+        - label: 493908328.24 - 696297780.00
+          value: 0
+          color_index: 0
+        x_axis: birthdate
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: -2744322900.00 - -2541933448.24
+          value: 198
+          color_index: 10
+        - label: -2541933448.24 - -2339543996.47
+          value: 35
+          color_index: 10
+        - label: -2339543996.47 - -2137154544.71
+          value: 100
+          color_index: 10
+        - label: -2137154544.71 - -1934765092.94
+          value: 83
+          color_index: 1
+        - label: -1934765092.94 - -1732375641.18
+          value: 68
+          color_index: 3
+        - label: -1732375641.18 - -1529986189.41
+          value: 34
+          color_index: 4
+        - label: -1529986189.41 - -1327596737.65
+          value: 42
+          color_index: 5
+        - label: -1327596737.65 - -1125207285.88
+          value: 96
+          color_index: 3
+        - label: -1125207285.88 - -922817834.12
+          value: 19
+          color_index: 9
+        - label: -922817834.12 - -720428382.35
+          value: 25
+          color_index: 9
+        - label: -720428382.35 - -518038930.59
+          value: 34
+          color_index: 6
+        - label: -518038930.59 - -315649478.82
+          value: 43
+          color_index: 5
+        - label: -315649478.82 - -113260027.06
+          value: 58
+          color_index: 10
+        - label: -113260027.06 - 89129424.71
+          value: 21
+          color_index: 10
+        - label: 89129424.71 - 291518876.47
+          value: 43
+          color_index: 10
+        - label: 291518876.47 - 493908328.24
+          value: 65
+          color_index: 10
+        - label: 493908328.24 - 696297780.00
+          value: 36
+          color_index: 10
+        x_axis: birthdate
+        y_axis: Count
+- attribute_information:
+    name: death_date
+    index: 3
+    type: DATE
+    scale: DATE
+  important_metrics:
+    mean:
+      values:
+        real: 513748345.35947716
+        synthetic: 847173633.66
+      difference:
+        absolute: 333425288.3005228
+        percentage: 64.90050845170514
+        color_index: 7
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
+      display_name: Mean
+    variance:
+      values:
+        real: 3.7781932360145504e+17
+        synthetic: 1.7482640425259968e+18
+      difference:
+        absolute: 1.3704447189245417e+18
+        percentage: 362.7248881452563
+        color_index: 10
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
+      display_name: Variance
+    standard_deviation:
+      values:
+        real: 614670093.3032736
+        synthetic: 1322219362.4833956
+      difference:
+        absolute: 707549269.180122
+        percentage: 115.11041075346782
+        color_index: 10
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+      display_name: Standard Deviation
+    minimum:
+      values:
+        real: -1134517860.0
+        synthetic: -1766793120.0
+      difference:
+        absolute: 632275260.0
+        percentage: 55.73074539346609
+        color_index: 6
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+      display_name: Minimum
+    maximum:
+      values:
+        real: 2493158580.0
+        synthetic: 2937341280.0
+      difference:
+        absolute: 444182700.0
+        percentage: 17.81606286752927
+        color_index: 2
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
+      display_name: Maximum
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+  details:
+    fifth_percentile:
+      values:
+        real: -539239307.9999999
+        synthetic: -1197079992.0
+      difference:
+        absolute: 657840684.0000001
+        percentage: 121.99420076401408
+        color_index: 10
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+      display_name: Fifth Percentile
+    q1:
+      values:
+        real: 63374850.0
+        synthetic: -607024545.0
+      difference:
+        absolute: 670399395.0
+        percentage: 1057.8319238625418
+        color_index: 10
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+      display_name: First Quartile
+    median:
+      values:
+        real: 568166760.0
+        synthetic: 1105445250.0
+      difference:
+        absolute: 537278490.0
+        percentage: 94.56352040024305
+        color_index: 10
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+      display_name: Median
+    q3:
+      values:
+        real: 978868980.0
+        synthetic: 2083557795.0
+      difference:
+        absolute: 1104688815.0
+        percentage: 112.85359303141877
+        color_index: 10
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+      display_name: Third Quartile
+    ninety_fifth_percentile:
+      values:
+        real: 1421254746.0
+        synthetic: 2717574350.9999986
+      difference:
+        absolute: 1296319604.9999986
+        percentage: 91.20951811407345
+        color_index: 10
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
+      display_name: Ninety Fifth Percentile
+    skewness:
+      values:
+        real: -0.17798011137396816
+        synthetic: -0.17672020418030454
+      difference:
+        absolute: 0.0012599071936636175
+        percentage: 0.7078921256635953
+        color_index: 1
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
+      display_name: Skewness
+    kurtosis:
+      values:
+        real: -0.4488073869314446
+        synthetic: -1.3036627098747477
+      difference:
+        absolute: 0.8548553229433031
+        percentage: 190.4726499240714
+        color_index: 10
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+      display_name: Kurtosis
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.36932861806311207
+          p_value: 1.188321104998482e-58
+          color_index: 4
+        synthetic:
+          KS_statistic: 0.36932861806311207
+          p_value: 1.188321104998482e-58
+          color_index: 4
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
+      display_name: Kolmogorov-Smirnov
+  plot:
+    density:
+      real:
+        x_values:
+        - -1766793120.0
+        - -1670790377.142857
+        - -1574787634.2857144
+        - -1478784891.4285715
+        - -1382782148.5714285
+        - -1286779405.7142859
+        - -1190776662.857143
+        - -1094773920.0
+        - -998771177.1428572
+        - -902768434.2857144
+        - -806765691.4285715
+        - -710762948.5714287
+        - -614760205.7142859
+        - -518757462.8571429
+        - -422754720.0
+        - -326751977.1428573
+        - -230749234.2857144
+        - -134746491.42857146
+        - -38743748.571428776
+        - 57258994.28571415
+        - 153261737.14285707
+        - 249264479.99999976
+        - 345267222.8571427
+        - 441269965.7142854
+        - 537272708.5714283
+        - 633275451.4285712
+        - 729278194.2857141
+        - 825280937.1428571
+        - 921283680.0
+        - 1017286422.8571424
+        - 1113289165.7142854
+        - 1209291908.5714283
+        - 1305294651.4285712
+        - 1401297394.2857141
+        - 1497300137.142857
+        - 1593302880.0
+        - 1689305622.8571424
+        - 1785308365.7142854
+        - 1881311108.5714283
+        - 1977313851.4285712
+        - 2073316594.2857141
+        - 2169319337.142857
+        - 2265322079.9999995
+        - 2361324822.8571424
+        - 2457327565.7142854
+        - 2553330308.5714283
+        - 2649333051.4285707
+        - 2745335794.285714
+        - 2841338537.1428566
+        - 2937341280.0
+        density:
+        - 2.0280304531371285e-15
+        - 2.032904261150726e-14
+        - 1.4158602615241593e-13
+        - 6.911834825627063e-13
+        - 2.410854679990165e-12
+        - 6.2571748182156904e-12
+        - 1.3022514048436851e-11
+        - 2.3969401496214536e-11
+        - 4.1454989663575494e-11
+        - 6.659571479776459e-11
+        - 9.668254229589895e-11
+        - 1.2768598407054554e-10
+        - 1.5881599839923622e-10
+        - 1.932847068959522e-10
+        - 2.3601327588464946e-10
+        - 2.8927639701726767e-10
+        - 3.461102574359121e-10
+        - 3.906292468363659e-10
+        - 4.1273987435450824e-10
+        - 4.2090114974486314e-10
+        - 4.3452917750801616e-10
+        - 4.659072167160452e-10
+        - 5.109513437466055e-10
+        - 5.558303336815019e-10
+        - 5.906816565226427e-10
+        - 6.12151737104884e-10
+        - 6.149583707780098e-10
+        - 5.942073036255482e-10
+        - 5.562407190389422e-10
+        - 5.127928729687236e-10
+        - 4.67433126300181e-10
+        - 4.1763924860323485e-10
+        - 3.6031694555815215e-10
+        - 2.9205965429107027e-10
+        - 2.1647611392681016e-10
+        - 1.4703354798742134e-10
+        - 9.40993114738638e-11
+        - 5.728792171518234e-11
+        - 3.229235249393578e-11
+        - 1.6834102241780128e-11
+        - 9.474888852922888e-12
+        - 7.293723728360487e-12
+        - 6.695063693120913e-12
+        - 5.797223268644177e-12
+        - 4.561675363351972e-12
+        - 3.2006346604381208e-12
+        - 1.833795968696558e-12
+        - 7.852879135370973e-13
+        - 2.392795736362257e-13
+        - 5.080446248024807e-14
+        x_axis: death_date
+        y_axis: Frequency
+        color_index: 0
+      synthetic:
+        x_values:
+        - -1766793120.0
+        - -1670790377.142857
+        - -1574787634.2857144
+        - -1478784891.4285715
+        - -1382782148.5714285
+        - -1286779405.7142859
+        - -1190776662.857143
+        - -1094773920.0
+        - -998771177.1428572
+        - -902768434.2857144
+        - -806765691.4285715
+        - -710762948.5714287
+        - -614760205.7142859
+        - -518757462.8571429
+        - -422754720.0
+        - -326751977.1428573
+        - -230749234.2857144
+        - -134746491.42857146
+        - -38743748.571428776
+        - 57258994.28571415
+        - 153261737.14285707
+        - 249264479.99999976
+        - 345267222.8571427
+        - 441269965.7142854
+        - 537272708.5714283
+        - 633275451.4285712
+        - 729278194.2857141
+        - 825280937.1428571
+        - 921283680.0
+        - 1017286422.8571424
+        - 1113289165.7142854
+        - 1209291908.5714283
+        - 1305294651.4285712
+        - 1401297394.2857141
+        - 1497300137.142857
+        - 1593302880.0
+        - 1689305622.8571424
+        - 1785308365.7142854
+        - 1881311108.5714283
+        - 1977313851.4285712
+        - 2073316594.2857141
+        - 2169319337.142857
+        - 2265322079.9999995
+        - 2361324822.8571424
+        - 2457327565.7142854
+        - 2553330308.5714283
+        - 2649333051.4285707
+        - 2745335794.285714
+        - 2841338537.1428566
+        - 2937341280.0
+        density:
+        - 4.687678198841066e-11
+        - 5.657417103301764e-11
+        - 6.663977558046534e-11
+        - 7.794953413159446e-11
+        - 9.204446513842313e-11
+        - 1.108045705928299e-10
+        - 1.3578493619177193e-10
+        - 1.6731810835866227e-10
+        - 2.0368814704518641e-10
+        - 2.40840405561158e-10
+        - 2.7302407034748616e-10
+        - 2.943755360245565e-10
+        - 3.0089405048885633e-10
+        - 2.9190790255603057e-10
+        - 2.702920825241335e-10
+        - 2.413357843064226e-10
+        - 2.1086181499083846e-10
+        - 1.8350907912458386e-10
+        - 1.6185227048730672e-10
+        - 1.4648760943412055e-10
+        - 1.3674674082525488e-10
+        - 1.3154514097116506e-10
+        - 1.2999825844324652e-10
+        - 1.3167324011343738e-10
+        - 1.3653282667924865e-10
+        - 1.4471367558888132e-10
+        - 1.5627832140606026e-10
+        - 1.7102553473829923e-10
+        - 1.8837789570975651e-10
+        - 2.0732769775064775e-10
+        - 2.2643756904472274e-10
+        - 2.4394420957262667e-10
+        - 2.580414747662573e-10
+        - 2.673596906616631e-10
+        - 2.715122236770403e-10
+        - 2.7143969665465093e-10
+        - 2.692758657147352e-10
+        - 2.6764717455706554e-10
+        - 2.6862157813240553e-10
+        - 2.7275946767912653e-10
+        - 2.787281161764816e-10
+        - 2.8369358191771124e-10
+        - 2.843301855809613e-10
+        - 2.7799395544493996e-10
+        - 2.6355248142400235e-10
+        - 2.415707631186029e-10
+        - 2.1389283149099503e-10
+        - 1.8293172357770964e-10
+        - 1.510383678079769e-10
+        - 1.201632819855779e-10
+        x_axis: death_date
+        y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - label: -1766793120.00 - -1531586400.00
+          value: 0
+          color_index: 0
+        - label: -1531586400.00 - -1296379680.00
+          value: 0
+          color_index: 0
+        - label: -1296379680.00 - -1061172960.00
+          value: 3
+          color_index: 0
+        - label: -1061172960.00 - -825966240.00
+          value: 7
+          color_index: 0
+        - label: -825966240.00 - -590759520.00
+          value: 31
+          color_index: 0
+        - label: -590759520.00 - -355552800.00
+          value: 41
+          color_index: 0
+        - label: -355552800.00 - -120346080.00
+          value: 84
+          color_index: 0
+        - label: -120346080.00 - 114860640.00
+          value: 86
+          color_index: 0
+        - label: 114860640.00 - 350067360.00
+          value: 102
+          color_index: 0
+        - label: 350067360.00 - 585274080.00
+          value: 122
+          color_index: 0
+        - label: 585274080.00 - 820480800.00
+          value: 132
+          color_index: 0
+        - label: 820480800.00 - 1055687520.00
+          value: 123
+          color_index: 0
+        - label: 1055687520.00 - 1290894240.00
+          value: 85
+          color_index: 0
+        - label: 1290894240.00 - 1526100960.00
+          value: 77
+          color_index: 0
+        - label: 1526100960.00 - 1761307680.00
+          value: 19
+          color_index: 0
+        - label: 1761307680.00 - 1996514400.00
+          value: 4
+          color_index: 0
+        - label: 1996514400.00 - 2231721120.00
+          value: 1
+          color_index: 0
+        - label: 2231721120.00 - 2466927840.00
+          value: 1
+          color_index: 0
+        - label: 2466927840.00 - 2702134560.00
+          value: 1
+          color_index: 0
+        - label: 2702134560.00 - 2937341280.00
+          value: 0
+          color_index: 0
+        x_axis: death_date
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: -1766793120.00 - -1531586400.00
+          value: 28
+          color_index: 10
+        - label: -1531586400.00 - -1296379680.00
+          value: 11
+          color_index: 10
+        - label: -1296379680.00 - -1061172960.00
+          value: 25
+          color_index: 10
+        - label: -1061172960.00 - -825966240.00
+          value: 20
+          color_index: 10
+        - label: -825966240.00 - -590759520.00
+          value: 178
+          color_index: 10
+        - label: -590759520.00 - -355552800.00
+          value: 31
+          color_index: 3
+        - label: -355552800.00 - -120346080.00
+          value: 37
+          color_index: 6
+        - label: -120346080.00 - 114860640.00
+          value: 29
+          color_index: 7
+        - label: 114860640.00 - 350067360.00
+          value: 32
+          color_index: 7
+        - label: 350067360.00 - 585274080.00
+          value: 24
+          color_index: 9
+        - label: 585274080.00 - 820480800.00
+          value: 25
+          color_index: 9
+        - label: 820480800.00 - 1055687520.00
+          value: 48
+          color_index: 7
+        - label: 1055687520.00 - 1290894240.00
+          value: 44
+          color_index: 5
+        - label: 1290894240.00 - 1526100960.00
+          value: 91
+          color_index: 2
+        - label: 1526100960.00 - 1761307680.00
+          value: 68
+          color_index: 10
+        - label: 1761307680.00 - 1996514400.00
+          value: 41
+          color_index: 10
+        - label: 1996514400.00 - 2231721120.00
+          value: 62
+          color_index: 10
+        - label: 2231721120.00 - 2466927840.00
+          value: 104
+          color_index: 10
+        - label: 2466927840.00 - 2702134560.00
+          value: 49
+          color_index: 10
+        - label: 2702134560.00 - 2937341280.00
+          value: 53
+          color_index: 10
+        x_axis: death_date
+        y_axis: Count
+- attribute_information:
+    name: Age
+    index: 4
+    type: INTEGER
+    scale: INTERVAL
+  important_metrics:
+    mean:
+      values:
+        real: 53.510893246187365
+        synthetic: 49.723
+      difference:
+        absolute: 3.787893246187366
+        percentage: 7.078732976406169
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
+      display_name: Mean
+    variance:
+      values:
+        real: 88.87733231757966
+        synthetic: 360.79706806806803
+      difference:
+        absolute: 271.91973575048837
+        percentage: 305.94947964780835
+        color_index: 10
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
+      display_name: Variance
+    standard_deviation:
+      values:
+        real: 9.427477516153495
+        synthetic: 18.994658935291994
+      difference:
+        absolute: 9.5671814191385
+        percentage: 101.48187999118142
+        color_index: 10
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+      display_name: Standard Deviation
+    minimum:
+      values:
+        real: 28.0
+        synthetic: 20.0
+      difference:
+        absolute: 8.0
+        percentage: 28.57142857142857
+        color_index: 3
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+      display_name: Minimum
+    maximum:
+      values:
+        real: 77.0
+        synthetic: 89.0
+      difference:
+        absolute: 12.0
+        percentage: 15.584415584415584
+        color_index: 2
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
+      display_name: Maximum
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+  details:
+    fifth_percentile:
+      values:
+        real: 37.0
+        synthetic: 28.0
+      difference:
+        absolute: 9.0
+        percentage: 24.324324324324326
+        color_index: 3
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+      display_name: Fifth Percentile
+    q1:
+      values:
+        real: 47.0
+        synthetic: 34.0
+      difference:
+        absolute: 13.0
+        percentage: 27.659574468085108
+        color_index: 3
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+      display_name: First Quartile
+    median:
+      values:
+        real: 54.0
+        synthetic: 42.0
+      difference:
+        absolute: 12.0
+        percentage: 22.22222222222222
+        color_index: 3
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+      display_name: Median
+    q3:
+      values:
+        real: 60.0
+        synthetic: 66.0
+      difference:
+        absolute: 6.0
+        percentage: 10.0
+        color_index: 2
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+      display_name: Third Quartile
+    ninety_fifth_percentile:
+      values:
+        real: 68.0
+        synthetic: 86.0
+      difference:
+        absolute: 18.0
+        percentage: 26.47058823529412
+        color_index: 3
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
+      display_name: Ninety Fifth Percentile
+    skewness:
+      values:
+        real: -0.19603936751803766
+        synthetic: 0.6185318457373936
+      difference:
+        absolute: 0.8145712132554312
+        percentage: 415.51409983022023
+        color_index: 10
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
+      display_name: Skewness
+    kurtosis:
+      values:
+        real: -0.3832864096294757
+        synthetic: -0.9307703272302295
+      difference:
+        absolute: 0.5474839176007538
+        percentage: 142.83937646785034
+        color_index: 10
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+      display_name: Kurtosis
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.3872709466811752
+          p_value: 1.3450044681563343e-64
+          color_index: 4
+        synthetic:
+          KS_statistic: 0.3872709466811752
+          p_value: 1.3450044681563343e-64
+          color_index: 4
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
+      display_name: Kolmogorov-Smirnov
+  plot:
+    density:
+      real:
+        x_values:
+        - 20.0
+        - 21.408163265306122
+        - 22.816326530612244
+        - 24.224489795918366
+        - 25.632653061224488
+        - 27.04081632653061
+        - 28.448979591836736
+        - 29.857142857142858
+        - 31.26530612244898
+        - 32.673469387755105
+        - 34.08163265306122
+        - 35.48979591836735
+        - 36.89795918367347
+        - 38.30612244897959
+        - 39.714285714285715
+        - 41.12244897959184
+        - 42.53061224489796
+        - 43.93877551020408
+        - 45.3469387755102
+        - 46.755102040816325
+        - 48.16326530612245
+        - 49.57142857142857
+        - 50.9795918367347
+        - 52.38775510204081
+        - 53.79591836734694
+        - 55.204081632653065
+        - 56.61224489795919
+        - 58.02040816326531
+        - 59.42857142857143
+        - 60.83673469387755
+        - 62.244897959183675
+        - 63.6530612244898
+        - 65.06122448979592
+        - 66.46938775510205
+        - 67.87755102040816
+        - 69.28571428571428
+        - 70.6938775510204
+        - 72.10204081632654
+        - 73.51020408163265
+        - 74.91836734693877
+        - 76.3265306122449
+        - 77.73469387755102
+        - 79.14285714285714
+        - 80.55102040816327
+        - 81.9591836734694
+        - 83.36734693877551
+        - 84.77551020408163
+        - 86.18367346938776
+        - 87.59183673469389
+        - 89.0
+        density:
+        - 1.2733965116024038e-06
+        - 8.521208815778339e-06
+        - 4.1738969333354685e-05
+        - 0.0001513509826793619
+        - 0.00041445648244451804
+        - 0.000887441115592287
+        - 0.001571042717737754
+        - 0.0024723144609277814
+        - 0.003682143159931504
+        - 0.005311856424598392
+        - 0.007365583616069027
+        - 0.00974718796721192
+        - 0.012349390592838957
+        - 0.01504638398962871
+        - 0.017630206397499387
+        - 0.01981119293019733
+        - 0.02138248716487509
+        - 0.022496951007429822
+        - 0.023648004596795464
+        - 0.02528744334015279
+        - 0.027649802523745638
+        - 0.030868495757043278
+        - 0.03482414809944846
+        - 0.03881273728159252
+        - 0.04173519687186052
+        - 0.04284260608801876
+        - 0.0422117133989142
+        - 0.04042470220716003
+        - 0.037989815079172456
+        - 0.03505626576941533
+        - 0.0314297851560197
+        - 0.026987045342835022
+        - 0.02213700201057238
+        - 0.01759243126005177
+        - 0.013736355482698696
+        - 0.010506250407502325
+        - 0.007823155816902625
+        - 0.005786568373844493
+        - 0.004383169650421631
+        - 0.0033207853396637474
+        - 0.002320271065957207
+        - 0.001382874713053735
+        - 0.0006688625742746519
+        - 0.0002543257463723924
+        - 7.418956814215758e-05
+        - 1.6270297705967796e-05
+        - 2.639599306317581e-06
+        - 3.130033448562691e-07
+        - 2.6898795993140293e-08
+        - 1.6654980952703545e-09
+        x_axis: Age
+        y_axis: Frequency
+        color_index: 0
+      synthetic:
+        x_values:
+        - 20.0
+        - 21.408163265306122
+        - 22.816326530612244
+        - 24.224489795918366
+        - 25.632653061224488
+        - 27.04081632653061
+        - 28.448979591836736
+        - 29.857142857142858
+        - 31.26530612244898
+        - 32.673469387755105
+        - 34.08163265306122
+        - 35.48979591836735
+        - 36.89795918367347
+        - 38.30612244897959
+        - 39.714285714285715
+        - 41.12244897959184
+        - 42.53061224489796
+        - 43.93877551020408
+        - 45.3469387755102
+        - 46.755102040816325
+        - 48.16326530612245
+        - 49.57142857142857
+        - 50.9795918367347
+        - 52.38775510204081
+        - 53.79591836734694
+        - 55.204081632653065
+        - 56.61224489795919
+        - 58.02040816326531
+        - 59.42857142857143
+        - 60.83673469387755
+        - 62.244897959183675
+        - 63.6530612244898
+        - 65.06122448979592
+        - 66.46938775510205
+        - 67.87755102040816
+        - 69.28571428571428
+        - 70.6938775510204
+        - 72.10204081632654
+        - 73.51020408163265
+        - 74.91836734693877
+        - 76.3265306122449
+        - 77.73469387755102
+        - 79.14285714285714
+        - 80.55102040816327
+        - 81.9591836734694
+        - 83.36734693877551
+        - 84.77551020408163
+        - 86.18367346938776
+        - 87.59183673469389
+        - 89.0
+        density:
+        - 0.003602602964717402
+        - 0.00458713896494278
+        - 0.005896254297929702
+        - 0.0077589973234712525
+        - 0.010430472318921939
+        - 0.014082068290011057
+        - 0.01866282459270542
+        - 0.02379462033759144
+        - 0.02877668041851239
+        - 0.03274071620719232
+        - 0.03492081141104166
+        - 0.034925167229005606
+        - 0.032877456742154705
+        - 0.029357458614804207
+        - 0.02517725475179713
+        - 0.021109287477963142
+        - 0.01768715487783324
+        - 0.01513856499623922
+        - 0.013434007653778966
+        - 0.012391943752514116
+        - 0.011783175637379475
+        - 0.01140362037680919
+        - 0.011110401137590471
+        - 0.010829150133186277
+        - 0.01054312918330523
+        - 0.010273694875756864
+        - 0.010059669596703342
+        - 0.009940077518594641
+        - 0.009941044385771555
+        - 0.01006593840427134
+        - 0.010289490262558524
+        - 0.010559381697917569
+        - 0.010808294134487476
+        - 0.010974076131735755
+        - 0.011019270986608517
+        - 0.010939842022601082
+        - 0.0107590402358054
+        - 0.010511913353387203
+        - 0.010231461657723316
+        - 0.009944403902484626
+        - 0.0096753607246058
+        - 0.009450447490233974
+        - 0.009291259568006933
+        - 0.009198400253013193
+        - 0.009134047082602166
+        - 0.00901769493520917
+        - 0.008744052137912368
+        - 0.008219630582129378
+        - 0.007402444253932643
+        - 0.006325261653600942
+        x_axis: Age
+        y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - label: 20.00 - 23.83
+          value: 0
+          color_index: 0
+        - label: 23.83 - 27.67
+          value: 0
+          color_index: 0
+        - label: 27.67 - 31.50
+          value: 7
+          color_index: 0
+        - label: 31.50 - 35.33
+          value: 25
+          color_index: 0
+        - label: 35.33 - 39.17
+          value: 48
+          color_index: 0
+        - label: 39.17 - 43.00
+          value: 55
+          color_index: 0
+        - label: 43.00 - 46.83
+          value: 85
+          color_index: 0
+        - label: 46.83 - 50.67
+          value: 96
+          color_index: 0
+        - label: 50.67 - 54.50
+          value: 156
+          color_index: 0
+        - label: 54.50 - 58.33
+          value: 159
+          color_index: 0
+        - label: 58.33 - 62.17
+          value: 133
+          color_index: 0
+        - label: 62.17 - 66.00
+          value: 73
+          color_index: 0
+        - label: 66.00 - 69.83
+          value: 51
+          color_index: 0
+        - label: 69.83 - 73.67
+          value: 17
+          color_index: 0
+        - label: 73.67 - 77.50
+          value: 14
+          color_index: 0
+        - label: 77.50 - 81.33
+          value: 0
+          color_index: 0
+        - label: 81.33 - 85.17
+          value: 0
+          color_index: 0
+        - label: 85.17 - 89.00
+          value: 0
+          color_index: 0
+        x_axis: Age
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: 20.00 - 23.83
+          value: 27
+          color_index: 10
+        - label: 23.83 - 27.67
+          value: 17
+          color_index: 10
+        - label: 27.67 - 31.50
+          value: 23
+          color_index: 10
+        - label: 31.50 - 35.33
+          value: 316
+          color_index: 10
+        - label: 35.33 - 39.17
+          value: 85
+          color_index: 8
+        - label: 39.17 - 43.00
+          value: 37
+          color_index: 4
+        - label: 43.00 - 46.83
+          value: 42
+          color_index: 6
+        - label: 46.83 - 50.67
+          value: 49
+          color_index: 5
+        - label: 50.67 - 54.50
+          value: 45
+          color_index: 8
+        - label: 54.50 - 58.33
+          value: 39
+          color_index: 8
+        - label: 58.33 - 62.17
+          value: 30
+          color_index: 8
+        - label: 62.17 - 66.00
+          value: 35
+          color_index: 6
+        - label: 66.00 - 69.83
+          value: 52
+          color_index: 1
+        - label: 69.83 - 73.67
+          value: 38
+          color_index: 10
+        - label: 73.67 - 77.50
+          value: 48
+          color_index: 10
+        - label: 77.50 - 81.33
+          value: 23
+          color_index: 10
+        - label: 81.33 - 85.17
+          value: 40
+          color_index: 10
+        - label: 85.17 - 89.00
+          value: 54
+          color_index: 10
+        x_axis: Age
+        y_axis: Count
+- attribute_information:
+    name: Sex
+    index: 5
+    type: STRING
+    scale: NOMINAL
+  important_metrics:
+    mode:
+      values:
+        real: M
+        synthetic: M
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
+      display_name: Mode
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+    distinct_values:
+      values:
+        real: 3
+        synthetic: 3
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+      display_name: Distinct Values
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.17493972609290215
+          color_index: 2
+        synthetic:
+          hellinger_distance: 0.17493972609290215
+          color_index: 2
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
+      display_name: Hellinger Distance
+  plot:
+    frequency_count:
+      real:
+        frequencies:
+        - label: M
+          value: 725
+          color_index: 0
+        - label: F
+          value: 193
+          color_index: 0
+        - label: nan
+          value: 1
+          color_index: 0
+        x_axis: Sex
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: M
+          value: 662
+          color_index: 1
+        - label: F
+          value: 270
+          color_index: 4
+        - label: nan
+          value: 68
+          color_index: 10
+        x_axis: Sex
+        y_axis: Count
+- attribute_information:
+    name: ChestPainType
+    index: 6
+    type: STRING
+    scale: NOMINAL
+  important_metrics:
+    mode:
+      values:
+        real: ASY
+        synthetic: NAP
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
+      display_name: Mode
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+    distinct_values:
+      values:
+        real: 5
+        synthetic: 5
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+      display_name: Distinct Values
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.24899208803470224
+          color_index: 3
+        synthetic:
+          hellinger_distance: 0.24899208803470224
+          color_index: 3
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
+      display_name: Hellinger Distance
+  plot:
+    frequency_count:
+      real:
+        frequencies:
+        - label: ASY
+          value: 496
+          color_index: 0
+        - label: NAP
+          value: 203
+          color_index: 0
+        - label: ATA
+          value: 173
+          color_index: 0
+        - label: TA
+          value: 46
+          color_index: 0
+        - label: nan
+          value: 1
+          color_index: 0
+        x_axis: ChestPainType
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: ASY
+          value: 285
+          color_index: 5
+        - label: NAP
+          value: 363
+          color_index: 8
+        - label: ATA
+          value: 168
+          color_index: 1
+        - label: TA
+          value: 116
+          color_index: 10
+        - label: nan
+          value: 68
+          color_index: 10
+        x_axis: ChestPainType
+        y_axis: Count
+- attribute_information:
+    name: RestingBP
+    index: 7
+    type: INTEGER
+    scale: INTERVAL
+  important_metrics:
+    mean:
+      values:
+        real: 132.39651416122004
+        synthetic: 131.263
+      difference:
+        absolute: 1.1335141612200346
+        percentage: 0.8561510613789631
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
+      display_name: Mean
+    variance:
+      values:
+        real: 342.400510724745
+        synthetic: 923.2050360360361
+      difference:
+        absolute: 580.8045253112911
+        percentage: 169.627236852517
+        color_index: 10
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
+      display_name: Variance
+    standard_deviation:
+      values:
+        real: 18.504067410295093
+        synthetic: 30.384289296214188
+      difference:
+        absolute: 11.880221885919095
+        percentage: 64.20329986103113
+        color_index: 7
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+      display_name: Standard Deviation
+    minimum:
+      values:
+        real: 0.0
+        synthetic: 72.0
+      difference:
+        absolute: 72.0
+        percentage: 100
+        color_index: 10
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+      display_name: Minimum
+    maximum:
+      values:
+        real: 200.0
+        synthetic: 243.0
+      difference:
+        absolute: 43.0
+        percentage: 21.5
+        color_index: 3
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
+      display_name: Maximum
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+  details:
+    fifth_percentile:
+      values:
+        real: 106.0
+        synthetic: 85.0
+      difference:
+        absolute: 21.0
+        percentage: 19.81132075471698
+        color_index: 2
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+      display_name: Fifth Percentile
+    q1:
+      values:
+        real: 120.0
+        synthetic: 108.0
+      difference:
+        absolute: 12.0
+        percentage: 10.0
+        color_index: 2
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+      display_name: First Quartile
+    median:
+      values:
+        real: 130.0
+        synthetic: 132.0
+      difference:
+        absolute: 2.0
+        percentage: 1.5384615384615385
+        color_index: 1
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+      display_name: Median
+    q3:
+      values:
+        real: 140.0
+        synthetic: 151.0
+      difference:
+        absolute: 11.0
+        percentage: 7.857142857142857
+        color_index: 1
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+      display_name: Third Quartile
+    ninety_fifth_percentile:
+      values:
+        real: 160.0
+        synthetic: 184.04999999999995
+      difference:
+        absolute: 24.049999999999955
+        percentage: 15.031249999999972
+        color_index: 2
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
+      display_name: Ninety Fifth Percentile
+    skewness:
+      values:
+        real: 0.1799369143410541
+        synthetic: 0.7141904486731419
+      difference:
+        absolute: 0.5342535343320878
+        percentage: 296.91157942136243
+        color_index: 10
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
+      display_name: Skewness
+    kurtosis:
+      values:
+        real: 3.27806645322641
+        synthetic: 1.4416384713489916
+      difference:
+        absolute: 1.8364279818774185
+        percentage: 56.02168254002079
+        color_index: 6
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+      display_name: Kurtosis
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.213240478781284
+          p_value: 1.464854617613442e-19
+          color_index: 3
+        synthetic:
+          KS_statistic: 0.213240478781284
+          p_value: 1.464854617613442e-19
+          color_index: 3
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
+      display_name: Kolmogorov-Smirnov
+  plot:
+    density:
+      real:
+        x_values:
+        - 0.0
+        - 4.959183673469388
+        - 9.918367346938776
+        - 14.877551020408164
+        - 19.836734693877553
+        - 24.795918367346943
+        - 29.75510204081633
+        - 34.714285714285715
+        - 39.673469387755105
+        - 44.632653061224495
+        - 49.591836734693885
+        - 54.55102040816327
+        - 59.51020408163266
+        - 64.46938775510205
+        - 69.42857142857143
+        - 74.38775510204083
+        - 79.34693877551021
+        - 84.3061224489796
+        - 89.26530612244899
+        - 94.22448979591837
+        - 99.18367346938777
+        - 104.14285714285715
+        - 109.10204081632654
+        - 114.06122448979593
+        - 119.02040816326532
+        - 123.9795918367347
+        - 128.9387755102041
+        - 133.8979591836735
+        - 138.85714285714286
+        - 143.81632653061226
+        - 148.77551020408166
+        - 153.73469387755102
+        - 158.69387755102042
+        - 163.65306122448982
+        - 168.6122448979592
+        - 173.57142857142858
+        - 178.53061224489798
+        - 183.48979591836735
+        - 188.44897959183675
+        - 193.40816326530614
+        - 198.36734693877554
+        - 203.3265306122449
+        - 208.2857142857143
+        - 213.2448979591837
+        - 218.20408163265307
+        - 223.16326530612247
+        - 228.12244897959187
+        - 233.08163265306123
+        - 238.04081632653063
+        - 243.0
+        density:
+        - 9.183124130343165e-05
+        - 5.2967287479559624e-05
+        - 1.016388088099316e-05
+        - 6.48852461046896e-07
+        - 1.3780561123950667e-08
+        - 9.736937966827251e-11
+        - 2.2888243252782534e-13
+        - 1.789934241587314e-16
+        - 6.103718819980937e-20
+        - 6.428344079027906e-17
+        - 9.502030649919808e-14
+        - 4.6727047632566396e-11
+        - 7.644605976293687e-09
+        - 4.1608406244543136e-07
+        - 7.535636256582889e-06
+        - 4.555302087284735e-05
+        - 9.763889435231652e-05
+        - 0.00016194972825376723
+        - 0.0006388841057722156
+        - 0.0018569336976757044
+        - 0.003531169582410966
+        - 0.0062558750039355205
+        - 0.010321414844511075
+        - 0.014465423253660232
+        - 0.019893786190815582
+        - 0.021941997330639753
+        - 0.022904314095660752
+        - 0.022299993494142873
+        - 0.020649435964421172
+        - 0.015814522044012493
+        - 0.010911252623650216
+        - 0.00841735002110406
+        - 0.007079641147187452
+        - 0.004760615497715049
+        - 0.0026404594574258246
+        - 0.0019758897771744335
+        - 0.0017581363856721069
+        - 0.0012007558180197426
+        - 0.0005811899744982298
+        - 0.00040841329611557487
+        - 0.00042376225137123714
+        - 0.00029547490993041633
+        - 7.94016846937171e-05
+        - 7.255319880965117e-06
+        - 2.2125312550621074e-07
+        - 2.245752923926048e-09
+        - 7.584044383092572e-12
+        - 8.520780412817064e-15
+        - 3.18488135649628e-18
+        - 3.96042538141252e-22
+        x_axis: RestingBP
+        y_axis: Frequency
+        color_index: 0
+      synthetic:
+        x_values:
+        - 0.0
+        - 4.959183673469388
+        - 9.918367346938776
+        - 14.877551020408164
+        - 19.836734693877553
+        - 24.795918367346943
+        - 29.75510204081633
+        - 34.714285714285715
+        - 39.673469387755105
+        - 44.632653061224495
+        - 49.591836734693885
+        - 54.55102040816327
+        - 59.51020408163266
+        - 64.46938775510205
+        - 69.42857142857143
+        - 74.38775510204083
+        - 79.34693877551021
+        - 84.3061224489796
+        - 89.26530612244899
+        - 94.22448979591837
+        - 99.18367346938777
+        - 104.14285714285715
+        - 109.10204081632654
+        - 114.06122448979593
+        - 119.02040816326532
+        - 123.9795918367347
+        - 128.9387755102041
+        - 133.8979591836735
+        - 138.85714285714286
+        - 143.81632653061226
+        - 148.77551020408166
+        - 153.73469387755102
+        - 158.69387755102042
+        - 163.65306122448982
+        - 168.6122448979592
+        - 173.57142857142858
+        - 178.53061224489798
+        - 183.48979591836735
+        - 188.44897959183675
+        - 193.40816326530614
+        - 198.36734693877554
+        - 203.3265306122449
+        - 208.2857142857143
+        - 213.2448979591837
+        - 218.20408163265307
+        - 223.16326530612247
+        - 228.12244897959187
+        - 233.08163265306123
+        - 238.04081632653063
+        - 243.0
+        density:
+        - 2.605789356038935e-23
+        - 1.002020760123693e-20
+        - 2.5328474682692103e-18
+        - 4.20968515050918e-16
+        - 4.601905202998526e-14
+        - 3.3101730762850933e-12
+        - 1.5675627768897804e-10
+        - 4.890913968049192e-09
+        - 1.0065379018751609e-07
+        - 1.3686613338080893e-06
+        - 1.2331552514086152e-05
+        - 7.398145258938908e-05
+        - 0.0002981782984127971
+        - 0.0008210922983573161
+        - 0.0015965329616271261
+        - 0.002342151352750915
+        - 0.002954659791771524
+        - 0.003883075429627583
+        - 0.005739299412070476
+        - 0.008293041626110232
+        - 0.010288377353546214
+        - 0.010900935205061132
+        - 0.010599194067950225
+        - 0.010214813467143005
+        - 0.01017523302117033
+        - 0.010548631744194358
+        - 0.01124477312839138
+        - 0.012212012024605914
+        - 0.013389998426315676
+        - 0.014496053579757332
+        - 0.014903259165363362
+        - 0.013559819079257565
+        - 0.010009530198373034
+        - 0.005753836515714127
+        - 0.0028545321658189917
+        - 0.0017519022560305193
+        - 0.0016397227729128099
+        - 0.001741307899872863
+        - 0.0016557670537589882
+        - 0.0012845094872554234
+        - 0.0008076734527024752
+        - 0.00048458381559457914
+        - 0.0003780577929242616
+        - 0.00038635277484227174
+        - 0.00044589856997834373
+        - 0.0005530451336564357
+        - 0.0006768862486877961
+        - 0.0007636421684224171
+        - 0.0007537514952000897
+        - 0.000600266972711269
+        x_axis: RestingBP
+        y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - label: 0.00 - 9.72
+          value: 1
+          color_index: 0
+        - label: 9.72 - 19.44
+          value: 0
+          color_index: 0
+        - label: 19.44 - 29.16
+          value: 0
+          color_index: 0
+        - label: 29.16 - 38.88
+          value: 0
+          color_index: 0
+        - label: 38.88 - 48.60
+          value: 0
+          color_index: 0
+        - label: 48.60 - 58.32
+          value: 0
+          color_index: 0
+        - label: 58.32 - 68.04
+          value: 0
+          color_index: 0
+        - label: 68.04 - 77.76
+          value: 0
+          color_index: 0
+        - label: 77.76 - 87.48
+          value: 1
+          color_index: 0
+        - label: 87.48 - 97.20
+          value: 10
+          color_index: 0
+        - label: 97.20 - 106.92
+          value: 35
+          color_index: 0
+        - label: 106.92 - 116.64
+          value: 103
+          color_index: 0
+        - label: 116.64 - 126.36
+          value: 205
+          color_index: 0
+        - label: 126.36 - 136.08
+          value: 210
+          color_index: 0
+        - label: 136.08 - 145.80
+          value: 176
+          color_index: 0
+        - label: 145.80 - 155.52
+          value: 79
+          color_index: 0
+        - label: 155.52 - 165.24
+          value: 59
+          color_index: 0
+        - label: 165.24 - 174.96
+          value: 17
+          color_index: 0
+        - label: 174.96 - 184.68
+          value: 15
+          color_index: 0
+        - label: 184.68 - 194.40
+          value: 4
+          color_index: 0
+        - label: 194.40 - 204.12
+          value: 4
+          color_index: 0
+        - label: 204.12 - 213.84
+          value: 0
+          color_index: 0
+        - label: 213.84 - 223.56
+          value: 0
+          color_index: 0
+        - label: 223.56 - 233.28
+          value: 0
+          color_index: 0
+        - label: 233.28 - 243.00
+          value: 0
+          color_index: 0
+        x_axis: RestingBP
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: 0.00 - 9.72
+          value: 0
+          color_index: 10
+        - label: 9.72 - 19.44
+          value: 0
+          color_index: 1
+        - label: 19.44 - 29.16
+          value: 0
+          color_index: 1
+        - label: 29.16 - 38.88
+          value: 0
+          color_index: 1
+        - label: 38.88 - 48.60
+          value: 0
+          color_index: 1
+        - label: 48.60 - 58.32
+          value: 0
+          color_index: 1
+        - label: 58.32 - 68.04
+          value: 0
+          color_index: 1
+        - label: 68.04 - 77.76
+          value: 26
+          color_index: 10
+        - label: 77.76 - 87.48
+          value: 28
+          color_index: 10
+        - label: 87.48 - 97.20
+          value: 77
+          color_index: 10
+        - label: 97.20 - 106.92
+          value: 93
+          color_index: 10
+        - label: 106.92 - 116.64
+          value: 113
+          color_index: 1
+        - label: 116.64 - 126.36
+          value: 106
+          color_index: 5
+        - label: 126.36 - 136.08
+          value: 107
+          color_index: 5
+        - label: 136.08 - 145.80
+          value: 143
+          color_index: 2
+        - label: 145.80 - 155.52
+          value: 218
+          color_index: 10
+        - label: 155.52 - 165.24
+          value: 13
+          color_index: 8
+        - label: 165.24 - 174.96
+          value: 8
+          color_index: 6
+        - label: 174.96 - 184.68
+          value: 18
+          color_index: 3
+        - label: 184.68 - 194.40
+          value: 23
+          color_index: 10
+        - label: 194.40 - 204.12
+          value: 1
+          color_index: 8
+        - label: 204.12 - 213.84
+          value: 4
+          color_index: 10
+        - label: 213.84 - 223.56
+          value: 3
+          color_index: 10
+        - label: 223.56 - 233.28
+          value: 7
+          color_index: 10
+        - label: 233.28 - 243.00
+          value: 12
+          color_index: 10
+        x_axis: RestingBP
+        y_axis: Count
+- attribute_information:
+    name: Cholesterol
+    index: 8
+    type: INTEGER
+    scale: INTERVAL
+  important_metrics:
+    mean:
+      values:
+        real: 198.7995642701525
+        synthetic: 151.314
+      difference:
+        absolute: 47.48556427015251
+        percentage: 23.88615108110774
+        color_index: 3
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
+      display_name: Mean
+    variance:
+      values:
+        real: 11951.857429004036
+        synthetic: 32379.050454454456
+      difference:
+        absolute: 20427.19302545042
+        percentage: 170.91228829318996
+        color_index: 10
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
+      display_name: Variance
+    standard_deviation:
+      values:
+        real: 109.32455089779256
+        synthetic: 179.94179740809096
+      difference:
+        absolute: 70.6172465102984
+        percentage: 64.59413364187374
+        color_index: 7
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+      display_name: Standard Deviation
+    minimum:
+      values:
+        real: 0.0
+        synthetic: -91.0
+      difference:
+        absolute: 91.0
+        percentage: 100
+        color_index: 10
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+      display_name: Minimum
+    maximum:
+      values:
+        real: 603.0
+        synthetic: 882.0
+      difference:
+        absolute: 279.0
+        percentage: 46.26865671641791
+        color_index: 5
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
+      display_name: Maximum
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+  details:
+    fifth_percentile:
+      values:
+        real: 0.0
+        synthetic: -60.05
+      difference:
+        absolute: 60.05
+        percentage: 100
+        color_index: 10
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+      display_name: Fifth Percentile
+    q1:
+      values:
+        real: 173.5
+        synthetic: 46.0
+      difference:
+        absolute: 127.5
+        percentage: 73.48703170028818
+        color_index: 8
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+      display_name: First Quartile
+    median:
+      values:
+        real: 223.0
+        synthetic: 70.0
+      difference:
+        absolute: 153.0
+        percentage: 68.60986547085201
+        color_index: 7
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+      display_name: Median
+    q3:
+      values:
+        real: 267.0
+        synthetic: 289.0
+      difference:
+        absolute: 22.0
+        percentage: 8.239700374531834
+        color_index: 1
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+      display_name: Third Quartile
+    ninety_fifth_percentile:
+      values:
+        real: 331.1999999999998
+        synthetic: 445.0
+      difference:
+        absolute: 113.80000000000018
+        percentage: 34.35990338164259
+        color_index: 4
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
+      display_name: Ninety Fifth Percentile
+    skewness:
+      values:
+        real: -0.6104175432769176
+        synthetic: 1.4030090114493723
+      difference:
+        absolute: 2.0134265547262897
+        percentage: 329.844149615617
+        color_index: 10
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
+      display_name: Skewness
+    kurtosis:
+      values:
+        real: 0.12160807050415912
+        synthetic: 2.3264036535256207
+      difference:
+        absolute: 2.2047955830214616
+        percentage: 1813.0339326007604
+        color_index: 10
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+      display_name: Kurtosis
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.4316365614798694
+          p_value: 1.1637614678395255e-80
+          color_index: 5
+        synthetic:
+          KS_statistic: 0.4316365614798694
+          p_value: 1.1637614678395255e-80
+          color_index: 5
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
+      display_name: Kolmogorov-Smirnov
+  plot:
+    density:
+      real:
+        x_values:
+        - -91.0
+        - -71.14285714285714
+        - -51.285714285714285
+        - -31.42857142857143
+        - -11.57142857142857
+        - 8.285714285714292
+        - 28.14285714285714
+        - 48.0
+        - 67.85714285714286
+        - 87.71428571428572
+        - 107.57142857142858
+        - 127.42857142857144
+        - 147.28571428571428
+        - 167.14285714285717
+        - 187.0
+        - 206.8571428571429
+        - 226.71428571428572
+        - 246.57142857142856
+        - 266.42857142857144
+        - 286.2857142857143
+        - 306.14285714285717
+        - 326.0
+        - 345.8571428571429
+        - 365.7142857142857
+        - 385.57142857142856
+        - 405.42857142857144
+        - 425.28571428571433
+        - 445.1428571428571
+        - 465.0
+        - 484.8571428571429
+        - 504.7142857142858
+        - 524.5714285714286
+        - 544.4285714285714
+        - 564.2857142857143
+        - 584.1428571428571
+        - 604.0
+        - 623.8571428571429
+        - 643.7142857142858
+        - 663.5714285714286
+        - 683.4285714285714
+        - 703.2857142857143
+        - 723.1428571428571
+        - 743.0
+        - 762.8571428571429
+        - 782.7142857142858
+        - 802.5714285714286
+        - 822.4285714285714
+        - 842.2857142857143
+        - 862.1428571428571
+        - 882.0
+        density:
+        - 1.3236281986111588e-05
+        - 0.00010425071122040134
+        - 0.0004952844201440016
+        - 0.0014193634762562932
+        - 0.0024535935832563217
+        - 0.002558882787328504
+        - 0.0016128576779352458
+        - 0.0006276811717719967
+        - 0.00019582697637330796
+        - 0.00016202581157539824
+        - 0.0003202543066607003
+        - 0.0006820992017272312
+        - 0.0013844302466576516
+        - 0.0025079362448047382
+        - 0.003892275708266736
+        - 0.005081565847796684
+        - 0.005601031614024621
+        - 0.0053840209032116814
+        - 0.004697512616003329
+        - 0.003766258849604396
+        - 0.0027396176877660743
+        - 0.0017912045123535483
+        - 0.0010615403653572283
+        - 0.000596149533832143
+        - 0.0003528767129129249
+        - 0.0002287791035474569
+        - 0.00014524154953813283
+        - 9.41117024584753e-05
+        - 7.45399466199912e-05
+        - 6.53721571401551e-05
+        - 5.661237095243271e-05
+        - 4.870566184682265e-05
+        - 4.045337455405157e-05
+        - 3.3004190279913995e-05
+        - 2.7578298261617457e-05
+        - 2.166923419469929e-05
+        - 1.3384993608593258e-05
+        - 5.639839109487981e-06
+        - 1.5068759029506515e-06
+        - 2.47555611967745e-07
+        - 2.4708826242475295e-08
+        - 1.4916106602235253e-09
+        - 5.436912543343739e-11
+        - 1.1958356951079672e-12
+        - 1.5867643031230222e-14
+        - 1.270099686853652e-16
+        - 6.132447880598799e-19
+        - 1.786057662595051e-21
+        - 3.137767376548018e-24
+        - 3.325132575496358e-27
+        x_axis: Cholesterol
+        y_axis: Frequency
+        color_index: 0
+      synthetic:
+        x_values:
+        - -91.0
+        - -71.14285714285714
+        - -51.285714285714285
+        - -31.42857142857143
+        - -11.57142857142857
+        - 8.285714285714292
+        - 28.14285714285714
+        - 48.0
+        - 67.85714285714286
+        - 87.71428571428572
+        - 107.57142857142858
+        - 127.42857142857144
+        - 147.28571428571428
+        - 167.14285714285717
+        - 187.0
+        - 206.8571428571429
+        - 226.71428571428572
+        - 246.57142857142856
+        - 266.42857142857144
+        - 286.2857142857143
+        - 306.14285714285717
+        - 326.0
+        - 345.8571428571429
+        - 365.7142857142857
+        - 385.57142857142856
+        - 405.42857142857144
+        - 425.28571428571433
+        - 445.1428571428571
+        - 465.0
+        - 484.8571428571429
+        - 504.7142857142858
+        - 524.5714285714286
+        - 544.4285714285714
+        - 564.2857142857143
+        - 584.1428571428571
+        - 604.0
+        - 623.8571428571429
+        - 643.7142857142858
+        - 663.5714285714286
+        - 683.4285714285714
+        - 703.2857142857143
+        - 723.1428571428571
+        - 743.0
+        - 762.8571428571429
+        - 782.7142857142858
+        - 802.5714285714286
+        - 822.4285714285714
+        - 842.2857142857143
+        - 862.1428571428571
+        - 882.0
+        density:
+        - 0.0007533258406460477
+        - 0.0010688586600035674
+        - 0.001419013588581887
+        - 0.0018507034784645594
+        - 0.002423643385685405
+        - 0.0031131096272600215
+        - 0.003742477043328807
+        - 0.004050064961159741
+        - 0.003871083442603447
+        - 0.003271338280805769
+        - 0.0024990419679085576
+        - 0.0018094168586432079
+        - 0.0013302409307549118
+        - 0.0010560618184998927
+        - 0.000921474647842614
+        - 0.0008667601316485477
+        - 0.0008611045911235927
+        - 0.0008967171061463528
+        - 0.0009738933390468212
+        - 0.0010861301168829972
+        - 0.0012100973279994779
+        - 0.0013069773219460414
+        - 0.0013386023479192443
+        - 0.0012898900676011074
+        - 0.0011777114152324534
+        - 0.0010340302493142923
+        - 0.0008789214591434253
+        - 0.0007133473171770815
+        - 0.0005371518087371958
+        - 0.0003655521791670961
+        - 0.00022294646089494852
+        - 0.00012468951381704264
+        - 6.900292499680425e-05
+        - 4.351844266851447e-05
+        - 3.5090633442315166e-05
+        - 3.442720685112182e-05
+        - 3.6339824571852034e-05
+        - 3.888814532277139e-05
+        - 4.229085611174617e-05
+        - 4.7402413531877745e-05
+        - 5.4304021919651716e-05
+        - 6.182205386386085e-05
+        - 6.827165038143147e-05
+        - 7.311596050174468e-05
+        - 7.825273525734449e-05
+        - 8.68812548303495e-05
+        - 9.963671930020771e-05
+        - 0.00011152622007147834
+        - 0.0001140640442584568
+        - 0.0001019022431044891
+        x_axis: Cholesterol
+        y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - label: -91.00 - -52.08
+          value: 0
+          color_index: 0
+        - label: -52.08 - -13.16
+          value: 0
+          color_index: 0
+        - label: -13.16 - 25.76
+          value: 172
+          color_index: 0
+        - label: 25.76 - 64.68
+          value: 0
+          color_index: 0
+        - label: 64.68 - 103.60
+          value: 3
+          color_index: 0
+        - label: 103.60 - 142.52
+          value: 13
+          color_index: 0
+        - label: 142.52 - 181.44
+          value: 62
+          color_index: 0
+        - label: 181.44 - 220.36
+          value: 198
+          color_index: 0
+        - label: 220.36 - 259.28
+          value: 205
+          color_index: 0
+        - label: 259.28 - 298.20
+          value: 159
+          color_index: 0
+        - label: 298.20 - 337.12
+          value: 66
+          color_index: 0
+        - label: 337.12 - 376.04
+          value: 21
+          color_index: 0
+        - label: 376.04 - 414.96
+          value: 11
+          color_index: 0
+        - label: 414.96 - 453.88
+          value: 1
+          color_index: 0
+        - label: 453.88 - 492.80
+          value: 4
+          color_index: 0
+        - label: 492.80 - 531.72
+          value: 2
+          color_index: 0
+        - label: 531.72 - 570.64
+          value: 1
+          color_index: 0
+        - label: 570.64 - 609.56
+          value: 1
+          color_index: 0
+        - label: 609.56 - 648.48
+          value: 0
+          color_index: 0
+        - label: 648.48 - 687.40
+          value: 0
+          color_index: 0
+        - label: 687.40 - 726.32
+          value: 0
+          color_index: 0
+        - label: 726.32 - 765.24
+          value: 0
+          color_index: 0
+        - label: 765.24 - 804.16
+          value: 0
+          color_index: 0
+        - label: 804.16 - 843.08
+          value: 0
+          color_index: 0
+        - label: 843.08 - 882.00
+          value: 0
+          color_index: 0
+        x_axis: Cholesterol
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: -91.00 - -52.08
+          value: 62
+          color_index: 10
+        - label: -52.08 - -13.16
+          value: 56
+          color_index: 10
+        - label: -13.16 - 25.76
+          value: 56
+          color_index: 7
+        - label: 25.76 - 64.68
+          value: 290
+          color_index: 10
+        - label: 64.68 - 103.60
+          value: 130
+          color_index: 10
+        - label: 103.60 - 142.52
+          value: 38
+          color_index: 10
+        - label: 142.52 - 181.44
+          value: 36
+          color_index: 5
+        - label: 181.44 - 220.36
+          value: 29
+          color_index: 9
+        - label: 220.36 - 259.28
+          value: 30
+          color_index: 9
+        - label: 259.28 - 298.20
+          value: 32
+          color_index: 8
+        - label: 298.20 - 337.12
+          value: 59
+          color_index: 2
+        - label: 337.12 - 376.04
+          value: 75
+          color_index: 10
+        - label: 376.04 - 414.96
+          value: 23
+          color_index: 10
+        - label: 414.96 - 453.88
+          value: 51
+          color_index: 10
+        - label: 453.88 - 492.80
+          value: 5
+          color_index: 3
+        - label: 492.80 - 531.72
+          value: 2
+          color_index: 1
+        - label: 531.72 - 570.64
+          value: 1
+          color_index: 1
+        - label: 570.64 - 609.56
+          value: 1
+          color_index: 1
+        - label: 609.56 - 648.48
+          value: 2
+          color_index: 10
+        - label: 648.48 - 687.40
+          value: 1
+          color_index: 10
+        - label: 687.40 - 726.32
+          value: 2
+          color_index: 10
+        - label: 726.32 - 765.24
+          value: 3
+          color_index: 10
+        - label: 765.24 - 804.16
+          value: 3
+          color_index: 10
+        - label: 804.16 - 843.08
+          value: 2
+          color_index: 10
+        - label: 843.08 - 882.00
+          value: 11
+          color_index: 10
+        x_axis: Cholesterol
+        y_axis: Count
+- attribute_information:
+    name: FastingBS
+    index: 9
+    type: BOOLEAN
+    scale: NOMINAL
+  important_metrics:
+    mode:
+      values:
+        real: '0.0'
+        synthetic: 'False'
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
+      display_name: Mode
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+    distinct_values:
+      values:
+        real: 3
+        synthetic: 3
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+      display_name: Distinct Values
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.9954728273451703
+          color_index: 10
+        synthetic:
+          hellinger_distance: 0.9954728273451703
+          color_index: 10
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
+      display_name: Hellinger Distance
+  plot:
+    frequency_count:
+      real:
+        frequencies:
+        - label: '0.0'
+          value: 704
+          color_index: 0
+        - label: '1.0'
+          value: 214
+          color_index: 0
+        - label: nan
+          value: 1
+          color_index: 0
+        x_axis: FastingBS
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: '0.0'
+          value: 0
+          color_index: 10
+        - label: '1.0'
+          value: 0
+          color_index: 10
+        - label: nan
+          value: 75
+          color_index: 10
+        x_axis: FastingBS
+        y_axis: Count
+- attribute_information:
+    name: RestingECG
+    index: 10
+    type: STRING
+    scale: NOMINAL
+  important_metrics:
+    mode:
+      values:
+        real: Normal
+        synthetic: Normal
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
+      display_name: Mode
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+    distinct_values:
+      values:
+        real: 4
+        synthetic: 4
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+      display_name: Distinct Values
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.1924051928834623
+          color_index: 2
+        synthetic:
+          hellinger_distance: 0.1924051928834623
+          color_index: 2
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
+      display_name: Hellinger Distance
+  plot:
+    frequency_count:
+      real:
+        frequencies:
+        - label: Normal
+          value: 552
+          color_index: 0
+        - label: LVH
+          value: 188
+          color_index: 0
+        - label: ST
+          value: 178
+          color_index: 0
+        - label: nan
+          value: 1
+          color_index: 0
+        x_axis: RestingECG
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: Normal
+          value: 427
+          color_index: 3
+        - label: LVH
+          value: 235
+          color_index: 3
+        - label: ST
+          value: 270
+          color_index: 6
+        - label: nan
+          value: 68
+          color_index: 10
+        x_axis: RestingECG
+        y_axis: Count
+- attribute_information:
+    name: MaxHR
+    index: 11
+    type: INTEGER
+    scale: INTERVAL
+  important_metrics:
+    mean:
+      values:
+        real: 136.80936819172115
+        synthetic: 144.732
+      difference:
+        absolute: 7.922631808278851
+        percentage: 5.7910009475201125
+        color_index: 1
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
+      display_name: Mean
+    variance:
+      values:
+        real: 647.522483043084
+        synthetic: 3839.886062062062
+      difference:
+        absolute: 3192.3635790189783
+        percentage: 493.0120053926482
+        color_index: 10
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
+      display_name: Variance
+    standard_deviation:
+      values:
+        real: 25.446463075309385
+        synthetic: 61.9668141997155
+      difference:
+        absolute: 36.52035112440612
+        percentage: 143.51837823717705
+        color_index: 10
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+      display_name: Standard Deviation
+    minimum:
+      values:
+        real: 60.0
+        synthetic: 24.0
+      difference:
+        absolute: 36.0
+        percentage: 60.0
+        color_index: 7
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+      display_name: Minimum
+    maximum:
+      values:
+        real: 202.0
+        synthetic: 219.0
+      difference:
+        absolute: 17.0
+        percentage: 8.415841584158416
+        color_index: 1
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
+      display_name: Maximum
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+  details:
+    fifth_percentile:
+      values:
+        real: 96.0
+        synthetic: 43.0
+      difference:
+        absolute: 53.0
+        percentage: 55.208333333333336
+        color_index: 6
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+      display_name: Fifth Percentile
+    q1:
+      values:
+        real: 120.0
+        synthetic: 94.0
+      difference:
+        absolute: 26.0
+        percentage: 21.666666666666668
+        color_index: 3
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+      display_name: First Quartile
+    median:
+      values:
+        real: 138.0
+        synthetic: 148.0
+      difference:
+        absolute: 10.0
+        percentage: 7.246376811594203
+        color_index: 1
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+      display_name: Median
+    q3:
+      values:
+        real: 156.0
+        synthetic: 213.0
+      difference:
+        absolute: 57.0
+        percentage: 36.53846153846153
+        color_index: 4
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+      display_name: Third Quartile
+    ninety_fifth_percentile:
+      values:
+        real: 178.0
+        synthetic: 216.0
+      difference:
+        absolute: 38.0
+        percentage: 21.34831460674157
+        color_index: 3
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
+      display_name: Ninety Fifth Percentile
+    skewness:
+      values:
+        real: -0.1444377667298132
+        synthetic: -0.2643935858100203
+      difference:
+        absolute: 0.11995581908020711
+        percentage: 83.05017572349877
+        color_index: 9
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
+      display_name: Skewness
+    kurtosis:
+      values:
+        real: -0.4454619038133698
+        synthetic: -1.311758090736045
+      difference:
+        absolute: 0.8662961869226753
+        percentage: 194.47144177914205
+        color_index: 10
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+      display_name: Kurtosis
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.3610304678998912
+          p_value: 5.2447675320157815e-56
+          color_index: 4
+        synthetic:
+          KS_statistic: 0.3610304678998912
+          p_value: 5.2447675320157815e-56
+          color_index: 4
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
+      display_name: Kolmogorov-Smirnov
+  plot:
+    density:
+      real:
+        x_values:
+        - 24.0
+        - 27.979591836734695
+        - 31.95918367346939
+        - 35.93877551020408
+        - 39.91836734693878
+        - 43.89795918367347
+        - 47.87755102040816
+        - 51.85714285714286
+        - 55.83673469387755
+        - 59.816326530612244
+        - 63.79591836734694
+        - 67.77551020408163
+        - 71.75510204081633
+        - 75.73469387755102
+        - 79.71428571428572
+        - 83.69387755102042
+        - 87.6734693877551
+        - 91.6530612244898
+        - 95.63265306122449
+        - 99.61224489795919
+        - 103.59183673469389
+        - 107.57142857142857
+        - 111.55102040816327
+        - 115.53061224489797
+        - 119.51020408163265
+        - 123.48979591836735
+        - 127.46938775510205
+        - 131.44897959183675
+        - 135.42857142857144
+        - 139.40816326530614
+        - 143.38775510204084
+        - 147.3673469387755
+        - 151.3469387755102
+        - 155.3265306122449
+        - 159.3061224489796
+        - 163.2857142857143
+        - 167.26530612244898
+        - 171.24489795918367
+        - 175.22448979591837
+        - 179.20408163265307
+        - 183.18367346938777
+        - 187.16326530612247
+        - 191.14285714285714
+        - 195.12244897959184
+        - 199.10204081632654
+        - 203.08163265306123
+        - 207.06122448979593
+        - 211.04081632653063
+        - 215.0204081632653
+        - 219.0
+        density:
+        - 1.567826006293913e-11
+        - 3.945068092858385e-10
+        - 6.8774677577723325e-09
+        - 8.332799918893196e-08
+        - 7.052217799870197e-07
+        - 4.2045806315714636e-06
+        - 1.7925075003396677e-05
+        - 5.6080304165657415e-05
+        - 0.00013416564185284155
+        - 0.0002587064185087942
+        - 0.0004215938464324396
+        - 0.0006005839688130414
+        - 0.000783510628235736
+        - 0.0010101336208480096
+        - 0.0013546665980928789
+        - 0.0018760182164158708
+        - 0.0026323167143915906
+        - 0.0036456253541164163
+        - 0.004785834195177862
+        - 0.005881231201522689
+        - 0.007001070977152399
+        - 0.008363548081814628
+        - 0.009979411037674656
+        - 0.011606922797591656
+        - 0.012891654027321618
+        - 0.013514319182764073
+        - 0.013477300692350895
+        - 0.013213072340097875
+        - 0.013190725478424087
+        - 0.013405381439820958
+        - 0.013497985685008375
+        - 0.013275717444871639
+        - 0.012758277080913753
+        - 0.011991238764077903
+        - 0.011050901370389162
+        - 0.010042311150522428
+        - 0.009043088778403943
+        - 0.008003298504482628
+        - 0.006783569201104988
+        - 0.005364147124982293
+        - 0.0038822737331473856
+        - 0.0025292887966502954
+        - 0.0014732594385429409
+        - 0.0007786128232704361
+        - 0.00038637054957003724
+        - 0.00018523191369918592
+        - 8.384413125259558e-05
+        - 3.291268239175123e-05
+        - 1.0179908649558645e-05
+        - 2.3213582874318e-06
+        x_axis: MaxHR
+        y_axis: Frequency
+        color_index: 0
+      synthetic:
+        x_values:
+        - 24.0
+        - 27.979591836734695
+        - 31.95918367346939
+        - 35.93877551020408
+        - 39.91836734693878
+        - 43.89795918367347
+        - 47.87755102040816
+        - 51.85714285714286
+        - 55.83673469387755
+        - 59.816326530612244
+        - 63.79591836734694
+        - 67.77551020408163
+        - 71.75510204081633
+        - 75.73469387755102
+        - 79.71428571428572
+        - 83.69387755102042
+        - 87.6734693877551
+        - 91.6530612244898
+        - 95.63265306122449
+        - 99.61224489795919
+        - 103.59183673469389
+        - 107.57142857142857
+        - 111.55102040816327
+        - 115.53061224489797
+        - 119.51020408163265
+        - 123.48979591836735
+        - 127.46938775510205
+        - 131.44897959183675
+        - 135.42857142857144
+        - 139.40816326530614
+        - 143.38775510204084
+        - 147.3673469387755
+        - 151.3469387755102
+        - 155.3265306122449
+        - 159.3061224489796
+        - 163.2857142857143
+        - 167.26530612244898
+        - 171.24489795918367
+        - 175.22448979591837
+        - 179.20408163265307
+        - 183.18367346938777
+        - 187.16326530612247
+        - 191.14285714285714
+        - 195.12244897959184
+        - 199.10204081632654
+        - 203.08163265306123
+        - 207.06122448979593
+        - 211.04081632653063
+        - 215.0204081632653
+        - 219.0
+        density:
+        - 0.0014714845772063763
+        - 0.0017788320568666296
+        - 0.002089967377671322
+        - 0.002398024762576206
+        - 0.00269838125092752
+        - 0.0029871717269581866
+        - 0.0032592939044194403
+        - 0.0035070661206743985
+        - 0.0037205475667846997
+        - 0.0038898371166592744
+        - 0.004008706779746726
+        - 0.004078156816334972
+        - 0.004108301959732964
+        - 0.004117516377768971
+        - 0.004128734758321838
+        - 0.004163808721084411
+        - 0.004237501123637078
+        - 0.0043529020021275
+        - 0.004499745459877243
+        - 0.004656342015715012
+        - 0.004794758850183511
+        - 0.004887797999178273
+        - 0.004915681687155317
+        - 0.004870485759381879
+        - 0.004757232209292902
+        - 0.004591735228506818
+        - 0.004396243736216081
+        - 0.004194312486646875
+        - 0.004006203306276872
+        - 0.003845722661557611
+        - 0.0037189589384189832
+        - 0.0036249605352667883
+        - 0.0035579991815658783
+        - 0.0035107612549243445
+        - 0.0034777307711639956
+        - 0.0034582154273637396
+        - 0.003458768293595233
+        - 0.0034948810707634754
+        - 0.003591558605565783
+        - 0.003781815138715211
+        - 0.004101700746772198
+        - 0.0045807935592487425
+        - 0.005228624850758273
+        - 0.006020084198208238
+        - 0.006885452852833624
+        - 0.0077116270432928515
+        - 0.008358781425956715
+        - 0.008691064200541184
+        - 0.008612989066445132
+        - 0.008098667630900225
+        x_axis: MaxHR
+        y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - label: 24.00 - 34.26
+          value: 0
+          color_index: 0
+        - label: 34.26 - 44.53
+          value: 0
+          color_index: 0
+        - label: 44.53 - 54.79
+          value: 0
+          color_index: 0
+        - label: 54.79 - 65.05
+          value: 2
+          color_index: 0
+        - label: 65.05 - 75.32
+          value: 7
+          color_index: 0
+        - label: 75.32 - 85.58
+          value: 11
+          color_index: 0
+        - label: 85.58 - 95.84
+          value: 25
+          color_index: 0
+        - label: 95.84 - 106.11
+          value: 66
+          color_index: 0
+        - label: 106.11 - 116.37
+          value: 91
+          color_index: 0
+        - label: 116.37 - 126.63
+          value: 133
+          color_index: 0
+        - label: 126.63 - 136.89
+          value: 110
+          color_index: 0
+        - label: 136.89 - 147.16
+          value: 136
+          color_index: 0
+        - label: 147.16 - 157.42
+          value: 124
+          color_index: 0
+        - label: 157.42 - 167.68
+          value: 90
+          color_index: 0
+        - label: 167.68 - 177.95
+          value: 75
+          color_index: 0
+        - label: 177.95 - 188.21
+          value: 43
+          color_index: 0
+        - label: 188.21 - 198.47
+          value: 5
+          color_index: 0
+        - label: 198.47 - 208.74
+          value: 1
+          color_index: 0
+        - label: 208.74 - 219.00
+          value: 0
+          color_index: 0
+        x_axis: MaxHR
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: 24.00 - 34.26
+          value: 33
+          color_index: 10
+        - label: 34.26 - 44.53
+          value: 27
+          color_index: 10
+        - label: 44.53 - 54.79
+          value: 27
+          color_index: 10
+        - label: 54.79 - 65.05
+          value: 63
+          color_index: 10
+        - label: 65.05 - 75.32
+          value: 34
+          color_index: 10
+        - label: 75.32 - 85.58
+          value: 41
+          color_index: 10
+        - label: 85.58 - 95.84
+          value: 30
+          color_index: 3
+        - label: 95.84 - 106.11
+          value: 58
+          color_index: 2
+        - label: 106.11 - 116.37
+          value: 60
+          color_index: 4
+        - label: 116.37 - 126.63
+          value: 55
+          color_index: 6
+        - label: 126.63 - 136.89
+          value: 38
+          color_index: 7
+        - label: 136.89 - 147.16
+          value: 30
+          color_index: 8
+        - label: 147.16 - 157.42
+          value: 39
+          color_index: 7
+        - label: 157.42 - 167.68
+          value: 35
+          color_index: 7
+        - label: 167.68 - 177.95
+          value: 36
+          color_index: 6
+        - label: 177.95 - 188.21
+          value: 30
+          color_index: 4
+        - label: 188.21 - 198.47
+          value: 31
+          color_index: 10
+        - label: 198.47 - 208.74
+          value: 49
+          color_index: 10
+        - label: 208.74 - 219.00
+          value: 284
+          color_index: 10
+        x_axis: MaxHR
+        y_axis: Count
+- attribute_information:
+    name: ExerciseAngina
+    index: 12
+    type: STRING
+    scale: NOMINAL
+  important_metrics:
+    mode:
+      values:
+        real: N
+        synthetic: N
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
+      display_name: Mode
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+    distinct_values:
+      values:
+        real: 3
+        synthetic: 3
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+      display_name: Distinct Values
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.1656267891093533
+          color_index: 2
+        synthetic:
+          hellinger_distance: 0.1656267891093533
+          color_index: 2
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
+      display_name: Hellinger Distance
+  plot:
+    frequency_count:
+      real:
+        frequencies:
+        - label: N
+          value: 547
+          color_index: 0
+        - label: Y
+          value: 371
+          color_index: 0
+        - label: nan
+          value: 1
+          color_index: 0
+        x_axis: ExerciseAngina
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: N
+          value: 554
+          color_index: 1
+        - label: Y
+          value: 376
+          color_index: 1
+        - label: nan
+          value: 70
+          color_index: 10
+        x_axis: ExerciseAngina
+        y_axis: Count
+- attribute_information:
+    name: Oldpeak
+    index: 13
+    type: DECIMAL
+    scale: INTERVAL
+  important_metrics:
+    mean:
+      values:
+        real: 0.8873638344226579
+        synthetic: 0.5936613081057198
+      difference:
+        absolute: 0.29370252631693805
+        percentage: 33.09832054492379
+        color_index: 4
+      description: Average value of numerical variables
+      interpretation: Compare if the synthetic data's mean falls within an acceptable
+        deviation range from the real data's mean, typically within one standard deviation
+      display_name: Mean
+    variance:
+      values:
+        real: 1.136332702047171
+        synthetic: 4.470694030403721
+      difference:
+        absolute: 3.3343613283565503
+        percentage: 293.43178475366415
+        color_index: 10
+      description: Measure of the amount of variation of a set of values
+      interpretation: Verify if the synthetic data preserves similar spread of values
+        as the real data, with variance ratios ideally close to 1
+      display_name: Variance
+    standard_deviation:
+      values:
+        real: 1.065989072198759
+        synthetic: 2.1144015773744878
+      difference:
+        absolute: 1.0484125051757287
+        percentage: 98.35114941781006
+        color_index: 10
+      description: Measure of the amount of variation or dispersion of a set of values
+      interpretation: Check if the synthetic data maintains a similar level of dispersion
+        as the real data, with the ratio of standard deviations ideally close to 1
+      display_name: Standard Deviation
+    minimum:
+      values:
+        real: -2.6
+        synthetic: -5.965374132031675
+      difference:
+        absolute: 3.365374132031675
+        percentage: 129.43746661660288
+        color_index: 10
+      description: Smallest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic minimum bounds
+      display_name: Minimum
+    maximum:
+      values:
+        real: 6.2
+        synthetic: 6.998921745611085
+      difference:
+        absolute: 0.7989217456110849
+        percentage: 12.8858346066304
+        color_index: 2
+      description: Largest value in a column
+      interpretation: Check if the synthetic data covers a similar value as the real
+        data, particularly important for maintaining realistic maximum bounds
+      display_name: Maximum
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+  details:
+    fifth_percentile:
+      values:
+        real: 0.0
+        synthetic: -1.9768339085150362
+      difference:
+        absolute: 1.9768339085150362
+        percentage: 100
+        color_index: 10
+      description: 5th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of fifth percentiles
+      display_name: Fifth Percentile
+    q1:
+      values:
+        real: 0.0
+        synthetic: -0.501622621045333
+      difference:
+        absolute: 0.501622621045333
+        percentage: 100
+        color_index: 10
+      description: 25th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of first quartiles
+      display_name: First Quartile
+    median:
+      values:
+        real: 0.6
+        synthetic: -0.2833039949809934
+      difference:
+        absolute: 0.8833039949809933
+        percentage: 147.21733249683223
+        color_index: 10
+      description: 50th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of medians
+      display_name: Median
+    q3:
+      values:
+        real: 1.5
+        synthetic: 1.7570967905685329
+      difference:
+        absolute: 0.25709679056853285
+        percentage: 17.13978603790219
+        color_index: 2
+      description: 75th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of third quartiles
+      display_name: Third Quartile
+    ninety_fifth_percentile:
+      values:
+        real: 3.0
+        synthetic: 5.13716520460255
+      difference:
+        absolute: 2.1371652046025504
+        percentage: 71.23884015341835
+        color_index: 8
+      description: 95th percentile of the data
+      interpretation: Compare if the synthetic data maintains similar distribution
+        shapes as the real data, with similar distribution of ninety-fifth percentiles
+      display_name: Ninety Fifth Percentile
+    skewness:
+      values:
+        real: 1.0234271657157934
+        synthetic: 0.8042326796114314
+      difference:
+        absolute: 0.21919448610436199
+        percentage: 21.41769277260249
+        color_index: 3
+      description: Measure of the asymmetry of the probability distribution of a real-valued
+        random variable about its mean
+      interpretation: Verify if the synthetic data preserves similar directional bias
+        (asymmetry) as the real data, with skewness values having the same sign and
+        similar magnitude
+      display_name: Skewness
+    kurtosis:
+      values:
+        real: 1.2076385934425478
+        synthetic: 1.1055205502349819
+      difference:
+        absolute: 0.1021180432075659
+        percentage: 8.456010246945132
+        color_index: 1
+      description: Measure of the 'tailedness' of the probability distribution of
+        a real-valued random variable
+      interpretation: Compare if the synthetic data maintains similar tail heaviness
+        and peak characteristics as the real data, with kurtosis values in a similar
+        range
+      display_name: Kurtosis
+    kolmogorov_smirnov:
+      values:
+        real:
+          KS_statistic: 0.559854189336235
+          p_value: 8.213992081705036e-139
+          color_index: 6
+        synthetic:
+          KS_statistic: 0.559854189336235
+          p_value: 8.213992081705036e-139
+          color_index: 6
+      description: Non-parametric test of the equality of continuous, one-dimensional
+        probability distributions
+      interpretation: Assess if the distributions are statistically similar, with
+        lower KS statistic values indicating better similarity between synthetic and
+        real data
+      display_name: Kolmogorov-Smirnov
+  plot:
+    density:
+      real:
+        x_values:
+        - -5.965374132031675
+        - -5.700796665141007
+        - -5.436219198250338
+        - -5.171641731359669
+        - -4.907064264469001
+        - -4.642486797578332
+        - -4.377909330687664
+        - -4.113331863796995
+        - -3.8487543969063265
+        - -3.584176930015658
+        - -3.319599463124989
+        - -3.055021996234321
+        - -2.7904445293436524
+        - -2.5258670624529835
+        - -2.261289595562315
+        - -1.9967121286716463
+        - -1.7321346617809779
+        - -1.4675571948903094
+        - -1.202979727999641
+        - -0.9384022611089717
+        - -0.6738247942183033
+        - -0.4092473273276349
+        - -0.1446698604369665
+        - 0.11990760645370191
+        - 0.3844850733443703
+        - 0.6490625402350396
+        - 0.913640007125708
+        - 1.1782174740163764
+        - 1.4427949409070449
+        - 1.7073724077977133
+        - 1.9719498746883826
+        - 2.23652734157905
+        - 2.5011048084697194
+        - 2.7656822753603887
+        - 3.030259742251056
+        - 3.2948372091417255
+        - 3.559414676032393
+        - 3.8239921429230623
+        - 4.088569609813732
+        - 4.353147076704399
+        - 4.6177245435950685
+        - 4.882302010485736
+        - 5.146879477376405
+        - 5.411456944267075
+        - 5.676034411157742
+        - 5.940611878048411
+        - 6.205189344939079
+        - 6.469766811829748
+        - 6.734344278720416
+        - 6.998921745611085
+        density:
+        - 1.0975598479392581e-36
+        - 1.1212569108944402e-31
+        - 4.4570868375026996e-27
+        - 6.89391777101558e-23
+        - 4.149064089122758e-19
+        - 9.716351785715928e-16
+        - 8.853711675104695e-13
+        - 3.139183507135444e-10
+        - 4.330901401790154e-08
+        - 2.324980576148996e-06
+        - 4.857556111631063e-05
+        - 0.00039558200330270545
+        - 0.0012718979681210828
+        - 0.0017844604888665725
+        - 0.0017738024942679405
+        - 0.00204462300780433
+        - 0.002315608276963024
+        - 0.0034869224064072207
+        - 0.006630812597350637
+        - 0.011171981034535592
+        - 0.03724588472431858
+        - 0.20419404889274
+        - 0.554460737260813
+        - 0.6345947902636631
+        - 0.36280824076869894
+        - 0.22157966177020383
+        - 0.2511039140137595
+        - 0.2692565954180245
+        - 0.25059147678678856
+        - 0.23427907440019183
+        - 0.20958364651164596
+        - 0.1432954778206776
+        - 0.08960007265173954
+        - 0.07740314835203187
+        - 0.06896360501494979
+        - 0.044113903906923685
+        - 0.02706225721459238
+        - 0.02306509547726637
+        - 0.019160329616930476
+        - 0.010354625841740486
+        - 0.003741936220373581
+        - 0.0020396354518330017
+        - 0.0018249505095128864
+        - 0.0017893248191638794
+        - 0.0018567282893019214
+        - 0.0017459699979582178
+        - 0.0017287888326061919
+        - 0.000985650037006912
+        - 0.00023280468272713478
+        - 2.1561338567825128e-05
+        x_axis: Oldpeak
+        y_axis: Frequency
+        color_index: 0
+      synthetic:
+        x_values:
+        - -5.965374132031675
+        - -5.700796665141007
+        - -5.436219198250338
+        - -5.171641731359669
+        - -4.907064264469001
+        - -4.642486797578332
+        - -4.377909330687664
+        - -4.113331863796995
+        - -3.8487543969063265
+        - -3.584176930015658
+        - -3.319599463124989
+        - -3.055021996234321
+        - -2.7904445293436524
+        - -2.5258670624529835
+        - -2.261289595562315
+        - -1.9967121286716463
+        - -1.7321346617809779
+        - -1.4675571948903094
+        - -1.202979727999641
+        - -0.9384022611089717
+        - -0.6738247942183033
+        - -0.4092473273276349
+        - -0.1446698604369665
+        - 0.11990760645370191
+        - 0.3844850733443703
+        - 0.6490625402350396
+        - 0.913640007125708
+        - 1.1782174740163764
+        - 1.4427949409070449
+        - 1.7073724077977133
+        - 1.9719498746883826
+        - 2.23652734157905
+        - 2.5011048084697194
+        - 2.7656822753603887
+        - 3.030259742251056
+        - 3.2948372091417255
+        - 3.559414676032393
+        - 3.8239921429230623
+        - 4.088569609813732
+        - 4.353147076704399
+        - 4.6177245435950685
+        - 4.882302010485736
+        - 5.146879477376405
+        - 5.411456944267075
+        - 5.676034411157742
+        - 5.940611878048411
+        - 6.205189344939079
+        - 6.469766811829748
+        - 6.734344278720416
+        - 6.998921745611085
+        density:
+        - 0.005622469202617677
+        - 0.006349833038849806
+        - 0.006073753935088216
+        - 0.005276510468613069
+        - 0.004594517755307508
+        - 0.004275593923941091
+        - 0.004146469841322105
+        - 0.003968373942699304
+        - 0.0038076285192238097
+        - 0.004250605607605763
+        - 0.006378125963100877
+        - 0.011329533520637442
+        - 0.019519298480082308
+        - 0.030195694712945798
+        - 0.04231524831077688
+        - 0.05690477476419571
+        - 0.0792786327195111
+        - 0.11809407877916236
+        - 0.17927421415056383
+        - 0.2567451072141232
+        - 0.3274737233278464
+        - 0.3605535115681686
+        - 0.33918085220133887
+        - 0.27545379436180895
+        - 0.20047674586875075
+        - 0.14068151598250475
+        - 0.10480232457971146
+        - 0.0879896637594043
+        - 0.08185165406185918
+        - 0.08071078143130189
+        - 0.08237123873797378
+        - 0.08561547091974715
+        - 0.08777958881634931
+        - 0.08530658134358685
+        - 0.07691180980392638
+        - 0.06533600970388263
+        - 0.05496430400864518
+        - 0.04790953140861264
+        - 0.042979860609594106
+        - 0.038075690571684855
+        - 0.03278955709121297
+        - 0.02848913316844818
+        - 0.026364459878945666
+        - 0.026030575665926047
+        - 0.02610554943915864
+        - 0.025550646714413455
+        - 0.024053825564352524
+        - 0.021506024517510165
+        - 0.01775241942529538
+        - 0.013010339436030069
+        x_axis: Oldpeak
+        y_axis: Frequency
+        color_index: 1
+    histogram:
+      real:
+        frequencies:
+        - label: -5.97 - -5.45
+          value: 0
+          color_index: 0
+        - label: -5.45 - -4.93
+          value: 0
+          color_index: 0
+        - label: -4.93 - -4.41
+          value: 0
+          color_index: 0
+        - label: -4.41 - -3.89
+          value: 0
+          color_index: 0
+        - label: -3.89 - -3.37
+          value: 0
+          color_index: 0
+        - label: -3.37 - -2.85
+          value: 0
+          color_index: 0
+        - label: -2.85 - -2.34
+          value: 1
+          color_index: 0
+        - label: -2.34 - -1.82
+          value: 1
+          color_index: 0
+        - label: -1.82 - -1.30
+          value: 1
+          color_index: 0
+        - label: -1.30 - -0.78
+          value: 5
+          color_index: 0
+        - label: -0.78 - -0.26
+          value: 3
+          color_index: 0
+        - label: -0.26 - 0.26
+          value: 406
+          color_index: 0
+        - label: 0.26 - 0.78
+          value: 62
+          color_index: 0
+        - label: 0.78 - 1.29
+          value: 140
+          color_index: 0
+        - label: 1.29 - 1.81
+          value: 117
+          color_index: 0
+        - label: 1.81 - 2.33
+          value: 92
+          color_index: 0
+        - label: 2.33 - 2.85
+          value: 34
+          color_index: 0
+        - label: 2.85 - 3.37
+          value: 32
+          color_index: 0
+        - label: 3.37 - 3.89
+          value: 11
+          color_index: 0
+        - label: 3.89 - 4.41
+          value: 11
+          color_index: 0
+        - label: 4.41 - 4.92
+          value: 0
+          color_index: 0
+        - label: 4.92 - 5.44
+          value: 1
+          color_index: 0
+        - label: 5.44 - 5.96
+          value: 1
+          color_index: 0
+        - label: 5.96 - 6.48
+          value: 1
+          color_index: 0
+        - label: 6.48 - 7.00
+          value: 0
+          color_index: 0
+        x_axis: Oldpeak
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: -5.97 - -5.45
+          value: 8
+          color_index: 10
+        - label: -5.45 - -4.93
+          value: 1
+          color_index: 10
+        - label: -4.93 - -4.41
+          value: 1
+          color_index: 10
+        - label: -4.41 - -3.89
+          value: 3
+          color_index: 10
+        - label: -3.89 - -3.37
+          value: 2
+          color_index: 10
+        - label: -3.37 - -2.85
+          value: 0
+          color_index: 1
+        - label: -2.85 - -2.34
+          value: 13
+          color_index: 10
+        - label: -2.34 - -1.82
+          value: 31
+          color_index: 10
+        - label: -1.82 - -1.30
+          value: 25
+          color_index: 10
+        - label: -1.30 - -0.78
+          value: 93
+          color_index: 10
+        - label: -0.78 - -0.26
+          value: 333
+          color_index: 10
+        - label: -0.26 - 0.26
+          value: 109
+          color_index: 8
+        - label: 0.26 - 0.78
+          value: 54
+          color_index: 2
+        - label: 0.78 - 1.29
+          value: 40
+          color_index: 8
+        - label: 1.29 - 1.81
+          value: 42
+          color_index: 7
+        - label: 1.81 - 2.33
+          value: 36
+          color_index: 7
+        - label: 2.33 - 2.85
+          value: 54
+          color_index: 6
+        - label: 2.85 - 3.37
+          value: 42
+          color_index: 4
+        - label: 3.37 - 3.89
+          value: 21
+          color_index: 10
+        - label: 3.89 - 4.41
+          value: 27
+          color_index: 10
+        - label: 4.41 - 4.92
+          value: 10
+          color_index: 10
+        - label: 4.92 - 5.44
+          value: 13
+          color_index: 10
+        - label: 5.44 - 5.96
+          value: 14
+          color_index: 10
+        - label: 5.96 - 6.48
+          value: 14
+          color_index: 10
+        - label: 6.48 - 7.00
+          value: 14
+          color_index: 10
+        x_axis: Oldpeak
+        y_axis: Count
+- attribute_information:
+    name: ST_Slope
+    index: 14
+    type: STRING
+    scale: NOMINAL
+  important_metrics:
+    mode:
+      values:
+        real: Flat
+        synthetic: Flat
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
+      display_name: Mode
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+    distinct_values:
+      values:
+        real: 4
+        synthetic: 4
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+      display_name: Distinct Values
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.1797184059169209
+          color_index: 2
+        synthetic:
+          hellinger_distance: 0.1797184059169209
+          color_index: 2
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
+      display_name: Hellinger Distance
+  plot:
+    frequency_count:
+      real:
+        frequencies:
+        - label: Flat
+          value: 460
+          color_index: 0
+        - label: Up
+          value: 395
+          color_index: 0
+        - label: Down
+          value: 63
+          color_index: 0
+        - label: nan
+          value: 1
+          color_index: 0
+        x_axis: ST_Slope
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: Flat
+          value: 614
+          color_index: 4
+        - label: Up
+          value: 253
+          color_index: 4
+        - label: Down
+          value: 85
+          color_index: 4
+        - label: nan
+          value: 48
+          color_index: 10
+        x_axis: ST_Slope
+        y_axis: Count
+- attribute_information:
+    name: HeartDisease
+    index: 15
+    type: BOOLEAN
+    scale: NOMINAL
+  important_metrics:
+    mode:
+      values:
+        real: '1.0'
+        synthetic: 'True'
+      description: Mode of categorical variables i.e., the most frequent value
+      interpretation: Compare if the most frequent categories in the synthetic data
+        match those in the real data, both in terms of the category value and its
+        relative frequency
+      display_name: Mode
+    missing_values_count:
+      values:
+        real: 0
+        synthetic: 0
+      difference:
+        absolute: 0
+        percentage: 0
+        color_index: 1
+      description: Count of missing values in the real and synthetic data
+      interpretation: Compare if the absolute number of missing values in synthetic
+        data maintains similar proportions to the real data, accounting for dataset
+        size differences
+      display_name: Missing Values Count
+    missing_values_percentage:
+      values:
+        real: 0.0
+        synthetic: 0.0
+      difference:
+        absolute: 0.0
+        percentage: 0
+        color_index: 1
+      description: Percentage of missing values in the real and synthetic data
+      interpretation: Verify if the relative frequency of missing values in synthetic
+        data matches the real data, regardless of dataset size
+      display_name: Missing Values Percentage
+    distinct_values:
+      values:
+        real: 3
+        synthetic: 3
+      difference:
+        absolute: 0
+        percentage: 0.0
+        color_index: 1
+      description: Count of distinct values in the real and synthetic data
+      interpretation: Compare if the synthetic data maintains a similar level of uniqueness/cardinality
+        as the real data, accounting for dataset size differences
+      display_name: Distinct Values
+  details:
+    hellinger_distance:
+      values:
+        real:
+          hellinger_distance: 0.9954127240126618
+          color_index: 10
+        synthetic:
+          hellinger_distance: 0.9954127240126618
+          color_index: 10
+      description: Distance metric for comparing distributions of categorical data
+      interpretation: The higher the value, the more dissimilar the distributions
+        are. The Hellinger Distance is calculated on the complete attribute not on
+        the top categories shown.
+      display_name: Hellinger Distance
+  plot:
+    frequency_count:
+      real:
+        frequencies:
+        - label: '1.0'
+          value: 508
+          color_index: 0
+        - label: '0.0'
+          value: 410
+          color_index: 0
+        - label: nan
+          value: 1
+          color_index: 0
+        x_axis: HeartDisease
+        y_axis: Count
+      synthetic:
+        frequencies:
+        - label: '1.0'
+          value: 0
+          color_index: 10
+        - label: '0.0'
+          value: 0
+          color_index: 10
+        - label: nan
+          value: 77
+          color_index: 10
+        x_axis: HeartDisease
+        y_axis: Count

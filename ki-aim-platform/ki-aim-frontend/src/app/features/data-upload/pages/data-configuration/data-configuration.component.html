@@ -5,7 +5,7 @@
 <div>
     <div
         class="mb-3 alert alert-warning" role="alert"
-        *ngIf="fileService.fileConfiguration.fileType == FileType.XLSX">
+        *ngIf="isFileTypeXLSX$ | async">
         <b>WARNING:</b> For XLSX files, Dates can not be estimated correctly, because Excel stores them as numbers internally. They will instead be configured as INTEGER. <br/>
         Please make sure, that you configure every column that contains dates manually.
     </div>
@@ -20,18 +20,22 @@
     </div>
 
     <div class="d-flex flex-column">
-        <div *ngFor="let column of dataConfiguration.configurations, index as i">
-            <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()" [column]="column"
-                                         [disabled]="locked" (onValidation)="onValidation($event)"
-                                         (onInput)="checkUniqueColumnNames()">
+        <form *ngIf="form" [formGroup]="form">
+            <div formArrayName="configurations">
+                <div *ngFor="let columnConfig of getColumnConfigurationForms(form); let i = index" [formGroupName]="i">
+                    <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()"
+                                                 [disabled]="locked" (onInput)="checkUniqueColumnNames()"
+                                                 [columnConfigurationForm]="columnConfig">
+                    </app-attribute-configuration>
+                </div>
+            </div>
 
-            </app-attribute-configuration>
-        </div>
-
+        </form>
     </div>
+
     <div class="btn-group">
         <div class="px-1">
-            <button mat-raised-button color="primary" (click)="confirmConfiguration()" [disabled]="!isValid || locked">Confirm configuration and start validation</button>
+            <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()" [disabled]="form.invalid || locked">Confirm configuration and start validation</button>
         </div>
     </div>
 </div>

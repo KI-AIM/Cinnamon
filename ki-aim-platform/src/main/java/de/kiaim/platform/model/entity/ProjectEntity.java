@@ -35,6 +35,15 @@ public class ProjectEntity {
 	private StatusEntity status = new StatusEntity(this);
 
 	/**
+	 * File containing the original data.
+	 */
+	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+	@JoinColumn(name = "file_id", referencedColumnName = "id")
+	@Setter
+	@Nullable
+	private FileEntity file = null;
+
+	/**
 	 * Datasets of the project.
 	 */
 	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)

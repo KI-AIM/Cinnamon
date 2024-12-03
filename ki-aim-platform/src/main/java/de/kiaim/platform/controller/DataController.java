@@ -10,7 +10,6 @@ import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
-import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.DataProcessor;
@@ -32,10 +31,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,24 +57,6 @@ public class DataController {
 			"""
 					,"data":""" + DATA_EXAMPLE + "}";
 
-	private final static String TRANSFORMATION_RESULT_EXAMPLE =
-			"""
-					{"dataSet":""" + DATA_SET_EXAMPLE +
-			"""
-					,"transformationErrors": [
-					{
-					      "index": 1,
-					      "dataTransformationErrors": [
-					        {
-					          "index": 2,
-					          "errorType": "MISSING_VALUE",
-					          "rawValue":""
-					        }
-					      ]
-					    }
-					]}
-					""";
-
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
@@ -95,6 +76,65 @@ public class DataController {
 		this.userService = userService;
 	}
 
+	@Operation(summary = "Returns information about the uploaded file.",
+	           description = "Returns information about the uploaded file.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Returns the estimated data configuration.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = FileInformation.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = FileInformation.class))}),
+	})
+	@GetMapping(value = "/file",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<FileInformation> getFile(
+			@AuthenticationPrincipal final UserEntity requestUser
+	) {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity projectEntity =  projectService.getProject(user);
+		final var fileInformation = databaseService.getFileInformation(projectEntity);
+		return ResponseEntity.ok(fileInformation);
+	}
+
+	@Operation(summary = "Stores the given file and file configuration.",
+	           description = "Stores the given file and file configuration.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully stored the file and the file configuration.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = FileInformation.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = FileInformation.class))}),
+			@ApiResponse(responseCode = "400",
+			             description = "The file is not supported or could not be read or the dataset has already been confirmed.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "The dataset has been stored but not confirmed and could not be deleted.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))})
+	})
+	@PostMapping(value = "/file",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<FileInformation> uploadFile(
+			@ParameterObject @Valid final UploadFileRequest requestData,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity projectEntity =  projectService.getProject(user);
+
+		final FileInformation fileInformation = databaseService.storeFile(projectEntity, requestData.getFile(),
+		                                                                  requestData.getFileConfiguration());
+		statusService.updateCurrentStep(projectEntity, Step.DATA_CONFIG);
+		return ResponseEntity.ok(fileInformation);
+	}
+
 	@Operation(summary = "Estimates the data configuration of a given data set.",
 	           description = "Estimates the data configuration of a given data set.")
 	@ApiResponses(value = {
@@ -106,7 +146,7 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = DataConfiguration.class))}),
 			@ApiResponse(responseCode = "400",
-			             description = "The file is not supported or could not be read.",
+			             description = "The data set has already been confirmed.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
@@ -118,49 +158,13 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/estimation",
-	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	@Transactional
+	@GetMapping(value = "/estimation",
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> estimateDatatypes(
-			@ParameterObject @Valid final EstimateDataConfigurationRequest requestData,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.ESTIMATE, requestData.getFile(), requestData.getFileConfiguration(), null,
-		                     null, null, user);
-	}
-
-	@Operation(summary = "Converts and validates the uploaded file into a tabular representation.",
-	           description = "Converts and validates the uploaded file into a tabular representation.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200",
-			             description = "Successfully converted and validated the data. Returns the result of the conversion.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = TransformationResult.class),
-			                                 examples = @ExampleObject(TRANSFORMATION_RESULT_EXAMPLE)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = TransformationResult.class))}),
-			@ApiResponse(responseCode = "400",
-			             description = "The file is not supported or could not be read. The configuration is not valid.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
-			@ApiResponse(responseCode = "500",
-			             description = "An internal error occurred.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))})
-	})
-	@PostMapping(value = "/validation",
-	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ResponseEntity<Object> readAndValidateData(
-			@ParameterObject @Valid final ReadDataRequest requestData,
-			@AuthenticationPrincipal UserEntity user
-	) throws ApiException {
-		return handleRequest(RequestType.VALIDATE, requestData.getFile(), requestData.getFileConfiguration(),
-		                     requestData.getConfiguration(), null, null, user);
+		return handleRequest(RequestType.ESTIMATE, null, null, null, user);
 	}
 
 	@Operation(summary = "Stores or updates the given configuration.",
@@ -173,7 +177,7 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = Long.class))}),
 			@ApiResponse(responseCode = "400",
-			             description = "The file is not supported or could not be read. The configuration is not valid. The data has already been stored.",
+			             description = "The file is not supported or could not be read. The configuration is not valid. The data has already been confirmed.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
@@ -189,10 +193,10 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> storeConfig(
-			@ParameterObject @Valid final ReadDataRequest requestData,
+			@Valid @RequestParam(name = "configuration") final DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.STORE_CONFIG, null, null, requestData.getConfiguration(), null, null, user);
+		return handleRequest(RequestType.STORE_CONFIG, configuration, null, null, user);
 	}
 
 	@Operation(summary = "Stores the given data into the internal database for further processing.",
@@ -217,15 +221,15 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
+	@Transactional
 	@PostMapping(value = "",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> storeData(
-			@ParameterObject @Valid final ReadDataRequest requestData,
+			@Valid @RequestParam(name = "configuration") final DataConfiguration configuration,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.STORE_DATE_SET, requestData.getFile(), requestData.getFileConfiguration(),
-		                     requestData.getConfiguration(), null, null, user);
+		return handleRequest(RequestType.STORE_DATE_SET, configuration, null, null, user);
 	}
 
 	@Operation(summary = "Confirms that the current dataset should be used.",
@@ -247,11 +251,13 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/confirm")
+	@PostMapping(value = "/confirm",
+	             consumes = MediaType.ALL_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> confirmData(
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.CONFIRM_DATE_SET, null, null, null, null, null, user);
+		return handleRequest(RequestType.CONFIRM_DATE_SET, null, null, null, user);
 	}
 
 	@Operation(summary = "Returns the configuration of the data set.",
@@ -282,7 +288,7 @@ public class DataController {
 	public ResponseEntity<Object> loadConfig(
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_CONFIG, null, null, null, null, null, user);
+		return handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
 	}
 
 	@Operation(summary = "Returns general information the data set.",
@@ -314,7 +320,7 @@ public class DataController {
 			@PathVariable final String stepName,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.INFO, null, null, null, stepName, null, user);
+		return handleRequest(RequestType.INFO, null, stepName, null, user);
 	}
 
 	@Operation(summary = "Returns the data of the data set.",
@@ -358,7 +364,7 @@ public class DataController {
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_DATA, null, null, null, stepName, request, user);
+		return handleRequest(RequestType.LOAD_DATA, null, stepName, request, user);
 	}
 
 	@Operation(summary = "Returns the data set.",
@@ -392,7 +398,7 @@ public class DataController {
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_DATA_SET, null, null, null, stepName, request, user);
+		return handleRequest(RequestType.LOAD_DATA_SET, null, stepName, request, user);
 	}
 
 	@Operation(summary = "Returns the entire transformation result.",
@@ -427,7 +433,7 @@ public class DataController {
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT, null, null, null, stepName, request, user);
+		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT, null, stepName, request, user);
 	}
 
 	@Operation(summary = "Returns a page the transformation result.",
@@ -467,7 +473,7 @@ public class DataController {
 			@ParameterObject final LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT_PAGE, null, null, null, stepName, request, user, page, perPage, rowSelector);
+		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT_PAGE, null, stepName, request, user, page, perPage, rowSelector);
 	}
 
 	@Operation(summary = "Deletes the data set from the internal data base.",
@@ -494,29 +500,27 @@ public class DataController {
 	public ResponseEntity<Object> deleteData(
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.DELETE, null, null, null, null, null, user);
+		return handleRequest(RequestType.DELETE, null, null, null, user);
 	}
 
 
 	/**
-	 * See {@link #handleRequest(RequestType, MultipartFile, FileConfiguration, DataConfiguration, String, LoadDataRequest, UserEntity, Integer, Integer, RowSelector)}
+	 * See {@link #handleRequest(RequestType, DataConfiguration, String, LoadDataRequest, UserEntity, Integer, Integer, RowSelector)}
 	 */
 	private ResponseEntity<Object> handleRequest(
 			final RequestType requestType,
-			@Nullable final MultipartFile file,
-			@Nullable final FileConfiguration fileConfiguration,
 			@Nullable final DataConfiguration configuration,
 			@Nullable final String stepName,
 			@Nullable final LoadDataRequest loadDataRequest,
 			final UserEntity requestUser) throws ApiException {
-		return handleRequest(requestType, file, fileConfiguration, configuration, stepName, loadDataRequest, requestUser, null, null, null);
+		return handleRequest(requestType, configuration, stepName, loadDataRequest, requestUser, null, null, null);
 	}
 
 	/**
 	 * Handles a request of the given type.
 	 * For each RequestType, different attributes must not be null:
 	 * <ul>
-	 *     <li>{@link RequestType#ESTIMATE}: file, fileConfiguration</li>
+	 *     <li>{@link RequestType#ESTIMATE}: </li>
 	 *     <li>{@link RequestType#DELETE}: requestUser</li>
 	 *     <li>{@link RequestType#INFO}: requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_CONFIG}: stepName, requestUser</li>
@@ -525,13 +529,10 @@ public class DataController {
 	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT}: requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT_PAGE}: page, perPage, requestUser, rowSelector, stepName</li>
 	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, requestUser</li>
-	 *     <li>{@link RequestType#STORE_DATE_SET}: file, fileConfiguration, configuration, user</li>
-	 *     <li>{@link RequestType#VALIDATE}: file, fileConfiguration, configuration</li>
+	 *     <li>{@link RequestType#STORE_DATE_SET}: configuration, user</li>
 	 * </ul>
 	 *
 	 * @param requestType       Type of the request.
-	 * @param file              File containing the source data.
-	 * @param fileConfiguration Configuration describing the file.
 	 * @param configuration     Configuration describing the source data.
 	 * @param loadDataRequest   Settings for the data set export.
 	 * @param stepName          The name of the step.
@@ -543,8 +544,6 @@ public class DataController {
 	 */
 	private ResponseEntity<Object> handleRequest(
 			final RequestType requestType,
-			@Nullable final MultipartFile file,
-			@Nullable final FileConfiguration fileConfiguration,
 			@Nullable final DataConfiguration configuration,
 			@Nullable final String stepName,
 			@Nullable final LoadDataRequest loadDataRequest,
@@ -567,14 +566,28 @@ public class DataController {
 				    !projectEntity.getDataSets().get(Step.VALIDATION).isStoredData()) {
 					throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET, "The data has not been stored!");
 				}
+				projectEntity.getDataSets().get(Step.VALIDATION).setConfirmedData(true);
 				statusService.updateCurrentStep(projectEntity, Step.ANONYMIZATION);
 				result = null;
 			}
 			case ESTIMATE -> {
-				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
-				final InputStream inputStream = getInputStream(file);
-				result = dataProcessor.estimateDataConfiguration(inputStream, fileConfiguration, DatatypeEstimationAlgorithm.MOST_ESTIMATED);
-				databaseService.storeDataConfiguration((DataConfiguration) result, projectEntity, Step.VALIDATION);
+				if (projectEntity.getFile() == null) {
+					throw new BadStateException(BadStateException.NO_DATASET_FILE, "Estimating the data configuration requires the file for the dataset to be selected!");
+				}
+
+				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
+						projectEntity.getFile().getFileConfiguration().getFileType());
+				final InputStream inputStream = new ByteArrayInputStream(projectEntity.getFile().getFile());
+				result = dataProcessor.estimateDataConfiguration(inputStream,
+				                                                 projectEntity.getFile().getFileConfiguration(),
+				                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+
+				try {
+					databaseService.storeDataConfiguration((DataConfiguration) result, projectEntity, Step.VALIDATION);
+				} catch (final BadDataConfigurationException e) {
+					throw new InternalInvalidResultException(InternalInvalidResultException.INVALID_ESTIMATION,
+					                                         "Estimation created an invalid configuration!", e);
+				}
 			}
 			case DELETE -> {
 				databaseService.delete(projectEntity);
@@ -618,23 +631,25 @@ public class DataController {
 				result = null;
 			}
 			case STORE_DATE_SET -> {
+				if (projectEntity.getFile() == null) {
+					throw new BadStateException(BadStateException.NO_DATASET_FILE, "Storing the dataset requires the file for the dataset to be selected!");
+				}
+
 				// Store configuration
 				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
 
 				// Store data set
-				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
-				final InputStream inputStream = getInputStream(file);
-				final TransformationResult transformationResult = dataProcessor.read(inputStream, fileConfiguration,
+				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
+						projectEntity.getFile().getFileConfiguration().getFileType());
+				final InputStream inputStream = new ByteArrayInputStream(projectEntity.getFile().getFile());
+
+				final TransformationResult transformationResult = dataProcessor.read(inputStream,
+				                                                                     projectEntity.getFile()
+				                                                                                  .getFileConfiguration(),
 				                                                                     configuration);
 				result = databaseService.storeTransformationResult(transformationResult, projectEntity, Step.VALIDATION);
 
 				statusService.updateCurrentStep(projectEntity, Step.VALIDATION);
-			}
-			case VALIDATE -> {
-				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
-				final InputStream inputStream = getInputStream(file);
-				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
-				result = dataProcessor.read(inputStream, fileConfiguration, configuration);
 			}
 			default -> {
 				throw new InternalMissingHandlingException(InternalMissingHandlingException.REQUEST_TYPE,
@@ -643,14 +658,6 @@ public class DataController {
 			}
 		}
 		return new ResponseEntity<>(result, HttpStatus.OK);
-	}
-
-	private InputStream getInputStream(final MultipartFile file) throws BadFileException {
-		try {
-			return file.getInputStream();
-		} catch (IOException e) {
-			throw new BadFileException(BadFileException.NOT_READABLE, "Could not read file");
-		}
 	}
 
 	private enum RequestType {
@@ -665,7 +672,6 @@ public class DataController {
 		LOAD_TRANSFORMATION_RESULT_PAGE,
 		STORE_CONFIG,
 		STORE_DATE_SET,
-		VALIDATE;
 	}
 
 }

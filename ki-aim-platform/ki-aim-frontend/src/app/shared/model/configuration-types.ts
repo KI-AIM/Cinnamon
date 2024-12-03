@@ -3,14 +3,13 @@ import { DataType } from "./data-type";
 import { DateFormatConfiguration } from "./date-format-configuration";
 import { DateTimeFormatConfiguration } from "./date-time-format-configuration";
 import { StringPatternConfiguration } from "./string-pattern-configuration";
-import { dataTypeFromString } from "./data-type";
 import { RangeConfiguration } from "./range-configuration";
 
 export enum ConfigurationType {
-	DATEFORMAT,
-	DATETIMEFORMAT,
-	RANGE,
-	STRINGPATTERN,
+	DATEFORMAT = "DATEFORMAT",
+	DATETIMEFORMAT = "DATETIMEFORMAT",
+	RANGE = "RANGE",
+	STRINGPATTERN = "STRINGPATTERN",
 }
 
 export function getConfigurationTypeForString(
@@ -30,8 +29,23 @@ export function getConfigurationTypeForString(
 	}
 }
 
-export function getConfigurationTypeStringForIndex(index: number) {
-	return ConfigurationType[index];
+/**
+ * Returns the configuration type for the given configuration name.
+ * @param configurationName The name of the configuration.
+ */
+export function getConfigurationTypeForConfigurationName(configurationName: string): ConfigurationType | null {
+    switch (configurationName) {
+        case DateFormatConfiguration.name:
+            return ConfigurationType.DATEFORMAT;
+        case DateTimeFormatConfiguration.name:
+            return ConfigurationType.DATETIMEFORMAT;
+        case RangeConfiguration.name:
+            return ConfigurationType.RANGE;
+        case StringPatternConfiguration.name:
+            return ConfigurationType.STRINGPATTERN;
+        default:
+                return null;
+    }
 }
 
 /**
@@ -52,10 +66,9 @@ export const DataTypeToConfigurationTypeMapping: Record<
 };
 
 export function getConfigurationsForDatatype(
-	type: String
+	type: DataType
 ): List<ConfigurationType> {
-	var datatype = dataTypeFromString(type);
-	return new List(DataTypeToConfigurationTypeMapping[datatype] || []);
+	return new List(DataTypeToConfigurationTypeMapping[type] || []);
 }
 
 export function getConfigurationForConfigurationType(

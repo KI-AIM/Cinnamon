@@ -2,20 +2,20 @@
 <div class="d-flex flex-column">
     <i class="w-100" *ngIf="!hasConfiguration()">No configurations added yet</i>
     <div class="d-flex justify-content-between align-items-center"
-        *ngFor="let configuration of column.configurations">
+        *ngFor="let configuration of getConfigurations().controls | keyvalue ">
         <a class="configuration-link w-100 justify-content-start" [disabled]="disabled"
            (click)="showRemovalDialog(removeConfigDialog)" mat-button title="Remove configuration">
-        <span>{{configAsString(configuration)}}</span>
+            <span>{{ configAsString(configuration.key) }}</span>
         </a>
         <ng-template #removeConfigDialog>
             <h2 mat-dialog-title>Delete configuration</h2>
             <mat-dialog-content>
                 Should the configuration really be removed?
-                <pre class="pre-wrapper">{{configAsString(configuration)}}</pre>
+                <pre class="pre-wrapper">{{configAsString(configuration.key)}}</pre>
             </mat-dialog-content>
             <mat-dialog-actions align="end">
                 <button mat-raised-button mat-dialog-close>Cancel</button>
-                <button mat-raised-button mat-dialog-close color="warn" (click)="removeConfiguration(configuration)">Delte configuration</button>
+                <button mat-raised-button mat-dialog-close color="warn" (click)="removeConfiguration(configuration.key)">Delte configuration</button>
             </mat-dialog-actions>
         </ng-template>
     </div>

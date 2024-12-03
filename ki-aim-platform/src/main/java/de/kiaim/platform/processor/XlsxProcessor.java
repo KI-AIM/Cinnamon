@@ -6,11 +6,11 @@ import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.platform.model.DataRowTransformationError;
+import de.kiaim.platform.model.entity.FileConfigurationEntity;
+import de.kiaim.platform.model.entity.XlsxFileConfigurationEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
-import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.file.FileType;
-import de.kiaim.platform.model.file.XlsxFileConfiguration;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -35,8 +35,8 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
     }
 
     @Override
-    public int getNumberColumns(InputStream data, FileConfiguration fileConfiguration) {
-        final XlsxFileConfiguration xlsxFileConfiguration = fileConfiguration.getXlsxFileConfiguration();
+    public int getNumberColumns(InputStream data, FileConfigurationEntity fileConfiguration) {
+        final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
         List<List<String>> rows;
 
         try(InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
@@ -53,10 +53,10 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      * {@inheritDoc}
      */
     @Override
-    public TransformationResult read(InputStream data, FileConfiguration fileConfiguration,
+    public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
                                      DataConfiguration configuration) {
 
-        final XlsxFileConfiguration xlsxFileConfiguration = fileConfiguration.getXlsxFileConfiguration();
+        final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
         List<List<String>> rows;
 
         try (InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
@@ -67,7 +67,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
             throw new RuntimeException(e);
         }
 
-        if (!rows.isEmpty() && xlsxFileConfiguration.isHasHeader()) {
+        if (!rows.isEmpty() && xlsxFileConfiguration.getHasHeader()) {
             rows.remove(0);
         }
 
@@ -196,9 +196,9 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      * {@inheritDoc}
      */
     @Override
-    public DataConfiguration estimateDataConfiguration(InputStream data, FileConfiguration fileConfiguration,
+    public DataConfiguration estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration,
                                                        final DatatypeEstimationAlgorithm algorithm) {
-        final XlsxFileConfiguration xlsxFileConfiguration = fileConfiguration.getXlsxFileConfiguration();
+        final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
         List<List<String>> rows;
 
         try (InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
@@ -216,7 +216,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         int numberColumns = 0;
         final List<String> columnNames;
 
-        if (xlsxFileConfiguration.isHasHeader()) {
+        if (xlsxFileConfiguration.getHasHeader()) {
             columnNames = normalizeColumnNames(rows.get(0).toArray(new String[0]));
             numberColumns = columnNames.size();
         } else {

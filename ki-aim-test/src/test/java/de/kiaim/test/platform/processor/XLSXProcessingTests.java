@@ -9,8 +9,9 @@ import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.PlatformApplication;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
-import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.model.file.FileType;
 import de.kiaim.platform.processor.XlsxProcessor;
 import de.kiaim.test.util.FileConfigurationTestHelper;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ public class XLSXProcessingTests {
             new File("src/test/resources/xlsx_test.xlsx")
         );
 
-        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
         DataConfiguration config = getDataConfiguration();
 
         TransformationResult actualResult = assertDoesNotThrow(
@@ -63,7 +64,7 @@ public class XLSXProcessingTests {
             new File("src/test/resources/xlsx_test_with_header.xlsx")
         );
 
-        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(true);
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, true);
         DataConfiguration config = getDataConfiguration();
 
         TransformationResult actualResult = assertDoesNotThrow(
@@ -130,7 +131,7 @@ public class XLSXProcessingTests {
                 new File("src/test/resources/xlsx_test_mixed_datatype.xlsx")
         );
 
-        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
 
         DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
                                                                                         DatatypeEstimationAlgorithm.MOST_ESTIMATED);
@@ -149,7 +150,7 @@ public class XLSXProcessingTests {
                 new File("src/test/resources/xlsx_test_mixed_datatype.xlsx")
         );
 
-        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(false);
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
 
         DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
                                                                                         DatatypeEstimationAlgorithm.MOST_GENERAL);
@@ -169,7 +170,7 @@ public class XLSXProcessingTests {
             new File("src/test/resources/xlsx_test_with_header.xlsx")
         );
 
-        FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, true);
 
         DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
                                                                                         DatatypeEstimationAlgorithm.MOST_ESTIMATED);

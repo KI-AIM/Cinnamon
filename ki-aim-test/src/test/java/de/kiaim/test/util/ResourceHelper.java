@@ -9,8 +9,12 @@ import java.nio.charset.StandardCharsets;
 public class ResourceHelper {
 
 	public static MockMultipartFile loadCsvFile() throws IOException {
+		return loadCsvFile("file");
+	}
+
+	public static MockMultipartFile loadCsvFile(final String paramName) throws IOException {
 		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
-		return new MockMultipartFile("file", "file.csv", null,
+		return new MockMultipartFile(paramName, "file.csv", null,
 		                             classLoader.getResourceAsStream("test.csv"));
 	}
 

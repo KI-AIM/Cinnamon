@@ -1,17 +1,12 @@
 package de.kiaim.test.platform.service;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.platform.exception.BadColumnNameException;
-import de.kiaim.platform.exception.BadFileException;
-import de.kiaim.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
-import de.kiaim.platform.model.entity.ExecutionStepEntity;
-import de.kiaim.platform.model.entity.ExternalProcessEntity;
-import de.kiaim.platform.model.entity.ProjectEntity;
-import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
-import de.kiaim.platform.model.file.FileConfiguration;
+import de.kiaim.platform.model.file.FileType;
 import de.kiaim.platform.processor.DataProcessor;
 import de.kiaim.platform.repository.UserRepository;
 import de.kiaim.platform.service.DataProcessorService;
@@ -79,16 +74,18 @@ public class ProjectServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	public void createZipFile() throws IOException, BadFileException, BadColumnNameException, InternalDataSetPersistenceException {
+	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, BadFileException {
 		// Preparation
 		final var project = new ProjectEntity();
 		final var file = ResourceHelper.loadCsvFile();
-		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		final var csvFileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
+		final var fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
 
-		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(file);
-		final TransformationResult transformationResult = dataProcessor.read(file.getInputStream(), fileConfiguration,
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(csvFileConfiguration.getFileType());
+		final TransformationResult transformationResult = dataProcessor.read(file.getInputStream(), csvFileConfiguration,
 		                                                                     configuration);
+		databaseService.storeFile(project, file, fileConfiguration);
 		databaseService.storeTransformationResult(transformationResult, project, Step.VALIDATION);
 		databaseService.storeConfiguration("test-config", "key = value", project);
 
@@ -101,7 +98,7 @@ public class ProjectServiceTest extends DatabaseTest {
 
 		var otherFile = ResourceHelper.loadCsvFileWithErrors();
 		final TransformationResult otherTransformationResult = dataProcessor.read(otherFile.getInputStream(),
-		                                                                     fileConfiguration,
+		                                                                     csvFileConfiguration,
 		                                                                     configuration);
 		databaseService.storeTransformationResult(otherTransformationResult, project, Step.ANONYMIZATION);
 

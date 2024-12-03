@@ -3,12 +3,9 @@ package de.kiaim.platform.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.model.configuration.data.DateFormatConfiguration;
-import de.kiaim.model.configuration.data.DateTimeFormatConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.dto.ExternalProcessResponse;
-import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.serialization.mapper.JsonMapper;
 import de.kiaim.model.serialization.mapper.YamlMapper;
 import de.kiaim.model.status.synthetization.SynthetizationStatus;
@@ -682,44 +679,6 @@ public class ProcessService {
 		}
 	}
 
-	private void preprocessDataConfiguration(final StepConfiguration stepConfiguration,
-	                                         final DataConfiguration dataConfiguration) {
-		if (stepConfiguration.getPreProcessors().contains("dateformat")) {
-			for (final var columnConfiguration : dataConfiguration.getConfigurations()) {
-				if (columnConfiguration.getType() == DataType.DATE_TIME) {
-					boolean found = false;
-					for (final var config : columnConfiguration.getConfigurations()) {
-						if (config instanceof DateTimeFormatConfiguration dateFormatConfiguration) {
-							found = true;
-							dateFormatConfiguration.setDateTimeFormatter("%Y-%m-%dT%H:%M:%S.%f");
-							break;
-						}
-					}
-
-					if (!found) {
-						columnConfiguration.getConfigurations()
-						                   .add(new DateTimeFormatConfiguration("%Y-%m-%dT%H:%M:%S.%f"));
-					}
-
-				} else if (columnConfiguration.getType() == DataType.DATE) {
-
-					boolean found = false;
-					for (final var config : columnConfiguration.getConfigurations()) {
-						if (config instanceof DateFormatConfiguration dateFormatConfiguration) {
-							found = true;
-							dateFormatConfiguration.setDateFormatter("%Y-%m-%d");
-							break;
-						}
-					}
-
-					if (!found) {
-						columnConfiguration.getConfigurations().add(new DateFormatConfiguration("%Y-%m-%d"));
-					}
-				}
-			}
-		}
-	}
-
 	private void addConfig(final String configuration, final StepConfiguration stepConfiguration,
 	                       final MultipartBodyBuilder bodyBuilder)
 			throws InternalIOException, InternalMissingHandlingException {
@@ -792,7 +751,6 @@ public class ProcessService {
 	private void addDataSet(final MultipartBodyBuilder bodyBuilder, final StepConfiguration stepConfiguration,
 	                        final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
 			throws InternalIOException, InternalMissingHandlingException {
-		preprocessDataConfiguration(stepConfiguration, dataSet.getDataConfiguration());
 		switch (stepInputConfiguration.getEncoding()) {
 			case FILE -> {
 				addDataSetFile(bodyBuilder, stepInputConfiguration, dataSet);

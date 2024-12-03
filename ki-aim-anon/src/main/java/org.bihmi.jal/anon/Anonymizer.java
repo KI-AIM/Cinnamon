@@ -3,6 +3,7 @@ package org.bihmi.jal.anon;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.bihmi.jal.anon.exception.NoOptimumFoundException;
 import org.bihmi.jal.anon.privacyModels.PrivacyModel;
 import org.bihmi.jal.anon.util.Hierarchy;
 import org.bihmi.jal.config.AttributeConfig;
@@ -232,6 +233,12 @@ public class Anonymizer {
         try {
             ARXResult result = anonymizer.anonymize(this.originalData, this.arxConfig);
             System.out.println("Optimum found? " + result.getOptimumFound());
+
+            // Send error with code ANON_1_1 when no solution found
+            if (!result.getOptimumFound()) {
+                throw new NoOptimumFoundException();
+            }
+
             DataHandle output = result.getOutput();
             if (JALConfig.isLocalGeneralization() && result.isResultAvailable()) {
                 try {
@@ -248,6 +255,8 @@ public class Anonymizer {
             return output;
         } catch (IOException e) {
             throw new IllegalStateException(e);
+        } catch (NoOptimumFoundException e) {
+                throw e;
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("!!! general exception caught!!!");

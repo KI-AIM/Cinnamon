@@ -75,8 +75,22 @@ public class ProjectService {
 			return user.getProject();
 		}
 
-		final ProjectEntity project = new ProjectEntity();
+		final ProjectEntity project = createProject();
 		user.setProject(project);
+
+		userRepository.save(user);
+
+		return project;
+	}
+
+	/**
+	 * Creates a new empty project that is not associated to any user.
+	 *
+	 * @return The project.
+	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
+	 */
+	public ProjectEntity createProject() throws InternalApplicationConfigurationException {
+		final ProjectEntity project = new ProjectEntity();
 
 		final PipelineEntity pipeline = new PipelineEntity();
 		project.addPipeline(pipeline);
@@ -111,8 +125,6 @@ public class ProjectService {
 
 			pipeline.addStage(stageStep, stage);
 		}
-
-		userRepository.save(user);
 
 		return project;
 	}

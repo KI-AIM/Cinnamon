@@ -1,6 +1,7 @@
 package de.kiaim.test.platform.service;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
+import de.kiaim.platform.config.KiAimConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.*;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -30,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ProjectServiceTest extends DatabaseTest {
 
+	@Autowired KiAimConfiguration kiAimConfiguration;
 	@Autowired UserRepository userRepository;
 	@Autowired DatabaseService databaseService;
 	@Autowired DataProcessorService dataProcessorService;
@@ -76,9 +79,9 @@ public class ProjectServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, BadFileException {
+	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, BadFileException, InternalApplicationConfigurationException, BadConfigurationNameException {
 		// Preparation
-		final var project = new ProjectEntity();
+		final var project = projectService.createProject();
 		final var file = ResourceHelper.loadCsvFile();
 		final var csvFileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 		final var fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
@@ -88,21 +91,28 @@ public class ProjectServiceTest extends DatabaseTest {
 		final TransformationResult transformationResult = dataProcessor.read(file.getInputStream(), csvFileConfiguration,
 		                                                                     configuration);
 		databaseService.storeFile(project, file, fileConfiguration);
-		databaseService.storeTransformationResult(transformationResult, project, Step.VALIDATION);
-		databaseService.storeConfiguration("test-config", "key = value", project);
+		databaseService.storeOriginalTransformationResult(transformationResult, project);
+		databaseService.storeConfiguration("anonymization", "key = value", project);
+
+		var pipeline = new PipelineEntity();
+		project.addPipeline(pipeline);
 
 		var execution = new ExecutionStepEntity();
-		project.putExecutionStep(Step.EXECUTION, execution);
+		pipeline.addStage(Step.EXECUTION, execution);
 
-		for (final var processStep : Step.EXECUTION.getProcesses()) {
-			execution.putExternalProcess(processStep, new ExternalProcessEntity());
+		for (final var processStep : kiAimConfiguration.getStages().get(Step.EXECUTION).getJobs()) {
+			final var process = new DataProcessingEntity();
+			process.setStep(processStep);
+			execution.addProcess(process);
 		}
 
 		var otherFile = ResourceHelper.loadCsvFileWithErrors();
 		final TransformationResult otherTransformationResult = dataProcessor.read(otherFile.getInputStream(),
 		                                                                     csvFileConfiguration,
 		                                                                     configuration);
-		databaseService.storeTransformationResult(otherTransformationResult, project, Step.ANONYMIZATION);
+		databaseService.storeTransformationResult(otherTransformationResult,
+		                                          (DataProcessingEntity) execution.getProcesses().get(0),
+		                                          List.of(Step.ANONYMIZATION));
 
 		// The test
 		var out = new ByteArrayOutputStream();
@@ -120,7 +130,7 @@ public class ProjectServiceTest extends DatabaseTest {
 					stringBuilder.append(new String(buffer, 0 , read));
 				}
 
-				if (zipEntry.getName().equals("ANONYMIZATION-result.csv")) {
+				if (zipEntry.getName().equals("ANONYMIZATION.csv")) {
 					var result = ResourceHelper.loadCsvFileWithErrorsAsString();
 					var resultBuilder = new StringBuilder(result);
 					resultBuilder.delete(result.length() - 24, result.length() - 15);
@@ -130,7 +140,7 @@ public class ProjectServiceTest extends DatabaseTest {
 					assertEquals(DataConfigurationTestHelper.generateDataConfigurationAsYaml(), stringBuilder.toString(), "Unexpected data configuration!");
 				} else if(zipEntry.getName().equals("original.csv")) {
 					assertEquals(ResourceHelper.loadCsvFileAsString(), stringBuilder.toString(), "Unexpected configuration!");
-				} else if(zipEntry.getName().equals("test-config.yaml")) {
+				} else if(zipEntry.getName().equals("anonymization.yaml")) {
 					assertEquals("key = value", stringBuilder.toString(), "Unexpected configuration!");
 				} else {
 					fail("Unexpected ZIP entry: " + zipEntry.getName());

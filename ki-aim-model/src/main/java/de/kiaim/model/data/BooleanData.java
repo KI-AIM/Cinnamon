@@ -33,6 +33,14 @@ public class BooleanData extends Data {
 		private boolean value;
 
 		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public DataType getDataType() {
+			return DataType.BOOLEAN;
+		}
+
+		/**
 		 * Sets the value of the resulting Boolean Object
 		 * The value is only set, if it is a valid Boolean
 		 * format:

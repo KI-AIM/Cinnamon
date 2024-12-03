@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Getter
 @Setter
 @NoArgsConstructor
-public class EstimateDataTypesRequest {
+public class EstimateDataConfigurationRequest {
 
 	@Parameter(description = "File containing the data.",
 	           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))

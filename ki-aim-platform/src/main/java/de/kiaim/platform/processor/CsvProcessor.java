@@ -1,9 +1,9 @@
 package de.kiaim.platform.processor;
 
+import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
-import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.model.DataRowTransformationError;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
@@ -85,8 +85,8 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration,
-	                                           final DatatypeEstimationAlgorithm algorithm) {
+	public DataConfiguration estimateDataConfiguration(InputStream data, FileConfiguration fileConfiguration,
+	                                                   final DatatypeEstimationAlgorithm algorithm) {
 		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
@@ -117,15 +117,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		}
 
 		List<String[]> validRows = getSubsetOfCompleteRows(recordIterator, 10);
-
-		final List<DataType> estimatedDataTypes;
-		if (validRows.isEmpty()) {
-			estimatedDataTypes = getUndefinedDatatypesList(numberColumns);
-		} else {
-			estimatedDataTypes = estimateDatatypesForMultipleRows(validRows, algorithm);
-		}
-
-		return buildConfigurationForDataTypes(estimatedDataTypes, columnNames);
+		return estimateDataConfiguration(validRows, algorithm, numberColumns, columnNames);
 	}
 
 	/**

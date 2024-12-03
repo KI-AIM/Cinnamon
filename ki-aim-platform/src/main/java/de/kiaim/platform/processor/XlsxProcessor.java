@@ -14,6 +14,7 @@ import de.kiaim.platform.model.file.XlsxFileConfiguration;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
 import org.dhatim.fastexcel.reader.Cell;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
@@ -195,8 +196,8 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      * {@inheritDoc}
      */
     @Override
-    public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration,
-                                               final DatatypeEstimationAlgorithm algorithm) {
+    public DataConfiguration estimateDataConfiguration(InputStream data, FileConfiguration fileConfiguration,
+                                                       final DatatypeEstimationAlgorithm algorithm) {
         final XlsxFileConfiguration xlsxFileConfiguration = fileConfiguration.getXlsxFileConfiguration();
         List<List<String>> rows;
 
@@ -224,15 +225,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         }
 
         List<String[]> validRows = getSubsetOfCompleteRows(rows, 10);
-
-        final List<DataType> estimatedDataTypes;
-        if (validRows.isEmpty()) {
-            estimatedDataTypes = getUndefinedDatatypesList(numberColumns);
-        } else {
-            estimatedDataTypes = estimateDatatypesForMultipleRows(validRows, algorithm);
-        }
-
-        return buildConfigurationForDataTypes(estimatedDataTypes, columnNames);
+        return estimateDataConfiguration(validRows, algorithm, numberColumns, columnNames);
     }
 
     private DataConfiguration getStringDataConfiguration(Sheet sheet) {

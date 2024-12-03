@@ -48,7 +48,7 @@ class DataControllerTest extends ControllerTest {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-		final String result = mockMvc.perform(multipart("/api/data/datatypes")
+		final String result = mockMvc.perform(multipart("/api/data/estimation")
 				                                      .file(file)
 				                                      .param("fileConfiguration",
 				                                             objectMapper.writeValueAsString(fileConfiguration)))
@@ -69,7 +69,7 @@ class DataControllerTest extends ControllerTest {
 	void estimateDatatypesMissingFile() throws Exception {
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-		mockMvc.perform(multipart("/api/data/datatypes")
+		mockMvc.perform(multipart("/api/data/estimation")
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
@@ -84,7 +84,7 @@ class DataControllerTest extends ControllerTest {
 		                                               classLoader.getResourceAsStream("test.csv"));
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-		mockMvc.perform(multipart("/api/data/datatypes")
+		mockMvc.perform(multipart("/api/data/estimation")
 				                .file(file)
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
@@ -98,7 +98,7 @@ class DataControllerTest extends ControllerTest {
 		                                               classLoader.getResourceAsStream("test.csv"));
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-		mockMvc.perform(multipart("/api/data/datatypes")
+		mockMvc.perform(multipart("/api/data/estimation")
 				                .file(file)
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
@@ -111,7 +111,7 @@ class DataControllerTest extends ControllerTest {
 		MockMultipartFile file = new MockMultipartFile("file", "file", null,
 		                                               classLoader.getResourceAsStream("test.csv"));
 
-		mockMvc.perform(multipart("/api/data/datatypes")
+		mockMvc.perform(multipart("/api/data/estimation")
 				                .file(file))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))

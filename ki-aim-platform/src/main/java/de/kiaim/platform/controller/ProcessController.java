@@ -9,6 +9,7 @@ import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.mapper.ExecutionStepMapper;
 import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,13 +40,16 @@ public class ProcessController {
 	private final ProjectService projectService;
 	private final StatusService statusService;
 	private final UserService userService;
+	private final ExecutionStepMapper executionStepMapper;
 
 	public ProcessController(final ProcessService processService, final ProjectService projectService,
-	                         final UserService userService, final StatusService statusService) {
+	                         final UserService userService, final StatusService statusService,
+	                         final ExecutionStepMapper executionStepMapper) {
 		this.processService = processService;
 		this.projectService = projectService;
 		this.userService = userService;
 		this.statusService = statusService;
+		this.executionStepMapper = executionStepMapper;
 	}
 
 	@Operation(summary = "Returns the status of the execution.",
@@ -53,7 +57,7 @@ public class ProcessController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully returns the status object.",
-			             content = @Content(schema = @Schema(implementation = ExecutionStepEntity.class))),
+			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -77,7 +81,9 @@ public class ProcessController {
 		final ProjectEntity project = projectService.getProject(user);
 		final Step step = Step.getStepOrThrow(stepName);
 
-		return processService.getStatus(project, step);
+		final ExecutionStepEntity executionStep = processService.getStatus(project, step);
+		var a =executionStepMapper.toDto(executionStep);
+		return executionStepMapper.toDto(executionStep);
 	}
 
 	@Operation(summary = "Saves the configuration and the URL of the selected process for the given step.",
@@ -137,7 +143,7 @@ public class ProcessController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully started the execution. Returns the status object.",
-			             content = @Content(schema = @Schema(implementation = ExecutionStepEntity.class))),
+			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -154,7 +160,7 @@ public class ProcessController {
 	@PostMapping(value = "/{stepName}/start",
 				 consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ExecutionStepEntity startProcess(
+	public ExecutionStepInformation startProcess(
 			@Parameter(description = "Step of which the process should be canceled.")
 			@PathVariable final String stepName,
 			@AuthenticationPrincipal final UserEntity requestUser
@@ -165,7 +171,8 @@ public class ProcessController {
 		final Step step = Step.getStepOrThrow(stepName);
 
 		// Start process
-		return processService.start(project, step);
+		final ExecutionStepEntity executionStep = processService.start(project, step);
+		return executionStepMapper.toDto(executionStep);
 	}
 
 	@Operation(summary = "Cancels a process.",
@@ -173,7 +180,7 @@ public class ProcessController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully canceled the process. Returns the status object.",
-			             content = @Content(schema = @Schema(implementation = ExecutionStepEntity.class))),
+			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -190,7 +197,7 @@ public class ProcessController {
 	@PostMapping(value = "/{stepName}/cancel",
 	             consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ExecutionStepEntity cancelProcess(
+	public ExecutionStepInformation cancelProcess(
 			@Parameter(description = "Step of which the process should be canceled.")
 			@PathVariable final String stepName,
 			@AuthenticationPrincipal final UserEntity requestUser
@@ -200,7 +207,8 @@ public class ProcessController {
 		final ProjectEntity project = projectService.getProject(user);
 		final Step step = Step.getStepOrThrow(stepName);
 
-		return processService.cancel(project, step);
+		final ExecutionStepEntity executionStep = processService.cancel(project, step);
+		return executionStepMapper.toDto(executionStep);
 	}
 
 	@Operation(summary = "Callback endpoint for marking processes as finished.",

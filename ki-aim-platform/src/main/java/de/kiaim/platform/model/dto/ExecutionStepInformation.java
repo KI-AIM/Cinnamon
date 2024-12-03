@@ -1,6 +1,5 @@
 package de.kiaim.platform.model.dto;
 
-import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -14,6 +13,8 @@ public class ExecutionStepInformation {
 
 	@Schema(description = "The status of the external processing.")
 	private ProcessStatus status = ProcessStatus.NOT_STARTED;
+
+	private Integer currentProcessIndex;
 
 	private final List<ExternalProcessInformation> processes = new ArrayList<>();
 }

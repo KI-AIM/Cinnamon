@@ -720,11 +720,12 @@ public class ProcessService {
 		}
 	}
 
-	private DataSetEntity getDataSet(final ExternalProcessEntity externalProcess)
+	public DataSetEntity getDataSet(final ExternalProcessEntity externalProcess)
 			throws InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
 		// TODO Hard coded first data set
-		return getDataSet(stepConfiguration.getInputs().get(0).getSelector(), externalProcess);
+		return getDataSet(stepConfiguration.getInputs().get(stepConfiguration.getInputs().size() - 1).getSelector(),
+		                  externalProcess);
 	}
 
 	private DataSetEntity getDataSet(final DataSetSelector dataSetSelector, final ExternalProcessEntity externalProcess)

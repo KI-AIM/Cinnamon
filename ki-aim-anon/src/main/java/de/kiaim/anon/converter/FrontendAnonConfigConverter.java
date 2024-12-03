@@ -32,7 +32,7 @@ public class FrontendAnonConfigConverter {
      *
      * @param frontendConfig The configuration received from the frontend.
      * @param originalDataSet The dataset associated with this configuration.
-     * @return An AnonymizationConfigV0 object configured for JAL.
+     * @return An AnonymizationConfig object configured for JAL.
      * @throws InvalidRiskThresholdException If the risk threshold provided is invalid.
      */
     public static AnonymizationConfig convertToJALConfig(FrontendAnonConfig frontendConfig, DataSet originalDataSet)
@@ -116,6 +116,7 @@ public class FrontendAnonConfigConverter {
             throws InvalidAttributeConfigException {
         List<AttributeConfig> attributeConfigs = new ArrayList<>();
 
+        // Generate an anon configuration for each column of the dataset
         for (ColumnConfiguration columnConfig : originalDataSet.getDataConfiguration().getConfigurations()) {
             // Check if attribute configured by user
             FrontendAttributeConfig matchingFrontendConfig = frontendAttributeConfigs.stream()
@@ -137,6 +138,9 @@ public class FrontendAnonConfigConverter {
         return attributeConfigs;
     }
 
+    /**
+     * Generate JAL attribute config from config defined by the user in the frontend.
+     */
     private static AttributeConfig createAttributeConfigFromFrontendConfig(FrontendAttributeConfig frontendConfig,
                                                                            DataSet originalDataSet)
             throws InvalidAttributeConfigException {
@@ -183,12 +187,18 @@ public class FrontendAnonConfigConverter {
         return attributeConfig;
     }
 
+    /**
+     * Generate default attribute config for attributes not configured.
+     * For now the default config delete the attribute.
+     * TODO : change to Default generalization
+     */
     private static AttributeConfig createDefaultAttributeConfig(ColumnConfiguration columnConfig) throws InvalidAttributeConfigException {
         AttributeConfig defaultConfig = new AttributeConfig();
         defaultConfig.setName(columnConfig.getName());
         defaultConfig.setDataType(columnConfig.getType().toString());
 
-        defaultConfig.setAttributeType("QUASI_IDENTIFYING_ATTRIBUTE");
+        // TODO : change to generalize ? improve default hierarchy
+        defaultConfig.setAttributeType("IDENTIFYING_ATTRIBUTE"); //By default, attribute is deleted
         defaultConfig.setHierarchyConfig(null);
 
         if (columnConfig.getType() == DataType.INTEGER || columnConfig.getType() == DataType.DECIMAL) {

@@ -2,6 +2,7 @@ package de.kiaim.anon.service;
 
 import de.kiaim.anon.AbstractAnonymizationTests;
 import de.kiaim.anon.model.AnonymizationRequest;
+import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
 import de.kiaim.model.data.DataSet;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -10,7 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.util.ResourceUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -24,10 +27,16 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     @Autowired
     private AnonymizationService anonymizationService;
 
+    private FrontendAnonConfigWrapper heartFrontendAnonConfigMissingAttr;
+
     @BeforeEach
     void setUpService() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
+
+        String heartFrontendAnonConfigMissingAttrPath = "data/data.heart-failure-anon-config-missing-attribute.yml";
+        heartFrontendAnonConfigMissingAttr = importFrontendAnonConfig(heartFrontendAnonConfigMissingAttrPath);
+        System.out.println("heartFrontendAnonConfigMissingAttr " + heartFrontendAnonConfigMissingAttr.getAnonymization());
     }
 
     @AfterEach
@@ -38,7 +47,8 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     @Test
     public void testAnonymizationService() throws Exception {
 
-        Future<DataSet> future = anonymizationService.anonymizeData(dataSet, frontendAnonConfig.getAnonymization(), "processIdTest");
+        Future<DataSet> future = anonymizationService.anonymizeData(
+                dataSet, frontendAnonConfig.getAnonymization(), "processIdTest");
 
         if (!future.isDone()) {
             for (int i = 0; i<30; i++) {
@@ -51,6 +61,28 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
             assertNotNull(anonymizedDataset);
             System.out.println(anonymizedDataset.getDataRows());
 
+
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testAnonymizationService_MissingAttribute() throws Exception {
+
+        Future<DataSet> future = anonymizationService.anonymizeData(
+                heartDataset, heartFrontendAnonConfigMissingAttr.getAnonymization(), "processIdMissing");
+
+        if (!future.isDone()) {
+            for (int i = 0; i<30; i++) {
+                Thread.sleep(100);
+            }
+        }
+
+        try {
+            DataSet anonymizedDataset = future.get();
+            assertNotNull(anonymizedDataset);
 
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
@@ -108,4 +140,6 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
 
         System.out.println("Received error response in callback: " + body);
     }
+
+
 }

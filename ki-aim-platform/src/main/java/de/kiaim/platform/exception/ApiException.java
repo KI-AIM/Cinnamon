@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatusCode;
  */
 public abstract class ApiException extends Exception {
 
+	private static final String ERROR_CODE_PREFIX = "PLATFORM";
+	private static final String ERROR_CODE_SEPARATOR = "_";
+
 	/**
 	 * Exception type code for exceptions that extend {@link BadRequestException}.
 	 */
@@ -42,10 +45,24 @@ public abstract class ApiException extends Exception {
 
 	/**
 	 * Returns the error code of the exception.
-	 * Code has the following structure [ExceptionTypeCode]-[ExceptionClassCode]-[ExceptionCode].
+	 * Code has the following structure PLATFORM_[ExceptionTypeCode]_[ExceptionClassCode]_[ExceptionCode].
 	 * @return String containing the error code.
 	 */
 	public String getErrorCode() {
-		return getExceptionTypeCode() + "-" +  getExceptionClassCode() + "-" + exceptionCode;
+		return assembleErrorCode(getExceptionTypeCode(), getExceptionClassCode(), exceptionCode);
+	}
+
+	/**
+	 * Assembles the error code for the given components.
+	 * Code has the following structure PLATFORM_[ExceptionTypeCode]_[ExceptionClassCode]_[ExceptionCode].
+	 * @param exceptionTypeCode First component.
+	 * @param exceptionClassCode Second component.
+	 * @param exceptionCode Third component.
+	 * @return String containing the error code.
+	 */
+	public static String assembleErrorCode(final String exceptionTypeCode, final String exceptionClassCode,
+	                                       final String exceptionCode) {
+		return ERROR_CODE_PREFIX + ERROR_CODE_SEPARATOR + exceptionTypeCode + ERROR_CODE_SEPARATOR +
+		       exceptionClassCode + ERROR_CODE_SEPARATOR + exceptionCode;
 	}
 }

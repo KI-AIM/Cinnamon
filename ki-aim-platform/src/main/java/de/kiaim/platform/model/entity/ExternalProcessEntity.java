@@ -1,9 +1,7 @@
 package de.kiaim.platform.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +17,6 @@ import java.util.Objects;
  * Entity representing a planned or running external process like the anonymization.
  * TODO move the configuration into a separate object, add directly to the project and reference here
  */
-@Schema(description = "Information about an external process.")
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @Getter
@@ -29,7 +26,6 @@ public abstract class ExternalProcessEntity {
 	/**
 	 * ID of the process.
 	 */
-	@JsonIgnore
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
 	private Long id;
@@ -51,7 +47,6 @@ public abstract class ExternalProcessEntity {
 	/**
 	 * The status of the external processing.
 	 */
-	@Schema(description = "The status of the external processing.")
 	@Setter
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
@@ -61,7 +56,6 @@ public abstract class ExternalProcessEntity {
 	 * Time when the process has been scheduled.
 	 * Null if status is not SCHEDULED.
 	 */
-	@JsonIgnore
 	@Setter
 	@Nullable
 	private Timestamp scheduledTime;
@@ -70,7 +64,6 @@ public abstract class ExternalProcessEntity {
 	 * URL to start the process.
 	 * Null if status is not SCHEDULED.
 	 */
-	@JsonIgnore
 	@Setter
 	@Nullable
 	private String processUrl;
@@ -78,7 +71,6 @@ public abstract class ExternalProcessEntity {
 	/**
 	 * The configuration for this process.
 	 */
-	@JsonIgnore
 	@Column(length = Integer.MAX_VALUE)
 	@Setter
 	@Nullable
@@ -87,7 +79,6 @@ public abstract class ExternalProcessEntity {
 	/**
 	 * Process id in the module.
 	 */
-	@JsonIgnore
 	@Setter
 	@Nullable
 	private String externalId;
@@ -95,7 +86,6 @@ public abstract class ExternalProcessEntity {
 	/**
 	 * The corresponding execution step.
 	 */
-	@JsonIgnore
 	@ManyToOne(fetch = FetchType.EAGER)
 	@Setter
 	private ExecutionStepEntity executionStep;
@@ -104,7 +94,6 @@ public abstract class ExternalProcessEntity {
 	 * Detailed status information.
 	 * Can have any form.
 	 */
-	@Schema(description = "The detailed status object retrieved from the server.")
 	@Column(length = 1000)
 	@Setter
 	@Nullable
@@ -113,7 +102,6 @@ public abstract class ExternalProcessEntity {
 	/**
 	 * Additional files created during the process.
 	 */
-	@JsonIgnore
 	@ElementCollection(fetch = FetchType.LAZY)
 	@MapKeyColumn(name = "filename")
 	@Lob
@@ -131,7 +119,6 @@ public abstract class ExternalProcessEntity {
 	 * Returns the corresponding project.
 	 * @return The corresponding project.
 	 */
-	@JsonIgnore
 	public ProjectEntity getProject() {
 		return executionStep.getProject();
 	}

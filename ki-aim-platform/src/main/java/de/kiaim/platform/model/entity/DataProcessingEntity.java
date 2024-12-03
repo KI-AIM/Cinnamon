@@ -1,6 +1,5 @@
 package de.kiaim.platform.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import org.springframework.lang.Nullable;
@@ -17,7 +16,6 @@ public class DataProcessingEntity extends ExternalProcessEntity {
 	/**
 	 * The data set resulting from the processing.
 	 */
-	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	@JoinColumn(name = "data_set_id", referencedColumnName = "id")
 	@Nullable

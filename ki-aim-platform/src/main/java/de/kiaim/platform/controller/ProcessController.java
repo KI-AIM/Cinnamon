@@ -4,6 +4,7 @@ import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.dto.ConfigureProcessRequest;
+import de.kiaim.platform.model.dto.ExecutionStepInformation;
 import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
@@ -67,7 +68,7 @@ public class ProcessController {
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@GetMapping(value = "/{stepName}", produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ExecutionStepEntity getProcess(
+	public ExecutionStepInformation getProcess(
 			@Parameter(description = "Step of which the process should be canceled.")
 			@PathVariable final String stepName,
 			@AuthenticationPrincipal final UserEntity requestUser

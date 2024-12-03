@@ -1,9 +1,7 @@
 package de.kiaim.platform.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,7 +17,6 @@ import java.util.*;
 public class ExecutionStepEntity {
 
 	/** The ID. */
-	@JsonIgnore
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
 	private Long id;
@@ -33,7 +30,6 @@ public class ExecutionStepEntity {
 	/**
 	 * Associated step of the process.
 	 */
-	@JsonIgnore
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	@Getter @Setter
@@ -42,7 +38,6 @@ public class ExecutionStepEntity {
 	/**
 	 * The status of the external processing.
 	 */
-	@Schema(description = "The status of the external processing.")
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	@Getter @Setter
@@ -67,7 +62,6 @@ public class ExecutionStepEntity {
 	/**
 	 * The corresponding pipeline.
 	 */
-	@JsonIgnore
 	@ManyToOne(fetch = FetchType.EAGER, optional = false)
 	@JoinColumn(name = "pipeline_id", nullable = false)
 	@Getter @Setter
@@ -118,7 +112,6 @@ public class ExecutionStepEntity {
 		}
 	}
 
-	@JsonIgnore
 	@Nullable
 	public ExternalProcessEntity getCurrentProcess() {
 		if (currentProcessIndex == null) {
@@ -127,7 +120,6 @@ public class ExecutionStepEntity {
 		return getProcess(currentProcessIndex);
 	}
 
-	@JsonIgnore
 	public ProjectEntity getProject() {
 		return pipeline.getProject();
 	}

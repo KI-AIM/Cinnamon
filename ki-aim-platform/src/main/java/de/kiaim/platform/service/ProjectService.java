@@ -200,11 +200,14 @@ public class ProjectService {
 				for (final ExecutionStepEntity executionStep : pipeline.getStages()) {
 					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {
 						// Add configuration
-						final String configurationName = stepService.getStepConfiguration(externalProcess.getStep()).getConfigurationName();
-						final ZipEntry configZipEntry = new ZipEntry(configurationName + ".yaml");
-						zipOut.putNextEntry(configZipEntry);
-						zipOut.write(externalProcess.getConfiguration().getBytes());
-						zipOut.closeEntry();
+						if (externalProcess.getConfiguration() != null) {
+							final String configurationName = stepService.getStepConfiguration(externalProcess.getStep())
+							                                            .getConfigurationName();
+							final ZipEntry configZipEntry = new ZipEntry(configurationName + ".yaml");
+							zipOut.putNextEntry(configZipEntry);
+							zipOut.write(externalProcess.getConfiguration().getBytes());
+							zipOut.closeEntry();
+						}
 
 						// Add data set
 						if (externalProcess instanceof DataProcessingEntity dataProcessing ) {

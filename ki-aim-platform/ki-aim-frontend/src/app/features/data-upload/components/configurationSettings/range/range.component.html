@@ -1,10 +1,10 @@
-<div class="d-flex flex-column w-100">
+<div class="d-flex flex-column w-100" [formGroup]="form">
     <mat-form-field>
         <mat-label>Minimum Value</mat-label>
-        <input matInput #range [type]="getInputType()" [(ngModel)]="rangeConfiguration.minValue" />
+        <input matInput [type]="getInputType()" formControlName="minValue"/>
     </mat-form-field>
     <mat-form-field>
         <mat-label>Maximum Value</mat-label>
-        <input matInput [type]="getInputType()" #range [(ngModel)]="rangeConfiguration.maxValue" />
+        <input matInput [type]="getInputType()" #range formControlName="maxValue"/>
     </mat-form-field>
 </div>

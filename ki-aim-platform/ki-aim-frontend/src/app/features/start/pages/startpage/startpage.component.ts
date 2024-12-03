@@ -20,6 +20,6 @@ export class StartpageComponent {
     }
 
     protected get locked(): boolean {
-        return this.statusService.isStepCompleted(Steps.VALIDATION);
+        return this.statusService.isStepCompleted(Steps.UPLOAD);
     }
 }

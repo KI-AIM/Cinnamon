@@ -24,7 +24,7 @@
         Continue
         <mat-icon>arrow_forward</mat-icon>
     </button>
-    <button mat-raised-button color="warn" (click)="openDeleteDialog(deleteDialog)">
+    <button mat-raised-button color="warn" (click)="openDeleteDialog(deleteDialog)" [disabled]="!locked">
         <mat-icon>delete</mat-icon>
         Delete Data
     </button>

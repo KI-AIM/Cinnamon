@@ -1,4 +1,4 @@
-import { Component, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { Component, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { TitleService } from 'src/app/core/services/title-service.service';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
 import { DataService } from 'src/app/shared/services/data.service';
@@ -20,19 +20,28 @@ import { ErrorMessageService } from 'src/app/shared/services/error-message.servi
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
-import { Subscription } from "rxjs";
+import { debounceTime, distinctUntilChanged, map, Observable, Subscription } from "rxjs";
+import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
+import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
+import { DateTimeFormatConfiguration } from "../../../../shared/model/date-time-format-configuration";
+import { RangeConfiguration } from "../../../../shared/model/range-configuration";
+import { StringPatternConfiguration } from "../../../../shared/model/string-pattern-configuration";
+import { DataSetInfoService } from "../../services/data-set-info.service";
 
 @Component({
     selector: 'app-data-configuration',
     templateUrl: './data-configuration.component.html',
     styleUrls: ['./data-configuration.component.less'],
 })
-export class DataConfigurationComponent implements OnInit {
+export class DataConfigurationComponent implements OnInit, OnDestroy {
     error: string;
-    FileType = FileType;
-    isValid: boolean;
-    dataConfiguration: DataConfiguration
+
     private dataConfigurationSubscription: Subscription;
+
+    protected form: FormGroup;
+
+    protected isFileTypeXLSX$: Observable<boolean>;
 
     @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
@@ -40,7 +49,9 @@ export class DataConfigurationComponent implements OnInit {
     constructor(
         public configuration: DataConfigurationService,
         public dataService: DataService,
+        private dataSetInfoService: DataSetInfoService,
         public fileService: FileService,
+        private readonly formBuilder: FormBuilder,
         private titleService: TitleService,
         private router: Router,
         private readonly statusService: StatusService,
@@ -48,22 +59,33 @@ export class DataConfigurationComponent implements OnInit {
 		private errorMessageService: ErrorMessageService,
     ) {
         this.error = "";
-        this.isValid = true;
         this.titleService.setPageTitle("Data configuration");
     }
 
     protected get locked(): boolean {
-        return this.statusService.isStepCompleted(Steps.DATA_CONFIG)
+        return this.statusService.isStepCompleted(Steps.VALIDATION)
     }
 
     ngOnInit(): void {
-        this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
-            this.dataConfiguration = value;
-        })
-    }
+        this.isFileTypeXLSX$ = this.fileService.fileInfo$.pipe(
+            map(value => {
+                console.log(value.type);
+               return value.type === FileType.XLSX;
+            })
+        );
 
-	ngAfterViewInit() {
-        this.setEmptyColumnNames();
+        this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
+            if (this.configuration.localDataConfiguration !== null) {
+                this.form = this.createForm(this.configuration.localDataConfiguration);
+            } else {
+                this.setEmptyColumnNames(value);
+                this.form = this.createForm(value);
+            }
+
+            this.form.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
+                this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
+            });
+        });
     }
 
     ngOnDestroy() {
@@ -71,24 +93,18 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     confirmConfiguration() {
+        const config = plainToInstance(DataConfiguration, this.form.value);
         this.loadingService.setLoadingStatus(true);
-
-        this.dataService.storeData(this.fileService.getFile(),
-            this.dataConfiguration,
-            this.fileService.getFileConfiguration()
-        ).subscribe({
+        this.configuration.setDataConfiguration(config);
+        this.dataService.storeData(config).subscribe({
             next: (d) => this.handleUpload(d),
             error: (e) => this.handleError(e),
-        })
+        });
     }
 
-    onValidation(isValid: boolean) {
-        this.isValid = isValid;
-    }
-
-    private setEmptyColumnNames() {
-        this.dataConfiguration.configurations.forEach((column, index) => {
-            if (column.name == undefined || column.name == null || column.name == "") {
+    private setEmptyColumnNames(dataConfiguration: DataConfiguration) {
+        dataConfiguration.configurations.forEach((column, index) => {
+            if (column.name === undefined || column.name === null || column.name == "") {
                 column.name = 'column_' + index;
             }
         });
@@ -96,6 +112,7 @@ export class DataConfigurationComponent implements OnInit {
 
     private handleUpload(data: Object) {
         this.loadingService.setLoadingStatus(false);
+        this.dataSetInfoService.invalidateCache();
 
         this.router.navigateByUrl("/dataValidation");
         this. statusService.setNextStep(Steps.VALIDATION);
@@ -115,26 +132,33 @@ export class DataConfigurationComponent implements OnInit {
         const names: string[] = [];
         const duplicates: string[] = [];
 
+        const configurationsFrom = (this.form.controls['configurations'] as FormArray).controls
         // Find duplicate column names
-        for (const hun of this.attributeConfigurations) {
+        for (const f of Object.values(configurationsFrom)) {
+            const fg = (f as FormGroup).controls['name'];
 
-            if (hun.nameInput.value !== "") {
-                if (names.includes(hun.nameInput.value)) {
-                    duplicates.push(hun.nameInput.value);
+            const name = fg.value;
+            if (name !== "") {
+                if (names.includes(name)) {
+                    duplicates.push(name);
                 } else {
-                    names.push(hun.nameInput.value);
+                    names.push(name);
                 }
             }
         }
 
-        // Add errors to inputs with duplicate column names
-        for (const hun of this.attributeConfigurations) {
-            if (duplicates.includes(hun.nameInput.value)) {
-                hun.nameInput.control.setErrors({unique: true});
+        // Add errors to inputs with duplicate column namesa
+        for (const f of Object.values(configurationsFrom)) {
+            const fg = (f as FormGroup).controls['name'];
+
+            const name = fg.value;
+            if (duplicates.includes(name)) {
+                fg.setErrors({unique: true});
             } else {
-                // Delete all errors and revalidate to add existing errors
-                hun.nameInput.control.setErrors(null);
-                hun.nameInput.control.updateValueAndValidity();
+                if (fg.errors && fg.errors['unique']) {
+                    fg.setErrors(null);
+                    fg.updateValueAndValidity();
+                }
             }
         }
     }
@@ -166,5 +190,84 @@ export class DataConfigurationComponent implements OnInit {
         }
 
         this.configurationUpload.closeDialog();
+    }
+
+    protected getColumnConfigurationForms(form: FormGroup): FormGroup[] {
+        return (form.controls['configurations'] as FormArray).controls as FormGroup[];
+    }
+
+    private createForm(dataConfiguration: DataConfiguration): FormGroup {
+        const formArray: any[] = [];
+        dataConfiguration.configurations.forEach(columnConfiguration=> {
+            const addConfigs = [];
+
+            for (const addConfig of columnConfiguration.configurations) {
+                if (addConfig.getName() === "DateFormatConfiguration") {
+                    const dateFormatConfiguration = addConfig as DateFormatConfiguration;
+                    addConfigs.push(
+                        this.formBuilder.group({
+                            name: ["DateFormatConfiguration"],
+                            dateFormatter: [{
+                                value: dateFormatConfiguration.dateFormatter,
+                                disabled: this.locked
+                            }, {validators: [Validators.required]}],
+                        })
+                    );
+                } else if (addConfig.getName() === "DateTimeFormatConfiguration") {
+                    const dateTimeFormatConfiguration = addConfig as DateTimeFormatConfiguration;
+                    addConfigs.push(
+                        this.formBuilder.group({
+                            name: ["DateTimeFormatConfiguration"],
+                            dateTimeFormatter: [{
+                                value: dateTimeFormatConfiguration.dateTimeFormatter,
+                                disabled: this.locked
+                            }, {
+                                validators: [Validators.required]
+                            }],
+                        })
+                    );
+                } else if (addConfig.getName() === "RangeConfiguration") {
+                    const rangeConfiguration = addConfig as RangeConfiguration;
+                    addConfigs.push(
+                        this.formBuilder.group({
+                            name: ["RangeConfiguration"],
+                            minValue: [{value: rangeConfiguration.minValue, disabled: this.locked}, {
+                                validators: [Validators.required]
+                            }],
+                            maxValue: [{value: rangeConfiguration.maxValue, disabled: this.locked}, {
+                                validators: [Validators.required]
+                            }],
+                        })
+                    );
+                } else if (addConfig.getName() === "StringPatternConfiguration") {
+                    const stringPatternConfiguration = addConfig as StringPatternConfiguration;
+                    addConfigs.push(
+                        this.formBuilder.group({
+                            name: ["StringPatternConfiguration"],
+                            pattern: [{value: stringPatternConfiguration.pattern, disabled: this.locked}, {
+                                validators: [Validators.required]
+                            }],
+                        })
+                    );
+                }
+            }
+
+            const columnGroup = this.formBuilder.group({
+                index: [columnConfiguration.index],
+                name: [{value: columnConfiguration.name, disabled: this.locked}, {
+                    validators: [Validators.required, noSpaceValidator()]
+                }],
+                type: [{value: columnConfiguration.type, disabled: this.locked}, {validators: [Validators.required]}],
+                scale: [{value: columnConfiguration.scale, disabled: this.locked}, {
+                    disabled: this.locked,
+                    validators: [Validators.required]
+                }],
+                configurations: this.formBuilder.array(addConfigs),
+            });
+
+            formArray.push(columnGroup);
+        });
+
+        return this.formBuilder.group({configurations: this.formBuilder.array(formArray)});
     }
 }

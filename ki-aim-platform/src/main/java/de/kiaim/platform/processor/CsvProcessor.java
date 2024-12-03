@@ -3,12 +3,10 @@ package de.kiaim.platform.processor;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
-import de.kiaim.model.enumeration.DataType;
-import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.model.DataRowTransformationError;
+import de.kiaim.platform.model.entity.CsvFileConfigurationEntity;
+import de.kiaim.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
-import de.kiaim.platform.model.file.CsvFileConfiguration;
-import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.file.FileType;
 import org.apache.commons.csv.CSVFormat;
@@ -33,8 +31,8 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int getNumberColumns(final InputStream data, final FileConfiguration fileConfiguration) {
-		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
+	public int getNumberColumns(final InputStream data, final FileConfigurationEntity fileConfiguration) {
+		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
 		final Iterable<CSVRecord> records;
@@ -52,9 +50,9 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public TransformationResult read(InputStream data, FileConfiguration fileConfiguration,
-	                                 DataConfiguration configuration) throws BadColumnNameException {
-		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
+	public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
+	                                 DataConfiguration configuration) {
+		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
 		final Iterable<CSVRecord> records;
@@ -85,9 +83,9 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration,
-	                                           final DatatypeEstimationAlgorithm algorithm) {
-		final CsvFileConfiguration csvFileConfiguration = fileConfiguration.getCsvFileConfiguration();
+	public DataConfiguration estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration,
+	                                                   final DatatypeEstimationAlgorithm algorithm) {
+		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
 		final Iterable<CSVRecord> records;
@@ -117,15 +115,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		}
 
 		List<String[]> validRows = getSubsetOfCompleteRows(recordIterator, 10);
-
-		final List<DataType> estimatedDataTypes;
-		if (validRows.isEmpty()) {
-			estimatedDataTypes = getUndefinedDatatypesList(numberColumns);
-		} else {
-			estimatedDataTypes = estimateDatatypesForMultipleRows(validRows, algorithm);
-		}
-
-		return buildConfigurationForDataTypes(estimatedDataTypes, columnNames);
+		return estimateDataConfiguration(validRows, algorithm, numberColumns, columnNames);
 	}
 
 	/**
@@ -158,7 +148,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * @param csvFileConfiguration Configuration to configure the CSVFormt
 	 * @return The configured CSVFormat
 	 */
-	private CSVFormat buildCsvFormat(final CsvFileConfiguration csvFileConfiguration) {
+	private CSVFormat buildCsvFormat(final CsvFileConfigurationEntity csvFileConfiguration) {
 		return CSVFormat.DEFAULT.builder()
 		                        .setDelimiter(csvFileConfiguration.getColumnSeparator())
 		                        .setRecordSeparator(csvFileConfiguration.getLineSeparator())

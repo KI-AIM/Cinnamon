@@ -20,4 +20,10 @@ public enum FileType {
 	FileType(final Set<String> fileExtensions) {
 		this.fileExtensions = fileExtensions;
 	}
+
+	public static class Values {
+		public static final String CSV = "CSV";
+		public static final String FHIR = "FHIR";
+		public static final String XLSX = "XLSX";
+	}
 }

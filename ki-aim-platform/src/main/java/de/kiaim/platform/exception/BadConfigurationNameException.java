@@ -19,6 +19,6 @@ public class BadConfigurationNameException extends BadRequestException {
 
 	@Override
 	protected String getExceptionClassCode() {
-		return COLUMN_NAME;
+		return CONFIGURATION_NAME;
 	}
 }

@@ -3,6 +3,7 @@ import { MatDialog } from "@angular/material/dialog";
 import { instanceToPlain } from "class-transformer";
 import { ColumnConfiguration } from "src/app/shared/model/column-configuration";
 import { Configuration } from "src/app/shared/model/configuration";
+import { FormArray, FormGroup } from "@angular/forms";
 
 @Component({
 	selector: "app-added-configuration-list",
@@ -10,8 +11,8 @@ import { Configuration } from "src/app/shared/model/configuration";
 	styleUrls: ["./added-configuration-list.component.less"],
 })
 export class AddedConfigurationListComponent {
-	@Input() column: ColumnConfiguration;
     @Input() disabled: boolean = false;
+    @Input() form!: FormGroup;
 
     instanceToPlain = instanceToPlain;
 
@@ -19,21 +20,26 @@ export class AddedConfigurationListComponent {
 
     }
 
-    configAsString(config: any): String {
-        return JSON.stringify(this.instanceToPlain(config));
+    configAsString(index: string): String {
+        const group = this.getConfigurations().controls[parseInt(index)] as FormGroup;
+        return JSON.stringify(group.getRawValue());
     }
 
-	removeConfiguration(configuration: Configuration) {
-        this.column.removeConfiguration(configuration);
+	removeConfiguration(index: string) {
+        this.getConfigurations().removeAt(parseInt(index));
     }
 
     hasConfiguration(): boolean {
-        return this.column.configurations.length > 0;
+        return this.getConfigurations().length > 0;
     }
 
     showRemovalDialog(templateRef: TemplateRef<any>) {
         this.dialog.open(templateRef, {
             width: '55%'
         });
+    }
+
+    protected getConfigurations(): FormArray {
+        return this.form.controls['configurations'] as FormArray;
     }
 }

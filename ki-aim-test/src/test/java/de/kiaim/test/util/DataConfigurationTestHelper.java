@@ -17,13 +17,9 @@ public class DataConfigurationTestHelper {
 	public static DataConfiguration generateDataConfiguration(final String stringPattern) {
 		final DataConfiguration dataConfiguration = generateEstimatedConfiguration();
 
-		final DateFormatConfiguration dateFormatConfiguration = new DateFormatConfiguration("yyyy-MM-dd");
-		dataConfiguration.getConfigurations().get(1).addConfiguration(dateFormatConfiguration);
 		final RangeConfiguration dateRangeConfiguration = new RangeConfiguration(new DateData(LocalDate.of(1970, 1, 1)), new DateData(LocalDate.of(2030, 1, 1)));
 		dataConfiguration.getConfigurations().get(1).addConfiguration(dateRangeConfiguration);
 
-		final DateTimeFormatConfiguration dateTimeFormatConfiguration = new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
-		dataConfiguration.getConfigurations().get(2).addConfiguration(dateTimeFormatConfiguration);
 		final RangeConfiguration dateTimeRangeConfiguration = new RangeConfiguration(new DateTimeData(LocalDateTime.of(1970, 1, 1, 0, 1)), new DateTimeData(LocalDateTime.of(2030, 1, 1, 23, 59)));
 		dataConfiguration.getConfigurations().get(2).addConfiguration(dateTimeRangeConfiguration);
 
@@ -44,8 +40,8 @@ public class DataConfigurationTestHelper {
 		final DataConfiguration configuration = new DataConfiguration();
 		final List<ColumnConfiguration> columnConfigurations = List.of(
 				new ColumnConfiguration(0, "column0_boolean", DataType.BOOLEAN, DataScale.NOMINAL , new ArrayList<>()),
-				new ColumnConfiguration(1, "column1_date", DataType.DATE, DataScale.DATE, new ArrayList<>()),
-				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, DataScale.DATE, new ArrayList<>()),
+				new ColumnConfiguration(1, "column1_date", DataType.DATE, DataScale.DATE, new ArrayList<>(List.of(new DateFormatConfiguration("yyyy-MM-dd")))),
+				new ColumnConfiguration(2, "column2_date_time", DataType.DATE_TIME, DataScale.DATE, new ArrayList<>(List.of(new DateTimeFormatConfiguration("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")))),
 				new ColumnConfiguration(3, "column3_decimal", DataType.DECIMAL, DataScale.RATIO, new ArrayList<>()),
 				new ColumnConfiguration(4, "column4_integer", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()),
 				new ColumnConfiguration(5, "column5_string", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()));

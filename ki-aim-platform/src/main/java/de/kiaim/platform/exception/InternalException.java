@@ -38,6 +38,11 @@ public abstract class InternalException extends ApiException {
 	 */
 	public static final String INVALID_STATE = "6";
 
+	/**
+	 * Exception class code for exceptions from {@link InternalInvalidResultException}.
+	 */
+	public static final String INVALID_RESULT = "7";
+
 	public InternalException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

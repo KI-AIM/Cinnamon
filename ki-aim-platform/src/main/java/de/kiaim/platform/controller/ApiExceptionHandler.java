@@ -82,7 +82,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			}
 		}
 
-		final String errorCode = ApiException.VALIDATION + "-" + VALIDATION_ERROR + "-1";
+		final String errorCode = ApiException.assembleErrorCode(ApiException.VALIDATION, VALIDATION_ERROR, "1");
 		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode, "Request validation failed", errors);
 	}
 
@@ -90,7 +90,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	protected ResponseEntity<Object> handleMissingServletRequestParameter(
 			MissingServletRequestParameterException ex, HttpHeaders headers, HttpStatusCode status,
 			WebRequest request) {
-		final String errorCode = ApiException.VALIDATION + "-" + REQUEST_STRUCTURE_ERROR + "-1";
+		final String errorCode = ApiException.assembleErrorCode(ApiException.VALIDATION, REQUEST_STRUCTURE_ERROR, "1");
 		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode,
 		                                                  "Missing parameter: '" + ex.getParameterName() + "'", null);
 	}
@@ -98,7 +98,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@Override
 	protected ResponseEntity<Object> handleMissingServletRequestPart(
 			MissingServletRequestPartException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-		final String errorCode = ApiException.VALIDATION + "-" + REQUEST_STRUCTURE_ERROR + "-2";
+		final String errorCode = ApiException.assembleErrorCode(ApiException.VALIDATION, REQUEST_STRUCTURE_ERROR, "2");
 		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode,
 		                                                  "Missing part: '" + ex.getRequestPartName() + "'", null);
 	}
@@ -106,7 +106,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@Override
 	protected ResponseEntity<Object> handleTypeMismatch(
 			TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-		final String errorCode = ApiException.VALIDATION + "-" + REQUEST_STRUCTURE_ERROR + "-3";
+		final String errorCode = ApiException.assembleErrorCode(ApiException.VALIDATION, REQUEST_STRUCTURE_ERROR, "3");
 		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode,
 		                                                  "Invalid parameter: '" + ex.getPropertyName() + "'", null);
 	}

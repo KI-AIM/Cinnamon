@@ -2,6 +2,7 @@ networks:
     data-management-network:
     synthetization-network:
     anonymization-network:
+    evaluation-network:
 
 services:
     ki-aim-db:
@@ -33,12 +34,15 @@ services:
             - data-management-network
             - synthetization-network
             - anonymization-network
+            - evaluation-network
         environment:
             - SPRING_DATASOURCE_URL=jdbc:postgresql://ki-aim-db:5432/ki_aim_db
             - KI-AIM.STEPS.SYNTHETIZATION.URL=http://ki-aim-synthetization:5000
             - KI-AIM.STEPS.ANONYMIZATION.URL=http://ki-aim-anon:8080
             - KI-AIM.STEPS.SYNTHETIZATION.CALLBACKHOST=ki-aim-platform
             - KI-AIM.STEPS.ANONYMIZATION.CALLBACKHOST=ki-aim-platform
+            - KI-AIM.STEPS.TECHNICAL-EVALUATION.URL=http://ki-aim-evaluation:5010
+            - KI-AIM.STEPS.TECHNICAL-EVALUATION.CALLBACKHOST=ki-aim-platform
         depends_on:
             - ki-aim-db
     ki-aim-synthetization:
@@ -50,6 +54,15 @@ services:
             - "127.0.0.1:5000:5000"
         networks:
             - synthetization-network
+    ki-aim-evaluation:
+        image: evaluation_module
+        container_name: ki-aim-evaluation
+        restart: always
+        ports:
+#            - "5010:5010"
+            - "127.0.0.1:5010:5010"
+        networks:
+            - evaluation-network
     ki-aim-anon:
         image: ki-aim-anon
         build:

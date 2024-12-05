@@ -16,7 +16,7 @@ The project has been created with Spring Boot 3.1.5. It has been tested with the
 - Tomcat 10.1.15 (LTS)
 - Node 20.9.0 (Latest version supported by Angular)
 - NPM 10.2.3 (Latest)
-- Angluar CLI 17.0.0 (Latest)
+- Angular CLI 17.0.0 (Latest)
 
 ## Build & Run 
 
@@ -39,7 +39,7 @@ ng serve --open
 
 inside the `/ki-aim-frontend` directory. 
 
-For this, a local version of node, npm and the angluar cli has to be installed. The build process however should work without any additional installations. 
+For this, a local version of node, npm and the angular cli has to be installed. The build process however should work without any additional installations.
 
 ## Spring and Angular
 The project works by including the built angular web application as a static resource into the Spring webapp. 

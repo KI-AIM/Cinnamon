@@ -10,6 +10,11 @@ public class BadDataConfigurationException extends BadRequestException {
 	 */
 	public static final String INVALID_NUMBER_OF_ATTRIBUTES = "1";
 
+	/**
+	 * Exception code for data type {@link de.kiaim.model.enumeration.DataType#UNDEFINED} in requests.
+	 */
+	public static final String UNDEFINED_DATA_TYPE = "2";
+
 	public BadDataConfigurationException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

@@ -114,8 +114,8 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 			columnNames = Collections.nCopies(numberColumns, "");
 		}
 
-		List<String[]> validRows = getSubsetOfCompleteRows(recordIterator, 10);
-		return estimateDataConfiguration(validRows, algorithm, numberColumns, columnNames);
+		List<List<String>> samples = getAttributeSamples(recordIterator, numberColumns);
+		return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
 	}
 
 	/**

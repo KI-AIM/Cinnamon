@@ -199,7 +199,26 @@ public class CSVProcessingTests {
         assertEquals(expectedConfiguration, actualConfiguration);
     }
 
+    @Test
+    void testEstimationSparse() {
+        String csvData = """
+                id,name,birthdate,smoker,price
+                650390,,1975-05-08,no,303.23 €
+                208589,,1994-02-28,,23623.18 €
+                452159,,1987-05-17,,38.41 €
+                730160,,1959-02-03,yes,21.01 €
+                614164,,1982-02-20,,158.79 €""";
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                       DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+
+        DataConfiguration expectedConfiguration = getDataConfiguration();
+        expectedConfiguration.getConfigurations().get(1).setType(DataType.UNDEFINED);
+
+        assertEquals(expectedConfiguration, actualConfiguration);
+    }
 
     private static DataConfiguration getDataConfiguration() {
         DataConfiguration config = new DataConfiguration();

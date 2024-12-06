@@ -224,8 +224,8 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
             columnNames = Collections.nCopies(numberColumns, "");
         }
 
-        List<String[]> validRows = getSubsetOfCompleteRows(rows, 10);
-        return estimateDataConfiguration(validRows, algorithm, numberColumns, columnNames);
+        List<List<String>> samples = getAttributeSamples(rows.iterator(), numberColumns);
+        return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
     }
 
     private DataConfiguration getStringDataConfiguration(Sheet sheet) {

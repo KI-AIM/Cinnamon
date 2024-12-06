@@ -120,7 +120,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     private handleError(error: HttpErrorResponse) {
         this.loadingService.setLoadingStatus(false);
-        this.error = this.errorMessageService.extractErrorMessage(error) + "a";
+        this.error = this.errorMessageService.extractErrorMessage(error);
 
         window.scroll(0, 0);
     }

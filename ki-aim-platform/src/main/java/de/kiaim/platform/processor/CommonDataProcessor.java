@@ -166,7 +166,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
             final var rowIterator = row.iterator();
 
             int currentColumn = 0;
-            while (rowIterator.hasNext()) {
+            while (rowIterator.hasNext() && currentColumn < numberColumns) {
                 // Only look for more values if more samples are needed
                 if (samples.get(currentColumn).size() < NUMBER_OF_SAMPLES) {
                     final var value = rowIterator.next();

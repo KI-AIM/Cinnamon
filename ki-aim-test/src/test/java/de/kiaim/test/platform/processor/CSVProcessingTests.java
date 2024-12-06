@@ -220,6 +220,25 @@ public class CSVProcessingTests {
         assertEquals(expectedConfiguration, actualConfiguration);
     }
 
+    @Test
+    void testEstimationAdditionalColumn() {
+        String csvData = """
+               id,name,birthdate,smoker,price
+               650390,Tonisha Swift,1975-05-08,no,303.23 €,
+               208589,Wilson Maggio,1994-02-28,no,23623.18 €
+               452159,Bill Hintz,1987-05-17,no,38.41 €,
+               730160,Nelia Heathcote,1959-02-03,yes,21.01 €
+               614164,Ms. Chester Keebler,1982-02-20,no,158.79 €""";
+        FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
+
+        InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                       DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+
+        DataConfiguration expectedConfiguration = getDataConfiguration();
+        assertEquals(expectedConfiguration, actualConfiguration);
+    }
+
     private static DataConfiguration getDataConfiguration() {
         DataConfiguration config = new DataConfiguration();
 

@@ -207,6 +207,12 @@ public class CSVProcessingTests {
                 208589,,1994-02-28,,23623.18 €
                 452159,,1987-05-17,,38.41 €
                 730160,,1959-02-03,yes,21.01 €
+                730160,,1959-02-03,yes,21.01 €
+                730160,,1959-02-03,yes,21.01 €
+                730160,,1959-02-03,yes,21.01 €
+                730160,,1959-02-03,yes,21.01 €
+                730160,,1959-02-03,yes,21.01 €
+                730160,,1959-02-03,yes,21.01 €
                 614164,,1982-02-20,,158.79 €""";
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 

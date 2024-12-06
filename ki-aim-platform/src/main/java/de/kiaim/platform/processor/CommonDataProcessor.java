@@ -167,10 +167,10 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
             int currentColumn = 0;
             while (rowIterator.hasNext() && currentColumn < numberColumns) {
+                final var value = rowIterator.next();
+
                 // Only look for more values if more samples are needed
                 if (samples.get(currentColumn).size() < NUMBER_OF_SAMPLES) {
-                    final var value = rowIterator.next();
-
                     // Add value to samples if not empty
                     if (!dataTransformationHelper.isValueEmpty(value)) {
                         samples.get(currentColumn).add(value);

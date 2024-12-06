@@ -2,7 +2,9 @@ package de.kiaim.test.platform.controller;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.configuration.data.StringPatternConfiguration;
+import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.spring.CustomMediaType;
+import de.kiaim.platform.exception.ApiException;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Mode;
@@ -150,6 +152,19 @@ class DataControllerTest extends ControllerTest {
 	void storeConfigYaml() throws Exception {
 		final String yamlConfiguration = DataConfigurationTestHelper.generateDataConfigurationAsYaml();
 		testStoreConfig(yamlConfiguration);
+	}
+
+	@Test
+	void storeConfigUndefinedDataType() throws Exception {
+		var configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		configuration.getConfigurations().get(0).setType(DataType.UNDEFINED);
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/data/configuration")
+				                .param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")));
 	}
 
 	@Test

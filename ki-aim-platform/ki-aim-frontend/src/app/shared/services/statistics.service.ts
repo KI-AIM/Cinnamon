@@ -53,6 +53,19 @@ export class StatisticsService {
         );
     }
 
+    public fetchResult(): Observable<Statistics> {
+        return this.httpClient.get<string>(environments.apiUrl + `/api/project/resultFile`,
+            {
+                params: {
+                    executionStepName: 'EVALUATION',
+                    processStepName: 'TECHNICAL_EVALUATION',
+                    name: 'metrics.json',
+                }
+            }).pipe(
+            map(value => plainToInstance(Statistics, JSON.parse(value)))
+        );
+    }
+
     public invalidateCache() {
         this._statistics = null;
         this._statistics$ = null;
@@ -77,10 +90,22 @@ export class StatisticsService {
      * @param options Format options
      */
     public formatNumber(value: number | string, options?: FormatNumberOptions): string {
+        // console.log(value);
         options ??= {};
         const {dataType = null, min = null, max = null, maximumFractionDigits} = options;
 
+        // If data type is date and value is string, pipe original data
+        if (dataType) {
+            if (dataType === 'DATE' && typeof value === 'string') {
+                return value;
+            } else if (dataType === 'DATE_TIME' && typeof value === 'string') {
+                return value;
+            }
+        }
+
         if (typeof value === "string") {
+            const float_value = parseFloat(value);
+            // console.log(float_value);
             value = parseFloat(value);
         }
 
@@ -105,7 +130,9 @@ export class StatisticsService {
             return value.toExponential(min)
         }
 
-        return value.toLocaleString(undefined, {maximumFractionDigits});
+        // return value.toLocaleString(undefined, {maximumFractionDigits});
+        // return value.toLocaleString();
+        return value.toString();
     }
 
     private fetchStatistics(): Observable<Statistics> {

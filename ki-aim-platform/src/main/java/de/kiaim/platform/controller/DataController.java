@@ -4,6 +4,7 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.spring.CustomMediaType;
+import de.kiaim.platform.config.KiAimConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.*;
 import de.kiaim.platform.model.entity.DataSetEntity;
@@ -59,20 +60,25 @@ public class DataController {
 			"""
 					,"data":""" + DATA_EXAMPLE + "}";
 
+	private final KiAimConfiguration kiAimConfiguration;
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
+	private final ProcessService processService;
 	private final ProjectService projectService;
 	private final StatusService statusService;
 	private final UserService userService;
 
 	@Autowired
-	public DataController(final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final DataSetService dataSetService, final ProjectService projectService,
-	                      final StatusService statusService, final UserService userService) {
+	public DataController(final KiAimConfiguration kiAimConfiguration, final DatabaseService databaseService, final DataProcessorService dataProcessorService,
+	                      final DataSetService dataSetService, final ProcessService processService,
+	                      final ProjectService projectService, final StatusService statusService,
+	                      final UserService userService) {
+		this.kiAimConfiguration = kiAimConfiguration;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
+		this.processService = processService;
 		this.projectService = projectService;
 		this.statusService = statusService;
 		this.userService = userService;
@@ -467,16 +473,33 @@ public class DataController {
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadTransformationResultPage(
 			@Parameter(description = "Step the requested data belongs to.")
-			@PathVariable final String stepName,
+			@PathVariable String stepName,
 			@Parameter(description = "Page number starting at 1.")
 			@RequestParam(required = true) final Integer page,
 			@Parameter(description = "Number of items per page.")
 			@RequestParam(required = true) final Integer perPage,
 			@Parameter(description = "Selector for the rows to be included.")
 			@RequestParam(required = false, defaultValue = "ALL") final RowSelector rowSelector,
+			@RequestParam(required = false, defaultValue = "DATASET") final String source,
 			@ParameterObject final LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
+		if (source.equals("JOB")) {
+			final UserEntity user2 = userService.getUserByEmail(user.getEmail());
+			final ProjectEntity project = projectService.getProject(user2);
+			final Step step = Step.getStepOrThrow(stepName);
+
+			Step exectionStep = null;
+			for (final var entry : kiAimConfiguration.getStages().entrySet()) {
+				if (entry.getValue().getJobs().contains(step)) {
+					exectionStep = entry.getKey();
+				}
+			}
+
+			final var executionStep = project.getPipelines().get(0).getStageByStep(exectionStep).getProcess(step).get();
+			stepName = processService.getDataSet(executionStep).getStep().name();
+		}
+
 		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT_PAGE, null, stepName, request, user, page, perPage, rowSelector);
 	}
 

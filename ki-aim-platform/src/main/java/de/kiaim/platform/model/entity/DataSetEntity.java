@@ -146,6 +146,14 @@ public class DataSetEntity {
 		}
 	}
 
+	public Step getStep() {
+		if (this.originalData != null) {
+			return Step.VALIDATION;
+		} else {
+			return this.job.getStep();
+		}
+	}
+
 	/**
 	 * Validates that exactly one filed of original data or process is set.
 	 */

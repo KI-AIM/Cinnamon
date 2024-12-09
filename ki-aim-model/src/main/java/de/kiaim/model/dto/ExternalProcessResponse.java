@@ -14,5 +14,5 @@ public class ExternalProcessResponse {
 	private String pid;
 
 	@JsonProperty(value = "session_key")
-	private Long sessionKey;
+	private String sessionKey;
 }

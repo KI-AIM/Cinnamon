@@ -39,7 +39,7 @@
             </div>
 
             <div *ngIf="status.processes[0].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
-                <app-data-table step="anonymization"></app-data-table>
+                <app-data-table sourceDataset="anonymization"></app-data-table>
             </div>
             <ng-template #anonNoData>
                 <div>
@@ -84,7 +84,7 @@
 
 
             <div *ngIf="status.processes[1].externalProcessStatus == ProcessStatus.FINISHED; else synthNoData">
-                <app-data-table step="synthetization"></app-data-table>
+                <app-data-table sourceDataset="synthetization"></app-data-table>
             </div>
             <ng-template #synthNoData>
                 <div>

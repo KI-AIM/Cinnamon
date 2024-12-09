@@ -90,6 +90,10 @@ export class ChartCalendarComponent extends ChartComponent {
         for (const [key, value] of Object.entries(this.data) as Entries<StatisticsData<DensityPlotData>>) {
             const dates: { [date: string]: number } = {};
             value.x_values.forEach(v => {
+                if (typeof v === "string") {
+                    v = Date.parse(v);
+                }
+
                 const date = new Date(v).toISOString().split('T')[0];
                 if (dates[date]) {
                     dates[date] = dates[date] + 1;

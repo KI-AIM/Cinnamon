@@ -104,7 +104,7 @@
                 <ng-container *ngIf="attributeStatistics.plot.density">
                     Density/Histogram
                 </ng-container>
-                <ng-container *ngIf="attributeStatistics.plot.frequency_count">
+                <ng-container *ngIf="attributeStatistics.plot.frequency_plot">
                     Frequency
                 </ng-container>
             </div>
@@ -128,8 +128,8 @@
 
                 </ng-container>
                 <ng-template #frequency>
-                    <ng-container *ngIf="attributeStatistics.plot.frequency_count; else noChart">
-                        <app-chart-frequency [data]="attributeStatistics.plot.frequency_count" [limit]="null"></app-chart-frequency>
+                    <ng-container *ngIf="attributeStatistics.plot.frequency_plot; else noChart">
+                        <app-chart-frequency [data]="attributeStatistics.plot.frequency_plot" [limit]="null"></app-chart-frequency>
                     </ng-container>
                 </ng-template>
                 <ng-template #noChart>
@@ -138,10 +138,10 @@
         </div>
 
         <div style="display: flex; flex-direction: row; gap: 0.5rem;">
-            <div style="display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; flex-basis: 50%;">
+            <div *ngIf="!hasSynthetic" style="display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; flex-basis: 50%;">
 
                 <ng-container *ngFor="let metricData of (attributeStatistics.details | keyvalue)">
-                    <ng-container *ngTemplateOutlet="metric; context: {data: metricData.value, name: '5th Percentile'}">
+                    <ng-container *ngTemplateOutlet="metric; context: {data: metricData.value}">
                     </ng-container>
                 </ng-container>
 
@@ -154,11 +154,15 @@
                         Values
                     </div>
 
-                    <app-data-table step="validation" [columnIndex]="attributeStatistics.attribute_information.index"></app-data-table>
+                    <app-data-table [sourceDataset]="sourceDataset"
+                                    [sourceProcess]="sourceProcess"
+                                    [columnIndex]="attributeStatistics.attribute_information.index"></app-data-table>
                 </div>
             </div>
 
         </div>
+
+        <ng-container *ngIf="hasSynthetic">
 
         <ng-container *ngFor="let metricData of getImportantMetrics()">
 
@@ -276,11 +280,12 @@
             </ng-template>
         </ng-container>
 
+        </ng-container>
 
     </div>
 </div>
 
-<ng-template #metric let-data='data' let-name='name'>
+<ng-template #metric let-data='data'>
     <div class="metric-wrapper">
         <div class="metric-name">
             {{ data.display_name }}

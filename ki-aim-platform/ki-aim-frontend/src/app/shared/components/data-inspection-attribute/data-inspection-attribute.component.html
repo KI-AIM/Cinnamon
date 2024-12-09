@@ -96,8 +96,8 @@
                 </ng-container>
             </ng-container>
             <ng-template #frequency>
-                <ng-container *ngIf="attributeStatistics.plot.frequency_count; else noChart">
-                    <app-chart-frequency [data]="attributeStatistics.plot.frequency_count" [limit]="null" [simple]="true"></app-chart-frequency>
+                <ng-container *ngIf="attributeStatistics.plot.frequency_plot; else noChart">
+                    <app-chart-frequency [data]="attributeStatistics.plot.frequency_plot" [limit]="null" [simple]="true"></app-chart-frequency>
                 </ng-container>
             </ng-template>
             <ng-template #noChart>
@@ -119,7 +119,9 @@
 <ng-template #detailsDialog>
     <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Attribute Details "{{attributeStatistics.attribute_information.name}}"</h2>
     <mat-dialog-content class="mat-typography" style="background-color: #F5F5F5;">
-        <app-data-inspection-attribute-details [attributeStatistics]="attributeStatistics"></app-data-inspection-attribute-details>
+        <app-data-inspection-attribute-details [attributeStatistics]="attributeStatistics"
+                                               [sourceDataset]="sourceDataset"
+                                               [sourceProcess]="sourceProcess"></app-data-inspection-attribute-details>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>

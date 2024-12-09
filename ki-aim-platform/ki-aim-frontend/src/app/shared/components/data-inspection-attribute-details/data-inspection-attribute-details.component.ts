@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
+import {Component, Input, OnInit, TemplateRef, ViewChild} from '@angular/core';
 import {
     AttributeStatistics, HellingerDistanceData,
     KolmogorovSmirnovData,
@@ -8,24 +8,31 @@ import {
 } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
-import { formatNumber } from "@angular/common";
 
 @Component({
     selector: 'app-data-inspection-attribute-details',
     templateUrl: './data-inspection-attribute-details.component.html',
     styleUrls: ['./data-inspection-attribute-details.component.less']
 })
-export class DataInspectionAttributeDetailsComponent {
+export class DataInspectionAttributeDetailsComponent implements OnInit {
     protected readonly Object = Object;
 
     @Input() public attributeStatistics!: AttributeStatistics;
+    @Input() public sourceDataset: string | null = null;
+    @Input() public sourceProcess: string | null = null;
     @ViewChild('table', {static: true}) tableTemplate!: TemplateRef<TableContext>;
 
     protected graphType: string = 'histogram';
+    protected hasSynthetic: boolean = false;
 
     constructor(
         protected statisticsService: StatisticsService,
     ) {
+    }
+
+    ngOnInit(): void {
+        this.hasSynthetic = this.attributeStatistics.important_metrics.mean?.values.synthetic != null
+            || this.attributeStatistics.important_metrics.mode?.values.synthetic != null;
     }
 
     protected get dataType(): DataType {

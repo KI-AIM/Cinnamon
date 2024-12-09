@@ -16,6 +16,8 @@ export class ChartDensityComponent extends ChartComponent {
     @Input() syntheticSeriesLabel: string = "Synthetisch";
 
     protected override createChartOptions(): EChartsOption {
+        console.log(this.data);
+
         const dataSetLabels: StatisticsData<string> = {
             real: "Original",
             synthetic: this.syntheticSeriesLabel,

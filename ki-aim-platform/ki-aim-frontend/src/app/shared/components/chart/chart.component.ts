@@ -75,7 +75,7 @@ export class ChartComponent implements OnInit {
     }
 
     protected formatNumber(value: number | string, dataType: DataType | null): string {
-        return this.statisticsService.formatNumber(value, {dataType});
+        return this.statisticsService.formatNumber(value, {dataType, max: 3, min: 3});
     }
 }
 

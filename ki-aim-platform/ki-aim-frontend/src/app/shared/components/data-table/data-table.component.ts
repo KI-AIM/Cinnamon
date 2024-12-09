@@ -15,7 +15,8 @@ import {environments} from "../../../../environments/environment";
 	styleUrls: ["./data-table.component.less"],
 })
 export class DataTableComponent implements AfterViewInit {
-    @Input() public step!: string;
+    @Input() public sourceDataset: string | null = null;
+    @Input() public sourceProcess: string | null = null;
     @Input() public columnIndex: number | null = null;
 
 	dataSource = new MatTableDataSource<TableElement>();
@@ -53,13 +54,14 @@ export class DataTableComponent implements AfterViewInit {
                         startWith({}),
                         switchMap(() => {
                             this.isLoading = true;
-                            return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/" + this.step + "/transformationResult/page", {
+                            return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/" + this.getSource() + "/transformationResult/page", {
                                 params: {
                                     defaultNullEncoding: "$value",
                                     columns: columnName,
                                     page: this.paginator.pageIndex + 1,
                                     perPage: this.paginator.pageSize,
-                                    rowSelector: this.filterCriteria
+                                    rowSelector: this.filterCriteria,
+                                    source: this.getSourceType(),
                                 }
                             }).pipe(catchError(() => of(null)));
                         }),
@@ -183,6 +185,28 @@ export class DataTableComponent implements AfterViewInit {
 		this.filterCriteria = $event.value;
         this.paginator.page.emit();
 	}
+
+    private getSource(): string {
+        if (this.sourceProcess) {
+            return this.sourceProcess;
+        }
+        if (this.sourceDataset) {
+            return this.sourceDataset;
+        }
+
+        return 'VALIDATION';
+    }
+
+    private getSourceType(): string {
+        if (this.sourceProcess) {
+            return 'JOB';
+        }
+        if (this.sourceDataset) {
+            return 'DATASET';
+        }
+
+        return 'DATASET';
+    }
 }
 
 /**

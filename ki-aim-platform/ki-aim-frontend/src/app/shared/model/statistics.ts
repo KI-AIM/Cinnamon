@@ -88,7 +88,7 @@ export class PlotData {
     histogram?: StatisticsData<HistogramPlotData>;
 
     @Type(() => StatisticsData<HistogramPlotData>)
-    frequency_count?: StatisticsData<HistogramPlotData>;
+    frequency_plot?: StatisticsData<HistogramPlotData>;
 }
 
 
@@ -136,7 +136,7 @@ export class StatisticsData<T> {
 }
 
 export class DensityPlotData {
-    x_values: number[];
+    x_values: number[] | string[];
     density: number[];
     x_axis: string;
     y_axis: string;

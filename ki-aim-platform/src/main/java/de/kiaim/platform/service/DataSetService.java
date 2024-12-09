@@ -8,6 +8,7 @@ import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.repository.DataSetRepository;
 import de.kiaim.platform.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,10 +31,12 @@ import java.util.*;
 @Service
 public class DataSetService {
 
+	private final DataSetRepository dataSetRepository;
 	private final UserRepository userRepository;
 
 	@Autowired
-	public DataSetService(final UserRepository userRepository) {
+	public DataSetService(final DataSetRepository dataSetRepository, final UserRepository userRepository) {
+		this.dataSetRepository = dataSetRepository;
 		this.userRepository = userRepository;
 	}
 
@@ -191,6 +194,14 @@ public class DataSetService {
 			                                                                   step.name() + "'!");
 		}
 		return dataSet;
+	}
+
+	public DataSetEntity getDataSetEntity(final Long id) {
+		return dataSetRepository.findById(id).orElse(null);
+	}
+
+	public DataSetEntity save(final DataSetEntity dataSetEntity) {
+		return dataSetRepository.save(dataSetEntity);
 	}
 
 	/**

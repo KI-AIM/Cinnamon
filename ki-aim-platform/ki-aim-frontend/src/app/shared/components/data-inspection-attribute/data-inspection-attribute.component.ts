@@ -15,6 +15,8 @@ import { DataType } from "../../model/data-type";
 })
 export class DataInspectionAttributeComponent {
     @Input() public attributeStatistics!: AttributeStatistics;
+    @Input() public sourceDataset: string | null = null;
+    @Input() public sourceProcess: string | null = null;
 
     protected graphType = 'histogram';
 

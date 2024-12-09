@@ -716,7 +716,7 @@ public class ProcessService {
 		for (final StepInputConfiguration inputDataSet : stepConfiguration.getInputs()) {
 			final var datasetEntity = getDataSet(inputDataSet.getSelector(), externalProcess);
 			final var dataset = databaseService.exportDataSet(datasetEntity);
-			addDataSet(bodyBuilder, stepConfiguration, inputDataSet, dataset);
+			addDataSet(bodyBuilder, inputDataSet, dataset);
 		}
 	}
 
@@ -749,8 +749,9 @@ public class ProcessService {
 		return result;
 	}
 
-	private void addDataSet(final MultipartBodyBuilder bodyBuilder, final StepConfiguration stepConfiguration,
-	                        final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
+	private void addDataSet(final MultipartBodyBuilder bodyBuilder,
+	                        final StepInputConfiguration stepInputConfiguration,
+	                        final DataSet dataSet)
 			throws InternalIOException, InternalMissingHandlingException {
 		switch (stepInputConfiguration.getEncoding()) {
 			case FILE -> {
@@ -767,8 +768,8 @@ public class ProcessService {
 		}
 	}
 
-	private void addDataSetJson(final MultipartBodyBuilder bodyBuilder,
-	                            final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
+	public void addDataSetJson(final MultipartBodyBuilder bodyBuilder,
+	                           final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
 			throws InternalIOException {
 		try {
 			final String dataSetString = JsonMapper.jsonMapper().writeValueAsString(dataSet);
@@ -779,8 +780,8 @@ public class ProcessService {
 		}
 	}
 
-	private void addDataSetFile(final MultipartBodyBuilder bodyBuilder,
-	                            final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
+	public void addDataSetFile(final MultipartBodyBuilder bodyBuilder,
+	                           final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
 			throws InternalIOException {
 
 		final var outputStream = new ByteArrayOutputStream();

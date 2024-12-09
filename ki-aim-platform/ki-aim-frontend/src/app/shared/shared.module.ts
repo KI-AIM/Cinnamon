@@ -103,6 +103,7 @@ import { ChartCalendarComponent } from './components/chart-calendar/chart-calend
         LoadingSpinnerComponent,
         NoSpaceValidatorDirective,
         DataInspectionComponent,
+        DataInspectionAttributeComponent,
     ],
 })
 export class SharedModule {}

@@ -38,15 +38,18 @@ public class ProcessController {
 
 	private final ProcessService processService;
 	private final ProjectService projectService;
+	private final StatisticsService statisticsService;
 	private final StatusService statusService;
 	private final UserService userService;
 	private final ExecutionStepMapper executionStepMapper;
 
 	public ProcessController(final ProcessService processService, final ProjectService projectService,
+	                         final StatisticsService statisticsService,
 	                         final UserService userService, final StatusService statusService,
 	                         final ExecutionStepMapper executionStepMapper) {
 		this.processService = processService;
 		this.projectService = projectService;
+		this.statisticsService = statisticsService;
 		this.userService = userService;
 		this.statusService = statusService;
 		this.executionStepMapper = executionStepMapper;
@@ -236,17 +239,22 @@ public class ProcessController {
 	)
 	public ResponseEntity<String> callback(
 			@Parameter(description = "Id of the process to mark as finished.")
-			@PathVariable final Long processId,
+			@PathVariable final String processId,
 			@RequestParam(name = "synthetic_data", required = false) final MultipartFile syntheticData,
 			@RequestParam(name = "anonymized_dataset", required = false) final MultipartFile anonData,
 			@RequestParam(name = "train", required = false) final MultipartFile trainingData,
 			@RequestParam(name = "test", required = false) final MultipartFile test,
 			@RequestParam(name = "model", required = false) final MultipartFile model,
 			@RequestParam(name = "exception_message", required = false) final MultipartFile exceptionMessage,
+			@RequestParam(name = "metrics_file", required = false) final MultipartFile metrics,
 			@RequestParam(name = "error_message", required = false) final MultipartFile errorMessage,
 			final MultipartHttpServletRequest request
 			) throws ApiException {
-		processService.finishProcess(processId, request.getFileMap().entrySet());
+		if (processId.startsWith(StatisticsService.ID_PREFIX)) {
+			statisticsService.finishStatistics(processId, metrics);
+		} else {
+			processService.finishProcess(Long.parseLong(processId), request.getFileMap().entrySet());
+		}
 		return ResponseEntity.ok().body(null);
 	}
 

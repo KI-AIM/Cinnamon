@@ -45,7 +45,7 @@
 
             <div *ngIf="evaluationService.status.processes[0].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
 
-                <app-data-inspection sourceProcess="TECHNICAL_EVALUATION"></app-data-inspection>
+                <app-data-inspection sourceProcess="TECHNICAL_EVALUATION" mainData="synthetic"></app-data-inspection>
 
 
 <!--                <ng-container *ngFor="let metricsGroup of getResult() | async | keyvalue">-->

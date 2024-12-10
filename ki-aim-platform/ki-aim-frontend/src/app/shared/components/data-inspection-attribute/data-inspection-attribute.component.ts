@@ -17,6 +17,7 @@ export class DataInspectionAttributeComponent {
     @Input() public attributeStatistics!: AttributeStatistics;
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
+    @Input() public mainData: 'real' | 'synthetic' = 'real';
 
     protected graphType = 'histogram';
 

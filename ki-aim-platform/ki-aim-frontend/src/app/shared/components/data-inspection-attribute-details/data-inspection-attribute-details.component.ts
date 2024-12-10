@@ -1,7 +1,6 @@
 import {Component, Input, OnInit, TemplateRef, ViewChild} from '@angular/core';
 import {
-    AttributeStatistics, HellingerDistanceData,
-    KolmogorovSmirnovData,
+    AttributeStatistics,
     StatisticsData,
     StatisticsValues,
     StatisticsValuesNominal
@@ -20,6 +19,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     @Input() public attributeStatistics!: AttributeStatistics;
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
+    @Input() public mainData: 'real' | 'synthetic' = 'real';
     @ViewChild('table', {static: true}) tableTemplate!: TemplateRef<TableContext>;
 
     protected graphType: string = 'histogram';
@@ -40,25 +40,48 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         return this.attributeStatistics.attribute_information.type;
     }
 
-    protected ksIndex(data: StatisticsData<KolmogorovSmirnovData>): number {
-        return Math.max(data.real.color_index, data.synthetic.color_index);
-    }
-
-    protected hdIndex(data: StatisticsData<HellingerDistanceData>): number {
-        return Math.max(data.real.color_index, data.synthetic.color_index);
-    }
-
     protected getImportantMetrics() {
         return Object.entries(this.attributeStatistics.important_metrics);
     }
 
-    protected getDetailsEntries(): [string, StatisticsValues | StatisticsValuesNominal<KolmogorovSmirnovData> | StatisticsValuesNominal<HellingerDistanceData>][] {
-        console.log(Object.entries(this.attributeStatistics.details));
-        return Object.entries(this.attributeStatistics.details);
-    }
-
     protected isSimple(value: any): boolean {
         return typeof value === "number" || typeof value === "string";
+    }
+
+    protected getColorIndex(data: StatisticsValues | StatisticsValuesNominal<any>): number {
+        if (data instanceof StatisticsValues) {
+            return data.difference.color_index;
+        } else {
+            return Math.max(data.values.real.color_index, data.values.synthetic.color_index);
+        }
+    }
+
+    protected getDifference(data: StatisticsValues | StatisticsValuesNominal<any>, which: 'absolute' | 'percentage'): number | string  {
+        if (data instanceof StatisticsValues) {
+            return data.difference[which];
+        } else {
+            return "N/A";
+        }
+    }
+
+    protected getValue(data: StatisticsData<any>, which : 'real' | 'synthetic'): number | string {
+        const type = typeof data[which];
+
+        if (type === "number" || type === "string") {
+            return data[which];
+        } else {
+            return this.getComplexValue(data[which]);
+        }
+    }
+
+    protected getComplexValue(complex: any): number | string {
+        for (const [key, value] of Object.entries(complex)) {
+            if (key !== 'color_index') {
+                return value as number | string;
+            }
+        }
+
+        return "N/A";
     }
 
     protected isComplex(value: any): boolean {
@@ -73,7 +96,5 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
 }
 
 interface TableContext {
-    data: StatisticsValues | StatisticsValuesNominal<KolmogorovSmirnovData> | StatisticsValuesNominal<HellingerDistanceData>;
-    name: string;
-
+    data: StatisticsValues | StatisticsValuesNominal<any>;
 }

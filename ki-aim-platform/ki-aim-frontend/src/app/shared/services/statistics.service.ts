@@ -99,7 +99,11 @@ export class StatisticsService {
         }
 
         if (typeof value === "string") {
-            value = parseFloat(value);
+            const floatValue = parseFloat(value);
+            if (isNaN(floatValue)) {
+                return value;
+            }
+            value = floatValue;
         }
 
         // if (dataType) {

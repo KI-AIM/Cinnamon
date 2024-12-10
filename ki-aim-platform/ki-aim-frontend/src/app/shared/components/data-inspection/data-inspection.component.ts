@@ -11,6 +11,7 @@ import {StatisticsService} from "../../services/statistics.service";
 export class DataInspectionComponent implements OnInit {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
+    @Input() public mainData: 'real' | 'synthetic' = 'real';
 
     protected statistics$: Observable<Statistics>;
 

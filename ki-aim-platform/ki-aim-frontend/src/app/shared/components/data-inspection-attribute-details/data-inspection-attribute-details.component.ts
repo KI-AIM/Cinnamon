@@ -31,6 +31,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
+
         this.hasSynthetic = this.attributeStatistics.important_metrics.mean?.values.synthetic != null
             || this.attributeStatistics.important_metrics.mode?.values.synthetic != null;
     }
@@ -56,16 +57,16 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         return Object.entries(this.attributeStatistics.details);
     }
 
-    protected isNumber(value: any): boolean {
-        return typeof value === "number";
+    protected isSimple(value: any): boolean {
+        return typeof value === "number" || typeof value === "string";
     }
 
     protected isComplex(value: any): boolean {
         return Object.keys(value).length > 2;
     }
 
-    protected toNumber(value: any): number {
-        return parseFloat(value);
+    protected castValue(value: any): number | string {
+        return value as number | string;
     }
 
     protected readonly DataType = DataType;

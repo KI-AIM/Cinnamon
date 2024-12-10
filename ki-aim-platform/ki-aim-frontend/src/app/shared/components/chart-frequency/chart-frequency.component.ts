@@ -91,6 +91,8 @@ export class ChartFrequencyComponent extends ChartComponent {
                 axisPointer: {
                     type: 'shadow',
                 },
+                // @ts-ignore
+                valueFormatter: (value) => this.formatNumber(value, null),
             },
             xAxis: {
                 type: 'category',

@@ -90,32 +90,25 @@ export class StatisticsService {
      * @param options Format options
      */
     public formatNumber(value: number | string, options?: FormatNumberOptions): string {
-        // console.log(value);
         options ??= {};
         const {dataType = null, min = null, max = null, maximumFractionDigits} = options;
 
         // If data type is date and value is string, pipe original data
-        if (dataType) {
-            if (dataType === 'DATE' && typeof value === 'string') {
-                return value;
-            } else if (dataType === 'DATE_TIME' && typeof value === 'string') {
-                return value;
-            }
+        if (dataType && (dataType === 'DATE' || dataType === 'DATE_TIME') && typeof value === 'string') {
+            return value;
         }
 
         if (typeof value === "string") {
-            const float_value = parseFloat(value);
-            // console.log(float_value);
             value = parseFloat(value);
         }
 
-        if (dataType) {
-            if (dataType === 'DATE') {
-                return new Date(value).toLocaleDateString();
-            } else if (dataType === 'DATE_TIME') {
-                return new Date(value).toLocaleString();
-            }
-        }
+        // if (dataType) {
+        //     if (dataType === 'DATE') {
+        //         return new Date(value).toLocaleDateString();
+        //     } else if (dataType === 'DATE_TIME') {
+        //         return new Date(value).toLocaleString();
+        //     }
+        // }
 
         if (value === 0) {
             return '0';
@@ -126,13 +119,11 @@ export class StatisticsService {
             return value.toExponential(max)
         }
 
-        if (min && abs < -Math.pow(10, min)) {
+        if (min && abs < Math.pow(10, -min)) {
             return value.toExponential(min)
         }
 
-        // return value.toLocaleString(undefined, {maximumFractionDigits});
-        // return value.toLocaleString();
-        return value.toString();
+        return value.toLocaleString(undefined, {maximumFractionDigits});
     }
 
     private fetchStatistics(): Observable<Statistics> {

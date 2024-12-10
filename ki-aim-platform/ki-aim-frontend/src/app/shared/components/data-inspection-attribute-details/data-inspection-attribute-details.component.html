@@ -54,19 +54,37 @@
                         <tr>
                             <th>Mean:</th>
                             <ng-template [ngIf]="attributeStatistics.important_metrics.mean" [ngIfElse]="notAvailable">
-                                <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.mean.values.real) }}</td>
+                                <td>{{
+                                        statisticsService.formatNumber(attributeStatistics.important_metrics.mean.values.real, {
+                                            max: 3,
+                                            min: 3
+                                        })
+                                    }}
+                                </td>
                             </ng-template>
                         </tr>
                         <tr>
                             <th>Variance:</th>
                             <ng-template [ngIf]="attributeStatistics.important_metrics.variance" [ngIfElse]="notAvailable">
-                                <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.variance.values.real) }}</td>
+                                <td>{{
+                                        statisticsService.formatNumber(attributeStatistics.important_metrics.variance.values.real, {
+                                            max: 3,
+                                            min: 3
+                                        })
+                                    }}
+                                </td>
                             </ng-template>
                         </tr>
                         <tr>
                             <th>Standard Deviation:</th>
                             <ng-template [ngIf]="attributeStatistics.important_metrics.standard_deviation" [ngIfElse]="notAvailable">
-                                <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.standard_deviation.values.real) }}</td>
+                                <td>{{
+                                        statisticsService.formatNumber(attributeStatistics.important_metrics.standard_deviation.values.real, {
+                                            max: 3,
+                                            min: 3
+                                        })
+                                    }}
+                                </td>
                             </ng-template>
                         </tr>
                     </table>
@@ -74,13 +92,27 @@
                     <tr>
                         <th>Minimum:</th>
                         <ng-template [ngIf]="attributeStatistics.important_metrics.minimum" [ngIfElse]="notAvailable">
-                            <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.minimum.values.real, {dataType}) }}</td>
+                            <td>{{
+                                    statisticsService.formatNumber(attributeStatistics.important_metrics.minimum.values.real, {
+                                        dataType,
+                                        max: 3,
+                                        min: 3
+                                    })
+                                }}
+                            </td>
                         </ng-template>
                     </tr>
                     <tr>
                         <th>Maximum:</th>
                         <ng-template [ngIf]="attributeStatistics.important_metrics.maximum" [ngIfElse]="notAvailable">
-                            <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.maximum.values.real, {dataType}) }}</td>
+                            <td>{{
+                                    statisticsService.formatNumber(attributeStatistics.important_metrics.maximum.values.real, {
+                                        dataType,
+                                        max: 3,
+                                        min: 3
+                                    })
+                                }}
+                            </td>
                         </ng-template>
                     </tr>
                     <tr>
@@ -89,7 +121,7 @@
                     </tr>
                     <tr>
                         <th>Missing values (%):</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.missing_values_percentage.values.real) }}</td>
+                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.missing_values_percentage.values.real, {max: 3, min: 3}) }}</td>
                     </tr>
                     </table>
                 </div>
@@ -291,10 +323,10 @@
             {{ data.display_name }}
         </div>
         <table *ngIf="data; else notAvailable" class="metric-table">
-            <ng-container *ngIf="isNumber(data.values.real) ; else complexMetric">
+            <ng-container *ngIf="isSimple(data.values.real) ; else complexMetric">
                 <tr>
                     <th>Value</th>
-                    <td>{{ statisticsService.formatNumber(data.values.real) }}</td>
+                    <td>{{ statisticsService.formatNumber(data.values.real, {dataType}) }}</td>
                 </tr>
             </ng-container>
             <ng-template #complexMetric>
@@ -302,7 +334,7 @@
                     <tr *ngFor="let metricPart of data.values.real | keyvalue">
                         <ng-container *ngIf="metricPart.key !== 'color_index'">
                             <th>{{ metricPart.key }}</th>
-                            <td>{{ statisticsService.formatNumber(toNumber(metricPart.value)) }}</td>
+                            <td>{{ statisticsService.formatNumber(castValue(metricPart.value)) }}</td>
                         </ng-container>
                     </tr>
                 </ng-container>
@@ -310,7 +342,7 @@
                     <tr *ngFor="let metricPart of data.values.real | keyvalue">
                         <ng-container *ngIf="metricPart.key !== 'color_index'">
                             <th>Value</th>
-                            <td>{{ statisticsService.formatNumber(toNumber(metricPart.value)) }}</td>
+                            <td>{{ statisticsService.formatNumber(castValue(metricPart.value)) }}</td>
                         </ng-container>
                     </tr>
                 </ng-template>
@@ -346,7 +378,7 @@
             <th>Diff (%)</th>
         </tr>
         <tr>
-            <ng-container *ngIf="isNumber(data.values.real)">
+            <ng-container *ngIf="isSimple(data.values.real)">
                 <th>Value</th>
                 <td>{{ statisticsService.formatNumber(data.values.real) }}</td>
                 <td>{{ statisticsService.formatNumber(data.values.synthetic) }}</td>

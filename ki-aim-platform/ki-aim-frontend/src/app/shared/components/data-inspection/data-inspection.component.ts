@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import {filter, interval, Observable, switchMap, take} from "rxjs";
+import { filter, interval, Observable, switchMap, take, timer } from "rxjs";
 import { Statistics } from "../../model/statistics";
 import {StatisticsService} from "../../services/statistics.service";
 
@@ -25,13 +25,13 @@ export class DataInspectionComponent implements OnInit {
     ngOnInit(): void {
         // Create the statistics observer
         if (this.sourceDataset === 'VALIDATION') {
-            this.statistics$ = interval(2000).pipe(
+            this.statistics$ = timer(0, 2000).pipe(
                 switchMap(() => this.statisticsService.statistics$),
                 filter(data => data !== null),
                 take(1),
             );
         } else {
-            this.statistics$ = interval(2000).pipe(
+            this.statistics$ = timer(0, 2000).pipe(
                 switchMap(() => this.statisticsService.fetchResult()),
                 filter(data => data !== null),
                 take(1),

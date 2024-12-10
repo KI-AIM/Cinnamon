@@ -7,6 +7,7 @@ import {
 } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
+import { SortDirection, SortType } from "../../pipes/metric-sorter.pipe";
 
 @Component({
     selector: 'app-data-inspection-attribute-details',
@@ -20,10 +21,14 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
     @Input() public mainData: 'real' | 'synthetic' = 'real';
-    @ViewChild('table', {static: true}) tableTemplate!: TemplateRef<TableContext>;
+    @ViewChild('metricComparison', {static: true}) tableTemplate!: TemplateRef<TableContext>;
 
     protected graphType: string = 'histogram';
     protected hasSynthetic: boolean = false;
+
+    protected metricFilterText: string;
+    protected metricSortDirection: SortDirection | null = null;
+    protected metricSortColumn: SortType | null = null;
 
     constructor(
         protected statisticsService: StatisticsService,
@@ -36,16 +41,30 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
             || this.attributeStatistics.important_metrics.mode?.values.synthetic != null;
     }
 
+    protected sort(type: SortType): void {
+        if (this.metricSortColumn === type) {
+            if (this.metricSortDirection === 'asc') {
+                this.metricSortDirection = 'desc';
+            } else if (this.metricSortDirection === 'desc') {
+                this.metricSortColumn = null;
+                this.metricSortDirection = null;
+            }
+        } else {
+            this.metricSortColumn = type;
+            this.metricSortDirection = 'asc';
+        }
+    }
+
     protected get dataType(): DataType {
         return this.attributeStatistics.attribute_information.type;
     }
 
-    protected getImportantMetrics() {
-        return Object.entries(this.attributeStatistics.important_metrics);
+    protected getDetailMetrics() {
+        return Object.values(this.attributeStatistics.details);
     }
 
-    protected isSimple(value: any): boolean {
-        return typeof value === "number" || typeof value === "string";
+    protected getAllMetrics() {
+        return Object.values(this.attributeStatistics.important_metrics).concat(Object.values(this.attributeStatistics.details));
     }
 
     protected getColorIndex(data: StatisticsValues | StatisticsValuesNominal<any>): number {
@@ -82,14 +101,6 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         }
 
         return "N/A";
-    }
-
-    protected isComplex(value: any): boolean {
-        return Object.keys(value).length > 2;
-    }
-
-    protected castValue(value: any): number | string {
-        return value as number | string;
     }
 
     protected readonly DataType = DataType;

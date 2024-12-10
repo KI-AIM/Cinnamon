@@ -29,11 +29,23 @@ th, td {
     width: 100%;
 }
 
-.metric-table > tr > th:nth-child(2) {
+.metric-table-single > tr > th:first-child,
+.metric-table-comparison > tr > th:nth-child(2) {
     width: 20%;
     min-width: 8rem;
 }
 
 .metric-table > tr > th:not(:first-child) {
     width: 20%;
+}
+
+.no-select {
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently
+                                     supported by Chrome, Edge, Opera and Firefox */
 }

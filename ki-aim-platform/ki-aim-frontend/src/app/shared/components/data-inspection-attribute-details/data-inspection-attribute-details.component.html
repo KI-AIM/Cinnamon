@@ -172,13 +172,25 @@
         <div style="display: flex; flex-direction: row; gap: 0.5rem;">
 
 
-            <div *ngIf="!hasSynthetic"
-                 style="display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; flex-basis: 50%;">
+            <div *ngIf="!hasSynthetic" class="metric-wrapper" style="flex-grow: 1; flex-basis: 50%;">
 
-                <ng-container *ngFor="let metricData of (attributeStatistics.details | keyvalue)">
-                    <ng-container *ngTemplateOutlet="metric; context: {data: metricData.value}">
+                <div class="metric-name">
+                    Additional Metrics
+                </div>
+
+                <ng-container *ngTemplateOutlet="metricSearch"></ng-container>
+
+                <table class="metric-table metric-table-single">
+                    <tr class="no-select">
+                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', type: 'metric'}"></ng-container>
+                        <th>Value</th>
+                    </tr>
+                    <ng-container
+                        *ngFor="let metricData of getDetailMetrics() | metricFilter:metricFilterText | metricSorter:metricSortDirection:metricSortColumn">
+                        <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
+                        </ng-container>
                     </ng-container>
-                </ng-container>
+                </table>
 
             </div>
 
@@ -210,24 +222,22 @@
                 <div class="metric-name">
                     Metric Comparison
                 </div>
-                <table class="metric-table">
+
+                <ng-container *ngTemplateOutlet="metricSearch"></ng-container>
+
+                <table class="metric-table metric-table-comparison">
                     <tr>
-                        <th style="width: fit-content;">Status</th>
-                        <th>Metric</th>
+                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', type: 'colorIndex'}"></ng-container>
+                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', type: 'metric'}"></ng-container>
                         <th>Real</th>
                         <th>Synth</th>
-                        <th>Diff (#)</th>
-                        <th>Diff (%)</th>
+                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (#)', type: 'absolute'}"></ng-container>
+                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (%)', type: 'percentage'}"></ng-container>
                     </tr>
 
-                    <ng-container *ngFor="let metricData of getImportantMetrics()">
-                        <ng-container style="margin-bottom: .2rem;"
-                                      *ngTemplateOutlet="metricComparison; context: {data: metricData[1]}">
-                        </ng-container>
-                    </ng-container>
-                    <ng-container *ngFor="let metricData of (attributeStatistics.details | keyvalue)">
-                        <ng-container
-                            *ngTemplateOutlet="metricComparison; context: {data: metricData.value}">
+                    <ng-container
+                        *ngFor="let metricData of getAllMetrics() | metricFilter:metricFilterText | metricSorter:metricSortDirection:metricSortColumn">
+                        <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
                         </ng-container>
                     </ng-container>
                 </table>
@@ -239,40 +249,13 @@
 </div>
 
 <ng-template #metric let-data='data'>
-    <div class="metric-wrapper">
-        <div class="metric-name">
-            {{ data.display_name }}
-        </div>
-        <table *ngIf="data; else notAvailable" class="metric-table">
-            <ng-container *ngIf="isSimple(data.values.real) ; else complexMetric">
-                <tr>
-                    <th>Value</th>
-                    <td>{{ statisticsService.formatNumber(data.values.real, {dataType}) }}</td>
-                </tr>
-            </ng-container>
-            <ng-template #complexMetric>
-                <ng-container *ngIf="isComplex(data.values.real); else nonComplexMetric">
-                    <tr *ngFor="let metricPart of data.values.real | keyvalue">
-                        <ng-container *ngIf="metricPart.key !== 'color_index'">
-                            <th>{{ metricPart.key }}</th>
-                            <td>{{ statisticsService.formatNumber(castValue(metricPart.value)) }}</td>
-                        </ng-container>
-                    </tr>
-                </ng-container>
-                <ng-template #nonComplexMetric>
-                    <tr *ngFor="let metricPart of data.values.real | keyvalue">
-                        <ng-container *ngIf="metricPart.key !== 'color_index'">
-                            <th>Value</th>
-                            <td>{{ statisticsService.formatNumber(castValue(metricPart.value)) }}</td>
-                        </ng-container>
-                    </tr>
-                </ng-template>
-            </ng-template>
-        </table>
-    </div>
+    <tr>
+        <td>{{ data.display_name }}</td>
+        <td>{{ statisticsService.formatNumber(getValue(data.values, mainData)) }}</td>
+    </tr>
 </ng-template>
 
-<ng-template #metricComparison let-data='data' let-name='name'>
+<ng-template #metricComparison let-data='data'>
     <tr>
         <td>
             <div *ngIf="data && data.difference"
@@ -288,16 +271,30 @@
     </tr>
 </ng-template>
 
-<ng-template #table let-data='data' let-name='name'>
-        <th>{{ data.display_name }}</th>
-        <td>{{ statisticsService.formatNumber(getValue(data.values, 'real')) }}</td>
-        <td>{{ statisticsService.formatNumber(getValue(data.values, 'synthetic')) }}</td>
-        <td>{{ statisticsService.formatNumber(getDifference(data, 'absolute')) }}</td>
-        <td>{{ statisticsService.formatNumber(getDifference(data, 'percentage')) }}</td>
-</ng-template>
-
 <ng-template #notAvailable>
     <td>
         N/A
     </td>
+</ng-template>
+
+<ng-template #metricSearch>
+    <mat-form-field class="w-100">
+        <mat-label>Search</mat-label>
+        <input type="text" matInput [(ngModel)]="metricFilterText"/>
+        <button mat-icon-button matSuffix *ngIf="metricFilterText" (click)="metricFilterText=''">
+            <mat-icon>clear</mat-icon>
+        </button>
+    </mat-form-field>
+</ng-template>
+
+<ng-template #sortColumn let-name="name" let-type="type">
+    <th (click)="sort(type)" style="min-width: 6rem;">
+        <div style="display: flex">
+            <span>{{ name }}</span>
+            <span *ngIf="metricSortColumn === type" style="margin-left: auto; margin-bottom: -7px;">
+                <mat-icon *ngIf="metricSortDirection === 'asc'">arrow_drop_up</mat-icon>
+                <mat-icon *ngIf="metricSortDirection === 'desc'">arrow_drop_down</mat-icon>
+            </span>
+        </div>
+    </th>
 </ng-template>

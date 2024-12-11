@@ -70,6 +70,7 @@ export class ChartFrequencyComponent extends ChartComponent {
                 name: dataSetLabels[key],
                 type: 'bar',
                 data: displayed,
+                barGap: '-70%',
                 barMinHeight: 2,
                 color: displayedColors,
             });

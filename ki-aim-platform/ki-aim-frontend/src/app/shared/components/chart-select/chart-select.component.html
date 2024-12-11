@@ -3,7 +3,8 @@
         <mat-form-field class="chart-select">
             <mat-select [(value)]="graph" (selectionChange)="update($event)">
                 <mat-option value="density">Density</mat-option>
-                <mat-option *ngIf="dataType === DataType.DATE" value="heatmap">Heatmap</mat-option>
+                <!-- TODO Disabled because issues with a wide range of values -->
+<!--                <mat-option *ngIf="dataType === DataType.DATE" value="heatmap">Heatmap</mat-option>-->
                 <mat-option value="histogram">Histogram</mat-option>
             </mat-select>
         </mat-form-field>

@@ -4,7 +4,7 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.spring.CustomMediaType;
-import de.kiaim.platform.config.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.*;
 import de.kiaim.platform.model.entity.DataSetEntity;

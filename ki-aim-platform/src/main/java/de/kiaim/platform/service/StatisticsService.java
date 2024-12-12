@@ -1,9 +1,9 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.model.dto.ExternalProcessResponse;
-import de.kiaim.platform.config.KiAimConfiguration;
-import de.kiaim.platform.config.StepConfiguration;
-import de.kiaim.platform.config.StepInputConfiguration;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.StepConfiguration;
+import de.kiaim.platform.model.configuration.StepInputConfiguration;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.exception.InternalIOException;
 import de.kiaim.platform.exception.InternalRequestException;

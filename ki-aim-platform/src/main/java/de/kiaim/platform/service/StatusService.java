@@ -1,6 +1,6 @@
 package de.kiaim.platform.service;
 
-import de.kiaim.platform.config.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;

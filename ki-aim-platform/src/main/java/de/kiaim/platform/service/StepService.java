@@ -1,8 +1,8 @@
 package de.kiaim.platform.service;
 
-import de.kiaim.platform.config.KiAimConfiguration;
-import de.kiaim.platform.config.StageConfiguration;
-import de.kiaim.platform.config.StepConfiguration;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.StageConfiguration;
+import de.kiaim.platform.model.configuration.StepConfiguration;
 import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.model.enumeration.Step;

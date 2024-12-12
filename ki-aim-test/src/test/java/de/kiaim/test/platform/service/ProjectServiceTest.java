@@ -1,7 +1,7 @@
 package de.kiaim.test.platform.service;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.platform.config.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.*;

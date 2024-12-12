@@ -1,6 +1,6 @@
 package de.kiaim.test.platform.controller;
 
-import de.kiaim.platform.config.StepConfiguration;
+import de.kiaim.platform.model.configuration.StepConfiguration;
 import de.kiaim.test.platform.ControllerTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithUserDetails;

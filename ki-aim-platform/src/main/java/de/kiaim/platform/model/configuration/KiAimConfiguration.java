@@ -1,5 +1,6 @@
-package de.kiaim.platform.config;
+package de.kiaim.platform.model.configuration;
 
+import de.kiaim.platform.config.PipelineConfiguration;
 import de.kiaim.platform.model.enumeration.Step;
 import lombok.Getter;
 import lombok.Setter;

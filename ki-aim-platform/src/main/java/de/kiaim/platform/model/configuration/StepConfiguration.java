@@ -1,4 +1,4 @@
-package de.kiaim.platform.config;
+package de.kiaim.platform.model.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.platform.model.enumeration.StepInputEncoding;

@@ -1,8 +1,8 @@
 package de.kiaim.platform.controller;
 
 import de.kiaim.model.spring.CustomMediaType;
-import de.kiaim.platform.config.StageConfiguration;
-import de.kiaim.platform.config.StepConfiguration;
+import de.kiaim.platform.model.configuration.StageConfiguration;
+import de.kiaim.platform.model.configuration.StepConfiguration;
 import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.service.StepService;
 import io.swagger.v3.oas.annotations.Operation;

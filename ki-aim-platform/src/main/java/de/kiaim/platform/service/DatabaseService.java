@@ -6,7 +6,7 @@ import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataType;
-import de.kiaim.platform.config.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.helper.DataschemeGenerator;

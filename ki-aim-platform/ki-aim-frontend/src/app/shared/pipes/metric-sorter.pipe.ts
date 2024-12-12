@@ -1,12 +1,12 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { StatisticsValues, StatisticsValuesNominal } from '../model/statistics';
+import {StatisticsValues, StatisticsValueTypes} from '../model/statistics';
 
 @Pipe({
     name: 'metricSorter'
 })
 export class MetricSorterPipe implements PipeTransform {
 
-    transform(value: Array<StatisticsValues | StatisticsValuesNominal<any>>, sortDirection: SortDirection | null, sortType: SortType | null): Array<StatisticsValues | StatisticsValuesNominal<any>> {
+    transform(value: Array<StatisticsValueTypes>, sortDirection: SortDirection | null, sortType: SortType | null): Array<StatisticsValueTypes> {
         if (sortDirection === null || sortType === null || sortDirection === 'original') {
             return value;
         }
@@ -30,7 +30,7 @@ export class MetricSorterPipe implements PipeTransform {
         }
     }
 
-    private getColorIndex(data: StatisticsValues | StatisticsValuesNominal<any>): number {
+    private getColorIndex(data: StatisticsValueTypes): number {
         if (data instanceof StatisticsValues) {
             return data.difference.color_index;
         } else {
@@ -38,7 +38,7 @@ export class MetricSorterPipe implements PipeTransform {
         }
     }
 
-    private getDifference(data: StatisticsValues | StatisticsValuesNominal<any>, which: 'absolute' | 'percentage'): number  {
+    private getDifference(data: StatisticsValueTypes, which: 'absolute' | 'percentage'): number  {
         if (data instanceof StatisticsValues) {
             return data.difference[which];
         } else {

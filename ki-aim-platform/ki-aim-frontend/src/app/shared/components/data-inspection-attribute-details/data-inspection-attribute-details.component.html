@@ -35,94 +35,17 @@
                     Important Statistical Metrics
                 </div>
 
-                <div style="display: flex; flex-direction: row; justify-content: space-between;">
-                    <table style="display: block;">
-                        <tr>
-                            <th>Distinct Values:</th>
-                            <ng-template [ngIf]="attributeStatistics.important_metrics.distinct_values" [ngIfElse]="notAvailable">
-                                <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.distinct_values.values[mainData]) }}
-                                </td>
-                            </ng-template>
-                        </tr>
-                        <tr>
-                            <th>Mode:</th>
-                            <ng-template [ngIf]="attributeStatistics.important_metrics.mode" [ngIfElse]="notAvailable">
-                                <td>{{ attributeStatistics.important_metrics.mode.values[mainData] }}
-                                </td>
-                            </ng-template>
-                        </tr>
-                        <tr>
-                            <th>Mean:</th>
-                            <ng-template [ngIf]="attributeStatistics.important_metrics.mean" [ngIfElse]="notAvailable">
-                                <td>{{
-                                        statisticsService.formatNumber(attributeStatistics.important_metrics.mean.values[mainData], {
-                                            max: 3,
-                                            min: 3
-                                        })
-                                    }}
-                                </td>
-                            </ng-template>
-                        </tr>
-                        <tr>
-                            <th>Variance:</th>
-                            <ng-template [ngIf]="attributeStatistics.important_metrics.variance" [ngIfElse]="notAvailable">
-                                <td>{{
-                                        statisticsService.formatNumber(attributeStatistics.important_metrics.variance.values[mainData], {
-                                            max: 3,
-                                            min: 3
-                                        })
-                                    }}
-                                </td>
-                            </ng-template>
-                        </tr>
-                        <tr>
-                            <th>Standard Deviation:</th>
-                            <ng-template [ngIf]="attributeStatistics.important_metrics.standard_deviation" [ngIfElse]="notAvailable">
-                                <td>{{
-                                        statisticsService.formatNumber(attributeStatistics.important_metrics.standard_deviation.values[mainData], {
-                                            max: 3,
-                                            min: 3
-                                        })
-                                    }}
-                                </td>
-                            </ng-template>
-                        </tr>
-                    </table>
-                    <table style="display: block;">
-                    <tr>
-                        <th>Minimum:</th>
-                        <ng-template [ngIf]="attributeStatistics.important_metrics.minimum" [ngIfElse]="notAvailable">
-                            <td>{{
-                                    statisticsService.formatNumber(attributeStatistics.important_metrics.minimum.values[mainData], {
-                                        dataType,
-                                        max: 3,
-                                        min: 3
-                                    })
-                                }}
+                <div>
+                    <table class="metric-table metric-table-single">
+                        <tr *ngFor="let metric of getImportantMetrics()">
+                            <td>{{metric.display_name }}</td>
+                            <td> {{ statisticsService.formatNumber(metric.values[mainData]) }}</td>
+                            <td class="information-column">
+                                <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, metric)">
+                                    <mat-icon fontIcon="info"></mat-icon>
+                                </a>
                             </td>
-                        </ng-template>
-                    </tr>
-                    <tr>
-                        <th>Maximum:</th>
-                        <ng-template [ngIf]="attributeStatistics.important_metrics.maximum" [ngIfElse]="notAvailable">
-                            <td>{{
-                                    statisticsService.formatNumber(attributeStatistics.important_metrics.maximum.values[mainData], {
-                                        dataType,
-                                        max: 3,
-                                        min: 3
-                                    })
-                                }}
-                            </td>
-                        </ng-template>
-                    </tr>
-                    <tr>
-                        <th>Missing values (#):</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.missing_values_count.values[mainData]) }}</td>
-                    </tr>
-                    <tr>
-                        <th>Missing values (%):</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.missing_values_percentage.values[mainData], {max: 3, min: 3}) }}</td>
-                    </tr>
+                        </tr>
                     </table>
                 </div>
 
@@ -171,7 +94,6 @@
 
         <div style="display: flex; flex-direction: row; gap: 0.5rem;">
 
-
             <div *ngIf="!hasSynthetic" class="metric-wrapper" style="flex-grow: 1; flex-basis: 50%;">
 
                 <div class="metric-name">
@@ -184,6 +106,7 @@
                     <tr class="no-select">
                         <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', type: 'metric'}"></ng-container>
                         <th>Value</th>
+                        <th></th>
                     </tr>
                     <ng-container
                         *ngFor="let metricData of getDetailMetrics() | metricFilter:metricFilterText | metricSorter:metricSortDirection:metricSortColumn">
@@ -226,13 +149,14 @@
                 <ng-container *ngTemplateOutlet="metricSearch"></ng-container>
 
                 <table class="metric-table metric-table-comparison">
-                    <tr>
+                    <tr class="no-select">
                         <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', type: 'colorIndex'}"></ng-container>
                         <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', type: 'metric'}"></ng-container>
                         <th>Real</th>
                         <th>Synth</th>
                         <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (#)', type: 'absolute'}"></ng-container>
                         <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (%)', type: 'percentage'}"></ng-container>
+                        <th></th>
                     </tr>
 
                     <ng-container
@@ -252,6 +176,11 @@
     <tr>
         <td>{{ data.display_name }}</td>
         <td>{{ statisticsService.formatNumber(getValue(data.values, mainData)) }}</td>
+        <td class="information-column">
+            <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, data)">
+                <mat-icon fontIcon="info"></mat-icon>
+            </a>
+        </td>
     </tr>
 </ng-template>
 
@@ -263,11 +192,18 @@
                   style="width: 10px; height: 100%; border-radius: 6px; margin-right: .5rem; margin-bottom: 2px; margin-top: 2px;">
             </div>
         </td>
-        <td>{{ data.display_name }}</td>
+        <td>
+            {{ data.display_name }}
+        </td>
         <td>{{ statisticsService.formatNumber(getValue(data.values, 'real')) }}</td>
         <td>{{ statisticsService.formatNumber(getValue(data.values, 'synthetic')) }}</td>
         <td>{{ statisticsService.formatNumber(getDifference(data, 'absolute')) }}</td>
         <td>{{ statisticsService.formatNumber(getDifference(data, 'percentage')) }}</td>
+        <td class="information-column">
+            <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, data)">
+                <mat-icon fontIcon="info"></mat-icon>
+            </a>
+        </td>
     </tr>
 </ng-template>
 
@@ -297,4 +233,24 @@
             </span>
         </div>
     </th>
+</ng-template>
+
+<ng-template #metricInfoDialog>
+    <mat-dialog-content class="mat-typography">
+
+        <div class="info-table">
+            <span class="info-name">Name:</span>
+            <span class="info-value">{{ metricInfo.display_name }}</span>
+
+            <span class="info-name">Description:</span>
+            <span class="info-value">{{ metricInfo.description }}</span>
+
+            <span class="info-name">Interpretation:</span>
+            <span class="info-value">{{ metricInfo.interpretation }}</span>
+        </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
 </ng-template>

@@ -1,13 +1,14 @@
-import {Component, Input, OnInit, TemplateRef, ViewChild} from '@angular/core';
+import {Component, Input, OnInit, TemplateRef} from '@angular/core';
 import {
     AttributeStatistics,
     StatisticsData,
     StatisticsValues,
-    StatisticsValuesNominal
+    StatisticsValuesNominal, StatisticsValueTypes
 } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
 import { SortDirection, SortType } from "../../pipes/metric-sorter.pipe";
+import {MatDialog} from "@angular/material/dialog";
 
 @Component({
     selector: 'app-data-inspection-attribute-details',
@@ -21,7 +22,6 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
     @Input() public mainData: 'real' | 'synthetic' = 'real';
-    @ViewChild('metricComparison', {static: true}) tableTemplate!: TemplateRef<TableContext>;
 
     protected graphType: string = 'histogram';
     protected hasSynthetic: boolean = false;
@@ -30,7 +30,10 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     protected metricSortDirection: SortDirection | null = null;
     protected metricSortColumn: SortType | null = null;
 
+    protected metricInfo: StatisticsValues | StatisticsValuesNominal<any>;
+
     constructor(
+        private dialog: MatDialog,
         protected statisticsService: StatisticsService,
     ) {
     }
@@ -59,6 +62,10 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         return this.attributeStatistics.attribute_information.type;
     }
 
+    protected getImportantMetrics(): StatisticsValueTypes[] {
+        return Object.values(this.attributeStatistics.important_metrics) as StatisticsValueTypes[];
+    }
+
     protected getDetailMetrics() {
         return Object.values(this.attributeStatistics.details);
     }
@@ -67,7 +74,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         return Object.values(this.attributeStatistics.important_metrics).concat(Object.values(this.attributeStatistics.details));
     }
 
-    protected getColorIndex(data: StatisticsValues | StatisticsValuesNominal<any>): number {
+    protected getColorIndex(data: StatisticsValueTypes): number {
         if (data instanceof StatisticsValues) {
             return data.difference.color_index;
         } else {
@@ -75,7 +82,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         }
     }
 
-    protected getDifference(data: StatisticsValues | StatisticsValuesNominal<any>, which: 'absolute' | 'percentage'): number | string  {
+    protected getDifference(data: StatisticsValueTypes, which: 'absolute' | 'percentage'): number | string  {
         if (data instanceof StatisticsValues) {
             return data.difference[which];
         } else {
@@ -103,9 +110,18 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         return "N/A";
     }
 
-    protected readonly DataType = DataType;
-}
+    /**
+     * Opens the info popup.
+     * @param templateRef The reference to the popup.
+     * @param statistics The statistics data.
+     */
+    openDialog(templateRef: TemplateRef<any>, statistics: StatisticsValueTypes) {
+        this.metricInfo = statistics;
 
-interface TableContext {
-    data: StatisticsValues | StatisticsValuesNominal<any>;
+        this.dialog.open(templateRef, {
+            width: '60%'
+        });
+    }
+
+    protected readonly DataType = DataType;
 }

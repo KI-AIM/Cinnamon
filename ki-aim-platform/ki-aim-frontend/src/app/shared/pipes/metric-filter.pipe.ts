@@ -1,12 +1,12 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { DetailMetrics, StatisticsValues, StatisticsValuesNominal } from "../model/statistics";
+import {DetailMetrics, StatisticsValues, StatisticsValuesNominal, StatisticsValueTypes} from "../model/statistics";
 
 @Pipe({
     name: 'metricFilter'
 })
 export class MetricFilterPipe implements PipeTransform {
 
-    transform(value: Array<StatisticsValues | StatisticsValuesNominal<any>>, filterText: string): Array<StatisticsValues | StatisticsValuesNominal<any>> {
+    transform(value: Array<StatisticsValueTypes>, filterText: string): Array<StatisticsValueTypes> {
         if (!filterText) {
             return value;
         }

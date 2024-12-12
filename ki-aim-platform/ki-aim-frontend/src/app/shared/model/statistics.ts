@@ -156,3 +156,5 @@ export class HistogramData {
     color_index: number;
     label: string;
 }
+
+export type StatisticsValueTypes = StatisticsValues | StatisticsValuesNominal<any>;

@@ -1,8 +1,6 @@
 package de.kiaim.platform.service;
 
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
-import de.kiaim.platform.model.configuration.StageConfiguration;
-import de.kiaim.platform.model.configuration.StepConfiguration;
+import de.kiaim.platform.model.configuration.*;
 import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.model.enumeration.Step;
@@ -36,6 +34,26 @@ public class StepService {
 		}
 
 		return kiAimConfiguration.getSteps().get(step);
+	}
+
+	public ExternalEndpoint getExternalServerEndpointConfiguration(
+			final StepConfiguration stepConfiguration) {
+		return kiAimConfiguration.getExternalServerEndpoints().get(stepConfiguration.getExternalServerEndpointIndex());
+	}
+
+	public ExternalEndpoint getExternalServerEndpointConfiguration(
+			final Step step) throws InternalApplicationConfigurationException {
+		final StepConfiguration stepConfiguration = getStepConfiguration(step);
+		return kiAimConfiguration.getExternalServerEndpoints().get(stepConfiguration.getExternalServerEndpointIndex());
+	}
+
+	public ExternalServer getExternalServerConfiguration(final ExternalEndpoint externalServerEndpoint) {
+		return kiAimConfiguration.getExternalServer().get(externalServerEndpoint.getExternalServerIndex());
+	}
+
+	public ExternalServer getExternalServerConfiguration(final Step step ) throws InternalApplicationConfigurationException {
+		final var ese = getExternalServerEndpointConfiguration(step);
+		return kiAimConfiguration.getExternalServer().get(ese.getExternalServerIndex());
 	}
 
 	/**

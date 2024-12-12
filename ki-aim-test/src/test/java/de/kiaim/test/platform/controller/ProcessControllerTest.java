@@ -35,7 +35,6 @@ import org.springframework.test.util.TestSocketUtils;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.hamcrest.Matchers.nullValue;
@@ -50,7 +49,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private static final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 
-	@Value("${ki-aim.steps.synthetization.callbackHost}")
+	@Value("${ki-aim.external-server[1].callback-host}")
 	private String callbackHost;
 
 	private MockWebServer mockBackEnd;
@@ -61,8 +60,17 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("ki-aim.steps.synthetization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("ki-aim.steps.anonymization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
+		// All properties must be redefined
+		registry.add("ki-aim.external-server[2].urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server[2].max-parallel-process", () -> 1);
+		registry.add("ki-aim.external-server[2].callback-host", () -> "localhost");
+		registry.add("ki-aim.external-server[1].urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server[1].max-parallel-process", () -> 1);
+		registry.add("ki-aim.external-server[1].callback-host", () -> "localhost");
+		registry.add("ki-aim.external-server[0].urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server[0].max-parallel-process", () -> 1);
+		registry.add("ki-aim.external-server[0].callback-host", () -> "localhost");
+
 	}
 
 	@BeforeEach
@@ -160,8 +168,8 @@ public class ProcessControllerTest extends ControllerTest {
 		final var upload = new JakartaServletFileUpload(factory);
 		final List<DiskFileItem> fileItems = upload.parseRequest(request);
 
-		Long id = process.getId();
-		final String callbackUrl = "http://" + callbackHost + ":8080/api/process/" + id.toString() + "/callback";
+		String id = process.getUuid().toString();
+		final String callbackUrl = "http://" + callbackHost + ":8080/api/process/" + id + "/callback";
 
 		// Test request content
 		for (final FileItem fileItem : fileItems) {
@@ -169,7 +177,7 @@ public class ProcessControllerTest extends ControllerTest {
 				assertEquals(DataSetTestHelper.generateDataSetAsJson(false), fileItem.getString(),
 				             "Unexpected content of data!");
 			} else if (fileItem.getFieldName().equals("session_key")) {
-				assertEquals(id.toString(), fileItem.getString(), "Unexpected session key!");
+				assertEquals(id, fileItem.getString(), "Unexpected session key!");
 			} else if (fileItem.getFieldName().equals("callback")) {
 				assertEquals(callbackUrl, fileItem.getString(), "Unexpected callback URL!");
 			} else if (fileItem.getFieldName().equals("anonymizationConfig")) {
@@ -184,7 +192,7 @@ public class ProcessControllerTest extends ControllerTest {
 	private void getStatus1() throws Exception {
 		var updateTestProject = getTestProject();
 		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get();
-		Long id = process.getId();
+		String id = process.getUuid().toString();
 
 		// Get status
 		mockBackEnd.enqueue(new MockResponse.Builder()
@@ -214,7 +222,7 @@ public class ProcessControllerTest extends ControllerTest {
 	private void finish1() throws Exception {
 		var updateTestProject = getTestProject();
 		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get();
-		Long id = process.getId();
+		String id = process.getUuid().toString();
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("123");
@@ -245,10 +253,9 @@ public class ProcessControllerTest extends ControllerTest {
 		assertTrue(existsDataSet(dataSetEntity.getId()), "Dataset has not been stored!");
 		assertTrue(dataSetEntity.isStoredData(), "Dataset has not been stored!");
 		assertEquals(List.of(Step.ANONYMIZATION), dataSetEntity.getProcessed(), "Unexpected previous processes!");
-		assertTrue(process.getAdditionalResultFiles().containsKey("additional.txt"),
+		assertTrue(process.getResultFiles().containsKey("additional.txt"),
 		           "Additional result has not been set!");
-		assertEquals("info",
-		             new String(process.getAdditionalResultFiles().get("additional.txt"), StandardCharsets.UTF_8),
+		assertEquals("info", process.getResultFiles().get("additional.txt").getLobString(),
 		             "Additional result has not been set correctly!");
 
 	}
@@ -256,7 +263,7 @@ public class ProcessControllerTest extends ControllerTest {
 	private void getStatus2() throws Exception {
 		var updateTestProject = getTestProject();
 		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.SYNTHETIZATION).get();
-		Long id = process.getId();
+		String id = process.getUuid().toString();
 
 		enqueueSynthStatus();
 
@@ -280,7 +287,7 @@ public class ProcessControllerTest extends ControllerTest {
 	private void finish2() throws Exception {
 		var updateTestProject = getTestProject();
 		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.SYNTHETIZATION).get();
-		Long id = process.getId();
+		String id = process.getUuid().toString();
 
 		enqueueSynthStatus();
 
@@ -454,7 +461,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		var updateTestProject = getTestProject();
 		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get();
-		Long id = process.getId();
+		String id = process.getUuid().toString();
 
 
 		// Send callback request with error
@@ -474,7 +481,7 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals(ProcessStatus.ERROR, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 		assertEquals("An error occurred!", process.getStatus());
-		assertFalse(process.getAdditionalResultFiles().containsKey("exception_message.txt"),
+		assertFalse(process.getResultFiles().containsKey("exception_message.txt"),
 		           "Exception message should not have been set!");
 	}
 

@@ -15,14 +15,7 @@ import org.springframework.lang.Nullable;
 @Entity
 @Getter
 @NoArgsConstructor
-public class OriginalDataEntity {
-
-	/**
-	 * ID and primary key.
-	 */
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
-	@Id
-	private Long id;
+public class OriginalDataEntity extends ProcessOwner {
 
 	/**
 	 * File containing the original data.
@@ -49,6 +42,14 @@ public class OriginalDataEntity {
 	@Setter
 	@Nullable
 	private LobWrapperEntity statistics = null;
+
+	/**
+	 * Process for calculating the statistics.
+	 */
+	@OneToOne(optional = false, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+	@JoinColumn(name= "process_id", referencedColumnName = "id", nullable = false)
+	@Getter
+	private final BackgroundProcessEntity process = new BackgroundProcessEntity();
 
 	/**
 	 * The corresponding project.

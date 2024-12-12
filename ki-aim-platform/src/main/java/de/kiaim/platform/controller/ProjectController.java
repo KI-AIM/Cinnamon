@@ -138,8 +138,8 @@ public class ProjectController {
 
 		final var content = project.getPipelines().get(0).getStageByStep(executionStep)
 		                           .getProcess(processStep).get()
-		                           .getAdditionalResultFiles().get(name);
-		final var s = new String(content);
+		                           .getResultFiles().get(name);
+		final var s = content.getLobString();
 
 		return ResponseEntity.ok().body(s);
 	}

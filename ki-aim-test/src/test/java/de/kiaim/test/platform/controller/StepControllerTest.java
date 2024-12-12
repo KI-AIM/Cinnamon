@@ -1,6 +1,6 @@
 package de.kiaim.test.platform.controller;
 
-import de.kiaim.platform.model.configuration.StepConfiguration;
+import de.kiaim.platform.model.dto.StepConfigurationResponse;
 import de.kiaim.test.platform.ControllerTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithUserDetails;
@@ -17,8 +17,8 @@ public class StepControllerTest extends ControllerTest {
 		final var config = mockMvc.perform(get("/api/step/anonymization"))
 		                          .andExpect(status().isOk())
 		                          .andReturn().getResponse().getContentAsString();
-		final var stepConfig = objectMapper.readValue(config, StepConfiguration.class);
-		assertEquals("http://anonymization.de", stepConfig.getUrl(), "Unexpected URL!");
+		final var stepConfig = objectMapper.readValue(config, StepConfigurationResponse.class);
+		assertEquals("http://anonymization.de", stepConfig.getUrlClient(), "Unexpected URL!");
 	}
 
 	@Test

@@ -201,7 +201,7 @@ public class ProjectService {
 					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {
 						// Add configuration
 						if (externalProcess.getConfiguration() != null) {
-							final String configurationName = stepService.getStepConfiguration(externalProcess.getStep())
+							final String configurationName = stepService.getExternalServerEndpointConfiguration(externalProcess.getStep())
 							                                            .getConfigurationName();
 							final ZipEntry configZipEntry = new ZipEntry(configurationName + ".yaml");
 							zipOut.putNextEntry(configZipEntry);
@@ -219,10 +219,10 @@ public class ProjectService {
 						}
 
 						// Add additional files
-						for (final var entry : externalProcess.getAdditionalResultFiles().entrySet()) {
+						for (final var entry : externalProcess.getResultFiles().entrySet()) {
 							final ZipEntry additionalFileEntry = new ZipEntry(entry.getKey());
 							zipOut.putNextEntry(additionalFileEntry);
-							zipOut.write(entry.getValue());
+							zipOut.write(entry.getValue().getLob());
 							zipOut.closeEntry();
 						}
 					}

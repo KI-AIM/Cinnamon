@@ -1,15 +1,10 @@
 package de.kiaim.platform.model.configuration;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.kiaim.platform.model.enumeration.StepInputEncoding;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.enumeration.StepType;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 /**
  * Configuration for a sigle step.
@@ -19,84 +14,23 @@ import java.util.List;
 public class StepConfiguration {
 
 	/**
-	 * Endpoint for fetching the available algorithms.
+	 * Endpoint to be used for this step.
 	 */
-	@NotBlank
-	private String algorithmEndpoint;
-
-	/**
-	 * Host name for this application used for requests from other modules.
-	 */
-	@JsonIgnore
-	@NotBlank
-	private String callbackHost;
-
-	/**
-	 * Endpoint for cancelling requests.
-	 */
-	@JsonIgnore
-	@NotBlank
-	private String cancelEndpoint;
-
-	/**
-	 * Name of the configuration.
-	 */
-	@NotBlank
-	private String configurationName;
-
-	/**
-	 * Name of the configuration part in the request.
-	 */
-	@NotBlank
-	private String configurationPartName;
-
-	/**
-	 * Encoding of the configuration.
-	 */
-	@JsonIgnore
-	private StepInputEncoding configurationEncoding;
-
-	/**
-	 * Input data sets.
-	 */
-	@JsonIgnore
-	private List<StepInputConfiguration> inputs;
-
-	/**
-	 * Maximum number of processes that are allowed to run in parallel.
-	 */
-	@JsonIgnore
-	@NotNull
-	private Integer maxParallelProcess;
-
-	/**
-	 * List of required pre-processors for this step.
-	 */
-	@JsonIgnore
-	private List<String> preProcessors;
-
-	/**
-	 * Endpoint for retrieving the status.
-	 */
-	private String statusEndpoint;
+	private Integer externalServerEndpointIndex;
 
 	/**
 	 * Type of this step.
 	 */
 	private StepType stepType;
 
-	/**
-	 * URL of the server.
-	 */
-	@Schema(description = "URL of the corresponding server.", example = "https://my-anonymization-server.de")
-	@NotBlank
-	private String url;
+	//=========================
+	//--- Automatically set ---
+	//=========================
 
-	/**
-	 * URL of the server for clients.
-	 */
-	@Schema(description = "URL of the corresponding server for the client.",
-	        example = "https://my-anonymization-server.de")
-	@NotBlank
-	private String urlClient;
+	private Step step;
+	private ExternalEndpoint endpoint;
+
+	public ExternalServer getServer() {
+		return endpoint.getServer();
+	}
 }

@@ -14,17 +14,12 @@ import java.util.*;
  * Groups multiple Processes that are executed sequentially and depend on the previous process.
  */
 @Entity
-public class ExecutionStepEntity {
-
-	/** The ID. */
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
-	@Id
-	private Long id;
+@Getter @Setter
+public class ExecutionStepEntity extends ProcessOwner {
 
 	/**
 	 * Index of the stage within the pipeline.
 	 */
-	@Getter @Setter
 	private Integer stageIndex;
 
 	/**
@@ -32,7 +27,6 @@ public class ExecutionStepEntity {
 	 */
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
-	@Getter @Setter
 	private Step step;
 
 	/**
@@ -40,14 +34,12 @@ public class ExecutionStepEntity {
 	 */
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
-	@Getter @Setter
 	private ProcessStatus status = ProcessStatus.NOT_STARTED;
 
 	/**
 	 * Index of the current job.
 	 * Null if not running.
 	 */
-	@Getter @Setter
 	@Nullable
 	private Integer currentProcessIndex;
 
@@ -56,7 +48,6 @@ public class ExecutionStepEntity {
 	 */
 	@OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
 	@OrderBy("jobIndex")
-	@Getter
 	private final List<ExternalProcessEntity> processes = new ArrayList<>();
 
 	/**
@@ -64,7 +55,6 @@ public class ExecutionStepEntity {
 	 */
 	@ManyToOne(fetch = FetchType.EAGER, optional = false)
 	@JoinColumn(name = "pipeline_id", nullable = false)
-	@Getter @Setter
 	private PipelineEntity pipeline;
 
 	/**

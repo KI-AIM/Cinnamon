@@ -290,9 +290,27 @@ public class DatabaseService {
 	                                                                    final String configurationName)
 			throws BadConfigurationNameException, InternalApplicationConfigurationException {
 		// Search for the step that has the given configurationName
+		Integer endpoint = null;
+		for (int endpointIndex = 0; endpointIndex < kiAimConfiguration.getExternalServerEndpoints().size(); endpointIndex++) {
+			if (kiAimConfiguration.getExternalServerEndpoints().get(endpointIndex).getConfigurationName()
+			                      .equals(configurationName)) {
+				endpoint = endpointIndex;
+				break;
+			}
+		}
+
+		if (endpoint == null) {
+			throw new BadConfigurationNameException(BadConfigurationNameException.NOT_FOUND,
+			                                        "Project with ID '" + project.getId() +
+			                                        "' has no configuration with the name '" + configurationName +
+			                                        "'!");
+		}
+
+
+		// Search for the step that has the given configurationName
 		Step processStep = null;
 		for (final var entry : kiAimConfiguration.getSteps().entrySet()) {
-			if (entry.getValue().getConfigurationName().equals(configurationName)) {
+			if (entry.getValue().getExternalServerEndpointIndex().equals(endpoint)) {
 				processStep = entry.getKey();
 				break;
 			}
@@ -667,7 +685,7 @@ public class DatabaseService {
 					job.setExternalProcessStatus(ProcessStatus.NOT_STARTED);
 					job.setScheduledTime(null);
 					job.setProcessUrl(null);
-					job.getAdditionalResultFiles().clear();
+					job.getResultFiles().clear();
 
 					if (job instanceof DataProcessingEntity dataProcessing) {
 						deleteDataSet(dataProcessing.getDataSet());

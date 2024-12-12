@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.exception.InternalRequestException;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
 import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.processor.CsvProcessor;
+import de.kiaim.platform.repository.BackgroundProcessRepository;
 import de.kiaim.platform.repository.ExternalProcessRepository;
 import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.platform.service.DatabaseService;
@@ -38,6 +40,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@Value("${server.port}") private int port;
 	@Autowired private SerializationConfig serializationConfig;
+	@Autowired private KiAimConfiguration kiAimConfiguration;
 	@Autowired private StepService stepService = mock(StepService.class);
 
 	private ObjectMapper jsonMapper = null;
@@ -47,19 +50,28 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("ki-aim.steps.synthetization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("ki-aim.steps.anonymization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
+		// All properties must be redefined
+		registry.add("ki-aim.external-server[2].urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server[2].max-parallel-process", () -> 1);
+		registry.add("ki-aim.external-server[2].callback-host", () -> "localhost");
+		registry.add("ki-aim.external-server[1].urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server[1].max-parallel-process", () -> 1);
+		registry.add("ki-aim.external-server[1].callback-host", () -> "localhost");
+		registry.add("ki-aim.external-server[0].urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server[0].max-parallel-process", () -> 1);
+		registry.add("ki-aim.external-server[0].callback-host", () -> "localhost");
 	}
 
 	@BeforeEach
 	void setUpMockWebServer() throws IOException {
 		ProjectRepository projectRepository = mock(ProjectRepository.class);
+		BackgroundProcessRepository backgroundProcessRepository = mock(BackgroundProcessRepository.class);
 		ExternalProcessRepository externalProcessRepository = mock(ExternalProcessRepository.class);
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
 
-		this.processService = new ProcessService(serializationConfig, port, externalProcessRepository,
+		this.processService = new ProcessService(serializationConfig, port, kiAimConfiguration, backgroundProcessRepository, externalProcessRepository,
 		                                         projectRepository, csvProcessor, databaseService, stepService);
 
 		mockBackEnd = new MockWebServer();

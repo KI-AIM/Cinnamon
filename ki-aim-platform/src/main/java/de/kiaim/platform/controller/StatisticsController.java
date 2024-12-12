@@ -1,9 +1,7 @@
 package de.kiaim.platform.controller;
 
 import de.kiaim.model.spring.CustomMediaType;
-import de.kiaim.platform.exception.InternalDataSetPersistenceException;
-import de.kiaim.platform.exception.InternalIOException;
-import de.kiaim.platform.exception.InternalRequestException;
+import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.service.ProjectService;
@@ -51,7 +49,8 @@ public class StatisticsController {
 	@GetMapping(value = "", produces = CustomMediaType.APPLICATION_YAML_VALUE)
 	public String getStatistics(
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws InternalIOException, InternalDataSetPersistenceException, InternalRequestException {
+	)
+			throws InternalIOException, InternalDataSetPersistenceException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
 		return statisticsService.getStatistics(projectEntity);

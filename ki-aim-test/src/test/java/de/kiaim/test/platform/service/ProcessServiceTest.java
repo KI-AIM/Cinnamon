@@ -50,16 +50,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		// All properties must be redefined
-		registry.add("ki-aim.external-server[2].urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("ki-aim.external-server[2].max-parallel-process", () -> 1);
-		registry.add("ki-aim.external-server[2].callback-host", () -> "localhost");
-		registry.add("ki-aim.external-server[1].urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("ki-aim.external-server[1].max-parallel-process", () -> 1);
-		registry.add("ki-aim.external-server[1].callback-host", () -> "localhost");
-		registry.add("ki-aim.external-server[0].urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("ki-aim.external-server[0].max-parallel-process", () -> 1);
-		registry.add("ki-aim.external-server[0].callback-host", () -> "localhost");
+		registry.add("ki-aim.external-server.2.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server.1.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server.0.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
 	}
 
 	@BeforeEach

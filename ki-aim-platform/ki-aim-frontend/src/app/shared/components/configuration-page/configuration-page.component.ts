@@ -189,17 +189,22 @@ export class ConfigurationPageComponent implements OnInit {
         this.updateConfigCache();
 
         const formData = new FormData();
+        formData.append("skip", 'true');
+        formData.append("stepName", this.algorithmService.getStepName());
+        const config = this.forms ? this.forms.formData : '';
 
         if (!this.selection.selectedOption) {
-            formData.append("configuration", "skip");
+            // formData.append("configuration", "skip");
+            this.configure(formData);
         } else {
-            const config = this.forms ? this.forms.formData : '';
             formData.append("configuration", stringify(this.algorithmService.createConfiguration(config, this.selection.selectedOption)));
+            this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).subscribe({
+                next: value => {
+                    formData.append("url", value.URL);
+                    this.configure(formData);
+                }
+            });
         }
-
-        formData.append("stepName", this.algorithmService.getStepName());
-        formData.append("url", "skip");
-        this.configure(formData);
     }
 
     /**

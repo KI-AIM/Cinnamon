@@ -127,7 +127,7 @@ public class ProcessService {
 	 */
 	@Transactional
 	public void configureProcess(final ProjectEntity project, final Step execStep, final String stepName,
-	                             final String url, final String configuration)
+	                             @Nullable final String url, @Nullable final String configuration, final boolean skip)
 			throws BadStepNameException, BadStateException, InternalInvalidStateException {
 		final Step step = Step.getStepOrThrow(stepName);
 
@@ -149,6 +149,7 @@ public class ProcessService {
 			                            "Process cannot be configured if the it is scheduled or started!");
 		}
 
+		externalProcess.setSkip(skip);
 		externalProcess.setProcessUrl(url);
 
 		// Update status

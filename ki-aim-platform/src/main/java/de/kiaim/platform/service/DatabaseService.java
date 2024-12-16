@@ -255,7 +255,7 @@ public class DatabaseService {
 	 * @param externalProcess The process the configuration should be associated with.
 	 */
 	@Transactional
-	public void storeConfiguration(final String configuration, final ExternalProcessEntity externalProcess) {
+	public void storeConfiguration(@Nullable final String configuration, final ExternalProcessEntity externalProcess) {
 		externalProcess.setConfiguration(configuration);
 		externalProcessRepository.save(externalProcess);
 	}

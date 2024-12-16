@@ -67,7 +67,7 @@ export abstract class AlgorithmService {
     public setConfig(data: ImportPipeData): void {
         let error = null;
         if (data.success) {
-            if (data.yamlConfigString !== "skip") {
+            if (data.yamlConfigString) {
                 const result = this.readConfiguration(parse(data.yamlConfigString), data.configData.name);
                 this.selectCache = result.selectedAlgorithm;
                 this.configCache[result.selectedAlgorithm.name] = result.config;

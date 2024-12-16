@@ -104,6 +104,35 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void configureSkip() throws Exception {
+		mockMvc.perform(post("/api/process/execution/configure")
+				                .param("stepName", Step.ANONYMIZATION.name())
+				                .param("skip", "true")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
+	}
+
+	@Test
+	public void configureMissingConfiguration() throws Exception {
+		mockMvc.perform(post("/api/process/execution/configure")
+				                .param("stepName", Step.ANONYMIZATION.name())
+				                .param("url", "/start_synthetization_process/ctgan")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("configuration", "Configuration not set!"));
+	}
+
+	@Test
+	public void configureMissingUrl() throws Exception {
+		mockMvc.perform(post("/api/process/execution/configure")
+				                .param("stepName", Step.ANONYMIZATION.name())
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("url", "Configuration not set!"));
+	}
+
+	@Test
 	public void startAndFinishProcess() throws Exception {
 		// Setup
 		postData(false);

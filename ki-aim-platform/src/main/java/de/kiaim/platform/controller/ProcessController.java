@@ -24,7 +24,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.util.UUID;
@@ -40,18 +39,15 @@ public class ProcessController {
 
 	private final ProcessService processService;
 	private final ProjectService projectService;
-	private final StatisticsService statisticsService;
 	private final StatusService statusService;
 	private final UserService userService;
 	private final ExecutionStepMapper executionStepMapper;
 
 	public ProcessController(final ProcessService processService, final ProjectService projectService,
-	                         final StatisticsService statisticsService,
 	                         final UserService userService, final StatusService statusService,
 	                         final ExecutionStepMapper executionStepMapper) {
 		this.processService = processService;
 		this.projectService = projectService;
-		this.statisticsService = statisticsService;
 		this.userService = userService;
 		this.statusService = statusService;
 		this.executionStepMapper = executionStepMapper;
@@ -126,7 +122,7 @@ public class ProcessController {
 
 		// Configure process
 		processService.configureProcess(project, step, requestData.getStepName(), requestData.getUrl(),
-		                                requestData.getConfiguration());
+		                                requestData.getConfiguration(), requestData.isSkip());
 
 		// Go to the next step
 		var configuredStep = Step.getStepOrThrow(requestData.getStepName());

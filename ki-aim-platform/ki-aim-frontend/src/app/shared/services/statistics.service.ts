@@ -134,6 +134,7 @@ export class StatisticsService {
         return this.httpClient.get<string>(this.baseUrl, {responseType: 'text' as 'json'})
             .pipe(
                 map(value => {
+                    console.log(value);
                     return plainToInstance(Statistics, parse( parse(value)));
                 }),
             );

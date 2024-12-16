@@ -13,8 +13,15 @@ import java.util.UUID;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@Data @NoArgsConstructor
+@Getter @Setter
+@NoArgsConstructor
 public class BackgroundProcessEntity {
+
+
+	/**
+	 * Index of the job within the stage.
+	 */
+	private Integer jobIndex;
 
 	/**
 	 * ID of the process.
@@ -84,8 +91,17 @@ public class BackgroundProcessEntity {
 	@JoinColumn(name = "lob_id")
 	private final Map<String, LobWrapperEntity> resultFiles = new HashMap<>();
 
-	@OneToOne(optional = false, orphanRemoval = false, cascade = CascadeType.ALL)
+//	@ManyToOne(optional = false, cascade = CascadeType.PERSIST)
+	@ManyToOne()
+	@JoinColumn(name = "owner_id", nullable = false)
 	private ProcessOwner owner;
+
+	public BackgroundProcessEntity(final ProcessOwner owner) {
+		this.owner = owner;
+		// TODO set dynamically via properties
+		this.endpoint = 3;
+		this.processUrl = "/calculate_descriptive_statistics";
+	}
 
 	@Nullable
 	public String getConfiguration() {

@@ -70,6 +70,7 @@ public class ProjectService {
 	 * @return The projects of the user.
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
 	 */
+	@Transactional
 	public ProjectEntity createProject(final UserEntity user) throws InternalApplicationConfigurationException {
 		if (hasProject(user)) {
 			return user.getProject();
@@ -119,6 +120,7 @@ public class ProjectService {
 					case EVALUATION -> new EvaluationProcessingEntity();
 				};
 
+				job.setEndpoint(stepConfiguration.getExternalServerEndpointIndex());
 				job.setStep(jobStep);
 				stage.addProcess(job);
 			}

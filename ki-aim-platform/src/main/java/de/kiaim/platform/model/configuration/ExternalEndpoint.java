@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.platform.helper.KiAimConfigurationPostProcessor;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.enumeration.StepInputEncoding;
+import de.kiaim.platform.model.enumeration.StepOutputEncoding;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,6 +61,12 @@ public class ExternalEndpoint {
 	 */
 	@JsonIgnore
 	private List<StepInputConfiguration> inputs;
+
+	/**
+	 * Input data sets.
+	 */
+	@JsonIgnore
+	private List<StepOutputConfiguration> outputs = new ArrayList<>();
 
 	/**
 	 * Maximum number of processes that are allowed to run in parallel.

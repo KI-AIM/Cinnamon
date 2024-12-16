@@ -10,10 +10,9 @@ import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.repository.BackgroundProcessRepository;
-import de.kiaim.platform.repository.ExternalProcessRepository;
-import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProcessService;
+import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.StepService;
 import de.kiaim.test.platform.ContextRequiredTest;
 import mockwebserver3.MockResponse;
@@ -30,6 +29,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -57,15 +57,15 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@BeforeEach
 	void setUpMockWebServer() throws IOException {
-		ProjectRepository projectRepository = mock(ProjectRepository.class);
 		BackgroundProcessRepository backgroundProcessRepository = mock(BackgroundProcessRepository.class);
-		ExternalProcessRepository externalProcessRepository = mock(ExternalProcessRepository.class);
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
+		ProjectService projectService = mock(ProjectService.class);
 
-		this.processService = new ProcessService(serializationConfig, port, kiAimConfiguration, backgroundProcessRepository, externalProcessRepository,
-		                                         projectRepository, csvProcessor, databaseService, stepService);
+		this.processService = new ProcessService(serializationConfig, port, kiAimConfiguration,
+		                                         backgroundProcessRepository, csvProcessor, databaseService,
+		                                         projectService, stepService);
 
 		mockBackEnd = new MockWebServer();
 		mockBackEnd.start(mockBackEndPort);
@@ -85,7 +85,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
 		externalProcess.setStep(Step.ANONYMIZATION);
-		ReflectionTestUtils.setField(externalProcess, "id", 1L);
+		externalProcess.setUuid(UUID.randomUUID());
 
 		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
 		executionStep.setCurrentProcessIndex(0);
@@ -118,7 +118,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
 		externalProcess.setStep(Step.ANONYMIZATION);
-		ReflectionTestUtils.setField(externalProcess, "id", 1L);
+		externalProcess.setUuid(UUID.randomUUID());
 
 		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
 		executionStep.setCurrentProcessIndex(0);

@@ -18,6 +18,13 @@ import org.springframework.lang.Nullable;
 public class OriginalDataEntity extends ProcessOwner {
 
 	/**
+	 * ID and primary key.
+	 */
+//	@Id
+//	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+//	private Long id;
+
+	/**
 	 * File containing the original data.
 	 */
 	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
@@ -35,27 +42,18 @@ public class OriginalDataEntity extends ProcessOwner {
 	private DataSetEntity dataSet = null;
 
 	/**
-	 * Statistics about the original data set.
-	 */
-	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-	@JoinColumn(name = "statistics", referencedColumnName = "id", nullable = true)
-	@Setter
-	@Nullable
-	private LobWrapperEntity statistics = null;
-
-	/**
 	 * Process for calculating the statistics.
 	 */
-	@OneToOne(optional = false, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-	@JoinColumn(name= "process_id", referencedColumnName = "id", nullable = false)
+	@OneToOne(mappedBy = "owner", optional = false, orphanRemoval = true, cascade = CascadeType.ALL)
 	@Getter
-	private final BackgroundProcessEntity process = new BackgroundProcessEntity();
+	private final BackgroundProcessEntity process = new BackgroundProcessEntity(this);
 
 	/**
 	 * The corresponding project.
 	 */
 	@JsonIgnore
-	@OneToOne(mappedBy = "originalData", optional = false, orphanRemoval = false, cascade = CascadeType.ALL)
+//	@OneToOne(mappedBy = "originalData", optional = false, orphanRemoval = false, cascade = CascadeType.ALL)
+	@OneToOne()
 	private ProjectEntity project;
 
 	/**
@@ -79,5 +77,9 @@ public class OriginalDataEntity extends ProcessOwner {
 		if (newDataSet != null && newDataSet.getOriginalData() != this) {
 			newDataSet.setOriginalData(this);
 		}
+	}
+
+	public LobWrapperEntity getStatistics() {
+		return this.process.getResultFiles().get("metrics.yml");
 	}
 }

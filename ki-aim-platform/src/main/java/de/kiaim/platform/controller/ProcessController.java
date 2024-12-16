@@ -27,6 +27,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import java.util.UUID;
+
 /**
  * Controller for managing external processes.
  * TODO add /project/{id}
@@ -239,22 +241,10 @@ public class ProcessController {
 	)
 	public ResponseEntity<String> callback(
 			@Parameter(description = "Id of the process to mark as finished.")
-			@PathVariable final String processId,
-			@RequestParam(name = "synthetic_data", required = false) final MultipartFile syntheticData,
-			@RequestParam(name = "anonymized_dataset", required = false) final MultipartFile anonData,
-			@RequestParam(name = "train", required = false) final MultipartFile trainingData,
-			@RequestParam(name = "test", required = false) final MultipartFile test,
-			@RequestParam(name = "model", required = false) final MultipartFile model,
-			@RequestParam(name = "exception_message", required = false) final MultipartFile exceptionMessage,
-			@RequestParam(name = "metrics_file", required = false) final MultipartFile metrics,
-			@RequestParam(name = "error_message", required = false) final MultipartFile errorMessage,
+			@PathVariable final UUID processId,
 			final MultipartHttpServletRequest request
-			) throws ApiException {
-		if (processId.startsWith(StatisticsService.ID_PREFIX)) {
-			statisticsService.finishStatistics(processId, metrics);
-		} else {
-			processService.finishProcess(Long.parseLong(processId), request.getFileMap().entrySet());
-		}
+	) throws ApiException {
+		processService.finishProcess(processId, request.getFileMap().entrySet());
 		return ResponseEntity.ok().body(null);
 	}
 

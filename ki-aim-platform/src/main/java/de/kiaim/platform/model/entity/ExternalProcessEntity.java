@@ -18,11 +18,6 @@ import org.springframework.lang.Nullable;
 public abstract class ExternalProcessEntity extends BackgroundProcessEntity {
 
 	/**
-	 * Index of the job within the stage.
-	 */
-	private Integer jobIndex;
-
-	/**
 	 * Associated step of the process.
 	 */
 	@Column(nullable = false)
@@ -37,12 +32,6 @@ public abstract class ExternalProcessEntity extends BackgroundProcessEntity {
 	private String configuration;
 
 	/**
-	 * The corresponding execution step.
-	 */
-	@ManyToOne(fetch = FetchType.EAGER)
-	private ExecutionStepEntity executionStep;
-
-	/**
 	 * Detailed status information.
 	 * Can have any form.
 	 */
@@ -51,10 +40,24 @@ public abstract class ExternalProcessEntity extends BackgroundProcessEntity {
 	private String status;
 
 	/**
+	 * Gets the corresponding execution step.
+	 */
+	public ExecutionStepEntity getExecutionStep() {
+		return (ExecutionStepEntity) this.getOwner();
+	}
+
+	/**
+	 * Sets the corresponding execution step.
+	 */
+	public void setExecutionStep(final ExecutionStepEntity executionStep) {
+		this.setOwner(executionStep);
+	}
+
+	/**
 	 * Returns the corresponding project.
 	 * @return The corresponding project.
 	 */
 	public ProjectEntity getProject() {
-		return executionStep.getProject();
+		return getExecutionStep().getProject();
 	}
 }

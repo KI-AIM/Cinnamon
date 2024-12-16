@@ -36,6 +36,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
@@ -136,7 +137,7 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("processes[0].processSteps").value(nullValue()))
 		       .andExpect(jsonPath("processes[1].externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
 		       .andExpect(jsonPath("processes[1].step").value(Step.SYNTHETIZATION.name()))
-		       .andExpect(jsonPath("processes.[1].status").value(nullValue()))
+		       .andExpect(jsonPath("processes[1].status").value(nullValue()))
 		       .andExpect(jsonPath("processes[1].processSteps").value(nullValue()));
 
 		// Test state changes
@@ -222,7 +223,10 @@ public class ProcessControllerTest extends ControllerTest {
 		response.setPid("123");
 
 		// Send callback request
-		var resultData = ResourceHelper.loadCsvFile("synthetic_data");
+		var abc = new MockMultipartFile("anonymized_dataset", "additional.txt", MediaType.TEXT_PLAIN_VALUE,
+		                                DataSetTestHelper.generateDataSetAsJson().getBytes());
+
+		var resultData =  ResourceHelper.loadCsvFile("anonymized_dataset");
 		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
 		                                                                 "info".getBytes());
@@ -232,8 +236,10 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 		mockMvc.perform(multipart("/api/process/" + id + "/callback")
-				                .file(resultData)
-				                .file(resultAdditional))
+				                .file(abc)
+				                .file(resultAdditional)
+//				                .param("anonymized_dataset", abc)
+		       )
 		       .andExpect(status().isOk());
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("POST", recordedRequest.getMethod());
@@ -429,7 +435,9 @@ public class ProcessControllerTest extends ControllerTest {
 		project = projectService.getProject(user);
 
 		// Check if the second process is running
-		assertEquals(ProcessStatus.RUNNING, project.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get().getExternalProcessStatus());
+		assertEquals(ProcessStatus.RUNNING,
+		             project.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get()
+		                    .getExternalProcessStatus());
 	}
 
 	@Test
@@ -525,13 +533,14 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void finishInvalidProcess() throws Exception {
+		final String id = UUID.randomUUID().toString();
 		final MockMultipartFile result = new MockMultipartFile("synthetic_data", "result.csv",
 		                                                       MediaType.TEXT_PLAIN_VALUE,
 		                                                       "result".getBytes());
-		mockMvc.perform(multipart("/api/process/0/callback")
+		mockMvc.perform(multipart("/api/process/" + id + "/callback")
 				                .file(result))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("No process with the given ID '0' exists!"));
+		       .andExpect(errorMessage("No process with the given ID '" + id + "' exists!"));
 	}
 
 }

@@ -46,9 +46,10 @@ public class ExecutionStepEntity extends ProcessOwner {
 	/**
 	 * Processes in this step.
 	 */
-	@OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "owner", orphanRemoval = true, cascade = CascadeType.ALL)
 	@OrderBy("jobIndex")
-	private final List<ExternalProcessEntity> processes = new ArrayList<>();
+//			@Transient
+	private List<BackgroundProcessEntity> processes = new ArrayList<>();
 
 	/**
 	 * The corresponding pipeline.
@@ -62,7 +63,7 @@ public class ExecutionStepEntity extends ProcessOwner {
 	 * @param externalProcess The process to be added.
 	 */
 	public void addProcess(final ExternalProcessEntity externalProcess) {
-		if (!processes.contains(externalProcess)) {
+		if (!this.containsJob(externalProcess.getStep())) {
 			externalProcess.setJobIndex(processes.size());
 			externalProcess.setExecutionStep(this);
 			processes.add(externalProcess);
@@ -75,7 +76,7 @@ public class ExecutionStepEntity extends ProcessOwner {
 	 * @return The process.
 	 */
 	public Optional<ExternalProcessEntity> getProcess(final Step step) {
-		for (final ExternalProcessEntity externalProcess : processes) {
+		for (final ExternalProcessEntity externalProcess : getProcesses()) {
 			if (externalProcess.getStep().equals(step)) {
 				return Optional.of(externalProcess);
 			}
@@ -85,7 +86,7 @@ public class ExecutionStepEntity extends ProcessOwner {
 	}
 
 	public ExternalProcessEntity getProcess(final Integer index) {
-		return processes.get(index);
+		return (ExternalProcessEntity) processes.get(index);
 	}
 
 	/**
@@ -110,8 +111,33 @@ public class ExecutionStepEntity extends ProcessOwner {
 		return getProcess(currentProcessIndex);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public ProjectEntity getProject() {
 		return pipeline.getProject();
+	}
+
+	public List<ExternalProcessEntity> getProcesses() {
+		List<ExternalProcessEntity> processes = new ArrayList<>();
+		for (final BackgroundProcessEntity externalProcess : this.processes) {
+			processes.add((ExternalProcessEntity) externalProcess);
+		}
+		return processes;
+	}
+
+	/**
+	 * Checks if this stage contains a job for the given step.
+	 * @param step The step.
+	 * @return If this stage contains a job for the given step.
+	 */
+	private boolean containsJob(final Step step) {
+		for (final ExternalProcessEntity externalProcess : getProcesses()) {
+			if (externalProcess.getStep().equals(step)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

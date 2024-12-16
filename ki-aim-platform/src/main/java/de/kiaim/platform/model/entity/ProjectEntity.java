@@ -38,7 +38,8 @@ public class ProjectEntity {
 	 * The original data.
 	 */
 	@OneToOne(optional = false, fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
-	@JoinColumn(name = "original_data_id", referencedColumnName = "id")
+//	@OneToOne()
+	@JoinColumn(name = "original_data_id", referencedColumnName = "id", nullable = false)
 	private OriginalDataEntity originalData = new OriginalDataEntity(this);
 
 	/**

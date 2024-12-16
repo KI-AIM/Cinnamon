@@ -27,11 +27,11 @@ public class KiAimConfiguration {
 
 	private Map<Step, StageConfiguration> stages = new HashMap<>();
 
-//	private List<ExternalServer> externalServer = new ArrayList<>();
-
 	private Map<Integer, ExternalServer> externalServer = new HashMap<>();
 
 	private Map<Integer, ExternalEndpoint> externalServerEndpoints = new HashMap<>();
+
+	private Integer statisticsEndpoint;
 
 	@NestedConfigurationProperty
 	private PipelineConfiguration pipeline = new PipelineConfiguration();

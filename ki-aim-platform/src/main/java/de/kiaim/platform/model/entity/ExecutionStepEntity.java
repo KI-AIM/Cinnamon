@@ -48,7 +48,6 @@ public class ExecutionStepEntity extends ProcessOwner {
 	 */
 	@OneToMany(mappedBy = "owner", orphanRemoval = true, cascade = CascadeType.ALL)
 	@OrderBy("jobIndex")
-//			@Transient
 	private List<BackgroundProcessEntity> processes = new ArrayList<>();
 
 	/**

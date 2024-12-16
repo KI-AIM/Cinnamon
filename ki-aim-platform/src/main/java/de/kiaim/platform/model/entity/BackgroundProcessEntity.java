@@ -17,7 +17,6 @@ import java.util.UUID;
 @NoArgsConstructor
 public class BackgroundProcessEntity {
 
-
 	/**
 	 * Index of the job within the stage.
 	 */
@@ -91,23 +90,39 @@ public class BackgroundProcessEntity {
 	@JoinColumn(name = "lob_id")
 	private final Map<String, LobWrapperEntity> resultFiles = new HashMap<>();
 
-//	@ManyToOne(optional = false, cascade = CascadeType.PERSIST)
-	@ManyToOne()
+	/**
+	 * Owner of the process.
+	 */
+	@ManyToOne(optional = false, cascade = CascadeType.PERSIST)
 	@JoinColumn(name = "owner_id", nullable = false)
 	private ProcessOwner owner;
 
+	/**
+	 * Creates a new process for the given owner.
+	 *
+	 * @param owner The owner of the process.
+	 */
 	public BackgroundProcessEntity(final ProcessOwner owner) {
 		this.owner = owner;
-		// TODO set dynamically via properties
-		this.endpoint = 3;
-		this.processUrl = "/calculate_descriptive_statistics";
 	}
 
+	/**
+	 * Returns the configuration string of this process.
+	 * Can be overwritten by other process entities.
+	 * The basic background process does not have a configuration and null is always returned.
+	 *
+	 * @return The configuration string. Is always null.
+	 */
 	@Nullable
 	public String getConfiguration() {
 		return null;
 	}
 
+	/**
+	 * The project this process belongs to.
+	 *
+	 * @return The corresponding project.
+	 */
 	public ProjectEntity getProject() {
 		return owner.getProject();
 	}

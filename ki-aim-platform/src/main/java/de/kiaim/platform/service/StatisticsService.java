@@ -1,6 +1,7 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.platform.exception.*;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
 import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import org.springframework.lang.Nullable;
@@ -15,11 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class StatisticsService {
 
+	private final KiAimConfiguration kiAimConfiguration;
+
 	private final ProcessService processService;
 
 	public StatisticsService(
+			final KiAimConfiguration kiAimConfiguration,
 			final ProcessService processService
 	) {
+		this.kiAimConfiguration = kiAimConfiguration;
 		this.processService = processService;
 	}
 
@@ -37,7 +42,8 @@ public class StatisticsService {
 		} else {
 			if (statisticsProcess.getExternalProcessStatus() == ProcessStatus.NOT_STARTED ||
 			    statisticsProcess.getExternalProcessStatus() == ProcessStatus.ERROR) {
-				processService.startOrScheduleBackendProcess(project.getOriginalData().getProcess());
+				statisticsProcess.setEndpoint(kiAimConfiguration.getStatisticsEndpoint());
+				processService.startOrScheduleBackendProcess(statisticsProcess);
 			}
 			return null;
 		}

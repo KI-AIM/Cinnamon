@@ -18,13 +18,6 @@ import org.springframework.lang.Nullable;
 public class OriginalDataEntity extends ProcessOwner {
 
 	/**
-	 * ID and primary key.
-	 */
-//	@Id
-//	@GeneratedValue(strategy = GenerationType.SEQUENCE)
-//	private Long id;
-
-	/**
 	 * File containing the original data.
 	 */
 	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
@@ -52,8 +45,7 @@ public class OriginalDataEntity extends ProcessOwner {
 	 * The corresponding project.
 	 */
 	@JsonIgnore
-//	@OneToOne(mappedBy = "originalData", optional = false, orphanRemoval = false, cascade = CascadeType.ALL)
-	@OneToOne()
+	@OneToOne(mappedBy = "originalData", optional = false, orphanRemoval = false, cascade = CascadeType.ALL)
 	private ProjectEntity project;
 
 	/**

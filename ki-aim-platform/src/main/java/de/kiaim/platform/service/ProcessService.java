@@ -721,7 +721,8 @@ public class ProcessService {
 		// Do the request
 		try {
 			final String serverUrl = es.getUrlServer();
-			final String url = externalProcess.getProcessUrl();
+			final String url = endpoint.getProcessEndpoint().isBlank() ? externalProcess.getProcessUrl()
+			                                                           : endpoint.getProcessEndpoint();
 
 			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
 			final var response = webClient.post()

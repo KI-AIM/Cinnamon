@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { filter, interval, Observable, switchMap, take, timer } from "rxjs";
+import { filter, Observable, switchMap, take, timer } from "rxjs";
 import { Statistics } from "../../model/statistics";
 import {StatisticsService} from "../../services/statistics.service";
 

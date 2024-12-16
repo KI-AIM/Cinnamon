@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.platform.helper.KiAimConfigurationPostProcessor;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.enumeration.StepInputEncoding;
-import de.kiaim.platform.model.enumeration.StepOutputEncoding;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -37,6 +36,11 @@ public class ExternalEndpoint {
 	@JsonIgnore
 	@NotBlank
 	private String cancelEndpoint;
+
+	/**
+	 * Endpoint used if used cannot select an algorithm.
+	 */
+	private String processEndpoint = "";
 
 	/**
 	 * Name of the configuration.
@@ -79,12 +83,12 @@ public class ExternalEndpoint {
 	 * List of required pre-processors for this step.
 	 */
 	@JsonIgnore
-	private List<String> preProcessors;
+	private List<String> preProcessors = new ArrayList<>();
 
 	/**
 	 * Endpoint for retrieving the status.
 	 */
-	private String statusEndpoint;
+	private String statusEndpoint = "";
 
 	//=========================
 	//--- Automatically set ---

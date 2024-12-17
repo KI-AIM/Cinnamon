@@ -31,7 +31,7 @@ export class ExecutionService extends ExecutionStepService {
         return "EXECUTION";
     }
 
-    protected override setCustomStatus(key: Steps, status: string | null): void {
+    protected override setCustomStatus(key: Steps, status: string | null, processSteps: Steps[]): void {
         if (areEnumValuesEqual(Steps, key, Steps.SYNTHETIZATION)) {
             if (status === null) {
                 this._synthProcess = null;

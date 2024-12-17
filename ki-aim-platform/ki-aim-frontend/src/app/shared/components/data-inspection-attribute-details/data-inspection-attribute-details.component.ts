@@ -9,6 +9,8 @@ import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
 import { SortDirection, SortType } from "../../pipes/metric-sorter.pipe";
 import {MatDialog} from "@angular/material/dialog";
+import {Steps} from "../../../core/enums/steps";
+import {processEnumValue} from "../../helper/enum-helper";
 
 @Component({
     selector: 'app-data-inspection-attribute-details',
@@ -22,6 +24,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
     @Input() public mainData: 'real' | 'synthetic' = 'real';
+    @Input() public processingSteps: Steps[] = [];
 
     protected graphType: string = 'histogram';
     protected hasSynthetic: boolean = false;
@@ -32,6 +35,8 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
 
     protected metricInfo: StatisticsValues | StatisticsValuesNominal<any>;
 
+    protected datasetDisplayName: string;
+
     constructor(
         private dialog: MatDialog,
         protected statisticsService: StatisticsService,
@@ -39,9 +44,10 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
-
         this.hasSynthetic = this.attributeStatistics.important_metrics.mean?.values.synthetic != null
             || this.attributeStatistics.important_metrics.mode?.values.synthetic != null;
+
+        this.datasetDisplayName = this.getSyntheticName();
     }
 
     protected sort(type: SortType): void {
@@ -56,10 +62,6 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
             this.metricSortColumn = type;
             this.metricSortDirection = 'asc';
         }
-    }
-
-    protected get dataType(): DataType {
-        return this.attributeStatistics.attribute_information.type;
     }
 
     protected getImportantMetrics(): StatisticsValueTypes[] {
@@ -108,6 +110,23 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         }
 
         return "N/A";
+    }
+
+    /**
+     * Creates the name of the dataset based on the steps applied to this dataset.
+     * @protected
+     */
+    private getSyntheticName(): string {
+        const names = ['','','','','','','','',''];
+        names[Steps.ANONYMIZATION] = "Anonymized";
+        names[Steps.SYNTHETIZATION] = "Synthesized";
+
+        let syntheticName = this.processingSteps
+            .map(value => processEnumValue(Steps, value))
+            .map(value => names[value])
+            .join(" and ");
+        syntheticName = syntheticName + " Values"
+        return syntheticName;
     }
 
     /**

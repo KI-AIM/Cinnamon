@@ -7,6 +7,7 @@ import {MatDialog} from "@angular/material/dialog";
 import { AttributeStatistics } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
+import {Steps} from "../../../core/enums/steps";
 
 @Component({
     selector: 'app-data-inspection-attribute',
@@ -18,6 +19,7 @@ export class DataInspectionAttributeComponent {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
     @Input() public mainData: 'real' | 'synthetic' = 'real';
+    @Input() public processingSteps: Steps[] = [];
 
     protected graphType = 'histogram';
 

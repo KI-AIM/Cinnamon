@@ -9,6 +9,7 @@ import {Steps} from "../../../core/enums/steps";
 export class EvaluationService extends ExecutionStepService {
 
     private _technicalEvaluationStatus: string | null = null;
+    private _processSteps: Steps[] = [];
 
     constructor(
         http: HttpClient,
@@ -20,11 +21,16 @@ export class EvaluationService extends ExecutionStepService {
         return this._technicalEvaluationStatus;
     }
 
+    public get processSteps(): Steps[] {
+        return this._processSteps;
+    }
+
     protected override getStepName(): string {
         return "EVALUATION";
     }
 
-    protected override setCustomStatus(key: Steps, status: string | null): void {
+    protected override setCustomStatus(key: Steps, status: string | null, processSteps: Steps[]): void {
         this._technicalEvaluationStatus = status;
+        this._processSteps = processSteps;
     }
 }

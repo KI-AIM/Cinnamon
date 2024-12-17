@@ -80,7 +80,7 @@ export abstract class ExecutionStepService implements OnInit {
                 this._status = value;
                 this.setState(value.status);
                 for (const status of value.processes) {
-                    this.setCustomStatus(status.step, status.status);
+                    this.setCustomStatus(status.step, status.status, status.processSteps);
                 }
             },
             error: err => {
@@ -132,7 +132,7 @@ export abstract class ExecutionStepService implements OnInit {
      */
     protected abstract getStepName(): string;
 
-    protected abstract setCustomStatus(key: Steps, status: string | null): void;
+    protected abstract setCustomStatus(key: Steps, status: string | null, processSteps: Steps[]): void;
 
     /**
      * Starts or stops listening to the status based on the given status.
@@ -160,7 +160,7 @@ export abstract class ExecutionStepService implements OnInit {
                 this._status = process;
                 this.setState(process.status);
                 for (const status of process.processes) {
-                    this.setCustomStatus(status.step, status.status);
+                    this.setCustomStatus(status.step, status.status, status.processSteps);
                 }
             },
             error: err => {

@@ -44,9 +44,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.hasSynthetic = this.attributeStatistics.important_metrics.mean?.values.synthetic != null
-            || this.attributeStatistics.important_metrics.mode?.values.synthetic != null;
-
+        this.hasSynthetic = this.mainData == 'synthetic';
         this.datasetDisplayName = this.getSyntheticName();
     }
 

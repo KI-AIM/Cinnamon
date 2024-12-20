@@ -36,7 +36,7 @@ export class StatisticsService {
     ) {
     }
 
-    public get statistics$(): Observable<Statistics> {
+    public get statistics$(): Observable<Statistics | null> {
         if (this._statistics) {
             return of(this._statistics);
         }
@@ -130,11 +130,15 @@ export class StatisticsService {
         return value.toLocaleString(undefined, {maximumFractionDigits});
     }
 
-    private fetchStatistics(): Observable<Statistics> {
+    private fetchStatistics(): Observable<Statistics | null> {
         return this.httpClient.get<string>(this.baseUrl, {responseType: 'text' as 'json'})
             .pipe(
                 map(value => {
-                    return plainToInstance(Statistics, parse( parse(value)));
+                    if (value) {
+                        return plainToInstance(Statistics, parse(parse(value)));
+                    } else {
+                        return null;
+                    }
                 }),
             );
     }

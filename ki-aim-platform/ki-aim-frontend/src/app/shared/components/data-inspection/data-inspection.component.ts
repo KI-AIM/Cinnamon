@@ -20,7 +20,7 @@ export class DataInspectionComponent implements OnInit {
     @Input() public mainData: 'real' | 'synthetic' = 'real';
     @Input() public processingSteps: Steps[] = [];
 
-    protected statistics$: Observable<Statistics>;
+    protected statistics$: Observable<Statistics | null>;
 
     protected filterText: string;
 

@@ -1,20 +1,33 @@
-import {Component, Input, OnInit, TemplateRef} from '@angular/core';
-import {filter, Observable, switchMap, take, tap, timer} from "rxjs";
+import { Component, Input, OnDestroy, OnInit, TemplateRef } from '@angular/core';
+import {
+    debounceTime,
+    distinctUntilChanged,
+    filter, map,
+    Observable, Subscription,
+    switchMap,
+    take,
+    tap,
+    timer
+} from "rxjs";
 import { Statistics } from "../../model/statistics";
-import {StatisticsService} from "../../services/statistics.service";
-import {Steps} from "../../../core/enums/steps";
-import {MatDialog} from "@angular/material/dialog";
-import {AlgorithmDefinition} from "../../model/algorithm-definition";
-import {TechnicalEvaluationService} from "../../../features/technical-evaluation/services/technical-evaluation.service";
-import {FormControl, FormGroup, Validators} from "@angular/forms";
-import {ConfigurationGroupDefinition} from "../../model/configuration-group-definition";
+import { StatisticsService } from "../../services/statistics.service";
+import { Steps } from "../../../core/enums/steps";
+import { MatDialog } from "@angular/material/dialog";
+import { AlgorithmDefinition } from "../../model/algorithm-definition";
+import {
+    TechnicalEvaluationService
+} from "../../../features/technical-evaluation/services/technical-evaluation.service";
+import { FormControl, FormGroup, Validators } from "@angular/forms";
+import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
+import { MetricImportance, MetricImportanceData } from "../../model/project-settings";
+import { ProjectConfigurationService } from "../../services/project-configuration.service";
 
 @Component({
     selector: 'app-data-inspection',
     templateUrl: './data-inspection.component.html',
     styleUrls: ['./data-inspection.component.less']
 })
-export class DataInspectionComponent implements OnInit {
+export class DataInspectionComponent implements OnInit, OnDestroy {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
     @Input() public mainData: 'real' | 'synthetic' = 'real';
@@ -27,9 +40,12 @@ export class DataInspectionComponent implements OnInit {
     protected algorithmDefinition$: Observable<AlgorithmDefinition>;
     protected importanceForm: FormGroup;
 
+    private updateSubscription: Subscription | null = null;
+
     constructor(
-        private readonly tes: TechnicalEvaluationService,
+        private readonly technicalEvaluationService: TechnicalEvaluationService,
         private readonly matDialog: MatDialog,
+        private readonly projectSettingsService: ProjectConfigurationService,
         private readonly statisticsService: StatisticsService,
     ) {
         this.importanceForm = new FormGroup({});
@@ -51,14 +67,33 @@ export class DataInspectionComponent implements OnInit {
             );
         }
 
-        this.algorithmDefinition$ = this.tes.algorithms.pipe(
+        // Prepare observable for metric configuration form
+        this.algorithmDefinition$ = this.technicalEvaluationService.algorithms.pipe(
             switchMap(value => {
-                return this.tes.getAlgorithmDefinition(value[0]);
+                return this.technicalEvaluationService.getAlgorithmDefinition(value[0]);
             }),
             tap(value => {
+                // Create form
                 this.createForm(value);
             }),
+            switchMap(value => {
+                // Load initial values from backend
+                return this.projectSettingsService.projectSettings$.pipe(
+                    tap(value1 => {
+                        this.importanceForm.patchValue(value1.metricConfiguration);
+                    }),
+                    map(() => {
+                        return value;
+                    }),
+                );
+            }),
         );
+    }
+
+    ngOnDestroy(): void {
+        if (this.updateSubscription !== null) {
+            this.updateSubscription.unsubscribe();
+        }
     }
 
     protected openDialog(templateRef: TemplateRef<any>) {
@@ -67,68 +102,57 @@ export class DataInspectionComponent implements OnInit {
         });
     }
 
-    protected readonly MetricImportance = MetricImportance;
-    protected readonly Object = Object;
-
-    protected readonly MetricImportanceLabels: {[key in MetricImportance]: {label: string}} = {
-        IMPORTANT : {
-            label: 'Important',
-        },
-        ADDITIONAL: {
-            label: 'Additional',
-        },
-        NOT_RELEVANT: {
-            label: 'Not Relevant',
-        }
-    }
-
     private createForm(algorithmDefinition: AlgorithmDefinition): void {
-        const formGroup: any = {};
-        if (algorithmDefinition.configurations) {
-            this.createGroups(formGroup, algorithmDefinition.configurations);
-        }
-        if (algorithmDefinition.options) {
-            Object.keys(algorithmDefinition.options).forEach(inputDefinition => {
-                // Add validators of the input
-                const validators = [Validators.required];
-                formGroup[inputDefinition] = new FormControl({}, validators)
-            });
-            // this.createGroups(formGroup, algorithmDefinition.options);
-        }
-        this.importanceForm = new FormGroup(formGroup);
-    }
+        const group: any = {};
+        this.createGroup(group, algorithmDefinition);
+        this.importanceForm = new FormGroup(group);
 
-    private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }) {
-        Object.entries(configurations).forEach(([name, groupDefinition]) => {
-            formGroup[name] = this.createGroup(groupDefinition);
+        if (this.updateSubscription !== null) {
+            this.updateSubscription.unsubscribe();
+        }
+        this.updateSubscription = this.importanceForm.valueChanges.pipe(
+            debounceTime(300),
+            distinctUntilChanged(),
+            switchMap(value => {
+                return this.projectSettingsService.projectSettings$.pipe(
+                    tap(value1 => {
+                       value1.metricConfiguration = value;
+                    }),
+                );
+            }),
+            switchMap(value => {
+                return this.projectSettingsService.setProjectSettings(value);
+            }),
+        ).subscribe({
+            error: value => {
+                // Upload of config failed
+                console.error(value);
+            }
         });
     }
 
-    private createGroup(groupDefinition: ConfigurationGroupDefinition): FormGroup {
-        const group: any = {};
+    private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }) {
+        Object.values(configurations).forEach((groupDefinition) => {
+            this.createGroup(formGroup, groupDefinition);
+        });
+    }
 
-        if (groupDefinition.parameters) {
-            groupDefinition.parameters.forEach(inputDefinition => {
-                // Add validators of the input
-                const validators = [Validators.required];
-                group[inputDefinition.name] = new FormControl({}, validators)
-            });
-        }
-
+    private createGroup(group: any, groupDefinition: ConfigurationGroupDefinition): void {
         if (groupDefinition.configurations) {
             this.createGroups(group, groupDefinition.configurations);
         }
         if (groupDefinition.options) {
-            this.createGroups(group, groupDefinition.options);
+            Object.keys(groupDefinition.options).forEach(inputDefinition => {
+                const validators = [Validators.required];
+                group[inputDefinition] = new FormControl({
+                    value: MetricImportance.IMPORTANT,
+                    disabled: false
+                }, validators)
+            });
         }
-
-        return new FormGroup(group);
     }
 
-}
-
-enum MetricImportance {
-    IMPORTANT = "IMPORTANT",
-    ADDITIONAL = "ADDITIONAL",
-    NOT_RELEVANT = "NOT_RELEVANT",
+    protected readonly MetricImportanceData = MetricImportanceData;
+    protected readonly MetricImportance = MetricImportance;
+    protected readonly Object = Object;
 }

@@ -33,20 +33,20 @@
     <mat-dialog-content class="mat-typography" style="background-color: #F5F5F5;">
         <div *ngIf="algorithmDefinition$ | async as algorithmDefinition">
             <div [formGroup]="importanceForm">
-                <div *ngFor="let configGroup of algorithmDefinition.configurations | keyvalue" [formGroupName]="configGroup.key">
+                <div *ngFor="let configGroup of algorithmDefinition.configurations | keyvalue">
                     <span>{{ configGroup.value.display_name }}</span>
                     <div *ngFor="let optionGroup of configGroup.value.options | keyvalue">
 
                         <div>
                             <span>{{ optionGroup.value.display_name }}</span>
-                            <span>{{ optionGroup.value.description }}</span>
+<!--                            <span>{{ optionGroup.value.description }}</span>-->
                         </div>
 
                         <mat-form-field class="d-block">
 <!--                            <mat-label>{{ optionGroup.value.display_name }}</mat-label>-->
                             <mat-select [formControlName]="optionGroup.key" [id]="optionGroup.key">
                             <mat-option *ngFor="let importance of Object.values(MetricImportance)" [value]="importance">
-                                    {{ MetricImportanceLabels[importance].label }}
+                                    {{ MetricImportanceData[importance].label }}
                                 </mat-option>
                             </mat-select>
                         </mat-form-field>

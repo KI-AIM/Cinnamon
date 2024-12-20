@@ -45,7 +45,7 @@ public class DatabaseTest extends ContextRequiredTest {
 	@Autowired
 	DatabaseService databaseService;
 	@Autowired
-	ProjectService projectService;
+	protected ProjectService projectService;
 
 	protected UserEntity testUser;
 	protected ProjectEntity testProject;

@@ -35,10 +35,16 @@ public class ProjectEntity {
 	private StatusEntity status = new StatusEntity(this);
 
 	/**
+	 * User configuration of the project.
+	 */
+	@OneToOne(optional = false, fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+	@JoinColumn(name = "project_configuration_id", referencedColumnName = "id")
+	private ProjectConfigurationEntity projectConfiguration = new ProjectConfigurationEntity(this);
+
+	/**
 	 * The original data.
 	 */
 	@OneToOne(optional = false, fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
-//	@OneToOne()
 	@JoinColumn(name = "original_data_id", referencedColumnName = "id", nullable = false)
 	private OriginalDataEntity originalData = new OriginalDataEntity(this);
 

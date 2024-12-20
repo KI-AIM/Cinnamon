@@ -3,11 +3,13 @@ package de.kiaim.platform.controller;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.ErrorResponse;
+import de.kiaim.platform.model.dto.ProjectConfigurationDTO;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.StatusEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.mapper.ProjectConfigurationMapper;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,9 +38,13 @@ public class ProjectController {
 	private final ProjectService projectService;
 	private final UserService userService;
 
-	public ProjectController(final ProjectService projectService, final UserService userService) {
+	private final ProjectConfigurationMapper projectConfigurationMapper;
+
+	public ProjectController(final ProjectService projectService, final UserService userService,
+	                         final ProjectConfigurationMapper projectConfigurationMapper) {
 		this.projectService = projectService;
 		this.userService = userService;
+		this.projectConfigurationMapper = projectConfigurationMapper;
 	}
 
 	@Operation(summary = "Creates a projects with the given mode.",
@@ -74,6 +81,40 @@ public class ProjectController {
 	) {
 		return projectService.getProject(requestUser).getStatus();
 	}
+
+
+	@Operation(summary = "Returns the configuration of the user's project.",
+	           description = "Returns the configuration of the user's project.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Response contains the configurations.",
+			             content = @Content(schema = @Schema(implementation = ProjectConfigurationDTO.class))),
+	})
+	@GetMapping(value = "/configuration", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ProjectConfigurationDTO getProjectConfiguration(
+			@AuthenticationPrincipal final UserEntity requestUser
+	) {
+		final var project = projectService.getProject(requestUser);
+		return projectConfigurationMapper.toDto(project.getProjectConfiguration());
+	}
+
+	@Operation(summary = "Updates the configuration of the user's project.",
+	           description = "Updates the configuration of the user's project.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "The configuration has been updated.",
+			             content = @Content()),
+	})
+	@PutMapping(value = "/configuration", consumes = {MediaType.APPLICATION_JSON_VALUE})
+	public void getProjectConfiguration(
+			@RequestBody @Valid final ProjectConfigurationDTO projectConfigurationDTO,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) {
+		final var project = projectService.getProject(requestUser);
+		projectConfigurationMapper.updateEntity(project.getProjectConfiguration(), projectConfigurationDTO);
+		projectService.saveProject(project);
+	}
+
 
 	@Operation(summary = "Creates a ZIP file containing all files related to the project.",
 	           description = "Creates a ZIP file containing all files related to the project.")

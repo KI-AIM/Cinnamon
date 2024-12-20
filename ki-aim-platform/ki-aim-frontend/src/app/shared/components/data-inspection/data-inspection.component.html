@@ -1,3 +1,10 @@
+
+<div class="w-100">
+    <button mat-raised-button mat-dialog-close color="primary" type="button"
+            (click)="openDialog(metricSelectionDialog)">Details
+    </button>
+</div>
+
 <mat-form-field class="w-100">
     <mat-label>Search</mat-label>
     <input type="text" matInput [(ngModel)]="filterText"/>
@@ -20,3 +27,35 @@
         </div>
     </div>
 </div>
+
+<ng-template #metricSelectionDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Metric Priority</h2>
+    <mat-dialog-content class="mat-typography" style="background-color: #F5F5F5;">
+        <div *ngIf="algorithmDefinition$ | async as algorithmDefinition">
+            <div [formGroup]="importanceForm">
+                <div *ngFor="let configGroup of algorithmDefinition.configurations | keyvalue" [formGroupName]="configGroup.key">
+                    <span>{{ configGroup.value.display_name }}</span>
+                    <div *ngFor="let optionGroup of configGroup.value.options | keyvalue">
+
+                        <div>
+                            <span>{{ optionGroup.value.display_name }}</span>
+                            <span>{{ optionGroup.value.description }}</span>
+                        </div>
+
+                        <mat-form-field class="d-block">
+<!--                            <mat-label>{{ optionGroup.value.display_name }}</mat-label>-->
+                            <mat-select [formControlName]="optionGroup.key" [id]="optionGroup.key">
+                            <mat-option *ngFor="let importance of Object.values(MetricImportance)" [value]="importance">
+                                    {{ MetricImportanceLabels[importance].label }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
+    </mat-dialog-actions>
+</ng-template>

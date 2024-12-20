@@ -8,7 +8,6 @@ import { ConfigurationGroupDefinition } from "../../model/configuration-group-de
 import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { HttpErrorResponse } from "@angular/common/http";
-import { LoadingService } from '../../services/loading.service';
 
 /**
  * HTML form and submit button for one algorithm.
@@ -88,7 +87,7 @@ export class ConfigurationFormComponent implements OnInit {
                             this.loadComponents();
                         }, 200);
 
-                        this.form.valueChanges.subscribe(value => {
+                        this.form.valueChanges.subscribe(() => {
                             this.onChange.emit();
                         });
                     },
@@ -169,14 +168,7 @@ export class ConfigurationFormComponent implements OnInit {
      * @private
      */
     private createForm(algorithmDefinition: AlgorithmDefinition): FormGroup {
-        const formGroup: any = {};
-        if (algorithmDefinition.configurations) {
-            this.createGroups(formGroup, algorithmDefinition.configurations);
-        }
-        if (algorithmDefinition.options) {
-            this.createGroups(formGroup, algorithmDefinition.options);
-        }
-        return new FormGroup(formGroup);
+        return this.createGroup(algorithmDefinition);
     }
 
     private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }) {
@@ -242,7 +234,7 @@ export class ConfigurationFormComponent implements OnInit {
      */
     loadComponents() {
         this.additionalConfigs?.configs.forEach(config => {
-            var componentRef: any = this.componentContainer.createComponent(config.component);
+            const componentRef: any = this.componentContainer.createComponent(config.component);
             componentRef.instance.form = this.form;
         });
     }

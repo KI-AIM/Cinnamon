@@ -1,7 +1,8 @@
 package de.kiaim.anon.exception;
 
-public class ResultDatasetProcessingException extends RuntimeException {
+public class ResultDatasetProcessingException extends AnonymizationException {
+
     public ResultDatasetProcessingException(String message) {
-        super(message);
+        super("ANON_4_1", "Failed to generate DataSet object with the anonymized dataset."+ message);
     }
 }

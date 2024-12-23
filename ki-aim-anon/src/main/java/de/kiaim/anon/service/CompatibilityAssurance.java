@@ -1,6 +1,5 @@
 package de.kiaim.anon.service;
 
-import de.kiaim.anon.exception.AttributeMismatchException;
 import de.kiaim.anon.exception.CompatibilityAssuranceException;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAttributeConfig;

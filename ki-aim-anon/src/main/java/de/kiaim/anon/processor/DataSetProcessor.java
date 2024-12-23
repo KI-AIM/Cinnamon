@@ -34,7 +34,7 @@ public class DataSetProcessor {
                 rowsList.add(rowList.toArray(new String[0]));
             }
         } catch (Exception e) {
-            throw new JALDataGenerationException("Error while converting dataset to string array. error : "+ e);
+            throw new JALDataGenerationException(" error : "+ e);
         }
         return rowsList.toArray(new String[0][]);
     }

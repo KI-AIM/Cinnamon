@@ -7,7 +7,7 @@ public class NoOptimumFoundException extends RuntimeException {
     private static final String ERROR_CODE = "ANON_1_1";
 
     public NoOptimumFoundException() {
-        super(ERROR_CODE); // Laissez un message par défaut si nécessaire.
+        super(ERROR_CODE);
     }
 
     public String getErrorCode() {

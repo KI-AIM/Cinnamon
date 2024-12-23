@@ -1,5 +1,6 @@
 package de.kiaim.anon.processor;
 
+import de.kiaim.anon.exception.ResultDatasetProcessingException;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.Data;
 import de.kiaim.model.data.DataRow;
@@ -78,7 +79,7 @@ public class AnonymizedDatasetProcessor {
         // Check if interval for numerical values
         if (type == DataType.DECIMAL || type == DataType.INTEGER) {
             if (value.contains(",")) {
-                throw new IllegalArgumentException("Interval values are not allowed for numerical data.");
+                throw new ResultDatasetProcessingException("Interval values are not allowed for numerical data.");
             }
         }
         return value;

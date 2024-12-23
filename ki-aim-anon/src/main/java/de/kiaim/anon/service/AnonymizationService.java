@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.anon.converter.FrontendAnonConfigConverter;
 import de.kiaim.anon.exception.AnonymizationException;
+import de.kiaim.anon.exception.UnexpectedAnonymizationException;
 import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.processor.AnonymizedDatasetProcessor;
 import de.kiaim.anon.processor.DataSetProcessor;
@@ -12,6 +13,7 @@ import de.kiaim.model.data.DataSet;
 import de.kiaim.model.serialization.mapper.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
+import org.bihmi.jal.anon.exception.NoOptimumFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
@@ -118,11 +120,20 @@ public class AnonymizationService {
                 // Send success callback
                 sendCallbackResult(request.getCallback(), result);
                 return result;
+            } catch (NoOptimumFoundException e) {
+                log.error("No optimum found during anonymization", e);
+                sendFailureCallback(request.getCallback(), new de.kiaim.anon.exception.NoOptimumFoundException());
+                return null;
             } catch (AnonymizationException ex) {
                 log.error("An error occurred during data anonymization", ex);
                 sendFailureCallback(request.getCallback(), ex);
                 return null;
+            } catch (Exception e) {
+                log.error("Unexpected error during anonymization", e);
+                sendFailureCallback(request.getCallback(), new UnexpectedAnonymizationException(e));
+                return null;
             }
+
         });
     }
 

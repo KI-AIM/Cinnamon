@@ -1,6 +1,7 @@
 package de.kiaim.anon.converter;
 
 import de.kiaim.anon.config.AnonymizationConfig;
+import de.kiaim.anon.exception.ConvertToJALConfigException;
 import de.kiaim.anon.helper.DatasetAnalyzer;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAttributeConfig;
@@ -36,33 +37,43 @@ public class FrontendAnonConfigConverter {
      * @throws InvalidRiskThresholdException If the risk threshold provided is invalid.
      */
     public static AnonymizationConfig convertToJALConfig(FrontendAnonConfig frontendConfig, DataSet originalDataSet)
-            throws InvalidRiskThresholdException, InvalidAttributeConfigException, InvalidSuppressionLimitException, InvalidGeneralizationSettingException {
+            throws ConvertToJALConfigException {
 
         // Validate the configuration before conversion
-        frontendConfig.validateConfig();
+        try {
+            frontendConfig.validateConfig();
 
-        // Convert the Risk Threshold to Privacy Models
-        Collection<PrivacyModel> privacyModels = convertPrivacyModels(
-                frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getRiskThresholdType(),
-                frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getRiskThresholdValue());
+            // Convert the Risk Threshold to Privacy Models
+            Collection<PrivacyModel> privacyModels = convertPrivacyModels(
+                    frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getRiskThresholdType(),
+                    frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getRiskThresholdValue());
 
-        // Convert the list of FrontendAttributeConfig to AttributeConfig for JAL
-        List<AttributeConfig> attributeConfigs = convertAttributeConfigs(
-                frontendConfig.getAttributeConfiguration(), originalDataSet);
+            // Convert the list of FrontendAttributeConfig to AttributeConfig for JAL
+            List<AttributeConfig> attributeConfigs = convertAttributeConfigs(
+                    frontendConfig.getAttributeConfiguration(), originalDataSet);
 
-        // Create a QualityModelConfig with default values
-        QualityModelConfig qualityModelConfig = new QualityModelConfig();
-        qualityModelConfig.setQualityModelType(QualityModelConfig.QualityModelType.LOSS_METRIC);
+            // Create a QualityModelConfig with default values
+            QualityModelConfig qualityModelConfig = new QualityModelConfig();
+            qualityModelConfig.setQualityModelType(QualityModelConfig.QualityModelType.LOSS_METRIC);
 
-        // Create the AnonymizationConfig object
+            // Create the AnonymizationConfig object
 
-        return new AnonymizationConfig(
-                privacyModels,
-                Double.parseDouble(frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getSuppressionLimit()), // Suppression limit between 0 and 1
-                qualityModelConfig, // Assuming QualityModelConfig needs a setting like "Global" or "Local"
-                frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getGeneralizationSetting().equalsIgnoreCase("Local"), // Local generalization is true if setting is "Local"
-                attributeConfigs
-        );
+            return new AnonymizationConfig(
+                    privacyModels,
+                    Double.parseDouble(frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getSuppressionLimit()), // Suppression limit between 0 and 1
+                    qualityModelConfig, // Assuming QualityModelConfig needs a setting like "Global" or "Local"
+                    frontendConfig.getPrivacyModels().get(0).getModelConfiguration().getGeneralizationSetting().equalsIgnoreCase("Local"), // Local generalization is true if setting is "Local"
+                    attributeConfigs
+            );
+        }catch (InvalidRiskThresholdException e) {
+            throw new ConvertToJALConfigException("Invalid risk threshold: " + e.getMessage());
+        } catch (InvalidAttributeConfigException e) {
+            throw new ConvertToJALConfigException("Invalid attribute configuration: " + e.getMessage());
+        } catch (InvalidGeneralizationSettingException e) {
+            throw new ConvertToJALConfigException("Invalid generalization setting: " + e.getMessage());
+        } catch (InvalidSuppressionLimitException e) {
+            throw new ConvertToJALConfigException("Invalid suppression limit: " + e.getMessage());
+        }
     }
 
     /**
@@ -220,7 +231,7 @@ public class FrontendAnonConfigConverter {
                 }
             }
             if (dateformat == null) {
-                throw new InvalidAttributeConfigException("dateFormat could not be retrieved from DataConfiguration, a DateFormat must be provided for DATE or DATE_TIME attributes.");
+                throw new ConvertToJALConfigException("dateFormat could not be retrieved from DataConfiguration, a DateFormat must be provided for DATE or DATE_TIME attributes.");
             }
         }
         defaultConfig.setDateFormat(dateformat);
@@ -261,7 +272,7 @@ public class FrontendAnonConfigConverter {
                 }
             }
             if (dateformat == null) {
-                throw new InvalidAttributeConfigException("dateFormat could not be retrieved from DataConfiguration, a DateFormat must be provided for DATE or DATE_TIME attributes.");
+                throw new ConvertToJALConfigException("dateFormat could not be retrieved from DataConfiguration, a DateFormat must be provided for DATE or DATE_TIME attributes.");
             }
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0;

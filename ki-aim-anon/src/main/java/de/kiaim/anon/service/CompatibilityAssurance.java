@@ -1,6 +1,7 @@
 package de.kiaim.anon.service;
 
 import de.kiaim.anon.exception.AttributeMismatchException;
+import de.kiaim.anon.exception.CompatibilityAssuranceException;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.model.configuration.anonymization.frontend.FrontendAttributeConfig;
 import de.kiaim.model.configuration.data.ColumnConfiguration;
@@ -37,21 +38,21 @@ public class CompatibilityAssurance {
 
             // Check attribute name
             if (!columnConfig.getName().trim().equals(frontendAttributeConfig.getName().trim())) {
-                throw new AttributeMismatchException("Column name mismatch at index " + i +
+                throw new CompatibilityAssuranceException("Column name mismatch at index " + i +
                         ": DataSet column name is '" + columnConfig.getName() +
                         "', but FrontendConfig attribute name is '" + frontendAttributeConfig.getName() + "'.");
             }
 
             // Check attribute dataType
             if (columnConfig.getType() != frontendAttributeConfig.getDataType()) {
-                throw new AttributeMismatchException("DataType mismatch at index " + i +
+                throw new CompatibilityAssuranceException("DataType mismatch at index " + i +
                         ": DataSet data type is '" + columnConfig.getType() +
                         "', but FrontendConfig data type is '" + frontendAttributeConfig.getDataType() + "'.");
             }
 
             // Check attribute DataScale
             if (columnConfig.getScale() != frontendAttributeConfig.getScale()) {
-                throw new AttributeMismatchException("DataScale mismatch at index " + i +
+                throw new CompatibilityAssuranceException("DataScale mismatch at index " + i +
                         ": DataSet data scale is '" + columnConfig.getScale() +
                         "', but FrontendConfig data scale is '" + frontendAttributeConfig.getScale() + "'.");
             }

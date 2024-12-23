@@ -1,5 +1,6 @@
 package de.kiaim.anon.processor;
 
+import de.kiaim.anon.exception.processor.JALDataGenerationException;
 import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
@@ -33,7 +34,7 @@ public class DataSetProcessor {
                 rowsList.add(rowList.toArray(new String[0]));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new JALDataGenerationException("Error while converting dataset to string array. error : "+ e);
         }
         return rowsList.toArray(new String[0][]);
     }

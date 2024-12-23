@@ -3,6 +3,7 @@ package de.kiaim.anon.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.anon.converter.FrontendAnonConfigConverter;
+import de.kiaim.anon.exception.AnonymizationException;
 import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.processor.AnonymizedDatasetProcessor;
 import de.kiaim.anon.processor.DataSetProcessor;
@@ -117,7 +118,7 @@ public class AnonymizationService {
                 // Send success callback
                 sendCallbackResult(request.getCallback(), result);
                 return result;
-            } catch (Exception ex) {
+            } catch (AnonymizationException ex) {
                 log.error("An error occurred during data anonymization", ex);
                 sendFailureCallback(request.getCallback(), ex);
                 return null;

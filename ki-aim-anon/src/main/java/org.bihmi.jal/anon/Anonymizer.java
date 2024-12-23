@@ -1,5 +1,7 @@
 package org.bihmi.jal.anon;
 
+import de.kiaim.anon.exception.ArxDataSetProcessingException;
+import de.kiaim.anon.exception.UnexpectedAnonymizationException;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -254,13 +256,13 @@ public class Anonymizer {
 
             return output;
         } catch (IOException e) {
-            throw new IllegalStateException(e);
+            throw new ArxDataSetProcessingException(e.getMessage());
         } catch (NoOptimumFoundException e) {
                 throw e;
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("!!! general exception caught!!!");
-            throw new RuntimeException(e);
+            throw new UnexpectedAnonymizationException(e);
         }
     }
 

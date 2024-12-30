@@ -94,7 +94,13 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>org.deidentifier</groupId>
+            <artifactId>arx</artifactId>
+            <version>3.9.1</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
 	<build>
 		<finalName>${artifactId}</finalName>

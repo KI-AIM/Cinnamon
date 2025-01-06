@@ -1,7 +1,7 @@
 
-<div class="w-100">
+<div class="w-100 mb-2">
     <button mat-raised-button mat-dialog-close color="primary" type="button"
-            (click)="openDialog(metricSelectionDialog)">Details
+            (click)="openDialog(metricSelectionDialog)">Metric Importance
     </button>
 </div>
 
@@ -30,19 +30,19 @@
 
 <ng-template #metricSelectionDialog>
     <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Metric Priority</h2>
-    <mat-dialog-content class="mat-typography" style="background-color: #F5F5F5;">
+    <mat-dialog-content class="mat-typography dialog-content">
         <div *ngIf="algorithmDefinition$ | async as algorithmDefinition">
-            <div [formGroup]="importanceForm">
-                <div *ngFor="let configGroup of algorithmDefinition.configurations | keyvalue">
-                    <span>{{ configGroup.value.display_name }}</span>
-                    <div *ngFor="let optionGroup of configGroup.value.options | keyvalue">
+            <div [formGroup]="importanceForm" class="vertical-boxes">
+                <div *ngFor="let configGroup of algorithmDefinition.configurations | keyvalue" class="box">
+                    <div class="box-name mb-1">
+                        {{ configGroup.value.display_name }}
+                    </div>
 
-                        <div>
-                            <span>{{ optionGroup.value.display_name }}</span>
-<!--                            <span>{{ optionGroup.value.description }}</span>-->
+                    <div *ngFor="let optionGroup of configGroup.value.options | keyvalue" style="display: flex;">
+                        <div style="min-width: 200px; margin-bottom: 22.4px; margin-top: auto">
+                            {{ optionGroup.value.display_name }}
                         </div>
-
-                        <mat-form-field class="d-block">
+                        <mat-form-field class="d-block flat-mat-form-field" style="width: 100%;">
 <!--                            <mat-label>{{ optionGroup.value.display_name }}</mat-label>-->
                             <mat-select [formControlName]="optionGroup.key" [id]="optionGroup.key">
                             <mat-option *ngFor="let importance of Object.values(MetricImportance)" [value]="importance">

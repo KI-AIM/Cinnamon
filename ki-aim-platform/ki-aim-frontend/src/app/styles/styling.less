@@ -1,5 +1,5 @@
-@import 'variables'; 
-@import 'colors'; 
+@import 'variables';
+@import 'colors';
 
 html.cdk-global-scrollblock {
     position: static !important;
@@ -28,17 +28,23 @@ html.cdk-global-scrollblock {
 
 .pre-wrapper {
     background-color: @mdc-grey-200;
-    border: solid 1px; 
+    border: solid 1px;
     border-color: @mdc-grey-300;
     padding: 10px;
-    margin-top: 10px; 
+    margin-top: 10px;
     margin-bottom: 10px;
+}
+
+::ng-deep .flat-mat-form-field .mat-mdc-form-field-infix {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    min-height: 0 !important;
 }
 
 input[type="file"]::file-selector-button {
     box-shadow: 0px 3px 1px -2px rgb(0 0 0 / 20%), 0px 2px 2px 0px rgb(0 0 0 / 14%), 0px 1px 5px 0px rgb(0 0 0 / 12%);
     background: @color-primary;
-    color: @color-primary-text-color; 
+    color: @color-primary-text-color;
     box-sizing: border-box;
     position: relative;
     -webkit-user-select: none;
@@ -62,17 +68,17 @@ input[type="file"]::file-selector-button {
     overflow: visible;
     transform: translate3d(0, 0, 0);
     transition: background 400ms cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
-    margin: 1rem; 
-    margin-left: 0; 
+    margin: 1rem;
+    margin-left: 0;
   }
-  
-  
+
+
   /*  fallback for older browsers supporting the -webkit prefix */
-  
+
   input[type="file"]::-webkit-file-upload-button {
     box-shadow: 0px 3px 1px -2px rgb(0 0 0 / 20%), 0px 2px 2px 0px rgb(0 0 0 / 14%), 0px 1px 5px 0px rgb(0 0 0 / 12%);
     background: @color-primary;
-    color: @color-primary-text-color; 
+    color: @color-primary-text-color;
     box-sizing: border-box;
     position: relative;
     -webkit-user-select: none;

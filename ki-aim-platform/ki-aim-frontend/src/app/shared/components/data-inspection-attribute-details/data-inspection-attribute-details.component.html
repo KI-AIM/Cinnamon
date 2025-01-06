@@ -1,11 +1,11 @@
-<div class="mt-2" style="padding-top: 20px !important;">
+<div class="mt-2">
     <!-- Flex in rows -->
-    <div style="width: 100%; display: flex; flex-direction: column; gap: 0.5rem;">
+    <div class="vertical-boxes">
         <!-- First row -->
         <div style="width: 100%; display: flex; flex-direction: row; gap: 0.5rem;">
 
-            <div class="metric-wrapper">
-                <div class="metric-name">
+            <div class="box">
+                <div class="box-name">
                     Attribute Information
                 </div>
                 <div>
@@ -30,8 +30,8 @@
                 </div>
             </div>
 
-            <div class="metric-wrapper" style="flex-grow: 1;">
-                <div class="metric-name">
+            <div class="box" style="flex-grow: 1;">
+                <div class="box-name">
                     Important Statistical Metrics
                 </div>
 
@@ -53,9 +53,9 @@
         </div>
 
 
-        <div class="metric-wrapper">
+        <div class="box">
 
-            <div class="metric-name">
+            <div class="box-name">
                 <ng-container *ngIf="attributeStatistics.plot.density">
                     Density/Histogram
                 </ng-container>
@@ -94,9 +94,9 @@
 
         <div style="display: flex; flex-direction: row; gap: 0.5rem;">
 
-            <div *ngIf="!hasSynthetic" class="metric-wrapper" style="flex-grow: 1; flex-basis: 50%;">
+            <div *ngIf="!hasSynthetic" class="box" style="flex-grow: 1; flex-basis: 50%;">
 
-                <div class="metric-name">
+                <div class="box-name">
                     Additional Metrics
                 </div>
 
@@ -117,8 +117,8 @@
 
             </div>
 
-            <div *ngIf="hasSynthetic" class="metric-wrapper" style="height: 100%; flex-shrink: 1; flex-basis: 50%;">
-                <div class="metric-name">
+            <div *ngIf="hasSynthetic" class="box" style="height: 100%; flex-shrink: 1; flex-basis: 50%;">
+                <div class="box-name">
                     Original Values
                 </div>
 
@@ -126,9 +126,9 @@
                                 [columnIndex]="attributeStatistics.attribute_information.index"></app-data-table>
             </div>
 
-            <div class="metric-wrapper" style="height: 100%; flex-shrink: 1; flex-basis: 50%;">
+            <div class="box" style="height: 100%; flex-shrink: 1; flex-basis: 50%;">
 
-                <div class="metric-name">
+                <div class="box-name">
                     {{ datasetDisplayName }}
                 </div>
 
@@ -140,9 +140,9 @@
 
         <ng-container *ngIf="hasSynthetic">
 
-            <div class="metric-wrapper">
+            <div class="box">
 
-                <div class="metric-name">
+                <div class="box-name">
                     Metric Comparison
                 </div>
 

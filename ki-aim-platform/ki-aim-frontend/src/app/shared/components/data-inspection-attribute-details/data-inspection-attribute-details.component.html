@@ -108,9 +108,11 @@
                         <th>Value</th>
                         <th></th>
                     </tr>
-                    <ng-container
-                        *ngFor="let metricData of getDetailMetrics() | metricFilter:metricFilterText | metricSorter:metricSortDirection:metricSortColumn">
-                        <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
+                    <ng-container *ngIf="(projectConfigService.projectSettings$ | async) as pc">
+                        <ng-container
+                            *ngFor="let metricData of injectImportance(getDetailMetrics(), pc.metricConfiguration) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
+                            <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
+                            </ng-container>
                         </ng-container>
                     </ng-container>
                 </table>
@@ -159,9 +161,11 @@
                         <th></th>
                     </tr>
 
-                    <ng-container
-                        *ngFor="let metricData of getAllMetrics() | metricFilter:metricFilterText | metricSorter:metricSortDirection:metricSortColumn">
-                        <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
+                    <ng-container *ngIf="(projectConfigService.projectSettings$ | async) as pc">
+                        <ng-container
+                            *ngFor="let metricData of injectImportance(getAllMetrics(), pc.metricConfiguration) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
+                            <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
+                            </ng-container>
                         </ng-container>
                     </ng-container>
                 </table>
@@ -174,10 +178,13 @@
 
 <ng-template #metric let-data='data'>
     <tr>
-        <td>{{ data.display_name }}</td>
-        <td>{{ statisticsService.formatNumber(getValue(data.values, mainData)) }}</td>
+        <td>{{ data[1].display_name }}</td>
+        <td>{{ statisticsService.formatNumber(getValue(data[1].values, mainData)) }}</td>
+        <td>
+            <span *ngIf="data[2] == 3">!</span>
+        </td>
         <td class="information-column">
-            <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, data)">
+            <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, data[1])">
                 <mat-icon fontIcon="info"></mat-icon>
             </a>
         </td>
@@ -187,30 +194,24 @@
 <ng-template #metricComparison let-data='data'>
     <tr>
         <td>
-            <div *ngIf="data && data.difference"
-                  [style.background-color]="statisticsService.colors[getColorIndex(data)]"
+            <div *ngIf="data && data[1].difference"
+                  [style.background-color]="statisticsService.colors[getColorIndex(data[1])]"
                   style="width: 10px; height: 100%; border-radius: 6px; margin-right: .5rem; margin-bottom: 2px; margin-top: 2px;">
             </div>
         </td>
         <td>
-            {{ data.display_name }}
+            {{ data[1].display_name }}
         </td>
-        <td>{{ statisticsService.formatNumber(getValue(data.values, 'real')) }}</td>
-        <td>{{ statisticsService.formatNumber(getValue(data.values, 'synthetic')) }}</td>
-        <td>{{ statisticsService.formatNumber(getDifference(data, 'absolute')) }}</td>
-        <td>{{ statisticsService.formatNumber(getDifference(data, 'percentage')) }}</td>
+        <td>{{ statisticsService.formatNumber(getValue(data[1].values, 'real')) }}</td>
+        <td>{{ statisticsService.formatNumber(getValue(data[1].values, 'synthetic')) }}</td>
+        <td>{{ statisticsService.formatNumber(getDifference(data[1], 'absolute')) }}</td>
+        <td>{{ statisticsService.formatNumber(getDifference(data[1], 'percentage')) }}</td>
         <td class="information-column">
-            <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, data)">
+            <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, data[1])">
                 <mat-icon fontIcon="info"></mat-icon>
             </a>
         </td>
     </tr>
-</ng-template>
-
-<ng-template #notAvailable>
-    <td>
-        N/A
-    </td>
 </ng-template>
 
 <ng-template #metricSearch>

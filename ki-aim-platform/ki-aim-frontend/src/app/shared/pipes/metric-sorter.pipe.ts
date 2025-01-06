@@ -6,28 +6,34 @@ import {StatisticsValues, StatisticsValueTypes} from '../model/statistics';
 })
 export class MetricSorterPipe implements PipeTransform {
 
-    transform(value: Array<StatisticsValueTypes>, sortDirection: SortDirection | null, sortType: SortType | null): Array<StatisticsValueTypes> {
+    transform(value: Array<[string, StatisticsValueTypes, number]>, sortDirection: SortDirection | null, sortType: SortType | null): Array<[string, StatisticsValueTypes, number]> {
+        let sorted: Array<[string, StatisticsValueTypes, number]>;
+
         if (sortDirection === null || sortType === null || sortDirection === 'original') {
-            return value;
-        }
-
-       const direction = sortDirection === 'asc' ? 1 : -1;
-
-        if (sortType === 'metric') {
-            return value.sort((a, b) => {
-                return direction * a.display_name.localeCompare(b.display_name);
-            });
-        } else if (sortType === 'colorIndex') {
-            return value.sort((a, b) => {
-                return direction * (this.getColorIndex(a) - this.getColorIndex(b));
-            });
-        } else if (sortType === 'absolute' || sortType === 'percentage') {
-            return value.sort((a, b) => {
-                return direction * (this.getDifference(a, sortType) - this.getDifference(b, sortType));
+            sorted = value.sort((a, b) => {
+                return b[2] - a[2];
             });
         } else {
-            return value;
+            const direction = sortDirection === 'asc' ? 1 : -1;
+
+            if (sortType === 'metric') {
+                sorted = value.sort((a, b) => {
+                    return direction * a[1].display_name.localeCompare(b[1].display_name);
+                });
+            } else if (sortType === 'colorIndex') {
+                sorted = value.sort((a, b) => {
+                    return direction * (this.getColorIndex(a[1]) - this.getColorIndex(b[1]));
+                });
+            } else if (sortType === 'absolute' || sortType === 'percentage') {
+                sorted = value.sort((a, b) => {
+                    return direction * (this.getDifference(a[1], sortType) - this.getDifference(b[1], sortType));
+                });
+            } else {
+                sorted = value;
+            }
         }
+
+        return sorted;
     }
 
     private getColorIndex(data: StatisticsValueTypes): number {

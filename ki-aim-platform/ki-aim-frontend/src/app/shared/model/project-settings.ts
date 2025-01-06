@@ -15,14 +15,17 @@ export enum MetricImportance {
     NOT_RELEVANT = "NOT_RELEVANT",
 }
 
-export const MetricImportanceData: { [key in MetricImportance]: { label: string } } = {
+export const MetricImportanceData: { [key in MetricImportance]: { label: string, value: number } } = {
     IMPORTANT: {
         label: 'Important',
+        value: 3,
     },
     ADDITIONAL: {
         label: 'Additional',
+        value: 2,
     },
     NOT_RELEVANT: {
         label: 'Not Relevant',
+        value: 1,
     }
 }

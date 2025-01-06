@@ -41,6 +41,7 @@ import { ChartSelectComponent } from './components/chart-select/chart-select.com
 import { ChartCalendarComponent } from './components/chart-calendar/chart-calendar.component';
 import { MetricFilterPipe } from './pipes/metric-filter.pipe';
 import { MetricSorterPipe } from './pipes/metric-sorter.pipe';
+import {MatMenuModule} from "@angular/material/menu";
 
 @NgModule({
     declarations: [
@@ -95,6 +96,7 @@ import { MetricSorterPipe } from './pipes/metric-sorter.pipe';
         NgxEchartsModule.forRoot(({
             echarts: () => import('echarts')
         })),
+        MatMenuModule,
     ],
     exports: [
         ConfigurationFormComponent,

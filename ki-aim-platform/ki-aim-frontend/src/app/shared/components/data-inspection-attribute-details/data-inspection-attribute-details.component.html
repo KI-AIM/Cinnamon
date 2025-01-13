@@ -108,9 +108,9 @@
                         <th>Value</th>
                         <th></th>
                     </tr>
-                    <ng-container *ngIf="(projectConfigService.projectSettings$ | async) as pc">
+                    <ng-container *ngIf="(metricConfig$ | async) as mc">
                         <ng-container
-                            *ngFor="let metricData of injectImportance(getDetailMetrics(), pc.metricConfiguration) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
+                            *ngFor="let metricData of injectImportance(getDetailMetrics(), mc) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
                             <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
                             </ng-container>
                         </ng-container>
@@ -161,9 +161,9 @@
                         <th></th>
                     </tr>
 
-                    <ng-container *ngIf="(projectConfigService.projectSettings$ | async) as pc">
+                    <ng-container *ngIf="(metricConfig$ | async) as mc">
                         <ng-container
-                            *ngFor="let metricData of injectImportance(getAllMetrics(), pc.metricConfiguration) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
+                            *ngFor="let metricData of injectImportance(getAllMetrics(), mc) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
                             <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
                             </ng-container>
                         </ng-container>

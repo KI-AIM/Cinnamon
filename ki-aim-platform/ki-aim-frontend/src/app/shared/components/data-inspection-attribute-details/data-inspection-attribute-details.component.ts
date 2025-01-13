@@ -13,6 +13,7 @@ import {Steps} from "../../../core/enums/steps";
 import {processEnumValue} from "../../helper/enum-helper";
 import {MetricImportanceData, MetricSettings} from "../../model/project-settings";
 import {ProjectConfigurationService} from "../../services/project-configuration.service";
+import {map, Observable} from "rxjs";
 
 @Component({
     selector: 'app-data-inspection-attribute-details',
@@ -20,6 +21,7 @@ import {ProjectConfigurationService} from "../../services/project-configuration.
     styleUrls: ['./data-inspection-attribute-details.component.less']
 })
 export class DataInspectionAttributeDetailsComponent implements OnInit {
+    protected readonly DataType = DataType;
     protected readonly Object = Object;
 
     @Input() public attributeStatistics!: AttributeStatistics;
@@ -39,9 +41,11 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
 
     protected datasetDisplayName: string;
 
+    protected metricConfig$: Observable<MetricSettings>;
+
     constructor(
         private dialog: MatDialog,
-        protected readonly projectConfigService: ProjectConfigurationService,
+        private readonly projectConfigService: ProjectConfigurationService,
         protected statisticsService: StatisticsService,
     ) {
     }
@@ -49,6 +53,9 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     ngOnInit(): void {
         this.hasSynthetic = this.mainData == 'synthetic';
         this.datasetDisplayName = this.getSyntheticName();
+        this.metricConfig$ = this.projectConfigService.projectSettings$.pipe(
+            map(val => val.metricConfiguration)
+        );
     }
 
     protected sort(type: SortType): void {
@@ -148,6 +155,4 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
             width: '60%'
         });
     }
-
-    protected readonly DataType = DataType;
 }

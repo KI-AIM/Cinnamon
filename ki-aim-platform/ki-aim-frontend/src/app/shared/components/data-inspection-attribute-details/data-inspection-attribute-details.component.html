@@ -66,6 +66,7 @@
             <div class="w-100 h-100">
                 <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
                     <div style="margin-top: .5rem;">
+                        <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="color-legend-button flat-mat-form-button" style="margin-bottom: -32px; margin-left: 70px;">Legend</button>
                         <app-chart-select [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType"></app-chart-select>
 
                         <ng-container *ngIf="graphType === 'density'">
@@ -83,6 +84,7 @@
 
                 </ng-container>
                 <ng-template #frequency>
+                    <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="color-legend-button flat-mat-form-button">Legend</button>
                     <ng-container *ngIf="attributeStatistics.plot.frequency_plot; else noChart">
                         <app-chart-frequency [data]="attributeStatistics.plot.frequency_plot" [limit]="null"></app-chart-frequency>
                     </ng-container>
@@ -152,7 +154,7 @@
 
                 <table class="metric-table metric-table-comparison">
                     <tr class="no-select">
-                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', type: 'colorIndex'}"></ng-container>
+                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', type: 'colorIndex', item: statusLegend}"></ng-container>
                         <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', type: 'metric'}"></ng-container>
                         <th>Real</th>
                         <th>Synth</th>
@@ -194,9 +196,8 @@
 <ng-template #metricComparison let-data='data'>
     <tr>
         <td>
-            <div *ngIf="data && data[1].difference"
-                  [style.background-color]="statisticsService.colors[getColorIndex(data[1])]"
-                  style="width: 10px; height: 100%; border-radius: 6px; margin-right: .5rem; margin-bottom: 2px; margin-top: 2px;">
+            <div *ngIf="data && data[1].difference" class="metric-similarity"
+                 [style.background-color]="statisticsService.colors[getColorIndex(data[1])]">
             </div>
         </td>
         <td>
@@ -224,10 +225,13 @@
     </mat-form-field>
 </ng-template>
 
-<ng-template #sortColumn let-name="name" let-type="type">
+<ng-template #sortColumn let-name="name" let-type="type" let-item="item">
     <th (click)="sort(type)" style="min-width: 6rem;">
         <div style="display: flex">
             <span>{{ name }}</span>
+            <span *ngIf="item">
+                <ng-container *ngTemplateOutlet="item"></ng-container>
+            </span>
             <span *ngIf="metricSortColumn === type" style="margin-left: auto; margin-bottom: -7px;">
                 <mat-icon *ngIf="metricSortDirection === 'asc'">arrow_drop_up</mat-icon>
                 <mat-icon *ngIf="metricSortDirection === 'desc'">arrow_drop_down</mat-icon>
@@ -254,4 +258,14 @@
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close color="primary">Close</button>
     </mat-dialog-actions>
+</ng-template>
+
+<mat-menu #colorLegend xPosition="after" yPosition="above">
+    <app-color-legend></app-color-legend>
+</mat-menu>
+
+<ng-template #statusLegend>
+    <span title="Show information" style="vertical-align: middle;" [matMenuTriggerFor]="colorLegend" (click)="$event.stopPropagation();">
+        <mat-icon fontIcon="info"></mat-icon>
+    </span>
 </ng-template>

@@ -42,6 +42,7 @@ import { ChartCalendarComponent } from './components/chart-calendar/chart-calend
 import { MetricFilterPipe } from './pipes/metric-filter.pipe';
 import { MetricSorterPipe } from './pipes/metric-sorter.pipe';
 import {MatMenuModule} from "@angular/material/menu";
+import { ColorLegendComponent } from './components/color-legend/color-legend.component';
 
 @NgModule({
     declarations: [
@@ -74,6 +75,7 @@ import {MatMenuModule} from "@angular/material/menu";
         ChartCalendarComponent,
         MetricFilterPipe,
         MetricSorterPipe,
+        ColorLegendComponent,
     ],
     imports: [
         CommonModule,

@@ -36,6 +36,10 @@ public class StatisticsService {
 	@Nullable
 	public String getStatistics(final ProjectEntity project)
 			throws InternalIOException, InternalDataSetPersistenceException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
+		if (project.getOriginalData().getDataSet() == null) {
+			throw new BadStateException(BadStateException.NO_DATA_SET, "No original data set is present.");
+		}
+
 		final BackgroundProcessEntity statisticsProcess = project.getOriginalData().getProcess();
 		if (statisticsProcess.getExternalProcessStatus() == ProcessStatus.FINISHED) {
 			return statisticsProcess.getResultFiles().get("metrics.json").getLobString();

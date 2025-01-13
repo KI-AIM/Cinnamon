@@ -53,6 +53,7 @@ export class StatisticsService {
         );
     }
 
+    // TODO use statistics endpoint
     public fetchResult(): Observable<Statistics> {
         return this.httpClient.get<string>(environments.apiUrl + `/api/project/resultFile`,
             {

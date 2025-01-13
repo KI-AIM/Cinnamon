@@ -735,6 +735,11 @@ public class ProcessService {
 			                                                                      .map(RequestRuntimeException::new))
 			                              .bodyToMono(ExternalProcessResponse.class)
 			                              .block();
+
+			if (response == null) {
+				throw new InternalRequestException(InternalRequestException.PROCESS_START, "Failed to read response!");
+			}
+
 			externalProcess.setExternalId(response.getPid());
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
 		} catch (RequestRuntimeException e) {

@@ -27,4 +27,6 @@ public class StepControllerTest extends ControllerTest {
 		                          .andExpect(status().isBadRequest())
 		                          .andExpect(errorMessage("The step 'invalidStepName' is not defined!"));
 	}
+
+	// TODO getStage
 }

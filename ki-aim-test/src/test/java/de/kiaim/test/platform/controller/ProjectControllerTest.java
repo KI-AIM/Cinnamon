@@ -81,4 +81,6 @@ public class ProjectControllerTest extends ControllerTest {
 		             "The metric configuration should not have changed!");
 	}
 
+	// TODO get zip
+	// TODO getResult file
 }

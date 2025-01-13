@@ -65,7 +65,6 @@ public class ProcessControllerTest extends ControllerTest {
 		registry.add("ki-aim.external-server.2.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
 		registry.add("ki-aim.external-server.1.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
 		registry.add("ki-aim.external-server.0.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-
 	}
 
 	@BeforeEach
@@ -571,5 +570,7 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("No process with the given ID '" + id + "' exists!"));
 	}
+
+	// TODO confirm
 
 }

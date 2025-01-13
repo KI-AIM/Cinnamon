@@ -1,6 +1,6 @@
 import {
     Component,
-    Input,
+    Input, OnInit,
     TemplateRef,
 } from '@angular/core';
 import {MatDialog} from "@angular/material/dialog";
@@ -14,7 +14,7 @@ import {Steps} from "../../../core/enums/steps";
     templateUrl: './data-inspection-attribute.component.html',
     styleUrls: ['./data-inspection-attribute.component.less']
 })
-export class DataInspectionAttributeComponent {
+export class DataInspectionAttributeComponent implements OnInit {
     @Input() public attributeStatistics!: AttributeStatistics;
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
@@ -22,11 +22,16 @@ export class DataInspectionAttributeComponent {
     @Input() public processingSteps: Steps[] = [];
 
     protected graphType = 'histogram';
+    protected hasSynthetic: boolean = false;
 
     constructor(
         private matDialog: MatDialog,
         protected statisticsService: StatisticsService,
     ) {
+    }
+
+    ngOnInit() {
+        this.hasSynthetic = this.mainData == 'synthetic';
     }
 
     protected openDetailsDialog(templateRef: TemplateRef<any>) {

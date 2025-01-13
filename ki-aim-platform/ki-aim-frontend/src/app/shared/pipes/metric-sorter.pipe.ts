@@ -2,7 +2,8 @@ import { Pipe, PipeTransform } from '@angular/core';
 import {StatisticsValues, StatisticsValueTypes} from '../model/statistics';
 
 @Pipe({
-    name: 'metricSorter'
+    name: 'metricSorter',
+    pure: false
 })
 export class MetricSorterPipe implements PipeTransform {
 

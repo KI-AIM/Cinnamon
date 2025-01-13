@@ -3,7 +3,8 @@ import {DetailMetrics, StatisticsValues, StatisticsValuesNominal, StatisticsValu
 import {MetricImportance, MetricImportanceData} from "../model/project-settings";
 
 @Pipe({
-    name: 'metricFilter'
+    name: 'metricFilter',
+    pure: false
 })
 export class MetricFilterPipe implements PipeTransform {
 

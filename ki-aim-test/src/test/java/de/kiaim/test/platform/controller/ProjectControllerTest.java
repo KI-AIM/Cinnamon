@@ -80,7 +80,4 @@ public class ProjectControllerTest extends ControllerTest {
 		assertEquals(originalMetricConfiguration, project.getProjectConfiguration().getMetricConfiguration(),
 		             "The metric configuration should not have changed!");
 	}
-
-	// TODO get zip
-	// TODO getResult file
 }

@@ -12,6 +12,7 @@ import de.kiaim.platform.service.DataSetService;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
 import de.kiaim.test.platform.ControllerTest;
+import de.kiaim.test.util.DataConfigurationTestHelper;
 import de.kiaim.test.util.DataSetTestHelper;
 import de.kiaim.test.util.ResourceHelper;
 import mockwebserver3.MockResponse;
@@ -22,6 +23,7 @@ import org.apache.commons.fileupload2.core.DiskFileItemFactory;
 import org.apache.commons.fileupload2.core.FileItem;
 import org.apache.commons.fileupload2.core.FileItemFactory;
 import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,9 +36,14 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.util.TestSocketUtils;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
@@ -144,6 +151,10 @@ public class ProcessControllerTest extends ControllerTest {
 		getStatus2();
 		finish2();
 		getStatus3();
+
+		// Get results
+		getResultFile();
+		getResultZip();
 	}
 
 	private void start() throws Exception {
@@ -251,10 +262,9 @@ public class ProcessControllerTest extends ControllerTest {
 		response.setPid("123");
 
 		// Send callback request
-		var abc = new MockMultipartFile("anonymized_dataset", "additional.txt", MediaType.TEXT_PLAIN_VALUE,
+		var anonymizationResult = new MockMultipartFile("anonymized_dataset", "additional.txt", MediaType.TEXT_PLAIN_VALUE,
 		                                DataSetTestHelper.generateDataSetAsJson().getBytes());
 
-		var resultData =  ResourceHelper.loadCsvFile("anonymized_dataset");
 		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
 		                                                                 "info".getBytes());
@@ -264,9 +274,8 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 		mockMvc.perform(multipart("/api/process/" + id + "/callback")
-				                .file(abc)
+				                .file(anonymizationResult)
 				                .file(resultAdditional)
-//				                .param("anonymized_dataset", abc)
 		       )
 		       .andExpect(status().isOk());
 		var recordedRequest = mockBackEnd.takeRequest();
@@ -348,6 +357,71 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("processes[1].processSteps[0]").value(Step.ANONYMIZATION.name()))
 		       .andExpect(jsonPath("processes[1].processSteps[1]").value(Step.SYNTHETIZATION.name()))
 		       .andExpect(jsonPath("processes[1].processSteps[2]").doesNotExist());
+	}
+
+	private void getResultFile() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/resultFile")
+		                                      .param("executionStepName", "EXECUTION")
+		                                      .param("processStepName", "ANONYMIZATION")
+		                                      .param("name", "additional.txt"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string("info"));
+	}
+
+	private void getResultZip() throws Exception {
+		var result = mockMvc.perform(MockMvcRequestBuilders.get("/api/project/zip")
+		                                                   .param("executionStepName", "EVALUATION")
+		                                                   .param("processStepName", "ANONYMIZATION")
+		                                                   .param("name", "additional.txt"))
+		                    .andExpect(status().isOk())
+		                    .andExpect(header().exists("Content-Disposition"))
+		                    .andExpect(header().string("Content-Disposition", "attachment; filename=process.zip"))
+		                    .andExpect(content().contentType("application/zip"))
+		                    .andReturn();
+
+		final var expectedEntries = new java.util.HashMap<>(Map.ofEntries(
+				Map.entry("attribute_config.yaml",
+				          MutablePair.of(false, DataConfigurationTestHelper.generateDataConfigurationAsYaml())),
+				Map.entry("original.csv", MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
+				Map.entry("anonymization.yaml", MutablePair.of(false, "configuration")),
+				Map.entry("ANONYMIZATION.csv", MutablePair.of(false, ResourceHelper.loadCsvFileWithErrorsAsString()
+				                                                                   .replace("forty two", ""))),
+				Map.entry("additional.txt", MutablePair.of(false, "info")),
+				Map.entry("synthetization_configuration.yaml", MutablePair.of(false, "configuration")),
+				Map.entry("ANONYMIZATION-SYNTHETIZATION.csv",
+				          MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
+				Map.entry("additional_1.txt", MutablePair.of(false, "info"))
+		));
+		final List<String> unexpectedEntries = new ArrayList<>();
+
+		try (final var zipIn = new ZipInputStream(new ByteArrayInputStream(result.getResponse().getContentAsByteArray()))) {
+
+			ZipEntry entry;
+			while ((entry = zipIn.getNextEntry()) != null) {
+				if (expectedEntries.containsKey(entry.getName())) {
+					var expectedEntry = expectedEntries.get(entry.getName());
+					expectedEntry.setLeft(true);
+
+					final StringBuilder sb = new StringBuilder();
+					final byte[] buffer = new byte[1024];
+					int read;
+
+					while((read = zipIn.read(buffer, 0, 1024)) >= 0) {
+						sb.append(new String(buffer, 0, read));
+					}
+					assertEquals(expectedEntry.getRight(), sb.toString(), "Unexpected content of file: " + entry.getName());
+				} else {
+					unexpectedEntries.add(entry.getName());
+				}
+
+				zipIn.closeEntry();
+			}
+		}
+
+		assertEquals(0, unexpectedEntries.size(), "Unexpected entries in the zip: " + unexpectedEntries);
+		for (final var entry : expectedEntries.entrySet()) {
+			assertTrue(entry.getValue().getLeft(), "Expected entry not found in the zip: " + entry.getKey());
+		}
 	}
 
 	private void enqueueSynthStatus() throws JsonProcessingException {
@@ -571,6 +645,12 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(errorMessage("No process with the given ID '" + id + "' exists!"));
 	}
 
-	// TODO confirm
+	@Test
+	public void confirm() throws Exception {
+		mockMvc.perform(post("/api/process/confirm"))
+		       .andExpect(status().isOk());
+		var updateTestProject = getTestProject();
+		assertEquals(Step.TECHNICAL_EVALUATION, updateTestProject.getStatus().getCurrentStep());
+	}
 
 }

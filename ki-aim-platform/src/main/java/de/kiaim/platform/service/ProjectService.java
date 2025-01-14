@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -198,6 +200,7 @@ public class ProjectService {
 			}
 
 			// Add results
+			Map<String, Integer> zipEntryCounter = new HashMap<>();
 			for (final PipelineEntity pipeline : project.getPipelines()) {
 				for (final ExecutionStepEntity executionStep : pipeline.getStages()) {
 					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {
@@ -222,7 +225,17 @@ public class ProjectService {
 
 						// Add additional files
 						for (final var entry : externalProcess.getResultFiles().entrySet()) {
-							final ZipEntry additionalFileEntry = new ZipEntry(entry.getKey());
+							String entryKey = entry.getKey();
+							if (zipEntryCounter.containsKey(entryKey)) {
+								var count = zipEntryCounter.get(entryKey);
+								entryKey = entryKey.substring(0, entryKey.lastIndexOf('.')) + "_" + count +
+								           entryKey.substring(entryKey.lastIndexOf('.'));
+								zipEntryCounter.put(entryKey, count + 1);
+							} else {
+								zipEntryCounter.put(entryKey, 1);
+							}
+
+							final ZipEntry additionalFileEntry = new ZipEntry(entryKey);
 							zipOut.putNextEntry(additionalFileEntry);
 							zipOut.write(entry.getValue().getLob());
 							zipOut.closeEntry();
@@ -233,8 +246,7 @@ public class ProjectService {
 
 			zipOut.finish();
 		} catch (final IOException | InternalApplicationConfigurationException e) {
-			throw new InternalIOException(InternalIOException.ZIP_CREATION,
-			                              "Failed to create the ZIP file for starting an external process!", e);
+			throw new InternalIOException(InternalIOException.ZIP_CREATION, "Failed to create the ZIP file!", e);
 		}
 	}
 

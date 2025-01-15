@@ -33,12 +33,19 @@
     <mat-dialog-content class="mat-typography dialog-content">
         <div *ngIf="algorithmDefinition$ | async as algorithmDefinition">
             <div [formGroup]="importanceForm" class="vertical-boxes">
+                <div class="box">
+                    <div class="box-name">
+                        General
+                    </div>
+                    <mat-checkbox formControlName="useUserDefinedImportance">Use User Defined Importance</mat-checkbox>
+                </div>
+
                 <div *ngFor="let configGroup of algorithmDefinition.configurations | keyvalue" class="box">
                     <div class="box-name mb-1">
                         {{ configGroup.value.display_name }}
                     </div>
 
-                    <table>
+                    <table formGroupName="userDefinedImportance">
                         <tr *ngFor="let optionGroup of configGroup.value.options | keyvalue">
                             <td>
                                 {{ optionGroup.value.display_name }}

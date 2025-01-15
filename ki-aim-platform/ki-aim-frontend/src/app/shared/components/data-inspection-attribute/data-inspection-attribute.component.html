@@ -34,43 +34,11 @@
             <div class="fw-bold">
                 Important Statistical Metrics
             </div>
-            <div>
+            <div *ngIf="(metricConfig$ | async) as mc">
                 <table>
-                    <tr *ngIf="attributeStatistics.important_metrics.distinct_values">
-                        <th>{{ attributeStatistics.important_metrics.distinct_values.display_name }}:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.distinct_values.values[mainData], {max: 3, min: 3}) }}</td>
-                    </tr>
-                    <tr *ngIf="attributeStatistics.important_metrics.mode">
-                        <th>{{ attributeStatistics.important_metrics.mode.display_name }}:</th>
-                        <td>{{ attributeStatistics.important_metrics.mode.values[mainData] }}</td>
-                    </tr>
-                    <tr *ngIf="attributeStatistics.important_metrics.mean">
-                        <th>{{ attributeStatistics.important_metrics.mean.display_name }}:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.mean.values[mainData], {max: 3, min: 3}) }}</td>
-                    </tr>
-                    <tr *ngIf="attributeStatistics.important_metrics.variance">
-                        <th>{{ attributeStatistics.important_metrics.variance.display_name }}:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.variance.values[mainData], {max: 3, min: 3}) }}</td>
-                    </tr>
-                    <tr *ngIf="attributeStatistics.important_metrics.standard_deviation">
-                        <th>{{ attributeStatistics.important_metrics.standard_deviation.display_name }}:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.standard_deviation.values[mainData], {max: 3, min: 3}) }}</td>
-                    </tr>
-                    <tr *ngIf="attributeStatistics.important_metrics.minimum">
-                        <th>{{ attributeStatistics.important_metrics.minimum.display_name }}:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.minimum.values[mainData], {dataType, max: 3, min: 3}) }}</td>
-                    </tr>
-                    <tr *ngIf="attributeStatistics.important_metrics.maximum">
-                        <th>{{ attributeStatistics.important_metrics.maximum.display_name }}:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.maximum.values[mainData], {dataType, max: 3, min: 3}) }}</td>
-                    </tr>
-                    <tr *ngIf="attributeStatistics.important_metrics.missing_values_count">
-                        <th>{{ attributeStatistics.important_metrics.missing_values_count.display_name }}:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.missing_values_count.values[mainData], { min: 3, max: 3 }) }}</td>
-                    </tr>
-                    <tr *ngIf="attributeStatistics.important_metrics.missing_values_percentage">
-                        <th>{{ attributeStatistics.important_metrics.missing_values_percentage.display_name }}:</th>
-                        <td>{{ statisticsService.formatNumber(attributeStatistics.important_metrics.missing_values_percentage.values[mainData], {min: 3, max: 3}) }}</td>
+                    <tr *ngFor="let metricData of projectConfigService.filterMetrics(mc.metricConfiguration, MetricImportance.IMPORTANT, attributeStatistics)">
+                        <th>{{ metricData[1].display_name }}:</th>
+                        <td>{{ statisticsService.formatNumber(metricData[1].values[mainData], {max: 3, min: 3}) }}</td>
                     </tr>
                 </table>
             </div>

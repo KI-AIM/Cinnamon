@@ -104,9 +104,14 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
     }
 
     private createForm(algorithmDefinition: AlgorithmDefinition): void {
+        const form: any = {};
+        form["useUserDefinedImportance"] = new FormControl({ value: false, disabled: false });
+
         const group: any = {};
         this.createGroup(group, algorithmDefinition);
-        this.importanceForm = new FormGroup(group);
+        form["userDefinedImportance"] = new FormGroup(group);
+        
+        this.importanceForm = new FormGroup(form);
 
         if (this.updateSubscription !== null) {
             this.updateSubscription.unsubscribe();

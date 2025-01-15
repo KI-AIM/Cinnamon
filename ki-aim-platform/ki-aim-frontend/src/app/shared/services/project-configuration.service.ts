@@ -2,9 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
 import { BehaviorSubject, map, Observable, of, shareReplay, switchMap, tap } from "rxjs";
-import { MetricImportance, MetricSettings, ProjectSettings } from "../model/project-settings";
+import {MetricImportance, MetricImportanceDefinition, MetricSettings, ProjectSettings} from "../model/project-settings";
 import { TechnicalEvaluationService } from "../../features/technical-evaluation/services/technical-evaluation.service";
 import { ConfigurationGroupDefinition, ConfigurationGroupDefinitions } from "../model/configuration-group-definition";
+import {AttributeStatistics, StatisticsValueTypes} from "../model/statistics";
 
 @Injectable({
     providedIn: 'root'
@@ -56,6 +57,41 @@ export class ProjectConfigurationService {
         return this.putProjectSettings(value);
     }
 
+    public getImportantMetrics(attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
+        return Object.entries(attributeStatistics.important_metrics);
+    }
+
+    public getDetailMetrics(attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
+        return Object.entries(attributeStatistics.details);
+    }
+
+    public getAllMetrics(attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
+        return Object.entries(attributeStatistics.important_metrics).concat(Object.entries(attributeStatistics.details));
+    }
+
+    /**
+     * Returns all metrics from the given attribute statistics where the configured importance matches the given importance.
+     * @param config The metric settings defining the importance of each metric.
+     * @param imp The importance of the metrics to filter.
+     * @param attributeStatistics The attribute statistics containing the metrics.
+     */
+    public filterMetrics(config: MetricSettings, imp: MetricImportance, attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
+        if (!config.useUserDefinedImportance) {
+            switch (imp) {
+                case MetricImportance.IMPORTANT:
+                    return this.getImportantMetrics(attributeStatistics);
+                case MetricImportance.ADDITIONAL:
+                    return this.getDetailMetrics(attributeStatistics);
+                case MetricImportance.NOT_RELEVANT:
+                    return [];
+            }
+        }
+
+        return this.getAllMetrics(attributeStatistics).filter(val => {
+            return config.userDefinedImportance[val[0]] === imp;
+        });
+    }
+
     private fetchProjectSettings(): Observable<ProjectSettings> {
         return this.http.get<ProjectSettings>(this.baseUrl + "/configuration");
     }
@@ -84,17 +120,19 @@ export class ProjectConfigurationService {
 
     private initMetricSettings(configurations: ConfigurationGroupDefinitions): MetricSettings {
         const metricSettings = new MetricSettings();
-        this.createGroups(metricSettings, configurations);
+        metricSettings.useUserDefinedImportance = false;
+        metricSettings.userDefinedImportance = {};
+        this.createGroups(metricSettings.userDefinedImportance, configurations);
         return metricSettings;
     }
 
-    private createGroups(metricsSettings: MetricSettings, configurations: ConfigurationGroupDefinitions) {
+    private createGroups(metricsSettings: MetricImportanceDefinition, configurations: ConfigurationGroupDefinitions) {
         Object.values(configurations).forEach((groupDefinition) => {
             this.createGroup(metricsSettings, groupDefinition);
         });
     }
 
-    private createGroup(metricSettings: MetricSettings, groupDefinition: ConfigurationGroupDefinition): void {
+    private createGroup(metricSettings: MetricImportanceDefinition, groupDefinition: ConfigurationGroupDefinition): void {
         if (groupDefinition.configurations) {
             this.createGroups(metricSettings, groupDefinition.configurations);
         }

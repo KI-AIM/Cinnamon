@@ -37,15 +37,22 @@
 
                 <div>
                     <table class="metric-table metric-table-single">
-                        <tr *ngFor="let metric of getImportantMetrics()">
-                            <td>{{metric.display_name }}</td>
-                            <td> {{ statisticsService.formatNumber(metric.values[mainData]) }}</td>
-                            <td class="information-column">
-                                <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, metric)">
-                                    <mat-icon fontIcon="info"></mat-icon>
-                                </a>
-                            </td>
-                        </tr>
+
+                        <ng-container *ngIf="(metricConfig$ | async) as mc">
+                            <ng-container *ngFor="let metricData of projectConfigService.filterMetrics(mc, MetricImportance.IMPORTANT, attributeStatistics)">
+                                <tr>
+                                    <td>{{metricData[1].display_name }}</td>
+                                    <td> {{ statisticsService.formatNumber(metricData[1].values[mainData]) }}</td>
+                                    <td class="information-column">
+                                        <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, metricData[1])">
+                                            <mat-icon fontIcon="info"></mat-icon>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </ng-container>
+                        </ng-container>
+
+
                     </table>
                 </div>
 
@@ -111,8 +118,7 @@
                         <th></th>
                     </tr>
                     <ng-container *ngIf="(metricConfig$ | async) as mc">
-                        <ng-container
-                            *ngFor="let metricData of injectImportance(getDetailMetrics(), mc) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
+                        <ng-container *ngFor="let metricData of injectImportance(projectConfigService.filterMetrics(mc, MetricImportance.ADDITIONAL, attributeStatistics), mc) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
                             <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
                             </ng-container>
                         </ng-container>
@@ -165,7 +171,7 @@
 
                     <ng-container *ngIf="(metricConfig$ | async) as mc">
                         <ng-container
-                            *ngFor="let metricData of injectImportance(getAllMetrics(), mc) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
+                            *ngFor="let metricData of  injectImportance(projectConfigService.filterMetrics(mc, MetricImportance.ADDITIONAL, attributeStatistics), mc) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
                             <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
                             </ng-container>
                         </ng-container>
@@ -182,9 +188,6 @@
     <tr>
         <td>{{ data[1].display_name }}</td>
         <td>{{ statisticsService.formatNumber(getValue(data[1].values, mainData)) }}</td>
-        <td>
-            <span *ngIf="data[2] == 3">!</span>
-        </td>
         <td class="information-column">
             <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, data[1])">
                 <mat-icon fontIcon="info"></mat-icon>

@@ -11,7 +11,7 @@ import { SortDirection, SortType } from "../../pipes/metric-sorter.pipe";
 import {MatDialog} from "@angular/material/dialog";
 import {Steps} from "../../../core/enums/steps";
 import {processEnumValue} from "../../helper/enum-helper";
-import {MetricImportanceData, MetricSettings} from "../../model/project-settings";
+import {MetricImportance, MetricImportanceData, MetricSettings} from "../../model/project-settings";
 import {ProjectConfigurationService} from "../../services/project-configuration.service";
 import {map, Observable} from "rxjs";
 
@@ -45,7 +45,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
 
     constructor(
         private dialog: MatDialog,
-        private readonly projectConfigService: ProjectConfigurationService,
+        protected readonly projectConfigService: ProjectConfigurationService,
         protected statisticsService: StatisticsService,
     ) {
     }
@@ -70,18 +70,6 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
             this.metricSortColumn = type;
             this.metricSortDirection = 'asc';
         }
-    }
-
-    protected getImportantMetrics(): StatisticsValueTypes[] {
-        return Object.values(this.attributeStatistics.important_metrics) as StatisticsValueTypes[];
-    }
-
-    protected getDetailMetrics(): Array<[string, StatisticsValueTypes]> {
-        return Object.entries(this.attributeStatistics.details);
-    }
-
-    protected getAllMetrics(): Array<[string, StatisticsValueTypes]> {
-        return Object.entries(this.attributeStatistics.important_metrics).concat(Object.entries(this.attributeStatistics.details));
     }
 
     protected getColorIndex(data: StatisticsValueTypes): number {
@@ -122,7 +110,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
 
     protected injectImportance(input: Array<[string, StatisticsValueTypes]>, config: MetricSettings): Array<[string, StatisticsValueTypes, number]> {
         return input.map(value => {
-            return [value[0], value[1], MetricImportanceData[config[value[0]]].value];
+            return [value[0], value[1], MetricImportanceData[config.userDefinedImportance[value[0]]].value];
         });
     }
 
@@ -155,4 +143,6 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
             width: '60%'
         });
     }
+
+    protected readonly MetricImportance = MetricImportance;
 }

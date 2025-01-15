@@ -6,6 +6,11 @@ export class ProjectSettings {
 }
 
 export class MetricSettings  {
+    useUserDefinedImportance: boolean;
+    userDefinedImportance: MetricImportanceDefinition;
+}
+
+export type MetricImportanceDefinition = {
     [key: string]: MetricImportance;
 }
 

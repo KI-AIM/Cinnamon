@@ -8,6 +8,9 @@ import { AttributeStatistics } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
 import {Steps} from "../../../core/enums/steps";
+import { Observable} from "rxjs";
+import {MetricImportance, ProjectSettings} from "../../model/project-settings";
+import {ProjectConfigurationService} from "../../services/project-configuration.service";
 
 @Component({
     selector: 'app-data-inspection-attribute',
@@ -24,14 +27,18 @@ export class DataInspectionAttributeComponent implements OnInit {
     protected graphType = 'histogram';
     protected hasSynthetic: boolean = false;
 
+    protected metricConfig$: Observable<ProjectSettings>;
+
     constructor(
         private matDialog: MatDialog,
+        protected readonly projectConfigService: ProjectConfigurationService,
         protected statisticsService: StatisticsService,
     ) {
     }
 
     ngOnInit() {
         this.hasSynthetic = this.mainData == 'synthetic';
+        this.metricConfig$ = this.projectConfigService.projectSettings$;
     }
 
     protected openDetailsDialog(templateRef: TemplateRef<any>) {
@@ -45,4 +52,5 @@ export class DataInspectionAttributeComponent implements OnInit {
     }
 
     protected readonly DataType = DataType;
+    protected readonly MetricImportance = MetricImportance;
 }

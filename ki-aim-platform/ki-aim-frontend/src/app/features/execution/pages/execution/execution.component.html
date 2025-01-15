@@ -4,11 +4,13 @@
 </app-info-card>
 
 <div class="mt-2">
-    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="executionService.disabled" (click)="executionService.start()">
+    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="executionService.disabled"
+            (click)="executionService.start()">
         Start
     </button>
 
-    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="!executionService.disabled" (click)="executionService.cancel()">
+    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="!executionService.disabled"
+            (click)="executionService.cancel()">
         Cancel Algorithm
     </button>
 
@@ -22,79 +24,138 @@
     <span class="status mt-2" [ngClass]="status.status"> <span>{{ status.status.replace("_", " ") }}</span> </span>
 </div>
 
-<mat-accordion *ngIf="status.processes.length > 0">
-    <mat-expansion-panel>
-        <mat-expansion-panel-header>
-            <mat-panel-title>Anonymization</mat-panel-title>
-            <mat-panel-description>
-    <span class="status mt-2" [ngClass]="status.processes[0].externalProcessStatus">
-        <span>{{ status.processes[0].externalProcessStatus.replace("_", " ") }}</span>
-    </span>
-            </mat-panel-description>
-        </mat-expansion-panel-header>
 
-        <div>
-            <div *ngIf="executionService.anonProcess !== null">
-                {{ executionService.anonProcess}}
-            </div>
+<div style="display: flex; width: 100%;">
+    <!-- Line on the left -->
+    <div class="stage-tree-line-vertical">
+    </div>
 
-            <div *ngIf="status.processes[0].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
-                <app-data-table sourceDataset="anonymization"></app-data-table>
-            </div>
-            <ng-template #anonNoData>
-                <div>
-                    No Data Available
+    <!-- Steps on the right -->
+    <div *ngIf="(stageConfiguration$ | async) as stageConfiguration" class="w-100" style="display: flex; flex-direction: column;">
+        <div *ngFor="let job of stageConfiguration.jobs; let i = index" class="w-100 d-flex">
+
+            <!-- Line to anon box -->
+            <div style="padding-top: 0.3rem;">
+                <div style="height: 3rem; display: flex;">
+                    <div class="stage-tree-line-horizontal"
+                         style="margin-top: auto; margin-bottom: auto; min-width: 2rem;">
+                    </div>
                 </div>
-            </ng-template>
+            </div>
+
+            <!-- Wrapper for step -->
+            <!-- I have no idea why width: 10% and flex-grow: 1 is doing what I want to do -->
+            <div class="mb-2 box" style="flex-grow: 1; width: 10%; padding-top: 0.3rem;">
+                <!-- Head -->
+                <div style="height: 3rem; display: flex;">
+                    <span style="margin-bottom: auto; margin-top: auto; margin-right: 2rem;"> {{ getJobName(i) }} </span>
+                    <span style="margin-bottom: auto; margin-top: auto;" class="status"
+                          [ngClass]="status.processes[i].externalProcessStatus">
+                        <span>{{ status.processes[i].externalProcessStatus.replace("_", " ") }}</span>
+                    </span>
+                </div>
+
+                <div style="margin-top: 0.4rem;">
+                    <mat-accordion>
+                        <!-- Status -->
+                        <mat-expansion-panel>
+                            <mat-expansion-panel-header>
+                                <mat-panel-title>Status</mat-panel-title>
+                                <mat-panel-description></mat-panel-description>
+                            </mat-expansion-panel-header>
+
+                            <ng-container *ngIf="i == 0">
+                                <div *ngIf="executionService.anonProcess !== null">
+                                    {{ executionService.anonProcess }}
+                                </div>
+                            </ng-container>
+                            <ng-container *ngIf="i == 1">
+                                <div *ngIf="executionService.synthProcess !== null">
+                                    <div *ngIf="isObject(executionService.synthProcess); else statusIsString">
+                                        <table class="table">
+                                            <thead>
+                                            <th>Step</th>
+                                            <th>Finished</th>
+                                            <th>Remaining Time/ Duration</th>
+                                            </thead>
+                                            <tbody>
+                                            <tr *ngFor="let step of castObject(executionService.synthProcess).status">
+                                                <td>{{ step.step }}</td>
+                                                <td>{{ step?.completed }}</td>
+                                                <td>{{ (step?.completed === "True") ? step?.duration : step?.remaining_time }}</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <ng-template #statusIsString>
+                                        {{ executionService.synthProcess }}
+                                    </ng-template>
+                                </div>
+                            </ng-container>
+
+                        </mat-expansion-panel>
+
+                        <!-- Data -->
+                        <mat-expansion-panel>
+                            <mat-expansion-panel-header>
+                                <mat-panel-title>Data</mat-panel-title>
+                                <mat-panel-description></mat-panel-description>
+                            </mat-expansion-panel-header>
+
+                            <div>
+                                <div
+                                    *ngIf="status.processes[i].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+                                    <app-data-table [sourceDataset]="getJobName(i)"></app-data-table>
+                                </div>
+                                <ng-template #anonNoData>
+                                    <div>
+                                        No Data Available
+                                    </div>
+                                </ng-template>
+                            </div>
+
+                        </mat-expansion-panel>
+
+                        <!-- Inspection -->
+                        <mat-expansion-panel>
+                            <mat-expansion-panel-header>
+                                <mat-panel-title>Inspection</mat-panel-title>
+                                <mat-panel-description></mat-panel-description>
+                            </mat-expansion-panel-header>
+
+                            <ng-template matExpansionPanelContent>
+
+                                <div class="mt-1">
+                                    <div
+                                        *ngIf="status.processes[i].externalProcessStatus == ProcessStatus.FINISHED; else synthNoData">
+                                        <app-data-inspection [sourceDataset]="getJobName(i)"></app-data-inspection>
+                                    </div>
+                                    <ng-template #synthNoData>
+                                        <div>
+                                            No Statistics Available
+                                        </div>
+                                    </ng-template>
+                                </div>
+                            </ng-template>
+                        </mat-expansion-panel>
+
+                        <!-- Risk -->
+                        <mat-expansion-panel>
+                            <mat-expansion-panel-header>
+                                <mat-panel-title>Risk</mat-panel-title>
+                                <mat-panel-description></mat-panel-description>
+                            </mat-expansion-panel-header>
+                            TODO
+                        </mat-expansion-panel>
+
+                    </mat-accordion>
+
+                </div>
+
+            </div>
         </div>
-
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-        <mat-expansion-panel-header>
-            <mat-panel-title>Synthetization</mat-panel-title>
-            <mat-panel-description>
-    <span class="status mt-2" [ngClass]="status.processes[1].externalProcessStatus">
-        <span>{{ status.processes[1].externalProcessStatus.replace("_", " ") }}</span>
-    </span>
-            </mat-panel-description>
-        </mat-expansion-panel-header>
-
-        <div>
-            <div *ngIf="executionService.synthProcess !== null">
-                <div *ngIf="isObject(executionService.synthProcess); else statusIsString">
-                    <table class="table">
-                        <thead>
-                        <th>Step</th>
-                        <th>Finished</th>
-                        <th>Remaining Time/ Duration</th>
-                        </thead>
-                        <tbody>
-                        <tr *ngFor="let step of castObject(executionService.synthProcess).status">
-                            <td>{{ step.step }}</td>
-                            <td>{{ step?.completed }}</td>
-                            <td>{{ (step?.completed === "True") ? step?.duration : step?.remaining_time }}</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <ng-template #statusIsString>
-                    {{ executionService.synthProcess }}
-                </ng-template>
-            </div>
-
-
-            <div *ngIf="status.processes[1].externalProcessStatus == ProcessStatus.FINISHED; else synthNoData">
-                <app-data-table sourceDataset="synthetization"></app-data-table>
-            </div>
-            <ng-template #synthNoData>
-                <div>
-                    No Data Available
-                </div>
-            </ng-template>
-        </div>
-
-    </mat-expansion-panel>
-</mat-accordion>
+    </div>
+</div>
 
 <div class="mt-2">
     <button type="button" mat-raised-button color="primary" [disabled]="status.status != ProcessStatus.FINISHED"

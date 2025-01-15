@@ -823,7 +823,16 @@ public class ProcessService {
 			case ORIGINAL -> {
 				result = process.getProject().getOriginalData().getDataSet();
 			}
+			case OWNER -> {
+				if (process.getOwner() instanceof DataSetEntity dataSetEntity) {
+					result = dataSetEntity;
+				} else {
+					// TODO
+					throw new InternalInvalidStateException("", "");
+				}
+			}
 			default -> {
+
 				throw new InternalMissingHandlingException(
 						InternalMissingHandlingException.DATA_SET_SELECTOR,
 						"No handling for selecting data set '" + dataSetSelector + "'!");

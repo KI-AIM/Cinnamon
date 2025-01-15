@@ -177,7 +177,7 @@ export abstract class ExecutionStepService implements OnInit {
         return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStepName());
     }
 
-    protected get stageConfiguration$(): Observable<StageConfiguration> {
+    public get stageConfiguration$(): Observable<StageConfiguration> {
         if (this._stageConfiguration) {
             return of(this._stageConfiguration);
         }
@@ -192,5 +192,9 @@ export abstract class ExecutionStepService implements OnInit {
                 this._stageConfiguration$ = null;
             })
         );
+    }
+
+    public fetchStageConfiguration(): Observable<StageConfiguration> {
+        return this.http.get<StageConfiguration>(environments.apiUrl + "/api/step/stage/" + this.getStepName());
     }
 }

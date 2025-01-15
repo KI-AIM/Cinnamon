@@ -4,6 +4,7 @@ import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.configuration.KiAimConfiguration;
 import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
+import de.kiaim.platform.model.enumeration.Step;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,13 +19,16 @@ public class StatisticsService {
 
 	private final KiAimConfiguration kiAimConfiguration;
 
+	private final DataSetService dataSetService;
 	private final ProcessService processService;
 
 	public StatisticsService(
 			final KiAimConfiguration kiAimConfiguration,
+			final DataSetService dataSetService,
 			final ProcessService processService
 	) {
 		this.kiAimConfiguration = kiAimConfiguration;
+		this.dataSetService = dataSetService;
 		this.processService = processService;
 	}
 
@@ -34,13 +38,14 @@ public class StatisticsService {
 	 */
 	@Transactional
 	@Nullable
-	public String getStatistics(final ProjectEntity project)
-			throws InternalIOException, InternalDataSetPersistenceException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
-		if (project.getOriginalData().getDataSet() == null) {
+	public String getStatistics(final ProjectEntity project, final Step step) throws BadStateException, BadDataSetIdException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, InternalInvalidStateException, InternalMissingHandlingException {
+		final var dataset = dataSetService.getDataSetEntityOrThrow(project, step);
+		if (!dataset.isStoredData())
+		{
 			throw new BadStateException(BadStateException.NO_DATA_SET, "No original data set is present.");
 		}
 
-		final BackgroundProcessEntity statisticsProcess = project.getOriginalData().getProcess();
+		final BackgroundProcessEntity statisticsProcess = dataset.getStatisticsProcess();
 		if (statisticsProcess.getExternalProcessStatus() == ProcessStatus.FINISHED) {
 			return statisticsProcess.getResultFiles().get("metrics.json").getLobString();
 		} else {

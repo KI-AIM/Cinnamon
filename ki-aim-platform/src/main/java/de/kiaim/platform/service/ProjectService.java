@@ -192,10 +192,10 @@ public class ProjectService {
 			addCsvToZip(zipOut, dataSet, "original");
 
 			// Add statistics
-			if (project.getOriginalData().getStatistics() != null) {
+			if (project.getOriginalData().getDataSet() != null) {
 				final ZipEntry statisticsEntry = new ZipEntry("statistics.yaml");
 				zipOut.putNextEntry(statisticsEntry);
-				zipOut.write(project.getOriginalData().getStatistics().getLob());
+				zipOut.write(project.getOriginalData().getDataSet().getStatistics().getLob());
 				zipOut.closeEntry();
 			}
 

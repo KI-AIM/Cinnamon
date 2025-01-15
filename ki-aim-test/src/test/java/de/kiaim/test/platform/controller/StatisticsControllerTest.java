@@ -81,7 +81,7 @@ public class StatisticsControllerTest extends ControllerTest {
 
 		// Finish
 		var updateTestProject = getTestProject();
-		var process = updateTestProject.getOriginalData().getProcess();
+		var process = updateTestProject.getOriginalData().getDataSet().getStatisticsProcess();
 		String id = process.getUuid().toString();
 
 		final MockMultipartFile resultAdditional = new MockMultipartFile("metrics.json", "metrics.json",

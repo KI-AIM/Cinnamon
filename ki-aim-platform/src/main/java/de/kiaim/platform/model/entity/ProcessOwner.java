@@ -16,7 +16,7 @@ public abstract class ProcessOwner {
 	 */
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
-	private Long id;
+	protected Long id;
 
 	/**
 	 * Returns the corresponding project.

@@ -8,6 +8,8 @@ import { Steps } from "../../../../core/enums/steps";
 import { Router } from "@angular/router";
 import { ExecutionService } from "../../services/execution.service";
 import { StatusService } from "../../../../shared/services/status.service";
+import {Observable} from "rxjs";
+import {StageConfiguration} from "../../../../shared/model/stage-configuration";
 
 @Component({
   selector: 'app-execution',
@@ -16,6 +18,7 @@ import { StatusService } from "../../../../shared/services/status.service";
 })
 export class ExecutionComponent implements OnInit, OnDestroy {
     protected readonly ProcessStatus = ProcessStatus;
+    protected stageConfiguration$: Observable<StageConfiguration>;
 
     constructor(
         protected readonly executionService: ExecutionService,
@@ -33,6 +36,7 @@ export class ExecutionComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.executionService.fetchStatus();
+        this.stageConfiguration$ = this.executionService.fetchStageConfiguration();
     }
 
     protected get status(): ExecutionStep {
@@ -73,5 +77,9 @@ export class ExecutionComponent implements OnInit, OnDestroy {
 
     protected castObject(value: any): any {
         return value as any;
+    }
+
+    protected getJobName(index: number): string {
+        return ["Anonymization", "Synthetization"][index];
     }
 }

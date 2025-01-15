@@ -53,9 +53,10 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         // Create the statistics observer
-        if (this.sourceDataset === 'VALIDATION') {
+        if (this.sourceDataset !==  null)
+        {
             this.statistics$ = timer(0, 2000).pipe(
-                switchMap(() => this.statisticsService.statistics$),
+                switchMap(() => this.statisticsService.fetchStatistics(this.sourceDataset!)),
                 filter(data => data !== null),
                 take(1),
             );

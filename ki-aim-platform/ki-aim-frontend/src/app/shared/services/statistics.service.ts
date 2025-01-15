@@ -44,7 +44,7 @@ export class StatisticsService {
             return this._statistics$;
         }
 
-        return this.fetchStatistics().pipe(
+        return this.fetchStatistics("VALIDATION").pipe(
             tap(value => this._statistics = value),
             share(),
             finalize(() => {
@@ -131,8 +131,8 @@ export class StatisticsService {
         return value.toLocaleString(undefined, {maximumFractionDigits});
     }
 
-    private fetchStatistics(): Observable<Statistics | null> {
-        return this.httpClient.get<string>(this.baseUrl, {responseType: 'text' as 'json'})
+    public fetchStatistics(stepName: string): Observable<Statistics | null> {
+        return this.httpClient.get<string>(this.baseUrl + "/" + stepName, {responseType: 'text' as 'json'})
             .pipe(
                 map(value => {
                     if (value) {

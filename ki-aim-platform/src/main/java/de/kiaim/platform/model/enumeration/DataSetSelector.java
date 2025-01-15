@@ -15,4 +15,9 @@ public enum DataSetSelector {
 	 * Selects the original data set.
 	 */
 	ORIGINAL,
+	/**
+	 * Selects the data set that owns the process.
+	 * If the owner is not a data set an exception is thrown.
+ 	 */
+	OWNER,
 }

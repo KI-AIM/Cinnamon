@@ -20,20 +20,13 @@ import java.util.Set;
 /**
  * Entity containing the metadata of a data set.
  * The data is stored in a separate table.
+ * The ID is used for identifying the table in the database.
  *
  * @author Daniel Preciado-Marquez
  */
 @NoArgsConstructor
 @Getter @Entity
-public class DataSetEntity {
-
-	/**
-	 * ID of the data set.
-	 * Used for identifying the table containing the data.
-	 */
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
-	@Id
-	private Long id;
+public class DataSetEntity extends ProcessOwner {
 
 	/**
 	 * The data configuration.
@@ -71,6 +64,13 @@ public class DataSetEntity {
 	private List<Step> processed = new ArrayList<>();
 
 	/**
+	 * Process for calculating the statistics.
+	 */
+	@OneToOne(mappedBy = "owner", optional = false, orphanRemoval = true, cascade = CascadeType.ALL)
+	@Getter
+	private final BackgroundProcessEntity statisticsProcess = new BackgroundProcessEntity(this);
+
+	/**
 	 * The corresponding original data.
 	 * Only originalData or job is allowed to be set.
 	 */
@@ -102,6 +102,10 @@ public class DataSetEntity {
 	 */
 	public DataSetEntity(final DataProcessingEntity dataProcessing) {
 		this.setJob(dataProcessing);
+	}
+
+	public Long getId() {
+		return this.id;
 	}
 
 	/**
@@ -168,4 +172,22 @@ public class DataSetEntity {
 		}
 	}
 
+	@Override
+	public ProjectEntity getProject() {
+		if (this.originalData != null) {
+			return this.originalData.getProject();
+		} else if (this.job != null) {
+			return this.job.getProject();
+		}
+		return null;
+	}
+
+	/**
+	 * Returns the statistics of the data set.
+	 * @return The statistics.
+	 */
+	public LobWrapperEntity getStatistics() {
+		// TODO move name in application.properties
+		return this.statisticsProcess.getResultFiles().get("metrics.yml");
+	}
 }

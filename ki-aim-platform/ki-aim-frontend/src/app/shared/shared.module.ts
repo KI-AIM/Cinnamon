@@ -43,6 +43,7 @@ import { MetricFilterPipe } from './pipes/metric-filter.pipe';
 import { MetricSorterPipe } from './pipes/metric-sorter.pipe';
 import {MatMenuModule} from "@angular/material/menu";
 import { ColorLegendComponent } from './components/color-legend/color-legend.component';
+import {MatRadioModule} from "@angular/material/radio";
 
 @NgModule({
     declarations: [
@@ -99,6 +100,7 @@ import { ColorLegendComponent } from './components/color-legend/color-legend.com
             echarts: () => import('echarts')
         })),
         MatMenuModule,
+        MatRadioModule,
     ],
     exports: [
         ConfigurationFormComponent,

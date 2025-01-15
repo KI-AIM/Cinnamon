@@ -25,7 +25,7 @@ export const MetricImportanceData: { [key in MetricImportance]: { label: string,
         value: 2,
     },
     NOT_RELEVANT: {
-        label: 'Not Relevant',
+        label: 'Hide',
         value: 1,
     }
 }

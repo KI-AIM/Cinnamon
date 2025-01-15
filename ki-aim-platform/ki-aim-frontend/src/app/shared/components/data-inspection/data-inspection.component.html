@@ -38,19 +38,20 @@
                         {{ configGroup.value.display_name }}
                     </div>
 
-                    <div *ngFor="let optionGroup of configGroup.value.options | keyvalue" style="display: flex;">
-                        <div style="min-width: 200px; margin-bottom: 22.4px; margin-top: auto">
-                            {{ optionGroup.value.display_name }}
-                        </div>
-                        <mat-form-field class="d-block flat-mat-form-field" style="width: 100%;">
-<!--                            <mat-label>{{ optionGroup.value.display_name }}</mat-label>-->
-                            <mat-select [formControlName]="optionGroup.key" [id]="optionGroup.key">
-                            <mat-option *ngFor="let importance of Object.values(MetricImportance)" [value]="importance">
-                                    {{ MetricImportanceData[importance].label }}
-                                </mat-option>
-                            </mat-select>
-                        </mat-form-field>
-                    </div>
+                    <table>
+                        <tr *ngFor="let optionGroup of configGroup.value.options | keyvalue">
+                            <td>
+                                {{ optionGroup.value.display_name }}
+                            </td>
+                            <td>
+                                <mat-radio-group [formControlName]="optionGroup.key" [id]="optionGroup.key">
+                                    <mat-radio-button *ngFor="let importance of Object.values(MetricImportance)" [value]="importance">
+                                        {{ MetricImportanceData[importance].label }}
+                                    </mat-radio-button>
+                                </mat-radio-group>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
         </div>

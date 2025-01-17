@@ -40,15 +40,16 @@
 
                         <ng-container *ngIf="(metricConfig$ | async) as mc">
                             <ng-container *ngFor="let metricData of projectConfigService.filterMetrics(mc, MetricImportance.IMPORTANT, attributeStatistics)">
-                                <tr>
-                                    <td>{{metricData[1].display_name }}</td>
-                                    <td> {{ statisticsService.formatNumber(metricData[1].values[mainData]) }}</td>
-                                    <td class="information-column">
-                                        <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, metricData[1])">
-                                            <mat-icon fontIcon="info"></mat-icon>
-                                        </a>
-                                    </td>
-                                </tr>
+
+                                <ng-container *ngIf="!hasSynthetic">
+                                    <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
+                                    </ng-container>
+                                </ng-container>
+                                <ng-container *ngIf="hasSynthetic">
+                                    <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
+                                    </ng-container>
+                                </ng-container>
+
                             </ng-container>
                         </ng-container>
 

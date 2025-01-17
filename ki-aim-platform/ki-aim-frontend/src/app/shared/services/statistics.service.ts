@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import {environments} from "../../../environments/environment";
 import {finalize, map, Observable, of, share, tap} from "rxjs";
 import {HttpClient} from "@angular/common/http";
-import {Statistics} from "../model/statistics";
+import {Statistics, StatisticsData} from "../model/statistics";
 import {parse} from "yaml";
 import {plainToInstance} from "class-transformer";
 import { DataType } from "../model/data-type";
@@ -143,6 +143,27 @@ export class StatisticsService {
                 }),
             );
     }
+
+    public getValue(data: StatisticsData<any>, which : 'real' | 'synthetic'): number | string {
+        const type = typeof data[which];
+
+        if (type === "number" || type === "string") {
+            return data[which];
+        } else {
+            return this.getComplexValue(data[which]);
+        }
+    }
+
+    protected getComplexValue(complex: any): number | string {
+        for (const [key, value] of Object.entries(complex)) {
+            if (key !== 'color_index') {
+                return value as number | string;
+            }
+        }
+
+        return "N/A";
+    }
+
 }
 
 export interface FormatNumberOptions {

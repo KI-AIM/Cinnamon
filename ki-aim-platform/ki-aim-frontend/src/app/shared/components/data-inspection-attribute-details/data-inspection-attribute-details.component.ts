@@ -89,23 +89,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     }
 
     protected getValue(data: StatisticsData<any>, which : 'real' | 'synthetic'): number | string {
-        const type = typeof data[which];
-
-        if (type === "number" || type === "string") {
-            return data[which];
-        } else {
-            return this.getComplexValue(data[which]);
-        }
-    }
-
-    protected getComplexValue(complex: any): number | string {
-        for (const [key, value] of Object.entries(complex)) {
-            if (key !== 'color_index') {
-                return value as number | string;
-            }
-        }
-
-        return "N/A";
+        return this.statisticsService.getValue(data, which);
     }
 
     protected injectImportance(input: Array<[string, StatisticsValueTypes]>, config: MetricSettings): Array<[string, StatisticsValueTypes, number]> {

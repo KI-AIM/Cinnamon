@@ -19,42 +19,46 @@
     </button>
 </div>
 
-<div class="mb-2">
-    <h2 class="me-2" style="display: inline;">Status</h2>
-    <span class="status mt-2" [ngClass]="evaluationService.status.status">
+<div *ngIf="(stage$ | async) as status">
+
+    <div class="mb-2">
+        <h2 class="me-2" style="display: inline;">Status</h2>
+        <span class="status mt-2" [ngClass]="evaluationService.status.status">
         <span>{{ evaluationService.status.status.replace("_", " ") }}</span>
     </span>
-</div>
+    </div>
 
-<mat-accordion *ngIf="evaluationService.status.processes.length > 0">
-    <mat-expansion-panel>
-        <mat-expansion-panel-header>
-            <mat-panel-title>Technical Evaluation</mat-panel-title>
-            <mat-panel-description>
+    <mat-accordion *ngIf="evaluationService.status.processes.length > 0">
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+                <mat-panel-title>Technical Evaluation</mat-panel-title>
+                <mat-panel-description>
                 <span class="status mt-2"
                       [ngClass]="evaluationService.status.processes[0].externalProcessStatus">
                     <span>{{ evaluationService.status.processes[0].externalProcessStatus.replace("_", " ") }}</span>
                 </span>
-            </mat-panel-description>
-        </mat-expansion-panel-header>
+                </mat-panel-description>
+            </mat-expansion-panel-header>
 
-        <div>
-            <ng-template *ngIf="evaluationService.technicalEvaluationStatus !== null">
-                {{ evaluationService.technicalEvaluationStatus }}
-            </ng-template>
+            <div>
+                <ng-template *ngIf="evaluationService.technicalEvaluationStatus !== null">
+                    {{ evaluationService.technicalEvaluationStatus }}
+                </ng-template>
 
-            <div *ngIf="evaluationService.status.processes[0].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
-                <app-data-inspection sourceProcess="TECHNICAL_EVALUATION" mainData="synthetic" [processingSteps]="evaluationService.processSteps"></app-data-inspection>
-            </div>
-            <ng-template #anonNoData>
-                <div>
-                    No Data Available
+                <div
+                    *ngIf="evaluationService.status.processes[0].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+                    <app-data-inspection sourceProcess="TECHNICAL_EVALUATION" mainData="synthetic"
+                                         [processingSteps]="evaluationService.processSteps"></app-data-inspection>
                 </div>
-            </ng-template>
-        </div>
+                <ng-template #anonNoData>
+                    <div>
+                        No Data Available
+                    </div>
+                </ng-template>
+            </div>
 
-    </mat-expansion-panel>
-</mat-accordion>
+        </mat-expansion-panel>
+    </mat-accordion>
 
-
+</div>
 

@@ -8,6 +8,7 @@ import {map, Observable, of, tap} from "rxjs";
 import {StatisticsService} from "../../../../shared/services/statistics.service";
 import {Statistics} from "../../../../shared/model/statistics";
 import {plainToInstance} from "class-transformer";
+import {ExecutionStep} from "../../../../shared/model/execution-step";
 
 @Component({
     selector: 'app-evaluation',
@@ -16,6 +17,8 @@ import {plainToInstance} from "class-transformer";
 })
 export class EvaluationComponent implements OnInit {
     protected readonly ProcessStatus = ProcessStatus;
+
+    protected stage$: Observable<ExecutionStep | null>;
 
     private _result: Statistics | null = null;
 
@@ -29,6 +32,7 @@ export class EvaluationComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.stage$ = this.evaluationService.status$;
         this.evaluationService.fetchStatus();
     }
 

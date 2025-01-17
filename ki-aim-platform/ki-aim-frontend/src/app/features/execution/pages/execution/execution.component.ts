@@ -18,7 +18,7 @@ import {StageConfiguration} from "../../../../shared/model/stage-configuration";
 })
 export class ExecutionComponent implements OnInit, OnDestroy {
     protected readonly ProcessStatus = ProcessStatus;
-    protected stageConfiguration$: Observable<StageConfiguration>;
+    protected stage$: Observable<ExecutionStep | null>;
 
     constructor(
         protected readonly executionService: ExecutionService,
@@ -35,8 +35,7 @@ export class ExecutionComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        this.executionService.fetchStatus();
-        this.stageConfiguration$ = this.executionService.fetchStageConfiguration();
+        this.stage$ = this.executionService.status$;
     }
 
     protected get status(): ExecutionStep {

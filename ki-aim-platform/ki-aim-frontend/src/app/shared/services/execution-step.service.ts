@@ -1,25 +1,35 @@
-import {Injectable, OnInit} from '@angular/core';
+import {Injectable } from '@angular/core';
 import { ExecutionStep } from "../model/execution-step";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
 import { ProcessStatus } from "../../core/enums/process-status";
-import {finalize, interval, Observable, of, share, Subscription, tap} from "rxjs";
-import { ExternalProcess } from "../model/external-process";
+import {
+    BehaviorSubject,
+    catchError,
+    finalize,
+    interval,
+    Observable,
+    of,
+    share, shareReplay,
+    Subscription,
+    switchMap,
+    tap
+} from "rxjs";
 import {StageConfiguration} from "../model/stage-configuration";
 import {Steps} from "../../core/enums/steps";
 
 @Injectable({
     providedIn: 'root'
 })
-export abstract class ExecutionStepService implements OnInit {
+export abstract class ExecutionStepService {
     private readonly baseUrl = environments.apiUrl + "/api/process";
 
     private _disabled: boolean = false;
     private _error: string | null = null;
     private _status: ExecutionStep = new ExecutionStep();
 
-    private _stageConfiguration: StageConfiguration | null = null;
-    private _stageConfiguration$: Observable<StageConfiguration> | null = null;
+    private _statusSubject: BehaviorSubject<ExecutionStep | null>;
+    private _status$: Observable<ExecutionStep | null> | null = null;
 
     /**
      * Observer that periodically sends requests to fetch the status
@@ -40,21 +50,15 @@ export abstract class ExecutionStepService implements OnInit {
         this._status.processes = [];
 
         // Create the status observer
-        this.statusObserver$ = interval(2000).pipe(tap(() => {
-            this.fetchStatus();
-        }));
-    }
-
-    ngOnInit(): void {
-        this.stageConfiguration$.subscribe({
-            next: value => {
-                for (let jobIndex = 0; jobIndex < value.jobs.length; jobIndex++) {
-                    const externalProcess = new ExternalProcess();
-                    externalProcess.externalProcessStatus = ProcessStatus.NOT_STARTED;
-                    this._status.processes.push(externalProcess);
-                }
-            }
-        });
+        this.statusObserver$ = interval(2000).pipe(
+            switchMap(() => {
+                return this.getProcess();
+            }),
+            tap(value => {
+                this.update(value)
+                this._statusSubject.next(value);
+            }),
+        );
     }
 
     public get disabled(): boolean {
@@ -69,6 +73,11 @@ export abstract class ExecutionStepService implements OnInit {
         return this._status;
     }
 
+    public get status$(): Observable<ExecutionStep | null> {
+        this.initializeProjectSettings();
+        return this._status$!;
+    }
+
     /**
      * Starts the anonymization and synthetization process.
      * @protected
@@ -76,12 +85,7 @@ export abstract class ExecutionStepService implements OnInit {
     public start() {
         this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStepName() + "/start", {}).subscribe({
             next: value => {
-                this._error = null;
-                this._status = value;
-                this.setState(value.status);
-                for (const status of value.processes) {
-                    this.setCustomStatus(status.step, status.status, status.processSteps);
-                }
+                this.update(value);
             },
             error: err => {
                 this.fetchStatus();
@@ -96,8 +100,7 @@ export abstract class ExecutionStepService implements OnInit {
     public cancel() {
         this.http.post<ExecutionStep>(this.baseUrl + '/' + this.getStepName() + '/cancel', {}).subscribe({
             next: (executionStep: ExecutionStep) => {
-                this._status = executionStep;
-                this.setState(executionStep.status);
+                this.update(executionStep);
             },
             error: err => {
                 this._error = `Failed to cancel the process. Status: ${err.status} (${err.statusText})`;
@@ -153,21 +156,18 @@ export abstract class ExecutionStepService implements OnInit {
      * Fetches the status from the server and updates the UI.
      * @private
      */
-   public fetchStatus(): void {
-        this.getProcess().subscribe({
-            next: process => {
-                this._error = null;
-                this._status = process;
-                this.setState(process.status);
-                for (const status of process.processes) {
-                    this.setCustomStatus(status.step, status.status, status.processSteps);
-                }
-            },
-            error: err => {
-                this._error = `Failed to update status. Status: ${err.status} (${err.statusText})`;
-            }
-        });
+    public fetchStatus(): Observable<ExecutionStep | null> {
+        return this.getProcess().pipe(
+            tap(value => {
+                this.update(value)
+            }),
+            catchError((error) => {
+                this._error = `Failed to update status. Status: ${error.status} (${error.statusText})`;
+                return of(null);
+            }),
+        );
     }
+
     /**
      *
      * Creates an observable that fetches the status.
@@ -177,24 +177,24 @@ export abstract class ExecutionStepService implements OnInit {
         return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStepName());
     }
 
-    public get stageConfiguration$(): Observable<StageConfiguration> {
-        if (this._stageConfiguration) {
-            return of(this._stageConfiguration);
+    private initializeProjectSettings(): void {
+        if (!this._statusSubject) {
+            this._statusSubject = new BehaviorSubject<ExecutionStep | null>(null)
+            this._status$ = this.fetchStatus().pipe(
+                tap(value => {
+                    this._statusSubject?.next(value);
+                }),
+                shareReplay(1),
+            );
         }
-        if (this._stageConfiguration$) {
-            return this._stageConfiguration$;
-        }
-
-        return this.http.get<StageConfiguration>(this.baseUrl).pipe(
-            tap(value => this._stageConfiguration = value),
-            share(),
-            finalize(() => {
-                this._stageConfiguration$ = null;
-            })
-        );
     }
 
-    public fetchStageConfiguration(): Observable<StageConfiguration> {
-        return this.http.get<StageConfiguration>(environments.apiUrl + "/api/step/stage/" + this.getStepName());
+    private update(executionStep: ExecutionStep) {
+        this._error = null;
+        this._status = executionStep;
+        this.setState(executionStep.status);
+        for (const status of executionStep.processes) {
+            this.setCustomStatus(status.step, status.status, status.processSteps);
+        }
     }
 }

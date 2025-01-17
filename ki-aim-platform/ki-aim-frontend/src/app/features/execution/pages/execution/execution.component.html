@@ -31,8 +31,8 @@
     </div>
 
     <!-- Steps on the right -->
-    <div *ngIf="(stageConfiguration$ | async) as stageConfiguration" class="w-100" style="display: flex; flex-direction: column;">
-        <div *ngFor="let job of stageConfiguration.jobs; let i = index" class="w-100 d-flex">
+    <div *ngIf="(stage$ | async) as stage" class="w-100" style="display: flex; flex-direction: column;">
+        <div *ngFor="let process of stage.processes; let i = index" class="w-100 d-flex">
 
             <!-- Line to anon box -->
             <div style="padding-top: 0.3rem;">

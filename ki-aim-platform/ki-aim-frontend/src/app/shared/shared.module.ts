@@ -44,10 +44,18 @@ import { MetricSorterPipe } from './pipes/metric-sorter.pipe';
 import {MatMenuModule} from "@angular/material/menu";
 import { ColorLegendComponent } from './components/color-legend/color-legend.component';
 import {MatRadioModule} from "@angular/material/radio";
+import {InstanceOfPipe} from "./pipes/instance-of.pipe";
+import { MetricInfoTableComponent } from './components/metric-info-table/metric-info-table.component';
 
 @NgModule({
     declarations: [
         // Components
+        ChartDensityComponent,
+        ChartFrequencyComponent,
+        ChartComponent,
+        ChartSelectComponent,
+        ChartCalendarComponent,
+        ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationGroupComponent,
         ConfigurationInputArrayComponent,
@@ -64,19 +72,15 @@ import {MatRadioModule} from "@angular/material/radio";
         InfoCardComponent,
         InformationDialogComponent,
         LoadingSpinnerComponent,
+        MetricInfoTableComponent,
         // Directives
         NoSpaceValidatorDirective,
         // Pipes
         ColumnConfigurationNameFilterPipe,
-        ChartDensityComponent,
-        StatisticsFilterPipe,
-        ChartFrequencyComponent,
-        ChartComponent,
-        ChartSelectComponent,
-        ChartCalendarComponent,
+        InstanceOfPipe,
         MetricFilterPipe,
         MetricSorterPipe,
-        ColorLegendComponent,
+        StatisticsFilterPipe,
     ],
     imports: [
         CommonModule,
@@ -103,17 +107,20 @@ import {MatRadioModule} from "@angular/material/radio";
         MatRadioModule,
     ],
     exports: [
+        ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,
         ConfigurationManagementComponent,
         ConfigurationPageComponent,
         ConfigurationUploadComponent,
+        DataInspectionComponent,
+        DataInspectionAttributeComponent,
         DataTableComponent,
         InfoCardComponent,
         LoadingSpinnerComponent,
+        MetricInfoTableComponent,
         NoSpaceValidatorDirective,
-        DataInspectionComponent,
-        DataInspectionAttributeComponent,
+        InstanceOfPipe,
     ],
 })
 export class SharedModule {}

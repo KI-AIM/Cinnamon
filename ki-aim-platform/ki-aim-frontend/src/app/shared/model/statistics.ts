@@ -1,11 +1,20 @@
 import { ColumnConfiguration } from "./column-configuration";
-import {Type} from "class-transformer";
+import { plainToInstance, Transform, Type } from "class-transformer";
+import { TransformFnParams } from "class-transformer/types/interfaces";
 
 export class Statistics {
-    @Type(() => AttributeStatistics)
-    resemblance: AttributeStatistics[];
+    @Type(() => ResemblanceStatistics)
+    resemblance: ResemblanceStatistics;
 
-    utility: any[];
+    @Type(() => UtilityStatistics)
+    utility: UtilityStatistics;
+}
+
+export class ResemblanceStatistics {
+    display_name: string;
+    description: string;
+    @Type(() => AttributeStatistics)
+    attributes: AttributeStatistics[];
 }
 
 export class AttributeStatistics {
@@ -91,17 +100,18 @@ export class PlotData {
     frequency_plot?: StatisticsData<HistogramPlotData>;
 }
 
+export class StatisticsMetaData {
+    display_name: string;
+    description: string;
+    interpretation: string;
+}
 
-export class StatisticsValues {
+export class StatisticsValues extends StatisticsMetaData {
     @Type(() => StatisticsData<number>)
     values: StatisticsData<number>;
 
     @Type(() => StatisticsDifference)
     difference: StatisticsDifference;
-
-    display_name: string;
-    description: string;
-    interpretation: string;
 }
 
 export class KolmogorovSmirnovData {
@@ -115,13 +125,9 @@ export class HellingerDistanceData {
     color_index: number;
 }
 
-export class StatisticsValuesNominal<T> {
+export class StatisticsValuesNominal<T> extends StatisticsMetaData {
     @Type(() => StatisticsData<T>)
     values: StatisticsData<T>;
-
-    display_name: string;
-    description: string;
-    interpretation: string;
 }
 
 export class StatisticsDifference {
@@ -158,3 +164,73 @@ export class HistogramData {
 }
 
 export type StatisticsValueTypes = StatisticsValues | StatisticsValuesNominal<any>;
+
+export class UtilityMetricData2 extends StatisticsMetaData {
+    @Type(() => Predictions)
+    real: Predictions;
+    @Type(() => Predictions)
+    synthetic: Predictions;
+    @Type(() => Predictions)
+    difference: Predictions;
+}
+
+export class UtilityMetricData3 extends StatisticsMetaData {
+    @Type(() => UtilityData)
+    predictions: UtilityData;
+}
+
+export class UtilityStatisticsData {
+    classifier: string;
+    score: number;
+    color_index: number;
+}
+
+export class UtilityData {
+    [key: string]: UtilityStatisticsData[]
+}
+
+export class Predictions {
+    @Type(() => UtilityData)
+    predictions: UtilityData;
+}
+
+export class UtilityStatistics {
+    display_name: string;
+    description: string;
+    @Transform(transformUtilityMetricData, { toClassOnly: true })
+    methods: UtilityMetricDataObject;
+}
+
+export type UtilityMetricDataObject = { [key: string]: UtilityMetricData2 | UtilityMetricData3 };
+
+function transformUtilityMetricData(params: TransformFnParams): UtilityMetricDataObject {
+    if (!params.value) {
+        return {};
+    }
+
+    const result: UtilityMetricDataObject = {};
+    for (const obj of params.value) {
+        for (const [key, value] of Object.entries(obj)) {
+            const type = utilityMetricDataFactory2(value);
+            if (type) {
+                result[key] = type;
+            }
+        }
+
+    }
+    return result;
+}
+
+function utilityMetricDataFactory2(data: any): UtilityMetricData2 | UtilityMetricData3 | null {
+    if (!data) {
+        return null;
+    }
+
+    if ('real' in data && 'synthetic' in data && 'difference' in data) {
+        return plainToInstance(UtilityMetricData2, data);
+    } else if ('predictions' in data) {
+        return plainToInstance(UtilityMetricData3, data);
+    }
+
+    return null;
+}

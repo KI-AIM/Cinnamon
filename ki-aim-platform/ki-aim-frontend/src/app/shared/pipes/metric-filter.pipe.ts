@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import {DetailMetrics, StatisticsValues, StatisticsValuesNominal, StatisticsValueTypes} from "../model/statistics";
-import {MetricImportance, MetricImportanceData} from "../model/project-settings";
+import { StatisticsValueTypes } from "../model/statistics";
+import { MetricImportance, MetricImportanceData } from "../model/project-settings";
 
 @Pipe({
     name: 'metricFilter',

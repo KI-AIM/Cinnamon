@@ -190,7 +190,7 @@
         <td>{{ data[1].display_name }}</td>
         <td>{{ statisticsService.formatNumber(getValue(data[1].values, mainData)) }}</td>
         <td class="information-column">
-            <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, data[1])">
+            <a title="Show information" style="vertical-align: middle;" (click)="metricInfoTableComponent.open(data[1])">
                 <mat-icon fontIcon="info"></mat-icon>
             </a>
         </td>
@@ -212,7 +212,7 @@
         <td>{{ statisticsService.formatNumber(getDifference(data[1], 'absolute')) }}</td>
         <td>{{ statisticsService.formatNumber(getDifference(data[1], 'percentage')) }}</td>
         <td class="information-column">
-            <a title="Show information" style="vertical-align: middle;" (click)="openDialog(metricInfoDialog, data[1])">
+            <a title="Show information" style="vertical-align: middle;" (click)="metricInfoTableComponent.open(data[1])">
                 <mat-icon fontIcon="info"></mat-icon>
             </a>
         </td>
@@ -244,25 +244,7 @@
     </th>
 </ng-template>
 
-<ng-template #metricInfoDialog>
-    <mat-dialog-content class="mat-typography">
-
-        <div class="info-table">
-            <span class="info-name">Name:</span>
-            <span class="info-value">{{ metricInfo.display_name }}</span>
-
-            <span class="info-name">Description:</span>
-            <span class="info-value">{{ metricInfo.description }}</span>
-
-            <span class="info-name">Interpretation:</span>
-            <span class="info-value">{{ metricInfo.interpretation }}</span>
-        </div>
-    </mat-dialog-content>
-
-    <mat-dialog-actions align="end">
-        <button mat-raised-button mat-dialog-close color="primary">Close</button>
-    </mat-dialog-actions>
-</ng-template>
+<app-metric-info-table #metricInfoTableComponent></app-metric-info-table>
 
 <mat-menu #colorLegend xPosition="after" yPosition="above">
     <app-color-legend></app-color-legend>

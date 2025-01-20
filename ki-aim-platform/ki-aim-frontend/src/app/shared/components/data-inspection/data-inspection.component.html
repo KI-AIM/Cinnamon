@@ -13,7 +13,7 @@
 
 <div style="margin-top: -1rem;">
     <div *ngIf="(statistics$ | async) as statistics">
-        <div *ngIf="(statistics.resemblance | statisticsFilter:filterText) as filteredAttributes">
+        <div *ngIf="(statistics.resemblance.attributes | statisticsFilter:filterText) as filteredAttributes">
             <div class="mb-2">Showing {{ filteredAttributes.filteredCount }}/ {{ filteredAttributes.originalCount }}
             </div>
 

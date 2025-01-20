@@ -75,9 +75,6 @@
                     </mat-expansion-panel-header>
 
                     <div>
-                        <button mat-flat-button [matMenuTriggerFor]="colorLegend" class="flat-mat-form-button ms-auto">
-                            Legend
-                        </button>
                         <div *ngFor="let abc of utility.methods | keyvalue" class="mb-2 pt-2 border-top border-1">
 
                             <div style="display: flex;">
@@ -89,6 +86,9 @@
                                     <mat-icon fontIcon="info"></mat-icon>
                                 </a>
 
+                                <button mat-flat-button [matMenuTriggerFor]="colorLegend" class="flat-mat-form-button ms-auto">
+                                    Legend
+                                </button>
                             </div>
 
                             <div *ngIf="(abc.value | instanceOf:UtilityMetricData2) as data2">

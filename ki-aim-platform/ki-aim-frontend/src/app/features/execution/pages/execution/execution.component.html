@@ -87,13 +87,11 @@
                                         </table>
                                     </div>
                                     <ng-template #statusIsString>
-                                        <ng-container *ngIf="executionService.synthProcess">
                                             {{ executionService.synthProcess }}
-                                        </ng-container>
-                                        <ng-container *ngIf="!executionService.synthProcess">
-                                            No Information Available
-                                        </ng-container>
                                     </ng-template>
+                                </div>
+                                <div *ngIf="!executionService.synthProcess">
+                                    No Status Available
                                 </div>
                             </ng-container>
 

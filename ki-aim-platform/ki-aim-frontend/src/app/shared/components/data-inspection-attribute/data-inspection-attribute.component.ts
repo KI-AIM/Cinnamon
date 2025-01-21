@@ -47,10 +47,6 @@ export class DataInspectionAttributeComponent implements OnInit {
         });
     }
 
-    protected get dataType(): DataType {
-        return this.attributeStatistics.attribute_information.type;
-    }
-
     protected readonly DataType = DataType;
     protected readonly MetricImportance = MetricImportance;
 }

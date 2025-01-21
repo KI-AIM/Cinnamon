@@ -25,6 +25,13 @@
                     Configuration Download
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" title="Configuration"
+               (click)="metricConfigurationComponent.open();"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                Metrics
+            </a>
+        </li>
     </ul>
 
 
@@ -34,4 +41,5 @@
     </div>
 
     <app-configuration-management></app-configuration-management>
+    <app-metric-configuration #metricConfigurationComponent></app-metric-configuration>
 </div>

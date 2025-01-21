@@ -46,6 +46,7 @@ import { ColorLegendComponent } from './components/color-legend/color-legend.com
 import {MatRadioModule} from "@angular/material/radio";
 import {InstanceOfPipe} from "./pipes/instance-of.pipe";
 import { MetricInfoTableComponent } from './components/metric-info-table/metric-info-table.component';
+import { MetricConfigurationComponent } from './components/metric-configuration/metric-configuration.component';
 
 @NgModule({
     declarations: [
@@ -81,6 +82,7 @@ import { MetricInfoTableComponent } from './components/metric-info-table/metric-
         MetricFilterPipe,
         MetricSorterPipe,
         StatisticsFilterPipe,
+        MetricConfigurationComponent,
     ],
     imports: [
         CommonModule,
@@ -121,6 +123,7 @@ import { MetricInfoTableComponent } from './components/metric-info-table/metric-
         MetricInfoTableComponent,
         NoSpaceValidatorDirective,
         InstanceOfPipe,
+        MetricConfigurationComponent,
     ],
 })
 export class SharedModule {}

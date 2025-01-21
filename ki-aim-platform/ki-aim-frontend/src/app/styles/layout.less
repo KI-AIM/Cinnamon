@@ -116,3 +116,32 @@ app-navigation{
     gap: 0.5rem;
     width: 100%;
 }
+
+.stage-head {
+    .box;
+
+    align-items: center;
+    display: flex;
+
+    > :not(:last-child) {
+        margin-right: 0.5rem;
+    }
+    > :last-child {
+        margin-left: auto;
+    }
+}
+
+
+.step-head {
+    display: flex;
+    height: 3rem;
+
+    > * {
+        margin-bottom: auto;
+        margin-top: auto;
+    }
+
+    > :last-child {
+        margin-left: auto;
+    }
+}

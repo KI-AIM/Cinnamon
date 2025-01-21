@@ -3,37 +3,31 @@
     <div>{{ evaluationService.error }}</div>
 </app-info-card>
 
-<div class="mt-2">
-    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="evaluationService.disabled"
-            (click)="evaluationService.start()">
-        Start
-    </button>
-
-    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="!evaluationService.disabled"
-            (click)="evaluationService.cancel()">
-        Cancel Algorithm
-    </button>
-
-    <button type="submit" mat-raised-button color="primary" (click)="downloadResult()">
-        Download
-    </button>
-</div>
-
 <div *ngIf="(stage$ | async) as status">
 
-    <div class="mb-2">
-        <h2 class="me-2" style="display: inline;">Status</h2>
-        <span class="status mt-2" [ngClass]="evaluationService.status.status">
-        <span>{{ evaluationService.status.status.replace("_", " ") }}</span>
+    <div class="stage-head">
+        <button type="submit" mat-raised-button color="primary" [disabled]="evaluationService.disabled"
+                (click)="evaluationService.start()">
+            Start
+            <mat-icon fontIcon="play_arrow" ></mat-icon>
+        </button>
+
+        <button type="submit" mat-raised-button color="warn" [disabled]="!evaluationService.disabled"
+                (click)="evaluationService.cancel()">
+            Cancel
+            <mat-icon fontIcon="stop"></mat-icon>
+        </button>
+
+        <span class="status" [ngClass]="evaluationService.status.status">
+            <span>{{ evaluationService.status.status.replace("_", " ") }}</span>
         </span>
     </div>
 
-    <div class="mb-2 box" style="width: 100%; padding-top: 0.3rem;">
+    <div class="mb-2 mt-2 box" style="width: 100%; padding-top: 0.3rem;">
 
-        <div style="height: 3rem; display: flex;">
-            <span style="margin-bottom: auto; margin-top: auto; margin-right: 2rem;">Technical Evaluation </span>
-            <span style="margin-bottom: auto; margin-top: auto;" class="status"
-                  [ngClass]="evaluationService.status.processes[0].externalProcessStatus">
+        <div class="step-head">
+            <span>Technical Evaluation </span>
+            <span class="status" [ngClass]="evaluationService.status.processes[0].externalProcessStatus">
                 <span>{{ evaluationService.status.processes[0].externalProcessStatus.replace("_", " ") }}</span>
             </span>
         </div>

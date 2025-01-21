@@ -3,25 +3,22 @@
     <div>{{ executionService.error }}</div>
 </app-info-card>
 
-<div class="mt-2">
-    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="executionService.disabled"
+<div class="stage-head">
+    <button type="submit" mat-raised-button color="primary" [disabled]="executionService.disabled"
             (click)="executionService.start()">
         Start
+        <mat-icon fontIcon="play_arrow"></mat-icon>
     </button>
 
-    <button type="submit" class="me-2" mat-raised-button color="primary" [disabled]="!executionService.disabled"
+    <button type="submit" mat-raised-button color="warn" [disabled]="!executionService.disabled"
             (click)="executionService.cancel()">
-        Cancel Algorithm
+        Cancel
+        <mat-icon fontIcon="stop"></mat-icon>
     </button>
 
-    <button type="submit" mat-raised-button color="primary" (click)="downloadResult()">
-        Download
-    </button>
-</div>
-
-<div class="mb-2">
-    <h2 class="me-2" style="display: inline;">Status</h2>
-    <span class="status mt-2" [ngClass]="status.status"> <span>{{ status.status.replace("_", " ") }}</span> </span>
+    <span class="status" [ngClass]="status.status">
+        <span>{{ status.status.replace("_", " ") }}</span>
+    </span>
 </div>
 
 
@@ -31,7 +28,7 @@
     </div>
 
     <!-- Steps on the right -->
-    <div *ngIf="(stage$ | async) as stage" class="w-100" style="display: flex; flex-direction: column;">
+    <div *ngIf="(stage$ | async) as stage" class="w-100" style="display: flex; flex-direction: column; margin-top: 2rem;">
         <div *ngFor="let process of stage.processes; let i = index" class="w-100 d-flex">
 
             <!-- Line to anon box -->
@@ -47,10 +44,9 @@
             <!-- I have no idea why width: 10% and flex-grow: 1 is doing what I want to do -->
             <div class="mb-2 box" style="flex-grow: 1; width: 10%; padding-top: 0.3rem;">
                 <!-- Head -->
-                <div style="height: 3rem; display: flex;">
-                    <span style="margin-bottom: auto; margin-top: auto; margin-right: 2rem;"> {{ getJobName(i) }} </span>
-                    <span style="margin-bottom: auto; margin-top: auto;" class="status"
-                          [ngClass]="status.processes[i].externalProcessStatus">
+                <div class="step-head">
+                    <span> {{ getJobName(i) }} </span>
+                    <span class="status" [ngClass]="status.processes[i].externalProcessStatus">
                         <span>{{ status.processes[i].externalProcessStatus.replace("_", " ") }}</span>
                     </span>
                 </div>
@@ -67,6 +63,9 @@
                             <ng-container *ngIf="i == 0">
                                 <div *ngIf="executionService.anonProcess !== null">
                                     {{ executionService.anonProcess }}
+                                </div>
+                                <div *ngIf="executionService.anonProcess === null">
+                                    No Status Available
                                 </div>
                             </ng-container>
                             <ng-container *ngIf="i == 1">
@@ -88,7 +87,12 @@
                                         </table>
                                     </div>
                                     <ng-template #statusIsString>
-                                        {{ executionService.synthProcess }}
+                                        <ng-container *ngIf="executionService.synthProcess">
+                                            {{ executionService.synthProcess }}
+                                        </ng-container>
+                                        <ng-container *ngIf="!executionService.synthProcess">
+                                            No Information Available
+                                        </ng-container>
                                     </ng-template>
                                 </div>
                             </ng-container>
@@ -132,20 +136,11 @@
                                     </div>
                                     <ng-template #synthNoData>
                                         <div>
-                                            No Statistics Available
+                                            No Inspection Available
                                         </div>
                                     </ng-template>
                                 </div>
                             </ng-template>
-                        </mat-expansion-panel>
-
-                        <!-- Risk -->
-                        <mat-expansion-panel>
-                            <mat-expansion-panel-header>
-                                <mat-panel-title>Risk</mat-panel-title>
-                                <mat-panel-description></mat-panel-description>
-                            </mat-expansion-panel-header>
-                            TODO
                         </mat-expansion-panel>
 
                     </mat-accordion>
@@ -157,7 +152,7 @@
     </div>
 </div>
 
-<div class="mt-2">
+<div class="box">
     <button type="button" mat-raised-button color="primary" [disabled]="status.status != ProcessStatus.FINISHED"
             (click)="continue()">
         Continue

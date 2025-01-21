@@ -2,8 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { EvaluationService } from "../../services/evaluation.service";
 import { TitleService } from "../../../../core/services/title-service.service";
 import { ProcessStatus } from "../../../../core/enums/process-status";
-import { environments } from "../../../../../environments/environment";
-import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
 import { StatisticsService } from "../../../../shared/services/statistics.service";
 import {
@@ -32,7 +30,6 @@ export class EvaluationComponent implements OnInit {
     constructor(
         protected readonly evaluationService: EvaluationService,
         protected readonly statisticsService: StatisticsService,
-        private readonly http: HttpClient,
         private readonly titleService: TitleService,
     ) {
         this.titleService.setPageTitle("Evaluation");
@@ -42,22 +39,6 @@ export class EvaluationComponent implements OnInit {
         this.stage$ = this.evaluationService.status$;
         this.statistics$ = this.statisticsService.fetchResult();
         this.evaluationService.fetchStatus();
-    }
-
-    /**
-     * Downloads all files related to the project in a ZIP file.
-     * @protected
-     */
-    protected downloadResult() {
-        this.http.get(environments.apiUrl + "/api/project/zip", {responseType: 'arraybuffer'}).subscribe({
-            next: data => {
-                const blob = new Blob([data], {
-                    type: 'application/zip'
-                });
-                const url = window.URL.createObjectURL(blob);
-                window.open(url);
-            }
-        });
     }
 
     protected getFirstElement(obj: UtilityData): Array<UtilityStatisticsData> {

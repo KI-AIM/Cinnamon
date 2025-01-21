@@ -19,15 +19,19 @@
     <hr class="hr">
     <ul class="nav flex-column justify-content-start">
         <li class="nav-item">
-            <a class="nav-link" title="Configuration"
-               (click)="openConfigurations()"
+            <a class="nav-link" title="Configuration" (click)="openConfigurations()"
                [ngClass]="{'disabled': !userService.isAuthenticated()}">
                     Configuration Download
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" title="Configuration"
-               (click)="metricConfigurationComponent.open();"
+            <a class="nav-link" title="Configuration" (click)="downloadResult()"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                Project Download
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" title="Configuration" (click)="metricConfigurationComponent.open();"
                [ngClass]="{'disabled': !userService.isAuthenticated()}">
                 Metrics
             </a>

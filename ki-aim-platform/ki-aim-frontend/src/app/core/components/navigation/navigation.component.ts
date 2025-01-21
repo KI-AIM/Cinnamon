@@ -5,6 +5,8 @@ import { KeyValue } from '@angular/common';
 import { UserService } from 'src/app/shared/services/user.service';
 import { ConfigurationManagementComponent } from 'src/app/shared/components/configuration-management/configuration-management.component';
 import { StatusService } from "../../../shared/services/status.service";
+import { environments } from "../../../../environments/environment";
+import { HttpClient } from "@angular/common/http";
 
 @Component({
     selector: 'app-navigation',
@@ -20,6 +22,7 @@ export class NavigationComponent {
     @ViewChild(ConfigurationManagementComponent) configManagement: ConfigurationManagementComponent;
 
     constructor(
+        private readonly http: HttpClient,
         protected statusService: StatusService,
         public userService: UserService,
     ) { }
@@ -41,5 +44,21 @@ export class NavigationComponent {
 
     openConfigurations() {
         this.configManagement.openDialog();
+    }
+
+    /**
+     * Downloads all files related to the project in a ZIP file.
+     * @protected
+     */
+    protected downloadResult() {
+        this.http.get(environments.apiUrl + "/api/project/zip", {responseType: 'arraybuffer'}).subscribe({
+            next: data => {
+                const blob = new Blob([data], {
+                    type: 'application/zip'
+                });
+                const url = window.URL.createObjectURL(blob);
+                window.open(url);
+            }
+        });
     }
 }

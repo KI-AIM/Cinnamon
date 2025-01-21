@@ -35,27 +35,12 @@
                     Important Statistical Metrics
                 </div>
 
-                <div>
-                    <table class="metric-table metric-table-single">
-
-                        <ng-container *ngIf="(metricConfig$ | async) as mc">
-                            <ng-container *ngFor="let metricData of projectConfigService.filterMetrics(mc, MetricImportance.IMPORTANT, attributeStatistics)">
-
-                                <ng-container *ngIf="!hasSynthetic">
-                                    <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
-                                    </ng-container>
-                                </ng-container>
-                                <ng-container *ngIf="hasSynthetic">
-                                    <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
-                                    </ng-container>
-                                </ng-container>
-
-                            </ng-container>
-                        </ng-container>
-
-
-                    </table>
-                </div>
+                <ng-container *ngIf="hasSynthetic">
+                    <ng-container *ngTemplateOutlet="metricComparisonTable; context: {tableData: importantMetricsTableData}"></ng-container>
+                </ng-container>
+                <ng-container *ngIf="!hasSynthetic">
+                    <ng-container *ngTemplateOutlet="metricTable; context: {tableData: importantMetricsTableData}"></ng-container>
+                </ng-container>
 
             </div>
         </div>
@@ -110,21 +95,7 @@
                     Additional Metrics
                 </div>
 
-                <ng-container *ngTemplateOutlet="metricSearch"></ng-container>
-
-                <table class="metric-table metric-table-single">
-                    <tr class="no-select">
-                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', type: 'metric'}"></ng-container>
-                        <th>Value</th>
-                        <th></th>
-                    </tr>
-                    <ng-container *ngIf="(metricConfig$ | async) as mc">
-                        <ng-container *ngFor="let metricData of injectImportance(projectConfigService.filterMetrics(mc, MetricImportance.ADDITIONAL, attributeStatistics), mc) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
-                            <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
-                            </ng-container>
-                        </ng-container>
-                    </ng-container>
-                </table>
+                <ng-container *ngTemplateOutlet="metricTable; context: {tableData: additionalMetricsTableData}"></ng-container>
 
             </div>
 
@@ -152,38 +123,37 @@
         <ng-container *ngIf="hasSynthetic">
 
             <div class="box">
-
                 <div class="box-name">
                     Metric Comparison
                 </div>
 
-                <ng-container *ngTemplateOutlet="metricSearch"></ng-container>
-
-                <table class="metric-table metric-table-comparison">
-                    <tr class="no-select">
-                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', type: 'colorIndex', item: statusLegend}"></ng-container>
-                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', type: 'metric'}"></ng-container>
-                        <th>Real</th>
-                        <th>Synth</th>
-                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (#)', type: 'absolute'}"></ng-container>
-                        <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (%)', type: 'percentage'}"></ng-container>
-                        <th></th>
-                    </tr>
-
-                    <ng-container *ngIf="(metricConfig$ | async) as mc">
-                        <ng-container
-                            *ngFor="let metricData of  injectImportance(projectConfigService.filterMetrics(mc, MetricImportance.ADDITIONAL, attributeStatistics), mc) | metricFilter:metricFilterText:null | metricSorter:metricSortDirection:metricSortColumn">
-                            <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
-                            </ng-container>
-                        </ng-container>
-                    </ng-container>
-                </table>
+                <ng-container *ngTemplateOutlet="metricComparisonTable; context: {tableData: additionalMetricsTableData}"></ng-container>
             </div>
 
         </ng-container>
 
     </div>
 </div>
+
+<ng-template #metricTable let-data='tableData'>
+    <div *ngIf="data | instanceOf:MetricTableData as tableData">
+        <ng-container *ngTemplateOutlet="metricSearch; context: {filterData: tableData.filter}"></ng-container>
+
+        <table class="metric-table metric-table-single">
+            <tr class="no-select">
+                <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', sortData: tableData.sort, type: 'metric'}"></ng-container>
+                <th>Value</th>
+                <th></th>
+            </tr>
+            <ng-container *ngIf="(metricConfig$ | async) as mc">
+                <ng-container *ngFor="let metricData of  injectImportance(projectConfigService.filterMetrics(mc, tableData.filter.importance, attributeStatistics), mc) | metricFilter:tableData.filter.filterText:null | metricSorter:tableData.sort.direction:tableData.sort.column">
+                    <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
+                    </ng-container>
+                </ng-container>
+            </ng-container>
+        </table>
+    </div>
+</ng-template>
 
 <ng-template #metric let-data='data'>
     <tr>
@@ -195,6 +165,31 @@
             </a>
         </td>
     </tr>
+</ng-template>
+
+<ng-template #metricComparisonTable let-data='tableData'>
+    <div *ngIf="data | instanceOf:MetricTableData as tableData">
+        <ng-container *ngTemplateOutlet="metricSearch; context: {filterData: tableData.filter}"></ng-container>
+
+        <table class="metric-table metric-table-comparison">
+            <tr class="no-select">
+                <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', sortData: tableData.sort, type: 'colorIndex', item: statusLegend}"></ng-container>
+                <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', sortData: tableData.sort, type: 'metric'}"></ng-container>
+                <th>Real</th>
+                <th>Synth</th>
+                <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (#)', sortData: tableData.sort, type: 'absolute'}"></ng-container>
+                <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (%)', sortData: tableData.sort, type: 'percentage'}"></ng-container>
+                <th></th>
+            </tr>
+
+            <ng-container *ngIf="(metricConfig$ | async) as mc">
+                <ng-container *ngFor="let metricData of  injectImportance(projectConfigService.filterMetrics(mc, tableData.filter.importance, attributeStatistics), mc) | metricFilter:tableData.filter.filterText:null | metricSorter:tableData.sort.direction:tableData.sort.column">
+                    <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
+                    </ng-container>
+                </ng-container>
+            </ng-container>
+        </table>
+    </div>
 </ng-template>
 
 <ng-template #metricComparison let-data='data'>
@@ -219,29 +214,31 @@
     </tr>
 </ng-template>
 
-<ng-template #metricSearch>
-    <mat-form-field class="w-100">
+<ng-template #metricSearch let-data='filterData'>
+    <mat-form-field *ngIf="data | instanceOf:MetricTableFilterData as filterData" class="w-100">
         <mat-label>Search</mat-label>
-        <input type="text" matInput [(ngModel)]="metricFilterText"/>
-        <button mat-icon-button matSuffix *ngIf="metricFilterText" (click)="metricFilterText=''">
+        <input type="text" matInput [(ngModel)]="filterData.filterText"/>
+        <button mat-icon-button matSuffix *ngIf="filterData.filterText" (click)="filterData.filterText=''">
             <mat-icon>clear</mat-icon>
         </button>
     </mat-form-field>
 </ng-template>
 
-<ng-template #sortColumn let-name="name" let-type="type" let-item="item">
-    <th (click)="sort(type)" style="min-width: 6rem;">
-        <div style="display: flex">
-            <span>{{ name }}</span>
-            <span *ngIf="item">
+<ng-template #sortColumn let-name="name" let-data="sortData" let-type="type" let-item="item">
+    <ng-container *ngIf="data | instanceOf:MetricTableSortData as sortData">
+        <th (click)="sort(sortData, type)" style="min-width: 6rem;">
+            <div style="display: flex">
+                <span>{{ name }}</span>
+                <span *ngIf="item">
                 <ng-container *ngTemplateOutlet="item"></ng-container>
             </span>
-            <span *ngIf="metricSortColumn === type" style="margin-left: auto; margin-bottom: -7px;">
-                <mat-icon *ngIf="metricSortDirection === 'asc'">arrow_drop_up</mat-icon>
-                <mat-icon *ngIf="metricSortDirection === 'desc'">arrow_drop_down</mat-icon>
+                <span *ngIf="sortData.column === type" style="margin-left: auto; margin-bottom: -7px;">
+                <mat-icon *ngIf="sortData.direction === 'asc'">arrow_drop_up</mat-icon>
+                <mat-icon *ngIf="sortData.direction === 'desc'">arrow_drop_down</mat-icon>
             </span>
-        </div>
-    </th>
+            </div>
+        </th>
+    </ng-container>
 </ng-template>
 
 <app-metric-info-table #metricInfoTableComponent></app-metric-info-table>

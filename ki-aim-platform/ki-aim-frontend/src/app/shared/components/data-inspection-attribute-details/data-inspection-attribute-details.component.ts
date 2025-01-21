@@ -1,19 +1,18 @@
-import {Component, Input, OnInit, TemplateRef} from '@angular/core';
+import {Component, Input, OnInit } from '@angular/core';
 import {
     AttributeStatistics,
     StatisticsData,
     StatisticsValues,
-    StatisticsValuesNominal, StatisticsValueTypes
+   StatisticsValueTypes
 } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
-import { SortDirection, SortType } from "../../pipes/metric-sorter.pipe";
-import {MatDialog} from "@angular/material/dialog";
 import {Steps} from "../../../core/enums/steps";
 import {processEnumValue} from "../../helper/enum-helper";
 import {MetricImportance, MetricImportanceData, MetricSettings} from "../../model/project-settings";
 import {ProjectConfigurationService} from "../../services/project-configuration.service";
 import {map, Observable} from "rxjs";
+import { MetricTableData, MetricTableFilterData, MetricTableSortData, SortType } from "../../model/metric-table-data";
 
 @Component({
     selector: 'app-data-inspection-attribute-details',
@@ -22,6 +21,9 @@ import {map, Observable} from "rxjs";
 })
 export class DataInspectionAttributeDetailsComponent implements OnInit {
     protected readonly DataType = DataType;
+    protected readonly MetricTableData = MetricTableData
+    protected readonly MetricTableFilterData = MetricTableFilterData;
+    protected readonly MetricTableSortData = MetricTableSortData;
     protected readonly Object = Object;
 
     @Input() public attributeStatistics!: AttributeStatistics;
@@ -33,42 +35,49 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     protected graphType: string = 'histogram';
     protected hasSynthetic: boolean = false;
 
-    protected metricFilterText: string;
-    protected metricSortDirection: SortDirection | null = null;
-    protected metricSortColumn: SortType | null = null;
-
-    protected metricInfo: StatisticsValues | StatisticsValuesNominal<any>;
+    protected importantMetricsTableData = new MetricTableData();
+    protected additionalMetricsTableData = new MetricTableData();
 
     protected datasetDisplayName: string;
 
     protected metricConfig$: Observable<MetricSettings>;
 
     constructor(
-        private dialog: MatDialog,
         protected readonly projectConfigService: ProjectConfigurationService,
         protected statisticsService: StatisticsService,
     ) {
+        this.importantMetricsTableData.filter.importance = MetricImportance.IMPORTANT;
+        this.additionalMetricsTableData.filter.importance = MetricImportance.ADDITIONAL;
     }
 
     ngOnInit(): void {
         this.hasSynthetic = this.mainData == 'synthetic';
+
+        if (this.hasSynthetic) {
+            this.importantMetricsTableData.sort.direction = 'desc';
+            this.importantMetricsTableData.sort.column = 'colorIndex';
+
+            this.additionalMetricsTableData.sort.direction = 'desc';
+            this.additionalMetricsTableData.sort.column = 'colorIndex';
+        }
+
         this.datasetDisplayName = this.getSyntheticName();
         this.metricConfig$ = this.projectConfigService.projectSettings$.pipe(
             map(val => val.metricConfiguration)
         );
     }
 
-    protected sort(type: SortType): void {
-        if (this.metricSortColumn === type) {
-            if (this.metricSortDirection === 'asc') {
-                this.metricSortDirection = 'desc';
-            } else if (this.metricSortDirection === 'desc') {
-                this.metricSortColumn = null;
-                this.metricSortDirection = null;
+    protected sort(sortData: MetricTableSortData, type: SortType): void {
+        if (sortData.column === type) {
+            if (sortData.direction === 'asc') {
+                sortData.direction = 'desc';
+            } else if (sortData.direction === 'desc') {
+                sortData.column = null;
+                sortData.direction = null;
             }
         } else {
-            this.metricSortColumn = type;
-            this.metricSortDirection = 'asc';
+            sortData.column = type;
+            sortData.direction = 'asc';
         }
     }
 
@@ -114,19 +123,5 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         syntheticName = syntheticName + " Values"
         return syntheticName;
     }
-
-    /**
-     * Opens the info popup.
-     * @param templateRef The reference to the popup.
-     * @param statistics The statistics data.
-     */
-    openDialog(templateRef: TemplateRef<any>, statistics: StatisticsValueTypes) {
-        this.metricInfo = statistics;
-
-        this.dialog.open(templateRef, {
-            width: '60%'
-        });
-    }
-
-    protected readonly MetricImportance = MetricImportance;
 }
+

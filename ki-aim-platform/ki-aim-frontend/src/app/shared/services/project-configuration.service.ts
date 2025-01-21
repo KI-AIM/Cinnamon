@@ -75,7 +75,11 @@ export class ProjectConfigurationService {
      * @param imp The importance of the metrics to filter.
      * @param attributeStatistics The attribute statistics containing the metrics.
      */
-    public filterMetrics(config: MetricSettings, imp: MetricImportance, attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
+    public filterMetrics(config: MetricSettings, imp: MetricImportance | null, attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
+        if (!imp) {
+            return this.getAllMetrics(attributeStatistics);
+        }
+
         if (!config.useUserDefinedImportance) {
             switch (imp) {
                 case MetricImportance.IMPORTANT:

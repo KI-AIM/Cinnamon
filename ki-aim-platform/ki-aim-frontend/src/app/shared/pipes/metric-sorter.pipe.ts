@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import {StatisticsValues, StatisticsValueTypes} from '../model/statistics';
+import { StatisticsValues, StatisticsValueTypes } from '../model/statistics';
+import { SortDirection, SortType } from "../model/metric-table-data";
 
 @Pipe({
     name: 'metricSorter',
@@ -55,5 +56,3 @@ export class MetricSorterPipe implements PipeTransform {
 
 }
 
-export type SortDirection = 'asc' | 'desc' | 'original';
-export type SortType = 'metric' | 'colorIndex' | 'absolute' | 'percentage';

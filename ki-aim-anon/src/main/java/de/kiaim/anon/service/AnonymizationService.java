@@ -70,6 +70,10 @@ public class AnonymizationService {
     public CompletableFuture<DataSet> anonymizeData(DataSet dataSet,
                                                     FrontendAnonConfig frontendAnonConfig,
                                                     String processId) throws Exception {
+
+        // Check that at least one attribute configuration as been defined by the user.
+        FrontendAnonConfigValidation.validateAttributeConfiguration(frontendAnonConfig);
+
         // Check compatibility between DataSet and FrontendAnonConfig
         CompatibilityAssurance.checkDataSetAndFrontendConfigCompatibility(dataSet, frontendAnonConfig);
 
@@ -104,6 +108,7 @@ public class AnonymizationService {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 log.info("Start anon.");
+                FrontendAnonConfigValidation.validateAttributeConfiguration(request.getAnonymizationConfig());
                 CompatibilityAssurance.checkDataSetAndFrontendConfigCompatibility(request.getData(), request.getAnonymizationConfig());
                 AnonymizationConfig anonymizationConfigConverted = FrontendAnonConfigConverter.convertToJALConfig(request.getAnonymizationConfig(), request.getData());
                 String[][] jalData = dataSetProcessor.convertDatasetToStringArray(request.getData());

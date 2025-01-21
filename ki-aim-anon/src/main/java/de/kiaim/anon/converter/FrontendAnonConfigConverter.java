@@ -281,7 +281,7 @@ public class FrontendAnonConfigConverter {
             type = "MASKING";
             intervalSize = frontendAttributeConfig.getIntervalSize();
             minLevelToUse = 0; // minimal masking
-            maxLevelToUse = Integer.parseInt(frontendAttributeConfig.getIntervalSize())+1; // full masking
+            maxLevelToUse = Integer.parseInt(frontendAttributeConfig.getIntervalSize()); // full masking
         } else if ((frontendAttributeConfig.getAttributeProtection() == AttributeProtection.GENERALIZATION
                 ||frontendAttributeConfig.getAttributeProtection() == AttributeProtection.MICRO_AGGREGATION)
                 && (frontendAttributeConfig.getDataType() == DataType.INTEGER || frontendAttributeConfig.getDataType() == DataType.DECIMAL)) {

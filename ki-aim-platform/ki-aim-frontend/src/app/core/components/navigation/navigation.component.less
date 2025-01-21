@@ -1,4 +1,4 @@
-@import '../../../styles/colors'; 
+@import '../../../styles/colors';
 @import '../../../styles/variables';
 
 .navbar-side {
@@ -12,14 +12,15 @@
 }
 
 .nav-link {
-    display: flex; 
+    cursor: pointer;
+    display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 1.25rem; 
+    font-size: 1.25rem;
 
     transition: @transition-value;
 
-    color: @color-white; 
+    color: @color-white;
 
     &:hover {
         background-color: @mdc-dark-blue-grey-600;
@@ -27,19 +28,19 @@
 }
 
 .active {
-    color: @mdc-grey-200; 
+    color: @mdc-grey-200;
     font-weight: 700;
     background-color: @mdc-dark-blue-grey-800;
 }
 
 .completed {
-    color: @mdc-green-300; 
+    color: @mdc-green-300;
     font-weight: 900;
 
     &::after {
         font-family: "bootstrap-icons";
         content: "\F26C";
-        margin-left: 5px; 
+        margin-left: 5px;
     }
 }
 
@@ -54,7 +55,7 @@
     cursor: pointer;
     color: @color-white;
     transition: @transition-value;
-        
+
     &:hover {
         background-color: @mdc-dark-blue-grey-600;
     }

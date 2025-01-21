@@ -179,24 +179,31 @@ public class ProjectService {
 	public void createZipFile(final ProjectEntity project, final OutputStream outputStream)
 			throws InternalDataSetPersistenceException, InternalIOException {
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
-			final DataSet dataSet = databaseService.exportDataSet(project.getOriginalData().getDataSet());
 
-			// Add data configuration
-			final ZipEntry attributeConfigZipEntry = new ZipEntry("attribute_config.yaml");
-			zipOut.putNextEntry(attributeConfigZipEntry);
-			yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
-			          .writeValue(zipOut, dataSet.getDataConfiguration());
-			zipOut.closeEntry();
-
-			// Add data set
-			addCsvToZip(zipOut, dataSet, "original");
-
-			// Add statistics
-			if (project.getOriginalData().getDataSet() != null) {
-				final ZipEntry statisticsEntry = new ZipEntry("statistics.yaml");
-				zipOut.putNextEntry(statisticsEntry);
-				zipOut.write(project.getOriginalData().getDataSet().getStatistics().getLob());
+			// Add original data set
+			final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
+			if (dataSetEntity != null) {
+				// Add data configuration
+				final ZipEntry attributeConfigZipEntry = new ZipEntry("attribute_config.yaml");
+				zipOut.putNextEntry(attributeConfigZipEntry);
+				yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
+				          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
 				zipOut.closeEntry();
+
+				// Add data set
+				if (dataSetEntity.isStoredData()) {
+					final DataSet dataSet = databaseService.exportDataSet(dataSetEntity);
+					addCsvToZip(zipOut, dataSet, "original");
+				}
+
+				// Add statistics
+				final LobWrapperEntity statistics = project.getOriginalData().getDataSet().getStatistics();
+				if (statistics != null) {
+					final ZipEntry statisticsEntry = new ZipEntry("statistics.yaml");
+					zipOut.putNextEntry(statisticsEntry);
+					zipOut.write(statistics.getLob());
+					zipOut.closeEntry();
+				}
 			}
 
 			// Add results

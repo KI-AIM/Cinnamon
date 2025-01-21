@@ -186,7 +186,11 @@ public class DataSetEntity extends ProcessOwner {
 	 * Returns the statistics of the data set.
 	 * @return The statistics.
 	 */
+	@Nullable
 	public LobWrapperEntity getStatistics() {
+		if (!this.statisticsProcess.getResultFiles().containsKey( "metrics.yml")) {
+			return null;
+		}
 		// TODO move name in application.properties
 		return this.statisticsProcess.getResultFiles().get("metrics.yml");
 	}

@@ -50,7 +50,7 @@ public class StatisticsControllerTest extends ControllerTest {
 
 	@Test
 	public void getStatisticsNoData() throws Exception {
-		mockMvc.perform(get("/api/statistics"))
+		mockMvc.perform(get("/api/statistics/validation"))
 		       .andExpect(status().isBadRequest());
 	}
 
@@ -70,7 +70,7 @@ public class StatisticsControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		mockMvc.perform(get("/api/statistics"))
+		mockMvc.perform(get("/api/statistics/validation"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(""));
 
@@ -99,7 +99,7 @@ public class StatisticsControllerTest extends ControllerTest {
 				                    .body("error")
 				                    .build());
 
-		mockMvc.perform(get("/api/statistics"))
+		mockMvc.perform(get("/api/statistics/validation"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string("\"" + statisticsContent + "\"\n"));
 

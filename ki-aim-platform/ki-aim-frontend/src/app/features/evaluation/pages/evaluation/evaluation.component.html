@@ -18,8 +18,8 @@
             <mat-icon fontIcon="stop"></mat-icon>
         </button>
 
-        <span class="status" [ngClass]="evaluationService.status.status">
-            <span>{{ evaluationService.status.status.replace("_", " ") }}</span>
+        <span class="status" [ngClass]="status.status">
+            <span>{{ status.status.replace("_", " ") }}</span>
         </span>
     </div>
 
@@ -27,99 +27,112 @@
 
         <div class="step-head">
             <span>Technical Evaluation </span>
-            <span class="status" [ngClass]="evaluationService.status.processes[0].externalProcessStatus">
-                <span>{{ evaluationService.status.processes[0].externalProcessStatus.replace("_", " ") }}</span>
+            <span class="status" [ngClass]="status.processes[0].externalProcessStatus">
+                <span>{{ status.processes[0].externalProcessStatus.replace("_", " ") }}</span>
             </span>
         </div>
-        <div *ngIf="(statistics$ | async) as statistics">
+        <div>
 
-            <mat-accordion *ngIf="evaluationService.status.processes.length > 0">
+            <mat-accordion>
+                <!-- Status -->
                 <mat-expansion-panel>
                     <mat-expansion-panel-header>
-                        <mat-panel-title> {{ statistics.resemblance.display_name }}</mat-panel-title>
-                        <mat-panel-description>
-                            {{ statistics.resemblance.description }}
-                        </mat-panel-description>
+                        <mat-panel-title>Status</mat-panel-title>
+                        <mat-panel-description></mat-panel-description>
                     </mat-expansion-panel-header>
 
-                    <div>
-                        <ng-template *ngIf="evaluationService.technicalEvaluationStatus !== null">
-                            {{ evaluationService.technicalEvaluationStatus }}
-                        </ng-template>
-
-                        <div
-                            *ngIf="evaluationService.status.processes[0].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
-                            <app-data-inspection sourceProcess="TECHNICAL_EVALUATION" mainData="synthetic"
-                                                 [processingSteps]="evaluationService.processSteps"></app-data-inspection>
-                        </div>
-                        <ng-template #anonNoData>
-                            <div>
-                                No Data Available
-                            </div>
-                        </ng-template>
+                    <div *ngIf="status.processes[0].status">
+                        {{ status.processes[0].status }}
                     </div>
-
+                    <div *ngIf="!status.processes[0].status">
+                        No Status Available
+                    </div>
                 </mat-expansion-panel>
-                <mat-expansion-panel *ngIf="statistics.utility as utility">
-                    <mat-expansion-panel-header>
-                        <mat-panel-title> {{ utility.display_name }}</mat-panel-title>
-                        <mat-panel-description>
-                            {{ utility.description }}
-                        </mat-panel-description>
-                    </mat-expansion-panel-header>
 
-                    <div>
-                        <div *ngFor="let abc of utility.methods | keyvalue" class="mb-2 pt-2 border-top border-1">
+                <ng-container *ngIf="status.status === ProcessStatus.FINISHED && (statistics$ | async) as statistics">
 
-                            <div style="display: flex;">
-                                <span
-                                    style="font-size: 1.2rem; margin-right: 0.2rem;"> {{ abc.value.display_name }} </span>
+                    <mat-expansion-panel>
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>{{ statistics.resemblance.display_name }}</mat-panel-title>
+                            <mat-panel-description>{{ statistics.resemblance.description }}</mat-panel-description>
+                        </mat-expansion-panel-header>
 
-                                <a title="Show Metric Information" style="vertical-align: middle;"
-                                   (click)="metricInfoTableComponent.open(abc.value)">
-                                    <mat-icon fontIcon="info"></mat-icon>
-                                </a>
-
-                                <button mat-flat-button [matMenuTriggerFor]="colorLegend" class="flat-mat-form-button ms-auto">
-                                    Legend
-                                </button>
+                        <div>
+                            <div
+                                *ngIf="status.processes[0].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+                                <app-data-inspection sourceProcess="TECHNICAL_EVALUATION" mainData="synthetic"
+                                                     [processingSteps]="evaluationService.processSteps"></app-data-inspection>
                             </div>
+                            <ng-template #anonNoData>
+                                <div>
+                                    No Data Available
+                                </div>
+                            </ng-template>
+                        </div>
 
-                            <div *ngIf="(abc.value | instanceOf:UtilityMetricData2) as data2">
-                                <div class="predictions">
-                                    <div>
-                                        <div>Real</div>
+                    </mat-expansion-panel>
+                    <mat-expansion-panel *ngIf="statistics.utility as utility">
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>{{ utility.display_name }}</mat-panel-title>
+                            <mat-panel-description>{{ utility.description }}</mat-panel-description>
+                        </mat-expansion-panel-header>
+
+                        <div>
+                            <div *ngFor="let abc of utility.methods | keyvalue" class="mb-2 pt-2 border-top border-1">
+
+                                <div style="display: flex;">
+                                <span style="font-size: 1.2rem; margin-right: 0.2rem;">
+                                    {{ abc.value.display_name }}
+                                </span>
+
+                                    <a title="Show Metric Information" style="vertical-align: middle;"
+                                       (click)="metricInfoTableComponent.open(abc.value)">
+                                        <mat-icon fontIcon="info"></mat-icon>
+                                    </a>
+
+                                    <button mat-flat-button [matMenuTriggerFor]="colorLegend"
+                                            class="flat-mat-form-button ms-auto">
+                                        Legend
+                                    </button>
+                                </div>
+
+                                <div *ngIf="(abc.value | instanceOf:UtilityMetricData2) as data2">
+                                    <div class="predictions">
+                                        <div>
+                                            <div>Real</div>
+                                        </div>
+                                        <ng-container
+                                            *ngTemplateOutlet="utilityMetricTable; context: {predictions: data2.real.predictions}">
+                                        </ng-container>
                                     </div>
+                                    <div class="predictions">
+                                        <div>
+                                            <div>Synthetic</div>
+                                        </div>
+                                        <ng-container
+                                            *ngTemplateOutlet="utilityMetricTable; context: {predictions: data2.synthetic.predictions}">
+                                        </ng-container>
+                                    </div>
+                                    <div class="predictions">
+                                        <div>
+                                            <div>Difference</div>
+                                        </div>
+                                        <ng-container
+                                            *ngTemplateOutlet="utilityMetricTable; context: {predictions: data2.difference.predictions}">
+                                        </ng-container>
+                                    </div>
+                                </div>
+                                <div *ngIf="(abc.value | instanceOf:UtilityMetricData3) as data3">
                                     <ng-container
-                                        *ngTemplateOutlet="utilityMetricTable; context: {predictions: data2.real.predictions}">
+                                        *ngTemplateOutlet="utilityMetricTable; context: {predictions: data3.predictions}">
                                     </ng-container>
                                 </div>
-                                <div class="predictions">
-                                    <div>
-                                        <div>Synthetic</div>
-                                    </div>
-                                    <ng-container
-                                        *ngTemplateOutlet="utilityMetricTable; context: {predictions: data2.synthetic.predictions}">
-                                    </ng-container>
-                                </div>
-                                <div class="predictions">
-                                    <div>
-                                        <div>Difference</div>
-                                    </div>
-                                    <ng-container
-                                        *ngTemplateOutlet="utilityMetricTable; context: {predictions: data2.difference.predictions}">
-                                    </ng-container>
-                                </div>
-                            </div>
-                            <div *ngIf="(abc.value | instanceOf:UtilityMetricData3) as data3">
-                                <ng-container
-                                    *ngTemplateOutlet="utilityMetricTable; context: {predictions: data3.predictions}">
-                                </ng-container>
                             </div>
                         </div>
-                    </div>
 
-                </mat-expansion-panel>
+                    </mat-expansion-panel>
+
+                </ng-container>
             </mat-accordion>
 
         </div>

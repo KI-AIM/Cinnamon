@@ -1,11 +1,11 @@
-<mat-form-field class="w-100">
-    <mat-label>Search</mat-label>
-    <input type="text" matInput [(ngModel)]="filterText"/>
-</mat-form-field>
 
+<div>
+    <div *ngIf="(statistics$ | async) as statistics else loading">
+        <mat-form-field class="w-100">
+            <mat-label>Search</mat-label>
+            <input type="text" matInput [(ngModel)]="filterText"/>
+        </mat-form-field>
 
-<div style="margin-top: -1rem;">
-    <div *ngIf="(statistics$ | async) as statistics">
         <div *ngIf="(statistics.resemblance.attributes | statisticsFilter:filterText) as filteredAttributes">
             <div class="mb-2">Showing {{ filteredAttributes.filteredCount }}/ {{ filteredAttributes.originalCount }}
             </div>
@@ -19,4 +19,9 @@
             </div>
         </div>
     </div>
+    <ng-template #loading>
+        <div class="d-flex justify-content-center">
+            <mat-spinner [diameter]="100"></mat-spinner>
+        </div>
+    </ng-template>
 </div>

@@ -54,7 +54,7 @@
                 <div style="margin-top: 0.4rem;">
                     <mat-accordion>
                         <!-- Status -->
-                        <mat-expansion-panel>
+                        <mat-expansion-panel [(expanded)]="expanded[i][0]">
                             <mat-expansion-panel-header>
                                 <mat-panel-title>Status</mat-panel-title>
                                 <mat-panel-description></mat-panel-description>
@@ -98,7 +98,7 @@
                         </mat-expansion-panel>
 
                         <!-- Data -->
-                        <mat-expansion-panel>
+                        <mat-expansion-panel [(expanded)]="expanded[i][1]">
                             <mat-expansion-panel-header>
                                 <mat-panel-title>Data</mat-panel-title>
                                 <mat-panel-description></mat-panel-description>
@@ -119,7 +119,7 @@
                         </mat-expansion-panel>
 
                         <!-- Inspection -->
-                        <mat-expansion-panel>
+                        <mat-expansion-panel [(expanded)]="expanded[i][2]">
                             <mat-expansion-panel-header>
                                 <mat-panel-title>Inspection</mat-panel-title>
                                 <mat-panel-description></mat-panel-description>

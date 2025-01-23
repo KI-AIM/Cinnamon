@@ -20,6 +20,8 @@ export class ExecutionComponent implements OnInit, OnDestroy {
     protected readonly ProcessStatus = ProcessStatus;
     protected stage$: Observable<ExecutionStep | null>;
 
+    protected expanded: Array<Array<boolean>>;
+
     constructor(
         protected readonly executionService: ExecutionService,
         private readonly http: HttpClient,
@@ -28,6 +30,14 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         private readonly titleService: TitleService,
     ) {
         this.titleService.setPageTitle("Execution");
+        this.expanded = [
+            [
+                false, false, false
+            ],
+            [
+                false, false, false
+            ],
+        ]
     }
 
     ngOnDestroy() {

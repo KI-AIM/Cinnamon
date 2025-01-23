@@ -6,16 +6,13 @@ import { ProcessStatus } from "../../core/enums/process-status";
 import {
     BehaviorSubject,
     catchError,
-    finalize,
     interval,
     Observable,
     of,
-    share, shareReplay,
     Subscription,
     switchMap,
     tap
 } from "rxjs";
-import {StageConfiguration} from "../model/stage-configuration";
 import {Steps} from "../../core/enums/steps";
 
 @Injectable({
@@ -29,7 +26,6 @@ export abstract class ExecutionStepService {
     private _status: ExecutionStep = new ExecutionStep();
 
     private _statusSubject: BehaviorSubject<ExecutionStep | null>;
-    private _status$: Observable<ExecutionStep | null> | null = null;
 
     /**
      * Observer that periodically sends requests to fetch the status
@@ -56,7 +52,6 @@ export abstract class ExecutionStepService {
             }),
             tap(value => {
                 this.update(value)
-                this._statusSubject.next(value);
             }),
         );
     }
@@ -75,7 +70,7 @@ export abstract class ExecutionStepService {
 
     public get status$(): Observable<ExecutionStep | null> {
         this.initializeProjectSettings();
-        return this._status$!;
+        return this._statusSubject!.asObservable();
     }
 
     /**
@@ -87,7 +82,7 @@ export abstract class ExecutionStepService {
             next: value => {
                 this.update(value);
             },
-            error: err => {
+            error: () => {
                 this.fetchStatus();
             }
         });
@@ -180,11 +175,11 @@ export abstract class ExecutionStepService {
     private initializeProjectSettings(): void {
         if (!this._statusSubject) {
             this._statusSubject = new BehaviorSubject<ExecutionStep | null>(null)
-            this._status$ = this.fetchStatus().pipe(
-                tap(value => {
-                    this._statusSubject?.next(value);
-                }),
-                shareReplay(1),
+            this.fetchStatus().subscribe({
+                    next: value => {
+                        this._statusSubject!.next(value);
+                    }
+                }
             );
         }
     }
@@ -196,5 +191,6 @@ export abstract class ExecutionStepService {
         for (const status of executionStep.processes) {
             this.setCustomStatus(status.step, status.status, status.processSteps);
         }
+        this._statusSubject.next(executionStep);
     }
 }

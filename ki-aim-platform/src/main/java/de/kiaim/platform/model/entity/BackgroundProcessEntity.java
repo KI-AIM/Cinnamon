@@ -126,4 +126,12 @@ public class BackgroundProcessEntity {
 	public ProjectEntity getProject() {
 		return owner.getProject();
 	}
+
+	/**
+	 * Resets the results of the process.
+	 */
+	public void reset() {
+		resultFiles.clear();
+		externalProcessStatus = ProcessStatus.NOT_STARTED;
+	}
 }

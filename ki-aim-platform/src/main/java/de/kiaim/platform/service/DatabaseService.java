@@ -1081,6 +1081,7 @@ public class DatabaseService {
 
 		dataSet.getDataTransformationErrors().clear();
 		dataSet.setStoredData(false);
+		dataSet.getStatisticsProcess().reset();
 		dataSetRepository.save(dataSet);
 	}
 

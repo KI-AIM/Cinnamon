@@ -553,7 +553,7 @@ public class ProcessService {
 			executionStep.setCurrentProcessIndex(jobCandidate);
 			processCandidate = executionStep.getProcess(jobCandidate);
 			// Reset status from potential previous execution
-			processCandidate.setStatus(null);
+			processCandidate.reset();
 
 			// Check if the process should be skipped
 			if (processCandidate.isSkip()) {

@@ -60,4 +60,13 @@ public abstract class ExternalProcessEntity extends BackgroundProcessEntity {
 	public ProjectEntity getProject() {
 		return getExecutionStep().getProject();
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void reset() {
+		super.reset();
+		this.status = null;
+	}
 }

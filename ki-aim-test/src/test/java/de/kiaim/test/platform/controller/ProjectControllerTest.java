@@ -80,4 +80,14 @@ public class ProjectControllerTest extends ControllerTest {
 		assertEquals(originalMetricConfiguration, project.getProjectConfiguration().getMetricConfiguration(),
 		             "The metric configuration should not have changed!");
 	}
+
+	@Test
+	public void getInvalidResultFile() throws Exception {
+		mockMvc.perform(get("/api/project/resultFile")
+				                .param("executionStepName", "evaluation")
+				                .param("processStepName", "technical_evaluation")
+				                .param("name", "invalidFile.txt"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("The file 'invalidFile.txt' could not be found!"));
+	}
 }

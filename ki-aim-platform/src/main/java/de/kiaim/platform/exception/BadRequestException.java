@@ -53,6 +53,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String DATA_CONFIGURATION = "9";
 
+	/**
+	 * Error class code for {@link BadQueryException}.
+	 */
+	public static final String QUERY = "10";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

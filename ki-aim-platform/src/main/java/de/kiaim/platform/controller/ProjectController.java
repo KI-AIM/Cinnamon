@@ -153,15 +153,20 @@ public class ProjectController {
 		return ResponseEntity.ok().build();
 	}
 
-	/**
-	 * TODO move into project or process?
-	 * @param executionStepName
-	 * @param processStepName
-	 * @param name
-	 * @param requestUser
-	 * @return
-	 * @throws BadStepNameException
-	 */
+	@Operation(summary = "Returns a file of the result of the specified job.",
+	           description = "Returns a file of the result of the specified job.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Returns the content of the file.",
+			             content = @Content(schema = @Schema(implementation = String.class),
+			                                mediaType = MediaType.ALL_VALUE)),
+			@ApiResponse(responseCode = "400",
+			             description = "No the job or the file does not exist.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
 	@GetMapping(value = "/resultFile", produces = {MediaType.ALL_VALUE})
 	@Transactional(readOnly = true)
 	public ResponseEntity<Object> getResultFile(
@@ -169,7 +174,7 @@ public class ProjectController {
 			@RequestParam final String processStepName,
 			@RequestParam final String name,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws BadStepNameException {
+	) throws BadQueryException, BadStepNameException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
@@ -180,6 +185,9 @@ public class ProjectController {
 		final var content = project.getPipelines().get(0).getStageByStep(executionStep)
 		                           .getProcess(processStep).get()
 		                           .getResultFiles().get(name);
+		if (content == null) {
+			throw new BadQueryException(BadQueryException.RESULT_FILE, "The file '" + name + "' could not be found!");
+		}
 		final var s = content.getLobString();
 
 		return ResponseEntity.ok().body(s);

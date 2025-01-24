@@ -69,7 +69,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.isFileTypeXLSX$ = this.fileService.fileInfo$.pipe(
             map(value => {
-                console.log(value.type);
                return value.type === FileType.XLSX;
             })
         );
@@ -120,7 +119,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     private handleError(error: HttpErrorResponse) {
         this.loadingService.setLoadingStatus(false);
-        this.error = this.errorMessageService.extractErrorMessage(error) + "a";
+        this.error = this.errorMessageService.extractErrorMessage(error);
 
         window.scroll(0, 0);
     }

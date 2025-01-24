@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.serialization.ColumnConfigurationDeserializer;
+import de.kiaim.model.validation.DataTypeNotUndefined;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -49,6 +50,7 @@ public class ColumnConfiguration {
      */
     @Schema(description = "Data type of the column.", example = "DATE")
     @NotNull(message = "The data type must not be empty!")
+    @DataTypeNotUndefined()
     DataType type = DataType.UNDEFINED;
 
     /**

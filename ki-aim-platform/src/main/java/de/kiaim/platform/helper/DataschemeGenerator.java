@@ -2,6 +2,7 @@ package de.kiaim.platform.helper;
 
 import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.DataConfiguration;
+import de.kiaim.platform.exception.BadDataConfigurationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -9,11 +10,14 @@ public class DataschemeGenerator {
 
 	/**
 	 * Creates a statement to create a table with the given name in the database based on the given DataConfiguration.
+	 *
 	 * @param dataConfiguration DataConfiguration for creating the schema.
-	 * @param tableName Name of the table.
+	 * @param tableName         Name of the table.
 	 * @return Query in the form of a String.
+	 * @throws BadDataConfigurationException If an attributes has an undefined data type.
 	 */
-	public String createSchema(final DataConfiguration dataConfiguration, final String tableName) {
+	public String createSchema(final DataConfiguration dataConfiguration, final String tableName)
+			throws BadDataConfigurationException {
 		String query = "CREATE TABLE " + tableName +
 		               "(" +
 		               "%s" +
@@ -40,6 +44,9 @@ public class DataschemeGenerator {
 				}
 				case STRING -> {
 					columns.append(createColumnString(columnConfiguration.getName(), "character varying"));
+				}
+				case UNDEFINED -> {
+					throw new BadDataConfigurationException(BadDataConfigurationException.UNDEFINED_DATA_TYPE, "Can't create table schema with an undefined column type!");
 				}
 			}
 			if (i < dataConfiguration.getConfigurations().size() - 1) {

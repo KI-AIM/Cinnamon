@@ -114,32 +114,8 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 			columnNames = Collections.nCopies(numberColumns, "");
 		}
 
-		List<String[]> validRows = getSubsetOfCompleteRows(recordIterator, 10);
-		return estimateDataConfiguration(validRows, algorithm, numberColumns, columnNames);
-	}
-
-	/**
-	 * Function that returns a subset of complete rows for csv records.
-	 * Complete means that no missing value should be present in a row.
-	 * The amount of rows is limited by the parameter maxNumberOfRows.
-	 *
-	 * @param recordIterator Iterator of csv records
-	 * @param maxNumberOfRows the maximum number of rows
-	 * @return A List<String[]> of split rows
-	 */
-	private List<String[]> getSubsetOfCompleteRows(Iterator<CSVRecord> recordIterator, int maxNumberOfRows) {
-		List<String[]> validRows = new ArrayList<>();
-
-		while (recordIterator.hasNext() && validRows.size() < maxNumberOfRows) {
-			CSVRecord record = recordIterator.next();
-			String[] row = record.values();
-
-			if (isColumnListComplete(row)) {
-				validRows.add(row);
-			}
-		}
-
-		return validRows;
+		List<List<String>> samples = getAttributeSamples(recordIterator, numberColumns);
+		return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
 	}
 
 	/**

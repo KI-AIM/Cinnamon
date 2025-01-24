@@ -224,8 +224,8 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
             columnNames = Collections.nCopies(numberColumns, "");
         }
 
-        List<String[]> validRows = getSubsetOfCompleteRows(rows, 10);
-        return estimateDataConfiguration(validRows, algorithm, numberColumns, columnNames);
+        List<List<String>> samples = getAttributeSamples(rows.iterator(), numberColumns);
+        return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
     }
 
     private DataConfiguration getStringDataConfiguration(Sheet sheet) {
@@ -245,31 +245,5 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         }
 
         return configuration;
-    }
-
-    /**
-     * Function that returns a subset of complete rows for xlsx records. Complete means that no
-     * missing value should be present in a row. The amount of rows is limited by the parameter
-     * maxNumberOfRows.
-     *
-     * @param rows            List structure that holds the rows
-     * @param maxNumberOfRows the maximum number of rows
-     * @return A List<String[]> of split rows
-     */
-    private List<String[]> getSubsetOfCompleteRows(List<List<String>> rows, int maxNumberOfRows) {
-        List<String[]> validRows = new ArrayList<>();
-
-        int i = 0;
-        while (i < rows.size() && validRows.size() < maxNumberOfRows) {
-            List<String> row = rows.get(i);
-
-            if (isColumnListComplete(row.toArray(new String[0]))) {
-                validRows.add(row.toArray(new String[0]));
-            }
-
-            i += 1;
-        }
-
-        return validRows;
     }
 }

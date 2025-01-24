@@ -71,6 +71,14 @@ public class ControllerTest extends DatabaseTest {
 		};
 	}
 
+	protected ResultMatcher errorCode(final String expectedErrorCode) {
+		return  mvcResult -> {
+			final String response = mvcResult.getResponse().getContentAsString();
+			final ErrorResponse errorResponse = objectMapper.readValue(response, ErrorResponse.class);
+			assertEquals(expectedErrorCode, errorResponse.getErrorCode() , "Unexpected error code!");
+		};
+	}
+
 	protected void postData() throws Exception {
 		postData(true);
 	}

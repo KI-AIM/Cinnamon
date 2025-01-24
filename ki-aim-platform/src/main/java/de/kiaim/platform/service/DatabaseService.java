@@ -828,8 +828,8 @@ public class DatabaseService {
 		}
 	}
 
-	private void storeDataSet(final DataSet dataSet,
-	                          final DataSetEntity dataSetEntity) throws InternalDataSetPersistenceException {
+	private void storeDataSet(final DataSet dataSet, final DataSetEntity dataSetEntity)
+			throws BadDataConfigurationException, InternalDataSetPersistenceException {
 		final String tableName = getTableName(dataSetEntity.getId());
 
 		// Create table

@@ -201,10 +201,10 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> storeConfig(
-			@Valid @RequestParam(name = "configuration") final DataConfiguration configuration,
+			@Valid final StoreDataConfigurationRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.STORE_CONFIG, configuration, null, null, user);
+		return handleRequest(RequestType.STORE_CONFIG, request.getConfiguration(), null, null, user);
 	}
 
 	@Operation(summary = "Stores the given data into the internal database for further processing.",
@@ -234,10 +234,10 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> storeData(
-			@Valid @RequestParam(name = "configuration") final DataConfiguration configuration,
+			@Valid final StoreDataConfigurationRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.STORE_DATE_SET, configuration, null, null, user);
+		return handleRequest(RequestType.STORE_DATE_SET, request.getConfiguration(), null, null, user);
 	}
 
 	@Operation(summary = "Confirms that the current dataset should be used.",

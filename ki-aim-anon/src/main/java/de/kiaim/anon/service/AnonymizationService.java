@@ -109,6 +109,7 @@ public class AnonymizationService {
             try {
                 log.info("Start anon.");
                 FrontendAnonConfigValidation.validateAttributeConfiguration(request.getAnonymizationConfig());
+                FrontendAnonConfigValidation.validateOneAttributeIsGeneralized(request.getAnonymizationConfig());
                 CompatibilityAssurance.checkDataSetAndFrontendConfigCompatibility(request.getData(), request.getAnonymizationConfig());
                 AnonymizationConfig anonymizationConfigConverted = FrontendAnonConfigConverter.convertToJALConfig(request.getAnonymizationConfig(), request.getData());
                 String[][] jalData = dataSetProcessor.convertDatasetToStringArray(request.getData());

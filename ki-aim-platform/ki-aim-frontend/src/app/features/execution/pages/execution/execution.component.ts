@@ -9,7 +9,6 @@ import { Router } from "@angular/router";
 import { ExecutionService } from "../../services/execution.service";
 import { StatusService } from "../../../../shared/services/status.service";
 import {Observable} from "rxjs";
-import {StageConfiguration} from "../../../../shared/model/stage-configuration";
 
 @Component({
   selector: 'app-execution',
@@ -50,22 +49,6 @@ export class ExecutionComponent implements OnInit, OnDestroy {
 
     protected get status(): ExecutionStep {
         return this.executionService.status;
-    }
-
-    /**
-     * Downloads all files related to the project in a ZIP file.
-     * @protected
-     */
-    protected downloadResult() {
-        this.http.get(environments.apiUrl + "/api/project/zip", {responseType: 'arraybuffer'}).subscribe({
-            next: data => {
-                const blob = new Blob([data], {
-                    type: 'application/zip'
-                });
-                const url = window.URL.createObjectURL(blob);
-                window.open(url);
-            }
-        });
     }
 
     protected continue() {

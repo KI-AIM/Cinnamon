@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService, ConfigData } from "../../services/algorithm.service";
@@ -22,7 +22,7 @@ import { ConfigurationAdditionalConfigs } from '../../model/configuration-additi
     templateUrl: './configuration-page.component.html',
     styleUrls: ['./configuration-page.component.less'],
 })
-export class ConfigurationPageComponent implements OnInit {
+export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
     @Input() public hasAlgorithmSelection: boolean = true;
 
@@ -194,7 +194,6 @@ export class ConfigurationPageComponent implements OnInit {
         const config = this.forms ? this.forms.formData : '';
 
         if (!this.selection.selectedOption) {
-            // formData.append("configuration", "skip");
             this.configure(formData);
         } else {
             formData.append("configuration", stringify(this.algorithmService.createConfiguration(config, this.selection.selectedOption)));

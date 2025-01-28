@@ -844,6 +844,7 @@ public class DatabaseService {
 
 		// Insert data
 		try (final Statement insertStatement = connection.createStatement()) {
+			long rowNumber = 0;
 			for (final DataRow dataRow : dataSet.getDataRows()) {
 				final List<String> stringRow = new ArrayList<>();
 
@@ -855,9 +856,14 @@ public class DatabaseService {
 				// Add initial value for is_hold_out flag
 				stringRow.add(Boolean.FALSE.toString());
 
+				// Add row number for row_number
+				stringRow.add(String.valueOf(rowNumber));
+
 				String values = String.join(",", stringRow);
 
 				insertStatement.execute("INSERT INTO " + tableName + " VALUES (" + values + ")");
+
+				rowNumber++;
 			}
 		} catch (SQLException e) {
 			try {

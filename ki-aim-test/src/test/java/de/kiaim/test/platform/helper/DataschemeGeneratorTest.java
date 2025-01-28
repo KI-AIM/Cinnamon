@@ -33,7 +33,8 @@ class DataschemeGeneratorTest {
 		                        "\"column3_decimal\" numeric," +
 		                        "\"column4_integer\" integer," +
 		                        "\"column5_string\" character varying," +
-		                        "\"is_hold_out\" boolean" +
+		                        "\"is_hold_out\" boolean," +
+		                        "\"row_index\" integer" +
 		                        ");";
 
 		assertEquals(expected, query);

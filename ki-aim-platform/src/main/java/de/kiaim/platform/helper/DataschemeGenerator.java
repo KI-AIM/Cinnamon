@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class DataschemeGenerator {
 
+	public static final String HOLT_OUT_FLAG_NAME = "is_hold_out";
+
 	/**
 	 * Creates a statement to create a table with the given name in the database based on the given DataConfiguration.
 	 *
@@ -24,6 +26,7 @@ public class DataschemeGenerator {
 		               ");";
 		StringBuilder columns = new StringBuilder();
 
+		// Add columns from the data set
 		for (int i = 0; i < dataConfiguration.getConfigurations().size(); ++i) {
 			final ColumnConfiguration columnConfiguration = dataConfiguration.getConfigurations().get(i);
 			switch (columnConfiguration.getType()) {
@@ -46,14 +49,16 @@ public class DataschemeGenerator {
 					columns.append(createColumnString(columnConfiguration.getName(), "character varying"));
 				}
 				case UNDEFINED -> {
-					throw new BadDataConfigurationException(BadDataConfigurationException.UNDEFINED_DATA_TYPE, "Can't create table schema with an undefined column type!");
+					throw new BadDataConfigurationException(BadDataConfigurationException.UNDEFINED_DATA_TYPE,
+					                                        "Can't create table schema with an undefined column type!");
 				}
 			}
-			if (i < dataConfiguration.getConfigurations().size() - 1) {
-				columns.append(",");
-			}
-
+			columns.append(",");
 		}
+
+		// Add column for hold out flag
+		columns.append(createColumnString(HOLT_OUT_FLAG_NAME, "boolean"));
+
 		return query.formatted(columns.toString());
 	}
 

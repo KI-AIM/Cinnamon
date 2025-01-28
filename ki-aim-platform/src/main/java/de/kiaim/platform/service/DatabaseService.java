@@ -846,10 +846,17 @@ public class DatabaseService {
 		try (final Statement insertStatement = connection.createStatement()) {
 			for (final DataRow dataRow : dataSet.getDataRows()) {
 				final List<String> stringRow = new ArrayList<>();
+
+				// Add values from the data set
 				for (final Data data : dataRow.getData()) {
 					stringRow.add(convertDataToString(data));
 				}
-				final String values = String.join(",", stringRow);
+
+				// Add initial value for is_hold_out flag
+				stringRow.add(Boolean.FALSE.toString());
+
+				String values = String.join(",", stringRow);
+
 				insertStatement.execute("INSERT INTO " + tableName + " VALUES (" + values + ")");
 			}
 		} catch (SQLException e) {

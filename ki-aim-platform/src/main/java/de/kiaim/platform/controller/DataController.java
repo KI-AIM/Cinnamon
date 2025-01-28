@@ -10,6 +10,7 @@ import de.kiaim.platform.model.dto.*;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
+import de.kiaim.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.TransformationResult;
@@ -586,6 +587,9 @@ public class DataController {
 		                                 ? loadDataRequest.getColumnNames()
 		                                 : new ArrayList<>();
 
+		final HoldOutSelector holdOutSelector = loadDataRequest != null ? loadDataRequest.getHoldOutSelector() : HoldOutSelector.ALL;
+		final boolean includeRowNumbers = loadDataRequest != null && loadDataRequest.isIncludeRowNumbers();
+
 		final Object result;
 		switch (requestType) {
 			case CONFIRM_DATE_SET -> {
@@ -629,28 +633,23 @@ public class DataController {
 			case LOAD_DATA -> {
 				final Step step = Step.getStepOrThrow(stepName);
 				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity, step);
-				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames);
+				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames, holdOutSelector);
 				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
 				result = dataSetService.encodeDataRows(dataSet, dataSetEntity.getDataTransformationErrors(),
 													   columnIndexMapping, loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
 				final Step step = Step.getStepOrThrow(stepName);
-				result = databaseService.exportDataSet(projectEntity, columnNames, step);
+				result = databaseService.exportDataSet(projectEntity, columnNames, holdOutSelector, step);
 			}
 			case LOAD_TRANSFORMATION_RESULT -> {
 				final Step step = Step.getStepOrThrow(stepName);
-				result = databaseService.exportTransformationResult(projectEntity, step);
+				result = databaseService.exportTransformationResult(projectEntity, holdOutSelector, step);
 			}
 			case LOAD_TRANSFORMATION_RESULT_PAGE -> {
 				final Step step = Step.getStepOrThrow(stepName);
-				if (rowSelector != RowSelector.ALL) {
-					result = databaseService.exportTransformationResultPage(projectEntity, step, columnNames, page, perPage,
-					                                                        rowSelector, loadDataRequest);
-				} else {
-					result = databaseService.exportTransformationResultPage(projectEntity, step, columnNames, page,
-					                                                        perPage, loadDataRequest);
-				}
+				result = databaseService.exportTransformationResultPage(projectEntity, step, rowSelector, columnNames,
+				                                                        page, perPage, loadDataRequest);
 			}
 			case STORE_CONFIG -> {
 				databaseService.storeOriginalDataConfiguration(configuration, projectEntity);

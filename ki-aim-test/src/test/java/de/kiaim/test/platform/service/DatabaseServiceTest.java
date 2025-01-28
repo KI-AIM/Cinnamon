@@ -10,6 +10,7 @@ import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.service.DatabaseService;
@@ -148,7 +149,8 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
 
-		final DataSet export = assertDoesNotThrow(() -> databaseService.exportDataSet(project, new ArrayList<>(), Step.VALIDATION));
+		final DataSet export = assertDoesNotThrow(
+				() -> databaseService.exportDataSet(project, new ArrayList<>(), HoldOutSelector.ALL, Step.VALIDATION));
 		assertEquals(transformationResult.getDataSet(), export, "Data sets do not match!");
 
 		assertDoesNotThrow(() -> databaseService.delete(project));
@@ -163,7 +165,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
 
 		final DataSet export = assertDoesNotThrow(
-				() -> databaseService.exportDataSet(project, List.of("column4_integer", "column0_boolean"), Step.VALIDATION));
+				() -> databaseService.exportDataSet(project, List.of("column4_integer", "column0_boolean"), HoldOutSelector.ALL, Step.VALIDATION));
 
 		// Test the data configuration
 		final DataConfiguration config = export.getDataConfiguration();

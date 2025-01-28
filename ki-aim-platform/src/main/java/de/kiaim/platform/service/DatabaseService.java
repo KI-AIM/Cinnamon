@@ -18,6 +18,7 @@ import de.kiaim.platform.model.dto.FileInformation;
 import de.kiaim.platform.model.dto.TransformationResultPage;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.entity.*;
+import de.kiaim.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
@@ -45,7 +46,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Service
 public class DatabaseService {
@@ -385,10 +385,10 @@ public class DatabaseService {
 	 * @throws InternalIOException                 If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
-	public DataSet exportDataSet(final ProjectEntity project, final Step step)
+	public DataSet exportDataSet(final ProjectEntity project, final HoldOutSelector holdOutSelector, final Step step)
 			throws InternalDataSetPersistenceException, BadDataSetIdException, InternalIOException {
 		try {
-			return exportDataSet(project, new ArrayList<>(), step);
+			return exportDataSet(project, new ArrayList<>(), holdOutSelector, step);
 		} catch (final BadColumnNameException e) {
 			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_EXPORT,
 			                                              "Failed to export the dataset due to an error in the column selection!",
@@ -404,10 +404,10 @@ public class DatabaseService {
 	 * @throws InternalIOException                 If the data configuration could not be loaded.
 	 */
 	@Transactional
-	public DataSet exportDataSet(final DataSetEntity dataSetEntity)
+	public DataSet exportDataSet(final DataSetEntity dataSetEntity, final HoldOutSelector holdOutSelector)
 			throws InternalDataSetPersistenceException, InternalIOException {
 		try {
-			return exportDataSet(dataSetEntity, new ArrayList<>());
+			return exportDataSet(dataSetEntity, new ArrayList<>(), holdOutSelector);
 		} catch (final BadColumnNameException e) {
 			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_EXPORT,
 			                                              "Failed to export the dataset due to an error in the column selection!",
@@ -430,10 +430,11 @@ public class DatabaseService {
 	 * @throws InternalIOException                 If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
-	public DataSet exportDataSet(final ProjectEntity project, final List<String> columnNames, final Step step)
+	public DataSet exportDataSet(final ProjectEntity project, final List<String> columnNames,
+	                             final HoldOutSelector holdOutSelector, final Step step)
 			throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, step);
-		return exportDataSet(dataSetEntity, columnNames);
+		return exportDataSet(dataSetEntity, columnNames, holdOutSelector);
 	}
 
 	/**
@@ -441,17 +442,19 @@ public class DatabaseService {
 	 * Returns the columns with the given names in the given order.
 	 * If no column names are provided, all columns are exported.
 	 *
-	 * @param dataSetEntity The data set entity.
-	 * @param columnNames   Names of the columns to export. If empty, all columns will be exported.
+	 * @param dataSetEntity   The data set entity.
+	 * @param columnNames     Names of the columns to export. If empty, all columns will be exported.
+	 * @param holdOutSelector Handling in regards to the hold out flag.
 	 * @return The DataSet.
 	 * @throws BadColumnNameException              If the data set does not contain a column with the given names.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 * @throws InternalIOException                 If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
-	public DataSet exportDataSet(final DataSetEntity dataSetEntity, final List<String> columnNames)
+	public DataSet exportDataSet(final DataSetEntity dataSetEntity, final List<String> columnNames,
+	                             final HoldOutSelector holdOutSelector)
 			throws BadColumnNameException, InternalDataSetPersistenceException, InternalIOException {
-		return exportDataSet(dataSetEntity, columnNames, null, false, 0, 0);
+		return exportDataSet(dataSetEntity, RowSelector.ALL, columnNames, holdOutSelector, false, 0, 0, false);
 	}
 
 	/**
@@ -482,9 +485,9 @@ public class DatabaseService {
 	 * @throws InternalIOException                 If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
-	public TransformationResult exportTransformationResult(final ProjectEntity project, final Step step)
+	public TransformationResult exportTransformationResult(final ProjectEntity project, final HoldOutSelector holdOutSelector, final Step step)
 			throws BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
-		final DataSet dataSet = exportDataSet(project, step);
+		final DataSet dataSet = exportDataSet(project, holdOutSelector, step);
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, step);
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
@@ -501,101 +504,17 @@ public class DatabaseService {
 	}
 
 	/**
-	 * Exports a page of the transformation result associated with the given project and step.
+	 * Exports a page of the transformation result associated with the given step in the given project.
+	 * Starts at the given page number taking the given page size into account.
 	 * Returns the columns with the given names in the given order.
 	 * If no column names are provided, all columns are exported.
 	 * Includes only the rows that macht the given row selector.
 	 * Encodes the data as specified in the given LoadDataRequest.
 	 *
 	 * @param project         The project of which the data set should be exported.
-	 * @param step            The step of which the data set should be exported.
-	 * @param columnNames     Names of the columns to export. If empty, all columns will be exported.
-	 * @param pageNumber      Number of the page to be exported.
-	 * @param pageSize        Number of entries per page.
-	 * @param rowSelector     Selector specifying which rows should be included.
-	 * @param loadDataRequest Export settings.
-	 * @return The page of the transformation result.
-	 * @throws BadColumnNameException              If the data set does not contain a column with the given names.
-	 * @throws BadDataSetIdException               If no DataConfiguration is associated with the given project.
-	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
-	 * @throws InternalIOException                 If the DataConfiguration could not be deserialized from the stored JSON.
-	 */
-	@Transactional
-	public TransformationResultPage exportTransformationResultPage(final ProjectEntity project, final Step step,
-	                                                               final List<String> columnNames, final int pageNumber,
-	                                                               final int pageSize, final RowSelector rowSelector,
-	                                                               final LoadDataRequest loadDataRequest)
-			throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
-		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, step);
-
-		final var startRow = (pageNumber - 1) * pageSize;
-		final var endRow = startRow + pageSize;
-
-		final int numberTotalRows = countEntries(dataSetEntity.getId());
-		final int numberInvalidRows = countInvalidRows(dataSetEntity.getId());
-
-		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
-
-		List<Integer> rowNumbers;
-		final int numberRows;
-		if (rowSelector == RowSelector.VALID) {
-			final List<Integer> invalid = columnNames.isEmpty()
-			                              ? errorRepository.findRowIndexByDataSetIdOrderByRowIndexAsc(
-					dataSetEntity.getId())
-			                              : errorRepository.findRowIndexByDataSetIdAndColumnIndexInOrderByRowIndexAsc(
-					                              dataSetEntity.getId(), columnIndexMapping.keySet());
-			rowNumbers = IntStream.rangeClosed(0, numberTotalRows).boxed().collect(Collectors.toList());
-			rowNumbers.removeAll(invalid);
-			rowNumbers = rowNumbers.subList(startRow, endRow);
-
-			numberRows = numberTotalRows - numberInvalidRows;
-		} else {
-			rowNumbers = columnNames.isEmpty()
-			             ? errorRepository.findRowIndexByDataSetIdOrderByRowIndexAsc(dataSetEntity.getId(), pageSize,
-			                                                                         startRow)
-			             : errorRepository.findRowIndexByDataSetIdAndColumnIndexInOrderByRowIndexAsc(
-					             dataSetEntity.getId(), columnIndexMapping.keySet(), pageSize, startRow);
-			numberRows = numberInvalidRows;
-		}
-
-		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
-
-		final DataSet dataSet = exportDataSet(dataSetEntity, columnNames, rowNumbers, false, 0, 0);
-		final Set<DataTransformationErrorEntity> errors2 = errorRepository.findByDataSetIdAndRowIndexIn(
-				dataSetEntity.getId(), rowNumbers);
-
-		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors2, 0, rowNumbers, columnIndexMapping, loadDataRequest);
-
-		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
-		for (final var error : errors2) {
-			if (!columnIndexMapping.containsKey(error.getColumnIndex())) {
-				continue;
-			}
-
-			if (!rowErrors.containsKey(error.getRowIndex())) {
-				rowErrors.put(error.getRowIndex(),
-				              new DataRowTransformationError(rowNumbers.indexOf(error.getRowIndex())));
-			}
-			final var rowError = rowErrors.get(error.getRowIndex());
-			final Integer columnIndex = columnIndexMapping.get(error.getColumnIndex());
-			rowError.addError(new DataTransformationError(columnIndex, error.getErrorType(), error.getOriginalValue()));
-		}
-
-		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();
-
-		return new TransformationResultPage(data, transformationErrors, rowNumbers, pageNumber, pageSize, numberRows,
-		                                    numberPages);
-	}
-
-	/**
-	 * Exports a page of the transformation result associated with the given step in the given project.
-	 * Starts at the given page number taking the given page size into account.
-	 * Returns the columns with the given names in the given order.
-	 * If no column names are provided, all columns are exported.
-	 *
-	 * @param project         The project of which the data set should be exported.
-	 * @param columnNames     Names of the columns to export. If empty, all columns will be exported.
 	 * @param step            The step of which the data should be exported.
+	 * @param rowSelector     Selector specifying which rows should be included.
+	 * @param columnNames     Names of the columns to export. If empty, all columns will be exported.
 	 * @param pageNumber      The number of the page to be exported.
 	 * @param pageSize        The number of items per page.
 	 * @param loadDataRequest Export settings.
@@ -607,24 +526,43 @@ public class DatabaseService {
 	 */
 	@Transactional
 	public TransformationResultPage exportTransformationResultPage(final ProjectEntity project, final Step step,
+	                                                               final RowSelector rowSelector,
 	                                                               final List<String> columnNames, final int pageNumber,
 	                                                               final int pageSize,
 	                                                               final LoadDataRequest loadDataRequest)
 			throws BadDataSetIdException, InternalDataSetPersistenceException, BadColumnNameException, InternalIOException {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, step);
 
+		var calcRowNumbers = rowSelector != RowSelector.ALL;
+
 		final var startRow = (pageNumber - 1) * pageSize;
 		final var endRow = startRow + pageSize;
 
-		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
-				dataSetEntity.getDataConfiguration(), columnNames);
-		final DataSet dataSet = exportDataSet(dataSetEntity, columnNames, null, true, startRow, pageSize);
-		final Set<DataTransformationErrorEntity> errors = errorRepository.findByDataSetIdAndRowIndexBetween(
-				dataSetEntity.getId(), startRow, endRow - 1);
+		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
+		final DataSet dataSet = exportDataSet(dataSetEntity, rowSelector, columnNames,
+		                                      loadDataRequest.getHoldOutSelector(), true, startRow, pageSize, calcRowNumbers);
 
-		final List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, null,
-		                                                              columnIndexMapping, loadDataRequest);
-		final int numberRows = countEntries(dataSetEntity.getId());
+		List<Integer> rowNumbers = null;
+		final Set<DataTransformationErrorEntity> errors;
+		if (calcRowNumbers) {
+			rowNumbers = dataSet.getData().stream().map(a -> (Integer) a.get(a.size() - 1)).toList();
+			errors = errorRepository.findByDataSetIdAndRowIndexIn(dataSetEntity.getId(), rowNumbers);
+		} else {
+			errors = errorRepository.findByDataSetIdAndRowIndexBetween(dataSetEntity.getId(), startRow, endRow - 1);
+		}
+
+		List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, rowNumbers, columnIndexMapping,
+		                                                        loadDataRequest);
+
+		if (calcRowNumbers) {
+			data = data.stream().map(a -> a.subList(0, a.size() - 1)).toList();
+		}
+
+		final int numberRows = switch (rowSelector) {
+			case ALL -> countEntries(dataSetEntity.getId());
+			case VALID -> countEntries(dataSetEntity.getId()) - countInvalidRows(dataSetEntity.getId());
+			case ERRORS -> countInvalidRows(dataSetEntity.getId());
+		};
 		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
@@ -643,7 +581,7 @@ public class DatabaseService {
 
 		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();
 
-		return new TransformationResultPage(data, transformationErrors, null, pageNumber, pageSize, numberRows,
+		return new TransformationResultPage(data, transformationErrors, rowNumbers, pageNumber, pageSize, numberRows,
 		                                    numberPages);
 	}
 
@@ -901,9 +839,10 @@ public class DatabaseService {
 		};
 	}
 
-	private DataSet exportDataSet(final DataSetEntity dataSetEntity, List<String> columnNames,
-	                              @Nullable final List<Integer> rows, final boolean pagination,
-	                              final int startRow, final int pageSize)
+	private DataSet exportDataSet(final DataSetEntity dataSetEntity, final RowSelector rowSelector,
+	                              List<String> columnNames, final HoldOutSelector holdOutSelector,
+	                              final boolean pagination, final int startRow, final int pageSize,
+	                              final boolean exportRowIndexColumn)
 			throws BadColumnNameException, InternalDataSetPersistenceException, InternalIOException {
 		DataConfiguration dataConfiguration = getDetachedDataConfiguration(dataSetEntity);
 
@@ -917,17 +856,11 @@ public class DatabaseService {
 		// Export the data from the database
 		final List<DataRow> dataRows = new ArrayList<>();
 
-		// If only specific rows should be selected but none are given, return empty dataset
-		if (rows != null && rows.isEmpty()) {
-			return new DataSet(dataRows, dataConfiguration);
-		}
-
 		try (final Statement exportStatement = connection.createStatement()) {
 
-			final String exportQuery = rows != null
-			                           ? createSelectQuery(dataSetEntity.getId(), columnNames, rows)
-			                           : createSelectQuery(dataSetEntity.getId(), columnNames, pagination, startRow,
-			                                               pageSize);
+			final String exportQuery = createSelectQuery(dataSetEntity.getId(), rowSelector, columnNames,
+			                                             holdOutSelector, pagination, startRow, pageSize,
+			                                             exportRowIndexColumn);
 
 			try (final ResultSet resultSet = exportStatement.executeQuery(exportQuery)) {
 				while (resultSet.next()) {
@@ -937,6 +870,10 @@ public class DatabaseService {
 						final ColumnConfiguration columnConfiguration = dataConfiguration.getConfigurations()
 						                                                                 .get(columnIndex);
 						data.add(convertResultToData(resultSet, columnIndex + 1, columnConfiguration.getType()));
+					}
+
+					if (exportRowIndexColumn) {
+						data.add(convertResultToData(resultSet, dataConfiguration.getConfigurations().size() + 1, DataType.INTEGER));
 					}
 					dataRows.add(new DataRow(data));
 				}
@@ -977,20 +914,43 @@ public class DatabaseService {
 		}
 	}
 
-	private String createSelectQuery(final Long dataSetId, final List<String> columnNames,
-	                                 final List<Integer> rowNumbers) {
-		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"").toList();
-		return "SELECT " + String.join(",", quotedColumnNames) +
-		       " FROM (SELECT *, ROW_NUMBER() OVER () AS row_num FROM " +
-		       getTableName(dataSetId) + ") AS numbered_rows WHERE row_num IN (" +
-		       rowNumbers.stream().map(rowNumber -> rowNumber + 1).map(Object::toString)
-		                 .collect(Collectors.joining(",")) + ");";
-	}
+	private String createSelectQuery(final Long dataSetId, final RowSelector rowSelector, final List<String> columnNames,
+	                                 final HoldOutSelector holdOutSelector, final boolean pagination,
+	                                 final int startRow, final int pageSize, final boolean exportRowIndexColumn) {
+		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"")
+		                                                  .collect(Collectors.toCollection(ArrayList::new));
+		if (exportRowIndexColumn) {
+			quotedColumnNames.add("\"" + DataschemeGenerator.ROW_INDEX_NAME + "\"");
+		}
 
-	private String createSelectQuery(final Long dataSetId, final List<String> columnNames, final boolean pagination,
-	                                 final int startRow, final int pageSize) {
-		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"").toList();
-		String query = "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId);
+		String query = "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId) + " d";
+
+		switch (holdOutSelector) {
+			case ALL -> {
+			}
+			case HOLD_OUT -> {
+				query = appendWhere(query);
+				query += DataschemeGenerator.HOLT_OUT_FLAG_NAME + " = true";
+			}
+			case REST -> {
+				query = appendWhere(query);
+				query += DataschemeGenerator.HOLT_OUT_FLAG_NAME + " = false";
+			}
+		}
+	
+		switch (rowSelector) {
+			case ALL -> {}
+			case VALID -> {
+				query = appendWhere(query);
+				query += "NOT EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
+			}
+			case ERRORS -> {
+				query = appendWhere(query);
+				query += "EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
+			}
+		}
+
+		query += " ORDER BY " + DataschemeGenerator.ROW_INDEX_NAME + " ASC";
 		if (pagination) {
 			query += " LIMIT " + pageSize + " OFFSET " + startRow;
 		}
@@ -1017,6 +977,7 @@ public class DatabaseService {
 					return new DecimalData(floatValue);
 				}
 				case INTEGER -> {
+					var a = resultSet.getObject(columnIndex);
 					return new IntegerData((Integer) resultSet.getObject(columnIndex));
 				}
 				case STRING -> {
@@ -1134,6 +1095,14 @@ public class DatabaseService {
 
 				dataSet.addDataRowTransformationError(transformationErrorEntity);
 			}
+		}
+	}
+
+	private String appendWhere(final String query) {
+		if (query.contains("WHERE")) {
+			return query + " AND ";
+		} else {
+			return query + " WHERE ";
 		}
 	}
 

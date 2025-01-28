@@ -11,6 +11,7 @@ import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.exception.InternalIOException;
 import de.kiaim.platform.model.entity.*;
+import de.kiaim.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.repository.ProjectRepository;
@@ -192,7 +193,7 @@ public class ProjectService {
 
 				// Add data set
 				if (dataSetEntity.isStoredData()) {
-					final DataSet dataSet = databaseService.exportDataSet(dataSetEntity);
+					final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, HoldOutSelector.ALL);
 					addCsvToZip(zipOut, dataSet, "original");
 				}
 
@@ -224,7 +225,7 @@ public class ProjectService {
 						// Add data set
 						if (externalProcess instanceof DataProcessingEntity dataProcessing ) {
 							if (dataProcessing.getDataSet() != null && dataProcessing.getDataSet().isStoredData()) {
-								addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet()),
+								addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet(), HoldOutSelector.ALL),
 								            dataProcessing.getDataSet().getProcessed().stream().map(Step::name)
 								                          .collect(Collectors.joining("-")));
 							}

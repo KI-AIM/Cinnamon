@@ -14,10 +14,7 @@ import de.kiaim.platform.model.configuration.*;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.*;
-import de.kiaim.platform.model.enumeration.DataSetSelector;
-import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
-import de.kiaim.platform.model.enumeration.ProcessStatus;
-import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.enumeration.*;
 import de.kiaim.platform.model.file.CsvFileConfiguration;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.repository.BackgroundProcessRepository;
@@ -795,7 +792,8 @@ public class ProcessService {
 			throws InternalDataSetPersistenceException, InternalIOException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		for (final StepInputConfiguration inputDataSet : ese.getInputs()) {
 			final var datasetEntity = getDataSet(inputDataSet.getSelector(), externalProcess);
-			final var dataset = databaseService.exportDataSet(datasetEntity);
+			// TODO read from config
+			final var dataset = databaseService.exportDataSet(datasetEntity, HoldOutSelector.ALL);
 			addDataSet(bodyBuilder, inputDataSet, dataset);
 		}
 	}

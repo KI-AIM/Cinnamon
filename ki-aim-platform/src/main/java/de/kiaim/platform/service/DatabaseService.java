@@ -572,7 +572,8 @@ public class DatabaseService {
 			}
 
 			if (!rowErrors.containsKey(error.getRowIndex())) {
-				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex() - startRow));
+				final int index = rowNumbers != null ? rowNumbers.indexOf(error.getRowIndex()) : error.getRowIndex() - startRow;
+				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(index));
 			}
 			final var rowError = rowErrors.get(error.getRowIndex());
 			final Integer columnIndex = columnIndexMapping.get(error.getColumnIndex());

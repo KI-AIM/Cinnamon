@@ -588,7 +588,6 @@ public class DataController {
 		                                 : new ArrayList<>();
 
 		final HoldOutSelector holdOutSelector = loadDataRequest != null ? loadDataRequest.getHoldOutSelector() : HoldOutSelector.ALL;
-		final boolean includeRowNumbers = loadDataRequest != null && loadDataRequest.isIncludeRowNumbers();
 
 		final Object result;
 		switch (requestType) {

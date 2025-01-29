@@ -544,6 +544,7 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void loadTransformationResultPageSelectErrors() throws Exception {
 		postData();
 

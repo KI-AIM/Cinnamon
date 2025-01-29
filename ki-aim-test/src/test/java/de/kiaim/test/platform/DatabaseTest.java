@@ -133,6 +133,7 @@ public class DatabaseTest extends ContextRequiredTest {
 			}
 
 			projectRepository.deleteAll();
+			dataTransformationErrorRepository.deleteAll();
 			databaseService.executeStatement("SELECT setval('project_entity_seq', 1, true)");
 			databaseService.executeStatement(
 					"""

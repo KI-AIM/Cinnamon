@@ -1020,7 +1020,7 @@ public class DatabaseService {
 				query = appendWhere(query);
 				query += DataschemeGenerator.HOLT_OUT_FLAG_NAME + " = true";
 			}
-			case REST -> {
+			case NOT_HOLD_OUT -> {
 				query = appendWhere(query);
 				query += DataschemeGenerator.HOLT_OUT_FLAG_NAME + " = false";
 			}

@@ -6,5 +6,5 @@ package de.kiaim.platform.model.enumeration;
 public enum HoldOutSelector {
 	ALL,
 	HOLD_OUT,
-	REST
+	NOT_HOLD_OUT
 }

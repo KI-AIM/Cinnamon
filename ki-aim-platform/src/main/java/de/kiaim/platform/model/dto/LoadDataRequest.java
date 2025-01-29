@@ -39,9 +39,7 @@ public class LoadDataRequest {
 			                              @ExampleObject("REST")
 	                              }))
 	@NotNull
-	private HoldOutSelector holdOutSelector = HoldOutSelector.REST;
-
-	private boolean includeRowNumbers = false;
+	private HoldOutSelector holdOutSelector = HoldOutSelector.NOT_HOLD_OUT;
 
 	@Parameter(description = "Default encoding for all transformation errors. Special values are '$null' for JSON null and '$value' for the original value.",
 	           required = false,

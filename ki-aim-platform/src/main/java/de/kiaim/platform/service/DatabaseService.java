@@ -248,6 +248,46 @@ public class DatabaseService {
 		storeDataSet(dataSet, dataSetEntity);
 	}
 
+	public void assignHoldOut(final ProjectEntity project, final float holdOutPercentage) {
+		final String tableName = getTableName(project.getOriginalData().getDataSet().getId());
+
+		final String abc =
+				"""
+				UPDATE %s
+				SET %s = false;
+				""";
+
+		final String abcd = abc.formatted(tableName, DataschemeGenerator.HOLT_OUT_FLAG_NAME);
+
+		try {
+			executeStatement(abcd);
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+
+		final String query =
+				"""
+				WITH selected_rows AS (
+				  SELECT ctid
+				  FROM %s
+				  ORDER BY random()
+				  LIMIT (SELECT round(count(*) * %f) FROM %s)
+				)
+				UPDATE %s
+				SET %s = true
+				WHERE ctid IN (SELECT ctid FROM selected_rows);
+				""";
+
+		var a = query.formatted(tableName, holdOutPercentage, tableName, tableName,
+		                        DataschemeGenerator.HOLT_OUT_FLAG_NAME);
+
+		try {
+			executeStatement(a);
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	/**
 	 * Stores the given algorithm configuration
 	 *

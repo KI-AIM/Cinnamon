@@ -378,6 +378,19 @@ public class DataController {
 		return handleRequest(RequestType.LOAD_DATA, null, stepName, request, user);
 	}
 
+	@PostMapping(value = "/{stepName}/data/hold-out",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<Object> generateHoldOutData(
+			@Parameter(description = "Percentage of records that should be marked as hold-out data.")
+			@RequestParam(required = true) final float holdOutPercentage,
+			@AuthenticationPrincipal UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity projectEntity =  projectService.getProject(user);
+		databaseService.assignHoldOut(projectEntity, holdOutPercentage);
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
+
 	@Operation(summary = "Returns the data set.",
 	           description = "Returns the data set.")
 	@ApiResponses(value = {

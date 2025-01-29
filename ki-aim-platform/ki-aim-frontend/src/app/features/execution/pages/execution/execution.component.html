@@ -81,7 +81,7 @@
                                             <tr *ngFor="let step of castObject(executionService.synthProcess).status">
                                                 <td>{{ step.step }}</td>
                                                 <td>{{ step?.completed }}</td>
-                                                <td>{{ (step?.completed === "True") ? step?.duration : step?.remaining_time }}</td>
+                                                <td>{{ ((step?.completed === "True") ? step?.duration : step?.remaining_time) | number:'1.0-0'}}</td>
                                             </tr>
                                             </tbody>
                                         </table>

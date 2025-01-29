@@ -41,7 +41,7 @@ export class DataTableComponent implements OnInit, AfterViewInit {
 	}
 
     ngOnInit() {
-        this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfo();
+        this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfo(this.getSource());
     }
 
     ngAfterViewInit() {

@@ -37,12 +37,12 @@ export class DataValidationComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.numberRows$ = this.dataSetInfoService.getDataSetInfo().pipe(
+        this.numberRows$ = this.dataSetInfoService.getDataSetInfo("validation").pipe(
             map(value => {
                 return value.numberRows;
             }),
         );
-        this.numberInvalidRows$ = this.dataSetInfoService.getDataSetInfo().pipe(
+        this.numberInvalidRows$ = this.dataSetInfoService.getDataSetInfo("validation").pipe(
             map(value => {
                 return value.numberInvalidRows;
             }),

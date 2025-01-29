@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class DatabaseTest extends ContextRequiredTest {
 
 	public static final String CONFIGURATION_NAME = "anonymization";
+	public static final Long PROJECT_SEED = 123L;
 
 	@Autowired
 	DataSource dataSource;
@@ -73,7 +74,7 @@ public class DatabaseTest extends ContextRequiredTest {
 
 		this.testUser = getTestUser();
 		try {
-			this.testProject = projectService.createProject(testUser);
+			this.testProject = projectService.createProject(testUser, PROJECT_SEED);
 		} catch (InternalApplicationConfigurationException e) {
 			fail(e);
 		}

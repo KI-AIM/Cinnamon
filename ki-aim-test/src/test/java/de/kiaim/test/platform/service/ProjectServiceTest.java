@@ -81,7 +81,7 @@ public class ProjectServiceTest extends DatabaseTest {
 	@Test
 	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, BadFileException, InternalApplicationConfigurationException, BadConfigurationNameException {
 		// Preparation
-		final var project = projectService.createProject();
+		final var project = projectService.createProject(System.currentTimeMillis());
 		final var file = ResourceHelper.loadCsvFile();
 		final var csvFileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 		final var fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();

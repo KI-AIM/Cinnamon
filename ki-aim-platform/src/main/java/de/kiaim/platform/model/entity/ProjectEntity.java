@@ -1,12 +1,14 @@
 package de.kiaim.platform.model.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Class to represent a project in the database.
@@ -26,6 +28,20 @@ public class ProjectEntity {
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
 	private Long id;
+
+	/**
+	 * Seed for the random operations.
+	 */
+	@Column(nullable = false)
+	@Getter(AccessLevel.NONE)
+	private long seed;
+
+	/**
+	 * Number of times the random has been called.
+	 */
+	@Column(nullable = false)
+	@Getter(AccessLevel.NONE)
+	private int randomCalls = 0;
 
 	/**
 	 * Current status of the project.
@@ -62,6 +78,15 @@ public class ProjectEntity {
 	private UserEntity user;
 
 	/**
+	 * Creates a new project with the given seed.
+	 *
+	 * @param seed The seed.
+	 */
+	public ProjectEntity(final long seed) {
+		this.seed = seed;
+	}
+
+	/**
 	 * Adas a new pipeline to the project and links the entities.
 	 * @param pipeline The pipeline to be added.
 	 * @return The added pipeline for further usage.
@@ -89,5 +114,19 @@ public class ProjectEntity {
 		if (newUser != null && newUser.getProject() != this) {
 			newUser.setProject(this);
 		}
+	}
+
+	public double randomDouble(final double origin, final double bound) {
+		Random random = prepareRandom();
+		randomCalls++;
+		return random.nextDouble(origin, bound);
+	}
+
+	private Random prepareRandom() {
+		Random random = new Random(seed);
+		for (int i = 0; i < randomCalls; i++) {
+			random.nextInt();
+		}
+		return random;
 	}
 }

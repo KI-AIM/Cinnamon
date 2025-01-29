@@ -69,17 +69,33 @@ public class ProjectService {
 	/**
 	 * Creates and returns a new project for the given user if they do not have one.
 	 * Otherwise, returns the existing project.
+	 * Creates a random seed.
+	 *
 	 * @param user The user.
 	 * @return The projects of the user.
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
 	 */
 	@Transactional
 	public ProjectEntity createProject(final UserEntity user) throws InternalApplicationConfigurationException {
+		return createProject(user, System.currentTimeMillis());
+	}
+
+	/**
+	 * Creates and returns a new project for the given user if they do not have one.
+	 * Otherwise, returns the existing project.
+	 *
+	 * @param user        The user.
+	 * @param projectSeed The seed used for the project.
+	 * @return The projects of the user.
+	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
+	 */
+	@Transactional
+	public ProjectEntity createProject(final UserEntity user, final long projectSeed) throws InternalApplicationConfigurationException {
 		if (hasProject(user)) {
 			return user.getProject();
 		}
 
-		final ProjectEntity project = createProject();
+		final ProjectEntity project = createProject(projectSeed);
 		user.setProject(project);
 
 		userRepository.save(user);
@@ -90,11 +106,12 @@ public class ProjectService {
 	/**
 	 * Creates a new empty project that is not associated to any user.
 	 *
+	 * @param projectSeed The seed used for the projects.
 	 * @return The project.
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
 	 */
-	public ProjectEntity createProject() throws InternalApplicationConfigurationException {
-		final ProjectEntity project = new ProjectEntity();
+	public ProjectEntity createProject(final long projectSeed) throws InternalApplicationConfigurationException {
+		final ProjectEntity project = new ProjectEntity(projectSeed);
 
 		final PipelineEntity pipeline = new PipelineEntity();
 		project.addPipeline(pipeline);

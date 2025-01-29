@@ -793,7 +793,7 @@ public class ProcessService {
 		for (final StepInputConfiguration inputDataSet : ese.getInputs()) {
 			final var datasetEntity = getDataSet(inputDataSet.getSelector(), externalProcess);
 			// TODO read from config
-			final var dataset = databaseService.exportDataSet(datasetEntity, HoldOutSelector.ALL);
+			final var dataset = databaseService.exportDataSet(datasetEntity, HoldOutSelector.NOT_HOLD_OUT);
 			addDataSet(bodyBuilder, inputDataSet, dataset);
 		}
 	}

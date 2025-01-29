@@ -400,7 +400,7 @@ public class DataController {
 	@PostMapping(value = "/hold-out",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> generateHoldOutSplit(
-			@ParameterObject final HoldOutRequest request,
+			@ParameterObject @Valid final HoldOutRequest request,
 			@AuthenticationPrincipal UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());

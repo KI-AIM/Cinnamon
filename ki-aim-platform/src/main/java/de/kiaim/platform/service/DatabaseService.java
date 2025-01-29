@@ -443,7 +443,8 @@ public class DatabaseService {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, step);
 		final int rows = countEntries(dataSetEntity.getId());
 		final int invalidRows = countInvalidRows(dataSetEntity.getId());
-		return new DataSetInfo(rows, invalidRows);
+		final boolean hasHoldOutSplit = dataSetEntity.getOriginalData() != null && dataSetEntity.getOriginalData().isHasHoldOut();
+		return new DataSetInfo(rows, invalidRows, hasHoldOutSplit);
 	}
 
 	/**
@@ -645,11 +646,7 @@ public class DatabaseService {
 			data = data.stream().map(a -> a.subList(0, a.size() - 1)).toList();
 		}
 
-		final int numberRows = switch (rowSelector) {
-			case ALL -> countEntries(dataSetEntity.getId());
-			case VALID -> countEntries(dataSetEntity.getId()) - countInvalidRows(dataSetEntity.getId());
-			case ERRORS -> countInvalidRows(dataSetEntity.getId());
-		};
+		final int numberRows = countEntries(dataSetEntity.getId(), loadDataRequest.getHoldOutSelector(), rowSelector);
 		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
@@ -734,6 +731,33 @@ public class DatabaseService {
 	 */
 	public int countEntries(final long dataSetId) throws InternalDataSetPersistenceException {
 		final String countQuery = "SELECT count(*) FROM " + getTableName(dataSetId) + ";";
+		try (final Statement countStatement = connection.createStatement()) {
+			try (ResultSet resultSet = countStatement.executeQuery(countQuery)) {
+				resultSet.next();
+				return resultSet.getInt(1);
+			}
+		} catch (SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_COUNT,
+			                                              "Failed to count rows for dataset with ID '" + dataSetId +
+			                                              "'!", e);
+		}
+	}
+
+	/**
+	 * Counts the number of entries in the data set that comply the given selectors.
+	 *
+	 * @param dataSetId       The ID of the data set.
+	 * @param holdOutSelector Which hold-out rows should be selected.
+	 * @param rowSelector     Selector specifying which rows should be included regarding on the hold-out split.
+	 * @return The number of entries.
+	 * @throws InternalDataSetPersistenceException If the number could not be retrieved.
+	 */
+	public int countEntries(final long dataSetId, final HoldOutSelector holdOutSelector, final RowSelector rowSelector) throws InternalDataSetPersistenceException {
+		String countQuery = "SELECT count(*) FROM " + getTableName(dataSetId) + " as d ";
+		countQuery = appendHoldOutCondition(countQuery, holdOutSelector);
+		countQuery = appendRowSelectorCondition(countQuery, rowSelector, dataSetId);
+		countQuery += ";";
+
 		try (final Statement countStatement = connection.createStatement()) {
 			try (ResultSet resultSet = countStatement.executeQuery(countQuery)) {
 				resultSet.next();
@@ -1012,31 +1036,8 @@ public class DatabaseService {
 		}
 
 		String query = "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId) + " d";
-
-		switch (holdOutSelector) {
-			case ALL -> {
-			}
-			case HOLD_OUT -> {
-				query = appendWhere(query);
-				query += DataschemeGenerator.HOLT_OUT_FLAG_NAME + " = true";
-			}
-			case NOT_HOLD_OUT -> {
-				query = appendWhere(query);
-				query += DataschemeGenerator.HOLT_OUT_FLAG_NAME + " = false";
-			}
-		}
-	
-		switch (rowSelector) {
-			case ALL -> {}
-			case VALID -> {
-				query = appendWhere(query);
-				query += "NOT EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
-			}
-			case ERRORS -> {
-				query = appendWhere(query);
-				query += "EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
-			}
-		}
+		query = appendHoldOutCondition(query, holdOutSelector);
+		query = appendRowSelectorCondition(query, rowSelector, dataSetId);
 
 		query += " ORDER BY " + DataschemeGenerator.ROW_INDEX_NAME + " ASC";
 		if (pagination) {
@@ -1184,6 +1185,39 @@ public class DatabaseService {
 				dataSet.addDataRowTransformationError(transformationErrorEntity);
 			}
 		}
+	}
+
+	private String appendHoldOutCondition(String query, final HoldOutSelector holdOutSelector) {
+		switch (holdOutSelector) {
+			case ALL -> {
+			}
+			case HOLD_OUT -> {
+				query = appendWhere(query);
+				query += DataschemeGenerator.HOLT_OUT_FLAG_NAME + " = true";
+			}
+			case NOT_HOLD_OUT -> {
+				query = appendWhere(query);
+				query += DataschemeGenerator.HOLT_OUT_FLAG_NAME + " = false";
+			}
+		}
+
+		return query;
+	}
+
+	private String appendRowSelectorCondition(String query, final RowSelector rowSelector, final Long dataSetId) {
+		switch (rowSelector) {
+			case ALL -> {}
+			case VALID -> {
+				query = appendWhere(query);
+				query += "NOT EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
+			}
+			case ERRORS -> {
+				query = appendWhere(query);
+				query += "EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
+			}
+		}
+
+		return query;
 	}
 
 	private String appendWhere(final String query) {

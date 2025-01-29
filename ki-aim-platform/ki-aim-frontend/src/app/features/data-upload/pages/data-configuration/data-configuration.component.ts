@@ -20,7 +20,7 @@ import { ErrorMessageService } from 'src/app/shared/services/error-message.servi
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
-import { debounceTime, distinctUntilChanged, map, Observable, Subscription } from "rxjs";
+import { debounceTime, distinctUntilChanged, map, Observable, Subscription, switchMap } from "rxjs";
 import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
 import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
@@ -95,8 +95,12 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         const config = plainToInstance(DataConfiguration, this.form.value);
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
-        this.dataService.storeData(config).subscribe({
-            next: (d) => this.handleUpload(d),
+        this.dataService.storeData(config).pipe(
+         switchMap(() => {
+             return this.dataService.createHoldOutSplit(0.3);
+         }),
+        ).subscribe({
+            next: () => this.handleUpload(),
             error: (e) => this.handleError(e),
         });
     }
@@ -109,12 +113,12 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         });
     }
 
-    private handleUpload(data: Object) {
+    private handleUpload() {
         this.loadingService.setLoadingStatus(false);
         this.dataSetInfoService.invalidateCache();
 
         this.router.navigateByUrl("/dataValidation");
-        this. statusService.setNextStep(Steps.VALIDATION);
+        this.statusService.setNextStep(Steps.VALIDATION);
     }
 
     private handleError(error: HttpErrorResponse) {

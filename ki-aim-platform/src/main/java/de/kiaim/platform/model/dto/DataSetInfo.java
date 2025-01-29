@@ -22,4 +22,10 @@ public class DataSetInfo {
 	 */
 	@Schema(description = "Number of invalid rows inside the dataset.", example = "36")
 	private final int numberInvalidRows;
+
+	/**
+	 * If the data set contains a hold out split.
+	 */
+	@Schema(description = "If the data set contains a hold out split.", example = "false")
+	private final boolean hasHoldOutSplit;
 }

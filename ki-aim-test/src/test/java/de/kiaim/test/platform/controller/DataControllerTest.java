@@ -6,7 +6,9 @@ import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.ApiException;
 import de.kiaim.platform.model.entity.DataSetEntity;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.RowSelector;
 import de.kiaim.platform.model.enumeration.Step;
@@ -392,6 +394,45 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataAsYaml(wrapInQuotes(defaultNullEncoding),
 		                                                                        wrapInQuotes("forty two"))));
+	}
+
+	// ================================================================================================================
+	// endregion
+	// ================================================================================================================
+
+	// ================================================================================================================
+	// region generateHoldOutSplit()
+	// ================================================================================================================
+
+	@Test
+	void generateHoldOutSplit() throws Exception {
+		final float holdOutPercentage = 0.5f;
+
+		postData(false);
+
+		mockMvc.perform(post("/api/data/hold-out")
+				                .param("holdOutPercentage", String.valueOf(holdOutPercentage)))
+		       .andExpect(status().isOk());
+
+		final ProjectEntity project = getTestProject();
+		assertTrue(project.getOriginalData().isHasHoldOut(), "Hold-out split should have been generated!");
+		assertEquals(holdOutPercentage, project.getOriginalData().getHoldOutPercentage(),
+		             "Hold-out percentage not set correctly!");
+
+		mockMvc.perform(get("/api/data/validation/data")
+				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name())
+				                .accept(MediaType.APPLICATION_JSON))
+				.andExpect(content().json("[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']]"));
+
+		mockMvc.perform(get("/api/data/validation/data")
+				                .param("holdOutSelector", HoldOutSelector.NOT_HOLD_OUT.name())
+				                .accept(MediaType.APPLICATION_JSON))
+		       .andExpect(content().json("[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']]"));
+
+		mockMvc.perform(get("/api/data/validation/data")
+				                .param("holdOutSelector", HoldOutSelector.ALL.name())
+				                .accept(MediaType.APPLICATION_JSON))
+		       .andExpect(content().json("[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!'],[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']]"));
 	}
 
 	// ================================================================================================================

@@ -58,6 +58,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String QUERY = "10";
 
+	/**
+	 * Error class code for {@link BadArgumentException}.
+	 */
+	public static final String ARGUMENT = "11";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

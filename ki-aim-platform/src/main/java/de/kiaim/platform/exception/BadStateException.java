@@ -20,6 +20,11 @@ public class BadStateException extends BadRequestException {
 	 */
 	public static final String NO_DATA_SET = "3";
 
+	/**
+	 * Exception code for actions that may not be done after the data has been confirmed.
+	 */
+	public static final String DATE_CONFIRMED = "4";
+
 	public BadStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

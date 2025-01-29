@@ -248,44 +248,91 @@ public class DatabaseService {
 		storeDataSet(dataSet, dataSetEntity);
 	}
 
-	public void assignHoldOut(final ProjectEntity project, final float holdOutPercentage) {
-		final String tableName = getTableName(project.getOriginalData().getDataSet().getId());
-
-		final String abc =
-				"""
-				UPDATE %s
-				SET %s = false;
-				""";
-
-		final String abcd = abc.formatted(tableName, DataschemeGenerator.HOLT_OUT_FLAG_NAME);
-
-		try {
-			executeStatement(abcd);
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
+	/**
+	 * Creates the hold-out split for the original data set.
+	 * This is only possible if the data is stored and not confirmed.
+	 *
+	 * @param project           The project.
+	 * @param holdOutPercentage The percentage of rows that should be added to the hol-out split. Must be between 0 and 1.
+	 * @throws BadStateException                   If the state of the data forbids to create the hold-out split.
+	 * @throws BadArgumentException                If the given percentage is invalid.
+	 * @throws InternalDataSetPersistenceException If executing the queries failed.
+	 */
+	@Transactional
+	public void createHoldOutSplit(final ProjectEntity project, final float holdOutPercentage)
+			throws BadStateException, BadArgumentException, InternalDataSetPersistenceException {
+		if (project.getOriginalData().getDataSet() == null || !project.getOriginalData().getDataSet().isStoredData()) {
+			throw new BadStateException(BadStateException.NO_DATA_SET,
+			                            "Creating the hold-out split requires the original date set to be store!");
 		}
 
+		if (project.getOriginalData().getDataSet().isConfirmedData()) {
+			throw new BadStateException(BadStateException.DATE_CONFIRMED,
+			                            "Creating the hold-out split cannot be done after the data has been confirmed!");
+		}
+
+		if (holdOutPercentage < 0 || holdOutPercentage > 1) {
+			throw new BadArgumentException(BadArgumentException.HOLD_OUT_PERCENTAGE,
+			                               "Hold out percentage must be between 0 and 1!");
+		}
+
+		final String tableName = getTableName(project.getOriginalData().getDataSet().getId());
+
+		// Reset existing hol-out split
+		if (project.getOriginalData().isHasHoldOut()) {
+			final String resetQuery =
+					"""
+					UPDATE %s
+					SET %s = false;
+					""".formatted(tableName, DataschemeGenerator.HOLT_OUT_FLAG_NAME);
+
+			try {
+				executeStatement(resetQuery);
+			} catch (final SQLException e) {
+				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT, "Failed to reset the hold-out split!", e);
+			}
+
+			project.getOriginalData().setHasHoldOut(false);
+		}
+
+		projectRepository.save(project);
+
+		// Set the seed
+		final double seed = project.randomDouble(-1, 1);
+		project.getOriginalData().setHoldOutSeed(seed);
+
+		final String seedQuery = "SELECT setseed(%s);".formatted(Double.toString(seed));
+
+		try {
+			executeStatement(seedQuery);
+		} catch (final SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT, "Failed to set the seed!", e);
+		}
+
+		// Create new hold-out split
 		final String query =
 				"""
 				WITH selected_rows AS (
 				  SELECT ctid
 				  FROM %s
 				  ORDER BY random()
-				  LIMIT (SELECT round(count(*) * %f) FROM %s)
+				  LIMIT (SELECT round(count(*) * %s) FROM %s)
 				)
 				UPDATE %s
 				SET %s = true
 				WHERE ctid IN (SELECT ctid FROM selected_rows);
-				""";
-
-		var a = query.formatted(tableName, holdOutPercentage, tableName, tableName,
-		                        DataschemeGenerator.HOLT_OUT_FLAG_NAME);
+				""".formatted(tableName, Float.toString(holdOutPercentage), tableName, tableName,
+				              DataschemeGenerator.HOLT_OUT_FLAG_NAME);
 
 		try {
-			executeStatement(a);
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
+			executeStatement(query);
+		} catch (final SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT, "Failed to create the hold-out split!", e);
 		}
+
+		project.getOriginalData().setHasHoldOut(true);
+		project.getOriginalData().setHoldOutPercentage(holdOutPercentage);
+		projectRepository.save(project);
 	}
 
 	/**

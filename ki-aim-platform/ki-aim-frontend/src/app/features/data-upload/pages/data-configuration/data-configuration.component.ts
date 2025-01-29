@@ -40,6 +40,9 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     private dataConfigurationSubscription: Subscription;
 
     protected form: FormGroup;
+    protected isAdvanceConfigurationExpanded: boolean = false;
+    protected createSplit: boolean = false;
+    protected holdOutSplitPercentage: number = 0.3;
 
     protected isFileTypeXLSX$: Observable<boolean>;
 
@@ -85,6 +88,13 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                 this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
             });
         });
+
+        this.dataSetInfoService.getDataSetInfo().subscribe({
+            next: value => {
+                this.createSplit = value.hasHoldOutSplit;
+                this.holdOutSplitPercentage = value.holdOutPercentage;
+            }
+        });
     }
 
     ngOnDestroy() {
@@ -97,12 +107,19 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         this.configuration.setDataConfiguration(config);
         this.dataService.storeData(config).pipe(
          switchMap(() => {
-             return this.dataService.createHoldOutSplit(0.3);
+             return this.dataService.createHoldOutSplit(this.holdOutSplitPercentage);
          }),
         ).subscribe({
             next: () => this.handleUpload(),
             error: (e) => this.handleError(e),
         });
+    }
+
+    protected updateCreateSplit(newValue: boolean) {
+        this.createSplit = newValue;
+        if (!newValue) {
+            this.isAdvanceConfigurationExpanded = false;
+        }
     }
 
     private setEmptyColumnNames(dataConfiguration: DataConfiguration) {

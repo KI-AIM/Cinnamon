@@ -443,8 +443,16 @@ public class DatabaseService {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, step);
 		final int rows = countEntries(dataSetEntity.getId());
 		final int invalidRows = countInvalidRows(dataSetEntity.getId());
-		final boolean hasHoldOutSplit = dataSetEntity.getOriginalData() != null && dataSetEntity.getOriginalData().isHasHoldOut();
-		return new DataSetInfo(rows, invalidRows, hasHoldOutSplit);
+
+		boolean hasHoldOutSplit = false;
+		float holdOutPercentage = 0.0f;
+		final OriginalDataEntity originalData = dataSetEntity.getOriginalData();
+		if (originalData != null) {
+			hasHoldOutSplit = originalData.isHasHoldOut();
+			holdOutPercentage = originalData.getHoldOutPercentage();
+		}
+
+		return new DataSetInfo(rows, invalidRows, hasHoldOutSplit, holdOutPercentage);
 	}
 
 	/**

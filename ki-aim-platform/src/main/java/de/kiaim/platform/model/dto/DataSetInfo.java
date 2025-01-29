@@ -28,4 +28,10 @@ public class DataSetInfo {
 	 */
 	@Schema(description = "If the data set contains a hold out split.", example = "false")
 	private final boolean hasHoldOutSplit;
+
+	/**
+	 * The percentage or rows that are assigned to the hold-out split.
+	 */
+	@Schema(description = "The percentage or rows that are assigned to the hold-out split.", example = "0.2")
+	private final float holdOutPercentage;
 }

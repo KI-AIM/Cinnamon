@@ -195,8 +195,19 @@ public class AnonymizationService {
         try {
             String errorMessage = "Anonymization failed";
             String exceptionMessage = ex.getMessage() != null ? ex.getMessage() : "No additional information";
+            String errorCode = "ANON_UNKNOWN";
+
+            // If the exception is an instance of AnonymizationException, retrieve errorCode
+            if (ex instanceof AnonymizationException anonymizationException) {
+                errorCode = anonymizationException.getErrorCode();
+                errorMessage = anonymizationException.getMessage();
+            }
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("error_code", new ByteArrayResource(errorCode.getBytes(StandardCharsets.UTF_8)) {
+                @Override
+                public String getFilename() { return "error_code.txt"; }
+            });
             body.add("error_message", new ByteArrayResource(errorMessage.getBytes(StandardCharsets.UTF_8)) {
                 @Override
                 public String getFilename() {

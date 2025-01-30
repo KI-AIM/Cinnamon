@@ -92,7 +92,9 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         this.dataSetInfoService.getDataSetInfo("validation").subscribe({
             next: value => {
                 this.createSplit = value.hasHoldOutSplit;
-                this.holdOutSplitPercentage = value.holdOutPercentage;
+                if (value.hasHoldOutSplit) {
+                    this.holdOutSplitPercentage = value.holdOutPercentage;
+                }
             }
         });
     }

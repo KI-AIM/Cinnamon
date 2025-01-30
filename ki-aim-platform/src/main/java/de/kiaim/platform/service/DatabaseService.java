@@ -441,6 +441,11 @@ public class DatabaseService {
 	public DataSetInfo getInfo(final ProjectEntity project,
 	                           final Step step) throws BadDataSetIdException, InternalDataSetPersistenceException {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, step);
+
+		if (!dataSetEntity.isStoredData()) {
+			return new DataSetInfo(0, 0, false, 0.0f);
+		}
+
 		final int rows = countEntries(dataSetEntity.getId());
 		final int invalidRows = countInvalidRows(dataSetEntity.getId());
 

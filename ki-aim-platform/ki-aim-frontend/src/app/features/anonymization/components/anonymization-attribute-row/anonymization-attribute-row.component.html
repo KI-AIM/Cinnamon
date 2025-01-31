@@ -81,7 +81,28 @@
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>
-                Interval Size
+                <!-- Change label according to selected Transformation Type -->
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'MASKING'">
+                    Masked Characters
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'RECORD_DELETION'">
+                    Using Suppression Limit
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'ATTRIBUTE_DELETION'">
+                    All Values Deleted
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'NO_PROTECTION'">
+                    No Change
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'DATE_GENERALIZATION'">
+                    Generalization Level
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'GENERALIZATION'">
+                    Generalization Interval
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'MICRO_AGGREGATION'">
+                    Aggregation Interval
+                </ng-container>
             </mat-label>
             <ng-container *ngIf="!intervalIsSelect; else selectField">
                 <input

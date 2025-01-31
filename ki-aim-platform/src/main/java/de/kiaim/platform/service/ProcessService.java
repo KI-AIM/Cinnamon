@@ -29,6 +29,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -247,6 +248,26 @@ public class ProcessService {
 			                                "' exists!");
 		}
 		final var process = backgroundProcessOptional.get();
+
+		// Finish the current process
+		final boolean containsError = doFinishProcess(process, resultFiles);
+
+		if (process instanceof ExternalProcessEntity externalProcess) {
+			// Start the next step of this process
+			if (!containsError) {
+				startNext(externalProcess.getExecutionStep());
+			}
+
+			// Start the next process of the same step
+			startScheduledProcess(externalProcess.getStep());
+		}
+
+	}
+
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	protected boolean doFinishProcess(final BackgroundProcessEntity process,
+	                                  final Set<Map.Entry<String, MultipartFile>> resultFiles
+	) throws InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException, BadDataConfigurationException, InternalDataSetPersistenceException, BadDataSetIdException, InternalIOException, InternalRequestException {
 		final ProjectEntity project = process.getProject();
 		final var endpoint = kiAimConfiguration.getExternalServerEndpoints().get(process.getEndpoint());
 
@@ -324,7 +345,7 @@ public class ProcessService {
 					}
 				}
 
-			} catch (final IOException e) {
+			} catch (final IOException | InternalInvalidResultException e) {
 				throw new InternalIOException(InternalIOException.MULTIPART_READING,
 				                              "Failed to read result file '" + entry.getKey() + "'!", e);
 			}
@@ -351,19 +372,11 @@ public class ProcessService {
 			setProcessError(process, errorMessage);
 		} else {
 			process.setExternalProcessStatus(ProcessStatus.FINISHED);
-
-			// Start the next step of this process
-			if (externalProcess != null) {
-				startNext(externalProcess.getExecutionStep());
-			}
-		}
-
-		// Start the next process of the same step
-		if (externalProcess != null) {
-			startScheduledProcess(externalProcess.getStep());
 		}
 
 		projectService.saveProject(project);
+
+		return containsError;
 	}
 
 	@Nullable
@@ -519,7 +532,8 @@ public class ProcessService {
 	 * @throws InternalMissingHandlingException    If no implementation exists for a valid configuration.
 	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
 	 */
-	private void startNext(final ExecutionStepEntity executionStep)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	protected void startNext(final ExecutionStepEntity executionStep)
 			throws BadStateException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		// Get the next step
 		Integer nextJob = null;
@@ -573,6 +587,8 @@ public class ProcessService {
 		} else {
 			executionStep.setStatus(ProcessStatus.FINISHED);
 		}
+
+		projectService.saveProject(executionStep.getProject());
 	}
 
 	/**
@@ -644,7 +660,8 @@ public class ProcessService {
 	 *
 	 * @param step The step.
 	 */
-	private void startScheduledProcess(final Step step) {
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	protected void startScheduledProcess(final Step step) {
 		final var stepConfig = kiAimConfiguration.getSteps().get(step);
 		final var server = stepConfig.getServer();
 
@@ -668,6 +685,8 @@ public class ProcessService {
 		}
 
 		externalProcess.setScheduledTime(null);
+
+		projectService.saveProject(externalProcess.getProject());
 	}
 
 	/**

@@ -90,13 +90,17 @@ export class StatisticsService {
      * @param value The number to be formatted.
      * @param options Format options
      */
-    public formatNumber(value: number | string, options?: FormatNumberOptions): string {
+    public formatNumber(value: number | string | null | undefined, options?: FormatNumberOptions): string {
         options ??= {};
         const {dataType = null, min = null, max = null, maximumFractionDigits} = options;
 
         // If data type is date and value is string, pipe original data
         if (dataType && (dataType === 'DATE' || dataType === 'DATE_TIME') && typeof value === 'string') {
             return value;
+        }
+
+        if (value == null) {
+            return 'N/A';
         }
 
         if (typeof value === "string") {

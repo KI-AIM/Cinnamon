@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -621,17 +622,13 @@ public class ProcessService {
 			                              .uri(url)
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
-			                                        errorResponse -> errorResponse.toEntity(
-					                                                                      ExternalProcessResponse.class)
-			                                                                      .map(RequestRuntimeException::new))
+			                                        errorResponse -> errorResponse.toEntity(String.class)
+			                                                                      .map(this::buildErrorResponse))
 			                              .bodyToMono(String.class)
 			                              .block();
 			externalProcess.setStatus(response);
-		} catch (RequestRuntimeException e) {
-			var message = "Failed to fetch the status! Got status of " + e.getResponse().getStatusCode();
-			if (e.getResponse().getBody() != null) {
-				message += " with message: '" + e.getResponse().getBody().getMessage() + "'";
-			}
+		} catch (final RequestRuntimeException e) {
+			final String message = buildError(e);
 			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
 		} catch (WebClientRequestException e) {
@@ -745,9 +742,8 @@ public class ProcessService {
 			                              .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
-			                                        errorResponse -> errorResponse.toEntity(
-					                                                                      ExternalProcessResponse.class)
-			                                                                      .map(RequestRuntimeException::new))
+			                                        errorResponse -> errorResponse.toEntity(String.class)
+			                                                                      .map(this::buildErrorResponse))
 			                              .bodyToMono(ExternalProcessResponse.class)
 			                              .block();
 
@@ -757,12 +753,8 @@ public class ProcessService {
 
 			externalProcess.setExternalId(response.getPid());
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
-		} catch (RequestRuntimeException e) {
-			var message = "Failed to start the process! Got status of " + e.getResponse().getStatusCode();
-			if (e.getResponse().getBody() != null) {
-				message += " with message: '" + e.getResponse().getBody().getMessage() + "' and error: '" +
-				           e.getResponse().getBody().getError() + "'";
-			}
+		} catch (final RequestRuntimeException e) {
+			final String message = buildError(e);
 			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		} catch (WebClientRequestException e) {
@@ -771,7 +763,6 @@ public class ProcessService {
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		}
 	}
-
 	private void addConfig(final String configuration, final ExternalEndpoint stepConfiguration,
 	                       final MultipartBodyBuilder bodyBuilder)
 			throws InternalIOException, InternalMissingHandlingException {
@@ -1014,6 +1005,34 @@ public class ProcessService {
 
 	private String injectUrlParameter(final String url, final BackgroundProcessEntity externalProcess) {
 		return url.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getUuid().toString());
+	}
+
+	private RequestRuntimeException buildErrorResponse(final ResponseEntity<String> response) {
+		ExternalProcessResponse responseBody;
+		try {
+			responseBody = jsonMapper.readValue(response.getBody(), ExternalProcessResponse.class);
+		} catch (JsonProcessingException e) {
+			responseBody = new ExternalProcessResponse();
+			responseBody.setError(response.getBody());
+		}
+
+		final ResponseEntity<ExternalProcessResponse> responseEntity = ResponseEntity.status(response.getStatusCode())
+		                                                                             .headers(response.getHeaders())
+		                                                                             .body(responseBody);
+		return new RequestRuntimeException(responseEntity);
+	}
+
+	private String buildError(final RequestRuntimeException e) {
+		var message = "Failed to start the process! Got status of '" + e.getResponse().getStatusCode() + "'.";
+		if (e.getResponse().getBody() != null) {
+			if (e.getResponse().getBody().getMessage() != null) {
+				message += " Got message: '" + e.getResponse().getBody().getMessage() + "'.";
+			}
+			if (e.getResponse().getBody().getError() != null) {
+				message += " Got error: '" + e.getResponse().getBody().getError() + "'.";
+			}
+		}
+		return message;
 	}
 
 }

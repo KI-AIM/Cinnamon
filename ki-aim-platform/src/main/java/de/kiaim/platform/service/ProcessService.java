@@ -491,8 +491,7 @@ public class ProcessService {
 			final ExternalServer es = stepService.getExternalServerConfiguration(ese);
 
 			final String serverUrl = es.getUrlServer();
-			final String cancelEndpoint = ese.getCancelEndpoint().replace(PROCESS_ID_PLACEHOLDER,
-			                                                              externalProcess.getUuid().toString());
+			final String cancelEndpoint = injectUrlParameter(ese.getCancelEndpoint(), externalProcess);
 
 			final MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
 			formData.add("session_key", externalProcess.getUuid().toString());
@@ -500,7 +499,7 @@ public class ProcessService {
 
 			// Do the request
 			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
-			webClient.post()
+			webClient.method(ese.getCancelHttpMethod().asHttpMethod())
 			         .uri(cancelEndpoint)
 			         .body(BodyInserters.fromFormData(formData))
 			         .retrieve()
@@ -736,8 +735,9 @@ public class ProcessService {
 		// Do the request
 		try {
 			final String serverUrl = es.getUrlServer();
-			final String url = endpoint.getProcessEndpoint().isBlank() ? externalProcess.getProcessUrl()
+			String url = endpoint.getProcessEndpoint().isBlank() ? externalProcess.getProcessUrl()
 			                                                           : endpoint.getProcessEndpoint();
+			url = injectUrlParameter(url, externalProcess);
 
 			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
 			final var response = webClient.post()
@@ -1010,6 +1010,10 @@ public class ProcessService {
 			executionStep.setStatus(ProcessStatus.ERROR);
 			executionStep.setCurrentProcessIndex(null);
 		}
+	}
+
+	private String injectUrlParameter(final String url, final BackgroundProcessEntity externalProcess) {
+		return url.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getUuid().toString());
 	}
 
 }

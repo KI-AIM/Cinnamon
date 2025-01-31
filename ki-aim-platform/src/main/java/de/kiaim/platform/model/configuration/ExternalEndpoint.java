@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -36,6 +37,11 @@ public class ExternalEndpoint {
 	@JsonIgnore
 	@NotBlank
 	private String cancelEndpoint;
+
+	/**
+	 * HTTP method for the cancel endpoint.
+	 */
+	private RequestMethod cancelHttpMethod = RequestMethod.POST;
 
 	/**
 	 * Endpoint used if used cannot select an algorithm.

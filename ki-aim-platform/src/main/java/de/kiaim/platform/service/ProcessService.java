@@ -729,7 +729,7 @@ public class ProcessService {
 		                                                     .build()
 		                                                     .toUriString();
 
-		bodyBuilder.part("callback",
+		bodyBuilder.part(endpoint.getCallbackPartName(),
 		                 serverAddress + "/api/process/" + uuid.toString() + "/callback");
 
 		// Do the request

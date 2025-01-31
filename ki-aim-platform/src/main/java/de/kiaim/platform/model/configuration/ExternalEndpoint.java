@@ -32,6 +32,11 @@ public class ExternalEndpoint {
 	private String algorithmEndpoint;
 
 	/**
+	 * Name of the callback url part in the request.
+	 */
+	private String callbackPartName = "callback";
+
+	/**
 	 * Endpoint for cancelling requests.
 	 */
 	@JsonIgnore

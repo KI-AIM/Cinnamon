@@ -801,8 +801,10 @@ public class ProcessService {
 			throws InternalDataSetPersistenceException, InternalIOException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		for (final StepInputConfiguration inputDataSet : ese.getInputs()) {
 			final var datasetEntity = getDataSet(inputDataSet.getSelector(), externalProcess);
-			// TODO read from config
-			final var dataset = databaseService.exportDataSet(datasetEntity, HoldOutSelector.NOT_HOLD_OUT);
+			final var holdOut = inputDataSet.getSelector() == DataSetSelector.HOLD_OUT
+			                    ? HoldOutSelector.HOLD_OUT
+			                    : HoldOutSelector.NOT_HOLD_OUT;
+			final var dataset = databaseService.exportDataSet(datasetEntity, holdOut);
 			addDataSet(bodyBuilder, inputDataSet, dataset);
 		}
 	}
@@ -819,6 +821,9 @@ public class ProcessService {
 		final DataSetEntity result;
 
 		switch (dataSetSelector) {
+			case HOLD_OUT, ORIGINAL -> {
+				result = process.getProject().getOriginalData().getDataSet();
+			}
 			case LAST_OR_ORIGINAL -> {
 				if (process instanceof ExternalProcessEntity externalProcess) {
 					result = getLastOrOriginalDataSet(externalProcess);
@@ -826,9 +831,6 @@ public class ProcessService {
 					// TODO
 					throw new InternalInvalidStateException("", "");
 				}
-			}
-			case ORIGINAL -> {
-				result = process.getProject().getOriginalData().getDataSet();
 			}
 			case OWNER -> {
 				if (process.getOwner() instanceof DataSetEntity dataSetEntity) {

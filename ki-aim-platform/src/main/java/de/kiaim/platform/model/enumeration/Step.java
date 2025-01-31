@@ -4,8 +4,6 @@ import de.kiaim.platform.exception.BadStepNameException;
 import lombok.Getter;
 import org.springframework.lang.Nullable;
 
-import java.util.List;
-
 /**
  * Steps of a project where the backend is involved.
  */
@@ -19,7 +17,8 @@ public enum Step {
 	SYNTHETIZATION(5),
 	EXECUTION(6),
 	TECHNICAL_EVALUATION(7),
-	EVALUATION(7),
+	RISK_EVALUATION(8),
+	EVALUATION(9),
 	;
 
 	/**

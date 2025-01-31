@@ -26,6 +26,7 @@ export class EvaluationComponent implements OnInit {
     protected stage$: Observable<ExecutionStep | null>;
 
     protected statistics$: Observable<Statistics | null>;
+    protected risks$: Observable<any>;
 
     constructor(
         protected readonly evaluationService: EvaluationService,
@@ -36,6 +37,7 @@ export class EvaluationComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.risks$ = this.statisticsService.fetchRisks();
         this.stage$ = this.evaluationService.status$;
         this.statistics$ = this.statisticsService.fetchResult();
         this.evaluationService.fetchStatus();

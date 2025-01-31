@@ -129,7 +129,8 @@ public class ProcessController {
 		final var nextStep = switch (configuredStep) {
 			case ANONYMIZATION -> Step.SYNTHETIZATION;
 			case SYNTHETIZATION -> Step.EXECUTION;
-			case TECHNICAL_EVALUATION -> Step.EVALUATION;
+			case TECHNICAL_EVALUATION -> Step.RISK_EVALUATION;
+			case RISK_EVALUATION -> Step.EVALUATION;
 			default -> Step.ANONYMIZATION;
 		};
 

@@ -218,12 +218,12 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
                     ? '/synthetizationConfiguration'
                     : this.algorithmService.getStepName() === "SYNTHETIZATION"
                         ? "/execution"
-                        : "/evaluation");
+                        : "/riskEvaluationConfiguration");
                 this.statusService.setNextStep(this.algorithmService.getStepName() === "ANONYMIZATION"
                     ? Steps.SYNTHETIZATION
                     : this.algorithmService.getStepName() === "SYNTHETIZATION"
                         ? Steps.EXECUTION
-                        : Steps.EVALUATION
+                        : Steps.RISK_EVALUATION
             );
             },
             error: err => {

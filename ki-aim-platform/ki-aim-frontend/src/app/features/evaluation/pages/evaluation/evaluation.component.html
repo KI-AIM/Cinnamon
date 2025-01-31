@@ -49,7 +49,7 @@
                     </div>
                 </mat-expansion-panel>
 
-                <ng-container *ngIf="status.status === ProcessStatus.FINISHED && (statistics$ | async) as statistics">
+                <ng-container *ngIf="status.processes[0].externalProcessStatus === ProcessStatus.FINISHED && (statistics$ | async) as statistics">
 
                     <mat-expansion-panel>
                         <mat-expansion-panel-header>
@@ -58,16 +58,8 @@
                         </mat-expansion-panel-header>
 
                         <div>
-                            <div
-                                *ngIf="status.processes[0].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
-                                <app-data-inspection sourceProcess="TECHNICAL_EVALUATION" mainData="synthetic"
-                                                     [processingSteps]="evaluationService.processSteps"></app-data-inspection>
-                            </div>
-                            <ng-template #anonNoData>
-                                <div>
-                                    No Data Available
-                                </div>
-                            </ng-template>
+                            <app-data-inspection sourceProcess="TECHNICAL_EVALUATION" mainData="synthetic"
+                                                 [processingSteps]="evaluationService.processSteps"></app-data-inspection>
                         </div>
 
                     </mat-expansion-panel>
@@ -78,6 +70,9 @@
                         </mat-expansion-panel-header>
 
                         <div>
+                            <ng-container *ngIf="!(utility.methods | keyvalue)?.length">
+                                No Metrics Available
+                            </ng-container>
                             <div *ngFor="let abc of utility.methods | keyvalue" class="mb-2 pt-2 border-top border-1">
 
                                 <div style="display: flex;">
@@ -133,6 +128,52 @@
                     </mat-expansion-panel>
 
                 </ng-container>
+            </mat-accordion>
+
+        </div>
+    </div>
+
+    <div class="mb-2 mt-2 box" style="width: 100%; padding-top: 0.3rem;">
+
+        <div class="step-head">
+            <span>Risk Evaluation</span>
+            <span class="status" [ngClass]="status.processes[1].externalProcessStatus">
+                <span>{{ status.processes[1].externalProcessStatus.replace("_", " ") }}</span>
+            </span>
+        </div>
+        <div>
+
+            <mat-accordion>
+                <!-- Status -->
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>Status</mat-panel-title>
+                        <mat-panel-description></mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div *ngIf="status.processes[1].status">
+                        {{ status.processes[1].status }}
+                    </div>
+                    <div *ngIf="!status.processes[1].status">
+                        No Status Available
+                    </div>
+                </mat-expansion-panel>
+
+                <ng-container *ngIf="status.processes[1].externalProcessStatus === ProcessStatus.FINISHED && (risks$ | async) as risks">
+
+                    <mat-expansion-panel>
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>Risks</mat-panel-title>
+                            <mat-panel-description>Kinda risky</mat-panel-description>
+                        </mat-expansion-panel-header>
+
+                        <div>
+                            {{risks}}
+                        </div>
+
+                    </mat-expansion-panel>
+                </ng-container>
+
             </mat-accordion>
 
         </div>

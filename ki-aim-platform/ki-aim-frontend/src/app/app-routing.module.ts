@@ -17,6 +17,9 @@ import {
     TechnicalEvaluationConfigurationComponent
 } from "./features/technical-evaluation/pages/technical-evaluation-configuration/technical-evaluation-configuration.component";
 import { EvaluationComponent } from "./features/evaluation/pages/evaluation/evaluation.component";
+import {
+    RiskAssessmentConfigurationComponent
+} from "./features/risk-assessment/pages/risk-assessment-configuration/risk-assessment-configuration.component";
 
 const routes: Routes = [
     {path: '', redirectTo: '', pathMatch: 'full', canActivate: [AuthGuard, StateGuard]},
@@ -30,6 +33,7 @@ const routes: Routes = [
     {path: 'synthetizationConfiguration', component: SynthetizationConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'execution', component: ExecutionComponent, canActivate: [AuthGuard]},
     {path: 'technicalEvaluationConfiguration', component: TechnicalEvaluationConfigurationComponent, canActivate: [AuthGuard]},
+    {path: 'riskEvaluationConfiguration', component: RiskAssessmentConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'evaluation', component: EvaluationComponent, canActivate: [AuthGuard]},
 ];
 

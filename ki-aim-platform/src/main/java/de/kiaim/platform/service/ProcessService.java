@@ -178,6 +178,8 @@ public class ProcessService {
 		}
 
 		executionStep.setStatus(ProcessStatus.RUNNING);
+		// Reset status from potential previous execution
+		executionStep.getProcesses().forEach(ExternalProcessEntity::reset);
 
 		// Start the first step
 		startNext(executionStep);
@@ -238,7 +240,6 @@ public class ProcessService {
 			throws ApiException {
 		final Optional<BackgroundProcessEntity> backgroundProcessOptional = backgroundProcessRepository.findByUuid(
 				processId);
-
 		// Invalid processID
 		if (backgroundProcessOptional.isEmpty()) {
 			throw new BadProcessIdException(BadProcessIdException.NO_PROCESS,
@@ -549,8 +550,6 @@ public class ProcessService {
 
 			executionStep.setCurrentProcessIndex(jobCandidate);
 			processCandidate = executionStep.getProcess(jobCandidate);
-			// Reset status from potential previous execution
-			processCandidate.reset();
 
 			// Check if the process should be skipped
 			if (processCandidate.isSkip()) {

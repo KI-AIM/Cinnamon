@@ -9,6 +9,7 @@ import { Router } from "@angular/router";
 import { ExecutionService } from "../../services/execution.service";
 import { StatusService } from "../../../../shared/services/status.service";
 import {Observable} from "rxjs";
+import { StatisticsService } from "../../../../shared/services/statistics.service";
 
 @Component({
   selector: 'app-execution',
@@ -25,6 +26,7 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         protected readonly executionService: ExecutionService,
         private readonly http: HttpClient,
         private readonly router: Router,
+        private readonly statisticsService: StatisticsService,
         private readonly statusService: StatusService,
         private readonly titleService: TitleService,
     ) {
@@ -69,6 +71,13 @@ export class ExecutionComponent implements OnInit, OnDestroy {
 
     protected castObject(value: any): any {
         return value as any;
+    }
+
+    protected formatTime(step: any): string {
+        return this.statisticsService.formatNumber((step?.completed === "True") ? step?.duration : step?.remaining_time, {
+            maximumFractionDigits: 0,
+            unit: "s"
+        });
     }
 
     protected getJobName(index: number): string {

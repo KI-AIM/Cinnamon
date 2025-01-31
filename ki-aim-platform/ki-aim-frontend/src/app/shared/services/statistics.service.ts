@@ -67,6 +67,17 @@ export class StatisticsService {
         );
     }
 
+    public fetchRisks(): Observable<any> {
+        return this.httpClient.get<any>(environments.apiUrl + `/api/project/resultFile`,
+            {
+                params: {
+                    executionStepName: 'EVALUATION',
+                    processStepName: 'RISK_EVALUATION',
+                    name: 'risks.json',
+                }
+            });
+    }
+
     public invalidateCache() {
         this._statistics = null;
         this._statistics$ = null;
@@ -119,20 +130,25 @@ export class StatisticsService {
         //     }
         // }
 
+        let numberValue = '';
         if (value === 0) {
-            return '0';
+            numberValue = '0';
+        } else {
+            const abs = Math.abs(value);
+            if (max && abs > Math.pow(10, max)) {
+                numberValue = value.toExponential(max)
+            } else if (min && abs < Math.pow(10, -min)) {
+                numberValue = value.toExponential(min)
+            }
+
+            numberValue = value.toLocaleString(undefined, {maximumFractionDigits});
         }
 
-        const abs = Math.abs(value);
-        if (max && abs > Math.pow(10, max)) {
-            return value.toExponential(max)
+        if (options.unit) {
+            return numberValue + ' ' + options.unit;
+        } else {
+            return numberValue;
         }
-
-        if (min && abs < Math.pow(10, -min)) {
-            return value.toExponential(min)
-        }
-
-        return value.toLocaleString(undefined, {maximumFractionDigits});
     }
 
     public fetchStatistics(stepName: string): Observable<Statistics | null> {
@@ -175,4 +191,5 @@ export interface FormatNumberOptions {
     min?: number | null;
     max?: number | null;
     maximumFractionDigits?: number;
+    unit?: string;
 }

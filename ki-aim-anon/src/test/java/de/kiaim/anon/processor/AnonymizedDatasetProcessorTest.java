@@ -11,8 +11,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static de.kiaim.anon.processor.AnonymizedDatasetProcessor.containsStarWithOtherCharacters;
 import static de.kiaim.anon.service.CompatibilityAssurance.isDataSetCompatible;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 public class AnonymizedDatasetProcessorTest extends AbstractAnonymizationTests {
@@ -41,6 +42,33 @@ public class AnonymizedDatasetProcessorTest extends AbstractAnonymizationTests {
         System.out.println("result");
         System.out.println(anonymizedDataset.toString().substring(0,3000));
         assert isDataSetCompatible(anonymizedDataset);
+    }
+
+    @Test
+    public void testContainsStarWithOtherCharacters() throws Exception {
+        String value1 = "0.6";
+        assertFalse(containsStarWithOtherCharacters(value1)); // Should return false
+
+        // Test: Value with only '*' characters
+        String value2 = "****";
+        assertFalse(containsStarWithOtherCharacters(value2)); // Should return false
+
+        // Test: Value with '*' and other characters (valid case)
+        String value3 = "4,0***";
+        assertTrue(containsStarWithOtherCharacters(value3)); // Should return true
+
+        // Test: Value with '*' and a single character (valid case)
+        String value4 = "A**";
+        assertTrue(containsStarWithOtherCharacters(value4)); // Should return true
+
+        // Test: Value with multiple characters and a '*' (valid case)
+        String value5 = "Hello*world";
+        assertTrue(containsStarWithOtherCharacters(value5)); // Should return true
+
+        // Test: Value with '*' and multiple digits (valid case)
+        String value6 = "123*456";
+        assertTrue(containsStarWithOtherCharacters(value6));
+
     }
 
 }

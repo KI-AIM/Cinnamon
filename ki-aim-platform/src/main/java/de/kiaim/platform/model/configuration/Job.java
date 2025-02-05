@@ -1,6 +1,5 @@
 package de.kiaim.platform.model.configuration;
 
-import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.enumeration.StepType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -11,12 +10,17 @@ import lombok.Setter;
  */
 @Schema(description = "Configuration of a step.")
 @Getter @Setter
-public class StepConfiguration {
+public class Job {
 
 	/**
 	 * Endpoint to be used for this step.
 	 */
 	private Integer externalServerEndpointIndex;
+
+	/**
+	 * Hardcoded fix for synth status.
+	 */
+	boolean fixStatus = false;
 
 	/**
 	 * Type of this step.
@@ -27,7 +31,8 @@ public class StepConfiguration {
 	//--- Automatically set ---
 	//=========================
 
-	private Step step;
+	private String name;
+
 	private ExternalEndpoint endpoint;
 
 	public ExternalServer getServer() {

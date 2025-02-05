@@ -78,6 +78,17 @@ export class StatisticsService {
             });
     }
 
+    public fetchRisks2(): Observable<any> {
+        return this.httpClient.get<any>(environments.apiUrl + `/api/project/resultFile`,
+            {
+                params: {
+                    executionStepName: 'EVALUATION',
+                    processStepName: 'BASE_EVALUATION',
+                    name: 'general_risks.json',
+                }
+            });
+    }
+
     public invalidateCache() {
         this._statistics = null;
         this._statistics$ = null;
@@ -152,7 +163,12 @@ export class StatisticsService {
     }
 
     public fetchStatistics(stepName: string): Observable<Statistics | null> {
-        return this.httpClient.get<string>(this.baseUrl + "/" + stepName, {responseType: 'text' as 'json'})
+        const params = {
+            selector: stepName.toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
+            jobName: stepName.toLowerCase(),
+        }
+
+        return this.httpClient.get<string>(this.baseUrl, {params: params, responseType: 'text' as 'json'})
             .pipe(
                 map(value => {
                     if (value) {

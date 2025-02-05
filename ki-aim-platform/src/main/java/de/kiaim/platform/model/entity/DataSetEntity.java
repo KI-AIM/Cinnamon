@@ -3,7 +3,7 @@ package de.kiaim.platform.model.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.platform.converter.StepListAttributeConverter;
-import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.configuration.Job;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -61,7 +61,7 @@ public class DataSetEntity extends ProcessOwner {
 	 */
 	@Convert(converter = StepListAttributeConverter.class)
 	@Setter
-	private List<Step> processed = new ArrayList<>();
+	private List<Job> processed = new ArrayList<>();
 
 	/**
 	 * Process for calculating the statistics.
@@ -147,14 +147,6 @@ public class DataSetEntity extends ProcessOwner {
 		}
 		if (newJob != null && newJob.getDataSet() != this) {
 			newJob.setDataSet(this);
-		}
-	}
-
-	public Step getStep() {
-		if (this.originalData != null) {
-			return Step.VALIDATION;
-		} else {
-			return this.job.getStep();
 		}
 	}
 

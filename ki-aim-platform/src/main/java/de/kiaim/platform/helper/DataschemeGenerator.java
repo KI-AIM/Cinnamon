@@ -11,7 +11,7 @@ import java.util.List;
 @Service
 public class DataschemeGenerator {
 
-	public static final String HOLT_OUT_FLAG_NAME = "is_hold_out";
+	public static final String HOLD_OUT_FLAG_NAME = "is_hold_out";
 	public static final String ROW_INDEX_NAME = "row_index";
 
 	/**
@@ -61,7 +61,7 @@ public class DataschemeGenerator {
 		}
 
 		// Add column for hold out flag
-		columns.add(createColumnString(HOLT_OUT_FLAG_NAME, "boolean"));
+		columns.add(createColumnString(HOLD_OUT_FLAG_NAME, "boolean"));
 
 		// Add column for row number
 		columns.add(createColumnString(ROW_INDEX_NAME, "integer"));

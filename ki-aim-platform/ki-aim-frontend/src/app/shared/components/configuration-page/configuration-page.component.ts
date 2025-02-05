@@ -10,6 +10,7 @@ import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../../environments/environment";
 import { StatusService } from "../../services/status.service";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
+import { Observable, switchMap } from "rxjs";
 
 /**
  * Entire configuration page including the algorithm selection,
@@ -168,13 +169,17 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         this.updateSelectCache();
         this.updateConfigCache();
 
-        this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).subscribe({
-            next: value => {
-                const formData = new FormData();
-                formData.append("configuration", stringify(this.algorithmService.createConfiguration(configuration, this.selection.selectedOption)));
-                formData.append("stepName", this.algorithmService.getStepName());
-                formData.append("url", value.URL);
-                this.configure(formData);
+        this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).pipe(
+            switchMap(value => {
+                return this.postConfig(configuration, value.URL);
+            }),
+            switchMap(() => {
+                return this.postConfigure(false);
+            }),
+        ).subscribe({
+            next: () => this.finish(),
+            error: err => {
+                this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
             }
         });
     }
@@ -188,47 +193,76 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         this.updateSelectCache();
         this.updateConfigCache();
 
-        const formData = new FormData();
-        formData.append("skip", 'true');
-        formData.append("stepName", this.algorithmService.getStepName());
-        const config = this.forms ? this.forms.formData : '';
-
         if (!this.selection.selectedOption) {
-            this.configure(formData);
+            this.postConfigure(true).subscribe({
+                    next: () => this.finish(),
+                    error: err => {
+                        this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
+                    }
+                }
+            );
         } else {
-            formData.append("configuration", stringify(this.algorithmService.createConfiguration(config, this.selection.selectedOption)));
-            this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).subscribe({
-                next: value => {
-                    formData.append("url", value.URL);
-                    this.configure(formData);
+
+            const config = this.forms ? this.forms.formData : '';
+            this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).pipe(
+                switchMap(value => {
+                    return this.postConfig(config, value.URL);
+                }),
+                switchMap(() => {
+                    return this.postConfigure(true);
+                }),
+            ).subscribe({
+                next: () => this.finish(),
+                error: err => {
+                    this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
                 }
             });
         }
     }
 
     /**
-     * Sends the configuration to the backend and proceeds to the next step.
-     * @param formData The form data for the request.
+     * Sends the configuration to the backend.
+     * @param configuration The configuration object.
+     * @param url The URL to be used for the job.
      * @private
      */
-    private configure(formData: FormData) {
-        this.httpClient.post<void>(this.baseUrl + "/" + this.algorithmService.getExecStepName() + "/configure", formData).subscribe({
-            next: () => {
-                this.router.navigateByUrl(this.algorithmService.getStepName() === "ANONYMIZATION"
-                    ? '/synthetizationConfiguration'
-                    : this.algorithmService.getStepName() === "SYNTHETIZATION"
-                        ? "/execution"
-                        : "/riskEvaluationConfiguration");
-                this.statusService.setNextStep(this.algorithmService.getStepName() === "ANONYMIZATION"
-                    ? Steps.SYNTHETIZATION
-                    : this.algorithmService.getStepName() === "SYNTHETIZATION"
-                        ? Steps.EXECUTION
-                        : Steps.RISK_EVALUATION
-            );
-            },
-            error: err => {
-                this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
-            }
-        });
+    private postConfig(configuration: Object, url: string): Observable<void> {
+        const formData = new FormData();
+        formData.append("configuration", stringify(this.algorithmService.createConfiguration(configuration, this.selection.selectedOption)));
+        formData.append("configurationName", this.algorithmService.getConfigurationName());
+        formData.append("url", url);
+        return this.httpClient.post<void>(environments.apiUrl + "/api/config", formData);
+    }
+
+    /**
+     * Configures the job.
+     * @param skip If the job should be skipped.
+     * @private
+     */
+    private postConfigure(skip: boolean): Observable<void> {
+        const formData = new FormData();
+        if (skip) {
+            formData.append("skip", 'true');
+        }
+        formData.append("jobName", this.algorithmService.getStepName());
+        return this.httpClient.post<void>(this.baseUrl + "/" + this.algorithmService.getExecStepName() + "/configure", formData);
+    }
+
+    /**
+     * Proceeds to the next step.
+     * @private
+     */
+    private finish() {
+        this.router.navigateByUrl(this.algorithmService.getStepName() === "anonymization"
+            ? '/synthetizationConfiguration'
+            : this.algorithmService.getStepName() === "synthetization"
+                ? "/execution"
+                : "/riskEvaluationConfiguration");
+        this.statusService.setNextStep(this.algorithmService.getStepName() === "anonymization"
+            ? Steps.SYNTHETIZATION
+            : this.algorithmService.getStepName() === "synthetization"
+                ? Steps.EXECUTION
+                : Steps.RISK_EVALUATION
+        );
     }
 }

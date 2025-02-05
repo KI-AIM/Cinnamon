@@ -1,10 +1,8 @@
 package de.kiaim.platform.controller;
 
 import de.kiaim.model.spring.CustomMediaType;
-import de.kiaim.platform.exception.BadConfigurationNameException;
-import de.kiaim.platform.exception.BadDataSetIdException;
-import de.kiaim.platform.exception.BadStepNameException;
-import de.kiaim.platform.exception.InternalApplicationConfigurationException;
+import de.kiaim.platform.exception.*;
+import de.kiaim.platform.model.dto.ConfigurationRequest;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
@@ -18,6 +16,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -47,27 +47,17 @@ public class ConfigurationController {
 			             content = @Content)
 	})
 	@PostMapping(value = "",
-	             consumes = MediaType.TEXT_PLAIN_VALUE,
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public void store(
-			@Parameter(description = "Name under which the configuration should be saved.",
-			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
-			                              schema = @Schema(implementation = String.class)),
-			           required = true)
-			@RequestParam(name = "name") final String configurationName,
-			@io.swagger.v3.oas.annotations.parameters.RequestBody(
-					description = "Content of the configuration. Can be any string.",
-					content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
-					                   schema = @Schema(implementation = String.class)),
-					required = true
-			)
-			@RequestBody(required = true) final String configuration,
+			@Valid @ParameterObject ConfigurationRequest configurationRequest,
 			@AuthenticationPrincipal UserEntity requestUser
-	) throws BadConfigurationNameException, InternalApplicationConfigurationException {
+	) throws BadConfigurationNameException, BadStateException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		databaseService.storeConfiguration(configurationName, configuration, project);
+		databaseService.storeConfiguration(configurationRequest.getConfigurationName(), configurationRequest.getUrl(),
+		                                   configurationRequest.getConfiguration(), project);
 	}
 
 	@Operation(summary = "Loads a previously stored configuration with the given name.",

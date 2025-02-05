@@ -64,15 +64,17 @@ export class DataTableComponent implements OnInit, AfterViewInit {
                         startWith({}),
                         switchMap(() => {
                             this.isLoading = true;
-                            return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/" + this.getSource() + "/transformationResult/page", {
+                            return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/transformationResult/page", {
                                 params: {
+                                    selector: this.getSource().toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
+                                    jobName: this.getSource(),
+
                                     defaultNullEncoding: "$value",
                                     columns: columnName,
                                     holdOutSelector: this.holdOutFilter,
                                     page: this.paginator.pageIndex + 1,
                                     perPage: this.paginator.pageSize,
                                     rowSelector: this.errorFilter,
-                                    source: this.getSourceType(),
                                 }
                             }).pipe(catchError(() => of(null)));
                         }),
@@ -217,17 +219,6 @@ export class DataTableComponent implements OnInit, AfterViewInit {
         }
 
         return 'VALIDATION';
-    }
-
-    private getSourceType(): string {
-        if (this.sourceProcess) {
-            return 'JOB';
-        }
-        if (this.sourceDataset) {
-            return 'DATASET';
-        }
-
-        return 'DATASET';
     }
 }
 

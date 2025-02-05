@@ -107,7 +107,8 @@
                             <div>
                                 <div
                                     *ngIf="status.processes[i].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
-                                    <app-data-table [sourceDataset]="getJobName(i)"></app-data-table>
+<!--                                    <app-data-table [sourceDataset]="getJobName(i)"></app-data-table>-->
+                                    <app-data-table [sourceProcess]="getJobName(i)"></app-data-table>
                                 </div>
                                 <ng-template #anonNoData>
                                     <div>

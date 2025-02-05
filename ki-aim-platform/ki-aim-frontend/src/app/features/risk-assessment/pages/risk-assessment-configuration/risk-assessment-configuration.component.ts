@@ -4,6 +4,8 @@ import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../../../environments/environment";
 import { Router } from "@angular/router";
 import { StatusService } from "../../../../shared/services/status.service";
+import { Observable, switchMap } from "rxjs";
+import { stringify } from "yaml";
 
 @Component({
   selector: 'app-risk-assessment-configuration',
@@ -24,10 +26,14 @@ export class RiskAssessmentConfigurationComponent {
     protected configure(): void {
         const formData = new FormData();
         formData.append("configuration", config);
-        formData.append("stepName", "RISK_EVALUATION");
+        formData.append("jobName", "RISK_EVALUATION");
         formData.append("url", "null");
 
-        this.httpClient.post<void>(this.baseUrl + "/evaluation/configure", formData).subscribe({
+
+        this.postConfig().pipe(
+            switchMap(() => this.postConfigure(false, "risk_evaluation")),
+            switchMap(() => this.postConfigure(false, "base_evaluation")),
+        ).subscribe({
             next: () => {
                 this.router.navigateByUrl("/evaluation");
                 this.statusService.setNextStep(Steps.EVALUATION);
@@ -36,6 +42,23 @@ export class RiskAssessmentConfigurationComponent {
                 // this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
             }
         });
+    }
+
+    private postConfig(): Observable<void> {
+        const formData = new FormData();
+        formData.append("configuration", config);
+        formData.append("configurationName", "risk_assessment_config");
+        formData.append("url", "null");
+        return this.httpClient.post<void>(environments.apiUrl + "/api/config", formData);
+    }
+
+    private postConfigure(skip: boolean, job: string): Observable<void> {
+        const formData = new FormData();
+        if (skip) {
+            formData.append("skip", 'true');
+        }
+        formData.append("jobName", job);
+        return this.httpClient.post<void>(this.baseUrl + "/evaluation/configure", formData);
     }
 
 }

@@ -2,9 +2,9 @@ package de.kiaim.platform.service;
 
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.dto.DataSetSource;
 import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
-import de.kiaim.platform.model.enumeration.Step;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,8 +38,10 @@ public class StatisticsService {
 	 */
 	@Transactional
 	@Nullable
-	public String getStatistics(final ProjectEntity project, final Step step) throws BadStateException, BadDataSetIdException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, InternalInvalidStateException, InternalMissingHandlingException {
-		final var dataset = dataSetService.getDataSetEntityOrThrow(project, step);
+	public String getStatistics(final ProjectEntity project,
+	                            final DataSetSource dataSetSource
+	) throws BadStateException, BadDataSetIdException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, InternalInvalidStateException, InternalMissingHandlingException, BadStepNameException {
+		final var dataset = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
 		if (!dataset.isStoredData())
 		{
 			throw new BadStateException(BadStateException.NO_DATA_SET, "No original data set is present.");

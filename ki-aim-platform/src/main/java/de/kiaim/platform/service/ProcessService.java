@@ -95,15 +95,15 @@ public class ProcessService {
 	 * If a process is running, the status of that process will be fetched from the external server.
 	 *
 	 * @param project The project.
-	 * @param step    The step.
+	 * @param stage   The stage.
 	 * @return The updated execution.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 * @throws InternalRequestException                  If the request to the external server failed.
 	 */
 	@Transactional
-	public ExecutionStepEntity getStatus(final ProjectEntity project, final Step step)
+	public ExecutionStepEntity getStatus(final ProjectEntity project, final Stage stage)
 			throws InternalRequestException, InternalApplicationConfigurationException {
-		final var executionStep = project.getPipelines().get(0).getStageByStep(step);
+		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
 			updateProcessStatus(executionStep.getCurrentProcess());
@@ -113,34 +113,28 @@ public class ProcessService {
 	}
 
 	/**
-	 * Saves the configuration and the URL of the selected algorithm for the process of the given step.
+	 * Configures the job.
+	 * Currently, always uses the first configuration for the job.
 	 *
-	 * @param project       The project.
-	 * @param execStep      The step.
-	 * @param stepName      The name of the corresponding step.
-	 * @param url           The URL to start the algorithm.
-	 * @param configuration The configuration for the algorithm.
-	 * @throws BadStepNameException          If the step name is not valid.
+	 * @param project The project.
+	 * @param stage   The stage.
+	 * @param job     The job to be configured.
+	 * @param skip    If the job should be skipped.
 	 * @throws BadStateException             If the corresponding process is already running or scheduled.
 	 * @throws InternalInvalidStateException If the process entity is missing.
 	 */
 	@Transactional
-	public void configureProcess(final ProjectEntity project, final Step execStep, final String stepName,
-	                             @Nullable final String url, @Nullable final String configuration, final boolean skip)
-			throws BadStepNameException, BadStateException, InternalInvalidStateException {
-		final Step step = Step.getStepOrThrow(stepName);
-
-		final var executionStep = project.getPipelines().get(0).getStageByStep(execStep);
+	public void configureProcess(final ProjectEntity project, final Stage stage, final Job job, final boolean skip)
+			throws BadStateException, InternalInvalidStateException {
+		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
 		// Get process entity
-		final Optional<ExternalProcessEntity> optional = executionStep.getProcess(step);
+		final Optional<ExternalProcessEntity> optional = executionStep.getProcess(job);
 		if (optional.isEmpty()) {
 			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
-			                                        "No process entity for step '" + step.name() + "' available!");
+			                                        "No process entity for step '" + job.getName() + "' available!");
 		}
 		final ExternalProcessEntity externalProcess = optional.get();
-
-		databaseService.storeConfiguration(configuration, externalProcess);
 
 		if (externalProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
 		    externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING) {
@@ -148,10 +142,33 @@ public class ProcessService {
 			                            "Process cannot be configured if the it is scheduled or started!");
 		}
 
-		externalProcess.setSkip(skip);
-		externalProcess.setProcessUrl(url);
+		if (!skip) {
+			// Set the configuration
+			ConfigurationListEntity configurationList = executionStep.getProject().getConfigurationList(
+					job.getEndpoint().getConfiguration());
+			if (configurationList == null || configurationList.getConfigurations().isEmpty()) {
+				throw new BadStateException(BadStateException.CONFIGURATION,
+				                            "No configuration '" +
+				                            job.getEndpoint().getConfiguration().getConfigurationName() + "' for job '" +
+				                            job.getName() + "'!");
+			}
 
-		// Update status
+			BackgroundProcessConfiguration config = configurationList.getConfigurations().get(0);
+
+			if (config.getProcessUrl() == null || config.getProcessUrl().isBlank()) {
+				throw new BadStateException(BadStateException.CONFIGURATION,
+				                            "No URL for configuration '" +
+				                            job.getEndpoint().getConfiguration().getConfigurationName() + "' for job '" +
+				                            job.getName() + "'!");
+			}
+
+			externalProcess.setConfiguration(config);
+		}
+
+		// Set if the process should be skipped
+		externalProcess.setSkip(skip);
+
+		// Save project
 		projectService.saveProject(project);
 	}
 
@@ -159,7 +176,7 @@ public class ProcessService {
 	 * Starts the execution of the given step in the given project.
 	 *
 	 * @param project The project the process corresponds to.
-	 * @param step    The step the process corresponds to.
+	 * @param stage   The step the process corresponds to.
 	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
 	 * @throws BadStateException                         If no original data set exist.
 	 * @throws InternalApplicationConfigurationException If the given step is not configured.
@@ -171,9 +188,9 @@ public class ProcessService {
 	 * @throws InternalRequestException                  If the request to start the process failed.
 	 */
 	@Transactional
-	public ExecutionStepEntity start(final ProjectEntity project, final Step step)
+	public ExecutionStepEntity start(final ProjectEntity project, final Stage stage)
 			throws BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
-		final var executionStep = project.getPipelines().get(0).getStageByStep(step);
+		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
 			return executionStep;
@@ -192,17 +209,17 @@ public class ProcessService {
 	}
 
 	/**
-	 * Cancels the execution of the given step in the given project.
+	 * Cancels the execution of the given stage in the given project.
 	 *
 	 * @param project The project.
-	 * @param step    The step.
+	 * @param stage   The step.
 	 * @return The updated execution entity.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 */
 	@Transactional
-	public ExecutionStepEntity cancel(final ProjectEntity project, final Step step)
+	public ExecutionStepEntity cancel(final ProjectEntity project, final Stage stage)
 			throws InternalApplicationConfigurationException {
-		final var executionStep = project.getPipelines().get(0).getStageByStep(step);
+		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
 			// Cancel the current process
@@ -222,7 +239,7 @@ public class ProcessService {
 	 * Finishes the process with the given process ID.
 	 * Checks if the result files contain an error message with key 'error_message'.
 	 * If no error message is present, sets the status to 'finished'
-	 * and starts the next process of the execution step as well as the next scheduled process of the same step.
+	 * and starts the next process of the stage as well as the next scheduled process of the same job.
 	 * If an error is present, aborts the current execution step and stets the status to 'error'.
 	 *
 	 * @param processId   The ID of the process to finish.
@@ -260,7 +277,7 @@ public class ProcessService {
 			}
 
 			// Start the next process of the same step
-			startScheduledProcess(externalProcess.getStep());
+			startScheduledProcess(externalProcess.getJob());
 		}
 
 	}
@@ -288,11 +305,11 @@ public class ProcessService {
 		boolean containsError = false;
 		String errorMessage = null;
 
-		List<Step> processed;
+		List<Job> processed;
 		if (externalProcess != null) {
 			var input = getDataSet(externalProcess);
 			processed = new ArrayList<>(input.getProcessed());
-			processed.add(externalProcess.getStep());
+			processed.add(externalProcess.getJob());
 		} else {
 			processed = new ArrayList<>();
 		}
@@ -319,8 +336,7 @@ public class ProcessService {
 							                                                                    fileConfigurationEntity,
 							                                                                    resultDataConfiguration);
 							try {
-								databaseService.storeTransformationResult(transformationResult, dataProcessing,
-								                                          processed);
+								databaseService.storeTransformationResult(transformationResult, dataProcessing, processed);
 							} catch (final BadDataConfigurationException e) {
 								throw new InternalInvalidResultException(
 										InternalInvalidResultException.INVALID_ESTIMATION,
@@ -353,8 +369,7 @@ public class ProcessService {
 		}
 
 		// Hardcoded fix for synthetization callback status
-
-		if (externalProcess != null && externalProcess.getStep() == Step.SYNTHETIZATION) {
+		if (externalProcess != null && externalProcess.getJob().isFixStatus()) {
 			try {
 				updateProcessStatus(externalProcess);
 				final var synthStatus = jsonMapper.readValue(externalProcess.getStatus(), SynthetizationStatus.class);
@@ -395,11 +410,9 @@ public class ProcessService {
 	 * If the process is running, updates the status by calling the external API.
 	 *
 	 * @param externalProcess The process which status should be updated.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalRequestException                  If the request for the status fails.
+	 * @throws InternalRequestException If the request for the status fails.
 	 */
-	private void updateProcessStatus(final ExternalProcessEntity externalProcess)
-			throws InternalApplicationConfigurationException, InternalRequestException {
+	private void updateProcessStatus(final ExternalProcessEntity externalProcess) throws InternalRequestException {
 		if (externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING) {
 			fetchStatus(externalProcess);
 		}
@@ -458,11 +471,11 @@ public class ProcessService {
 	 */
 	private void startOrScheduleProcess(final ExternalProcessEntity externalProcess)
 			throws InternalDataSetPersistenceException, InternalRequestException, InternalIOException, InternalInvalidStateException, BadStateException, InternalMissingHandlingException {
-		final String configuration = externalProcess.getConfiguration();
+		final String configuration = externalProcess.getConfigurationString();
 
 		if (configuration == null) {
 			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_CONFIGURATION,
-			                                        "No configuration for step '" + externalProcess.getStep().name() +
+			                                        "No configuration for step '" + externalProcess.getJob().getName() +
 			                                        "' found!");
 		}
 
@@ -474,10 +487,8 @@ public class ProcessService {
 	 * Cancels the given process.
 	 *
 	 * @param externalProcess The process to be canceled.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 */
-	private void cancelProcess(final ExternalProcessEntity externalProcess)
-			throws InternalApplicationConfigurationException {
+	private void cancelProcess(final ExternalProcessEntity externalProcess) {
 		if (!(externalProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
 		      externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING)) {
 			return;
@@ -487,7 +498,7 @@ public class ProcessService {
 			externalProcess.setScheduledTime(null);
 		} else {
 			// Get configuration
-			final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
+			final Job stepConfiguration = externalProcess.getJob();
 			final ExternalEndpoint ese = stepService.getExternalServerEndpointConfiguration(stepConfiguration);
 			final ExternalServer es = stepService.getExternalServerConfiguration(ese);
 
@@ -515,7 +526,7 @@ public class ProcessService {
 		}
 
 		externalProcess.setExternalProcessStatus(ProcessStatus.CANCELED);
-		startScheduledProcess(externalProcess.getStep());
+		startScheduledProcess(externalProcess.getJob());
 	}
 
 	/**
@@ -598,10 +609,9 @@ public class ProcessService {
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 * @throws InternalRequestException                  If the request failed.
 	 */
-	private void fetchStatus(final ExternalProcessEntity externalProcess)
-			throws InternalApplicationConfigurationException, InternalRequestException {
+	private void fetchStatus(final ExternalProcessEntity externalProcess) throws InternalRequestException {
 		// Get configuration
-		final StepConfiguration stepConfiguration = stepService.getStepConfiguration(externalProcess.getStep());
+		final Job stepConfiguration = externalProcess.getJob();
 		final ExternalEndpoint ese = stepService.getExternalServerEndpointConfiguration(stepConfiguration);
 		final ExternalServer es = stepService.getExternalServerConfiguration(ese);
 
@@ -628,7 +638,7 @@ public class ProcessService {
 			                              .block();
 			externalProcess.setStatus(response);
 		} catch (final RequestRuntimeException e) {
-			final String message = buildError(e);
+			final String message = buildError(e, "fetch the status");
 			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
 		} catch (WebClientRequestException e) {
@@ -652,14 +662,13 @@ public class ProcessService {
 	}
 
 	/**
-	 * Starts a scheduled process for the given step.
+	 * Starts a scheduled process for the given job name.
 	 *
-	 * @param step The step.
+	 * @param job The job.
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	protected void startScheduledProcess(final Step step) {
-		final var stepConfig = kiAimConfiguration.getSteps().get(step);
-		final var server = stepConfig.getServer();
+	protected void startScheduledProcess(final Job job) {
+		final var server = job.getServer();
 
 		final Set<Integer> endpoints = server.getEndpoints().stream()
 		                                     .map(ExternalEndpoint::getIndex)
@@ -709,7 +718,7 @@ public class ProcessService {
 		addDataSets(externalProcess, endpoint, bodyBuilder);
 
 		// Add config
-		final String configuration = externalProcess.getConfiguration();
+		final String configuration = externalProcess.getConfigurationString();
 		if (configuration != null) {
 			addConfig(configuration, endpoint, bodyBuilder);
 		}
@@ -732,8 +741,8 @@ public class ProcessService {
 		// Do the request
 		try {
 			final String serverUrl = es.getUrlServer();
-			String url = endpoint.getProcessEndpoint().isBlank() ? externalProcess.getProcessUrl()
-			                                                           : endpoint.getProcessEndpoint();
+			String url = endpoint.getProcessEndpoint().isBlank() ? externalProcess.getConfiguration().getProcessUrl()
+			                                                     : endpoint.getProcessEndpoint();
 			url = injectUrlParameter(url, externalProcess);
 
 			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
@@ -754,7 +763,7 @@ public class ProcessService {
 			externalProcess.setExternalId(response.getPid());
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
 		} catch (final RequestRuntimeException e) {
-			final String message = buildError(e);
+			final String message = buildError(e, "start the process");
 			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		} catch (WebClientRequestException e) {
@@ -980,7 +989,7 @@ public class ProcessService {
 
 					if (lastOrOriginalDataSet == null) {
 						throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_DATA_STET,
-						                                        "The job for step " + dataProcessingEntity.getStep() +
+						                                        "The job for step " + dataProcessingEntity.getJob().getName() +
 						                                        " does not contain a data set!");
 					}
 
@@ -1024,8 +1033,8 @@ public class ProcessService {
 		return new RequestRuntimeException(responseEntity);
 	}
 
-	private String buildError(final RequestRuntimeException e) {
-		var message = "Failed to start the process! Got status of '" + e.getResponse().getStatusCode() + "'.";
+	private String buildError(final RequestRuntimeException e, final String action) {
+		var message = "Failed to " + action + "! Got status of '" + e.getResponse().getStatusCode() + "'.";
 		if (e.getResponse().getBody() != null) {
 			if (e.getResponse().getBody().getMessage() != null) {
 				message += " Got message: '" + e.getResponse().getBody().getMessage() + "'.";

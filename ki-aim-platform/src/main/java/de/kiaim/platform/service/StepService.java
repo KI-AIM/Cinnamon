@@ -1,8 +1,11 @@
 package de.kiaim.platform.service;
 
+import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.model.configuration.*;
 import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.exception.InternalApplicationConfigurationException;
+import de.kiaim.platform.model.entity.ExternalProcessEntity;
+import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.Step;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +29,7 @@ public class StepService {
 	 * @return The step configuration.
 	 * @throws InternalApplicationConfigurationException If no configuration could be found.
 	 */
-	public StepConfiguration getStepConfiguration(final Step step) throws InternalApplicationConfigurationException {
+	public Job getStepConfiguration(final Step step) throws InternalApplicationConfigurationException {
 		if (!kiAimConfiguration.getSteps().containsKey(step)) {
 			throw new InternalApplicationConfigurationException(
 					InternalApplicationConfigurationException.MISSING_STEP_CONFIGURATION,
@@ -37,13 +40,13 @@ public class StepService {
 	}
 
 	public ExternalEndpoint getExternalServerEndpointConfiguration(
-			final StepConfiguration stepConfiguration) {
+			final Job stepConfiguration) {
 		return kiAimConfiguration.getExternalServerEndpoints().get(stepConfiguration.getExternalServerEndpointIndex());
 	}
 
 	public ExternalEndpoint getExternalServerEndpointConfiguration(
 			final Step step) throws InternalApplicationConfigurationException {
-		final StepConfiguration stepConfiguration = getStepConfiguration(step);
+		final Job stepConfiguration = getStepConfiguration(step);
 		return kiAimConfiguration.getExternalServerEndpoints().get(stepConfiguration.getExternalServerEndpointIndex());
 	}
 
@@ -62,45 +65,51 @@ public class StepService {
 	 * @return The step configuration.
 	 * @throws BadStepNameException If no configuration could be found.
 	 */
-	public StepConfiguration getStepConfiguration(final String stepName) throws BadStepNameException {
-		try {
-			return getStepConfiguration(Step.getStepOrThrow(stepName));
-		} catch (final InternalApplicationConfigurationException e) {
+	public Job getStepConfiguration(final String stepName) throws BadStepNameException {
+		if (!kiAimConfiguration.getSteps().containsKey(stepName.toLowerCase())) {
 			throw new BadStepNameException(BadStepNameException.NOT_FOUND,
-			                               "The step '" + stepName + "' is not defined!");
+			                               "The job '" + stepName + "' is not defined!");
 		}
+
+		return kiAimConfiguration.getSteps().get(stepName.toLowerCase());
 	}
 
 	/**
 	 * Returns the configuration for the given stage.
 	 *
-	 * @param stage The stage.
-	 * @return The step configuration.
-	 * @throws InternalApplicationConfigurationException If no configuration could be found.
-	 */
-	public StageConfiguration getStageConfiguration(final Step stage) throws InternalApplicationConfigurationException {
-		if (!kiAimConfiguration.getStages().containsKey(stage)) {
-			throw new InternalApplicationConfigurationException(
-					InternalApplicationConfigurationException.MISSING_STEP_CONFIGURATION,
-					"No configuration for the stage '" + stage.name() + "' found!");
-		}
-
-		return kiAimConfiguration.getStages().get(stage);
-	}
-
-	/**
-	 * Returns the configuration for the stage with the given name.
-	 *
-	 * @param stageName The name of the stage.
+	 * @param stageName The stage.
 	 * @return The step configuration.
 	 * @throws BadStepNameException If no configuration could be found.
 	 */
-	public StageConfiguration getStageConfiguration(final String stageName) throws BadStepNameException {
-		try {
-			return getStageConfiguration(Step.getStepOrThrow(stageName));
-		} catch (final InternalApplicationConfigurationException e) {
+	public Stage getStageConfiguration(final String stageName) throws BadStepNameException {
+		if (!kiAimConfiguration.getStages().containsKey(stageName.toLowerCase())) {
 			throw new BadStepNameException(BadStepNameException.NOT_FOUND,
 			                               "The step '" + stageName + "' is not defined!");
 		}
+
+		return kiAimConfiguration.getStages().get(stageName.toLowerCase());
+	}
+
+	public ExternalConfiguration getExternalConfiguration(final String configurationName) throws BadConfigurationNameException {
+		if (!kiAimConfiguration.getExternalConfiguration().containsKey(configurationName.toLowerCase())) {
+			throw new BadConfigurationNameException(BadConfigurationNameException.NOT_FOUND,
+			                                        "No configuration with name '" + configurationName +
+			                                        "' registered!");
+		}
+
+		return kiAimConfiguration.getExternalConfiguration().get(configurationName.toLowerCase());
+	}
+
+	public ExternalProcessEntity getProcess(final String jobName, final ProjectEntity project) throws BadStepNameException {
+		var job =  getStepConfiguration(jobName);
+
+		Stage exectionStep = null;
+		for (final var entry : kiAimConfiguration.getStages().entrySet()) {
+			if (entry.getValue().getJobList().contains(job)) {
+				exectionStep = entry.getValue();
+			}
+		}
+
+		return project.getPipelines().get(0).getStageByStep(exectionStep).getProcess(job).get();
 	}
 }

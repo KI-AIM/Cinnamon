@@ -28,11 +28,11 @@ export class ExecutionService extends ExecutionStepService {
     };
 
     protected override getStepName(): string {
-        return "EXECUTION";
+        return "execution";
     }
 
-    protected override setCustomStatus(key: Steps, status: string | null, processSteps: Steps[]): void {
-        if (areEnumValuesEqual(Steps, key, Steps.SYNTHETIZATION)) {
+    protected override setCustomStatus(key: string, status: string | null, processSteps: string[]): void {
+        if (key === "synthetization") {
             if (status === null) {
                 this._synthProcess = null;
             } else {
@@ -42,7 +42,7 @@ export class ExecutionService extends ExecutionStepService {
                     this._synthProcess = status
                 }
             }
-        } else if (areEnumValuesEqual(Steps, key, Steps.ANONYMIZATION)) {
+        } else if (key === "anonymization") {
             this._anonProcess = status;
         }
     }

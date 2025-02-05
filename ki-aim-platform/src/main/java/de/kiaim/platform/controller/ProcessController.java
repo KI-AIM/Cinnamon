@@ -2,6 +2,8 @@ package de.kiaim.platform.controller;
 
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
+import de.kiaim.platform.model.configuration.Job;
+import de.kiaim.platform.model.configuration.Stage;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.dto.ConfigureProcessRequest;
 import de.kiaim.platform.model.dto.ExecutionStepInformation;
@@ -40,14 +42,16 @@ public class ProcessController {
 	private final ProcessService processService;
 	private final ProjectService projectService;
 	private final StatusService statusService;
+	private final StepService stepService;
 	private final UserService userService;
 	private final ExecutionStepMapper executionStepMapper;
 
 	public ProcessController(final ProcessService processService, final ProjectService projectService,
-	                         final UserService userService, final StatusService statusService,
-	                         final ExecutionStepMapper executionStepMapper) {
+	                         final StepService stepService, final UserService userService,
+	                         final StatusService statusService, final ExecutionStepMapper executionStepMapper) {
 		this.processService = processService;
 		this.projectService = projectService;
+		this.stepService = stepService;
 		this.userService = userService;
 		this.statusService = statusService;
 		this.executionStepMapper = executionStepMapper;
@@ -72,18 +76,18 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/{stepName}", produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	@GetMapping(value = "/{stageName}", produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ExecutionStepInformation getProcess(
 			@Parameter(description = "Step of which the process should be canceled.")
-			@PathVariable final String stepName,
+			@PathVariable final String stageName,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		final Step step = Step.getStepOrThrow(stepName);
 
-		final ExecutionStepEntity executionStep = processService.getStatus(project, step);
-		var a =executionStepMapper.toDto(executionStep);
+		final Stage stage = stepService.getStageConfiguration(stageName);
+
+		final ExecutionStepEntity executionStep = processService.getStatus(project, stage);
 		return executionStepMapper.toDto(executionStep);
 	}
 
@@ -106,33 +110,34 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/{stepName}/configure",
+	@PostMapping(value = "/{stageName}/configure",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Void> configureProcess(
 			@Parameter(description = "Step of which the process should be configured.")
-			@PathVariable final String stepName,
+			@PathVariable final String stageName,
 			@ParameterObject @Valid final ConfigureProcessRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		final Step step = Step.getStepOrThrow(stepName);
+
+		final Stage stage = stepService.getStageConfiguration(stageName);
+		final Job job = stepService.getStepConfiguration(requestData.getJobName());
 
 		// Configure process
-		processService.configureProcess(project, step, requestData.getStepName(), requestData.getUrl(),
-		                                requestData.getConfiguration(), requestData.isSkip());
+		processService.configureProcess(project, stage, job, requestData.isSkip());
 
 		// Go to the next step
-		var configuredStep = Step.getStepOrThrow(requestData.getStepName());
-		final var nextStep = switch (configuredStep) {
+		var configuredStep = Step.getStep(requestData.getJobName());
+		final var nextStep = configuredStep != null ? switch (configuredStep) {
 			case ANONYMIZATION -> Step.SYNTHETIZATION;
 			case SYNTHETIZATION -> Step.EXECUTION;
 			case TECHNICAL_EVALUATION -> Step.RISK_EVALUATION;
 			case RISK_EVALUATION -> Step.EVALUATION;
 			default -> Step.ANONYMIZATION;
-		};
+		} : Step.EVALUATION;
 
 		statusService.updateCurrentStep(project, nextStep);
 
@@ -159,21 +164,22 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/{stepName}/start",
+	@PostMapping(value = "/{stageName}/start",
 				 consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ExecutionStepInformation startProcess(
 			@Parameter(description = "Step of which the process should be canceled.")
-			@PathVariable final String stepName,
+			@PathVariable final String stageName,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		final Step step = Step.getStepOrThrow(stepName);
+
+		final Stage stage = stepService.getStageConfiguration(stageName);
 
 		// Start process
-		final ExecutionStepEntity executionStep = processService.start(project, step);
+		final ExecutionStepEntity executionStep = processService.start(project, stage);
 		return executionStepMapper.toDto(executionStep);
 	}
 
@@ -196,20 +202,21 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/{stepName}/cancel",
+	@PostMapping(value = "/{stageName}/cancel",
 	             consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ExecutionStepInformation cancelProcess(
 			@Parameter(description = "Step of which the process should be canceled.")
-			@PathVariable final String stepName,
+			@PathVariable final String stageName,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		final Step step = Step.getStepOrThrow(stepName);
 
-		final ExecutionStepEntity executionStep = processService.cancel(project, step);
+		final Stage stage = stepService.getStageConfiguration(stageName);
+
+		final ExecutionStepEntity executionStep = processService.cancel(project, stage);
 		return executionStepMapper.toDto(executionStep);
 	}
 

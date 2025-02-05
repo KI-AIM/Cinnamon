@@ -4,6 +4,6 @@ import {Steps} from "../../core/enums/steps";
 export class ExternalProcess {
     externalProcessStatus: ProcessStatus;
     status: string | null;
-    step: Steps;
-    processSteps: Steps[];
+    step: string;
+    processSteps: string[];
 }

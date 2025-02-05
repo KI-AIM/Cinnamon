@@ -4,7 +4,6 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.spring.CustomMediaType;
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.*;
 import de.kiaim.platform.model.entity.DataSetEntity;
@@ -61,25 +60,20 @@ public class DataController {
 			"""
 					,"data":""" + DATA_EXAMPLE + "}";
 
-	private final KiAimConfiguration kiAimConfiguration;
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
-	private final ProcessService processService;
 	private final ProjectService projectService;
 	private final StatusService statusService;
 	private final UserService userService;
 
 	@Autowired
-	public DataController(final KiAimConfiguration kiAimConfiguration, final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final DataSetService dataSetService, final ProcessService processService,
-	                      final ProjectService projectService, final StatusService statusService,
-	                      final UserService userService) {
-		this.kiAimConfiguration = kiAimConfiguration;
+	public DataController(final DatabaseService databaseService, final DataProcessorService dataProcessorService,
+	                      final DataSetService dataSetService, final ProjectService projectService,
+	                      final StatusService statusService, final UserService userService) {
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
-		this.processService = processService;
 		this.projectService = projectService;
 		this.statusService = statusService;
 		this.userService = userService;
@@ -292,14 +286,13 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/{stepName}/configuration",
+	@GetMapping(value = "/configuration",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadConfig(
-			@Parameter(description = "Step the requested data configuration belongs to.")
-			@PathVariable final String stepName,
+			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_CONFIG, null, stepName, null, user);
+		return handleRequest(RequestType.LOAD_CONFIG, null, dataSetSource, null, user);
 	}
 
 	@Operation(summary = "Returns general information the data set.",
@@ -324,14 +317,13 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/{stepName}/info",
+	@GetMapping(value = "/info",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> info(
-			@Parameter(description = "Step the requested data belongs to.")
-			@PathVariable final String stepName,
+			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.INFO, null, stepName, null, user);
+		return handleRequest(RequestType.INFO, null, dataSetSource, null, user);
 	}
 
 	@Operation(summary = "Returns the data of the data set.",
@@ -367,15 +359,14 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/{stepName}/data",
+	@GetMapping(value = "/data",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadData(
-			@Parameter(description = "Step the requested data belongs to.")
-			@PathVariable final String stepName,
+			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_DATA, null, stepName, request, user);
+		return handleRequest(RequestType.LOAD_DATA, null, dataSetSource, request, user);
 	}
 
 	@Operation(summary = "Creates a hold-out split.",
@@ -432,15 +423,14 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/{stepName}",
+	@GetMapping(value = "",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadDataSet(
-			@Parameter(description = "Step the requested data belongs to.")
-			@PathVariable final String stepName,
+			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_DATA_SET, null, stepName, request, user);
+		return handleRequest(RequestType.LOAD_DATA_SET, null, dataSetSource, request, user);
 	}
 
 	@Operation(summary = "Returns the entire transformation result.",
@@ -467,15 +457,14 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/{stepName}/transformationResult",
+	@GetMapping(value = "/transformationResult",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadTransformationResult(
-			@Parameter(description = "Step the requested data belongs to.")
-			@PathVariable final String stepName,
+			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT, null, stepName, request, user);
+		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT, null, dataSetSource, request, user);
 	}
 
 	@Operation(summary = "Returns a page the transformation result.",
@@ -501,38 +490,26 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/{stepName}/transformationResult/page",
+	@GetMapping(value = "/transformationResult/page",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ResponseEntity<Object> loadTransformationResultPage(
-			@Parameter(description = "Step the requested data belongs to.")
-			@PathVariable String stepName,
+	public TransformationResultPage loadTransformationResultPage(
+			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@Parameter(description = "Page number starting at 1.")
 			@RequestParam(required = true) final Integer page,
 			@Parameter(description = "Number of items per page.")
 			@RequestParam(required = true) final Integer perPage,
 			@Parameter(description = "Selector for the rows to be included.")
 			@RequestParam(required = false, defaultValue = "ALL") final RowSelector rowSelector,
-			@RequestParam(required = false, defaultValue = "DATASET") final String source,
-			@ParameterObject final LoadDataRequest request,
+			@ParameterObject @Valid final LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		if (source.equals("JOB")) {
-			final UserEntity user2 = userService.getUserByEmail(user.getEmail());
-			final ProjectEntity project = projectService.getProject(user2);
-			final Step step = Step.getStepOrThrow(stepName);
+		final UserEntity user2 = userService.getUserByEmail(user.getEmail());
+		final ProjectEntity project = projectService.getProject(user2);
 
-			Step exectionStep = null;
-			for (final var entry : kiAimConfiguration.getStages().entrySet()) {
-				if (entry.getValue().getJobs().contains(step)) {
-					exectionStep = entry.getKey();
-				}
-			}
-
-			final var executionStep = project.getPipelines().get(0).getStageByStep(exectionStep).getProcess(step).get();
-			stepName = processService.getDataSet(executionStep).getStep().name();
-		}
-
-		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT_PAGE, null, stepName, request, user, page, perPage, rowSelector);
+		dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
+		return databaseService.exportTransformationResultPage(
+				dataSetService.getDataSetEntityOrThrow(project, dataSetSource), rowSelector,
+				page, perPage, request);
 	}
 
 	@Operation(summary = "Deletes the data set from the internal data base.",
@@ -562,19 +539,6 @@ public class DataController {
 		return handleRequest(RequestType.DELETE, null, null, null, user);
 	}
 
-
-	/**
-	 * See {@link #handleRequest(RequestType, DataConfiguration, String, LoadDataRequest, UserEntity, Integer, Integer, RowSelector)}
-	 */
-	private ResponseEntity<Object> handleRequest(
-			final RequestType requestType,
-			@Nullable final DataConfiguration configuration,
-			@Nullable final String stepName,
-			@Nullable final LoadDataRequest loadDataRequest,
-			final UserEntity requestUser) throws ApiException {
-		return handleRequest(requestType, configuration, stepName, loadDataRequest, requestUser, null, null, null);
-	}
-
 	/**
 	 * Handles a request of the given type.
 	 * For each RequestType, different attributes must not be null:
@@ -586,7 +550,6 @@ public class DataController {
 	 *     <li>{@link RequestType#LOAD_DATA}: loadDataRequest, requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_DATA_SET}: loadDataRequest, requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT}: requestUser, stepName</li>
-	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT_PAGE}: page, perPage, requestUser, rowSelector, stepName</li>
 	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, requestUser</li>
 	 *     <li>{@link RequestType#STORE_DATE_SET}: configuration, user</li>
 	 * </ul>
@@ -594,22 +557,16 @@ public class DataController {
 	 * @param requestType       Type of the request.
 	 * @param configuration     Configuration describing the source data.
 	 * @param loadDataRequest   Settings for the data set export.
-	 * @param stepName          The name of the step.
-	 * @param page              The page number to be exported.
-	 * @param perPage           The number of entries per page to be exported.
-	 * @param rowSelector       Selector for wich rows should be exported.
+	 * @param dataSetSource     Source of the data set.
 	 * @param requestUser       User of the request.
 	 * @return Response entity containing the response based on the request type or an error description.
 	 */
 	private ResponseEntity<Object> handleRequest(
 			final RequestType requestType,
 			@Nullable final DataConfiguration configuration,
-			@Nullable final String stepName,
+			@Nullable final DataSetSource dataSetSource,
 			@Nullable final LoadDataRequest loadDataRequest,
-			final UserEntity requestUser,
-			final Integer page,
-			final Integer perPage,
-			final RowSelector rowSelector
+			final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
@@ -653,33 +610,23 @@ public class DataController {
 				result = null;
 			}
 			case INFO -> {
-				final Step step = Step.getStepOrThrow(stepName);
-				result = databaseService.getInfo(projectEntity, step);
+				result = databaseService.getInfo(projectEntity, dataSetSource);
 			}
 			case LOAD_CONFIG -> {
-				final Step step = Step.getStepOrThrow(stepName);
-				result = databaseService.exportDataConfiguration(projectEntity, step);
+				result = databaseService.exportDataConfiguration(projectEntity, dataSetSource);
 			}
 			case LOAD_DATA -> {
-				final Step step = Step.getStepOrThrow(stepName);
-				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity, step);
+				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity, dataSetSource);
 				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames, holdOutSelector);
 				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
 				result = dataSetService.encodeDataRows(dataSet, dataSetEntity.getDataTransformationErrors(),
 													   columnIndexMapping, loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
-				final Step step = Step.getStepOrThrow(stepName);
-				result = databaseService.exportDataSet(projectEntity, columnNames, holdOutSelector, step);
+				result = databaseService.exportDataSet(projectEntity, columnNames, holdOutSelector, dataSetSource);
 			}
 			case LOAD_TRANSFORMATION_RESULT -> {
-				final Step step = Step.getStepOrThrow(stepName);
-				result = databaseService.exportTransformationResult(projectEntity, holdOutSelector, step);
-			}
-			case LOAD_TRANSFORMATION_RESULT_PAGE -> {
-				final Step step = Step.getStepOrThrow(stepName);
-				result = databaseService.exportTransformationResultPage(projectEntity, step, rowSelector, columnNames,
-				                                                        page, perPage, loadDataRequest);
+				result = databaseService.exportTransformationResult(projectEntity, holdOutSelector, dataSetSource);
 			}
 			case STORE_CONFIG -> {
 				databaseService.storeOriginalDataConfiguration(configuration, projectEntity);
@@ -724,7 +671,6 @@ public class DataController {
 		LOAD_DATA,
 		LOAD_DATA_SET,
 		LOAD_TRANSFORMATION_RESULT,
-		LOAD_TRANSFORMATION_RESULT_PAGE,
 		STORE_CONFIG,
 		STORE_DATE_SET,
 	}

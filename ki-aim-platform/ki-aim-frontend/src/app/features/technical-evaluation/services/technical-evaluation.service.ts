@@ -20,11 +20,15 @@ export class TechnicalEvaluationService extends AlgorithmService {
     }
 
     public override getStepName(): string {
-        return "TECHNICAL_EVALUATION";
+        return "technical_evaluation";
+    }
+
+    public override getConfigurationName(): string {
+        return "evaluation_configuration";
     }
 
     override getExecStepName(): string {
-        return "EVALUATION";
+        return "evaluation";
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {

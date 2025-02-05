@@ -20,15 +20,23 @@ public class KiAimConfigurationPostProcessor {
 
 	@PostConstruct
 	public void assignIndices() {
+		// Set indices of external stuff
 		for (final var externalServer : config.getExternalServer().entrySet()) {
 			externalServer.getValue().setIndex(externalServer.getKey());
+		}
+		for (final var externalConfiguration : config.getExternalConfiguration().entrySet()) {
+			externalConfiguration.getValue().setConfigurationName(externalConfiguration.getKey());
 		}
 		for (final var endpoint : config.getExternalServerEndpoints().entrySet()) {
 			endpoint.getValue().setIndex(endpoint.getKey());
 		}
 
+		// Set names of jobs/stages
 		for (final var entry : config.getSteps().entrySet()) {
-			entry.getValue().setStep(entry.getKey());
+			entry.getValue().setName(entry.getKey());
+		}
+		for (final var entry : config.getStages().entrySet()) {
+			entry.getValue().setStageName(entry.getKey());
 		}
 	}
 
@@ -40,6 +48,10 @@ public class KiAimConfigurationPostProcessor {
 			final var server = config.getExternalServer().get(serverIndex);
 			server.getEndpoints().add(endpoint);
 			endpoint.setServer(server);
+
+			final var configurationIndex = endpoint.getConfigurationName();
+			final var configuration = config.getExternalConfiguration().get(configurationIndex);
+			endpoint.setConfiguration(configuration);
 		}
 
 		// Link endpoints and steps
@@ -47,7 +59,19 @@ public class KiAimConfigurationPostProcessor {
 			final var endpointIndex = step.getExternalServerEndpointIndex();
 			final var endpoint = config.getExternalServerEndpoints().get(endpointIndex);
 			step.setEndpoint(endpoint);
-			endpoint.getSteps().add(step);
 		}
+
+		// Link pipeline and stages
+		for (final var stageName : config.getPipeline().getStages()) {
+			config.getPipeline().getStageList().add(config.getStages().get(stageName));
+		}
+
+		// Link stages and jobs
+		for (final var stage : config.getStages().values()) {
+			for (final var jobName : stage.getJobs()) {
+				stage.getJobList().add(config.getSteps().get(jobName));
+			}
+		}
+
 	}
 }

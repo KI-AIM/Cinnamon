@@ -1,7 +1,7 @@
 package de.kiaim.platform.controller;
 
 import de.kiaim.model.spring.CustomMediaType;
-import de.kiaim.platform.model.configuration.StageConfiguration;
+import de.kiaim.platform.model.configuration.Stage;
 import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.model.dto.StepConfigurationResponse;
 import de.kiaim.platform.model.mapper.StepConfigurationMapper;
@@ -54,7 +54,7 @@ public class StepController {
 
 	@GetMapping(value = "/stage/{stageName}",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ResponseEntity<StageConfiguration> getStage(@PathVariable final String stageName) throws BadStepNameException {
+	public ResponseEntity<Stage> getStage(@PathVariable final String stageName) throws BadStepNameException {
 		return ResponseEntity.ok(stepService.getStageConfiguration(stageName));
 	}
 }

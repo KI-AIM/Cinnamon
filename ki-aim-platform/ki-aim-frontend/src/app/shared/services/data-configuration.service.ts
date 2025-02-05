@@ -14,7 +14,7 @@ import { environments } from "../../../environments/environment";
     providedIn: 'root',
 })
 export class DataConfigurationService {
-    private readonly baseUrl: string = environments.apiUrl + "/api/data/VALIDATION/configuration";
+    private readonly baseUrl: string = environments.apiUrl + "/api/data/configuration";
     public readonly CONFIGURATION_NAME = "configurations";
 
     private readonly _dataConfiguration$: Observable<DataConfiguration>;
@@ -55,11 +55,10 @@ export class DataConfigurationService {
     }
 
     public downloadDataConfigurationAsJson(): Observable<DataConfiguration> {
-        return this.httpClient.get<DataConfiguration>(this.baseUrl + "?format=json");
-    }
-
-    public downloadDataConfiguration(step: string): Observable<DataConfiguration> {
-        return this.httpClient.get<DataConfiguration>(environments.apiUrl + "/api/data/" + step + "/configuration?format=json");
+        const params = {
+            selector: "ORIGINAL",
+        }
+        return this.httpClient.get<DataConfiguration>(this.baseUrl + "?format=json", {params: params});
     }
 
     public postDataConfigurationString(configString: string): Observable<void> {

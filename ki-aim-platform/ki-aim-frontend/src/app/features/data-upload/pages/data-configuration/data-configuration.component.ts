@@ -89,7 +89,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
             });
         });
 
-        this.dataSetInfoService.getDataSetInfo("validation").subscribe({
+        this.dataSetInfoService.getDataSetInfoOriginal$().subscribe({
             next: value => {
                 this.createSplit = value.hasHoldOutSplit;
                 if (value.hasHoldOutSplit) {

@@ -5,15 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.platform.model.configuration.KiAimConfiguration;
-import de.kiaim.platform.model.configuration.StageConfiguration;
-import de.kiaim.platform.model.configuration.StepConfiguration;
+import de.kiaim.platform.model.configuration.Stage;
+import de.kiaim.platform.model.configuration.Job;
 import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.exception.InternalIOException;
 import de.kiaim.platform.model.entity.*;
-import de.kiaim.platform.model.enumeration.HoldOutSelector;
-import de.kiaim.platform.model.enumeration.Mode;
-import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.enumeration.*;
 import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.platform.repository.UserRepository;
 import org.apache.commons.csv.CSVFormat;
@@ -117,35 +115,35 @@ public class ProjectService {
 		project.addPipeline(pipeline);
 
 		// Create entities for external processes
-		for (final Step stageStep : kiAimConfiguration.getPipeline().getStages()) {
-			if (!kiAimConfiguration.getStages().containsKey(stageStep)) {
+		for (final String stageName : kiAimConfiguration.getPipeline().getStages()) {
+			if (!kiAimConfiguration.getStages().containsKey(stageName)) {
 				throw new InternalApplicationConfigurationException(
 						InternalApplicationConfigurationException.MISSING_STAGE_CONFIGURATION,
-						"No configuration for stage '" + stageStep + "'!");
+						"No configuration for stage '" + stageName + "'!");
 			}
 
-			final StageConfiguration stageConfiguration = kiAimConfiguration.getStages().get(stageStep);
+			final Stage stageConfiguration = kiAimConfiguration.getStages().get(stageName);
 			final ExecutionStepEntity stage = new ExecutionStepEntity();
 
-			for (final Step jobStep : stageConfiguration.getJobs()) {
-				if (!kiAimConfiguration.getSteps().containsKey(jobStep)) {
+			for (final String jobName : stageConfiguration.getJobs()) {
+				if (!kiAimConfiguration.getSteps().containsKey(jobName)) {
 					throw new InternalApplicationConfigurationException(
 							InternalApplicationConfigurationException.MISSING_STEP_CONFIGURATION,
-							"No configuration for step '" + jobStep + "'!");
+							"No configuration for step '" + jobName + "'!");
 				}
 
-				final StepConfiguration stepConfiguration = kiAimConfiguration.getSteps().get(jobStep);
+				final Job stepConfiguration = kiAimConfiguration.getSteps().get(jobName);
 				ExternalProcessEntity job = switch (stepConfiguration.getStepType()) {
 					case DATA_PROCESSING -> new DataProcessingEntity();
 					case EVALUATION -> new EvaluationProcessingEntity();
 				};
 
 				job.setEndpoint(stepConfiguration.getExternalServerEndpointIndex());
-				job.setStep(jobStep);
+				job.setJob(stepConfiguration);
 				stage.addProcess(job);
 			}
 
-			pipeline.addStage(stageStep, stage);
+			pipeline.addStage(stageConfiguration, stage);
 		}
 
 		return project;
@@ -230,12 +228,12 @@ public class ProjectService {
 				for (final ExecutionStepEntity executionStep : pipeline.getStages()) {
 					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {
 						// Add configuration
-						if (externalProcess.getConfiguration() != null) {
-							final String configurationName = stepService.getExternalServerEndpointConfiguration(externalProcess.getStep())
+						if (externalProcess.getConfigurationString() != null) {
+							final String configurationName = stepService.getExternalServerEndpointConfiguration(externalProcess.getJob())
 							                                            .getConfigurationName();
 							final ZipEntry configZipEntry = new ZipEntry(configurationName + ".yaml");
 							zipOut.putNextEntry(configZipEntry);
-							zipOut.write(externalProcess.getConfiguration().getBytes());
+							zipOut.write(externalProcess.getConfigurationString().getBytes());
 							zipOut.closeEntry();
 						}
 
@@ -243,7 +241,7 @@ public class ProjectService {
 						if (externalProcess instanceof DataProcessingEntity dataProcessing ) {
 							if (dataProcessing.getDataSet() != null && dataProcessing.getDataSet().isStoredData()) {
 								addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet(), HoldOutSelector.ALL),
-								            dataProcessing.getDataSet().getProcessed().stream().map(Step::name)
+								            dataProcessing.getDataSet().getProcessed().stream().map(Job::getName)
 								                          .collect(Collectors.joining("-")));
 							}
 						}
@@ -270,7 +268,7 @@ public class ProjectService {
 			}
 
 			zipOut.finish();
-		} catch (final IOException | InternalApplicationConfigurationException e) {
+		} catch (final IOException e) {
 			throw new InternalIOException(InternalIOException.ZIP_CREATION, "Failed to create the ZIP file!", e);
 		}
 	}

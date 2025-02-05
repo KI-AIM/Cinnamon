@@ -28,11 +28,15 @@ export class AnonymizationService extends AlgorithmService {
     }
 
     public override getStepName() {
-        return "ANONYMIZATION";
+        return "anonymization";
+    }
+
+    public override getConfigurationName(): string {
+        return "anonymization";
     }
 
     public override getExecStepName(): string {
-        return "EXECUTION";
+        return "execution";
     }
 
     public override createConfiguration(arg: AnonymizationFormConfig, selectedAlgorithm: Algorithm): Object {

@@ -22,7 +22,7 @@ export class DataInspectionAttributeComponent implements OnInit {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
     @Input() public mainData: 'real' | 'synthetic' = 'real';
-    @Input() public processingSteps: Steps[] = [];
+    @Input() public processingSteps: string[] = [];
 
     protected graphType = 'histogram';
     protected hasSynthetic: boolean = false;

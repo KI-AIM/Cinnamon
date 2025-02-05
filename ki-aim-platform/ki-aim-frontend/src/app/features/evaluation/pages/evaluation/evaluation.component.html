@@ -178,6 +178,54 @@
 
         </div>
     </div>
+
+
+    <div class="mb-2 mt-2 box" style="width: 100%; padding-top: 0.3rem;">
+
+        <div class="step-head">
+            <span>Base Evaluation</span>
+            <span class="status" [ngClass]="status.processes[2].externalProcessStatus">
+                <span>{{ status.processes[2].externalProcessStatus.replace("_", " ") }}</span>
+            </span>
+        </div>
+        <div>
+
+            <mat-accordion>
+                <!-- Status -->
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>Status</mat-panel-title>
+                        <mat-panel-description></mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div *ngIf="status.processes[2].status">
+                        {{ status.processes[2].status }}
+                    </div>
+                    <div *ngIf="!status.processes[2].status">
+                        No Status Available
+                    </div>
+                </mat-expansion-panel>
+
+                <ng-container *ngIf="status.processes[2].externalProcessStatus === ProcessStatus.FINISHED && (risks2$ | async) as risks">
+
+                    <mat-expansion-panel>
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>Risks</mat-panel-title>
+                            <mat-panel-description>Kinda risky</mat-panel-description>
+                        </mat-expansion-panel-header>
+
+                        <div>
+                            {{risks}}
+                        </div>
+
+                    </mat-expansion-panel>
+                </ng-container>
+
+            </mat-accordion>
+
+        </div>
+    </div>
+
 </div>
 
 <ng-template #utilityMetricTable let-predictions="predictions">

@@ -7,12 +7,12 @@ import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
+import de.kiaim.platform.model.dto.DataSetSource;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.platform.model.enumeration.Mode;
-import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.test.platform.DatabaseTest;
@@ -111,7 +111,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		final UserEntity user = getTestUser();
 		final ProjectEntity project = projectService.getProject(user);
 
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, config, project),
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, null, config, project),
 		                   "The configuration could not be stored!");
 
 		final UserEntity updatedUser = getTestUser();
@@ -131,7 +131,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		final UserEntity user = getTestUser();
 		final ProjectEntity project = projectService.getProject(user);
 		final String updatedConfig = "Updated test config";
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, updatedConfig, project),
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, null, updatedConfig, project),
 		                   "The configuration could not be updated!");
 
 		final UserEntity updatedUser = getTestUser();
@@ -150,7 +150,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
 
 		final DataSet export = assertDoesNotThrow(
-				() -> databaseService.exportDataSet(project, new ArrayList<>(), HoldOutSelector.ALL, Step.VALIDATION));
+				() -> databaseService.exportDataSet(project, new ArrayList<>(), HoldOutSelector.ALL, DataSetSource.Original()));
 		assertEquals(transformationResult.getDataSet(), export, "Data sets do not match!");
 
 		assertDoesNotThrow(() -> databaseService.delete(project));
@@ -165,7 +165,8 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
 
 		final DataSet export = assertDoesNotThrow(
-				() -> databaseService.exportDataSet(project, List.of("column4_integer", "column0_boolean"), HoldOutSelector.ALL, Step.VALIDATION));
+				() -> databaseService.exportDataSet(project, List.of("column4_integer", "column0_boolean"),
+				                                    HoldOutSelector.ALL, DataSetSource.Original()));
 
 		// Test the data configuration
 		final DataConfiguration config = export.getDataConfiguration();
@@ -219,9 +220,10 @@ class DatabaseServiceTest extends DatabaseTest {
 	void exportConfigurationNoConfiguration() {
 		final UserEntity user = getTestUser();
 		final ProjectEntity project = projectService.getProject(user);
-		final String config = assertDoesNotThrow(() -> databaseService.exportConfiguration(CONFIGURATION_NAME, project),
-		                                         "Configuration should not be present!");
-		assertNull(config, "Configuration should not be present!");
+		final var error = assertThrows(BadConfigurationNameException.class,
+		                               () -> databaseService.exportConfiguration(CONFIGURATION_NAME, project),
+		                               "Configuration should not be present!");
+		assertEquals(ApiException.assembleErrorCode("1", "2", "2"), error.getErrorCode());
 	}
 
 	@Test

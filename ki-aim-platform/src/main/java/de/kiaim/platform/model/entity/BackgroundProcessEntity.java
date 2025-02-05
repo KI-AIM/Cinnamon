@@ -50,9 +50,16 @@ public class BackgroundProcessEntity {
 	private int endpoint;
 
 	/**
+	 * The configuration used for the process.
+	 */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "configuration_id")
+	@Nullable
+	private BackgroundProcessConfiguration configuration = null;
+
+	/**
 	 * The status of the external processing.
 	 */
-	@Getter @Setter
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	private ProcessStatus externalProcessStatus = ProcessStatus.NOT_STARTED;
@@ -61,22 +68,12 @@ public class BackgroundProcessEntity {
 	 * Time when the process has been scheduled.
 	 * Null if status is not SCHEDULED.
 	 */
-	@Setter
 	@Nullable
 	private Timestamp scheduledTime;
 
 	/**
-	 * URL to start the process.
-	 * Null if status is not SCHEDULED.
-	 */
-	@Setter
-	@Nullable
-	private String processUrl;
-
-	/**
 	 * Process id in the module.
 	 */
-	@Setter
 	@Nullable
 	private String externalId;
 
@@ -106,6 +103,17 @@ public class BackgroundProcessEntity {
 		this.owner = owner;
 	}
 
+	public void setConfiguration(final BackgroundProcessConfiguration newConfiguration) {
+		final BackgroundProcessConfiguration oldConfiguration = this.configuration;
+		this.configuration = newConfiguration;
+		if (oldConfiguration != null && oldConfiguration.getUsages().contains(this)) {
+			oldConfiguration.removeUsage(this);
+		}
+		if (newConfiguration != null && !newConfiguration.getUsages().contains(this)) {
+			newConfiguration.addUsage(this);
+		}
+	}
+
 	/**
 	 * Returns the configuration string of this process.
 	 * Can be overwritten by other process entities.
@@ -114,7 +122,10 @@ public class BackgroundProcessEntity {
 	 * @return The configuration string. Is always null.
 	 */
 	@Nullable
-	public String getConfiguration() {
+	public String getConfigurationString() {
+		if (configuration != null) {
+			return configuration.getConfiguration();
+		}
 		return null;
 	}
 

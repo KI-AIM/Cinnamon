@@ -130,7 +130,7 @@ export abstract class ExecutionStepService {
      */
     protected abstract getStepName(): string;
 
-    protected abstract setCustomStatus(key: Steps, status: string | null, processSteps: Steps[]): void;
+    protected abstract setCustomStatus(key: string, status: string | null, processSteps: string[]): void;
 
     /**
      * Starts or stops listening to the status based on the given status.

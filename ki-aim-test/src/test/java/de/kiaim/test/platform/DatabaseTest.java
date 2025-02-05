@@ -1,8 +1,9 @@
 package de.kiaim.test.platform;
 
+import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
-import de.kiaim.platform.model.entity.ExternalProcessEntity;
+import de.kiaim.platform.model.configuration.ExternalConfiguration;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.DataSetRepository;
@@ -11,6 +12,7 @@ import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.platform.repository.UserRepository;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProjectService;
+import de.kiaim.platform.service.StepService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +49,8 @@ public class DatabaseTest extends ContextRequiredTest {
 	DatabaseService databaseService;
 	@Autowired
 	protected ProjectService projectService;
+	@Autowired
+	private StepService stepService;
 
 	protected UserEntity testUser;
 	protected ProjectEntity testProject;
@@ -92,16 +96,23 @@ public class DatabaseTest extends ContextRequiredTest {
 		final UserEntity updatedUser = getTestUser();
 		final ProjectEntity project = projectService.getProject(updatedUser);
 
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, config, project),
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, null, config, project),
 		                   "The configuration could not be stored!");
 		testConfiguration(project, config);
 	}
 
 	protected void testConfiguration(final ProjectEntity project, final String config) {
-		final ExternalProcessEntity process = assertDoesNotThrow(
-				() -> databaseService.getExternalProcessForConfigurationName(project, CONFIGURATION_NAME));
-		assertNotNull(process.getConfiguration(), "The configuration has not been stored correctly in the process!");
-		assertEquals(config, process.getConfiguration(), "The configuration has not been stored correctly!");
+		final ExternalConfiguration ec;
+		try {
+			ec = stepService.getExternalConfiguration(CONFIGURATION_NAME);
+		} catch (final BadConfigurationNameException e) {
+			fail(e);
+			return;
+		}
+		final var bpc = project.getConfigurationList(ec).getConfigurations().get(0);
+
+		assertNotNull(bpc, "The configuration has not been stored correctly in the process!");
+		assertEquals(config, bpc.getConfiguration(), "The configuration has not been stored correctly!");
 	}
 
 	protected boolean existsDataSet(final long dataSetId) {

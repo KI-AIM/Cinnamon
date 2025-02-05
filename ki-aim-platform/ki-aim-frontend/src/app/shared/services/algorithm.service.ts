@@ -36,6 +36,9 @@ export abstract class AlgorithmService {
      */
     abstract getStepName(): string;
 
+    // TODO fetch
+    abstract getConfigurationName(): string;
+
     abstract getExecStepName(): string;
 
     /**

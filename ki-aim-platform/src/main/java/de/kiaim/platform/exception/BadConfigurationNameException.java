@@ -11,8 +11,10 @@ public class BadConfigurationNameException extends BadRequestException {
 	public static final String NOT_FOUND = "1";
 
 	/**
-	 * Exception code for column names that could not be found.
+	 * Exception code for configuration names that don't have any configuration saved.
 	 */
+	public static final String NO_CONFIGURATION = "2";
+
 	public BadConfigurationNameException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

@@ -5,10 +5,10 @@ import de.kiaim.model.data.DataSet;
 import de.kiaim.platform.exception.BadColumnNameException;
 import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.exception.BadStepNameException;
+import de.kiaim.platform.model.dto.DataSetSource;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.entity.*;
-import de.kiaim.platform.model.enumeration.Step;
-import de.kiaim.platform.repository.DataSetRepository;
+import de.kiaim.platform.model.enumeration.DataSetSourceSelector;
 import de.kiaim.platform.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.servlet.HandlerMapping;
 
 import java.util.*;
 
@@ -31,13 +30,14 @@ import java.util.*;
 @Service
 public class DataSetService {
 
-	private final DataSetRepository dataSetRepository;
 	private final UserRepository userRepository;
 
+	private final StepService stepService;
+
 	@Autowired
-	public DataSetService(final DataSetRepository dataSetRepository, final UserRepository userRepository) {
-		this.dataSetRepository = dataSetRepository;
+	public DataSetService(final UserRepository userRepository, final StepService stepService) {
 		this.userRepository = userRepository;
+		this.stepService = stepService;
 	}
 
 	/**
@@ -66,12 +66,12 @@ public class DataSetService {
 		final RequestAttributes ra = RequestContextHolder.getRequestAttributes();
 		if (ra instanceof ServletRequestAttributes) {
 			final HttpServletRequest request = ((ServletRequestAttributes) ra).getRequest();
-			final Map<String, String> pathVariables = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
-			final String stepName = pathVariables.get("stepName");
+			final DataSetSourceSelector selector = DataSetSourceSelector.valueOf(
+					request.getParameter("selector").trim().toUpperCase());
+			final String jobName = request.getParameter("jobName");
 
 			try {
-				final Step step = Step.getStepOrThrow(stepName);
-				final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(user.getProject(), step);
+				final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(user.getProject(), new DataSetSource(selector, jobName));
 				transformationErrors = dataSetEntity.getDataTransformationErrors();
 				columnIndexMapping = getColumnIndexMapping(dataSetEntity.getDataConfiguration(), loadDataRequest.getColumnNames());
 			} catch (BadStepNameException | BadDataSetIdException | BadColumnNameException ignored) {
@@ -166,42 +166,46 @@ public class DataSetService {
 	}
 
 	/**
-	 * Returns for the DataSetEntity for the given Step from the given project.
-	 * Allowed steps are {@link Step#VALIDATION} and steps of the type {@link de.kiaim.platform.model.enumeration.StepType#DATA_PROCESSING}.
+	 * Returns for the DataSetEntity for the given source from the given project.
 	 *
-	 * @param project The project.
-	 * @param step The step.
+	 * @param project       The project.
+	 * @param dataSetSource The source.
 	 * @return The DataSetEntity
-	 * @throws BadDataSetIdException If no data set exist for the step.
+	 * @throws BadDataSetIdException If no data set exist that complies with the selector.
 	 */
 	public DataSetEntity getDataSetEntityOrThrow(final ProjectEntity project,
-	                                             final Step step) throws BadDataSetIdException {
+	                                             final DataSetSource dataSetSource) throws BadDataSetIdException, BadStepNameException {
 		DataSetEntity dataSet = null;
 
-		if (step == Step.VALIDATION) {
-			dataSet = project.getOriginalData().getDataSet();
-		} else {
-			final ExternalProcessEntity process = project.getPipelines().get(0).getStageByStep(Step.EXECUTION)
-			                                             .getProcess(step).get();
-			if (process instanceof DataProcessingEntity dataProcessing) {
-				dataSet = dataProcessing.getDataSet();
+		switch (dataSetSource.getSelector())
+		{
+			case ORIGINAL -> {
+				dataSet = project.getOriginalData().getDataSet();
+
+				if (dataSet == null) {
+					throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET,
+					                                "The project '" + project.getId() +
+					                                "' does not contain an original data set!");
+				}
+
+			}
+			case JOB -> {
+				final var process =  stepService.getProcess(dataSetSource.getJobName(), project);
+				if (process instanceof DataProcessingEntity dataProcessing) {
+					dataSet = dataProcessing.getDataSet();
+				}
+
+				if (dataSet == null) {
+					throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET,
+					                                "The project '" + project.getId() +
+					                                "' does not contain a data set for job '" +
+					                                dataSetSource.getJobName() + "'!");
+				}
+
 			}
 		}
 
-		if (dataSet == null) {
-			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET, "The project '" + project.getId() +
-			                                                                   "' does not contain a data set for step '" +
-			                                                                   step.name() + "'!");
-		}
 		return dataSet;
-	}
-
-	public DataSetEntity getDataSetEntity(final Long id) {
-		return dataSetRepository.findById(id).orElse(null);
-	}
-
-	public DataSetEntity save(final DataSetEntity dataSetEntity) {
-		return dataSetRepository.save(dataSetEntity);
 	}
 
 	/**

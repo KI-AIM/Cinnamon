@@ -269,7 +269,9 @@ class DataControllerTest extends ControllerTest {
 	void loadConfigYaml() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/VALIDATION/configuration").accept(CustomMediaType.APPLICATION_YAML))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
+		                                      .accept(CustomMediaType.APPLICATION_YAML)
+		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(
 				       content().string(DataConfigurationTestHelper.generateDataConfigurationAsYaml()));
@@ -279,7 +281,9 @@ class DataControllerTest extends ControllerTest {
 	void loadConfigJson() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/VALIDATION/configuration").accept(MediaType.APPLICATION_JSON))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
+		                                      .accept(MediaType.APPLICATION_JSON)
+		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataConfigurationTestHelper.generateDataConfigurationAsJson()));
 	}
@@ -288,16 +292,18 @@ class DataControllerTest extends ControllerTest {
 	void getDataInfo() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/validation/info"))
+		mockMvc.perform(get("/api/data/info")
+				                .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{numberRows: 3, numberInvalidRows:  1}"));
 	}
 
 	@Test
 	void getDataInfoNoData() throws Exception {
-		mockMvc.perform(get("/api/data/validation/info"))
+		mockMvc.perform(get("/api/data/info")
+				                .param("selector", "original"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("The project '" + testProject.getId() + "' does not contain a data set for step 'VALIDATION'!"));
+		       .andExpect(errorMessage("The project '" + testProject.getId() + "' does not contain an original data set!"));
 	}
 
 	// ================================================================================================================
@@ -308,24 +314,27 @@ class DataControllerTest extends ControllerTest {
 	void loadData() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
-		                                      .accept(CustomMediaType.APPLICATION_YAML))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .accept(CustomMediaType.APPLICATION_YAML)
+		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataAsYaml()));
 	}
 
 	@Test
 	void loadDataNoDataSet() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .param("selector", "original"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
-				       "The project '" + testProject.getId() + "' does not contain a data set for step 'VALIDATION'!"));
+				       "The project '" + testProject.getId() + "' does not contain an original data set!"));
 	}
 
 	@WithAnonymousUser
 	@Test
 	void loadDataNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .param("selector", "original"))
 		       .andExpect(status().isUnauthorized());
 	}
 
@@ -333,8 +342,9 @@ class DataControllerTest extends ControllerTest {
 	void loadDataColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
+		                                      .param("selector", "original")
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataColumnsAsYaml()));
@@ -344,7 +354,8 @@ class DataControllerTest extends ControllerTest {
 	void loadDataInvalidColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		                                      .param("selector", "original")
 		                                      .param("columns", "invalid1,column4_integer,invalid2"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Data set does not contain columns with names: 'invalid1', 'invalid2'"));
@@ -357,8 +368,9 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 		final String formatErrorEncoding = ":(";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
+		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
 		       .andExpect(status().isOk())
@@ -372,8 +384,9 @@ class DataControllerTest extends ControllerTest {
 
 		final String defaultNullEncoding = "N/A";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
+		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", "$null"))
 		       .andExpect(status().isOk())
@@ -387,8 +400,9 @@ class DataControllerTest extends ControllerTest {
 
 		final String defaultNullEncoding = "N/A";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
+		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", "$value"))
 		       .andExpect(status().isOk())
@@ -419,19 +433,25 @@ class DataControllerTest extends ControllerTest {
 		assertEquals(holdOutPercentage, project.getOriginalData().getHoldOutPercentage(),
 		             "Hold-out percentage not set correctly!");
 
-		mockMvc.perform(get("/api/data/validation/data")
+		mockMvc.perform(get("/api/data/data")
+				                .param("selector", "original")
 				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name())
 				                .accept(MediaType.APPLICATION_JSON))
+				.andExpect(status().isOk())
 				.andExpect(content().json("[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']]"));
 
-		mockMvc.perform(get("/api/data/validation/data")
+		mockMvc.perform(get("/api/data/data")
+				                .param("selector", "original")
 				                .param("holdOutSelector", HoldOutSelector.NOT_HOLD_OUT.name())
 				                .accept(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk())
 		       .andExpect(content().json("[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']]"));
 
-		mockMvc.perform(get("/api/data/validation/data")
+		mockMvc.perform(get("/api/data/data")
+				                .param("selector", "original")
 				                .param("holdOutSelector", HoldOutSelector.ALL.name())
 				                .accept(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk())
 		       .andExpect(content().json("[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!'],[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']]"));
 	}
 
@@ -447,8 +467,9 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSet() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
-		                                      .accept(CustomMediaType.APPLICATION_YAML))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .accept(CustomMediaType.APPLICATION_YAML)
+		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsYaml()));
 	}
@@ -457,24 +478,27 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetJson() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
-		                                      .accept(MediaType.APPLICATION_JSON))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .accept(MediaType.APPLICATION_JSON)
+		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsJson()));
 	}
 
 	@Test
 	void loadDataSetNoDataSet() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .param("selector", "original"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
-				       "The project '" + testProject.getId() + "' does not contain a data set for step 'VALIDATION'!"));
+				       "The project '" + testProject.getId() + "' does not contain an original data set!"));
 	}
 
 	@WithAnonymousUser
 	@Test
 	void loadDataSetNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation"))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .param("selector", "original"))
 		       .andExpect(status().isUnauthorized());
 	}
 
@@ -482,8 +506,9 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
+		                                      .param("selector", "original")
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataSetColumnsAsYaml()));
@@ -493,7 +518,8 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetInvalidColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		                                      .param("selector", "original")
 		                                      .param("columns", "invalid1,column4_integer,invalid2"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Data set does not contain columns with names: 'invalid1', 'invalid2'"));
@@ -506,8 +532,9 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 		final String formatErrorEncoding = ":(";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
 		                                      .accept(CustomMediaType.APPLICATION_YAML)
+		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
 		       .andExpect(status().isOk())
@@ -523,8 +550,9 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 		final String formatErrorEncoding = ":(";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/validation")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
 		                                      .accept(MediaType.APPLICATION_JSON)
+		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
 		       .andExpect(status().isOk())
@@ -541,7 +569,8 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResult() throws Exception {
 		postData(true);
 
-		mockMvc.perform(get("/api/data/validation/transformationResult"))
+		mockMvc.perform(get("/api/data/transformationResult")
+				                .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(oneOf(TransformationResultTestHelper.generateTransformationResultAsJsonA(),
 		                                         TransformationResultTestHelper.generateTransformationResultAsJsonB())));
@@ -551,7 +580,8 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPage() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
 				                .param("page", "2")
 				                .param("perPage", "1"))
 		       .andExpect(status().isOk())
@@ -563,7 +593,8 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageWithErrors() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
 				                .param("page", "2")
 				                .param("perPage", "2"))
 		       .andExpect(status().isOk())
@@ -575,7 +606,8 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageEncodedErrors() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
 				                .param("page", "3")
 				                .param("perPage", "1")
 				                .param("formatErrorEncoding", "$value"))
@@ -589,7 +621,8 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageSelectErrors() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
 				                .param("page", "1")
 				                .param("perPage", "2")
 				                .param("rowSelector", RowSelector.ERRORS.name())
@@ -600,10 +633,12 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void loadTransformationResultPageSelectValid() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
 				                .param("page", "1")
 				                .param("perPage", "1")
 				                .param("rowSelector", RowSelector.VALID.name())
@@ -617,7 +652,8 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageSelectColumn() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/validation/transformationResult/page")
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
 				                .param("page", "1")
 				                .param("perPage", "10")
 				                .param("columns", "column4_integer")

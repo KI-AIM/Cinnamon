@@ -17,7 +17,14 @@ export class DataSetInfoService {
     }
 
     /**
-     * Returns the information to the dataset of the validation step.
+     * Returns the information to the original dataset
+     */
+    public getDataSetInfoOriginal$(): Observable<DataSetInfo> {
+        return this.getDataSetInfo("validation");
+    }
+
+    /**
+     * Returns the information to the dataset of the given step.
      * @param step The step of the data set.
      */
     public getDataSetInfo(step: string): Observable<DataSetInfo> {
@@ -31,7 +38,11 @@ export class DataSetInfoService {
             return observable;
         }
 
-        const dataSetInfo$ = this.http.get<DataSetInfo>(environments.apiUrl + "/api/data/" + step + "/info").pipe(
+        const params = {
+            selector: step.toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
+            jobName: step.toLowerCase(),
+        }
+        const dataSetInfo$ = this.http.get<DataSetInfo>(environments.apiUrl + "/api/data/info", {params: params}).pipe(
             tap(value => {
                 this.cache[step] = {dateSetInfo: value, dataSetInfo$: of(value)};
             }),

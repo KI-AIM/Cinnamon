@@ -25,6 +25,11 @@ public class BadStateException extends BadRequestException {
 	 */
 	public static final String DATE_CONFIRMED = "4";
 
+	/**
+	 * Exception code for actions that require a configuration to be set.
+	 */
+	public static final String CONFIGURATION = "5";
+
 	public BadStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

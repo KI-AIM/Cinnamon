@@ -30,7 +30,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
     @Input() public mainData: 'real' | 'synthetic' = 'real';
-    @Input() public processingSteps: Steps[] = [];
+    @Input() public processingSteps: string[] = [];
 
     protected graphType: string = 'histogram';
     protected hasSynthetic: boolean = false;
@@ -112,12 +112,12 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
      * @protected
      */
     private getSyntheticName(): string {
-        const names = ['','','','','','','','',''];
-        names[Steps.ANONYMIZATION] = "Anonymized";
-        names[Steps.SYNTHETIZATION] = "Synthesized";
+        const names: Record<string, string> = {
+            "anonymization": "Anonymized",
+            "synthetization": "Synthesized",
+        }
 
         let syntheticName = this.processingSteps
-            .map(value => processEnumValue(Steps, value))
             .map(value => names[value])
             .join(" and ");
         syntheticName = syntheticName + " Values"

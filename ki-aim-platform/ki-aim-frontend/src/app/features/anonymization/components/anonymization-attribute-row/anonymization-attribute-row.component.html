@@ -18,7 +18,7 @@
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>
-                Attribute Type
+                Column type
             </mat-label>
             <mat-select
                 [id]="formElements.dataType.name"
@@ -38,7 +38,7 @@
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>
-                Attribute Scale
+                Column scale
             </mat-label>
             <mat-select
                 [id]="formElements.scale.name"
@@ -58,7 +58,7 @@
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>
-                Transformation Type
+                Transformation type
             </mat-label>
             <mat-select
                 [id]="formElements.transformationType.name"
@@ -83,25 +83,25 @@
             <mat-label>
                 <!-- Change label according to selected Transformation Type -->
                 <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'MASKING'">
-                    Masked Characters
+                    Masked characters
                 </ng-container>
                 <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'RECORD_DELETION'">
-                    Using Suppression Limit
+                    Using suppression limit
                 </ng-container>
                 <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'ATTRIBUTE_DELETION'">
-                    All Values Deleted
+                    Column deletion
                 </ng-container>
                 <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'NO_PROTECTION'">
-                    No Change
+                    Original data remains
                 </ng-container>
                 <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'DATE_GENERALIZATION'">
-                    Generalization Level
+                    Generalization interval
                 </ng-container>
                 <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'GENERALIZATION'">
-                    Generalization Interval
+                    Generalization interval
                 </ng-container>
                 <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'MICRO_AGGREGATION'">
-                    Aggregation Interval
+                    Aggregation interval
                 </ng-container>
             </mat-label>
             <ng-container *ngIf="!intervalIsSelect; else selectField">

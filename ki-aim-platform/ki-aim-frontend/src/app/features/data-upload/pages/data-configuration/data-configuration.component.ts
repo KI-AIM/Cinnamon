@@ -107,14 +107,21 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         const config = plainToInstance(DataConfiguration, this.form.value);
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
-        this.dataService.storeData(config).pipe(
-         switchMap(() => {
-             return this.dataService.createHoldOutSplit(this.holdOutSplitPercentage);
-         }),
-        ).subscribe({
-            next: () => this.handleUpload(),
-            error: (e) => this.handleError(e),
-        });
+        if (this.createSplit) {
+            this.dataService.storeData(config).pipe(
+                switchMap(() => {
+                    return this.dataService.createHoldOutSplit(this.holdOutSplitPercentage);
+                }),
+            ).subscribe({
+                next: () => this.handleUpload(),
+                error: (e) => this.handleError(e),
+            });
+        } else {
+            this.dataService.storeData(config).subscribe({
+                next: () => this.handleUpload(),
+                error: (e) => this.handleError(e),
+            });
+        }
     }
 
     protected updateCreateSplit(newValue: boolean) {

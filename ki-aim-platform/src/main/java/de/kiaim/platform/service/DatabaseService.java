@@ -1114,7 +1114,13 @@ public class DatabaseService {
 		dataSet.getDataTransformationErrors().clear();
 		dataSet.setStoredData(false);
 		dataSet.getStatisticsProcess().reset();
-		dataSetRepository.save(dataSet);
+
+		final OriginalDataEntity original = dataSet.getOriginalData();
+		if (original != null) {
+			original.setHasHoldOut(false);
+		}
+
+		projectRepository.save(dataSet.getProject());
 	}
 
 	/**

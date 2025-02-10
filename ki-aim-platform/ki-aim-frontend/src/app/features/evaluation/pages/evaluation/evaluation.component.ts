@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { EvaluationService } from "../../services/evaluation.service";
 import { TitleService } from "../../../../core/services/title-service.service";
 import { ProcessStatus } from "../../../../core/enums/process-status";
-import { Observable } from "rxjs";
+import { Observable, tap } from "rxjs";
 import { StatisticsService } from "../../../../shared/services/statistics.service";
 import {
     Statistics, UtilityData,
@@ -11,6 +11,7 @@ import {
     UtilityStatisticsData
 } from "../../../../shared/model/statistics";
 import { ExecutionStep } from "../../../../shared/model/execution-step";
+import { RiskEvaluation } from '../../../../shared/model/risk-evaluation';
 
 @Component({
     selector: 'app-evaluation',
@@ -26,8 +27,21 @@ export class EvaluationComponent implements OnInit {
     protected stage$: Observable<ExecutionStep | null>;
 
     protected statistics$: Observable<Statistics | null>;
-    protected risks$: Observable<any>;
+    protected risks$: Observable<RiskEvaluation>;
+    protected risksString$: Observable<any>;
     protected risks2$: Observable<any>;
+
+    protected riskMetrics: { 
+        label: string, 
+        key: keyof RiskEvaluation, 
+        hasAttackRate: boolean 
+    }[] = [
+        { label: "Linkage", key: "linkage_health_risk", hasAttackRate: true },
+        // { label: "Singling-out univariate", key: "univariate_singling_out_risk", hasAttackRate: true },
+        // { label: "Singling-out multivariate", key: "multivariate_singling_out_risk", hasAttackRate: true },
+        // { label: "Average Attribute Inference", key: "inference_average_risk", hasAttackRate: true }
+    ];
+    
 
     constructor(
         protected readonly evaluationService: EvaluationService,
@@ -38,11 +52,22 @@ export class EvaluationComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.risks$ = this.statisticsService.fetchRisks();
+        this.risksString$ = this.statisticsService.fetchRisksString();
+        this.risks$ = this.statisticsService.fetchRisks().pipe(
+            tap(risks => console.log("Risks data:", risks)) // Debug
+        );
         this.risks2$ = this.statisticsService.fetchRisks2();
         this.stage$ = this.evaluationService.status$;
         this.statistics$ = this.statisticsService.fetchResult();
         this.evaluationService.fetchStatus();
+    }
+
+    // Method for formatting the confidence interval
+    formatConfidenceInterval(interval?: [number, number]): string {
+        if (!interval || interval.length !== 2) {
+            return 'N/A';
+        }
+        return `[${interval[0].toFixed(2)}, ${interval[1].toFixed(2)}]`;
     }
 
     protected getFirstElement(obj: UtilityData): Array<UtilityStatisticsData> {
@@ -51,5 +76,11 @@ export class EvaluationComponent implements OnInit {
             return obj[keys[0]];
         }
         return [];
+    }
+
+    // Method for generatting color index
+    generateRiskColorIndex(riskValue?: number): number {
+        if (riskValue === undefined) return 0;
+        return Math.min(Math.floor(riskValue * 10), 9)+1;
     }
 }

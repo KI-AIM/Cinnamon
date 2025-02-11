@@ -203,30 +203,27 @@
                                         <div class="classifier-cell classifier-head">Overall Risk [0,1]</div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
                                             </span>
-                                            <span>{{ risks.linkage_health_risk.risk_value | number:'1.4-4'}}</span>
+                                            <span>{{ risks?.linkage_health_risk?.risk_value | number:'1.2-2'}}</span>
                                         </div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.univariate_singling_out_risk?.risk_value)]">
                                             </span>
-                                            <!-- <span>{{ risks.univariate_singling_out_risk.risk_value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <span>{{ risks?.univariate_singling_out_risk?.risk_value | number:'1.2-2'}}</span>
                                         </div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.risk_value)]">
                                             </span>
-                                            <!-- <span>{{ risks.multivariate_singling_out_risk.risk_value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <span>{{ risks?.multivariate_singling_out_risk?.risk_value | number:'1.2-2'}}</span>
                                         </div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.inference_average_risk?.priv_risk)]">
                                             </span>
-                                            <!-- <span>{{ risks.inference_average_risk.risk_value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <span>{{ risks?.inference_average_risk?.priv_risk | number:'1.2-2'}}</span>
                                         </div>
                                     </div>
 
@@ -234,30 +231,29 @@
                                         <div class="classifier-cell classifier-head">Risk Confidence Interval</div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
                                             </span>
-                                            <span>{{ formatConfidenceInterval(risks.linkage_health_risk.risk_ci)}}</span>
+                                            <span>{{ formatConfidenceInterval(risks?.linkage_health_risk?.risk_ci)}}</span>
                                         </div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.univariate_singling_out_risk?.risk_value)]">
                                             </span>
-                                            <!-- <span>{{ risks.univariate_singling_out_risk.risk_value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <span>{{ formatConfidenceInterval(risks?.univariate_singling_out_risk?.risk_ci)}}</span>
                                         </div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.risk_value)]">
                                             </span>
-                                            <!-- <span>{{ risks.multivariate_singling_out_risk.risk_value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <span>{{ formatConfidenceInterval(risks?.multivariate_singling_out_risk?.risk_ci)}}</span>
                                         </div>
+                                        <!-- No risk CI for average inference -->
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[0]">
                                             </span>
-                                            <!-- <span>{{ risks.inference_average_risk.risk_value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <!-- <span>{{ risks.inference_average_risk.risk_value | number:'1.2-2'}}</span> -->
+                                            <span> </span>
                                         </div>
                                     </div>
 
@@ -265,29 +261,28 @@
                                         <div class="classifier-cell classifier-head">Successful Attacks</div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.attack_rate?.value)]">
                                             </span>
-                                            <span>{{ risks.linkage_health_risk.attack_rate.value | number:'1.4-4'}}</span>
+                                            <span>{{ risks?.linkage_health_risk?.attack_rate?.value | number:'1.2-2'}}</span>
                                         </div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.univariate_singling_out_risk?.attack_rate?.value)]">
                                             </span>
-                                            <!-- <span>{{ risks.univariate_singling_out_risk.attack_rate.value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <span>{{ risks?.univariate_singling_out_risk?.attack_rate?.value | number:'1.2-2'}}</span>
                                         </div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.attack_rate?.value)]">
                                             </span>
-                                            <!-- <span>{{ risks.multivariate_singling_out_risk.attack_rate.value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <span>{{ risks?.multivariate_singling_out_risk?.attack_rate?.value | number:'1.2-2'}}</span>
                                         </div>
+                                        <!-- TODO : change for correct value -->
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
                                             </span>
-                                            <!-- <span>{{ risks.inference_average_risk.attack_rate.value | number:'1.4-4'}}</span> -->
+                                            <!-- <span>{{ risks.inference_average_risk.attack_rate.value | number:'1.2-2'}}</span> -->
                                             <span>0.9</span>
                                         </div>
                                     </div>
@@ -296,29 +291,29 @@
                                         <div class="classifier-cell classifier-head">Error Rate</div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.attack_rate?.error)]">
                                             </span>
-                                            <span>{{ risks.linkage_health_risk.attack_rate.error | number:'1.4-4'}}</span>
+                                            <span>{{ risks?.linkage_health_risk?.attack_rate?.error | number:'1.2-2'}}</span>
+                                        </div>
+                                        <!-- TODO : change color ? -->
+                                        <div class="classifier-cell">
+                                            <span class="metric-similarity"
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.univariate_singling_out_risk?.attack_rate?.error)]">
+                                            </span>
+                                            <span>{{ risks?.univariate_singling_out_risk?.attack_rate?.error | number:'1.2-2'}}</span>
                                         </div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.attack_rate?.error)]">
                                             </span>
-                                            <!-- <span>{{ risks.univariate_singling_out_risk.risk_value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <span>{{ risks?.multivariate_singling_out_risk?.attack_rate?.error | number:'1.2-2'}}</span>
                                         </div>
+                                        <!-- TODO : change for correct value -->
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
+                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
                                             </span>
-                                            <!-- <span>{{ risks.multivariate_singling_out_risk.risk_value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
-                                        </div>
-                                        <div class="classifier-cell">
-                                            <span class="metric-similarity"
-                                                [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks.linkage_health_risk.risk_value)]">
-                                            </span>
-                                            <!-- <span>{{ risks.inference_average_risk.risk_value | number:'1.4-4'}}</span> -->
+                                            <!-- <span>{{ risks.inference_average_risk.risk_value | number:'1.2-2'}}</span> -->
                                             <span>0.9</span>
                                         </div>
                                     </div>
@@ -329,27 +324,26 @@
                                             <span class="metric-similarity"
                                                 [style.background-color]="statisticsService.colors[0]">
                                             </span>
-                                            <span>{{ risks.linkage_health_risk.execution_time | number:'1.4-4'}}</span>
+                                            <span>{{ risks?.linkage_health_risk?.execution_time | number:'1.2-2'}}</span>
                                         </div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
                                                 [style.background-color]="statisticsService.colors[0]">
                                             </span>
-                                            <!-- <span>{{ risks.univariate_singling_out_risk.risk_value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <span>{{ risks?.univariate_singling_out_risk?.risk_value | number:'1.2-2'}}</span>
                                         </div>
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
                                                 [style.background-color]="statisticsService.colors[0]">
                                             </span>
-                                            <!-- <span>{{ risks.multivariate_singling_out_risk.risk_value | number:'1.4-4'}}</span> -->
-                                            <span>0.9</span>
+                                            <span>{{ risks?.multivariate_singling_out_risk?.risk_value | number:'1.2-2'}}</span>
                                         </div>
+                                        <!-- TODO : change for correct value -->
                                         <div class="classifier-cell">
                                             <span class="metric-similarity"
                                                 [style.background-color]="statisticsService.colors[0]">
                                             </span>
-                                            <!-- <span>{{ risks.inference_average_risk.risk_value | number:'1.4-4'}}</span> -->
+                                            <!-- <span>{{ risks.inference_average_risk.risk_value | number:'1.2-2'}}</span> -->
                                             <span>0.9</span>
                                         </div>
                                     </div>
@@ -373,7 +367,7 @@
                                     <div>
                                         <div class="classifier-cell classifier-head"> </div>
                                         <div *ngFor="let attribute of risks.inference_risk" class="classifier-cell"> 
-                                            {{attribute.name}} 
+                                            {{attribute?.name}} 
                                         </div>
                                     </div>
 
@@ -383,7 +377,7 @@
                                             <span class="metric-similarity"
                                                 [style.background-color]="statisticsService.colors[generateRiskColorIndex(attribute.value.risk_value)]">
                                             </span>
-                                            <span>{{attribute.value.risk_value  | number:'1.4-4'}}</span>
+                                            <span>{{attribute?.value?.risk_value  | number:'1.2-2'}}</span>
                                         </div>
                                     </div>
                                     <div>
@@ -392,7 +386,7 @@
                                             <span class="metric-similarity"
                                                 [style.background-color]="statisticsService.colors[generateRiskColorIndex(attribute.value.risk_value)]">
                                             </span>
-                                            <span>{{ formatConfidenceInterval(attribute.value.risk_ci)}}</span>
+                                            <span>{{ formatConfidenceInterval(attribute?.value?.risk_ci)}}</span>
                                         </div>
                                     </div>
                                     <div>
@@ -401,7 +395,7 @@
                                             <span class="metric-similarity"
                                                 [style.background-color]="statisticsService.colors[generateRiskColorIndex(attribute.value.attack_rate.value)]">
                                             </span>
-                                            <span>{{attribute.value.attack_rate.value  | number:'1.4-4'}}</span>
+                                            <span>{{attribute?.value?.attack_rate?.value  | number:'1.2-2'}}</span>
                                         </div>
                                     </div>
                                     <div>
@@ -410,7 +404,7 @@
                                             <span class="metric-similarity"
                                                 [style.background-color]="statisticsService.colors[generateRiskColorIndex(attribute.value.attack_rate.error)]">
                                             </span>
-                                            <span>{{attribute.value.attack_rate.error  | number:'1.4-4'}}</span>
+                                            <span>{{attribute?.value?.attack_rate?.error  | number:'1.2-2'}}</span>
                                         </div>
                                     </div>
                                 </div>

@@ -8,6 +8,7 @@ export class RiskInference {
 
 export class RiskResults {
     risk_value?: number;
+    priv_risk?: number; // For inference_average_risk
     @Type(() => Array)
     risk_ci?: [number, number];
     n_attacks: number;

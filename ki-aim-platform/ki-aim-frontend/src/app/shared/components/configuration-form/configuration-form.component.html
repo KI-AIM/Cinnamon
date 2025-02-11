@@ -1,34 +1,9 @@
 <form (ngSubmit)="onSubmit()" [formGroup]="form">
 
-    <mat-accordion>
-        <ng-container *ngFor="let groupDefinition of getGroupNames()">
-            <mat-expansion-panel>
-                <mat-expansion-panel-header>
-                    <mat-panel-title [style]="form.controls[groupDefinition].invalid? 'color: red;' : ''">{{ algorithmDefinition.configurations[groupDefinition].display_name }}</mat-panel-title>
-                    <mat-panel-description> {{ algorithmDefinition.configurations[groupDefinition].description }}</mat-panel-description>
-                </mat-expansion-panel-header>
-
-                <app-configuration-group [form]="form" [fromGroupName]="groupDefinition"
-                                         [group]="algorithmDefinition.configurations[groupDefinition]"
-                                         [disabled]="disabled" [isOption]="false">
-                </app-configuration-group>
-
-            </mat-expansion-panel>
-        </ng-container>
-
-        <ng-container *ngIf="additionalConfigs">
-            <ng-container *ngFor="let additionalConfig of additionalConfigs.configs">
-                <mat-expansion-panel>
-                    <mat-expansion-panel-header>
-                        <mat-panel-title>{{additionalConfig.title}}</mat-panel-title>
-                        <mat-panel-description>{{additionalConfig.description}}</mat-panel-description>
-                    </mat-expansion-panel-header>
-
-                    <ng-container #dynamicComponentContainer></ng-container>
-                </mat-expansion-panel>
-            </ng-container>
-        </ng-container>
-    </mat-accordion>
+    <app-configuration-group [form]="form" [fromGroupName]="''"
+                             [group]="algorithmDefinition"
+                             [disabled]="disabled" [isOption]="false"
+    ></app-configuration-group>
 
     <div class="mt-2">
         <button #configurationSubmitButton type="submit" mat-raised-button color="primary" [disabled]="!valid || disabled">

@@ -129,18 +129,6 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     /**
-     * Returns the names of the groups in the configuration definition.
-     * @protected
-     */
-    protected getGroupNames(): Array<string> {
-        if (this.algorithmDefinition == undefined) {
-            return [];
-        }
-
-        return Object.keys(this.algorithmDefinition.configurations);
-    }
-
-    /**
      * Enables or disables the form based on the current value of {@link disabled}.
      * @private
      */

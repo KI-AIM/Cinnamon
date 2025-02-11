@@ -124,10 +124,10 @@ export class ConfigurationGroupComponent {
      * @protected
      */
     protected get formGroup(): FormGroup {
-        if (this.isOption) {
+        if (this.fromGroupName) {
             return this.form.controls[this.fromGroupName] as FormGroup;
         } else {
-            return this.form.controls[this.fromGroupName] as FormGroup;
+            return this.form;
         }
     }
 

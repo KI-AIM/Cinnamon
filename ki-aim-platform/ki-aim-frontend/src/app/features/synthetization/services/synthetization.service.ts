@@ -30,6 +30,10 @@ export class SynthetizationService extends AlgorithmService {
         return "execution";
     }
 
+    override getJobs(): string[] {
+        return ["synthetization"];
+    }
+
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
         return {
             synthetization_configuration: {

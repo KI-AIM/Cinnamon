@@ -3,15 +3,16 @@ import { CommonModule } from '@angular/common';
 import {
     RiskAssessmentConfigurationComponent
 } from './pages/risk-assessment-configuration/risk-assessment-configuration.component';
-import { TechnicalEvaluationService } from "../technical-evaluation/services/technical-evaluation.service";
 import { RiskAssessmentService } from "./services/risk-assessment.service";
+import { SharedModule } from "../../shared/shared.module";
 
 @NgModule({
     declarations: [
         RiskAssessmentConfigurationComponent
     ],
     imports: [
-        CommonModule
+        CommonModule,
+        SharedModule
     ],
     providers: [
         {

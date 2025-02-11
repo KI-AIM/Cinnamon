@@ -21,6 +21,12 @@
                     </mat-form-field>
             </ng-container>
 
+            <ng-container *ngSwitchCase="ConfigurationInputType.ATTRIBUTE_LIST">
+                <app-configuration-input-attribute-list [configurationInputDefinition]="configurationInputDefinition"
+                                                        [parentForm]="form" [disabled]="disabled">
+                </app-configuration-input-attribute-list>
+            </ng-container>
+
             <ng-container *ngSwitchCase="ConfigurationInputType.LIST">
                 <div class="input-array-wrapper">
                     <mat-form-field class="input-array">
@@ -134,5 +140,3 @@
     </div>
 
 </div>
-
-

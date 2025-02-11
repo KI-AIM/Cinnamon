@@ -26,7 +26,7 @@ public class StepControllerTest extends ControllerTest {
 	public void getInvalidName() throws Exception {
 		mockMvc.perform(get("/api/step/invalidStepName"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("The step 'invalidStepName' is not defined!"));
+		       .andExpect(errorMessage("No configuration with name 'invalidStepName' registered!"));
 	}
 
 	@Test

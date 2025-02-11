@@ -39,6 +39,10 @@ export class AnonymizationService extends AlgorithmService {
         return "execution";
     }
 
+    public override getJobs(): string[] {
+        return ["anonymization"];
+    }
+
     public override createConfiguration(arg: AnonymizationFormConfig, selectedAlgorithm: Algorithm): Object {
 
         return {

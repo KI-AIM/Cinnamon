@@ -10,7 +10,7 @@ import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../../environments/environment";
 import { StatusService } from "../../services/status.service";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
-import { Observable, switchMap } from "rxjs";
+import { from, mergeMap, Observable, switchMap } from "rxjs";
 
 /**
  * Entire configuration page including the algorithm selection,
@@ -92,7 +92,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      */
     protected updateConfigCache(): void
     {
-        if (this.selection.selectedOption) {
+        if (this.selection.selectedOption && this.forms)  {
             this.algorithmService.configCache[this.selection.selectedOption.name] = this.forms.formData;
         }
     }
@@ -174,7 +174,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
                 return this.postConfig(configuration, value.URL);
             }),
             switchMap(() => {
-                return this.postConfigure(false);
+                return this.configureJobs(false);
             }),
         ).subscribe({
             next: () => this.finish(),
@@ -194,7 +194,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         this.updateConfigCache();
 
         if (!this.selection.selectedOption) {
-            this.postConfigure(true).subscribe({
+            this.configureJobs(true).subscribe({
                     next: () => this.finish(),
                     error: err => {
                         this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
@@ -209,7 +209,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
                     return this.postConfig(config, value.URL);
                 }),
                 switchMap(() => {
-                    return this.postConfigure(true);
+                    return this.configureJobs(true);
                 }),
             ).subscribe({
                 next: () => this.finish(),
@@ -235,16 +235,30 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * Configures the job.
-     * @param skip If the job should be skipped.
+     * Configures all jobs defined to be configured.
+     * @param skip If the jobs should be skipped.
      * @private
      */
-    private postConfigure(skip: boolean): Observable<void> {
+    private configureJobs(skip: boolean): Observable<void> {
+        return from(this.algorithmService.getJobs()).pipe(
+            mergeMap(job => {
+                return this.postConfigure(skip, job);
+            }),
+        );
+    }
+
+    /**
+     * Configures the job.
+     * @param skip If the job should be skipped.
+     * @param jobName The name of the job to configure.
+     * @private
+     */
+    private postConfigure(skip: boolean, jobName: string): Observable<void> {
         const formData = new FormData();
         if (skip) {
             formData.append("skip", 'true');
         }
-        formData.append("jobName", this.algorithmService.getStepName());
+        formData.append("jobName", jobName);
         return this.httpClient.post<void>(this.baseUrl + "/" + this.algorithmService.getExecStepName() + "/configure", formData);
     }
 
@@ -253,16 +267,35 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * @private
      */
     private finish() {
-        this.router.navigateByUrl(this.algorithmService.getStepName() === "anonymization"
-            ? '/synthetizationConfiguration'
-            : this.algorithmService.getStepName() === "synthetization"
-                ? "/execution"
-                : "/riskEvaluationConfiguration");
-        this.statusService.setNextStep(this.algorithmService.getStepName() === "anonymization"
-            ? Steps.SYNTHETIZATION
-            : this.algorithmService.getStepName() === "synthetization"
-                ? Steps.EXECUTION
-                : Steps.RISK_EVALUATION
-        );
+        let nextUrl = "";
+        let nextStep = Steps.EVALUATION;
+        switch (this.algorithmService.getStepName()) {
+            case "anonymization": {
+                nextUrl = '/synthetizationConfiguration';
+                nextStep = Steps.SYNTHETIZATION;
+                break;
+            }
+            case "synthetization": {
+                nextUrl = '/execution';
+                nextStep = Steps.EVALUATION;
+                break;
+            }
+            case "technical_evaluation": {
+                nextUrl = "/riskEvaluationConfiguration";
+                nextStep = Steps.RISK_EVALUATION;
+                break;
+            }
+            case "risk_evaluation": {
+                nextUrl = '/evaluation';
+                nextStep = Steps.EVALUATION;
+                break;
+            }
+            default: {
+                console.error(`Unhandled step: ${this.algorithmService.getStepName()}`);
+            }
+        }
+
+        this.router.navigateByUrl(nextUrl);
+        this.statusService.setNextStep(nextStep);
     }
 }

@@ -1,0 +1,13 @@
+<div *ngIf="dataConfiguration$ | async as dataConfiguration"
+     style="display: flex; flex-wrap: wrap;">
+    <div *ngFor="let attribute of dataConfiguration.configurations">
+        <div>
+            <mat-checkbox [disabled]="disabled" [checked]="formArray.value.includes(attribute.name)"
+                          (change)="toggleCheckbox(attribute.name, $event.checked)">
+                <span style="margin-left: -10px;">
+                    {{ attribute.name }}
+                </span>
+            </mat-checkbox>
+        </div>
+    </div>
+</div>

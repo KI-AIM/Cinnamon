@@ -54,6 +54,12 @@ public class KiAimConfigurationPostProcessor {
 			endpoint.setConfiguration(configuration);
 		}
 
+		// Link server and configurations
+		for (final var externalConfig : config.getExternalConfiguration().values()) {
+			final var server = config.getExternalServer().get(externalConfig.getExternalServerIndex());
+			externalConfig.setExternalServer(server);
+		}
+
 		// Link endpoints and steps
 		for (final var step: config.getSteps().values()) {
 			final var endpointIndex = step.getExternalServerEndpointIndex();

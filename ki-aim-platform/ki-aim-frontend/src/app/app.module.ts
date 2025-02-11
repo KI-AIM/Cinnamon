@@ -29,6 +29,7 @@ import { SynthetizationModule } from "./features/synthetization/synthetization.m
 import { ExecutionModule } from "./features/execution/execution.module";
 import { TechnicalEvaluationModule } from "./features/technical-evaluation/technical-evaluation.module";
 import { EvaluationModule } from "./features/evaluation/evaluation.module";
+import { RiskAssessmentModule } from "./features/risk-assessment/risk-assessment.module";
 
 @NgModule({
     declarations: [
@@ -46,6 +47,7 @@ import { EvaluationModule } from "./features/evaluation/evaluation.module";
         StartModule,
         SynthetizationModule,
         TechnicalEvaluationModule,
+        RiskAssessmentModule,
         DataUploadModule,
         HttpClientModule,
         NgbModule,

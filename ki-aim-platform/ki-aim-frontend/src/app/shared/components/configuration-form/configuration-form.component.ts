@@ -185,10 +185,18 @@ export class ConfigurationFormComponent implements OnInit {
                 if (inputDefinition.type === ConfigurationInputType.LIST) {
                     const controls = [];
                     for (const defaultValue of inputDefinition.default_value as number[]) {
-                        controls.push(new FormControl({value: defaultValue, disabled: this.disabled}, Validators.required));
+                        controls.push(new FormControl({
+                            value: defaultValue,
+                            disabled: this.disabled
+                        }, Validators.required));
                     }
 
-                    group[inputDefinition.name] = new FormArray(controls, Validators.required)
+                    group[inputDefinition.name] = new FormArray(controls, Validators.required);
+                } else if (inputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
+                    group[inputDefinition.name] = new FormArray([], Validators.required);
+                    if (inputDefinition.invert) {
+                        group[inputDefinition.invert] = new FormArray([]);
+                    }
                 } else {
                     // Add validators of the input
                     const validators = [Validators.required];

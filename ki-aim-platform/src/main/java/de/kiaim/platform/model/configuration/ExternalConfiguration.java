@@ -33,4 +33,9 @@ public class ExternalConfiguration {
 	 * Name of the configuration.
 	 */
 	private String configurationName;
+
+	/**
+	 * Server used for fetching the config definition.
+	 */
+	private ExternalServer externalServer;
 }

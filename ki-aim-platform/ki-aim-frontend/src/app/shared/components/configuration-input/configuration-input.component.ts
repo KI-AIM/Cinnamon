@@ -1,9 +1,9 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { ConfigurationInputDefinition } from "../../model/configuration-input-definition";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import {AbstractControl, FormArray, FormControl, FormGroup, Validators} from "@angular/forms";
 import { DataConfigurationService } from "../../services/data-configuration.service";
-import { map, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { ColumnConfiguration } from '../../model/column-configuration';
 
 /**
@@ -16,7 +16,7 @@ import { ColumnConfiguration } from '../../model/column-configuration';
   templateUrl: './configuration-input.component.html',
   styleUrls: ['./configuration-input.component.less']
 })
-export class ConfigurationInputComponent {
+export class ConfigurationInputComponent implements OnInit, OnDestroy {
     protected readonly ConfigurationInputType = ConfigurationInputType;
     protected readonly Math = Math;
 

@@ -140,6 +140,18 @@ export class ConfigurationInputComponent implements OnInit, OnDestroy {
             for (const defaultValue of this.configurationInputDefinition.default_value as number[]) {
                 formArray.push(new FormControl(defaultValue, Validators.required));
             }
+        } else if (this.configurationInputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
+            const formArray = this.form.controls[this.configurationInputDefinition.name] as FormArray
+            formArray.clear();
+
+            if (this.configurationInputDefinition.invert) {
+                const formArrayInverted = this.form.controls[this.configurationInputDefinition.invert] as FormArray
+                formArrayInverted.clear();
+
+                this.dataConfiguration.forEach(attribute => {
+                    formArrayInverted.push(new FormControl(attribute.name));
+                });
+            }
         } else {
             this.form.controls[this.configurationInputDefinition.name].setValue(this.configurationInputDefinition.default_value);
         }

@@ -99,7 +99,13 @@ export class ConfigurationGroupComponent {
      * @param configuration The configuration object.
      */
     public handleMissingOptions(configuration: any) {
-        const configGroup = configuration[this.fromGroupName];
+        let configGroup;
+        if (this.fromGroupName) {
+            configGroup = configuration[this.fromGroupName];
+        } else {
+            configGroup = configuration;
+        }
+
         for (const group of this.groups) {
             group.handleMissingOptions(configGroup);
         }

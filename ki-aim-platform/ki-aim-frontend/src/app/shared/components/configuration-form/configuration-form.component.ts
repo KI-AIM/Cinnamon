@@ -4,7 +4,9 @@ import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { AlgorithmService } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
-import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
+import {
+    ConfigurationGroupDefinition,
+} from "../../model/configuration-group-definition";
 import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { HttpErrorResponse } from "@angular/common/http";
@@ -121,11 +123,49 @@ export class ConfigurationFormComponent implements OnInit {
     public setConfiguration(configuration: Object) {
         //Wait here so that form is loaded before updating it
         setTimeout(() => {
+            this.fixAttributeLists(this.algorithmDefinition, configuration, this.form);
             for (const group of this.groups) {
                 group.handleMissingOptions(configuration);
             }
             this.form.patchValue(configuration);
         }, 100);
+    }
+
+    private fixAttributeLists(cde: ConfigurationGroupDefinition, obj: Object, form: FormGroup) {
+        if (cde.options) {
+            for (const [key, value] of Object.entries(cde.options)) {
+                this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup);
+            }
+        }
+        if (cde.configurations) {
+            for (const [key, value] of Object.entries(cde.configurations)) {
+                this.fixAttributeLists(value, (obj as Record<string, any>)[key] as Object, form.controls[key] as FormGroup);
+            }
+        }
+        if (cde.parameters) {
+            for (const key of cde.parameters) {
+                if (key.type === ConfigurationInputType.ATTRIBUTE_LIST) {
+
+                    const list = (obj as Record<string, any>)[key.name];
+                    if (Array.isArray(list)) {
+                        (form.get(key.name) as FormArray).clear();
+                        for (const item of list) {
+                            (form.get(key.name) as FormArray).push(new FormControl());
+                        }
+                    }
+
+                    if (key.invert) {
+                        const invert = (obj as Record<string, any>)[key.invert];
+                        if (Array.isArray(invert)) {
+                            (form.get(key.invert) as FormArray).clear();
+                            for (const item of invert) {
+                                (form.get(key.invert) as FormArray).push(new FormControl());
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**

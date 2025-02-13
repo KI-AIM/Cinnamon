@@ -20,6 +20,7 @@ export class DataTableComponent implements OnInit, AfterViewInit {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
     @Input() public columnIndex: number | null = null;
+    @Input() public hideHoldOutSplit: boolean = false;
 
 	dataSource = new MatTableDataSource<TableElement>();
 	@ViewChild(MatPaginator) paginator: MatPaginator;

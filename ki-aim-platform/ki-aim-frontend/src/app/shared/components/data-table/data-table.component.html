@@ -4,15 +4,17 @@
             aria-label="Select page of periodic elements">
         </mat-paginator>
         <div>
-            <ng-container *ngIf="(dataSetInfo$ | async) as dataSetInfo">
-                <mat-form-field *ngIf="dataSetInfo.hasHoldOutSplit" class="me-2">
-                    <mat-label>Hold out</mat-label>
-                    <mat-select (selectionChange)="applyHoldOutFilter($event)" [value]="holdOutFilter">
-                        <mat-option value="ALL">All</mat-option>
-                        <mat-option value="HOLD_OUT">Hold-Out</mat-option>
-                        <mat-option value="NOT_HOLD_OUT">Not Hold-Out</mat-option>
-                    </mat-select>
-                </mat-form-field>
+            <ng-container *ngIf="!hideHoldOutSplit">
+                <ng-container *ngIf="(dataSetInfo$ | async) as dataSetInfo">
+                    <mat-form-field *ngIf="dataSetInfo.hasHoldOutSplit" class="me-2">
+                        <mat-label>Hold out</mat-label>
+                        <mat-select (selectionChange)="applyHoldOutFilter($event)" [value]="holdOutFilter">
+                            <mat-option value="ALL">All</mat-option>
+                            <mat-option value="HOLD_OUT">Hold-Out</mat-option>
+                            <mat-option value="NOT_HOLD_OUT">Not Hold-Out</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </ng-container>
             </ng-container>
             <mat-form-field>
                 <mat-label>Filter data</mat-label>

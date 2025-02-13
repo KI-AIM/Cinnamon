@@ -23,6 +23,9 @@ import { ConfigurationAdditionalConfigs } from "../../model/configuration-additi
 })
 export class ConfigurationGroupComponent implements AfterViewInit {
 
+    /**
+     * Configurations displayed additionally to the given definition.
+     */
     @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
 
     /**
@@ -74,6 +77,9 @@ export class ConfigurationGroupComponent implements AfterViewInit {
      */
     @ViewChildren('options') private groups: QueryList<ConfigurationGroupComponent>;
 
+    /**
+     * Container for the additional configs.
+     */
     @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
 
     constructor(

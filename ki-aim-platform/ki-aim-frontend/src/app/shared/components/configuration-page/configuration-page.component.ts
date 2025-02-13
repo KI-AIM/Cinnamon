@@ -277,7 +277,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
             }
             case "synthetization": {
                 nextUrl = '/execution';
-                nextStep = Steps.EVALUATION;
+                nextStep = Steps.EXECUTION;
                 break;
             }
             case "technical_evaluation": {

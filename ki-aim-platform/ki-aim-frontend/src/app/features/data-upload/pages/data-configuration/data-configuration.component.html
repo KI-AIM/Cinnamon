@@ -52,7 +52,7 @@
             </mat-expansion-panel-header>
 
             <div>
-                <mat-checkbox [checked]="createSplit" (change)="updateCreateSplit($event.checked)">
+                <mat-checkbox [checked]="createSplit" (change)="updateCreateSplit($event.checked)" [disabled]="locked">
                     Should an extended analysis of the data be carried out automatically (this reduces the amount of usable data and possibly worsens the results)
                 </mat-checkbox>
                 <div style="margin-left: 40px;">
@@ -62,8 +62,8 @@
                         </mat-expansion-panel-header>
                         <mat-form-field style="width: 100%;">
                             <mat-label>Percentage of Hold-Out split</mat-label>
-                            <input matInput type="number" [disabled]="!createSplit" [(ngModel)]="holdOutSplitPercentage"
-                                   required min="0" max="1"/>
+                            <input matInput type="number" [disabled]="!createSplit || locked"
+                                   [(ngModel)]="holdOutSplitPercentage" required min="0" max="1"/>
                             <mat-error>Percentage must be between 0 and 1</mat-error>
                         </mat-form-field>
                     </mat-expansion-panel>

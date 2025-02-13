@@ -112,11 +112,8 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     public readFromCache(): void {
         if (this.algorithmService.selectCache && this.selection) {
             this.selection.selectedOption = this.algorithmService.selectCache;
-            if (this.algorithmService.configCache[this.selection.selectedOption.name]) {
-                //Timeout is 0, so function is called before data is overwritten
-                setTimeout(() => {
-                    this.forms.setConfiguration(this.algorithmService.configCache[this.algorithmService.selectCache!.name]);
-                }, 0);
+            if (this.forms) {
+                this.forms.readFromCache();
             }
         }
     }
@@ -296,6 +293,8 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         }
 
         this.router.navigateByUrl(nextUrl);
-        this.statusService.setNextStep(nextStep);
+        if (!this.statusService.isStepCompleted(nextStep)) {
+            this.statusService.setNextStep(nextStep);
+        }
     }
 }

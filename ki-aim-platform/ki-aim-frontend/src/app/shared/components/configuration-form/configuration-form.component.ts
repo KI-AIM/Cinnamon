@@ -79,6 +79,7 @@ export class ConfigurationFormComponent implements OnInit {
                         this.algorithmDefinition = value
                         this.form = this.createForm(value);
                         this.updateForm();
+                        this.readFromCache();
 
                         this.form.valueChanges.subscribe(() => {
                             this.onChange.emit();
@@ -108,12 +109,28 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     /**
+     * Reads the configuration from the cache.
+     */
+    public readFromCache(): void {
+        if (this.anonService.configCache[this.algorithm.name]) {
+            //Timeout is 0, so function is called before data is overwritten
+            setTimeout(() => {
+                this.setConfiguration(this.anonService.configCache[this.anonService.selectCache!.name]);
+            }, 0);
+        }
+    }
+
+    /**
      * Sets the values of the form from the given JSON object.
      * @param configuration JSON of the form.
      */
     public setConfiguration(configuration: Object) {
         //Wait here so that form is loaded before updating it
         setTimeout(() => {
+            if (Object.keys(this.form.controls).length === 0) {
+                return;
+            }
+
             this.fixAttributeLists(this.algorithmDefinition, configuration, this.form);
             for (const group of this.groups) {
                 group.handleMissingOptions(configuration);

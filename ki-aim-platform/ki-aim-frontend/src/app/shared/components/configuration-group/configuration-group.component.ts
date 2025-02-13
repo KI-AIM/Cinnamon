@@ -1,8 +1,17 @@
-import {Component, Input, QueryList, ViewChildren} from '@angular/core';
+import {
+    AfterViewInit, ChangeDetectorRef,
+    Component,
+    Input,
+    QueryList,
+    ViewChild,
+    ViewChildren,
+    ViewContainerRef
+} from '@angular/core';
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
 import { FormGroup } from "@angular/forms";
 import {ConfigurationInputComponent} from "../configuration-input/configuration-input.component";
 import { MatCheckbox, MatCheckboxChange } from "@angular/material/checkbox";
+import { ConfigurationAdditionalConfigs } from "../../model/configuration-additional-configs";
 
 /**
  * Component for a collapsable input group.
@@ -12,7 +21,9 @@ import { MatCheckbox, MatCheckboxChange } from "@angular/material/checkbox";
   templateUrl: './configuration-group.component.html',
   styleUrls: ['./configuration-group.component.less']
 })
-export class ConfigurationGroupComponent {
+export class ConfigurationGroupComponent implements AfterViewInit {
+
+    @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
 
     /**
      * The parent form object.
@@ -63,8 +74,16 @@ export class ConfigurationGroupComponent {
      */
     @ViewChildren('options') private groups: QueryList<ConfigurationGroupComponent>;
 
+    @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
+
     constructor(
+        private readonly cdRef: ChangeDetectorRef,
     ) {
+    }
+
+    public ngAfterViewInit() {
+        this.loadComponents();
+        this.cdRef.detectChanges();
     }
 
     /**
@@ -158,6 +177,20 @@ export class ConfigurationGroupComponent {
      */
     protected isGroupEmpty(group: ConfigurationGroupDefinition) {
         return (!group.parameters || group.parameters.length === 0) && !group.configurations && !group.options;
+    }
+
+    /**
+     * Loads additional config components
+     * and injects them into the component container.
+     * Also attaches the form to the component
+     */
+    private loadComponents() {
+        if (this.additionalConfigs !== null) {
+            this.additionalConfigs?.configs.forEach(config => {
+                const componentRef: any = this.componentContainer.createComponent(config.component);
+                componentRef.instance.form = this.form;
+            });
+        }
     }
 
 }

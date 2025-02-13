@@ -64,8 +64,6 @@ export class ConfigurationFormComponent implements OnInit {
 
     @ViewChildren(ConfigurationGroupComponent) private groups: QueryList<ConfigurationGroupComponent>;
 
-    @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
-
     constructor(
         private readonly anonService: AlgorithmService,
     ) {
@@ -81,13 +79,6 @@ export class ConfigurationFormComponent implements OnInit {
                         this.algorithmDefinition = value
                         this.form = this.createForm(value);
                         this.updateForm();
-
-                        setTimeout(() => {
-                            if (this.componentContainer) {
-                                this.componentContainer.clear();
-                            }
-                            this.loadComponents();
-                        }, 200);
 
                         this.form.valueChanges.subscribe(() => {
                             this.onChange.emit();
@@ -261,17 +252,5 @@ export class ConfigurationFormComponent implements OnInit {
         }
 
         return object;
-    }
-
-    /**
-     * Loads additional config components
-     * and injects them into the component container.
-     * Also attaches the form to the component
-     */
-    loadComponents() {
-        this.additionalConfigs?.configs.forEach(config => {
-            const componentRef: any = this.componentContainer.createComponent(config.component);
-            componentRef.instance.form = this.form;
-        });
     }
 }

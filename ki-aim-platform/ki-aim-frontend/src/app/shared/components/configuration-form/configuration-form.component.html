@@ -1,12 +1,14 @@
 <form (ngSubmit)="onSubmit()" [formGroup]="form">
 
-    <app-configuration-group [form]="form" [fromGroupName]="''"
-                             [group]="algorithmDefinition"
-                             [disabled]="disabled" [isOption]="false"
-    ></app-configuration-group>
+    <ng-container *ngIf="algorithmDefinition">
+        <app-configuration-group [form]="form" [fromGroupName]="''"
+                                 [group]="algorithmDefinition"
+                                 [disabled]="disabled" [isOption]="false" [additionalConfigs]="additionalConfigs">
+        </app-configuration-group>
+    </ng-container>
 
     <div class="mt-2">
-        <button #configurationSubmitButton type="submit" mat-raised-button color="primary" [disabled]="!valid || disabled">
+        <button type="submit" mat-raised-button color="primary" [disabled]="!valid || disabled">
             Continue
         </button>
     </div>

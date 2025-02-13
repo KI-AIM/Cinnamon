@@ -42,7 +42,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     protected form: FormGroup;
     protected isAdvanceConfigurationExpanded: boolean = false;
     protected createSplit: boolean = false;
-    protected holdOutSplitPercentage: number = 0.3;
+    protected holdOutSplitPercentage: number = 0.2;
 
     protected isFileTypeXLSX$: Observable<boolean>;
 

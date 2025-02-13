@@ -2,13 +2,15 @@ package de.kiaim.platform.service;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataSet;
-import de.kiaim.platform.exception.BadColumnNameException;
-import de.kiaim.platform.exception.BadDataSetIdException;
-import de.kiaim.platform.exception.BadStepNameException;
+import de.kiaim.platform.exception.*;
+import de.kiaim.platform.model.configuration.ExternalEndpoint;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
 import de.kiaim.platform.model.dto.DataSetSource;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.entity.*;
+import de.kiaim.platform.model.enumeration.DataSetSelector;
 import de.kiaim.platform.model.enumeration.DataSetSourceSelector;
+import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,11 +34,15 @@ public class DataSetService {
 
 	private final UserRepository userRepository;
 
+	private final KiAimConfiguration kiAimConfiguration;
+
 	private final StepService stepService;
 
 	@Autowired
-	public DataSetService(final UserRepository userRepository, final StepService stepService) {
+	public DataSetService(final UserRepository userRepository, final KiAimConfiguration kiAimConfiguration,
+	                      final StepService stepService) {
 		this.userRepository = userRepository;
+		this.kiAimConfiguration = kiAimConfiguration;
 		this.stepService = stepService;
 	}
 
@@ -74,7 +80,9 @@ public class DataSetService {
 				final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(user.getProject(), new DataSetSource(selector, jobName));
 				transformationErrors = dataSetEntity.getDataTransformationErrors();
 				columnIndexMapping = getColumnIndexMapping(dataSetEntity.getDataConfiguration(), loadDataRequest.getColumnNames());
-			} catch (BadStepNameException | BadDataSetIdException | BadColumnNameException ignored) {
+			} catch (BadStepNameException | BadDataSetIdException | BadColumnNameException |
+			         InternalApplicationConfigurationException | BadStateException | InternalInvalidStateException |
+			         InternalMissingHandlingException ignored) {
 			}
 
 			final String defaultNullEncoding = request.getParameter("defaultNullEncoding");
@@ -171,10 +179,15 @@ public class DataSetService {
 	 * @param project       The project.
 	 * @param dataSetSource The source.
 	 * @return The DataSetEntity
-	 * @throws BadDataSetIdException If no data set exist that complies with the selector.
+	 * @throws BadDataSetIdException                     If no data set exist that complies with the selector.
+	 * @throws BadStateException                         If the data set does not exist.
+	 * @throws InternalApplicationConfigurationException If the process is not configured correctly
+	 * @throws InternalInvalidStateException             If the application is in an invalid state.
+	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
 	 */
 	public DataSetEntity getDataSetEntityOrThrow(final ProjectEntity project,
-	                                             final DataSetSource dataSetSource) throws BadDataSetIdException, BadStepNameException {
+	                                             final DataSetSource dataSetSource)
+			throws BadDataSetIdException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		DataSetEntity dataSet = null;
 
 		switch (dataSetSource.getSelector())
@@ -193,6 +206,8 @@ public class DataSetService {
 				final var process =  stepService.getProcess(dataSetSource.getJobName(), project);
 				if (process instanceof DataProcessingEntity dataProcessing) {
 					dataSet = dataProcessing.getDataSet();
+				} else {
+					dataSet = getDataSet(process);
 				}
 
 				if (dataSet == null) {
@@ -263,5 +278,128 @@ public class DataSetService {
 			return transformationError.getOriginalValue();
 		}
 		return encoding;
+	}
+
+	/**
+	 * Returns the data set used by the given external process.
+	 *
+	 * @param externalProcess The process.
+	 * @return The data set.
+	 * @throws BadStateException                         If the data set does not exist.
+	 * @throws InternalApplicationConfigurationException If the process is not configured correctly
+	 * @throws InternalInvalidStateException             If the application is in an invalid state.
+	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
+	 */
+	public DataSetEntity getDataSet(final ExternalProcessEntity externalProcess)
+			throws BadStateException, InternalApplicationConfigurationException, InternalInvalidStateException, InternalMissingHandlingException {
+		final ExternalEndpoint ese = kiAimConfiguration.getExternalServerEndpoints().get(externalProcess.getEndpoint());
+		// TODO Hard coded first data set
+		return getDataSet(ese.getInputs().get(ese.getInputs().size() - 1).getSelector(), externalProcess);
+	}
+
+	public DataSetEntity getDataSet(final DataSetSelector dataSetSelector, final BackgroundProcessEntity process)
+			throws BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
+		final DataSetEntity result;
+
+		switch (dataSetSelector) {
+			case HOLD_OUT, ORIGINAL -> {
+				result = process.getProject().getOriginalData().getDataSet();
+			}
+			case LAST_OR_ORIGINAL -> {
+				if (process instanceof ExternalProcessEntity externalProcess) {
+					result = getLastOrOriginalDataSet(externalProcess);
+				} else {
+					// TODO
+					throw new InternalInvalidStateException("", "");
+				}
+			}
+			case OWNER -> {
+				if (process.getOwner() instanceof DataSetEntity dataSetEntity) {
+					result = dataSetEntity;
+				} else {
+					// TODO
+					throw new InternalInvalidStateException("", "");
+				}
+			}
+			default -> {
+
+				throw new InternalMissingHandlingException(
+						InternalMissingHandlingException.DATA_SET_SELECTOR,
+						"No handling for selecting data set '" + dataSetSelector + "'!");
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Returns the data set of the last finished step of the given execution.
+	 * If no step is finished, returns the original data set.
+	 *
+	 * @param externalProcess The external process.
+	 * @return The data set.
+	 * @throws BadStateException             If no original data set exist.
+	 * @throws InternalInvalidStateException If a finished process does not contain data set.
+	 */
+	private DataSetEntity getLastOrOriginalDataSet(final ExternalProcessEntity externalProcess)
+			throws BadStateException, InternalInvalidStateException {
+		final ExecutionStepEntity executionStep = externalProcess.getExecutionStep();
+		final var index = executionStep.getStageIndex();
+		final var pipeline = executionStep.getPipeline();
+
+		DataSetEntity result = null;
+
+		for (int i = index; i >= 0; i--) {
+			result = getLastDataSet(pipeline.getStages().get(i));
+			if (result != null) {
+				break;
+			}
+
+		}
+
+		if (result == null) {
+			result = pipeline.getProject().getOriginalData().getDataSet();
+		}
+
+		if (result == null) {
+			throw new BadStateException(BadStateException.NO_DATA_SET,
+			                            "The project '" + executionStep.getProject().getId() +
+			                            "' does not contain an original data set!");
+		}
+
+		return result;
+	}
+
+	@Nullable
+	private DataSetEntity getLastDataSet(final ExecutionStepEntity executionStep) throws InternalInvalidStateException {
+
+		var indexOfSourceStep = executionStep.getCurrentProcessIndex() != null
+		                        ? executionStep.getCurrentProcessIndex()
+		                        : executionStep.getProcesses().size() - 1;
+
+		DataSetEntity lastOrOriginalDataSet = null;
+		while (lastOrOriginalDataSet == null) {
+
+			if (indexOfSourceStep < 0) {
+				break;
+			} else {
+				var candidate = executionStep.getProcess(indexOfSourceStep);
+				if (candidate.getExternalProcessStatus() == ProcessStatus.FINISHED &&
+				    candidate instanceof DataProcessingEntity dataProcessingEntity) {
+					lastOrOriginalDataSet = dataProcessingEntity.getDataSet();
+
+					if (lastOrOriginalDataSet == null) {
+						throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_DATA_STET,
+						                                        "The job for step " + dataProcessingEntity.getJob().getName() +
+						                                        " does not contain a data set!");
+					}
+
+				} else {
+					indexOfSourceStep--;
+				}
+			}
+		}
+
+		return lastOrOriginalDataSet;
 	}
 }

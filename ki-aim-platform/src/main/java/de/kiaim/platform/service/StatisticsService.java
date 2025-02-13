@@ -40,7 +40,7 @@ public class StatisticsService {
 	@Nullable
 	public String getStatistics(final ProjectEntity project,
 	                            final DataSetSource dataSetSource
-	) throws BadStateException, BadDataSetIdException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, InternalInvalidStateException, InternalMissingHandlingException, BadStepNameException {
+	) throws BadStateException, BadDataSetIdException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, InternalInvalidStateException, InternalMissingHandlingException, BadStepNameException, InternalApplicationConfigurationException {
 		final var dataset = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
 		if (!dataset.isStoredData())
 		{

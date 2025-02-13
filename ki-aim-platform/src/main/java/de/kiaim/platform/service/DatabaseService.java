@@ -375,13 +375,17 @@ public class DatabaseService {
 	 * @param project       The project
 	 * @param dataSetSource Source of the data set.
 	 * @return The info object.
-	 * @throws BadDataSetIdException               If no dataset exists.
-	 * @throws BadStepNameException                If the source is a job and the job does not exist or does not have a data set.
-	 * @throws InternalDataSetPersistenceException If the internal queries failed.
+	 * @throws BadDataSetIdException                     If no dataset exists.
+	 * @throws BadStateException                         If the data set does not exist.
+	 * @throws BadStepNameException                      If the source is a job and the job does not exist or does not have a data set.
+	 * @throws InternalApplicationConfigurationException If the process is not configured correctly
+	 * @throws InternalDataSetPersistenceException       If the internal queries failed.
+	 * @throws InternalInvalidStateException             If the application is in an invalid state.
+	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
 	 */
 	public DataSetInfo getInfo(final ProjectEntity project,
 	                           final DataSetSource dataSetSource)
-			throws BadDataSetIdException, InternalDataSetPersistenceException, BadStepNameException {
+			throws BadDataSetIdException, InternalDataSetPersistenceException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
 
 		if (!dataSetEntity.isStoredData()) {
@@ -408,13 +412,17 @@ public class DatabaseService {
 	 * @param project       The project of which the configuration should be exported.
 	 * @param dataSetSource Source of the data set.
 	 * @return The configuration.
-	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
-	 * @throws BadStepNameException  If the source is a job and the job does not exist or does not have a data set.
-	 * @throws InternalIOException   If the DataConfiguration could not be deserialized from the stored JSON.
+	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
+	 * @throws BadStateException                         If the data set does not exist.
+	 * @throws BadStepNameException                      If the source is a job and the job does not exist or does not have a data set.
+	 * @throws InternalApplicationConfigurationException If the process is not configured correctly
+	 * @throws InternalInvalidStateException             If the application is in an invalid state.
+	 * @throws InternalIOException                       If the DataConfiguration could not be deserialized from the stored JSON.
+	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
 	 */
 	@Transactional
 	public DataConfiguration exportDataConfiguration(final ProjectEntity project, final DataSetSource dataSetSource)
-			throws BadDataSetIdException, InternalIOException, BadStepNameException {
+			throws BadDataSetIdException, InternalIOException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
 		return getDetachedDataConfiguration(dataSetEntity);
 	}
@@ -426,14 +434,18 @@ public class DatabaseService {
 	 * @param holdOutSelector Which hold-out rows should be selected.
 	 * @param dataSetSource   Source of the data set.
 	 * @return The DataSet.
-	 * @throws BadDataSetIdException               If no DataConfiguration is associated with the given project.
-	 * @throws BadStepNameException                If the source is a job and the job does not exist or does not have a data set.
-	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
-	 * @throws InternalIOException                 If the DataConfiguration could not be deserialized from the stored JSON.
+	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
+	 * @throws BadStateException                         If the data set does not exist.
+	 * @throws BadStepNameException                      If the source is a job and the job does not exist or does not have a data set.
+	 * @throws InternalApplicationConfigurationException If the process is not configured correctly
+	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
+	 * @throws InternalInvalidStateException             If the application is in an invalid state.
+	 * @throws InternalIOException                       If the DataConfiguration could not be deserialized from the stored JSON.
+	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
 	 */
 	@Transactional
 	public DataSet exportDataSet(final ProjectEntity project, final HoldOutSelector holdOutSelector, final DataSetSource dataSetSource)
-			throws InternalDataSetPersistenceException, BadDataSetIdException, InternalIOException, BadStepNameException {
+			throws InternalDataSetPersistenceException, BadDataSetIdException, InternalIOException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		try {
 			return exportDataSet(project, new ArrayList<>(), holdOutSelector, dataSetSource);
 		} catch (final BadColumnNameException e) {
@@ -474,16 +486,20 @@ public class DatabaseService {
 	 * @param holdOutSelector Which hold-out rows should be selected.
 	 * @param dataSetSource   Source of the data set.
 	 * @return The DataSet.
-	 * @throws BadColumnNameException              If the data set does not contain a column with the given names.
-	 * @throws BadDataSetIdException               If no DataConfiguration is associated with the given project.
-	 * @throws BadStepNameException                If the source is a job and the job does not exist or does not have a data set.
-	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
-	 * @throws InternalIOException                 If the DataConfiguration could not be deserialized from the stored JSON.
+	 * @throws BadColumnNameException                    If the data set does not contain a column with the given names.
+	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
+	 * @throws BadStateException                         If the data set does not exist.
+	 * @throws BadStepNameException                      If the source is a job and the job does not exist or does not have a data set.
+	 * @throws InternalApplicationConfigurationException If the process is not configured correctly
+	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException                       If the DataConfiguration could not be deserialized from the stored JSON.
+	 * @throws InternalInvalidStateException             If the application is in an invalid state.
+	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
 	 */
 	@Transactional
 	public DataSet exportDataSet(final ProjectEntity project, final List<String> columnNames,
 	                             final HoldOutSelector holdOutSelector, final DataSetSource dataSetSource)
-			throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException, BadStepNameException {
+			throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
 		return exportDataSet(dataSetEntity, columnNames, holdOutSelector);
 	}
@@ -532,14 +548,18 @@ public class DatabaseService {
 	 * @param holdOutSelector Which hold-out rows should be selected.
 	 * @param dataSetSource   Source of the data set.
 	 * @return The transformation result.
-	 * @throws BadDataSetIdException               If no DataConfiguration is associated with the given project.
-	 * @throws BadStepNameException                If the source is a job and the job does not exist or does not have a data set.
-	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
-	 * @throws InternalIOException                 If the DataConfiguration could not be deserialized from the stored JSON.
+	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
+	 * @throws BadStateException                         If the data set does not exist.
+	 * @throws BadStepNameException                      If the source is a job and the job does not exist or does not have a data set.
+	 * @throws InternalApplicationConfigurationException If the process is not configured correctly
+	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException                       If the DataConfiguration could not be deserialized from the stored JSON.
+	 * @throws InternalInvalidStateException             If the application is in an invalid state.
+	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
 	 */
 	@Transactional
 	public TransformationResult exportTransformationResult(final ProjectEntity project, final HoldOutSelector holdOutSelector, final DataSetSource dataSetSource)
-			throws BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException, BadStepNameException {
+			throws BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		final DataSet dataSet = exportDataSet(project, holdOutSelector, dataSetSource);
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
 

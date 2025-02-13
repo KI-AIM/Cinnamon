@@ -67,15 +67,15 @@ public class ProcessService {
 
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
+	private final DataSetService dataSetService;
 	private final ProjectService projectService;
 	private final StepService stepService;
 
 	public ProcessService(final SerializationConfig serializationConfig,
 	                      @Value("${server.port}") final int port, final KiAimConfiguration kiAimConfiguration,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
-	                      final CsvProcessor csvProcessor,
-	                      final DatabaseService databaseService,
-	                      final ProjectService projectService,
+	                      final CsvProcessor csvProcessor, final DatabaseService databaseService,
+	                      final DataSetService dataSetService, final ProjectService projectService,
 	                      final StepService stepService
 	) {
 		this.jsonMapper = serializationConfig.jsonMapper();
@@ -86,6 +86,7 @@ public class ProcessService {
 		this.backgroundProcessRepository = backgroundProcessRepository;
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
+		this.dataSetService = dataSetService;
 		this.stepService = stepService;
 		this.projectService = projectService;
 	}
@@ -307,7 +308,7 @@ public class ProcessService {
 
 		List<Job> processed;
 		if (externalProcess != null) {
-			var input = getDataSet(externalProcess);
+			var input = dataSetService.getDataSet(externalProcess);
 			processed = new ArrayList<>(input.getProcessed());
 			processed.add(externalProcess.getJob());
 		} else {
@@ -809,55 +810,13 @@ public class ProcessService {
 	                         final MultipartBodyBuilder bodyBuilder)
 			throws InternalDataSetPersistenceException, InternalIOException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		for (final StepInputConfiguration inputDataSet : ese.getInputs()) {
-			final var datasetEntity = getDataSet(inputDataSet.getSelector(), externalProcess);
+			final var datasetEntity = dataSetService.getDataSet(inputDataSet.getSelector(), externalProcess);
 			final var holdOut = inputDataSet.getSelector() == DataSetSelector.HOLD_OUT
 			                    ? HoldOutSelector.HOLD_OUT
 			                    : HoldOutSelector.NOT_HOLD_OUT;
 			final var dataset = databaseService.exportDataSet(datasetEntity, holdOut);
 			addDataSet(bodyBuilder, inputDataSet, dataset);
 		}
-	}
-
-	public DataSetEntity getDataSet(final ExternalProcessEntity externalProcess)
-			throws InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
-		final ExternalEndpoint ese = kiAimConfiguration.getExternalServerEndpoints().get(externalProcess.getEndpoint());
-		// TODO Hard coded first data set
-		return getDataSet(ese.getInputs().get(ese.getInputs().size() - 1).getSelector(), externalProcess);
-	}
-
-	private DataSetEntity getDataSet(final DataSetSelector dataSetSelector, final BackgroundProcessEntity process)
-			throws BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
-		final DataSetEntity result;
-
-		switch (dataSetSelector) {
-			case HOLD_OUT, ORIGINAL -> {
-				result = process.getProject().getOriginalData().getDataSet();
-			}
-			case LAST_OR_ORIGINAL -> {
-				if (process instanceof ExternalProcessEntity externalProcess) {
-					result = getLastOrOriginalDataSet(externalProcess);
-				} else {
-					// TODO
-					throw new InternalInvalidStateException("", "");
-				}
-			}
-			case OWNER -> {
-				if (process.getOwner() instanceof DataSetEntity dataSetEntity) {
-					result = dataSetEntity;
-				} else {
-					// TODO
-					throw new InternalInvalidStateException("", "");
-				}
-			}
-			default -> {
-
-				throw new InternalMissingHandlingException(
-						InternalMissingHandlingException.DATA_SET_SELECTOR,
-						"No handling for selecting data set '" + dataSetSelector + "'!");
-			}
-		}
-
-		return result;
 	}
 
 	private void addDataSet(final MultipartBodyBuilder bodyBuilder,
@@ -929,77 +888,6 @@ public class ProcessService {
 			throw new InternalIOException(InternalIOException.DATA_CONFIGURATION_SERIALIZATION,
 			                              "Failed to create the data configuration!", e);
 		}
-	}
-
-	/**
-	 * Returns the data set of the last finished step of the given execution.
-	 * If no step is finished, returns the original data set.
-	 *
-	 * @param externalProcess The external process.
-	 * @return The data set.
-	 * @throws BadStateException             If no original data set exist.
-	 * @throws InternalInvalidStateException If a finished process does not contain data set.
-	 */
-	private DataSetEntity getLastOrOriginalDataSet(final ExternalProcessEntity externalProcess)
-			throws BadStateException, InternalInvalidStateException {
-		final ExecutionStepEntity executionStep = externalProcess.getExecutionStep();
-		final var index = executionStep.getStageIndex();
-		final var pipeline = executionStep.getPipeline();
-
-		DataSetEntity result = null;
-
-		for (int i = index; i >= 0; i--) {
-			result = getLastDataSet(pipeline.getStages().get(i));
-			if (result != null) {
-				break;
-			}
-
-		}
-
-		if (result == null) {
-			result = pipeline.getProject().getOriginalData().getDataSet();
-		}
-
-		if (result == null) {
-			throw new BadStateException(BadStateException.NO_DATA_SET,
-			                            "The project '" + executionStep.getProject().getId() +
-			                            "' does not contain an original data set!");
-		}
-
-		return result;
-	}
-
-	@Nullable
-	private DataSetEntity getLastDataSet(final ExecutionStepEntity executionStep) throws InternalInvalidStateException {
-
-		var indexOfSourceStep = executionStep.getCurrentProcessIndex() != null
-		                        ? executionStep.getCurrentProcessIndex()
-		                        : executionStep.getProcesses().size() - 1;
-
-		DataSetEntity lastOrOriginalDataSet = null;
-		while (lastOrOriginalDataSet == null) {
-
-			if (indexOfSourceStep < 0) {
-				break;
-			} else {
-				var candidate = executionStep.getProcess(indexOfSourceStep);
-				if (candidate.getExternalProcessStatus() == ProcessStatus.FINISHED &&
-				    candidate instanceof DataProcessingEntity dataProcessingEntity) {
-					lastOrOriginalDataSet = dataProcessingEntity.getDataSet();
-
-					if (lastOrOriginalDataSet == null) {
-						throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_DATA_STET,
-						                                        "The job for step " + dataProcessingEntity.getJob().getName() +
-						                                        " does not contain a data set!");
-					}
-
-				} else {
-					indexOfSourceStep--;
-				}
-			}
-		}
-
-		return lastOrOriginalDataSet;
 	}
 
 	private void setProcessError(final BackgroundProcessEntity process, final String message) {

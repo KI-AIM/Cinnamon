@@ -9,7 +9,7 @@ import de.kiaim.platform.model.dto.ExternalProcessInformation;
 import de.kiaim.platform.model.entity.DataProcessingEntity;
 import de.kiaim.platform.model.entity.EvaluationProcessingEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
-import de.kiaim.platform.service.ProcessService;
+import de.kiaim.platform.service.DataSetService;
 import lombok.extern.log4j.Log4j2;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -24,7 +24,7 @@ import java.util.List;
 public abstract class ExternalProcessMapper {
 
 	@Autowired
-	protected ProcessService processService;
+	protected DataSetService dataSetService;
 
 	@Mapping(target = "step", source = "entity.job", qualifiedByName = "job")
 	@Mapping(target = "processSteps", source = "entity", qualifiedByName = "processSteps")
@@ -42,7 +42,7 @@ public abstract class ExternalProcessMapper {
 			jobs = dataProcessing.getDataSet() != null ? dataProcessing.getDataSet().getProcessed() : null;
 		} else if (entity instanceof EvaluationProcessingEntity evaluation) {
 			try {
-				jobs = processService.getDataSet(evaluation).getProcessed();
+				jobs = dataSetService.getDataSet(evaluation).getProcessed();
 			} catch (final InternalApplicationConfigurationException | BadStateException | InternalInvalidStateException |
 			         InternalMissingHandlingException e) {
 				log.error("Failed to convert to DTO!", e);

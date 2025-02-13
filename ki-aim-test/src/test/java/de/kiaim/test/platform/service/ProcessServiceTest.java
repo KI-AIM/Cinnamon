@@ -10,10 +10,7 @@ import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.repository.BackgroundProcessRepository;
-import de.kiaim.platform.service.DatabaseService;
-import de.kiaim.platform.service.ProcessService;
-import de.kiaim.platform.service.ProjectService;
-import de.kiaim.platform.service.StepService;
+import de.kiaim.platform.service.*;
 import de.kiaim.test.platform.ContextRequiredTest;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
@@ -40,6 +37,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@Value("${server.port}") private int port;
 	@Autowired private SerializationConfig serializationConfig;
 	@Autowired private KiAimConfiguration kiAimConfiguration;
+	@Autowired private DataSetService dataSetService;
 	@Autowired private StepService stepService = mock(StepService.class);
 
 	private ObjectMapper jsonMapper = null;
@@ -64,7 +62,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		this.processService = new ProcessService(serializationConfig, port, kiAimConfiguration,
 		                                         backgroundProcessRepository, csvProcessor, databaseService,
-		                                         projectService, stepService);
+												 dataSetService, projectService, stepService);
 
 		mockBackEnd = new MockWebServer();
 		mockBackEnd.start(mockBackEndPort);

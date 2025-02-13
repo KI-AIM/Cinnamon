@@ -16,7 +16,7 @@
                 </mat-panel-description>
             </mat-expansion-panel-header>
 
-            <app-configuration-group [form]="formGroup" [fromGroupName]="groupDefinition.key"
+            <app-configuration-group #configurations [form]="formGroup" [fromGroupName]="groupDefinition.key"
                                      [group]="groupDefinition.value" [disabled]="disabled" [isOption]="false">
             </app-configuration-group>
         </mat-expansion-panel>

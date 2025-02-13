@@ -72,10 +72,16 @@ export class ConfigurationGroupComponent implements AfterViewInit {
     @ViewChildren('optionCheckboxes') private matCheckboxes: QueryList<MatCheckbox>;
 
     /**
+     * List of all group components that are configurations.
+     * @private
+     */
+    @ViewChildren('configurations') private configurations: QueryList<ConfigurationGroupComponent>;
+
+    /**
      * List of all group components that are options.
      * @private
      */
-    @ViewChildren('options') private groups: QueryList<ConfigurationGroupComponent>;
+    @ViewChildren('options') private options: QueryList<ConfigurationGroupComponent>;
 
     /**
      * Container for the additional configs.
@@ -110,13 +116,25 @@ export class ConfigurationGroupComponent implements AfterViewInit {
      * @param groupConfig The configuration object.
      */
     public removeInactiveGroups(groupConfig: any): any {
-        for (const group of this.groups) {
+        let configGroup;
+        if (this.fromGroupName) {
+            configGroup = groupConfig[this.fromGroupName];
+        } else {
+            configGroup = groupConfig;
+        }
+
+        for (const group of this.configurations) {
+            group.removeInactiveGroups(configGroup);
+        }
+        for (const group of this.options) {
+            group.removeInactiveGroups(configGroup);
+
             if (!group.isActive) {
-                delete groupConfig[group.fromGroupName];
+                delete configGroup[group.fromGroupName];
             }
         }
 
-        return groupConfig;
+        return configGroup;
     }
 
     /**
@@ -131,12 +149,12 @@ export class ConfigurationGroupComponent implements AfterViewInit {
             configGroup = configuration;
         }
 
-        for (const group of this.groups) {
+        for (const group of this.options) {
             group.handleMissingOptions(configGroup);
         }
 
         if (this.group.options) {
-            for (const def of this.groups) {
+            for (const def of this.options) {
                 if (!Object.hasOwn(configGroup, def.fromGroupName)) {
                     for (const cb of this.matCheckboxes) {
                         if (cb.id === 'isActive' + def.fromGroupName) {
@@ -147,6 +165,13 @@ export class ConfigurationGroupComponent implements AfterViewInit {
                     def.setActive(false);
                 }
             }
+        }
+
+        for (const group of this.configurations) {
+            group.handleMissingOptions(configGroup);
+        }
+        for (const group of this.options) {
+            group.handleMissingOptions(configGroup);
         }
     }
 
@@ -168,7 +193,7 @@ export class ConfigurationGroupComponent implements AfterViewInit {
      * @protected
      */
     protected toggleActive(event: MatCheckboxChange): void {
-        for (const group of this.groups) {
+        for (const group of this.options) {
             if (group.fromGroupName === event.source.value) {
                 group.setActive(event.checked);
                 break;

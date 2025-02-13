@@ -248,7 +248,7 @@ export class ConfigurationFormComponent implements OnInit {
      */
     private removeUncheckedGroups(object: any): any {
         for (const group of this.groups) {
-            group.removeInactiveGroups(object[group.fromGroupName]);
+            group.removeInactiveGroups(object);
         }
 
         return object;

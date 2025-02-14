@@ -7,6 +7,9 @@ import {StatisticsService} from "../../services/statistics.service";
   styleUrls: ['./color-legend.component.less']
 })
 export class ColorLegendComponent {
+    @Input() goodLabel: string = "Similar";
+    @Input() badLabel: string = "Different";
+
     constructor(
         protected statisticsService: StatisticsService,
     ) {

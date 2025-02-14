@@ -6,8 +6,8 @@
     <div style="display: flex; flex-direction: column;">
         <div *ngFor="let color of statisticsService.colors.slice(1); index as i" class="color-legend-item">
             <div [style.background-color]="color"></div>
-            <div *ngIf="i == 0">Similar</div>
-            <div *ngIf="i == statisticsService.colors.length - 2">Different</div>
+            <div *ngIf="i == 0">{{ goodLabel }}</div>
+            <div *ngIf="i == statisticsService.colors.length - 2">{{ badLabel }}</div>
         </div>
     </div>
 </div>

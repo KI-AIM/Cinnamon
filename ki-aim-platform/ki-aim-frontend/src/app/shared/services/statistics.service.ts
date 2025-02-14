@@ -6,6 +6,7 @@ import {Statistics, StatisticsData} from "../model/statistics";
 import {parse} from "yaml";
 import {plainToInstance} from "class-transformer";
 import { DataType } from "../model/data-type";
+import { RiskEvaluation } from '../model/risk-evaluation';
 
 @Injectable({
   providedIn: 'root'
@@ -67,7 +68,7 @@ export class StatisticsService {
         );
     }
 
-    public fetchRisks(): Observable<any> {
+    public fetchRisksString(): Observable<any> {
         return this.httpClient.get<any>(environments.apiUrl + `/api/project/resultFile`,
             {
                 params: {
@@ -76,6 +77,19 @@ export class StatisticsService {
                     name: 'risks.json',
                 }
             });
+    }
+
+    public fetchRisks(): Observable<RiskEvaluation> {
+        return this.httpClient.get<any>(environments.apiUrl + `/api/project/resultFile`,
+            {
+                params: {
+                    executionStepName: 'EVALUATION',
+                    processStepName: 'RISK_EVALUATION',
+                    name: 'risks.json',
+                }
+            }).pipe(
+                map(value =>plainToInstance(RiskEvaluation, JSON.parse(value)))
+            );
     }
 
     public fetchRisks2(): Observable<any> {

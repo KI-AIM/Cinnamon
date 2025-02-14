@@ -533,6 +533,7 @@ public class ProcessService {
 	/**
 	 * Starts the next process of the given ExecutionStep.
 	 * If the execution is not started, the first step will be started.
+	 * If a process requires a hold-out split but none exists, the step will be skipped regardless of the configuration.
 	 * If the last step is finished, the execution will be finished.
 	 *
 	 * @param executionStep The execution step.
@@ -582,9 +583,20 @@ public class ProcessService {
 				processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
 				lastJob = jobCandidate;
 			} else {
-				foundNext = true;
-				nextJob = jobCandidate;
-				nextProcess = processCandidate;
+				// Check if hold out split is required and present.
+				final boolean requiresHoldOut = processCandidate.getJob().getEndpoint().getInputs().stream()
+				                                                .anyMatch(input -> input.getSelector().equals(DataSetSelector.HOLD_OUT));
+				final boolean hasHoldOut = processCandidate.getProject().getOriginalData().isHasHoldOut();
+
+				if (requiresHoldOut && !hasHoldOut) {
+					processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
+					processCandidate.setStatus("The process requires a hold out split, but no hold out split is present!");
+					lastJob = jobCandidate;
+				} else {
+					foundNext = true;
+					nextJob = jobCandidate;
+					nextProcess = processCandidate;
+				}
 			}
 		}
 

@@ -30,7 +30,9 @@ export class EvaluationService extends ExecutionStepService {
     }
 
     protected override setCustomStatus(key: string, status: string | null, processSteps: string[]): void {
-        this._technicalEvaluationStatus = status;
-        this._processSteps = processSteps;
+        if (key === "technical_evaluation") {
+            this._technicalEvaluationStatus = status;
+            this._processSteps = processSteps;
+        }
     }
 }

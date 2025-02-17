@@ -13,7 +13,7 @@ export class ChartDensityComponent extends ChartComponent {
     @Input() columnConfiguration!: ColumnConfiguration;
     @Input() data!: StatisticsData<DensityPlotData>;
     @Input() simple: boolean = false;
-    @Input() syntheticSeriesLabel: string = "Synthetisch";
+    @Input() syntheticSeriesLabel: string = "Synthetic";
 
     protected override createChartOptions(): EChartsOption {
         const dataSetLabels: StatisticsData<string> = {

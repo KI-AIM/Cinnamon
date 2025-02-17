@@ -61,7 +61,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
             this.additionalMetricsTableData.sort.column = 'colorIndex';
         }
 
-        this.datasetDisplayName = this.getSyntheticName();
+        this.datasetDisplayName = this.getSyntheticName()
         this.metricConfig$ = this.projectConfigService.projectSettings$.pipe(
             map(val => val.metricConfiguration)
         );
@@ -111,17 +111,14 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
      * Creates the name of the dataset based on the steps applied to this dataset.
      * @protected
      */
-    private getSyntheticName(): string {
+    protected getSyntheticName(): string {
         const names: Record<string, string> = {
             "anonymization": "Anonymized",
             "synthetization": "Synthesized",
         }
 
-        let syntheticName = this.processingSteps
+        return this.processingSteps
             .map(value => names[value])
             .join(" and ");
-        syntheticName = syntheticName + " Values"
-        return syntheticName;
     }
 }
-

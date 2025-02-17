@@ -144,7 +144,7 @@
         <div>
 
             <mat-accordion>
-                
+
                 <!-- Status -->
                 <mat-expansion-panel>
                     <mat-expansion-panel-header>
@@ -169,7 +169,7 @@
                         <mat-expansion-panel-header>
                             <mat-panel-title>Risks</mat-panel-title>
                             <mat-panel-description>Risk assessment</mat-panel-description>
-                        </mat-expansion-panel-header>                       
+                        </mat-expansion-panel-header>
 
                         <div style="display: flex;" class="mb-2 pt-2 border-top border-1">
                             <span style="font-size: 1.2rem; margin-right: 0.2rem;">
@@ -186,10 +186,10 @@
                                     Legend
                                 </button>
                         </div>
-                        
+
                         <div *ngIf="risks">
                             <div class="risk-summary">
-                
+
                                 <div style="display: flex; flex-direction: row; width: 100%; justify-content: space-between;">
                                     <div>
                                         <div class="classifier-cell classifier-head"> </div>
@@ -286,7 +286,7 @@
                                             <span>0.9</span>
                                         </div>
                                     </div>
-                                    
+
                                     <div>
                                         <div class="classifier-cell classifier-head">Error Rate</div>
                                         <div class="classifier-cell">
@@ -366,8 +366,8 @@
                                 <div style="display: flex; flex-direction: row; width: 100%; justify-content: space-between;">
                                     <div>
                                         <div class="classifier-cell classifier-head"> </div>
-                                        <div *ngFor="let attribute of risks.inference_risk" class="classifier-cell"> 
-                                            {{attribute?.name}} 
+                                        <div *ngFor="let attribute of risks.inference_risk" class="classifier-cell">
+                                            {{attribute?.name}}
                                         </div>
                                     </div>
 
@@ -409,7 +409,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>                        
+                        </div>
 
                     </mat-expansion-panel>
                 </ng-container>
@@ -451,7 +451,7 @@
                     <mat-expansion-panel>
                         <mat-expansion-panel-header>
                             <mat-panel-title>Risks</mat-panel-title>
-                            <mat-panel-description>Kinda risky</mat-panel-description>
+                            <mat-panel-description>Base assessment</mat-panel-description>
                         </mat-expansion-panel-header>
 
                         <div>

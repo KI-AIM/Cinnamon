@@ -6,14 +6,14 @@ import { ProcessStatus } from "../../core/enums/process-status";
 import {
     BehaviorSubject,
     catchError,
-    interval,
+    interval, map,
     Observable,
     of,
     Subscription,
     switchMap,
     tap
 } from "rxjs";
-import {Steps} from "../../core/enums/steps";
+import { plainToInstance } from "class-transformer";
 
 @Injectable({
     providedIn: 'root'
@@ -80,7 +80,8 @@ export abstract class ExecutionStepService {
     public start() {
         this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStepName() + "/start", {}).subscribe({
             next: value => {
-                this.update(value);
+                // For some reason value is a plain object here
+                this.update(plainToInstance(ExecutionStep, value));
             },
             error: () => {
                 this.fetchStatus();
@@ -154,7 +155,7 @@ export abstract class ExecutionStepService {
     public fetchStatus(): Observable<ExecutionStep | null> {
         return this.getProcess().pipe(
             tap(value => {
-                this.update(value)
+                this.update(value);
             }),
             catchError((error) => {
                 this._error = `Failed to update status. Status: ${error.status} (${error.statusText})`;
@@ -169,7 +170,12 @@ export abstract class ExecutionStepService {
      * @private
      */
     private getProcess(): Observable<ExecutionStep> {
-        return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStepName());
+        return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStepName()).pipe(
+            // For some reason value is a plain object here
+            map(value => {
+                return plainToInstance(ExecutionStep, value);
+            }),
+        );
     }
 
     private initializeProjectSettings(): void {

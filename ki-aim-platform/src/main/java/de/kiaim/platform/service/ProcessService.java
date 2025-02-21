@@ -18,6 +18,9 @@ import de.kiaim.platform.model.enumeration.*;
 import de.kiaim.platform.model.file.CsvFileConfiguration;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.repository.BackgroundProcessRepository;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ConnectTimeoutException;
+import io.netty.handler.timeout.ReadTimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -28,6 +31,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -39,10 +43,12 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import reactor.netty.http.client.HttpClient;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -758,7 +764,13 @@ public class ProcessService {
 			                                                     : endpoint.getProcessEndpoint();
 			url = injectUrlParameter(url, externalProcess);
 
-			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
+			HttpClient client = HttpClient.create()
+			                              .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+			                              .responseTimeout(Duration.ofSeconds(10));
+			final WebClient webClient = WebClient.builder()
+			                                     .clientConnector(new ReactorClientHttpConnector(client))
+			                                     .baseUrl(serverUrl)
+			                                     .build();
 			final var response = webClient.post()
 			                              .uri(url)
 			                              .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
@@ -780,7 +792,12 @@ public class ProcessService {
 			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		} catch (WebClientRequestException e) {
-			final var message = "Failed to start the process! " + e.getMessage();
+			var message = "Failed to start the process! ";
+			if (e.getCause() instanceof ConnectTimeoutException || e.getCause() instanceof ReadTimeoutException) {
+				message += "Connection timed out!";
+			} else if (e.getMessage() != null) {
+				message += e.getMessage();
+			}
 			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		}

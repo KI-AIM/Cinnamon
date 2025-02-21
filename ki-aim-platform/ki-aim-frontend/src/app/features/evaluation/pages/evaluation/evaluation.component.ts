@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { EvaluationService } from "../../services/evaluation.service";
 import { TitleService } from "../../../../core/services/title-service.service";
 import { ProcessStatus } from "../../../../core/enums/process-status";
-import { Observable, tap } from "rxjs";
+import { Observable, of, tap } from "rxjs";
 import { StatisticsService } from "../../../../shared/services/statistics.service";
 import {
     Statistics, UtilityData,
@@ -12,6 +12,7 @@ import {
 } from "../../../../shared/model/statistics";
 import { ExecutionStep } from "../../../../shared/model/execution-step";
 import { RiskEvaluation } from '../../../../shared/model/risk-evaluation';
+import { ExternalProcess } from "../../../../shared/model/external-process";
 
 @Component({
     selector: 'app-evaluation',
@@ -27,21 +28,24 @@ export class EvaluationComponent implements OnInit {
     protected stage$: Observable<ExecutionStep | null>;
 
     protected statistics$: Observable<Statistics | null>;
+    protected statisticsCache: Statistics | null = null;
+
     protected risks$: Observable<RiskEvaluation>;
     protected risksString$: Observable<any>;
     protected risks2$: Observable<any>;
 
-    protected riskMetrics: { 
-        label: string, 
-        key: keyof RiskEvaluation, 
-        hasAttackRate: boolean 
+    protected riskMetrics: {
+        label: string,
+        key: keyof RiskEvaluation,
+        hasAttackRate: boolean
     }[] = [
         { label: "Linkage", key: "linkage_health_risk", hasAttackRate: true },
         // { label: "Singling-out univariate", key: "univariate_singling_out_risk", hasAttackRate: true },
         // { label: "Singling-out multivariate", key: "multivariate_singling_out_risk", hasAttackRate: true },
         // { label: "Average Attribute Inference", key: "inference_average_risk", hasAttackRate: true }
     ];
-    
+
+    private expanded: Record<string, boolean> = {};
 
     constructor(
         protected readonly evaluationService: EvaluationService,
@@ -62,12 +66,29 @@ export class EvaluationComponent implements OnInit {
         this.evaluationService.fetchStatus();
     }
 
+    getStatistics(): Observable<Statistics | null> {
+        if (this.statisticsCache) {
+            return of(this.statisticsCache);
+        } else {
+            return this.statistics$.pipe(
+                tap(statistics => {
+                    this.statisticsCache = statistics;
+                }),
+            );
+        }
+    }
+
     // Method for formatting the confidence interval
     formatConfidenceInterval(interval?: [number, number]): string {
         if (!interval || interval.length !== 2) {
             return 'N/A';
         }
         return `[${interval[0].toFixed(2)}, ${interval[1].toFixed(2)}]`;
+    }
+
+    protected start() {
+        this.statisticsCache = null;
+        this.evaluationService.start();
     }
 
     protected getFirstElement(obj: UtilityData): Array<UtilityStatisticsData> {
@@ -78,9 +99,29 @@ export class EvaluationComponent implements OnInit {
         return [];
     }
 
+    protected getJobName(index: ExternalProcess): string {
+        const jobNames: Record<string, string> = {
+            'technical_evaluation': 'Technical Evaluation',
+            'risk_evaluation': 'Risk Evaluation',
+            'base_evaluation': 'Base Evaluation',
+        };
+
+        return jobNames[index.step];
+    }
+
+    protected isExpanded(ep: ExternalProcess, what: string): boolean {
+        return this.expanded[ep.step + what];
+    }
+
+    protected setExpanded(ep: ExternalProcess, what: string, expanded: boolean): void {
+        this.expanded[ep.step + what] = expanded;
+    }
+
     // Method for generatting color index
     generateRiskColorIndex(riskValue?: number): number {
         if (riskValue === undefined) return 0;
         return Math.min(Math.floor(riskValue * 10), 9)+1;
     }
+
+    protected readonly ExternalProcess = ExternalProcess;
 }

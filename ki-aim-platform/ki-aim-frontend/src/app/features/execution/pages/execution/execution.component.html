@@ -22,27 +22,24 @@
 </div>
 
 
-<div style="display: flex; width: 100%;">
+<div class="stage-tree">
     <!-- Line on the left -->
     <div class="stage-tree-line-vertical">
     </div>
 
     <!-- Steps on the right -->
-    <div *ngIf="(stage$ | async) as stage" class="w-100" style="display: flex; flex-direction: column; margin-top: 2rem;">
-        <div *ngFor="let process of stage.processes; let i = index" class="w-100 d-flex">
+    <div *ngIf="(stage$ | async) as stage" class="stage-tree-steps">
+        <div *ngFor="let process of stage.processes; let i = index" class="stage-tree-step">
 
-            <!-- Line to anon box -->
-            <div style="padding-top: 0.3rem;">
-                <div style="height: 3rem; display: flex;">
-                    <div class="stage-tree-line-horizontal"
-                         style="margin-top: auto; margin-bottom: auto; min-width: 2rem;">
-                    </div>
+            <!-- Line to box -->
+            <div class="stage-tree-line-horizontal">
+                <div>
+                    <div></div>
                 </div>
             </div>
 
             <!-- Wrapper for step -->
-            <!-- I have no idea why width: 10% and flex-grow: 1 is doing what I want to do -->
-            <div class="mb-2 box" style="flex-grow: 1; width: 10%; padding-top: 0.3rem;">
+            <div class="mb-2 box step-wrapper">
                 <!-- Head -->
                 <div class="step-head">
                     <span> {{ getJobName(i) }} </span>
@@ -51,7 +48,7 @@
                     </span>
                 </div>
 
-                <div style="margin-top: 0.4rem;">
+                <div class="step-body">
                     <mat-accordion>
                         <!-- Status -->
                         <mat-expansion-panel [(expanded)]="expanded[i][0]">
@@ -147,6 +144,7 @@
                 </div>
 
             </div>
+
         </div>
     </div>
 </div>
@@ -157,4 +155,3 @@
         Continue
     </button>
 </div>
-

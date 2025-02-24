@@ -45,7 +45,7 @@ export class EvaluationComponent implements OnInit {
         // { label: "Average Attribute Inference", key: "inference_average_risk", hasAttackRate: true }
     ];
 
-    private expanded: Record<string, boolean> = {};
+    protected expanded: Record<string, boolean> = {};
 
     constructor(
         protected readonly evaluationService: EvaluationService,
@@ -87,8 +87,13 @@ export class EvaluationComponent implements OnInit {
     }
 
     protected start() {
-        this.statisticsCache = null;
-        this.evaluationService.start();
+        this.evaluationService.asyncStart().subscribe({
+            next: value => {
+                if (value) {
+                    this.statisticsCache = null;
+                }
+            }
+        });
     }
 
     protected getFirstElement(obj: UtilityData): Array<UtilityStatisticsData> {
@@ -107,14 +112,6 @@ export class EvaluationComponent implements OnInit {
         };
 
         return jobNames[index.step];
-    }
-
-    protected isExpanded(ep: ExternalProcess, what: string): boolean {
-        return this.expanded[ep.step + what];
-    }
-
-    protected setExpanded(ep: ExternalProcess, what: string, expanded: boolean): void {
-        this.expanded[ep.step + what] = expanded;
     }
 
     // Method for generatting color index

@@ -78,15 +78,23 @@ export abstract class ExecutionStepService {
      * @protected
      */
     public start() {
-        this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStepName() + "/start", {}).subscribe({
-            next: value => {
-                // For some reason value is a plain object here
-                this.update(plainToInstance(ExecutionStep, value));
-            },
-            error: () => {
-                this.fetchStatus();
-            }
-        });
+        this.asyncStart().subscribe();
+    }
+
+    /**
+     * Returns an observable for starting the process.
+     * @protected
+     */
+    public asyncStart(): Observable<ExecutionStep | null> {
+        return this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStepName() + "/start", {}).pipe(
+            tap(value => {
+                    // For some reason value is a plain object here
+                    this.update(plainToInstance(ExecutionStep, value));
+            }),
+            catchError(() => {
+                return this.fetchStatus();
+            }),
+        );
     }
 
     /**

@@ -79,7 +79,7 @@
     </div>
 
     <div class="d-flex flex-column px-2 w-100">
-        <mat-form-field>
+        <mat-form-field [hideRequiredMarker]="form.controls[formElements.interval.name].disabled">
             <mat-label>
                 <!-- Change label according to selected Transformation Type -->
                 <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'MASKING'">

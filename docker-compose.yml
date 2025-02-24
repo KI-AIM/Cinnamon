@@ -76,15 +76,15 @@ services:
             - "127.0.0.1:5010:5010"
         networks:
             - evaluation-network
-#    ki-aim-risk-assessment:
-#        image: risk_assessment_module-app
-#        container_name: ki-aim-risk-assessment
-#        restart: always
-#        ports:
-#            #            - "8000:8000"
-#            - "127.0.0.1:8000:8000"
-#        networks:
-#            - evaluation-network
+    ki-aim-risk-assessment:
+        image: risk_assessment_module
+        container_name: ki-aim-risk-assessment
+        restart: always
+        ports:
+#            - "8000:8000"
+            - "127.0.0.1:8000:8000"
+        networks:
+            - evaluation-network
     ki-aim-anon:
         image: ki-aim-anon
         build:

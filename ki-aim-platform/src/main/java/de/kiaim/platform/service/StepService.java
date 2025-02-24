@@ -75,7 +75,7 @@ public class StepService {
 
 		for (final var stage : project.getPipelines().get(0).getStages()) {
 			for (final var job : stage.getProcesses()) {
-				if (job.getJob().getName().equals(jobName)) {
+				if (job.getJob().getName().equalsIgnoreCase(jobName)) {
 					process = job;
 					break;
 				}

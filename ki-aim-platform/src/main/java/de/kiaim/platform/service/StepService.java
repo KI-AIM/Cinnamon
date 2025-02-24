@@ -3,10 +3,8 @@ package de.kiaim.platform.service;
 import de.kiaim.platform.exception.BadConfigurationNameException;
 import de.kiaim.platform.model.configuration.*;
 import de.kiaim.platform.exception.BadStepNameException;
-import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
-import de.kiaim.platform.model.enumeration.Step;
 import org.springframework.stereotype.Service;
 
 /**
@@ -23,40 +21,12 @@ public class StepService {
 		this.kiAimConfiguration = kiAimConfiguration;
 	}
 
-	/**
-	 * Returns the configuration for the given step.
-	 * @param step The step.
-	 * @return The step configuration.
-	 * @throws InternalApplicationConfigurationException If no configuration could be found.
-	 */
-	public Job getStepConfiguration(final Step step) throws InternalApplicationConfigurationException {
-		if (!kiAimConfiguration.getSteps().containsKey(step)) {
-			throw new InternalApplicationConfigurationException(
-					InternalApplicationConfigurationException.MISSING_STEP_CONFIGURATION,
-					"No configuration for the step '" + step.name() + "' found!");
-		}
-
-		return kiAimConfiguration.getSteps().get(step);
-	}
-
-	public ExternalEndpoint getExternalServerEndpointConfiguration(
-			final Job stepConfiguration) {
-		return kiAimConfiguration.getExternalServerEndpoints().get(stepConfiguration.getExternalServerEndpointIndex());
-	}
-
-	public ExternalEndpoint getExternalServerEndpointConfiguration(
-			final Step step) throws InternalApplicationConfigurationException {
-		final Job stepConfiguration = getStepConfiguration(step);
+	public ExternalEndpoint getExternalServerEndpointConfiguration(final Job stepConfiguration) {
 		return kiAimConfiguration.getExternalServerEndpoints().get(stepConfiguration.getExternalServerEndpointIndex());
 	}
 
 	public ExternalServer getExternalServerConfiguration(final ExternalEndpoint externalServerEndpoint) {
 		return kiAimConfiguration.getExternalServer().get(externalServerEndpoint.getExternalServerIndex());
-	}
-
-	public ExternalServer getExternalServerConfiguration(final Step step ) throws InternalApplicationConfigurationException {
-		final var ese = getExternalServerEndpointConfiguration(step);
-		return kiAimConfiguration.getExternalServer().get(ese.getExternalServerIndex());
 	}
 
 	/**
@@ -101,15 +71,22 @@ public class StepService {
 	}
 
 	public ExternalProcessEntity getProcess(final String jobName, final ProjectEntity project) throws BadStepNameException {
-		var job =  getStepConfiguration(jobName);
+		ExternalProcessEntity process = null;
 
-		Stage exectionStep = null;
-		for (final var entry : kiAimConfiguration.getStages().entrySet()) {
-			if (entry.getValue().getJobList().contains(job)) {
-				exectionStep = entry.getValue();
+		for (final var stage : project.getPipelines().get(0).getStages()) {
+			for (final var job : stage.getProcesses()) {
+				if (job.getJob().getName().equals(jobName)) {
+					process = job;
+					break;
+				}
 			}
 		}
 
-		return project.getPipelines().get(0).getStageByStep(exectionStep).getProcess(job).get();
+		if (process == null) {
+			throw new BadStepNameException(BadStepNameException.NOT_FOUND,
+			                               "The job '" + jobName + "' is not defined!");
+		}
+
+		return process;
 	}
 }

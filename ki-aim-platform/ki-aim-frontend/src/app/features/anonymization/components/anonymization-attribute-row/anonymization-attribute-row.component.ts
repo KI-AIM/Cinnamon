@@ -4,10 +4,9 @@ import {
     Input,
     OnInit,
     Output,
-    ViewChild,
 } from '@angular/core';
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
-import { FormControl, FormGroup, NgModel, Validators } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { List } from 'src/app/core/utils/list';
 import {
     AnonymizationAttributeRowConfiguration,
@@ -15,7 +14,7 @@ import {
 } from 'src/app/shared/model/anonymization-attribute-config';
 import { DataType } from 'src/app/shared/model/data-type';
 import { DataScale } from 'src/app/shared/model/data-scale';
-import { areEnumValuesEqual, getEnumKeysByValues, getEnumIndexForString, getEnumKeyByValue } from 'src/app/shared/helper/enum-helper';
+import { areEnumValuesEqual } from 'src/app/shared/helper/enum-helper';
 
 type FormField = {
     name: string;
@@ -46,12 +45,9 @@ export class AnonymizationAttributeRowComponent implements OnInit {
     DataType = DataType;
     AttributeProtection = AttributeProtection;
     DataScale = DataScale;
-    getEnumIndexForString = getEnumIndexForString;
-    getEnumKeyForValue = getEnumKeyByValue
 
     intervalMin: number | null = null;
     intervalMax: number | null = null;
-    intervalInitialValue: number | null = null;
     intervalIsSelect = false; // To determine whether to render an input or select element
 
     validTransformations: List<String> | null = null;
@@ -92,13 +88,13 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         this.initParameterValues();
         this.initFormControlElements();
         //If row is added and Generalization is available, set it
-        if (this.anonymizationRowConfiguration.attributeProtection === null || this.anonymizationRowConfiguration.attributeProtection === undefined) {
+        if (this.getTransformationType() === null || this.getTransformationType() === undefined) {
             if (this.getValidTransformationsForAttribute().contains(AttributeProtection.DATE_GENERALIZATION)) {
-                this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.DATE_GENERALIZATION;
+                this.setTransformationType(AttributeProtection.DATE_GENERALIZATION);
             } else if (this.getValidTransformationsForAttribute().contains(AttributeProtection.MICRO_AGGREGATION)) {
-                this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.MICRO_AGGREGATION;
+                this.setTransformationType(AttributeProtection.MICRO_AGGREGATION);
             } else {
-                this.anonymizationRowConfiguration.attributeProtection = AttributeProtection.ATTRIBUTE_DELETION;
+                this.setTransformationType(AttributeProtection.ATTRIBUTE_DELETION);
             }
         }
         //Initialize the interval input field
@@ -173,28 +169,28 @@ export class AnonymizationAttributeRowComponent implements OnInit {
     private setValidTransformationsForAttribute() {
         var transformations = [];
 
-        if (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.DATE) ||
-            areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.NOMINAL) ||
-            areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.ORDINAL) ||
-            areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.INTERVAL) ||
-            areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.RATIO)
+        if (areEnumValuesEqual(DataScale, this.getScale(), DataScale.DATE) ||
+            areEnumValuesEqual(DataScale, this.getScale(), DataScale.NOMINAL) ||
+            areEnumValuesEqual(DataScale, this.getScale(), DataScale.ORDINAL) ||
+            areEnumValuesEqual(DataScale, this.getScale(), DataScale.INTERVAL) ||
+            areEnumValuesEqual(DataScale, this.getScale(), DataScale.RATIO)
         ) {
             transformations.push(AttributeProtection.MASKING);
         }
 
-        if (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.DATE)) {
+        if (areEnumValuesEqual(DataScale, this.getScale(), DataScale.DATE)) {
             transformations.push(AttributeProtection.DATE_GENERALIZATION);
         }
 
-        if (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.ORDINAL)) {
+        if (areEnumValuesEqual(DataScale, this.getScale(), DataScale.ORDINAL)) {
             transformations.push(AttributeProtection.GENERALIZATION);
         }
 
-        if (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.RATIO) ||
-            areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.INTERVAL)
+        if (areEnumValuesEqual(DataScale, this.getScale(), DataScale.RATIO) ||
+            areEnumValuesEqual(DataScale, this.getScale(), DataScale.INTERVAL)
         ) {
-            if (areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.DECIMAL) ||
-                areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.INTEGER)
+            if (areEnumValuesEqual(DataType, this.getDataType(), DataType.DECIMAL) ||
+                areEnumValuesEqual(DataType, this.getDataType(), DataType.INTEGER)
             ) {
                 transformations.push(AttributeProtection.GENERALIZATION);
                 transformations.push(AttributeProtection.MICRO_AGGREGATION);
@@ -225,53 +221,97 @@ export class AnonymizationAttributeRowComponent implements OnInit {
     }
 
     /**
+     * Returns the current data type.
+     * @protected
+     */
+    protected getDataType(): DataScale {
+        return this.form.controls[this.formElements.dataType.name].value;
+    }
+
+    /**
+     * Returns the current data scale.
+     * @protected
+     */
+    protected getScale(): DataScale {
+        return this.form.controls[this.formElements.scale.name].value;
+    }
+
+    /**
+     * Returns the current transformation type/ attribute protection.
+     * @protected
+     */
+    protected getTransformationType(): AttributeProtection {
+        return this.form.controls[this.formElements.transformationType.name].value;
+    }
+
+    /**
+     * Sets the value of the interval size.
+     * @param value The new value.
+     * @protected
+     */
+    protected setIntervalSize(value: string | number | null): void {
+        this.anonymizationRowConfiguration.intervalSize = value;
+        this.form.controls[this.formElements.interval.name].setValue(value);
+    }
+
+    /**
+     * Sets the value of the transformation type.
+     * @param value The new value.
+     * @protected
+     */
+    protected setTransformationType(value: AttributeProtection) {
+        this.anonymizationRowConfiguration.attributeProtection = value;
+        this.form.controls[this.formElements.transformationType.name].setValue(value);
+    }
+
+    /**
      * Function to adjust the interval input field
      * depending on the current settings in the frontend
      */
     setIntervalConditions() {
-        if (this.anonymizationRowConfiguration.attributeProtection !== null) {
+        if (this.getTransformationType() !== null) {
             // MASKING -> [ 'DATE', 'NOMINAL', 'ORDNIAL', 'INTERVAL', 'RATIO' ]
-            if (areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.MASKING) &&
-                (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.DATE) ||
-                areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.NOMINAL) ||
-                areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.ORDINAL) ||
-                areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.INTERVAL) ||
-                areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.RATIO))
+            if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.MASKING) &&
+                (areEnumValuesEqual(DataScale, this.getScale(), DataScale.DATE) ||
+                areEnumValuesEqual(DataScale, this.getScale(), DataScale.NOMINAL) ||
+                areEnumValuesEqual(DataScale, this.getScale(), DataScale.ORDINAL) ||
+                areEnumValuesEqual(DataScale, this.getScale(), DataScale.INTERVAL) ||
+                areEnumValuesEqual(DataScale, this.getScale(), DataScale.RATIO))
             ) {
                 this.changeIntervalSettings(2, 1000, 3, false, false);
             }
             // DATE_GENERALIZATION -> DATE
-            else if (areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.DATE_GENERALIZATION) &&
-                    areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.DATE)
+            else if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.DATE_GENERALIZATION) &&
+                    areEnumValuesEqual(DataScale, this.getScale(), DataScale.DATE)
             ) {
                 this.changeIntervalSettings(null, null, 'year', true, false);
             }
             //[ 'GENERALIZATION', 'MICRO_AGGREGATION' ]
-            else if (areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.GENERALIZATION) ||
-                    areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.MICRO_AGGREGATION)
+            else if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.GENERALIZATION) ||
+                    areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.MICRO_AGGREGATION)
             ) {
                 // ORDINAL
-                if (areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.attributeProtection, DataScale.ORDINAL)) {
+                if (areEnumValuesEqual(DataScale, this.getTransformationType(), DataScale.ORDINAL)) {
                     this.changeIntervalSettings(1, 100, 5, false, false);
                 }
                 // INTEGER -> INTEVAL
-                else if (areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.INTEGER) &&
-                        areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.INTERVAL)
+                else if (areEnumValuesEqual(DataType, this.getDataType(), DataType.INTEGER) &&
+                        areEnumValuesEqual(DataScale, this.getScale(), DataScale.INTERVAL)
                 ) {
                     this.changeIntervalSettings(1, 1000, 10, false, false);
                 }
                 // DECIMAL -> RATIO
-                else if (areEnumValuesEqual(DataType, this.anonymizationRowConfiguration.dataType, DataType.DECIMAL) &&
-                        areEnumValuesEqual(DataScale, this.anonymizationRowConfiguration.scale, DataScale.RATIO)
+                else if (areEnumValuesEqual(DataType, this.getDataType(), DataType.DECIMAL) &&
+                        areEnumValuesEqual(DataScale, this.getScale(), DataScale.RATIO)
                 ) {
                     this.changeIntervalSettings(0.001, 1000.0, 1, false, false);
                 }
             }
             // [ 'ATTRIBUTE_DELETION', 'VALUE_DELETION']
-            else if (areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.ATTRIBUTE_DELETION) ||
-                    areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.VALUE_DELETION) ||
-                    areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.RECORD_DELETION) ||
-                    areEnumValuesEqual(AttributeProtection, this.anonymizationRowConfiguration.attributeProtection, AttributeProtection.NO_PROTECTION)
+            else if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.ATTRIBUTE_DELETION) ||
+                    areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.VALUE_DELETION) ||
+                    areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.RECORD_DELETION) ||
+                    areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.NO_PROTECTION)
             ) {
                 this.changeIntervalSettings(null, null, null, false, true);
             }
@@ -301,7 +341,7 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         this.intervalMin = intervalMin;
         this.intervalMax = intervalMax;
         this.intervalIsSelect = intervalIsSelect;
-        this.anonymizationRowConfiguration.intervalSize = intervalInitialValue;
+        this.setIntervalSize(intervalInitialValue);
         this.toggleIntervalField(deactivateInterval);
     }
 

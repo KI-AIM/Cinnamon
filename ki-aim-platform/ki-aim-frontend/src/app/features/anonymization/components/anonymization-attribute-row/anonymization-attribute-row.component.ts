@@ -115,7 +115,10 @@ export class AnonymizationAttributeRowComponent implements OnInit {
      * validity check of the form
      */
     updateForm() {
-        this.form.updateValueAndValidity();
+        setTimeout(() => {
+            this.form.updateValueAndValidity();
+            this.form.controls[this.formElements.interval.name].updateValueAndValidity();
+        });
     }
 
     /**

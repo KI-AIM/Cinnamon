@@ -10,6 +10,7 @@ import {ColumnConfiguration} from "../../model/column-configuration";
     styleUrls: ['../chart/chart.component.less'],
 })
 export class ChartDensityComponent extends ChartComponent {
+    @Input() public colorScheme!: string;
     @Input() columnConfiguration!: ColumnConfiguration;
     @Input() data!: StatisticsData<DensityPlotData>;
     @Input() public originalSeriesLabel: string = "Original";
@@ -27,7 +28,7 @@ export class ChartDensityComponent extends ChartComponent {
         const series = [];
         for (const [key, value] of Object.entries(this.data) as Entries<StatisticsData<DensityPlotData>>) {
             series.push({
-                color: [this.statisticsService.colors[value.color_index]],
+                color: [this.statisticsService.getColorScheme(this.colorScheme)[value.color_index]],
                 name: dataSetLabels[key],
                 type: 'line',
                 symbol: 'none',

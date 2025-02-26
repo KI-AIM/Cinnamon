@@ -177,7 +177,7 @@
                                         </button>
                                     </div>
                                     <div>
-                                        <div class="risk-summary">
+                                        <div class="risk-summary" *ngIf="projectConfig$ | async as projectConfig">
 
                                             <div style="display: flex; flex-direction: row; width: 100%; justify-content: space-between;">
                                                 <div>
@@ -192,25 +192,25 @@
                                                     <div class="classifier-cell classifier-head">Overall Risk [0,1]</div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
                                                         </span>
                                                         <span>{{ risks?.linkage_health_risk?.risk_value | number:'1.2-2'}}</span>
                                                     </div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.univariate_singling_out_risk?.risk_value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.univariate_singling_out_risk?.risk_value)]">
                                                         </span>
                                                         <span>{{ risks?.univariate_singling_out_risk?.risk_value | number:'1.2-2'}}</span>
                                                     </div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.risk_value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.risk_value)]">
                                                         </span>
                                                         <span>{{ risks?.multivariate_singling_out_risk?.risk_value | number:'1.2-2'}}</span>
                                                     </div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.inference_average_risk?.priv_risk)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.inference_average_risk?.priv_risk)]">
                                                         </span>
                                                         <span>{{ risks?.inference_average_risk?.priv_risk | number:'1.2-2'}}</span>
                                                     </div>
@@ -220,26 +220,26 @@
                                                     <div class="classifier-cell classifier-head">Risk Confidence Interval</div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
                                                         </span>
                                                         <span>{{ formatConfidenceInterval(risks?.linkage_health_risk?.risk_ci)}}</span>
                                                     </div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.univariate_singling_out_risk?.risk_value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.univariate_singling_out_risk?.risk_value)]">
                                                         </span>
                                                         <span>{{ formatConfidenceInterval(risks?.univariate_singling_out_risk?.risk_ci)}}</span>
                                                     </div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.risk_value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.risk_value)]">
                                                         </span>
                                                         <span>{{ formatConfidenceInterval(risks?.multivariate_singling_out_risk?.risk_ci)}}</span>
                                                     </div>
                                                     <!-- No risk CI for average inference -->
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[0]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[0]">
                                                         </span>
                                                         <!-- <span>{{ risks.inference_average_risk.risk_value | number:'1.2-2'}}</span> -->
                                                         <span> </span>
@@ -250,26 +250,26 @@
                                                     <div class="classifier-cell classifier-head">Successful Attacks</div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.attack_rate?.value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.linkage_health_risk?.attack_rate?.value)]">
                                                         </span>
                                                         <span>{{ risks?.linkage_health_risk?.attack_rate?.value | number:'1.2-2'}}</span>
                                                     </div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.univariate_singling_out_risk?.attack_rate?.value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.univariate_singling_out_risk?.attack_rate?.value)]">
                                                         </span>
                                                         <span>{{ risks?.univariate_singling_out_risk?.attack_rate?.value | number:'1.2-2'}}</span>
                                                     </div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.attack_rate?.value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.attack_rate?.value)]">
                                                         </span>
                                                         <span>{{ risks?.multivariate_singling_out_risk?.attack_rate?.value | number:'1.2-2'}}</span>
                                                     </div>
                                                     <!-- TODO : change for correct value -->
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
                                                         </span>
                                                         <!-- <span>{{ risks.inference_average_risk.attack_rate.value | number:'1.2-2'}}</span> -->
                                                         <span>0.9</span>
@@ -280,27 +280,27 @@
                                                     <div class="classifier-cell classifier-head">Error Rate</div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.attack_rate?.error)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.linkage_health_risk?.attack_rate?.error)]">
                                                         </span>
                                                         <span>{{ risks?.linkage_health_risk?.attack_rate?.error | number:'1.2-2'}}</span>
                                                     </div>
                                                     <!-- TODO : change color ? -->
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.univariate_singling_out_risk?.attack_rate?.error)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.univariate_singling_out_risk?.attack_rate?.error)]">
                                                         </span>
                                                         <span>{{ risks?.univariate_singling_out_risk?.attack_rate?.error | number:'1.2-2'}}</span>
                                                     </div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.attack_rate?.error)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.multivariate_singling_out_risk?.attack_rate?.error)]">
                                                         </span>
                                                         <span>{{ risks?.multivariate_singling_out_risk?.attack_rate?.error | number:'1.2-2'}}</span>
                                                     </div>
                                                     <!-- TODO : change for correct value -->
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.linkage_health_risk?.risk_value)]">
                                                         </span>
                                                         <!-- <span>{{ risks.inference_average_risk.risk_value | number:'1.2-2'}}</span> -->
                                                         <span>0.9</span>
@@ -311,26 +311,26 @@
                                                     <div class="classifier-cell classifier-head">Time Taken</div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[0]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[0]">
                                                         </span>
                                                         <span>{{ risks?.linkage_health_risk?.execution_time | number:'1.2-2'}}</span>
                                                     </div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[0]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[0]">
                                                         </span>
                                                         <span>{{ risks?.univariate_singling_out_risk?.risk_value | number:'1.2-2'}}</span>
                                                     </div>
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[0]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[0]">
                                                         </span>
                                                         <span>{{ risks?.multivariate_singling_out_risk?.risk_value | number:'1.2-2'}}</span>
                                                     </div>
                                                     <!-- TODO : change for correct value -->
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[0]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[0]">
                                                         </span>
                                                         <!-- <span>{{ risks.inference_average_risk.risk_value | number:'1.2-2'}}</span> -->
                                                         <span>0.9</span>
@@ -352,7 +352,8 @@
                                     <div>
                                         <div *ngIf="(risks.inference_risk?.length ?? 0) > 0 && (risks?.inference_results?.length ?? 0) > 0" class="risk-summary">
 
-                                            <div style="display: flex; flex-direction: row; width: 100%; justify-content: space-between;">
+                                            <div *ngIf="projectConfig$ | async as projectConfig"
+                                                 style="display: flex; flex-direction: row; width: 100%; justify-content: space-between;">
                                                 <div>
                                                     <div class="classifier-cell classifier-head"> </div>
                                                     <div *ngFor="let attribute of risks.inference_risk" class="classifier-cell">
@@ -364,7 +365,7 @@
                                                     <div class="classifier-cell classifier-head">Overall Risk [0,1]</div>
                                                     <div *ngFor="let attribute of risks.inference_risk" class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(attribute.value.risk_value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(attribute.value.risk_value)]">
                                                         </span>
                                                         <span>{{attribute?.value?.risk_value  | number:'1.2-2'}}</span>
                                                     </div>
@@ -373,7 +374,7 @@
                                                     <div class="classifier-cell classifier-head">Risk Confidence Interval</div>
                                                     <div *ngFor="let attribute of risks.inference_risk" class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(attribute.value.risk_value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(attribute.value.risk_value)]">
                                                         </span>
                                                         <span>{{ formatConfidenceInterval(attribute?.value?.risk_ci)}}</span>
                                                     </div>
@@ -382,7 +383,7 @@
                                                     <div class="classifier-cell classifier-head">Inference Rate [0,1]</div>
                                                     <div *ngFor="let attribute of risks.inference_results" class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(attribute.value.attack_rate.value)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(attribute.value.attack_rate.value)]">
                                                         </span>
                                                         <span>{{attribute?.value?.attack_rate?.value  | number:'1.2-2'}}</span>
                                                     </div>
@@ -391,7 +392,7 @@
                                                     <div class="classifier-cell classifier-head">Error Rate</div>
                                                     <div *ngFor="let attribute of risks.inference_results" class="classifier-cell">
                                                         <span class="metric-similarity"
-                                                              [style.background-color]="statisticsService.colors[generateRiskColorIndex(attribute.value.attack_rate.error)]">
+                                                              [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(attribute.value.attack_rate.error)]">
                                                         </span>
                                                         <span>{{attribute?.value?.attack_rate?.error  | number:'1.2-2'}}</span>
                                                     </div>
@@ -436,24 +437,26 @@
 <ng-template #utilityMetricTable let-predictions="predictions">
     <div *ngIf="(predictions | instanceOf:UtilityData) as p"
          style="display: flex; flex-direction: row; width: 100%; justify-content: space-between;">
-        <div>
-            <div class="classifier-cell classifier-head">Classifier</div>
-            <ng-container *ngFor="let firstClassifier of getFirstElement(p)">
-                <div class="classifier-cell">{{ firstClassifier.classifier }}</div>
-            </ng-container>
-        </div>
-
-        <div *ngFor="let classifiers of p | keyvalue">
-            <div class="classifier-cell classifier-head">{{ classifiers.key }}</div>
-            <div *ngFor="let classifier of classifiers.value" class="classifier-cell">
-
-                <span class="metric-similarity"
-                     [style.background-color]="statisticsService.colors[classifier.color_index]">
-                </span>
-                <span>{{ statisticsService.formatNumber(classifier.score) }}</span>
+        <ng-container *ngIf="projectConfig$ | async as projectConfig">
+            <div>
+                <div class="classifier-cell classifier-head">Classifier</div>
+                <ng-container *ngFor="let firstClassifier of getFirstElement(p)">
+                    <div class="classifier-cell">{{ firstClassifier.classifier }}</div>
+                </ng-container>
             </div>
 
-        </div>
+            <div *ngFor="let classifiers of p | keyvalue">
+                <div class="classifier-cell classifier-head">{{ classifiers.key }}</div>
+                <div *ngFor="let classifier of classifiers.value" class="classifier-cell">
+
+                <span class="metric-similarity"
+                      [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[classifier.color_index]">
+                </span>
+                    <span>{{ statisticsService.formatNumber(classifier.score) }}</span>
+                </div>
+
+            </div>
+        </ng-container>
     </div>
 </ng-template>
 

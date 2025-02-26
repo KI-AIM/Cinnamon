@@ -13,6 +13,8 @@ import {
 import { ExecutionStep } from "../../../../shared/model/execution-step";
 import { RiskEvaluation } from '../../../../shared/model/risk-evaluation';
 import { ExternalProcess } from "../../../../shared/model/external-process";
+import { ProjectConfigurationService } from "../../../../shared/services/project-configuration.service";
+import { ProjectSettings } from "../../../../shared/model/project-settings";
 
 @Component({
     selector: 'app-evaluation',
@@ -47,15 +49,20 @@ export class EvaluationComponent implements OnInit {
 
     protected expanded: Record<string, boolean> = {};
 
+    protected projectConfig$: Observable<ProjectSettings>;
+
     constructor(
         protected readonly evaluationService: EvaluationService,
         protected readonly statisticsService: StatisticsService,
         private readonly titleService: TitleService,
+        protected readonly projectConfigService: ProjectConfigurationService,
     ) {
         this.titleService.setPageTitle("Evaluation");
     }
 
     ngOnInit() {
+        this.projectConfig$ = this.projectConfigService.projectSettings$;
+
         this.risksString$ = this.statisticsService.fetchRisksString();
         this.risks$ = this.statisticsService.fetchRisks().pipe(
             tap(risks => console.log("Risks data:", risks)) // Debug
@@ -119,6 +126,4 @@ export class EvaluationComponent implements OnInit {
         if (riskValue === undefined) return 0;
         return Math.min(Math.floor(riskValue * 10), 9)+1;
     }
-
-    protected readonly ExternalProcess = ExternalProcess;
 }

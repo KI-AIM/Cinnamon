@@ -9,6 +9,7 @@ import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
 import { MetricImportance, MetricImportanceData } from "../../model/project-settings";
 import { MatDialog } from "@angular/material/dialog";
+import { StatisticsService } from "../../services/statistics.service";
 
 @Component({
     selector: 'app-metric-configuration',
@@ -29,6 +30,7 @@ export class MetricConfigurationComponent implements OnInit, OnDestroy {
     constructor(
         private readonly matDialog: MatDialog,
         private readonly projectConfigurationService: ProjectConfigurationService,
+        protected readonly statisticsService: StatisticsService,
         private readonly technicalEvaluationService: TechnicalEvaluationService,
     ) {
         this.importanceForm = new FormGroup({});
@@ -72,6 +74,9 @@ export class MetricConfigurationComponent implements OnInit, OnDestroy {
 
     private createForm(algorithmDefinition: AlgorithmDefinition): void {
         const form: any = {};
+
+        form["colorScheme"] = new FormControl({value: 'Default', disabled: false});
+
         form["useUserDefinedImportance"] = new FormControl({value: false, disabled: false});
 
         const group: any = {};

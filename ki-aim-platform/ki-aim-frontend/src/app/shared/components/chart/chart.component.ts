@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import { Component, OnChanges, OnInit } from '@angular/core';
 import {ECharts, EChartsOption} from "echarts";
 import {DataType} from "../../model/data-type";
 import { StatisticsService } from "../../services/statistics.service";
@@ -8,7 +8,7 @@ import { StatisticsService } from "../../services/statistics.service";
     templateUrl: './chart.component.html',
     styleUrls: ['./chart.component.less']
 })
-export class ChartComponent implements OnInit {
+export class ChartComponent implements OnInit, OnChanges {
     protected options: EChartsOption;
     protected chartInstances: ECharts;
     protected zoomInstance: ECharts | null = null;
@@ -20,6 +20,10 @@ export class ChartComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.options = this.createChartOptions();
+    }
+
+    ngOnChanges() {
         this.options = this.createChartOptions();
     }
 

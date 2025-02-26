@@ -56,21 +56,23 @@
                     Frequency
                 </ng-container>
             </div>
-            <div class="w-100 h-100">
+            <div class="w-100 h-100" *ngIf="metricConfig$ | async as mc">
                 <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
                     <div style="margin-top: .5rem;">
                         <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="color-legend-button flat-mat-form-button" style="margin-bottom: -32px; margin-left: 70px;">Legend</button>
                         <app-chart-select [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType"></app-chart-select>
 
                         <ng-container *ngIf="graphType === 'density'">
-                            <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
+                            <app-chart-density [colorScheme]="mc.colorScheme"
+                                               [columnConfiguration]="attributeStatistics.attribute_information"
                                                [data]="attributeStatistics.plot.density"
                                                [originalSeriesLabel]="originalDisplayName"
                                                [syntheticSeriesLabel]="datasetDisplayName">
                             </app-chart-density>
                         </ng-container>
                         <ng-container *ngIf="graphType === 'histogram'">
-                            <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null"
+                            <app-chart-frequency [colorScheme]="mc.colorScheme"
+                                                 [data]="attributeStatistics.plot.histogram!" [limit]="null"
                                                  [originalSeriesLabel]="originalDisplayName"
                                                  [syntheticSeriesLabel]="datasetDisplayName">
                             ></app-chart-frequency>
@@ -87,7 +89,8 @@
                 <ng-template #frequency>
                     <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="color-legend-button flat-mat-form-button">Legend</button>
                     <ng-container *ngIf="attributeStatistics.plot.frequency_plot; else noChart">
-                        <app-chart-frequency [data]="attributeStatistics.plot.frequency_plot" [limit]="null"
+                        <app-chart-frequency [colorScheme]="mc.colorScheme"
+                                             [data]="attributeStatistics.plot.frequency_plot" [limit]="null"
                                              [originalSeriesLabel]="originalDisplayName"
                                              [syntheticSeriesLabel]="datasetDisplayName"></app-chart-frequency>
                     </ng-container>
@@ -194,7 +197,7 @@
 
             <ng-container *ngIf="(metricConfig$ | async) as mc">
                 <ng-container *ngFor="let metricData of  injectImportance(projectConfigService.filterMetrics(mc, tableData.filter.importance, attributeStatistics), mc) | metricFilter:tableData.filter.filterText:null | metricSorter:tableData.sort.direction:tableData.sort.column">
-                    <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
+                    <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData, mc: mc}">
                     </ng-container>
                 </ng-container>
             </ng-container>
@@ -202,11 +205,11 @@
     </div>
 </ng-template>
 
-<ng-template #metricComparison let-data='data'>
+<ng-template #metricComparison let-data='data' let-mc='mc'>
     <tr>
         <td>
             <div *ngIf="data && data[1].difference" class="metric-similarity"
-                 [style.background-color]="statisticsService.colors[getColorIndex(data[1])]">
+                 [style.background-color]="statisticsService.getColorScheme(mc.colorScheme)[getColorIndex(data[1])]">
             </div>
         </td>
         <td>

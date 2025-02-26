@@ -22,23 +22,48 @@ export class StatisticsService {
         "synthetization": "Synthesized",
     }
 
-    public readonly colors = [
-        '#00aaff',
-        '#007700',
-        '#009900',
-        '#00bb00',
-        '#00dd00',
-        '#00ff00',
-        '#ff0000',
-        '#dd0000',
-        '#bb0000',
-        '#990000',
-        '#770000',
-    ]
+    public readonly colorDefinitions = [
+        {
+            name: 'Default',
+            colors: [
+                '#00aaff',
+                '#007700',
+                '#009900',
+                '#00bb00',
+                '#00dd00',
+                '#00ff00',
+                '#ff0000',
+                '#dd0000',
+                '#bb0000',
+                '#990000',
+                '#770000',
+            ],
+        },
+        {
+            name: 'Blue',
+            colors: [
+                '#da6605',
+                '#007700',
+                '#009900',
+                '#00bb00',
+                '#00dd00',
+                '#00ff00',
+                '#0000ff',
+                '#0000dd',
+                '#0000bb',
+                '#000099',
+                '#000077',
+            ],
+        },
+    ];
 
     constructor(
         private readonly httpClient: HttpClient,
     ) {
+    }
+
+    public getColorScheme(name: string) {
+        return this.colorDefinitions.find(value => value.name === name)?.colors ?? [];
     }
 
     public get statistics$(): Observable<Statistics | null> {

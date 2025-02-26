@@ -9,6 +9,7 @@ import {ChartComponent, Entries} from "../chart/chart.component";
     styleUrls: ['../chart/chart.component.less'],
 })
 export class ChartFrequencyComponent extends ChartComponent {
+    @Input() public colorScheme!: string;
     @Input() public data!: StatisticsData<HistogramPlotData>;
     @Input() public simple: boolean = false;
     @Input() public limit: number | null = 10;
@@ -37,7 +38,7 @@ export class ChartFrequencyComponent extends ChartComponent {
                     return {
                         value: val.value,
                         itemStyle: {
-                            color: this.statisticsService.colors[val.color_index],
+                            color: this.statisticsService.getColorScheme(this.colorScheme)[val.color_index],
                         }
                     }
                 });
@@ -47,7 +48,7 @@ export class ChartFrequencyComponent extends ChartComponent {
                 displayed.push({
                         value: sumAllValues - sumMostCommon,
                         itemStyle: {
-                            color: this.statisticsService.colors[5],
+                            color: this.statisticsService.getColorScheme(this.colorScheme)[5],
                         }
                     })
             } else {
@@ -55,7 +56,7 @@ export class ChartFrequencyComponent extends ChartComponent {
                    return {
                        value: val.value,
                        itemStyle: {
-                           color: this.statisticsService.colors[val.color_index],
+                           color: this.statisticsService.getColorScheme(this.colorScheme)[val.color_index],
                        }
                    }
                 });
@@ -64,7 +65,7 @@ export class ChartFrequencyComponent extends ChartComponent {
             const displayedColors: string[] = [];
             const allColors: number[] = value.frequencies.map(val => val.color_index);
             allColors.forEach(val => {
-               displayedColors.push(this.statisticsService.colors[val]);
+               displayedColors.push(this.statisticsService.getColorScheme(this.colorScheme)[val]);
             });
 
             series.push({

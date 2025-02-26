@@ -1,13 +1,15 @@
-<div style="margin-left: 0.5rem;">
+<div style="margin-left: 0.5rem;"  *ngIf="projectConfig$ | async as projectConfig">
     <div class="color-legend-item" style="margin-bottom: 1rem;">
-        <div [style.background-color]="statisticsService.colors[0]" style="width: 20px; height: 20px;"></div>
+        <div [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[0]"
+             style="width: 20px; height: 20px;"></div>
         <div>Original</div>
     </div>
     <div style="display: flex; flex-direction: column;">
-        <div *ngFor="let color of statisticsService.colors.slice(1); index as i" class="color-legend-item">
-            <div [style.background-color]="color"></div>
+        <div *ngFor="let color of statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme).slice(1); index as i"
+             class="color-legend-item">
+        <div [style.background-color]="color"></div>
             <div *ngIf="i == 0">{{ goodLabel }}</div>
-            <div *ngIf="i == statisticsService.colors.length - 2">{{ badLabel }}</div>
+            <div *ngIf="i == statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme).length - 2">{{ badLabel }}</div>
         </div>
     </div>
 </div>

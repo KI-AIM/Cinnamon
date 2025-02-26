@@ -3,6 +3,8 @@ package de.kiaim.anon.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.anon.config.AnonymizationConfig;
 import de.kiaim.anon.converter.FrontendAnonConfigConverter;
+import de.kiaim.anon.exception.AnonymizationException;
+import de.kiaim.anon.exception.UnexpectedAnonymizationException;
 import de.kiaim.anon.model.AnonymizationRequest;
 import de.kiaim.anon.processor.AnonymizedDatasetProcessor;
 import de.kiaim.anon.processor.DataSetProcessor;
@@ -11,6 +13,7 @@ import de.kiaim.model.data.DataSet;
 import de.kiaim.model.serialization.mapper.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
+import org.bihmi.jal.anon.exception.NoOptimumFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
@@ -67,6 +70,10 @@ public class AnonymizationService {
     public CompletableFuture<DataSet> anonymizeData(DataSet dataSet,
                                                     FrontendAnonConfig frontendAnonConfig,
                                                     String processId) throws Exception {
+
+        // Check that at least one attribute configuration as been defined by the user.
+        FrontendAnonConfigValidation.validateAttributeConfiguration(frontendAnonConfig);
+
         // Check compatibility between DataSet and FrontendAnonConfig
         CompatibilityAssurance.checkDataSetAndFrontendConfigCompatibility(dataSet, frontendAnonConfig);
 
@@ -101,6 +108,8 @@ public class AnonymizationService {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 log.info("Start anon.");
+                FrontendAnonConfigValidation.validateAttributeConfiguration(request.getAnonymizationConfig());
+                FrontendAnonConfigValidation.validateOneAttributeIsGeneralized(request.getAnonymizationConfig());
                 CompatibilityAssurance.checkDataSetAndFrontendConfigCompatibility(request.getData(), request.getAnonymizationConfig());
                 AnonymizationConfig anonymizationConfigConverted = FrontendAnonConfigConverter.convertToJALConfig(request.getAnonymizationConfig(), request.getData());
                 String[][] jalData = dataSetProcessor.convertDatasetToStringArray(request.getData());
@@ -117,11 +126,20 @@ public class AnonymizationService {
                 // Send success callback
                 sendCallbackResult(request.getCallback(), result);
                 return result;
-            } catch (Exception ex) {
+            } catch (NoOptimumFoundException e) {
+                log.error("No optimum found during anonymization", e);
+                sendFailureCallback(request.getCallback(), new de.kiaim.anon.exception.NoOptimumFoundException());
+                return null;
+            } catch (AnonymizationException ex) {
                 log.error("An error occurred during data anonymization", ex);
                 sendFailureCallback(request.getCallback(), ex);
                 return null;
+            } catch (Exception e) {
+                log.error("Unexpected error during anonymization", e);
+                sendFailureCallback(request.getCallback(), new UnexpectedAnonymizationException(e));
+                return null;
             }
+
         });
     }
 
@@ -177,8 +195,19 @@ public class AnonymizationService {
         try {
             String errorMessage = "Anonymization failed";
             String exceptionMessage = ex.getMessage() != null ? ex.getMessage() : "No additional information";
+            String errorCode = "ANON_UNKNOWN";
+
+            // If the exception is an instance of AnonymizationException, retrieve errorCode
+            if (ex instanceof AnonymizationException anonymizationException) {
+                errorCode = anonymizationException.getErrorCode();
+                errorMessage = anonymizationException.getMessage();
+            }
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("error_code", new ByteArrayResource(errorCode.getBytes(StandardCharsets.UTF_8)) {
+                @Override
+                public String getFilename() { return "error_code.txt"; }
+            });
             body.add("error_message", new ByteArrayResource(errorMessage.getBytes(StandardCharsets.UTF_8)) {
                 @Override
                 public String getFilename() {

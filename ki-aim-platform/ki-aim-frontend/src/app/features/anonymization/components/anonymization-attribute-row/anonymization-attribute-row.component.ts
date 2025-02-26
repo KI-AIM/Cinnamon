@@ -99,6 +99,7 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         }
         //Initialize the interval input field
         this.setIntervalConditions();
+        console.log("initialProtection", this.anonymizationRowConfiguration.attributeProtection);
     }
 
     /**

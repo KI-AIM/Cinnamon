@@ -61,9 +61,9 @@ public class AbstractAnonymizationTests {
         frontendAnonConfig = importFrontendAnonConfig(frontendAnonConfigPath);
         processId = "testProcess123";
 
-
-        System.out.println("FrontendAnonConfigWrapper");
-        System.out.println(heartFrontendAnonConfig.toString());
+//
+//        System.out.println("FrontendAnonConfigWrapper");
+//        System.out.println(heartFrontendAnonConfig.toString());
 
         if (mockWebServer == null) {
             mockWebServer = new MockWebServer();

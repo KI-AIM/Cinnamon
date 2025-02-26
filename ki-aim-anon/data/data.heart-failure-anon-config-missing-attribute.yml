@@ -1,0 +1,105 @@
+anonymization:
+  privacyModels:
+    - name: anonymization_tabular
+      type: tabular
+      modelConfiguration:
+        riskThresholdType: "Avg"
+        riskThresholdValue: 0.5
+        suppressionLimit: "0.9"
+        generalizationSetting: "Global"
+
+  attributeConfiguration:
+    - index: 0
+      name: "id"
+      dataType: "INTEGER"
+      scale: "NOMINAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+
+    - index: 1
+      name: "name"
+      dataType: "STRING"
+      scale: "NOMINAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+
+    - index: 2
+      name: "birthdate"
+      dataType: "DATE"
+      scale: "DATE"
+      attributeProtection: "ATTRIBUTE_DELETION"
+
+    - index: 3
+      name: "death_date"
+      dataType: "DATE"
+      scale: "DATE"
+      attributeProtection: "DATE_GENERALIZATION"
+      intervalSize: "year"
+
+    - index: 4
+      name: "Age"
+      dataType: "INTEGER"
+      scale: "INTERVAL"
+      attributeProtection: "GENERALIZATION"
+      intervalSize: "10"
+
+    - index: 5
+      name: "Sex"
+      dataType: "STRING"
+      scale: "NOMINAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+      intervalSize: ""
+
+    - index: 6
+      name: "ChestPainType"
+      dataType: "STRING"
+      scale: "NOMINAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+      intervalSize: ""
+
+    - index: 7
+      name: "RestingBP"
+      dataType: "INTEGER"
+      scale: "INTERVAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+      intervalSize: ""
+
+    - index: 8
+      name: "Cholesterol"
+      dataType: "INTEGER"
+      scale: "INTERVAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+      intervalSize: ""
+
+    - index: 9
+      name: "FastingBS"
+      dataType: "BOOLEAN"
+      scale: "NOMINAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+      intervalSize: ""
+
+    - index: 10
+      name: "RestingECG"
+      dataType: "STRING"
+      scale: "NOMINAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+      intervalSize: ""
+
+    - index: 11
+      name: "MaxHR"
+      dataType: "INTEGER"
+      scale: "INTERVAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+      intervalSize: ""
+
+    - index: 12
+      name: "ExerciseAngina"
+      dataType: "STRING"
+      scale: "NOMINAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+      intervalSize: ""
+
+    - index: 14
+      name: "ST_Slope"
+      dataType: "STRING"
+      scale: "NOMINAL"
+      attributeProtection: "ATTRIBUTE_DELETION"
+      intervalSize: ""

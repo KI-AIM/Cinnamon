@@ -21,25 +21,29 @@ configurations:
         - name: riskThresholdValue
           label: Risk Threshold Value
           type: float
-          description: Select the threshold value based on the risk type.
+          description: Select the threshold value based on the risk type. # AP : should we provide an example ?
           default_value: 0.1
           switch:
             - depends_on: riskThresholdType
               conditions:
                 - if: Max
                   values: [0.05, 0.075, 0.1, 0.2, 0.5] # KO: added larger values for k=2 and k=5 as well. at least for testing.
+                  min_value: 0.05
+                  max_value: 0.5
                 - if: Avg
                   values: [0.0005, 0.001, 0.005, 0.05, 0.075, 0.1, 0.2, 0.5] # KO: added larger values for k=2 and k=5 as well. at least for testing.
-        - name: generalizationSetting
+                  min_value: 0.0005
+                  max_value: 0.5
+        - name: generalizationSetting # AP : should this parameter be kept ?
           label: Generalization Setting
           type: string
-          description: Select the risk type, either 'Max' or 'Avg'.
+          description: Select the generalization setting. # AP : should we provide an example ?
           default_value: 'Global'
           values: [ 'Global', 'Local' ]
         - name: suppressionLimit
           label: Suppression Limit
           type: float
-          description: Maximum suppression limit.
+          description: Define the maximum suppression limit (example 0.9).
           default_value: 0
           min_value: 0
           max_value: 1

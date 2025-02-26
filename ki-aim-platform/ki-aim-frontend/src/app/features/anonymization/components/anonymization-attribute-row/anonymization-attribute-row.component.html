@@ -59,7 +59,7 @@
             </mat-label>
             <mat-select
                 [id]="formElements.transformationType.name"
-                (selectionChange)="setIntervalConditions(); updateForm();"
+                (selectionChange)="updateTransformationType(); setIntervalConditions(); updateForm();"
                 [formControlName]="formElements.transformationType.name"
             >
                 <mat-option
@@ -107,7 +107,7 @@
                     [max]="intervalMax"
                     [step]="intervalMin"
                     [id]="formElements.interval.name"
-                    (change)="updateForm()"
+                    (change)="updateIntervalSize(); updateForm();"
                     [formControlName]="formElements.interval.name"
                     matInput
                 >
@@ -117,7 +117,7 @@
                 <mat-select
                     [id]="formElements.interval.name"
                     [formControlName]="formElements.interval.name"
-                    (change)="updateForm()"
+                    (change)="updateIntervalSize(); updateForm();"
                 >
                     <mat-option
                         *ngFor="let interval of getIntervalEnumOptions().getAll()"

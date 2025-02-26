@@ -99,7 +99,6 @@ export class AnonymizationAttributeRowComponent implements OnInit {
         }
         //Initialize the interval input field
         this.setIntervalConditions();
-        console.log("initialProtection", this.anonymizationRowConfiguration.attributeProtection);
     }
 
     /**
@@ -256,6 +255,22 @@ export class AnonymizationAttributeRowComponent implements OnInit {
     protected setIntervalSize(value: string | number | null): void {
         this.anonymizationRowConfiguration.intervalSize = value;
         this.form.controls[this.formElements.interval.name].setValue(value);
+    }
+
+    /**
+     * Sets the transformation type of the internal configuration object to the current form value.
+     * @protected
+     */
+    protected updateTransformationType(): void {
+        this.anonymizationRowConfiguration.attributeProtection = this.form.controls[this.formElements.transformationType.name].value;
+    }
+
+    /**
+     * Sets the interval size of the internal configuration object to the current form value.
+     * @protected
+     */
+    protected updateIntervalSize(): void {
+        this.anonymizationRowConfiguration.intervalSize = this.form.controls[this.formElements.interval.name].value;
     }
 
     /**

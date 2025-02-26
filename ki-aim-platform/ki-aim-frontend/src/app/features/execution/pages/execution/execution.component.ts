@@ -10,6 +10,7 @@ import { ExecutionService } from "../../services/execution.service";
 import { StatusService } from "../../../../shared/services/status.service";
 import {Observable} from "rxjs";
 import { StatisticsService } from "../../../../shared/services/statistics.service";
+import { StageDefinition } from "../../../../shared/services/execution-step.service";
 
 @Component({
   selector: 'app-execution',
@@ -19,6 +20,8 @@ import { StatisticsService } from "../../../../shared/services/statistics.servic
 export class ExecutionComponent implements OnInit, OnDestroy {
     protected readonly ProcessStatus = ProcessStatus;
     protected stage$: Observable<ExecutionStep | null>;
+    protected stageDefinition$: Observable<StageDefinition>;
+
 
     protected expanded: Array<Array<boolean>>;
 
@@ -47,6 +50,7 @@ export class ExecutionComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.stage$ = this.executionService.status$;
+        this.stageDefinition$ = this.executionService.fetchStageDefinition$();
     }
 
     protected get status(): ExecutionStep {
@@ -80,7 +84,12 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         });
     }
 
-    protected getJobName(index: number): string {
-        return ["Anonymization", "Synthetization"][index];
+    protected getJobName(job: string): string {
+        const jobNames: Record<string, string> = {
+            'anonymization': 'Anonymization',
+            'synthetization': 'Synthetization',
+        };
+
+        return jobNames[job];
     }
 }

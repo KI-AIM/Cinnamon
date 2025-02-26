@@ -86,7 +86,7 @@ export abstract class ExecutionStepService {
      * @protected
      */
     public asyncStart(): Observable<ExecutionStep | null> {
-        return this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStepName() + "/start", {}).pipe(
+        return this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStageName() + "/start", {}).pipe(
             tap(value => {
                     // For some reason value is a plain object here
                     this.update(plainToInstance(ExecutionStep, value));
@@ -102,7 +102,7 @@ export abstract class ExecutionStepService {
      * @protected
      */
     public cancel() {
-        this.http.post<ExecutionStep>(this.baseUrl + '/' + this.getStepName() + '/cancel', {}).subscribe({
+        this.http.post<ExecutionStep>(this.baseUrl + '/' + this.getStageName() + '/cancel', {}).subscribe({
             next: (executionStep: ExecutionStep) => {
                 this.update(executionStep);
             },
@@ -137,7 +137,7 @@ export abstract class ExecutionStepService {
     /**
      * Name of the step. Must be equal to the name of the step in the backend.
      */
-    protected abstract getStepName(): string;
+    protected abstract getStageName(): string;
 
     protected abstract setCustomStatus(key: string, status: string | null, processSteps: string[]): void;
 
@@ -154,6 +154,13 @@ export abstract class ExecutionStepService {
             this.stopListenToStatus();
             this._disabled = false;
         }
+    }
+
+    /**
+     * Fetches the stage definition.
+     */
+    public fetchStageDefinition$(): Observable<StageDefinition> {
+        return this.http.get<StageDefinition>(environments.apiUrl + '/api/step/stage/' + this.getStageName());
     }
 
     /**
@@ -178,7 +185,7 @@ export abstract class ExecutionStepService {
      * @private
      */
     private getProcess(): Observable<ExecutionStep> {
-        return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStepName()).pipe(
+        return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStageName()).pipe(
             // For some reason value is a plain object here
             map(value => {
                 return plainToInstance(ExecutionStep, value);
@@ -207,4 +214,9 @@ export abstract class ExecutionStepService {
         }
         this._statusSubject.next(executionStep);
     }
+}
+
+export class StageDefinition {
+    jobs: string[];
+    stageName: string;
 }

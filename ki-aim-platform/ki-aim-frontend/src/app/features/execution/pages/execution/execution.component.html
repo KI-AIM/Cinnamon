@@ -28,8 +28,8 @@
     </div>
 
     <!-- Steps on the right -->
-    <div *ngIf="(stage$ | async) as stage" class="stage-tree-steps">
-        <div *ngFor="let process of stage.processes; let i = index" class="stage-tree-step">
+    <div *ngIf="(stageDefinition$ | async) as stage" class="stage-tree-steps">
+        <div *ngFor="let process of stage.jobs; let i = index" class="stage-tree-step">
 
             <!-- Line to box -->
             <div class="stage-tree-line-horizontal">
@@ -42,8 +42,8 @@
             <div class="mb-2 box step-wrapper">
                 <!-- Head -->
                 <div class="step-head">
-                    <span> {{ getJobName(i) }} </span>
-                    <span class="status" [ngClass]="status.processes[i].externalProcessStatus">
+                    <span> {{ getJobName(process) }} </span>
+                    <span *ngIf="status.processes[i]" class="status" [ngClass]="status.processes[i].externalProcessStatus">
                         <span>{{ status.processes[i].externalProcessStatus.replace("_", " ") }}</span>
                     </span>
                 </div>
@@ -103,9 +103,9 @@
 
                             <div>
                                 <div
-                                    *ngIf="status.processes[i].externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+                                    *ngIf="status.processes[i]?.externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
 <!--                                    <app-data-table [sourceDataset]="getJobName(i)"></app-data-table>-->
-                                    <app-data-table [sourceProcess]="getJobName(i)"></app-data-table>
+                                    <app-data-table [sourceProcess]="getJobName(process)"></app-data-table>
                                 </div>
                                 <ng-template #anonNoData>
                                     <div>
@@ -128,7 +128,7 @@
                                 <div class="mt-1">
                                     <div
                                         *ngIf="status.processes[i].externalProcessStatus == ProcessStatus.FINISHED; else synthNoData">
-                                        <app-data-inspection [sourceDataset]="getJobName(i)"></app-data-inspection>
+                                        <app-data-inspection [sourceDataset]="getJobName(process)"></app-data-inspection>
                                     </div>
                                     <ng-template #synthNoData>
                                         <div>

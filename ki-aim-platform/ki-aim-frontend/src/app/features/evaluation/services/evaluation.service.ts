@@ -25,7 +25,7 @@ export class EvaluationService extends ExecutionStepService {
         return this._processSteps;
     }
 
-    protected override getStepName(): string {
+    protected override getStageName(): string {
         return "evaluation";
     }
 

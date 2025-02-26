@@ -27,7 +27,7 @@ export class ExecutionService extends ExecutionStepService {
         return this._synthProcess;
     };
 
-    protected override getStepName(): string {
+    protected override getStageName(): string {
         return "execution";
     }
 

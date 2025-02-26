@@ -1,1 +1,41 @@
 @import "../../../../styles/status.less";
+@import "../../../../styles/layout.less";
+@import "../../../../styles/styling";
+
+.classifier-cell {
+    display: flex;
+    flex-direction: row;
+    gap: 0.2rem;
+    height: 2rem;
+    padding: 0.3rem !important;
+}
+
+.classifier-head {
+    font-weight: bold;
+}
+
+.metric-similarity {
+    display: inline-block;
+    border-radius: 100%;
+    height: 20px;
+    width: 20px;
+}
+
+.predictions {
+    margin-top: 1rem;
+}
+
+.predictions > :first-child {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+    margin-bottom: 0.5rem;
+}
+
+.predictions > :first-child > div {
+    border-bottom: 1px solid black;
+    width: 80%;
+    text-align: center;
+}
+

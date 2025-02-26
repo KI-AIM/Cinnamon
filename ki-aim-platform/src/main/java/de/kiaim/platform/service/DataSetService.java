@@ -1,11 +1,14 @@
 package de.kiaim.platform.service;
 
+import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataSet;
+import de.kiaim.platform.exception.BadColumnNameException;
+import de.kiaim.platform.exception.BadDataSetIdException;
 import de.kiaim.platform.exception.BadStepNameException;
 import de.kiaim.platform.model.dto.LoadDataRequest;
-import de.kiaim.platform.model.entity.DataTransformationErrorEntity;
-import de.kiaim.platform.model.entity.UserEntity;
+import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.repository.DataSetRepository;
 import de.kiaim.platform.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,18 +21,22 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerMapping;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+/**
+ * Provides functions for working with data sets.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Service
 public class DataSetService {
 
+	private final DataSetRepository dataSetRepository;
 	private final UserRepository userRepository;
 
 	@Autowired
-	public DataSetService(final UserRepository userRepository) {
+	public DataSetService(final DataSetRepository dataSetRepository, final UserRepository userRepository) {
+		this.dataSetRepository = dataSetRepository;
 		this.userRepository = userRepository;
 	}
 
@@ -54,6 +61,7 @@ public class DataSetService {
 
 		final LoadDataRequest loadDataRequest = new LoadDataRequest();
 		Set<DataTransformationErrorEntity> transformationErrors = new HashSet<>();
+		Map<Integer, Integer> columnIndexMapping = new HashMap<>();
 
 		final RequestAttributes ra = RequestContextHolder.getRequestAttributes();
 		if (ra instanceof ServletRequestAttributes) {
@@ -63,10 +71,11 @@ public class DataSetService {
 
 			try {
 				final Step step = Step.getStepOrThrow(stepName);
-				transformationErrors = user.getProject().getDataSets().get(step).getDataTransformationErrors();
-			} catch (BadStepNameException ignored) {
+				final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(user.getProject(), step);
+				transformationErrors = dataSetEntity.getDataTransformationErrors();
+				columnIndexMapping = getColumnIndexMapping(dataSetEntity.getDataConfiguration(), loadDataRequest.getColumnNames());
+			} catch (BadStepNameException | BadDataSetIdException | BadColumnNameException ignored) {
 			}
-
 
 			final String defaultNullEncoding = request.getParameter("defaultNullEncoding");
 			if (defaultNullEncoding != null) {
@@ -78,7 +87,7 @@ public class DataSetService {
 			loadDataRequest.setValueNotInRangeEncoding(request.getParameter("valueNotInRangeEncoding"));
 		}
 
-		return encodeDataRows(dataSet, transformationErrors, loadDataRequest);
+		return encodeDataRows(dataSet, transformationErrors, columnIndexMapping, loadDataRequest);
 	}
 
 	/**
@@ -92,8 +101,9 @@ public class DataSetService {
 	 */
 	public List<List<Object>> encodeDataRows(final DataSet dataSet,
 	                                         final Set<DataTransformationErrorEntity> transformationErrors,
+	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
-		return encodeDataRows(dataSet, transformationErrors, 0, null, loadDataRequest);
+		return encodeDataRows(dataSet, transformationErrors, 0, null, columnIndexMapping, loadDataRequest);
 	}
 
 	/**
@@ -113,6 +123,7 @@ public class DataSetService {
 	                                         final Set<DataTransformationErrorEntity> transformationErrors,
 	                                         final int rowOffset,
 	                                         @Nullable final List<Integer> indexMapping,
+	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
 		final List<List<Object>> data = dataSet.getData();
 
@@ -131,6 +142,10 @@ public class DataSetService {
 		    !formatErrorEncoding.equals("$null") || !valueNotInRangeEncoding.equals("$null")) {
 
 			for (final DataTransformationErrorEntity transformationError : transformationErrors) {
+				if (!columnIndexMapping.isEmpty() && !columnIndexMapping.containsKey(transformationError.getColumnIndex())) {
+					// Column is not requested
+					continue;
+				}
 
 				final var encodedValue = switch (transformationError.getErrorType()) {
 					case CONFIG_ERROR, OTHER -> encodeValue(defaultNullEncoding, transformationError);
@@ -139,17 +154,102 @@ public class DataSetService {
 					case VALUE_NOT_IN_RANGE -> encodeValue(valueNotInRangeEncoding, transformationError);
 				};
 
-				if (indexMapping != null) {
-					data.get(indexMapping.indexOf(transformationError.getRowIndex())).set(transformationError.getColumnIndex(), encodedValue);
-				} else {
-					data.get(transformationError.getRowIndex() - rowOffset).set(transformationError.getColumnIndex(), encodedValue);
-				}
+				final Integer columnIndex = columnIndexMapping.get(transformationError.getColumnIndex());
+				final int rowIndex = indexMapping != null
+				                  ? indexMapping.indexOf(transformationError.getRowIndex())
+				                  : transformationError.getRowIndex() - rowOffset;
+				data.get(rowIndex).set(columnIndex, encodedValue);
 			}
 		}
 
 		return data;
 	}
 
+	/**
+	 * Returns for the DataSetEntity for the given Step from the given project.
+	 * Allowed steps are {@link Step#VALIDATION} and steps of the type {@link de.kiaim.platform.model.enumeration.StepType#DATA_PROCESSING}.
+	 *
+	 * @param project The project.
+	 * @param step The step.
+	 * @return The DataSetEntity
+	 * @throws BadDataSetIdException If no data set exist for the step.
+	 */
+	public DataSetEntity getDataSetEntityOrThrow(final ProjectEntity project,
+	                                             final Step step) throws BadDataSetIdException {
+		DataSetEntity dataSet = null;
+
+		if (step == Step.VALIDATION) {
+			dataSet = project.getOriginalData().getDataSet();
+		} else {
+			final ExternalProcessEntity process = project.getPipelines().get(0).getStageByStep(Step.EXECUTION)
+			                                             .getProcess(step).get();
+			if (process instanceof DataProcessingEntity dataProcessing) {
+				dataSet = dataProcessing.getDataSet();
+			}
+		}
+
+		if (dataSet == null) {
+			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET, "The project '" + project.getId() +
+			                                                                   "' does not contain a data set for step '" +
+			                                                                   step.name() + "'!");
+		}
+		return dataSet;
+	}
+
+	public DataSetEntity getDataSetEntity(final Long id) {
+		return dataSetRepository.findById(id).orElse(null);
+	}
+
+	public DataSetEntity save(final DataSetEntity dataSetEntity) {
+		return dataSetRepository.save(dataSetEntity);
+	}
+
+	/**
+	 * Maps the original index of the columns with the given names to their position in the list.
+	 * If the list is empty, all columns will be added with their original index.
+	 *
+	 * @param dataConfiguration The DataConfiguration
+	 * @param columnNames The column names to be mapped.
+	 * @return Map from original index to index in list.
+	 * @throws BadColumnNameException If no column with the given name exist.
+	 */
+	public Map<Integer, Integer> getColumnIndexMapping(final DataConfiguration dataConfiguration,
+	                                                   final List<String> columnNames) throws BadColumnNameException {
+		final Map<Integer, Integer> columnIndexMapping = new HashMap<>();
+
+		if (columnNames.isEmpty()) {
+			// If empty, all columns should be exported.
+			for (int i = 0; i < dataConfiguration.getConfigurations().size(); i++) {
+				final var columnConfiguration = dataConfiguration.getConfigurations().get(i);
+				columnIndexMapping.put(columnConfiguration.getIndex(), i);
+			}
+		} else {
+
+			for (int i = 0; i < columnNames.size(); i++) {
+				final String columnName = columnNames.get(i);
+				final var columnConfiguration = dataConfiguration.getColumnConfigurationByColumnName(columnName);
+
+				if (columnConfiguration == null) {
+					throw new BadColumnNameException(BadColumnNameException.NOT_FOUND, "Could not find column: " + columnName);
+				}
+
+				columnIndexMapping.put(columnConfiguration.getIndex(), i);
+			}
+		}
+
+		return columnIndexMapping;
+	}
+
+	/**
+	 * Encodes the value.
+	 * "$null" replaces the value with 'null'.
+	 * "$values" inserts the value from the given transformation error.
+	 * All other values will not be modified.
+	 *
+	 * @param encoding The value or encoding to be used.
+	 * @param transformationError The transformation error containing the original value.
+	 * @return The encoded value.
+	 */
 	@Nullable
 	private String encodeValue(final String encoding, final DataTransformationErrorEntity transformationError) {
 		if (encoding.equals("$null")) {

@@ -1,7 +1,9 @@
-import { Injectable } from '@angular/core';
-import { ExecutionStepService } from "../../../shared/services/execution-step.service";
-import { HttpClient } from "@angular/common/http";
-import { SynthetizationProcess } from "../../../shared/model/synthetization-process";
+import {Injectable} from '@angular/core';
+import {ExecutionStepService} from "../../../shared/services/execution-step.service";
+import {HttpClient} from "@angular/common/http";
+import {SynthetizationProcess} from "../../../shared/model/synthetization-process";
+import {Steps} from "../../../core/enums/steps";
+import {areEnumValuesEqual} from "../../../shared/helper/enum-helper";
 
 @Injectable({
   providedIn: 'root'
@@ -29,8 +31,8 @@ export class ExecutionService extends ExecutionStepService {
         return "EXECUTION";
     }
 
-    protected override setCustomStatus(key: string, status: string | null): void {
-        if (key === "SYNTHETIZATION") {
+    protected override setCustomStatus(key: Steps, status: string | null, processSteps: Steps[]): void {
+        if (areEnumValuesEqual(Steps, key, Steps.SYNTHETIZATION)) {
             if (status === null) {
                 this._synthProcess = null;
             } else {
@@ -40,12 +42,8 @@ export class ExecutionService extends ExecutionStepService {
                     this._synthProcess = status
                 }
             }
-        } else if (key === "ANONYMIZATION") {
+        } else if (areEnumValuesEqual(Steps, key, Steps.ANONYMIZATION)) {
             this._anonProcess = status;
         }
-    }
-
-    protected override getSteps(): string[] {
-        return ['ANONYMIZATION', 'SYNTHETIZATION'];
     }
 }

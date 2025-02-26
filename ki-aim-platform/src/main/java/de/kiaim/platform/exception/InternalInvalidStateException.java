@@ -20,6 +20,11 @@ public class InternalInvalidStateException extends InternalException {
 	 */
 	public static final String LAST_STEP_NOT_FINISHED = "3";
 
+	/**
+	 * Exception code for a missing data set that should be present based on the status of the project.
+	 */
+	public static final String MISSING_DATA_STET = "4";
+
 	public InternalInvalidStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

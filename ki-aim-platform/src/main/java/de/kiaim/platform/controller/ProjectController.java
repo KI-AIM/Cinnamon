@@ -3,11 +3,13 @@ package de.kiaim.platform.controller;
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.ErrorResponse;
+import de.kiaim.platform.model.dto.ProjectConfigurationDTO;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.StatusEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.mapper.ProjectConfigurationMapper;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,9 +38,13 @@ public class ProjectController {
 	private final ProjectService projectService;
 	private final UserService userService;
 
-	public ProjectController(final ProjectService projectService, final UserService userService) {
+	private final ProjectConfigurationMapper projectConfigurationMapper;
+
+	public ProjectController(final ProjectService projectService, final UserService userService,
+	                         final ProjectConfigurationMapper projectConfigurationMapper) {
 		this.projectService = projectService;
 		this.userService = userService;
+		this.projectConfigurationMapper = projectConfigurationMapper;
 	}
 
 	@Operation(summary = "Creates a projects with the given mode.",
@@ -75,6 +82,40 @@ public class ProjectController {
 		return projectService.getProject(requestUser).getStatus();
 	}
 
+
+	@Operation(summary = "Returns the configuration of the user's project.",
+	           description = "Returns the configuration of the user's project.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Response contains the configurations.",
+			             content = @Content(schema = @Schema(implementation = ProjectConfigurationDTO.class))),
+	})
+	@GetMapping(value = "/configuration", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ProjectConfigurationDTO getProjectConfiguration(
+			@AuthenticationPrincipal final UserEntity requestUser
+	) {
+		final var project = projectService.getProject(requestUser);
+		return projectConfigurationMapper.toDto(project.getProjectConfiguration());
+	}
+
+	@Operation(summary = "Updates the configuration of the user's project.",
+	           description = "Updates the configuration of the user's project.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "The configuration has been updated.",
+			             content = @Content()),
+	})
+	@PutMapping(value = "/configuration", consumes = {MediaType.APPLICATION_JSON_VALUE})
+	public void getProjectConfiguration(
+			@RequestBody @Valid final ProjectConfigurationDTO projectConfigurationDTO,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) {
+		final var project = projectService.getProject(requestUser);
+		projectConfigurationMapper.updateEntity(project.getProjectConfiguration(), projectConfigurationDTO);
+		projectService.saveProject(project);
+	}
+
+
 	@Operation(summary = "Creates a ZIP file containing all files related to the project.",
 	           description = "Creates a ZIP file containing all files related to the project.")
 	@ApiResponses(value = {
@@ -99,7 +140,7 @@ public class ProjectController {
 	            produces = {CustomMediaType.APPLICATION_ZIP_VALUE})
 	public ResponseEntity<StreamingResponseBody> getZip(@AuthenticationPrincipal final UserEntity requestUser,
 	                                                    final HttpServletResponse response)
-			throws IOException, InternalDataSetPersistenceException, InternalIOException, BadColumnNameException, BadDataSetIdException {
+			throws IOException, InternalDataSetPersistenceException, InternalIOException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
@@ -112,15 +153,20 @@ public class ProjectController {
 		return ResponseEntity.ok().build();
 	}
 
-	/**
-	 * TODO move into project or process?
-	 * @param executionStepName
-	 * @param processStepName
-	 * @param name
-	 * @param requestUser
-	 * @return
-	 * @throws BadStepNameException
-	 */
+	@Operation(summary = "Returns a file of the result of the specified job.",
+	           description = "Returns a file of the result of the specified job.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Returns the content of the file.",
+			             content = @Content(schema = @Schema(implementation = String.class),
+			                                mediaType = MediaType.ALL_VALUE)),
+			@ApiResponse(responseCode = "400",
+			             description = "No the job or the file does not exist.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
 	@GetMapping(value = "/resultFile", produces = {MediaType.ALL_VALUE})
 	@Transactional(readOnly = true)
 	public ResponseEntity<Object> getResultFile(
@@ -128,7 +174,7 @@ public class ProjectController {
 			@RequestParam final String processStepName,
 			@RequestParam final String name,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws BadStepNameException {
+	) throws BadQueryException, BadStepNameException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
@@ -136,8 +182,13 @@ public class ProjectController {
 		final Step executionStep = Step.getStepOrThrow(executionStepName);
 		final Step processStep = Step.getStepOrThrow(processStepName);
 
-		final var content =  project.getExecutions().get(executionStep).getProcesses().get(processStep).getAdditionalResultFiles().get(name);
-		final var s = new String(content);
+		final var content = project.getPipelines().get(0).getStageByStep(executionStep)
+		                           .getProcess(processStep).get()
+		                           .getResultFiles().get(name);
+		if (content == null) {
+			throw new BadQueryException(BadQueryException.RESULT_FILE, "The file '" + name + "' could not be found!");
+		}
+		final var s = content.getLobString();
 
 		return ResponseEntity.ok().body(s);
 	}

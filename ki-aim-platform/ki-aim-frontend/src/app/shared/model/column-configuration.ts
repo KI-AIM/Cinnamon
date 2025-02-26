@@ -6,15 +6,15 @@ import { DataScale } from "./data-scale";
 
 export class ColumnConfiguration {
     index: number;
-    name: String; 
+    name: string;
     type: DataType;
     scale: DataScale;
 
     @Type(() => Configuration)
-    configurations: Configuration[] = []; 
+    configurations: Configuration[] = [];
 
     addConfiguration(configuration: Configuration) {
-        this.configurations.push(configuration); 
+        this.configurations.push(configuration);
     }
 
     removeConfiguration(configuration: Configuration) {

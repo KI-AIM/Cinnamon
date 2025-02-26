@@ -1,5 +1,5 @@
 import { NgModule } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { InformationDialogComponent } from "./components/information-dialog/information-dialog.component";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatButtonModule } from "@angular/material/button";
@@ -12,7 +12,7 @@ import { ConfigurationInputComponent } from './components/configuration-input/co
 import { ConfigurationInputInfoComponent } from './components/configuration-input-info/configuration-input-info.component';
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
-import { ReactiveFormsModule } from "@angular/forms";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import { ConfigurationFormComponent } from './components/configuration-form/configuration-form.component';
 import { MatIconModule } from "@angular/material/icon";
 import { MatSelectModule } from "@angular/material/select";
@@ -28,9 +28,35 @@ import {DataTableComponent} from "./components/data-table/data-table.component";
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
+import { DataInspectionComponent } from './components/data-inspection/data-inspection.component';
+import { DataInspectionAttributeComponent } from './components/data-inspection-attribute/data-inspection-attribute.component';
+import {ColumnConfigurationNameFilterPipe} from "./pipes/column-configuration-name-filter.pipe";
+import { DataInspectionAttributeDetailsComponent } from './components/data-inspection-attribute-details/data-inspection-attribute-details.component';
+import { NgxEchartsModule } from "ngx-echarts";
+import { ChartDensityComponent } from './components/chart-density/chart-density.component';
+import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
+import { ChartFrequencyComponent } from './components/chart-frequency/chart-frequency.component';
+import { ChartComponent } from './components/chart/chart.component';
+import { ChartSelectComponent } from './components/chart-select/chart-select.component';
+import { ChartCalendarComponent } from './components/chart-calendar/chart-calendar.component';
+import { MetricFilterPipe } from './pipes/metric-filter.pipe';
+import { MetricSorterPipe } from './pipes/metric-sorter.pipe';
+import {MatMenuModule} from "@angular/material/menu";
+import { ColorLegendComponent } from './components/color-legend/color-legend.component';
+import {MatRadioModule} from "@angular/material/radio";
+import {InstanceOfPipe} from "./pipes/instance-of.pipe";
+import { MetricInfoTableComponent } from './components/metric-info-table/metric-info-table.component';
+import { MetricConfigurationComponent } from './components/metric-configuration/metric-configuration.component';
 
 @NgModule({
     declarations: [
+        // Components
+        ChartDensityComponent,
+        ChartFrequencyComponent,
+        ChartComponent,
+        ChartSelectComponent,
+        ChartCalendarComponent,
+        ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationGroupComponent,
         ConfigurationInputArrayComponent,
@@ -40,11 +66,23 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
         ConfigurationPageComponent,
         ConfigurationSelectionComponent,
         ConfigurationUploadComponent,
+        DataInspectionComponent,
+        DataInspectionAttributeComponent,
+        DataInspectionAttributeDetailsComponent,
         DataTableComponent,
         InfoCardComponent,
         InformationDialogComponent,
         LoadingSpinnerComponent,
+        MetricInfoTableComponent,
+        // Directives
         NoSpaceValidatorDirective,
+        // Pipes
+        ColumnConfigurationNameFilterPipe,
+        InstanceOfPipe,
+        MetricFilterPipe,
+        MetricSorterPipe,
+        StatisticsFilterPipe,
+        MetricConfigurationComponent,
     ],
     imports: [
         CommonModule,
@@ -62,17 +100,30 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
         MatTableModule,
         ReactiveFormsModule,
         MatProgressBarModule,
+        NgOptimizedImage,
+        FormsModule,
+        NgxEchartsModule.forRoot(({
+            echarts: () => import('echarts')
+        })),
+        MatMenuModule,
+        MatRadioModule,
     ],
     exports: [
+        ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,
         ConfigurationManagementComponent,
         ConfigurationPageComponent,
         ConfigurationUploadComponent,
+        DataInspectionComponent,
+        DataInspectionAttributeComponent,
         DataTableComponent,
         InfoCardComponent,
         LoadingSpinnerComponent,
+        MetricInfoTableComponent,
         NoSpaceValidatorDirective,
+        InstanceOfPipe,
+        MetricConfigurationComponent,
     ],
 })
 export class SharedModule {}

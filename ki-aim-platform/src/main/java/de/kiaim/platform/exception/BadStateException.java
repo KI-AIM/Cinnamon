@@ -15,6 +15,11 @@ public class BadStateException extends BadRequestException {
 	 */
 	public static final String NO_DATASET_FILE = "2";
 
+	/**
+	 * Exception code for actions that require a data set from a specific step to be present.
+	 */
+	public static final String NO_DATA_SET = "3";
+
 	public BadStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

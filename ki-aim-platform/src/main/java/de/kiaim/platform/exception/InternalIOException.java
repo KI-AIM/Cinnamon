@@ -30,6 +30,16 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String CSV_CREATION = "5";
 
+	/**
+	 * Exception code for failed configuration serialization.
+	 */
+	public static final String CONFIGURATION_SERIALIZATION = "6";
+
+	/**
+	 * Exception code for failed data set serialization.
+	 */
+	public static final String DATA_SET_SERIALIZATION = "7";
+
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

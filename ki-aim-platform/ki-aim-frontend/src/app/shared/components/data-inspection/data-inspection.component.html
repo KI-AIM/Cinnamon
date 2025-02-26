@@ -1,0 +1,27 @@
+
+<div>
+    <div *ngIf="(statistics$ | async) as statistics else loading">
+        <mat-form-field class="w-100">
+            <mat-label>Search</mat-label>
+            <input type="text" matInput [(ngModel)]="filterText"/>
+        </mat-form-field>
+
+        <div *ngIf="(statistics.resemblance.attributes | statisticsFilter:filterText) as filteredAttributes">
+            <div class="mb-2">Showing {{ filteredAttributes.filteredCount }}/ {{ filteredAttributes.originalCount }}
+            </div>
+
+            <div *ngFor="let attribute of filteredAttributes.filteredList" class="mb-2 border-top border-1">
+                <div class="mt-2">
+                    <app-data-inspection-attribute [attributeStatistics]="attribute" [sourceDataset]="sourceDataset"
+                                                   [sourceProcess]="sourceProcess" [mainData]="mainData" [processingSteps]="processingSteps">
+                    </app-data-inspection-attribute>
+                </div>
+            </div>
+        </div>
+    </div>
+    <ng-template #loading>
+        <div class="d-flex justify-content-center">
+            <mat-spinner [diameter]="100"></mat-spinner>
+        </div>
+    </ng-template>
+</div>

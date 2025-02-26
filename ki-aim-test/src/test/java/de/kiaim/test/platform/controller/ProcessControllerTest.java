@@ -8,9 +8,11 @@ import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.service.DataSetService;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
 import de.kiaim.test.platform.ControllerTest;
+import de.kiaim.test.util.DataConfigurationTestHelper;
 import de.kiaim.test.util.DataSetTestHelper;
 import de.kiaim.test.util.ResourceHelper;
 import mockwebserver3.MockResponse;
@@ -21,6 +23,7 @@ import org.apache.commons.fileupload2.core.DiskFileItemFactory;
 import org.apache.commons.fileupload2.core.FileItem;
 import org.apache.commons.fileupload2.core.FileItemFactory;
 import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,9 +36,14 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.util.TestSocketUtils;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,18 +57,21 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private static final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 
-	@Value("${ki-aim.steps.SYNTHETIZATION.callbackHost}")
+	@Value("${ki-aim.external-server[1].callback-host}")
 	private String callbackHost;
 
 	private MockWebServer mockBackEnd;
 
+	@Autowired private DataSetService dataSetService;
 	@Autowired private UserService userService;
 	@Autowired private ProjectService projectService;
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("ki-aim.steps.synthetization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("ki-aim.steps.anonymization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
+		// All properties must be redefined
+		registry.add("ki-aim.external-server.2.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server.1.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server.0.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
 	}
 
 	@BeforeEach
@@ -79,7 +90,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/execution"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("currentStep").value(nullValue()));
+		       .andExpect(jsonPath("currentProcessIndex").value(nullValue()));
 	}
 
 	@Test
@@ -99,6 +110,35 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void configureSkip() throws Exception {
+		mockMvc.perform(post("/api/process/execution/configure")
+				                .param("stepName", Step.ANONYMIZATION.name())
+				                .param("skip", "true")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
+	}
+
+	@Test
+	public void configureMissingConfiguration() throws Exception {
+		mockMvc.perform(post("/api/process/execution/configure")
+				                .param("stepName", Step.ANONYMIZATION.name())
+				                .param("url", "/start_synthetization_process/ctgan")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("configuration", "Configuration not set!"));
+	}
+
+	@Test
+	public void configureMissingUrl() throws Exception {
+		mockMvc.perform(post("/api/process/execution/configure")
+				                .param("stepName", Step.ANONYMIZATION.name())
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("url", "Configuration not set!"));
+	}
+
+	@Test
 	public void startAndFinishProcess() throws Exception {
 		// Setup
 		postData(false);
@@ -111,6 +151,10 @@ public class ProcessControllerTest extends ControllerTest {
 		getStatus2();
 		finish2();
 		getStatus3();
+
+		// Get results
+		getResultFile();
+		getResultZip();
 	}
 
 	private void start() throws Exception {
@@ -125,16 +169,19 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/execution/start"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("currentStep").value(Step.ANONYMIZATION.name()))
-		       .andExpect(jsonPath("processes.ANONYMIZATION.externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("processes.ANONYMIZATION.status").value(nullValue()))
-		       .andExpect(jsonPath("processes.SYNTHETIZATION.externalProcessStatus").value(
-				       ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("processes.SYNTHETIZATION.status").value(nullValue()));
+		       .andExpect(jsonPath("currentProcessIndex").value(0))
+		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("processes[0].step").value(Step.ANONYMIZATION.name()))
+		       .andExpect(jsonPath("processes[0].status").value(nullValue()))
+		       .andExpect(jsonPath("processes[0].processSteps").value(nullValue()))
+		       .andExpect(jsonPath("processes[1].externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
+		       .andExpect(jsonPath("processes[1].step").value(Step.SYNTHETIZATION.name()))
+		       .andExpect(jsonPath("processes[1].status").value(nullValue()))
+		       .andExpect(jsonPath("processes[1].processSteps").value(nullValue()));
 
 		// Test state changes
 		var updateTestProject = getTestProject();
-		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
+		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get();
 		assertNotNull(process, "No external process has been created!");
 		assertEquals(ProcessStatus.RUNNING, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
@@ -155,8 +202,8 @@ public class ProcessControllerTest extends ControllerTest {
 		final var upload = new JakartaServletFileUpload(factory);
 		final List<DiskFileItem> fileItems = upload.parseRequest(request);
 
-		Long id = process.getId();
-		final String callbackUrl = "http://" + callbackHost + ":8080/api/process/" + id.toString() + "/callback";
+		String id = process.getUuid().toString();
+		final String callbackUrl = "http://" + callbackHost + ":8080/api/process/" + id + "/callback";
 
 		// Test request content
 		for (final FileItem fileItem : fileItems) {
@@ -164,7 +211,7 @@ public class ProcessControllerTest extends ControllerTest {
 				assertEquals(DataSetTestHelper.generateDataSetAsJson(false), fileItem.getString(),
 				             "Unexpected content of data!");
 			} else if (fileItem.getFieldName().equals("session_key")) {
-				assertEquals(id.toString(), fileItem.getString(), "Unexpected session key!");
+				assertEquals(id, fileItem.getString(), "Unexpected session key!");
 			} else if (fileItem.getFieldName().equals("callback")) {
 				assertEquals(callbackUrl, fileItem.getString(), "Unexpected callback URL!");
 			} else if (fileItem.getFieldName().equals("anonymizationConfig")) {
@@ -178,8 +225,8 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private void getStatus1() throws Exception {
 		var updateTestProject = getTestProject();
-		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
-		Long id = process.getId();
+		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get();
+		String id = process.getUuid().toString();
 
 		// Get status
 		mockBackEnd.enqueue(new MockResponse.Builder()
@@ -190,12 +237,16 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/execution"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("currentStep").value(Step.ANONYMIZATION.name()))
-		       .andExpect(jsonPath("processes.ANONYMIZATION.externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("processes.ANONYMIZATION.status").value("status"))
-		       .andExpect(jsonPath("processes.SYNTHETIZATION.externalProcessStatus").value(
-				       ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("processes.SYNTHETIZATION.status").value(nullValue()));
+		       .andExpect(jsonPath("currentProcessIndex").value(0))
+		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("processes[0].status").value("status"))
+		       .andExpect(jsonPath("processes[0].step").value(Step.ANONYMIZATION.name()))
+		       .andExpect(jsonPath("processes[0].processSteps").value(nullValue()))
+		       .andExpect(jsonPath("processes[1].externalProcessStatus").value( ProcessStatus.NOT_STARTED.name()))
+		       .andExpect(jsonPath("processes[1].step").value(Step.SYNTHETIZATION.name()))
+		       .andExpect(jsonPath("processes[1].status").value(nullValue()))
+		       .andExpect(jsonPath("processes[1].processSteps").value(nullValue()));
+
 
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("GET", recordedRequest.getMethod());
@@ -204,14 +255,16 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private void finish1() throws Exception {
 		var updateTestProject = getTestProject();
-		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
-		Long id = process.getId();
+		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get();
+		String id = process.getUuid().toString();
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("123");
 
 		// Send callback request
-		var resultData = ResourceHelper.loadCsvFile("synthetic_data");
+		var anonymizationResult = new MockMultipartFile("anonymized_dataset", "additional.txt", MediaType.TEXT_PLAIN_VALUE,
+		                                DataSetTestHelper.generateDataSetAsJson().getBytes());
+
 		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
 		                                                                 "info".getBytes());
@@ -221,44 +274,48 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 		mockMvc.perform(multipart("/api/process/" + id + "/callback")
-				                .file(resultData)
-				                .file(resultAdditional))
+				                .file(anonymizationResult)
+				                .file(resultAdditional)
+		       )
 		       .andExpect(status().isOk());
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("POST", recordedRequest.getMethod());
 		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
 
 		// Test state changes
-		process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
-		final DataSetEntity dataSetEntity = updateTestProject.getDataSets().get(Step.ANONYMIZATION);
+		process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get();
+		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(updateTestProject, Step.ANONYMIZATION);
 		assertEquals(ProcessStatus.FINISHED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 		assertTrue(existsDataSet(dataSetEntity.getId()), "Dataset has not been stored!");
 		assertTrue(dataSetEntity.isStoredData(), "Dataset has not been stored!");
-		assertTrue(process.getAdditionalResultFiles().containsKey("additional.txt"),
+		assertEquals(List.of(Step.ANONYMIZATION), dataSetEntity.getProcessed(), "Unexpected previous processes!");
+		assertTrue(process.getResultFiles().containsKey("additional.txt"),
 		           "Additional result has not been set!");
-		assertEquals("info",
-		             new String(process.getAdditionalResultFiles().get("additional.txt"), StandardCharsets.UTF_8),
+		assertEquals("info", process.getResultFiles().get("additional.txt").getLobString(),
 		             "Additional result has not been set correctly!");
 
 	}
 
 	private void getStatus2() throws Exception {
 		var updateTestProject = getTestProject();
-		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.SYNTHETIZATION);
-		Long id = process.getId();
+		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.SYNTHETIZATION).get();
+		String id = process.getUuid().toString();
 
 		enqueueSynthStatus();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/execution"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("currentStep").value(Step.SYNTHETIZATION.name()))
-		       .andExpect(jsonPath("processes.ANONYMIZATION.externalProcessStatus").value(ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("processes.ANONYMIZATION.status").value("status"))
-		       .andExpect(jsonPath("processes.SYNTHETIZATION.externalProcessStatus").value(
-				       ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("processes.SYNTHETIZATION.status").value("{\"status\":[{\"completed\":\"False\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"));
+		       .andExpect(jsonPath("currentProcessIndex").value(1))
+		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("processes[0].status").value("status"))
+		       .andExpect(jsonPath("processes[0].step").value(Step.ANONYMIZATION.name()))
+		       .andExpect(jsonPath("processes[0].processSteps[0]").value(Step.ANONYMIZATION.name()))
+		       .andExpect(jsonPath("processes[1].externalProcessStatus").value( ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("processes[1].status").value("{\"status\":[{\"completed\":\"False\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"))
+		       .andExpect(jsonPath("processes[1].step").value(Step.SYNTHETIZATION.name()))
+		       .andExpect(jsonPath("processes[1].processSteps").value(nullValue()));
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("GET", recordedRequest.getMethod());
 		assertEquals("/get_status/" + id, recordedRequest.getPath());
@@ -266,8 +323,8 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private void finish2() throws Exception {
 		var updateTestProject = getTestProject();
-		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.SYNTHETIZATION);
-		Long id = process.getId();
+		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.SYNTHETIZATION).get();
+		String id = process.getUuid().toString();
 
 		enqueueSynthStatus();
 
@@ -279,18 +336,92 @@ public class ProcessControllerTest extends ControllerTest {
 				                .file(resultData)
 				                .file(resultAdditional))
 		       .andExpect(status().isOk());
+
+		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(updateTestProject, Step.SYNTHETIZATION);
+		assertEquals(List.of(Step.ANONYMIZATION, Step.SYNTHETIZATION), dataSetEntity.getProcessed(), "Unexpected previous processes!");
 	}
 
 	private void getStatus3() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/execution"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("currentStep").value(nullValue()))
-		       .andExpect(jsonPath("processes.ANONYMIZATION.externalProcessStatus").value(ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("processes.ANONYMIZATION.status").value("status"))
-		       .andExpect(jsonPath("processes.SYNTHETIZATION.externalProcessStatus").value(
-				       ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("processes.SYNTHETIZATION.status").value("{\"status\":[{\"completed\":\"True\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"));
+		       .andExpect(jsonPath("currentProcessIndex").value(nullValue()))
+		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("processes[0].status").value("status"))
+		       .andExpect(jsonPath("processes[0].step").value(Step.ANONYMIZATION.name()))
+		       .andExpect(jsonPath("processes[0].processSteps[0]").value(Step.ANONYMIZATION.name()))
+		       .andExpect(jsonPath("processes[0].processSteps[1]").doesNotExist())
+		       .andExpect(jsonPath("processes[1].externalProcessStatus").value( ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("processes[1].status").value("{\"status\":[{\"completed\":\"True\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"))
+		       .andExpect(jsonPath("processes[1].step").value(Step.SYNTHETIZATION.name()))
+		       .andExpect(jsonPath("processes[1].processSteps[0]").value(Step.ANONYMIZATION.name()))
+		       .andExpect(jsonPath("processes[1].processSteps[1]").value(Step.SYNTHETIZATION.name()))
+		       .andExpect(jsonPath("processes[1].processSteps[2]").doesNotExist());
+	}
+
+	private void getResultFile() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/resultFile")
+		                                      .param("executionStepName", "EXECUTION")
+		                                      .param("processStepName", "ANONYMIZATION")
+		                                      .param("name", "additional.txt"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string("info"));
+	}
+
+	private void getResultZip() throws Exception {
+		var result = mockMvc.perform(MockMvcRequestBuilders.get("/api/project/zip")
+		                                                   .param("executionStepName", "EVALUATION")
+		                                                   .param("processStepName", "ANONYMIZATION")
+		                                                   .param("name", "additional.txt"))
+		                    .andExpect(status().isOk())
+		                    .andExpect(header().exists("Content-Disposition"))
+		                    .andExpect(header().string("Content-Disposition", "attachment; filename=process.zip"))
+		                    .andExpect(content().contentType("application/zip"))
+		                    .andReturn();
+
+		final var expectedEntries = new java.util.HashMap<>(Map.ofEntries(
+				Map.entry("attribute_config.yaml",
+				          MutablePair.of(false, DataConfigurationTestHelper.generateDataConfigurationAsYaml())),
+				Map.entry("original.csv", MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
+				Map.entry("anonymization.yaml", MutablePair.of(false, "configuration")),
+				Map.entry("ANONYMIZATION.csv", MutablePair.of(false, ResourceHelper.loadCsvFileWithErrorsAsString()
+				                                                                   .replace("forty two", ""))),
+				Map.entry("additional.txt", MutablePair.of(false, "info")),
+				Map.entry("synthetization_configuration.yaml", MutablePair.of(false, "configuration")),
+				Map.entry("ANONYMIZATION-SYNTHETIZATION.csv",
+				          MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
+				Map.entry("additional_1.txt", MutablePair.of(false, "info"))
+		));
+		final List<String> unexpectedEntries = new ArrayList<>();
+
+		try (final var zipIn = new ZipInputStream(new ByteArrayInputStream(result.getResponse().getContentAsByteArray()))) {
+
+			ZipEntry entry;
+			while ((entry = zipIn.getNextEntry()) != null) {
+				if (expectedEntries.containsKey(entry.getName())) {
+					var expectedEntry = expectedEntries.get(entry.getName());
+					expectedEntry.setLeft(true);
+
+					final StringBuilder sb = new StringBuilder();
+					final byte[] buffer = new byte[1024];
+					int read;
+
+					while((read = zipIn.read(buffer, 0, 1024)) >= 0) {
+						sb.append(new String(buffer, 0, read));
+					}
+					assertEquals(expectedEntry.getRight(), sb.toString(), "Unexpected content of file: " + entry.getName());
+				} else {
+					unexpectedEntries.add(entry.getName());
+				}
+
+				zipIn.closeEntry();
+			}
+		}
+
+		assertEquals(0, unexpectedEntries.size(), "Unexpected entries in the zip: " + unexpectedEntries);
+		for (final var entry : expectedEntries.entrySet()) {
+			assertTrue(entry.getValue().getLeft(), "Expected entry not found in the zip: " + entry.getKey());
+		}
 	}
 
 	private void enqueueSynthStatus() throws JsonProcessingException {
@@ -327,16 +458,16 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/execution/start"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("currentStep").value(Step.ANONYMIZATION.name()));
+		       .andExpect(jsonPath("currentProcessIndex").value(0));
 
 		mockMvc.perform(multipart("/api/process/execution/cancel")
 				                .param("stepName", Step.SYNTHETIZATION.name()))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.CANCELED.name()))
-		       .andExpect(jsonPath("currentStep").value(nullValue()));
+		       .andExpect(jsonPath("currentProcessIndex").value(nullValue()));
 
 		// Test state changes
-		final ExternalProcessEntity process = getTestProject().getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
+		final ExternalProcessEntity process = getTestProject().getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get();
 		assertEquals(ProcessStatus.CANCELED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 	}
@@ -384,7 +515,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .with(httpBasic("test_user_3", "changeme")))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("processes.ANONYMIZATION.externalProcessStatus").value(ProcessStatus.SCHEDULED.name()));
+		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.SCHEDULED.name()));
 
 		// Cancel first
 		mockBackEnd.enqueue(new MockResponse.Builder()
@@ -406,7 +537,9 @@ public class ProcessControllerTest extends ControllerTest {
 		project = projectService.getProject(user);
 
 		// Check if the second process is running
-		assertEquals(ProcessStatus.RUNNING, project.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION).getExternalProcessStatus());
+		assertEquals(ProcessStatus.RUNNING,
+		             project.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get()
+		                    .getExternalProcessStatus());
 	}
 
 	@Test
@@ -431,8 +564,8 @@ public class ProcessControllerTest extends ControllerTest {
 
 
 		var updateTestProject = getTestProject();
-		var process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
-		Long id = process.getId();
+		var process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get();
+		String id = process.getUuid().toString();
 
 
 		// Send callback request with error
@@ -447,12 +580,12 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
 
 		// Test state changes
-		process = updateTestProject.getExecutions().get(Step.EXECUTION).getProcesses().get(Step.ANONYMIZATION);
+		process = updateTestProject.getPipelines().get(0).getStageByStep(Step.EXECUTION).getProcess(Step.ANONYMIZATION).get();
 		assertEquals(ProcessStatus.ERROR, process.getExecutionStep().getStatus());
 		assertEquals(ProcessStatus.ERROR, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 		assertEquals("An error occurred!", process.getStatus());
-		assertFalse(process.getAdditionalResultFiles().containsKey("exception_message.txt"),
+		assertFalse(process.getResultFiles().containsKey("exception_message.txt"),
 		           "Exception message should not have been set!");
 	}
 
@@ -462,7 +595,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/execution/start"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
-				       "The project '" + testProject.getId() + "' does not contain a data set for step 'VALIDATION'!"));
+				       "The project '" + testProject.getId() + "' does not contain an original data set!"));
 	}
 
 	@Test
@@ -470,7 +603,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/execution/start"))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorMessage(
-				       "No configuration with name 'anonymization' required for step 'ANONYMIZATION' found!"));
+				       "No configuration for step 'ANONYMIZATION' found!"));
 	}
 
 	@Test
@@ -502,13 +635,22 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void finishInvalidProcess() throws Exception {
+		final String id = UUID.randomUUID().toString();
 		final MockMultipartFile result = new MockMultipartFile("synthetic_data", "result.csv",
 		                                                       MediaType.TEXT_PLAIN_VALUE,
 		                                                       "result".getBytes());
-		mockMvc.perform(multipart("/api/process/0/callback")
+		mockMvc.perform(multipart("/api/process/" + id + "/callback")
 				                .file(result))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("No process with the given ID '0' exists!"));
+		       .andExpect(errorMessage("No process with the given ID '" + id + "' exists!"));
+	}
+
+	@Test
+	public void confirm() throws Exception {
+		mockMvc.perform(post("/api/process/confirm"))
+		       .andExpect(status().isOk());
+		var updateTestProject = getTestProject();
+		assertEquals(Step.TECHNICAL_EVALUATION, updateTestProject.getStatus().getCurrentStep());
 	}
 
 }

@@ -1,10 +1,19 @@
-import { Injectable } from '@angular/core';
+import {Injectable } from '@angular/core';
 import { ExecutionStep } from "../model/execution-step";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
 import { ProcessStatus } from "../../core/enums/process-status";
-import { interval, Observable, Subscription, tap } from "rxjs";
-import { ExternalProcess } from "../model/external-process";
+import {
+    BehaviorSubject,
+    catchError,
+    interval,
+    Observable,
+    of,
+    Subscription,
+    switchMap,
+    tap
+} from "rxjs";
+import {Steps} from "../../core/enums/steps";
 
 @Injectable({
     providedIn: 'root'
@@ -15,6 +24,8 @@ export abstract class ExecutionStepService {
     private _disabled: boolean = false;
     private _error: string | null = null;
     private _status: ExecutionStep = new ExecutionStep();
+
+    private _statusSubject: BehaviorSubject<ExecutionStep | null>;
 
     /**
      * Observer that periodically sends requests to fetch the status
@@ -32,17 +43,17 @@ export abstract class ExecutionStepService {
     ) {
         // Create the initial status object so something can be displayed
         this._status.status = ProcessStatus.NOT_STARTED;
-        this._status.processes = {};
-        for (const step of this.getSteps()) {
-            const externalProcess = new ExternalProcess();
-            externalProcess.externalProcessStatus = ProcessStatus.NOT_STARTED;
-            this._status.processes[step] = externalProcess;
-        }
+        this._status.processes = [];
 
         // Create the status observer
-        this.statusObserver$ = interval(2000).pipe(tap(() => {
-            this.fetchStatus();
-        }));
+        this.statusObserver$ = interval(2000).pipe(
+            switchMap(() => {
+                return this.getProcess();
+            }),
+            tap(value => {
+                this.update(value)
+            }),
+        );
     }
 
     public get disabled(): boolean {
@@ -57,6 +68,11 @@ export abstract class ExecutionStepService {
         return this._status;
     }
 
+    public get status$(): Observable<ExecutionStep | null> {
+        this.initializeProjectSettings();
+        return this._statusSubject!.asObservable();
+    }
+
     /**
      * Starts the anonymization and synthetization process.
      * @protected
@@ -64,14 +80,9 @@ export abstract class ExecutionStepService {
     public start() {
         this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStepName() + "/start", {}).subscribe({
             next: value => {
-                this._error = null;
-                this._status = value;
-                this.setState(value.status);
-                for (const [key, status] of Object.entries(value.processes)) {
-                    this.setCustomStatus(key, status.status);
-                }
+                this.update(value);
             },
-            error: err => {
+            error: () => {
                 this.fetchStatus();
             }
         });
@@ -84,8 +95,7 @@ export abstract class ExecutionStepService {
     public cancel() {
         this.http.post<ExecutionStep>(this.baseUrl + '/' + this.getStepName() + '/cancel', {}).subscribe({
             next: (executionStep: ExecutionStep) => {
-                this._status = executionStep;
-                this.setState(executionStep.status);
+                this.update(executionStep);
             },
             error: err => {
                 this._error = `Failed to cancel the process. Status: ${err.status} (${err.statusText})`;
@@ -120,13 +130,7 @@ export abstract class ExecutionStepService {
      */
     protected abstract getStepName(): string;
 
-    protected abstract setCustomStatus(key: string, status: string | null): void;
-
-    /**
-     * TODO We could read the steps of this execution step from dynamically from the backend
-     * @protected
-     */
-    protected abstract getSteps(): string[];
+    protected abstract setCustomStatus(key: Steps, status: string | null, processSteps: Steps[]): void;
 
     /**
      * Starts or stops listening to the status based on the given status.
@@ -147,21 +151,18 @@ export abstract class ExecutionStepService {
      * Fetches the status from the server and updates the UI.
      * @private
      */
-   public fetchStatus(): void {
-        this.getProcess().subscribe({
-            next: process => {
-                this._error = null;
-                this._status = process;
-                this.setState(process.status);
-                for (const [key, status] of Object.entries(process.processes)) {
-                    this.setCustomStatus(key, status.status);
-                }
-            },
-            error: err => {
-                this._error = `Failed to update status. Status: ${err.status} (${err.statusText})`;
-            }
-        });
+    public fetchStatus(): Observable<ExecutionStep | null> {
+        return this.getProcess().pipe(
+            tap(value => {
+                this.update(value)
+            }),
+            catchError((error) => {
+                this._error = `Failed to update status. Status: ${error.status} (${error.statusText})`;
+                return of(null);
+            }),
+        );
     }
+
     /**
      *
      * Creates an observable that fetches the status.
@@ -169,5 +170,27 @@ export abstract class ExecutionStepService {
      */
     private getProcess(): Observable<ExecutionStep> {
         return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStepName());
+    }
+
+    private initializeProjectSettings(): void {
+        if (!this._statusSubject) {
+            this._statusSubject = new BehaviorSubject<ExecutionStep | null>(null)
+            this.fetchStatus().subscribe({
+                    next: value => {
+                        this._statusSubject!.next(value);
+                    }
+                }
+            );
+        }
+    }
+
+    private update(executionStep: ExecutionStep) {
+        this._error = null;
+        this._status = executionStep;
+        this.setState(executionStep.status);
+        for (const status of executionStep.processes) {
+            this.setCustomStatus(status.step, status.status, status.processSteps);
+        }
+        this._statusSubject.next(executionStep);
     }
 }

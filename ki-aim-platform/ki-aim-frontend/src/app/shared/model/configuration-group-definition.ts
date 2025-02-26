@@ -1,9 +1,11 @@
 import { ConfigurationInputDefinition } from "./configuration-input-definition";
 
+export type ConfigurationGroupDefinitions = { [name: string]: ConfigurationGroupDefinition };
+
 export class ConfigurationGroupDefinition {
     display_name: string
     description: string
     parameters: ConfigurationInputDefinition[]
-    configurations: {[name: string]: ConfigurationGroupDefinition}
-    options: {[name: string]: ConfigurationGroupDefinition}
+    configurations: ConfigurationGroupDefinitions
+    options: ConfigurationGroupDefinitions
 }

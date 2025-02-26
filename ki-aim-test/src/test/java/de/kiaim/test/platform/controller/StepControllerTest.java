@@ -1,6 +1,8 @@
 package de.kiaim.test.platform.controller;
 
-import de.kiaim.platform.config.StepConfiguration;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import de.kiaim.platform.model.configuration.StageConfiguration;
+import de.kiaim.platform.model.dto.StepConfigurationResponse;
 import de.kiaim.test.platform.ControllerTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithUserDetails;
@@ -17,14 +19,30 @@ public class StepControllerTest extends ControllerTest {
 		final var config = mockMvc.perform(get("/api/step/anonymization"))
 		                          .andExpect(status().isOk())
 		                          .andReturn().getResponse().getContentAsString();
-		final var stepConfig = objectMapper.readValue(config, StepConfiguration.class);
-		assertEquals("http://anonymization.de", stepConfig.getUrl(), "Unexpected URL!");
+		final var stepConfig = objectMapper.readValue(config, StepConfigurationResponse.class);
+		assertEquals("http://anonymization.de", stepConfig.getUrlClient(), "Unexpected URL!");
 	}
 
 	@Test
 	public void getInvalidName() throws Exception {
-		final var config = mockMvc.perform(get("/api/step/invalidStepName"))
-		                          .andExpect(status().isBadRequest())
-		                          .andExpect(errorMessage("The step 'invalidStepName' is not defined!"));
+		mockMvc.perform(get("/api/step/invalidStepName"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("The step 'invalidStepName' is not defined!"));
+	}
+
+	@Test
+	public void getStageStage() throws Exception {
+		final var config = mockMvc.perform(get("/api/step/stage/execution"))
+		                          .andExpect(status().isOk())
+		                          .andReturn().getResponse().getContentAsString();
+		final var stageConfig = objectMapper.readValue(config, StageConfiguration.class);
+		assertEquals(2, stageConfig.getJobs().size(), "Unexpected number of jobs!");
+	}
+
+	@Test
+	public void getStageInvalidName() throws Exception {
+		mockMvc.perform(get("/api/step/stage/invalidStepName"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("The step 'invalidStepName' is not defined!"));
 	}
 }

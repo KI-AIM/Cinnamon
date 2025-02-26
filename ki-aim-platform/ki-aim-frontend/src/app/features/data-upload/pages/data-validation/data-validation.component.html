@@ -30,7 +30,39 @@
     </button>
 </div>
 
-<app-data-table step="validation"></app-data-table>
+<mat-accordion>
+    <mat-expansion-panel>
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                <h5>Data Upload Result</h5>
+            </mat-panel-title>
+            <mat-panel-description>
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <ng-template matExpansionPanelContent>
+            <div class="mt-1">
+                <app-data-table sourceDataset="validation"></app-data-table>
+            </div>
+        </ng-template>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                <h5>Data Inspection</h5>
+            </mat-panel-title>
+            <mat-panel-description>
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <ng-template matExpansionPanelContent>
+            <div class="mt-1">
+                <app-data-inspection sourceDataset="VALIDATION"></app-data-inspection>
+            </div>
+        </ng-template>
+
+    </mat-expansion-panel>
+</mat-accordion>
 
 <ng-template #deleteDialog>
     <mat-dialog-content class="mat-typography">

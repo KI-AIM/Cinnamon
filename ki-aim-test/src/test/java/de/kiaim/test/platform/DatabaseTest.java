@@ -1,6 +1,8 @@
 package de.kiaim.test.platform;
 
+import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.repository.DataSetRepository;
@@ -25,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Transactional
 public class DatabaseTest extends ContextRequiredTest {
 
+	public static final String CONFIGURATION_NAME = "anonymization";
+
 	@Autowired
 	DataSource dataSource;
 	private Connection connection;
@@ -41,7 +45,7 @@ public class DatabaseTest extends ContextRequiredTest {
 	@Autowired
 	DatabaseService databaseService;
 	@Autowired
-	ProjectService projectService;
+	protected ProjectService projectService;
 
 	protected UserEntity testUser;
 	protected ProjectEntity testProject;
@@ -68,7 +72,11 @@ public class DatabaseTest extends ContextRequiredTest {
 		}
 
 		this.testUser = getTestUser();
-		this.testProject = projectService.createProject(testUser);
+		try {
+			this.testProject = projectService.createProject(testUser);
+		} catch (InternalApplicationConfigurationException e) {
+			fail(e);
+		}
 	}
 
 	@AfterEach
@@ -79,17 +87,20 @@ public class DatabaseTest extends ContextRequiredTest {
 		connection = null;
 	}
 
-	protected void storeConfiguration(final String configName, final String config) {
+	protected void storeConfiguration(final String config) {
 		final UserEntity updatedUser = getTestUser();
 		final ProjectEntity project = projectService.getProject(updatedUser);
 
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(configName, config, project),
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, config, project),
 		                   "The configuration could not be stored!");
+		testConfiguration(project, config);
+	}
 
-		assertTrue(project.getConfigurations().containsKey(configName),
-		           "The configuration has not been stored correctly under the user!");
-		assertEquals(config, project.getConfigurations().get(configName),
-		             "The configuration has not been stored correctly!");
+	protected void testConfiguration(final ProjectEntity project, final String config) {
+		final ExternalProcessEntity process = assertDoesNotThrow(
+				() -> databaseService.getExternalProcessForConfigurationName(project, CONFIGURATION_NAME));
+		assertNotNull(process.getConfiguration(), "The configuration has not been stored correctly in the process!");
+		assertEquals(config, process.getConfiguration(), "The configuration has not been stored correctly!");
 	}
 
 	protected boolean existsDataSet(final long dataSetId) {
@@ -141,8 +152,8 @@ public class DatabaseTest extends ContextRequiredTest {
 							END
 							$do$;
 							""");
-		} catch (SQLException ignored) {
-			fail(ignored);
+		} catch (SQLException e) {
+			fail(e);
 		}
 	}
 

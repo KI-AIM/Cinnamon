@@ -63,20 +63,20 @@ services:
     ki-aim-platform:
       environment:
         # Datasource has to match with the configuration of the ki-aim-db container
-        - SPRING_DATASOURCE_URL=jdbc:postgresql://ki-aim-db:5432/ki_aim_db
-        - SPRING_DATASOURCE_USERNAME=ki_aim_user
-        - SPRING_DATASOURCE_PASSWORD=changeme
+        SPRING_DATASOURCE_PASSWORD: changeme
+        SPRING_DATASOURCE_URL: jdbc:postgresql://ki-aim-db:5432/ki_aim_db
+        SPRING.DATASOURCE.USERNAME: ki_aim_user
 ```
 
 > [!WARNING]
 > Please change the password of the PostgreSQL user before deploying.
 
-When changing container names or ports, the configurations for the steps have to be changed as well.
+When changing container names or ports, the configurations for the external server have to be changed as well.
 
 ```yaml
 services:
   ki-aim-platform:
     environment:
-      - KI-AIM.STEPS.ANONYMIZATION.URL=http://ki-aim-anon:8080
-      - KI-AIM.STEPS.ANONYMIZATION.CALLBACKHOST=ki-aim-platform
+      KI-AIM.EXTERNAL-SERVER.0.CALLBACK-HOST: ki-aim-platform
+      KI-AIM.EXTERNAL-SERVER.0.URL-SERVER: http://ki-aim-anon:8080
 ```

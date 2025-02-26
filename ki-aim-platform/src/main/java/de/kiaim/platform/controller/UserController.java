@@ -1,6 +1,7 @@
 package de.kiaim.platform.controller;
 
 import de.kiaim.model.spring.CustomMediaType;
+import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.dto.RegisterRequest;
 import de.kiaim.platform.model.entity.UserEntity;
@@ -55,7 +56,7 @@ public class UserController {
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public boolean login(
 			@AuthenticationPrincipal UserEntity user
-	) {
+	) throws InternalApplicationConfigurationException {
 		// TODO move somewhere else
 		projectService.createProject(user);
 		return true;

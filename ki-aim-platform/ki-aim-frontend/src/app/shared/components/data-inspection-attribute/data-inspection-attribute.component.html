@@ -1,0 +1,102 @@
+<div class="wrapper">
+    <!-- Basic information on the left -->
+    <div class="d-flex flex-column" style="flex: 0 0 auto; min-width: 15rem;">
+
+        <!-- Configured metadata on the top -->
+        <div>
+            <div class="fw-bold">
+                Attribute Information
+            </div>
+            <div>
+                <table>
+                    <tr>
+                        <th>Index:</th>
+                        <td>{{ attributeStatistics.attribute_information.index }}</td>
+                    </tr>
+                    <tr>
+                        <th>Name:</th>
+                        <td>{{ attributeStatistics.attribute_information.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Type:</th>
+                        <td>{{ attributeStatistics.attribute_information.type }}</td>
+                    </tr>
+                    <tr>
+                        <th>Scale:</th>
+                        <td>{{ attributeStatistics.attribute_information.scale }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Important metrics on the bottom -->
+        <div class="mt-2">
+            <div class="fw-bold">
+                Important Statistical Metrics
+            </div>
+            <div *ngIf="(metricConfig$ | async) as mc">
+                <table>
+                    <tr *ngFor="let metricData of projectConfigService.filterMetrics(mc.metricConfiguration, MetricImportance.IMPORTANT, attributeStatistics)">
+                        <th>{{ metricData[1].display_name }}:</th>
+                        <td>{{ statisticsService.formatNumber(statisticsService.getValue(metricData[1].values, mainData), {max: 3, min: 3}) }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graph in the middle -->
+    <div class="" style="flex : 1 1 auto; min-width: 300px;">
+
+        <div class="w-100 h-100">
+            <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
+                <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="flat-mat-form-button" style="margin-bottom: -32px;">Legend</button>
+                <app-chart-select [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType" [simple]="true"></app-chart-select>
+
+                <ng-container *ngIf="graphType === 'density'">
+                    <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
+                                       [data]="attributeStatistics.plot.density" [simple]="true"></app-chart-density>
+                </ng-container>
+                <ng-container *ngIf="graphType === 'histogram'">
+                    <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null" [simple]="true"></app-chart-frequency>
+                </ng-container>
+                <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
+                    <app-chart-calendar [data]="attributeStatistics.plot.density" [simple]="true"></app-chart-calendar>
+                </ng-container>
+            </ng-container>
+            <ng-template #frequency>
+                <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="flat-mat-form-button" style="margin-bottom: 2px;">Legend</button>
+                <ng-container *ngIf="attributeStatistics.plot.frequency_plot; else noChart">
+                    <app-chart-frequency [data]="attributeStatistics.plot.frequency_plot" [limit]="null" [simple]="true"></app-chart-frequency>
+                </ng-container>
+            </ng-template>
+            <ng-template #noChart>
+            </ng-template>
+        </div>
+    </div>
+
+    <!-- Button to open details on the right -->
+    <div class="d-flex flex-row" style="flex: 0 0 auto;">
+        <div class="m-auto">
+            <button mat-raised-button color="primary" type="button" (click)="openDetailsDialog(detailsDialog)">Details
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<ng-template #detailsDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Attribute Details "{{attributeStatistics.attribute_information.name}}"</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <app-data-inspection-attribute-details [attributeStatistics]="attributeStatistics" [mainData]="mainData"
+                                               [sourceDataset]="sourceDataset" [sourceProcess]="sourceProcess" [processingSteps]="processingSteps">
+        </app-data-inspection-attribute-details>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
+    </mat-dialog-actions>
+</ng-template>
+
+<mat-menu #colorLegend xPosition="after" yPosition="above">
+    <app-color-legend></app-color-legend>
+</mat-menu>

@@ -1,0 +1,19 @@
+<ng-template #metricInfoDialog>
+    <mat-dialog-content class="mat-typography">
+
+        <div class="info-table">
+            <span class="info-name">Name:</span>
+            <span class="info-value">{{ metricInfo.display_name }}</span>
+
+            <span class="info-name">Description:</span>
+            <span class="info-value">{{ metricInfo.description }}</span>
+
+            <span class="info-name">Interpretation:</span>
+            <span class="info-value">{{ metricInfo.interpretation }}</span>
+        </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

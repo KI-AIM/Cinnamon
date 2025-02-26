@@ -11,15 +11,15 @@ import java.util.List;
  */
 @Getter
 public enum Step {
-	WELCOME(0, List.of()),
-	UPLOAD(1, List.of()),
-	DATA_CONFIG(2, List.of()),
-	VALIDATION(3, List.of()),
-	ANONYMIZATION(4, List.of()),
-	SYNTHETIZATION(5, List.of()),
-	EXECUTION(6, List.of(ANONYMIZATION, SYNTHETIZATION)),
-	TECHNICAL_EVALUATION(7, List.of()),
-	EVALUATION(7, List.of(TECHNICAL_EVALUATION)),
+	WELCOME(0),
+	UPLOAD(1),
+	DATA_CONFIG(2),
+	VALIDATION(3),
+	ANONYMIZATION(4),
+	SYNTHETIZATION(5),
+	EXECUTION(6),
+	TECHNICAL_EVALUATION(7),
+	EVALUATION(7),
 	;
 
 	/**
@@ -27,15 +27,8 @@ public enum Step {
 	 */
 	private final int index;
 
-	/**
-	 * List of processes in this step.
-	 */
-	private final List<Step> processes;
-
-
-	Step(final int index, final List<Step> processes) {
+	Step(final int index) {
 		this.index = index;
-		this.processes = processes;
 	}
 
 	/**

@@ -4,16 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.exception.InternalRequestException;
-import de.kiaim.platform.model.entity.ExecutionStepEntity;
-import de.kiaim.platform.model.entity.ExternalProcessEntity;
-import de.kiaim.platform.model.entity.ProjectEntity;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.processor.CsvProcessor;
-import de.kiaim.platform.repository.ExternalProcessRepository;
-import de.kiaim.platform.repository.ProjectRepository;
+import de.kiaim.platform.repository.BackgroundProcessRepository;
 import de.kiaim.platform.service.DatabaseService;
 import de.kiaim.platform.service.ProcessService;
+import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.StepService;
 import de.kiaim.test.platform.ContextRequiredTest;
 import mockwebserver3.MockResponse;
@@ -30,6 +29,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -40,6 +40,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@Value("${server.port}") private int port;
 	@Autowired private SerializationConfig serializationConfig;
+	@Autowired private KiAimConfiguration kiAimConfiguration;
 	@Autowired private StepService stepService = mock(StepService.class);
 
 	private ObjectMapper jsonMapper = null;
@@ -49,20 +50,22 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("ki-aim.steps.synthetization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("ki-aim.steps.anonymization.url", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server.2.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server.1.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("ki-aim.external-server.0.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
 	}
 
 	@BeforeEach
 	void setUpMockWebServer() throws IOException {
-		ProjectRepository projectRepository = mock(ProjectRepository.class);
-		ExternalProcessRepository externalProcessRepository = mock(ExternalProcessRepository.class);
+		BackgroundProcessRepository backgroundProcessRepository = mock(BackgroundProcessRepository.class);
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
+		ProjectService projectService = mock(ProjectService.class);
 
-		this.processService = new ProcessService(serializationConfig, port, externalProcessRepository,
-		                                         projectRepository, csvProcessor, databaseService, stepService);
+		this.processService = new ProcessService(serializationConfig, port, kiAimConfiguration,
+		                                         backgroundProcessRepository, csvProcessor, databaseService,
+		                                         projectService, stepService);
 
 		mockBackEnd = new MockWebServer();
 		mockBackEnd.start(mockBackEndPort);
@@ -79,26 +82,24 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@Test
 	public void fetchStatusError() throws IOException {
-
-		final Step curretnStep = Step.ANONYMIZATION;
-
-		final ExternalProcessEntity externalProcess = new ExternalProcessEntity();
+		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
-		ReflectionTestUtils.setField(externalProcess, "id", 1L);
+		externalProcess.setStep(Step.ANONYMIZATION);
+		externalProcess.setUuid(UUID.randomUUID());
 
 		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
-		executionStep.setCurrentStep(curretnStep);
+		executionStep.setCurrentProcessIndex(0);
 		executionStep.setStatus(ProcessStatus.RUNNING);
-		executionStep.putExternalProcess(curretnStep, externalProcess);
+		executionStep.addProcess(externalProcess);
 
 		final ProjectEntity project = new ProjectEntity();
+		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
 		final Step step = Step.EXECUTION;
-		project.putExecutionStep(step, executionStep);
+		pipeline.addStage(step, executionStep);
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setError("An error occurred!");
 		mockBackEnd.enqueue(new MockResponse.Builder()
-
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 				                    .code(500)
 				                    .body(jsonMapper.writeValueAsString(response))
@@ -114,20 +115,20 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@Test
 	public void fetchStatusUnavailable() throws IOException {
-		final Step curretnStep = Step.ANONYMIZATION;
-
-		final ExternalProcessEntity externalProcess = new ExternalProcessEntity();
+		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
-		ReflectionTestUtils.setField(externalProcess, "id", 1L);
+		externalProcess.setStep(Step.ANONYMIZATION);
+		externalProcess.setUuid(UUID.randomUUID());
 
 		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
-		executionStep.setCurrentStep(curretnStep);
+		executionStep.setCurrentProcessIndex(0);
 		executionStep.setStatus(ProcessStatus.RUNNING);
-		executionStep.putExternalProcess(curretnStep, externalProcess);
+		executionStep.addProcess(externalProcess);
 
 		final ProjectEntity project = new ProjectEntity();
+		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
 		final Step step = Step.EXECUTION;
-		project.putExecutionStep(step, executionStep);
+		pipeline.addStage(step, executionStep);
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setError("An error occurred!");

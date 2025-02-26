@@ -4,8 +4,10 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.model.spring.CustomMediaType;
+import de.kiaim.platform.model.configuration.KiAimConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.*;
+import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.enumeration.RowSelector;
@@ -38,6 +40,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 // TODO Support different languages
 @RestController
@@ -57,20 +60,25 @@ public class DataController {
 			"""
 					,"data":""" + DATA_EXAMPLE + "}";
 
+	private final KiAimConfiguration kiAimConfiguration;
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
+	private final ProcessService processService;
 	private final ProjectService projectService;
 	private final StatusService statusService;
 	private final UserService userService;
 
 	@Autowired
-	public DataController(final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final DataSetService dataSetService, final ProjectService projectService,
-	                      final StatusService statusService, final UserService userService) {
+	public DataController(final KiAimConfiguration kiAimConfiguration, final DatabaseService databaseService, final DataProcessorService dataProcessorService,
+	                      final DataSetService dataSetService, final ProcessService processService,
+	                      final ProjectService projectService, final StatusService statusService,
+	                      final UserService userService) {
+		this.kiAimConfiguration = kiAimConfiguration;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
+		this.processService = processService;
 		this.projectService = projectService;
 		this.statusService = statusService;
 		this.userService = userService;
@@ -283,12 +291,14 @@ public class DataController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/configuration",
+	@GetMapping(value = "/{stepName}/configuration",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadConfig(
+			@Parameter(description = "Step the requested data configuration belongs to.")
+			@PathVariable final String stepName,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_CONFIG, null, null, null, user);
+		return handleRequest(RequestType.LOAD_CONFIG, null, stepName, null, user);
 	}
 
 	@Operation(summary = "Returns general information the data set.",
@@ -463,16 +473,33 @@ public class DataController {
 	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadTransformationResultPage(
 			@Parameter(description = "Step the requested data belongs to.")
-			@PathVariable final String stepName,
+			@PathVariable String stepName,
 			@Parameter(description = "Page number starting at 1.")
 			@RequestParam(required = true) final Integer page,
 			@Parameter(description = "Number of items per page.")
 			@RequestParam(required = true) final Integer perPage,
 			@Parameter(description = "Selector for the rows to be included.")
 			@RequestParam(required = false, defaultValue = "ALL") final RowSelector rowSelector,
+			@RequestParam(required = false, defaultValue = "DATASET") final String source,
 			@ParameterObject final LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
+		if (source.equals("JOB")) {
+			final UserEntity user2 = userService.getUserByEmail(user.getEmail());
+			final ProjectEntity project = projectService.getProject(user2);
+			final Step step = Step.getStepOrThrow(stepName);
+
+			Step exectionStep = null;
+			for (final var entry : kiAimConfiguration.getStages().entrySet()) {
+				if (entry.getValue().getJobs().contains(step)) {
+					exectionStep = entry.getKey();
+				}
+			}
+
+			final var executionStep = project.getPipelines().get(0).getStageByStep(exectionStep).getProcess(step).get();
+			stepName = processService.getDataSet(executionStep).getStep().name();
+		}
+
 		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT_PAGE, null, stepName, request, user, page, perPage, rowSelector);
 	}
 
@@ -523,7 +550,7 @@ public class DataController {
 	 *     <li>{@link RequestType#ESTIMATE}: </li>
 	 *     <li>{@link RequestType#DELETE}: requestUser</li>
 	 *     <li>{@link RequestType#INFO}: requestUser, stepName</li>
-	 *     <li>{@link RequestType#LOAD_CONFIG}: stepName, requestUser</li>
+	 *     <li>{@link RequestType#LOAD_CONFIG}: requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_DATA}: loadDataRequest, requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_DATA_SET}: loadDataRequest, requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT}: requestUser, stepName</li>
@@ -555,35 +582,32 @@ public class DataController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
 
-		final List<String> columnNames = loadDataRequest != null && !loadDataRequest.getColumns().isBlank()
-		                                 ? List.of(loadDataRequest.getColumns().split(","))
+		final List<String> columnNames = loadDataRequest != null
+		                                 ? loadDataRequest.getColumnNames()
 		                                 : new ArrayList<>();
 
 		final Object result;
 		switch (requestType) {
 			case CONFIRM_DATE_SET -> {
-				if (projectEntity.getDataSets().containsKey(Step.VALIDATION) &&
-				    !projectEntity.getDataSets().get(Step.VALIDATION).isStoredData()) {
-					throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET, "The data has not been stored!");
-				}
-				projectEntity.getDataSets().get(Step.VALIDATION).setConfirmedData(true);
+				databaseService.confirmDataSet(projectEntity);
 				statusService.updateCurrentStep(projectEntity, Step.ANONYMIZATION);
 				result = null;
 			}
 			case ESTIMATE -> {
-				if (projectEntity.getFile() == null) {
+				final var file = projectEntity.getOriginalData().getFile();
+				if (file == null) {
 					throw new BadStateException(BadStateException.NO_DATASET_FILE, "Estimating the data configuration requires the file for the dataset to be selected!");
 				}
 
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
-						projectEntity.getFile().getFileConfiguration().getFileType());
-				final InputStream inputStream = new ByteArrayInputStream(projectEntity.getFile().getFile());
+						file.getFileConfiguration().getFileType());
+				final InputStream inputStream = new ByteArrayInputStream(file.getFile());
 				result = dataProcessor.estimateDataConfiguration(inputStream,
-				                                                 projectEntity.getFile().getFileConfiguration(),
+				                                                 file.getFileConfiguration(),
 				                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
 
 				try {
-					databaseService.storeDataConfiguration((DataConfiguration) result, projectEntity, Step.VALIDATION);
+					databaseService.storeOriginalDataConfiguration((DataConfiguration) result, projectEntity);
 				} catch (final BadDataConfigurationException e) {
 					throw new InternalInvalidResultException(InternalInvalidResultException.INVALID_ESTIMATION,
 					                                         "Estimation created an invalid configuration!", e);
@@ -599,14 +623,16 @@ public class DataController {
 				result = databaseService.getInfo(projectEntity, step);
 			}
 			case LOAD_CONFIG -> {
-				result = databaseService.exportDataConfiguration(projectEntity, Step.VALIDATION);
+				final Step step = Step.getStepOrThrow(stepName);
+				result = databaseService.exportDataConfiguration(projectEntity, step);
 			}
 			case LOAD_DATA -> {
 				final Step step = Step.getStepOrThrow(stepName);
-				final DataSet dataSet = databaseService.exportDataSet(projectEntity, columnNames, step);
-				result = dataSetService.encodeDataRows(dataSet, projectEntity.getDataSets().get(step)
-				                                                             .getDataTransformationErrors(),
-				                                       loadDataRequest);
+				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity, step);
+				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames);
+				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
+				result = dataSetService.encodeDataRows(dataSet, dataSetEntity.getDataTransformationErrors(),
+													   columnIndexMapping, loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
 				final Step step = Step.getStepOrThrow(stepName);
@@ -627,27 +653,27 @@ public class DataController {
 				}
 			}
 			case STORE_CONFIG -> {
-				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
+				databaseService.storeOriginalDataConfiguration(configuration, projectEntity);
 				result = null;
 			}
 			case STORE_DATE_SET -> {
-				if (projectEntity.getFile() == null) {
+				final var file = projectEntity.getOriginalData().getFile();
+				if (file == null) {
 					throw new BadStateException(BadStateException.NO_DATASET_FILE, "Storing the dataset requires the file for the dataset to be selected!");
 				}
 
 				// Store configuration
-				databaseService.storeDataConfiguration(configuration, projectEntity, Step.VALIDATION);
+				databaseService.storeOriginalDataConfiguration(configuration, projectEntity);
 
 				// Store data set
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
-						projectEntity.getFile().getFileConfiguration().getFileType());
-				final InputStream inputStream = new ByteArrayInputStream(projectEntity.getFile().getFile());
+						file.getFileConfiguration().getFileType());
+				final InputStream inputStream = new ByteArrayInputStream(file.getFile());
 
 				final TransformationResult transformationResult = dataProcessor.read(inputStream,
-				                                                                     projectEntity.getFile()
-				                                                                                  .getFileConfiguration(),
+				                                                                     file.getFileConfiguration(),
 				                                                                     configuration);
-				result = databaseService.storeTransformationResult(transformationResult, projectEntity, Step.VALIDATION);
+				result = databaseService.storeOriginalTransformationResult(transformationResult, projectEntity);
 
 				statusService.updateCurrentStep(projectEntity, Step.VALIDATION);
 			}

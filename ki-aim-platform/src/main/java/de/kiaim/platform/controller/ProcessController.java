@@ -4,10 +4,12 @@ import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.dto.ConfigureProcessRequest;
+import de.kiaim.platform.model.dto.ExecutionStepInformation;
 import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.mapper.ExecutionStepMapper;
 import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,8 +24,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+import java.util.UUID;
 
 /**
  * Controller for managing external processes.
@@ -38,14 +41,16 @@ public class ProcessController {
 	private final ProjectService projectService;
 	private final StatusService statusService;
 	private final UserService userService;
+	private final ExecutionStepMapper executionStepMapper;
 
 	public ProcessController(final ProcessService processService, final ProjectService projectService,
-	                         final UserService userService, final StepService stepService,
-	                         StatusService statusService) {
+	                         final UserService userService, final StatusService statusService,
+	                         final ExecutionStepMapper executionStepMapper) {
 		this.processService = processService;
 		this.projectService = projectService;
 		this.userService = userService;
 		this.statusService = statusService;
+		this.executionStepMapper = executionStepMapper;
 	}
 
 	@Operation(summary = "Returns the status of the execution.",
@@ -53,7 +58,7 @@ public class ProcessController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully returns the status object.",
-			             content = @Content(schema = @Schema(implementation = ExecutionStepEntity.class))),
+			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -68,7 +73,7 @@ public class ProcessController {
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@GetMapping(value = "/{stepName}", produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ExecutionStepEntity getProcess(
+	public ExecutionStepInformation getProcess(
 			@Parameter(description = "Step of which the process should be canceled.")
 			@PathVariable final String stepName,
 			@AuthenticationPrincipal final UserEntity requestUser
@@ -77,7 +82,9 @@ public class ProcessController {
 		final ProjectEntity project = projectService.getProject(user);
 		final Step step = Step.getStepOrThrow(stepName);
 
-		return processService.getStatus(project, step);
+		final ExecutionStepEntity executionStep = processService.getStatus(project, step);
+		var a =executionStepMapper.toDto(executionStep);
+		return executionStepMapper.toDto(executionStep);
 	}
 
 	@Operation(summary = "Saves the configuration and the URL of the selected process for the given step.",
@@ -115,7 +122,7 @@ public class ProcessController {
 
 		// Configure process
 		processService.configureProcess(project, step, requestData.getStepName(), requestData.getUrl(),
-		                                requestData.getConfiguration());
+		                                requestData.getConfiguration(), requestData.isSkip());
 
 		// Go to the next step
 		var configuredStep = Step.getStepOrThrow(requestData.getStepName());
@@ -137,7 +144,7 @@ public class ProcessController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully started the execution. Returns the status object.",
-			             content = @Content(schema = @Schema(implementation = ExecutionStepEntity.class))),
+			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -154,7 +161,7 @@ public class ProcessController {
 	@PostMapping(value = "/{stepName}/start",
 				 consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ExecutionStepEntity startProcess(
+	public ExecutionStepInformation startProcess(
 			@Parameter(description = "Step of which the process should be canceled.")
 			@PathVariable final String stepName,
 			@AuthenticationPrincipal final UserEntity requestUser
@@ -165,7 +172,8 @@ public class ProcessController {
 		final Step step = Step.getStepOrThrow(stepName);
 
 		// Start process
-		return processService.start(project, step);
+		final ExecutionStepEntity executionStep = processService.start(project, step);
+		return executionStepMapper.toDto(executionStep);
 	}
 
 	@Operation(summary = "Cancels a process.",
@@ -173,7 +181,7 @@ public class ProcessController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully canceled the process. Returns the status object.",
-			             content = @Content(schema = @Schema(implementation = ExecutionStepEntity.class))),
+			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -190,7 +198,7 @@ public class ProcessController {
 	@PostMapping(value = "/{stepName}/cancel",
 	             consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ExecutionStepEntity cancelProcess(
+	public ExecutionStepInformation cancelProcess(
 			@Parameter(description = "Step of which the process should be canceled.")
 			@PathVariable final String stepName,
 			@AuthenticationPrincipal final UserEntity requestUser
@@ -200,7 +208,8 @@ public class ProcessController {
 		final ProjectEntity project = projectService.getProject(user);
 		final Step step = Step.getStepOrThrow(stepName);
 
-		return processService.cancel(project, step);
+		final ExecutionStepEntity executionStep = processService.cancel(project, step);
+		return executionStepMapper.toDto(executionStep);
 	}
 
 	@Operation(summary = "Callback endpoint for marking processes as finished.",
@@ -228,16 +237,9 @@ public class ProcessController {
 	)
 	public ResponseEntity<String> callback(
 			@Parameter(description = "Id of the process to mark as finished.")
-			@PathVariable final Long processId,
-			@RequestParam(name = "synthetic_data", required = false) final MultipartFile syntheticData,
-			@RequestParam(name = "anonymized_dataset", required = false) final MultipartFile anonData,
-			@RequestParam(name = "train", required = false) final MultipartFile trainingData,
-			@RequestParam(name = "test", required = false) final MultipartFile test,
-			@RequestParam(name = "model", required = false) final MultipartFile model,
-			@RequestParam(name = "exception_message", required = false) final MultipartFile exceptionMessage,
-			@RequestParam(name = "error_message", required = false) final MultipartFile errorMessage,
+			@PathVariable final UUID processId,
 			final MultipartHttpServletRequest request
-			) throws ApiException {
+	) throws ApiException {
 		processService.finishProcess(processId, request.getFileMap().entrySet());
 		return ResponseEntity.ok().body(null);
 	}

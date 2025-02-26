@@ -11,6 +11,7 @@ import { ErrorMessageService } from "src/app/shared/services/error-message.servi
 import {DataSetInfoService} from "../../services/data-set-info.service";
 import {map, Observable} from "rxjs";
 import { StatusService } from "../../../../shared/services/status.service";
+import {FileService} from "../../services/file.service";
 
 @Component({
 	selector: "app-data-validation",
@@ -26,6 +27,7 @@ export class DataValidationComponent implements OnInit {
 		private router: Router,
         private statusService: StatusService,
         protected dataSetInfoService: DataSetInfoService,
+        private readonly fileService: FileService,
 		private dataService: DataService,
 		private titleService: TitleService,
         private dialog: MatDialog,
@@ -70,6 +72,7 @@ export class DataValidationComponent implements OnInit {
     protected deleteData() {
         this.dataService.deleteData().subscribe({
             next: () => {
+                this.fileService.invalidateCache();
                 this.router.navigateByUrl("/upload");
                 this.statusService.setNextStep(Steps.UPLOAD);
             }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.serialization.ColumnConfigurationDeserializer;
+import de.kiaim.model.validation.DataTypeNotUndefined;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -21,16 +22,12 @@ import java.util.List;
  * configurations
  */
 @Schema(description = "Configuration of a single column in the data set.")
-@AllArgsConstructor
-@Getter
-@Setter
+@NoArgsConstructor @AllArgsConstructor
+@Getter @Setter
 @EqualsAndHashCode
 @ToString
 @JsonDeserialize(using = ColumnConfigurationDeserializer.class)
 public class ColumnConfiguration {
-    public ColumnConfiguration() {
-        this.configurations = new ArrayList<>();
-    }
 
     /**
      * The index of the column
@@ -53,7 +50,8 @@ public class ColumnConfiguration {
      */
     @Schema(description = "Data type of the column.", example = "DATE")
     @NotNull(message = "The data type must not be empty!")
-    DataType type;
+    @DataTypeNotUndefined()
+    DataType type = DataType.UNDEFINED;
 
     /**
      * The scale of the column
@@ -68,7 +66,7 @@ public class ColumnConfiguration {
     @Schema(description = "List of different configurations depending on the data type.",
             example = "[{\"name\": \"DateFormatConfiguration\", \"dataFormatter\": \"yyyy-MM-dd\"}]")
     @Valid
-    List<Configuration> configurations;
+    List<Configuration> configurations = new ArrayList<>();
 
     /**
      * Adds a new configuration to the column configuration

@@ -6,14 +6,15 @@ import de.kiaim.model.data.DataSet;
 import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.enumeration.DataScale;
 import de.kiaim.platform.model.DataRowTransformationError;
+import de.kiaim.platform.model.entity.FileConfigurationEntity;
+import de.kiaim.platform.model.entity.XlsxFileConfigurationEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
-import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.file.FileType;
-import de.kiaim.platform.model.file.XlsxFileConfiguration;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
 import org.dhatim.fastexcel.reader.Cell;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
@@ -34,8 +35,8 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
     }
 
     @Override
-    public int getNumberColumns(InputStream data, FileConfiguration fileConfiguration) {
-        final XlsxFileConfiguration xlsxFileConfiguration = fileConfiguration.getXlsxFileConfiguration();
+    public int getNumberColumns(InputStream data, FileConfigurationEntity fileConfiguration) {
+        final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
         List<List<String>> rows;
 
         try(InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
@@ -52,10 +53,10 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      * {@inheritDoc}
      */
     @Override
-    public TransformationResult read(InputStream data, FileConfiguration fileConfiguration,
+    public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
                                      DataConfiguration configuration) {
 
-        final XlsxFileConfiguration xlsxFileConfiguration = fileConfiguration.getXlsxFileConfiguration();
+        final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
         List<List<String>> rows;
 
         try (InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
@@ -66,7 +67,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
             throw new RuntimeException(e);
         }
 
-        if (!rows.isEmpty() && xlsxFileConfiguration.isHasHeader()) {
+        if (!rows.isEmpty() && xlsxFileConfiguration.getHasHeader()) {
             rows.remove(0);
         }
 
@@ -195,9 +196,9 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      * {@inheritDoc}
      */
     @Override
-    public DataConfiguration estimateDatatypes(InputStream data, FileConfiguration fileConfiguration,
-                                               final DatatypeEstimationAlgorithm algorithm) {
-        final XlsxFileConfiguration xlsxFileConfiguration = fileConfiguration.getXlsxFileConfiguration();
+    public DataConfiguration estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration,
+                                                       final DatatypeEstimationAlgorithm algorithm) {
+        final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
         List<List<String>> rows;
 
         try (InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
@@ -215,7 +216,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         int numberColumns = 0;
         final List<String> columnNames;
 
-        if (xlsxFileConfiguration.isHasHeader()) {
+        if (xlsxFileConfiguration.getHasHeader()) {
             columnNames = normalizeColumnNames(rows.get(0).toArray(new String[0]));
             numberColumns = columnNames.size();
         } else {
@@ -223,16 +224,8 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
             columnNames = Collections.nCopies(numberColumns, "");
         }
 
-        List<String[]> validRows = getSubsetOfCompleteRows(rows, 10);
-
-        final List<DataType> estimatedDataTypes;
-        if (validRows.isEmpty()) {
-            estimatedDataTypes = getUndefinedDatatypesList(numberColumns);
-        } else {
-            estimatedDataTypes = estimateDatatypesForMultipleRows(validRows, algorithm);
-        }
-
-        return buildConfigurationForDataTypes(estimatedDataTypes, columnNames);
+        List<List<String>> samples = getAttributeSamples(rows.iterator(), numberColumns);
+        return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
     }
 
     private DataConfiguration getStringDataConfiguration(Sheet sheet) {
@@ -252,31 +245,5 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         }
 
         return configuration;
-    }
-
-    /**
-     * Function that returns a subset of complete rows for xlsx records. Complete means that no
-     * missing value should be present in a row. The amount of rows is limited by the parameter
-     * maxNumberOfRows.
-     *
-     * @param rows            List structure that holds the rows
-     * @param maxNumberOfRows the maximum number of rows
-     * @return A List<String[]> of split rows
-     */
-    private List<String[]> getSubsetOfCompleteRows(List<List<String>> rows, int maxNumberOfRows) {
-        List<String[]> validRows = new ArrayList<>();
-
-        int i = 0;
-        while (i < rows.size() && validRows.size() < maxNumberOfRows) {
-            List<String> row = rows.get(i);
-
-            if (isColumnListComplete(row.toArray(new String[0]))) {
-                validRows.add(row.toArray(new String[0]));
-            }
-
-            i += 1;
-        }
-
-        return validRows;
     }
 }

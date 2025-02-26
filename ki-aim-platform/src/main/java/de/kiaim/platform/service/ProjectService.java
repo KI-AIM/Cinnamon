@@ -116,16 +116,15 @@ public class ProjectService {
 	 * Writes a ZIP to the given OutputStream containing the data set and data configuration of the given project and the given configuration.
 	 * @param project The project of the data set.
 	 * @param outputStream The OutputStream to write to.
-	 * @throws BadColumnNameException If the data set does not contain a column with the given names.
 	 * @throws BadDataSetIdException If no DataConfiguration is associated with the given project.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 * @throws InternalIOException If the request body could not be created.
 	 */
 	@Transactional
 	public void createZipFile(final ProjectEntity project, final OutputStream outputStream)
-			throws BadColumnNameException, BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
+			throws BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException {
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
-			final DataSet dataSet = databaseService.exportDataSet(project, new ArrayList<>(), Step.VALIDATION);
+			final DataSet dataSet = databaseService.exportDataSet(project, Step.VALIDATION);
 
 			// Add data configuration
 			final ZipEntry attributeConfigZipEntry = new ZipEntry("attribute_config.yaml");
@@ -150,7 +149,7 @@ public class ProjectService {
 				for (final ExternalProcessEntity externalProcess : executionStep.getProcesses().values()) {
 					if (project.getDataSets().containsKey(externalProcess.getStep()) &&
 					    project.getDataSets().get(externalProcess.getStep()).isStoredData()) {
-						addCsvToZip(zipOut, databaseService.exportDataSet(project, new ArrayList<>(), Step.VALIDATION),
+						addCsvToZip(zipOut, databaseService.exportDataSet(project, externalProcess.getStep()),
 						            externalProcess.getStep().name() + "-result");
 					}
 

@@ -1,5 +1,6 @@
 package de.kiaim.test.model.validation;
 
+import de.kiaim.model.enumeration.DataType;
 import de.kiaim.test.util.DataConfigurationTestHelper;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -48,6 +49,24 @@ public class DataConfigurationValidatorTest {
 		var violation = iterator.next();
 		assertEquals("The column name must not contain space characters!", violation.getMessage(), "Violation has an unexpected message!");
 		assertEquals("configurations[0].name", violation.getPropertyPath().toString(), "Violation has an unexpected path!");
+
+		assertFalse(iterator.hasNext(), "Should have only one violation!");
+	}
+
+	@Test
+	void undefinedDataType() {
+		var config = DataConfigurationTestHelper.generateDataConfiguration();
+		config.getConfigurations().get(0).setType(DataType.UNDEFINED);
+
+		var violations = validator.validate(config);
+
+		var iterator = violations.iterator();
+
+		assertTrue(iterator.hasNext(), "Should have violations!");
+
+		var violation = iterator.next();
+		assertEquals("The data type must not be 'UNDEFINED'!", violation.getMessage(), "Violation has an unexpected message!");
+		assertEquals("configurations[0].type", violation.getPropertyPath().toString(), "Violation has an unexpected path!");
 
 		assertFalse(iterator.hasNext(), "Should have only one violation!");
 	}

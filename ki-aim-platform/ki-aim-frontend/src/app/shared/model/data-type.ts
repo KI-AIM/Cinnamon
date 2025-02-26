@@ -1,11 +1,11 @@
 export enum DataType {
-    BOOLEAN,
-	DATE_TIME,
-	DECIMAL,
-	INTEGER,
-	STRING,
-	DATE,
-	UNDEFINED
+    BOOLEAN = "BOOLEAN",
+	DATE_TIME = "DATE_TIME",
+	DECIMAL = "DECIMAL",
+	INTEGER = "INTEGER",
+	STRING = "STRING",
+	DATE = "DATE",
+	UNDEFINED = "UNDEFINED",
 }
 
 export function dataTypeFromString(value: String): DataType {

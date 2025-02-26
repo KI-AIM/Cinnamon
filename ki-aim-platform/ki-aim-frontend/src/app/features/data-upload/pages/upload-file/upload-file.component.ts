@@ -1,4 +1,4 @@
-import { Component, ElementRef, TemplateRef, ViewChild } from "@angular/core";
+import {Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild} from "@angular/core";
 import { Steps } from "src/app/core/enums/steps";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { DataService } from "src/app/shared/services/data.service";
@@ -17,17 +17,21 @@ import { ConfigurationService } from "../../../../shared/services/configuration.
 import { ErrorMessageService } from "src/app/shared/services/error-message.service";
 import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
 import { StatusService } from "../../../../shared/services/status.service";
+import { Observable } from "rxjs";
+import { FileInformation } from "../../../../shared/model/file-information";
 
 @Component({
 	selector: "app-upload-file",
 	templateUrl: "./upload-file.component.html",
 	styleUrls: ["./upload-file.component.less"],
 })
-export class UploadFileComponent {
+export class UploadFileComponent implements OnInit, OnDestroy {
 	Steps = Steps;
     private configurationFile: File | null;
 	protected dataFile: File | null;
 	public fileConfiguration: FileConfiguration;
+
+    protected fileInfo$: Observable<FileInformation>;
 
 	@ViewChild("uploadErrorModal") errorModal: TemplateRef<NgbModal>;
 	@ViewChild("fileForm") fileInput: ElementRef;
@@ -51,8 +55,6 @@ export class UploadFileComponent {
 		[QuoteChar.SINGLE_QUOTE]: "Single Quote (')",
 	};
 
-	public currentFileType = "";
-
 	constructor(
 		private titleService: TitleService,
         private statusService: StatusService,
@@ -60,7 +62,7 @@ export class UploadFileComponent {
 		public dataConfigurationService: DataConfigurationService,
 		private router: Router,
 		private modalService: NgbModal,
-		private fileService: FileService,
+		protected fileService: FileService,
 		public dialog: MatDialog,
 		public loadingService: LoadingService,
         private configurationService: ConfigurationService,
@@ -70,8 +72,16 @@ export class UploadFileComponent {
 		this.fileConfiguration = fileService.getFileConfiguration();
 	}
 
+    ngOnDestroy(): void {
+        this.fileService.setFileConfiguration(this.fileConfiguration)
+    }
+
+    ngOnInit(): void {
+        this.fileInfo$ = this.fileService.fileInfo$;
+    }
+
     protected get locked(): boolean {
-        return this.statusService.isStepCompleted(Steps.DATA_CONFIG);
+        return this.statusService.isStepCompleted(Steps.VALIDATION);
     }
 
 	onFileInput(event: Event) {
@@ -79,7 +89,7 @@ export class UploadFileComponent {
 
 		if (files) {
 			this.dataFile = files[0];
-			this.currentFileType = this.getFileExtension(files[0]);
+            this.setFileType(this.dataFile);
 		}
 	}
 
@@ -106,23 +116,27 @@ export class UploadFileComponent {
         if (!this.dataFile) {
             return;
         }
-        this.setFileType(this.dataFile);
-        this.fileService.setFile(this.dataFile);
-        this.fileService.setFileConfiguration(this.fileConfiguration)
 
-        if (this.configurationFile == null) {
-            // Estimate data configuration based on the data set
-            this.dataService.estimateData(this.dataFile, this.fileService.getFileConfiguration()).subscribe({
-                next: (d) => this.handleUpload(d),
-                error: (e) => this.handleError("Failed to estimate the data types" + this.errorMessageService.convertResponseToMessage(e)),
-            });
-        } else {
-            // Use data configuration from the selected file
-            this.configurationService.uploadAllConfigurations(this.configurationFile, null).subscribe(result => {
-                this.handleConfigurationUpload(result);
-            });
-        }
-
+        this.fileService.uploadFile(this.dataFile, this.fileConfiguration).subscribe({
+            next: value => {
+                this.fileService.invalidateCache();
+                if (this.configurationFile == null) {
+                    // Estimate data configuration based on the data set
+                    this.dataService.estimateData().subscribe({
+                        next: (d) => this.handleUpload(d),
+                        error: (e) => this.handleError("Failed to estimate the data types" + this.errorMessageService.convertResponseToMessage(e)),
+                    });
+                } else {
+                    // Use data configuration from the selected file
+                    this.configurationService.uploadAllConfigurations(this.configurationFile, null).subscribe(result => {
+                        this.handleConfigurationUpload(result);
+                    });
+                }
+            },
+            error: err => {
+                this.handleError("Failed to upload file" + this.errorMessageService.convertResponseToMessage(err));
+            },
+        });
 	}
 
     /**
@@ -201,4 +215,6 @@ export class UploadFileComponent {
 		this.modalService.dismissAll();
 		this.fileInput.nativeElement.value = "";
 	}
+
+    protected readonly FileType = FileType;
 }

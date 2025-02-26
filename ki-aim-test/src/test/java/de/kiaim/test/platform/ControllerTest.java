@@ -22,6 +22,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
@@ -70,25 +71,23 @@ public class ControllerTest extends DatabaseTest {
 		};
 	}
 
+	protected ResultMatcher errorCode(final String expectedErrorCode) {
+		return  mvcResult -> {
+			final String response = mvcResult.getResponse().getContentAsString();
+			final ErrorResponse errorResponse = objectMapper.readValue(response, ErrorResponse.class);
+			assertEquals(expectedErrorCode, errorResponse.getErrorCode() , "Unexpected error code!");
+		};
+	}
+
 	protected void postData() throws Exception {
 		postData(true);
 	}
 
 	protected void postData(final boolean withErrors) throws Exception {
-		MockMultipartFile file;
-		if (withErrors) {
-			file = ResourceHelper.loadCsvFileWithErrors();
-		} else {
-			file = ResourceHelper.loadCsvFile();
-		}
+		postFile(withErrors);
 
-		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
-
 		String result = mockMvc.perform(multipart("/api/data")
-				                                .file(file)
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration))
 				                                .param("configuration",
 				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())
@@ -98,6 +97,20 @@ public class ControllerTest extends DatabaseTest {
 	}
 
 	protected void postData(final boolean withErrors, final String user) throws Exception {
+		postFile(withErrors, user);
+
+		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		String result = mockMvc.perform(multipart("/api/data")
+				                                .with(httpBasic(user, "changeme"))
+				                                .param("configuration",
+				                                       objectMapper.writeValueAsString(configuration)))
+		                       .andExpect(status().isOk())
+		                       .andReturn().getResponse().getContentAsString();
+
+		assertDoesNotThrow(() -> Long.parseLong(result.trim()));
+	}
+
+	protected void postFile(final boolean withErrors) throws Exception {
 		MockMultipartFile file;
 		if (withErrors) {
 			file = ResourceHelper.loadCsvFileWithErrors();
@@ -106,19 +119,32 @@ public class ControllerTest extends DatabaseTest {
 		}
 
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
 
-		String result = mockMvc.perform(multipart("/api/data")
-				                                .file(file)
-				                                .with(httpBasic(user, "changeme"))
-				                                .param("fileConfiguration",
-				                                       objectMapper.writeValueAsString(fileConfiguration))
-				                                .param("configuration",
-				                                       objectMapper.writeValueAsString(configuration)))
-		                       .andExpect(status().isOk())
-		                       .andReturn().getResponse().getContentAsString();
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+	}
 
-		assertDoesNotThrow(() -> Long.parseLong(result.trim()));
+	protected void postFile(final boolean withErrors, final String user) throws Exception {
+		MockMultipartFile file;
+		if (withErrors) {
+			file = ResourceHelper.loadCsvFileWithErrors();
+		} else {
+			file = ResourceHelper.loadCsvFile();
+		}
+
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .with(httpBasic(user, "changeme"))
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
 	}
 
 }

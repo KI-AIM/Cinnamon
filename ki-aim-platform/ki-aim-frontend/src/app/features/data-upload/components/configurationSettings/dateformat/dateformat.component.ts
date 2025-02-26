@@ -1,5 +1,5 @@
-import { Component } from "@angular/core";
-import { DateFormatConfiguration } from "src/app/shared/model/date-format-configuration";
+import { Component, Input } from "@angular/core";
+import { FormGroup } from "@angular/forms";
 
 @Component({
 	selector: "app-dateformat",
@@ -7,10 +7,5 @@ import { DateFormatConfiguration } from "src/app/shared/model/date-format-config
 	styleUrls: ["./dateformat.component.less"],
 })
 export class DateformatComponent {
-    public dateformatConfiguration = new DateFormatConfiguration(); 
-
-    getDateFormatConfiguration() {
-        return this.dateformatConfiguration; 
-    }
-
+    @Input() form: FormGroup;
 }

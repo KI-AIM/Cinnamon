@@ -11,7 +11,6 @@ import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
 import de.kiaim.test.platform.ControllerTest;
-import de.kiaim.test.util.DataConfigurationTestHelper;
 import de.kiaim.test.util.DataSetTestHelper;
 import de.kiaim.test.util.ResourceHelper;
 import mockwebserver3.MockResponse;
@@ -212,9 +211,7 @@ public class ProcessControllerTest extends ControllerTest {
 		response.setPid("123");
 
 		// Send callback request
-		final MockMultipartFile resultData = new MockMultipartFile("synthetic_data", "csv.csv",
-		                                                           MediaType.TEXT_PLAIN_VALUE,
-		                                                           "data".getBytes());
+		var resultData = ResourceHelper.loadCsvFile("synthetic_data");
 		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
 		                                                                 "info".getBytes());
@@ -274,9 +271,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		enqueueSynthStatus();
 
-		final MockMultipartFile resultData = new MockMultipartFile("synthetic_data", "csv.csv",
-		                                                           MediaType.TEXT_PLAIN_VALUE,
-		                                                           "data".getBytes());
+		var resultData = ResourceHelper.loadCsvFile("synthetic_data");
 		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
 		                                                                 "info".getBytes());

@@ -39,8 +39,16 @@ public class DataSetEntity {
 	/**
 	 * If the data has been stored into the extra table.
 	 */
+	@Column(nullable = false)
 	@Setter
 	private boolean storedData = false;
+
+	/**
+	 * If the data has been stored and confirmed.
+	 */
+	@Column(nullable = false)
+	@Setter
+	private boolean confirmedData = false;
 
 	/**
 	 * List of transformation errors during the parsing.

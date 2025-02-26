@@ -1,6 +1,8 @@
 package de.kiaim.platform.service;
 
 import de.kiaim.platform.exception.BadFileException;
+import de.kiaim.platform.exception.InternalMissingHandlingException;
+import de.kiaim.platform.model.file.FileType;
 import de.kiaim.platform.processor.DataProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -20,30 +22,27 @@ public class DataProcessorService {
 	}
 
 	/**
-	 * Returns the DataProcessor that can handle the given file.
-	 * @param file The file which the returned DataProcessor should handle.
+	 * Returns the DataProcessor that can handle the given file type.
+	 * @param fileType The file type of the file to process.
 	 * @return The DataProcessor.
-	 * @throws BadFileException If nor DataProcessor can handle the given file or the file extension could not be read.
+	 * @throws InternalMissingHandlingException If no data processor exists for the given file type.
 	 */
-	public DataProcessor getDataProcessor(final MultipartFile file) throws BadFileException {
-		final String fileExtension = extractFileExtension(file);
-
+	public DataProcessor getDataProcessor(final FileType fileType) throws InternalMissingHandlingException {
 		for (final DataProcessor processor : processors) {
-			if (processor.getSupportedDataType().getFileExtensions().contains(fileExtension)) {
+			if (processor.getSupportedDataType().equals(fileType)) {
 				return processor;
 			}
 		}
 
-		throw new BadFileException(BadFileException.UNSUPPORTED, "Unsupported file type: '" + fileExtension + "'");
+		throw new InternalMissingHandlingException(InternalMissingHandlingException.FILE_TYPE , "Unsupported file type: '" + fileType.name() + "'");
 	}
 
 	/**
-	 * Extracts the file extension from the file name of the given file, e.g. ".csv".
-	 * @param file File to extract the extension from.
-	 * @return The file extension.
-	 * @throws BadFileException If the file extension could not be read.
+	 * Validates the given file.
+	 * @param file File to be validated.
+	 * @throws BadFileException If the file is not valid.
 	 */
-	private String extractFileExtension(@Nullable final MultipartFile file) throws BadFileException {
+	public void validateFileOrThrow(@Nullable final MultipartFile file) throws BadFileException {
 		if (file == null) {
 			throw new BadFileException(BadFileException.MISSING_FILE, "Missing file");
 		}
@@ -57,8 +56,6 @@ public class DataProcessorService {
 		if (fileExtensionBegin == -1) {
 			throw new BadFileException(BadFileException.MISSING_FILE_EXTENSION, "Missing file extension");
 		}
-
-		return file.getOriginalFilename().substring(fileExtensionBegin);
 	}
 
 }

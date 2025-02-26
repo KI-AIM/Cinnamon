@@ -48,6 +48,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String STATE = "8";
 
+	/**
+	 * Error class code for {@link BadDataConfigurationException}.
+	 */
+	public static final String DATA_CONFIGURATION = "9";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

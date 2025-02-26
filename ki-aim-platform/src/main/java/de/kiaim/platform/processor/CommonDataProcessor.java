@@ -1,6 +1,7 @@
 package de.kiaim.platform.processor;
 
 import de.kiaim.model.configuration.data.ColumnConfiguration;
+import de.kiaim.model.configuration.data.Configuration;
 import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.*;
 import de.kiaim.model.enumeration.DataType;
@@ -15,10 +16,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Getter
 public abstract class CommonDataProcessor implements DataProcessor {
+
+    /**
+     * Max number of samples used for the column configuration estimation.
+     */
+    public static final int NUMBER_OF_SAMPLES = 10;
 
     @Autowired
     DataTransformationHelper dataTransformationHelper;
@@ -82,16 +87,6 @@ public abstract class CommonDataProcessor implements DataProcessor {
         }
     }
 
-    private List<ColumnConfiguration> getColumnConfigurationForIndex(
-            List<ColumnConfiguration> configurations,
-            int index
-    ) {
-        return configurations
-                .stream()
-                .filter(it -> it.getIndex() == index)
-                .toList();
-    }
-
     /**
      * Check whether every value of a column, stored in an array,
      * is valid and not empty
@@ -110,92 +105,243 @@ public abstract class CommonDataProcessor implements DataProcessor {
     }
 
     /**
-     * Processes every entry of a row and tries to convert it to one of the
-     * available data types.
-     * The first valid transformation determines the datatype estimation
-     * @param row represented by an array with separated column values
-     * @return List of DataTypes for every column
+     * Estimates the DataConfiguration for multiple attributes.
+     * The estimation is performed for each sample of each attribute individually.
+     * Afterward the different results are counted.
+     * The datatype for each attribute is chosen based on the given DataTypeEstimationAlgorithm.
+     * Samples that contain the estimated datatype are then used for determining the configurations.
+     *
+     * @param samples Column major list containing samples for each attribute.
+     * @param algorithm Algorithm how to select the datatype of a column.
+     * @param numberColumns The number of columns in the dataset. Used if the given rows are empty.
+     * @param columnNames The names of the columns.
+     * @return The estimated DataConfiguration.
      */
-    public List<DataType> estimateDatatypesFromRow(String[] row) {
-        List<DataType> result = new ArrayList<>();
-
-        for (String column : row) {
-            List<Pair<DataType, DataBuilder>> processingOrder = getProcessingOrder();
-            boolean foundMatchingDataType = false;
-
-            for (int i = 0; i < processingOrder.size() && !foundMatchingDataType ; i++) {
-                Pair<DataType, DataBuilder> processor = processingOrder.get(i);
-
-                foundMatchingDataType = tryConvertingDataType(processor.element1(), column);
-
-                if(foundMatchingDataType) {
-                    result.add(processor.element0());
-                }
-            }
-            if (!foundMatchingDataType) {
-                // If no processor was able to transform value it is UNDEFINED
-                result.add(DataType.UNDEFINED);
+    public DataConfiguration estimateDataConfiguration(
+            final List<List<String>> samples,
+            final DatatypeEstimationAlgorithm algorithm,
+            final int numberColumns,
+            final List<String> columnNames
+    ) {
+        final List<ColumnConfiguration> estimatedColumnConfigurations = new ArrayList<>(numberColumns);
+        for (final List<String> attributeSample : samples) {
+            if (attributeSample.isEmpty()) {
+                estimatedColumnConfigurations.add(new ColumnConfiguration());
+            } else {
+                estimatedColumnConfigurations.add(estimateColumnConfiguration(attributeSample, algorithm));
             }
         }
-        return result;
 
+        return buildDataConfiguration(estimatedColumnConfigurations, columnNames);
     }
 
     /**
-     * Performs datatype estimation on multiple rows.
-     * The datatype estimation is performed for each row
-     * individually. Afterwards the different results are
-     * counted for every column and the datatype
-     * with the most results is used as the estimation
-     * for the row.
-     * @param rows List containing the rows as String[]
-     * @param algorithm Algorithm how to select the datatype of a column.
-     * @return List of datatype estimations
+     * Normalizes column names by replacing spaces with underscores.
+     * @param columnNames The column names to be normalized.
+     * @return The normalize column names.
      */
-    public List<DataType> estimateDatatypesForMultipleRows(List<String[]> rows,
-                                                           final DatatypeEstimationAlgorithm algorithm) {
-        List<List<DataType>> datatypesForRows = new ArrayList<>();
-        List<DataType> resultList = new ArrayList<>();
-
-        for (String[] row : rows) {
-            datatypesForRows.add(estimateDatatypesFromRow(row));
-        }
-
-        List<Map<DataType, Integer>> countedEstimatedDatatypes = countEstimatedDatatypesForRows(datatypesForRows);
-
-        for (Map<DataType, Integer> countedMapForColumn : countedEstimatedDatatypes) {
-            switch (algorithm) {
-                case MOST_ESTIMATED -> resultList.add(getMostEstimatedDatatypeFromCountMap(countedMapForColumn));
-                case MOST_GENERAL -> resultList.add(getMostGeneralDatatypeFromCountMap(countedMapForColumn));
-            }
-        }
-
-        return resultList;
-    }
-
     public List<String> normalizeColumnNames(final String[] columnNames) {
         return Arrays.stream(columnNames).map(columnName -> columnName.replace(" ", "_")).toList();
     }
 
     /**
-     * Performs the counting for the Collection of datatype
-     * estimations for every row.
-     * @param datatypesForRows two-dimensional matrix; First dimension are the rows, second dimension the columns
-     * @return A List of Count-Maps. For every Column a new Map entry is created
+     * Extracts samples for each attribute from the given rows.
+     * Outer list of the result contains an entry for each attribute. Inner lists contain at maximum {@link #NUMBER_OF_SAMPLES} values.
+     *
+     * @param rows          Rows of the dataset without header.
+     * @param numberColumns Number of attributes in the dataset.
+     * @return The samples.
      */
-    private List<Map<DataType, Integer>> countEstimatedDatatypesForRows(List<List<DataType>> datatypesForRows) {
-        List<List<DataType>> transposedList = transpose(datatypesForRows);
-        List<Map<DataType, Integer>> countedMapsForColumns = new ArrayList<>();
-
-        for (List<DataType> columnResults : transposedList) {
-            countedMapsForColumns.add(countEstimatedDatatypesForColumn(columnResults));
+    protected List<List<String>> getAttributeSamples(final Iterator<? extends Iterable<String>> rows, final int numberColumns) {
+        // Prepare result
+        int finishedCount = 0;
+        final List<List<String>> samples = new ArrayList<>();
+        for (int i = 0; i < numberColumns; i++) {
+            samples.add(new ArrayList<>());
         }
 
-        return countedMapsForColumns;
+        // Iterate over rows until all targets are reached
+        while (rows.hasNext() && finishedCount < numberColumns) {
+            final var row = rows.next();
+            final var rowIterator = row.iterator();
+
+            int currentColumn = 0;
+            while (rowIterator.hasNext() && currentColumn < numberColumns) {
+                final var value = rowIterator.next();
+
+                // Only look for more values if more samples are needed
+                if (samples.get(currentColumn).size() < NUMBER_OF_SAMPLES) {
+                    // Add value to samples if not empty
+                    if (!dataTransformationHelper.isValueEmpty(value)) {
+                        samples.get(currentColumn).add(value);
+
+                        // Increase counter for finished columns if target amount is reached
+                        if (samples.get(currentColumn).size() == NUMBER_OF_SAMPLES) {
+                            finishedCount++;
+                        }
+                    }
+                }
+
+                currentColumn++;
+            }
+
+        }
+
+        return samples;
+    }
+
+    private List<ColumnConfiguration> getColumnConfigurationForIndex(
+            List<ColumnConfiguration> configurations,
+            int index
+    ) {
+        return configurations
+                .stream()
+                .filter(it -> it.getIndex() == index)
+                .toList();
     }
 
     /**
-     * Counts the number of DataType occurences for a single column.
+     * Estimates the data type and configurations for an attribute.
+     * The estimation is performed for each sample individually.
+     * Afterward the different results are counted.
+     * The datatype of the attribute is chosen based on the given DataTypeEstimationAlgorithms.
+     * Samples that contain the estimated datatype are then used for determining the configurations.
+     *
+     * @param attributeSamples List containing samples of a single attribute.
+     * @param algorithm Algorithm how to select the datatype of a column.
+     * @return List of estimated ColumnConfigurations.
+     */
+    private ColumnConfiguration estimateColumnConfiguration(
+            final List<String> attributeSamples,
+            final DatatypeEstimationAlgorithm algorithm
+    ) {
+        // Estimate the column configuration for all samples
+        final List<ColumnConfiguration> columnConfigurationForSamples = new ArrayList<>();
+        for (final String attributeSample : attributeSamples) {
+            columnConfigurationForSamples.add(estimateColumnConfigurationFromSample(attributeSample));
+        }
+
+        // Get the estimated data type based on the given algorithm
+        final List<DataType> dataTypes = extractDataTypes(columnConfigurationForSamples);
+        final Map<DataType, Integer> countedEstimatedDatatypes = countEstimatedDatatypesForColumn(dataTypes);
+        final var estimatedDataType = switch (algorithm) {
+            case MOST_ESTIMATED -> getMostEstimatedDatatypeFromCountMap(countedEstimatedDatatypes);
+            case MOST_GENERAL -> getMostGeneralDatatypeFromCountMap(countedEstimatedDatatypes);
+        };
+
+        final var configs = getMostEstimatedConfiguration(estimatedDataType, columnConfigurationForSamples);
+        var columnConfiguration = new ColumnConfiguration();
+        columnConfiguration.setType(estimatedDataType);
+        columnConfiguration.setConfigurations(configs);
+
+        return columnConfiguration;
+    }
+
+    /**
+     * Tries to estimate a column configuration for the given sample.
+     * The first valid transformation determines the datatype estimation and the configurations.
+     *
+     * @param sample A single sample value.
+     * @return The estimated column configuration.
+     */
+    private ColumnConfiguration estimateColumnConfigurationFromSample(final String sample) {
+        List<Pair<DataType, DataBuilder>> processingOrder = getProcessingOrder();
+        var columnConfiguration = new ColumnConfiguration();
+
+        for (final Pair<DataType, DataBuilder> processor : processingOrder) {
+            final var estimationResult = processor.element1().estimateColumnConfiguration(sample);
+
+            if (estimationResult.getType() != DataType.UNDEFINED) {
+                columnConfiguration = estimationResult;
+                break;
+            }
+        }
+
+        return columnConfiguration;
+    }
+
+    /**
+     * Returns a list the most estimated configurations for the given column configurations.
+     * ColumnConfigurations with other data types than the given one will be ignored.
+     * The returned list contains each appearing class once.
+     * Uses the equals method to compare instances.
+     *
+     * @param estimatedDataType The estimated data type for the column.
+     * @param estimationResult  All estimated column configurations.
+     * @return The configurations.
+     */
+    private List<Configuration> getMostEstimatedConfiguration(
+            final DataType estimatedDataType,
+            final List<ColumnConfiguration> estimationResult
+    ) {
+        final Map<Class<?>, Map<Configuration, Integer>> resultMap = new HashMap<>();
+
+        // Iterate over all estimated configurations
+        for (final var columnEstimationResult : estimationResult) {
+            // If the data type is different, the configurations can be ignored
+            if (columnEstimationResult.getType() != estimatedDataType) {
+                continue;
+            }
+
+            for (final var config : columnEstimationResult.getConfigurations()) {
+                // Create a new entry in the map if the class appears the first time
+                if (!resultMap.containsKey(config.getClass())) {
+                    resultMap.put(config.getClass(), new HashMap<>());
+                }
+
+                var map = resultMap.get(config.getClass());
+                if (map.isEmpty()) {
+                    map.put(config, 1);
+                } else {
+                    var isPresent = false;
+                    // Compare current instance with all other instances of the same class
+                    for (final var existingConfig : map.entrySet()) {
+                        if (existingConfig.getKey().equals(config)) {
+                            // An instances equal to the current one is present, so increase counter
+                            existingConfig.setValue(existingConfig.getValue() + 1);
+                            isPresent = true;
+                            break;
+                        }
+                    }
+                    if (!isPresent) {
+                        // Instance is unique under the current ones
+                        map.put(config, 1);
+                    }
+                }
+            }
+
+        }
+
+        return getMostEstimatedInstances(resultMap);
+    }
+
+    /**
+     * Searches for each class, the most appeared instance.
+     * @param resultMap Map containing for each class the number of equal appearances for each instance.
+     * @return The instances.
+     */
+    private static List<Configuration> getMostEstimatedInstances(Map<Class<?>, Map<Configuration, Integer>> resultMap) {
+        final List<Configuration> result = new ArrayList<>();
+        for (final var configs : resultMap.values()) {
+            Configuration mostConfig = null;
+            Integer mostConfigCount = 0;
+
+            for (final var entry : configs.entrySet()) {
+                if (entry.getValue() > mostConfigCount) {
+                    mostConfig = entry.getKey();
+                    mostConfigCount = entry.getValue();
+                }
+            }
+
+            if (mostConfig != null) {
+                result.add(mostConfig);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Counts the number of DataType occurrences for a single column.
      * @param column List of datatype estimations for a column
      * @return Count Map Map<DataType, Integer>
      */
@@ -256,44 +402,13 @@ public abstract class CommonDataProcessor implements DataProcessor {
     }
 
     /**
-     * Transposes a given List<List<*>> structure.
-     * That means that rows will be converted to
-     * columns and columns to rows.
+     * Returns a list of data types for a given list of column configurations.
      *
-     * @param list the 2d matrix to transpose
-     * @return transposed matrix <List<List<*>>
-     * @param <T> the Type of the object
+     * @param list List of ColumnConfiguration.
+     * @return The data types.
      */
-    public static <T> List<List<T>> transpose(List<List<T>> list) {
-        final int N = list.stream().mapToInt(List::size).max().orElse(-1);
-        List<Iterator<T>> iterList = list.stream().map(List::iterator).toList();
-        return IntStream.range(0, N)
-                .mapToObj(n -> iterList.stream()
-                        .filter(Iterator::hasNext)
-                        .map(Iterator::next)
-                        .collect(Collectors.toList()))
-                .collect(Collectors.toList());
-    }
-
-
-
-    /**
-     * Method that tries to convert a value for a given DataBuilder
-     * @param builder the DataBuilder for a specific type
-     * @param column the String Value
-     * @return true if conversion was successful; false otherwise
-     */
-    private boolean tryConvertingDataType(
-            DataBuilder builder,
-            String column
-    ) {
-        try {
-            builder.setValue(column, new ArrayList<>()).build();
-            return true;
-        } catch (Exception e) {
-            // Handle the exception if needed
-            return false;
-        }
+    private List<DataType> extractDataTypes(List<ColumnConfiguration> list) {
+        return list.stream().map(ColumnConfiguration::getType).collect(Collectors.toList());
     }
 
     /**
@@ -314,43 +429,27 @@ public abstract class CommonDataProcessor implements DataProcessor {
     }
 
     /**
-     * Creates a list of DataTypes, where every type for a given
-     * number of columns is set to UNDEFINED
-     * @param numberOfColumns depicting the length of the list
-     * @return List with DataTypes
-     */
-    public List<DataType> getUndefinedDatatypesList(int numberOfColumns) {
-        List<DataType> result = new ArrayList<>();
-        for (int i = 0; i < numberOfColumns; i++) {
-            result.add(DataType.UNDEFINED);
-        }
-
-        return result;
-    }
-
-    /**
-     * Builds a new DataConfiguration for a list of DataTypes.
-     * The resulting DataConfiguration will contain a list of
-     * ColumnConfigurations where only the DataType contains relevant
-     * information
-     * @param dataTypes list of datatypes to be processed
+     * Builds a new DataConfiguration for a list of ColumnConfigurations.
+     * The column configurations only contain the estimated data type and configurations.
+     * All other attributes will be set.
+     *
+     * @param columnConfigurations Estimated column configurations.
      * @param columnNames list containing the column names
      * @return new DataConfiguration object
      */
-    public DataConfiguration buildConfigurationForDataTypes(List<DataType> dataTypes, List<String> columnNames) {
+    private DataConfiguration buildDataConfiguration(
+            final List<ColumnConfiguration> columnConfigurations,
+            List<String> columnNames
+    ) {
         DataConfiguration resultingConfiguration = new DataConfiguration();
-        List<ColumnConfiguration> resultingColumnConfigurations = new ArrayList<>();
 
-        for (int i = 0; i < dataTypes.size(); i++) {
-            DataType type = dataTypes.get(i);
-            String columnName = columnNames.get(i);
-
-            ColumnConfiguration newColumnConfiguration = new ColumnConfiguration(
-                    i, columnName, type, type.getDefaultScale(), new ArrayList<>()
-            );
-            resultingColumnConfigurations.add(newColumnConfiguration);
+        for (int i = 0; i < columnConfigurations.size(); i++) {
+            var columnConfiguration = columnConfigurations.get(i);
+            columnConfiguration.setIndex(i);
+            columnConfiguration.setName(columnNames.get(i));
+            columnConfiguration.setScale(columnConfiguration.getType().getDefaultScale());
         }
-        resultingConfiguration.setConfigurations(resultingColumnConfigurations);
+        resultingConfiguration.setConfigurations(columnConfigurations);
 
         return resultingConfiguration;
     }

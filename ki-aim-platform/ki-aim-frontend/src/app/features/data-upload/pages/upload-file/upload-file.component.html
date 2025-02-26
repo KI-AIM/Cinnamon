@@ -3,6 +3,18 @@
 </p>
 
 <div>
+    <span>Current File: </span>
+    <ng-container *ngIf="(fileInfo$ | async) as fileInfo">
+        <ng-container *ngIf="fileInfo.name !== null; else noFile">
+            <span>{{ fileInfo.name }}</span>
+        </ng-container>
+    </ng-container>
+    <ng-template #noFile>
+        <i>No File Selected</i>
+    </ng-template>
+</div>
+
+<div>
     <input type="file" accept=".csv,.xlsx" #fileForm (input)="onFileInput($event)" [disabled]="locked">
     <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
         [hidden]="!this.dataFile" style="vertical-align: middle;">
@@ -64,7 +76,7 @@
 <ng-template #fileConfigurationDialog>
     <mat-dialog-content class="mat-typography">
         <h1>Configure the file</h1>
-        <div *ngIf="this.currentFileType == 'csv'">
+        <div *ngIf="this.fileConfiguration.fileType === FileType.CSV">
             <div>
                 <mat-form-field class="d-block">
                     <mat-label>Column Separator</mat-label>
@@ -101,7 +113,7 @@
                 </mat-checkbox>
             </div>
         </div>
-        <div *ngIf="this.currentFileType == 'xlsx'">
+        <div *ngIf="this.fileConfiguration.fileType === FileType.XLSX">
             <div>
                 <mat-checkbox [(ngModel)]="this.fileConfiguration.xlsxFileConfiguration.hasHeader" color="primary">
                     Use first row as header

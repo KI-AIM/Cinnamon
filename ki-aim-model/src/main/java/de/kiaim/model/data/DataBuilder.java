@@ -1,14 +1,23 @@
 package de.kiaim.model.data;
 
+import de.kiaim.model.configuration.data.ColumnConfiguration;
 import de.kiaim.model.configuration.data.Configuration;
+import de.kiaim.model.enumeration.DataType;
 import de.kiaim.model.exception.DataBuildingException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Interface for all data builder classes
  */
 public interface DataBuilder {
+
+	/**
+	 * Returns the data type of the Data object build by this builder.
+	 * @return The DataType.
+	 */
+	DataType getDataType();
 
     /**
      * Sets the value of the resulting Data Object
@@ -32,4 +41,20 @@ public interface DataBuilder {
      */
      Data buildNull();
 
+	/**
+	 * Estimates the data type and configurations for the given value.
+	 * @param value The raw value.
+	 * @return A ColumnConfiguration containing the estimated values.
+	 */
+     default ColumnConfiguration estimateColumnConfiguration(final String value) {
+	     final var columnConfiguration = new ColumnConfiguration();
+
+	     try {
+		     this.setValue(value, new ArrayList<>()).build();
+		     columnConfiguration.setType(getDataType());
+	     } catch (DataBuildingException ignored) {
+	     }
+
+		 return columnConfiguration;
+     }
 }

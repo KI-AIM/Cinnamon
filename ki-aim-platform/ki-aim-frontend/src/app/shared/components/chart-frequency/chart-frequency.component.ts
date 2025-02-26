@@ -12,11 +12,12 @@ export class ChartFrequencyComponent extends ChartComponent {
     @Input() public data!: StatisticsData<HistogramPlotData>;
     @Input() public simple: boolean = false;
     @Input() public limit: number | null = 10;
+    @Input() public originalSeriesLabel: string = "Original";
     @Input() syntheticSeriesLabel: string = "Synthetic";
 
     protected override createChartOptions(): EChartsOption {
         const dataSetLabels: StatisticsData<string> = {
-            real: "Original",
+            real: this.originalSeriesLabel,
             synthetic: this.syntheticSeriesLabel,
         }
 

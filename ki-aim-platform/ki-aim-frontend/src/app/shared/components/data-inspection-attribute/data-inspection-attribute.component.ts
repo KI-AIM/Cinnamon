@@ -3,14 +3,13 @@ import {
     Input, OnInit,
     TemplateRef,
 } from '@angular/core';
-import {MatDialog} from "@angular/material/dialog";
+import { MatDialog } from "@angular/material/dialog";
 import { AttributeStatistics } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
-import {Steps} from "../../../core/enums/steps";
-import { Observable} from "rxjs";
-import {MetricImportance, ProjectSettings} from "../../model/project-settings";
-import {ProjectConfigurationService} from "../../services/project-configuration.service";
+import { Observable } from "rxjs";
+import { MetricImportance, ProjectSettings } from "../../model/project-settings";
+import { ProjectConfigurationService } from "../../services/project-configuration.service";
 
 @Component({
     selector: 'app-data-inspection-attribute',
@@ -24,8 +23,11 @@ export class DataInspectionAttributeComponent implements OnInit {
     @Input() public mainData: 'real' | 'synthetic' = 'real';
     @Input() public processingSteps: string[] = [];
 
-    protected graphType = 'histogram';
+    protected originalDisplayName: string;
+    protected syntheticDisplayName: string;
     protected hasSynthetic: boolean = false;
+
+    protected graphType = 'histogram';
 
     protected metricConfig$: Observable<ProjectSettings>;
 
@@ -38,6 +40,9 @@ export class DataInspectionAttributeComponent implements OnInit {
 
     ngOnInit() {
         this.hasSynthetic = this.mainData == 'synthetic';
+        this.originalDisplayName = this.statisticsService.getOriginalName(this.sourceDataset);
+        this.syntheticDisplayName = this.statisticsService.getSyntheticName(this.processingSteps);
+
         this.metricConfig$ = this.projectConfigService.projectSettings$;
     }
 

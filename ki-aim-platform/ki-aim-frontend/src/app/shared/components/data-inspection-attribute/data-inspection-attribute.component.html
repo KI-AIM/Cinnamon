@@ -55,10 +55,14 @@
 
                 <ng-container *ngIf="graphType === 'density'">
                     <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
-                                       [data]="attributeStatistics.plot.density" [simple]="true"></app-chart-density>
+                                       [data]="attributeStatistics.plot.density"
+                                       [originalSeriesLabel]="originalDisplayName" [simple]="true"
+                                       [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-density>
                 </ng-container>
                 <ng-container *ngIf="graphType === 'histogram'">
-                    <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null" [simple]="true"></app-chart-frequency>
+                    <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null"
+                                         [originalSeriesLabel]="originalDisplayName" [simple]="true"
+                                         [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
                 </ng-container>
                 <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
                     <app-chart-calendar [data]="attributeStatistics.plot.density" [simple]="true"></app-chart-calendar>
@@ -67,7 +71,9 @@
             <ng-template #frequency>
                 <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="flat-mat-form-button" style="margin-bottom: 2px;">Legend</button>
                 <ng-container *ngIf="attributeStatistics.plot.frequency_plot; else noChart">
-                    <app-chart-frequency [data]="attributeStatistics.plot.frequency_plot" [limit]="null" [simple]="true"></app-chart-frequency>
+                    <app-chart-frequency [data]="attributeStatistics.plot.frequency_plot" [limit]="null"
+                                         [originalSeriesLabel]="originalDisplayName" [simple]="true"
+                                         [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
                 </ng-container>
             </ng-template>
             <ng-template #noChart>

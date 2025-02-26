@@ -12,12 +12,13 @@ import {ColumnConfiguration} from "../../model/column-configuration";
 export class ChartDensityComponent extends ChartComponent {
     @Input() columnConfiguration!: ColumnConfiguration;
     @Input() data!: StatisticsData<DensityPlotData>;
+    @Input() public originalSeriesLabel: string = "Original";
     @Input() simple: boolean = false;
     @Input() syntheticSeriesLabel: string = "Synthetic";
 
     protected override createChartOptions(): EChartsOption {
         const dataSetLabels: StatisticsData<string> = {
-            real: "Original",
+            real: this.originalSeriesLabel,
             synthetic: this.syntheticSeriesLabel,
         }
 

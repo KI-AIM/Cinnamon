@@ -128,7 +128,7 @@
                                 <div class="mt-1">
                                     <div
                                         *ngIf="status.processes[i].externalProcessStatus == ProcessStatus.FINISHED; else synthNoData">
-                                        <app-data-inspection [sourceDataset]="getJobName(process)"></app-data-inspection>
+                                        <app-data-inspection [sourceDataset]="process"></app-data-inspection>
                                     </div>
                                     <ng-template #synthNoData>
                                         <div>

@@ -17,6 +17,10 @@ export class StatisticsService {
     private _statistics: Statistics | null = null;
     private _statistics$: Observable<Statistics> | null = null;
 
+    private readonly labels: Record<string, string> = {
+        "anonymization": "Anonymized",
+        "synthetization": "Synthesized",
+    }
 
     public readonly colors = [
         '#00aaff',
@@ -202,6 +206,25 @@ export class StatisticsService {
         } else {
             return this.getComplexValue(data[which]);
         }
+    }
+
+    /**
+     * Creates the name of the dataset based on the source of the dataset.
+     * @param sourceDataset
+     */
+    public getOriginalName(sourceDataset: string | null): string {
+        if (sourceDataset && Object.hasOwn(this.labels, sourceDataset)) {
+            return this.labels[sourceDataset];
+        }
+        return "Original";
+    }
+
+    /**
+     * Creates the name of the dataset based on the steps applied to the dataset.
+     * @protected
+     */
+    public getSyntheticName(processingSteps: string[]): string {
+        return processingSteps.map(value => this.labels[value]).join(" and ");
     }
 
     protected getComplexValue(complex: any): number | string {

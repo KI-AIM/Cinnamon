@@ -65,11 +65,13 @@
                         <ng-container *ngIf="graphType === 'density'">
                             <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
                                                [data]="attributeStatistics.plot.density"
+                                               [originalSeriesLabel]="originalDisplayName"
                                                [syntheticSeriesLabel]="datasetDisplayName">
                             </app-chart-density>
                         </ng-container>
                         <ng-container *ngIf="graphType === 'histogram'">
                             <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null"
+                                                 [originalSeriesLabel]="originalDisplayName"
                                                  [syntheticSeriesLabel]="datasetDisplayName">
                             ></app-chart-frequency>
                         </ng-container>
@@ -85,7 +87,9 @@
                 <ng-template #frequency>
                     <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="color-legend-button flat-mat-form-button">Legend</button>
                     <ng-container *ngIf="attributeStatistics.plot.frequency_plot; else noChart">
-                        <app-chart-frequency [data]="attributeStatistics.plot.frequency_plot" [limit]="null"></app-chart-frequency>
+                        <app-chart-frequency [data]="attributeStatistics.plot.frequency_plot" [limit]="null"
+                                             [originalSeriesLabel]="originalDisplayName"
+                                             [syntheticSeriesLabel]="datasetDisplayName"></app-chart-frequency>
                     </ng-container>
                 </ng-template>
                 <ng-template #noChart>
@@ -117,7 +121,7 @@
             <div class="box" style="height: 100%; flex-shrink: 1; flex-basis: 50%;">
 
                 <div class="box-name">
-                    {{ datasetDisplayName }} Values
+                    {{ hasSynthetic ? datasetDisplayName : originalDisplayName }} Values
                 </div>
 
                 <app-data-table [sourceDataset]="sourceDataset" [sourceProcess]="sourceProcess"

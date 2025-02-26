@@ -263,7 +263,7 @@ public class ProcessService {
 	 */
 	@Transactional
 	public void finishProcess(final UUID processId, final Set<Map.Entry<String, MultipartFile>> resultFiles)
-			throws ApiException {
+			throws BadProcessIdException, BadStateException, InternalDataSetPersistenceException, InternalMissingHandlingException, InternalInvalidStateException, InternalIOException, InternalRequestException {
 		final Optional<BackgroundProcessEntity> backgroundProcessOptional = backgroundProcessRepository.findByUuid(
 				processId);
 		// Invalid processID
@@ -275,7 +275,7 @@ public class ProcessService {
 		final var process = backgroundProcessOptional.get();
 
 		// Finish the current process
-		final boolean containsError = doFinishProcess(process, resultFiles);
+		final boolean containsError = tryFinishProcess(process, resultFiles);
 
 		if (process instanceof ExternalProcessEntity externalProcess) {
 			// Start the next step of this process
@@ -290,10 +290,46 @@ public class ProcessService {
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	protected boolean tryFinishProcess(final BackgroundProcessEntity process,
+	                                   final Set<Map.Entry<String, MultipartFile>> resultFiles) {
+		boolean containsError;
+
+		try {
+			containsError = doFinishProcess(process, resultFiles);
+		} catch (final Exception e) {
+			log.error("Failed to finish process!", e);
+			setProcessError(process, e.getMessage());
+			containsError = true;
+		}
+
+		process.setUuid(null);
+
+		final ProjectEntity project = process.getProject();
+		projectService.saveProject(project);
+
+		return containsError;
+	}
+
+	/**
+	 * Finishes the given process.
+	 *
+	 * @param process     The process to finish.
+	 * @param resultFiles All files send in the callback request.
+	 * @return If the process has been finished.
+	 * @throws BadDataConfigurationException             If the data configuration is not valid.
+	 * @throws BadDataSetIdException                     If the data set could not be exported.
+	 * @throws BadStateException                         If the file for the dataset has not been stored.
+	 * @throws InternalApplicationConfigurationException If the step is not configured.
+	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
+	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
+	 * @throws InternalIOException                       If a result file could not be read.
+	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
+	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
+	 */
 	protected boolean doFinishProcess(final BackgroundProcessEntity process,
 	                                  final Set<Map.Entry<String, MultipartFile>> resultFiles
-	) throws InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException, BadDataConfigurationException, InternalDataSetPersistenceException, BadDataSetIdException, InternalIOException, InternalRequestException {
-		final ProjectEntity project = process.getProject();
+	) throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
+
 		final var endpoint = kiAimConfiguration.getExternalServerEndpoints().get(process.getEndpoint());
 
 		ExternalProcessEntity externalProcess = null;
@@ -389,15 +425,11 @@ public class ProcessService {
 			}
 		}
 
-		process.setUuid(null);
-
 		if (containsError) {
 			setProcessError(process, errorMessage);
 		} else {
 			process.setExternalProcessStatus(ProcessStatus.FINISHED);
 		}
-
-		projectService.saveProject(project);
 
 		return containsError;
 	}

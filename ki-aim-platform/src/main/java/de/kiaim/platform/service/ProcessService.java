@@ -372,9 +372,12 @@ public class ProcessService {
 							final FileConfigurationEntity fileConfigurationEntity = new CsvFileConfigurationEntity(
 									new CsvFileConfiguration());
 
-							final DataConfiguration resultDataConfiguration = csvProcessor.estimateDataConfiguration(
-									value.getInputStream(), fileConfigurationEntity,
-									DatatypeEstimationAlgorithm.MOST_GENERAL);
+							final DataConfiguration resultDataConfiguration = process.getProject().getOriginalData()
+							                                                         .getDataSet().getDataConfiguration();
+							// TODO estimate config if we enable data type changes
+//							final DataConfiguration resultDataConfiguration = csvProcessor.estimateDataConfiguration(
+//									value.getInputStream(), fileConfigurationEntity,
+//									DatatypeEstimationAlgorithm.MOST_GENERAL);
 							final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),
 							                                                                    fileConfigurationEntity,
 							                                                                    resultDataConfiguration);

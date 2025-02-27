@@ -39,8 +39,8 @@ public class AnonymizedDatasetProcessorTest extends AbstractAnonymizationTests {
         setAnonymizedDataset();
         assertNotNull(anonymizedDataset);
 
-        System.out.println("result");
-        System.out.println(anonymizedDataset.toString().substring(0,3000));
+//        System.out.println("result");
+//        System.out.println(anonymizedDataset.toString().substring(0,3000));
         assert isDataSetCompatible(anonymizedDataset);
     }
 

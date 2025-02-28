@@ -4,13 +4,14 @@ import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService, ConfigData } from "../../services/algorithm.service";
 import { stringify } from "yaml";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
-import { Steps } from "../../../core/enums/steps";
+import { StepConfiguration, Steps } from "../../../core/enums/steps";
 import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../../environments/environment";
 import { StatusService } from "../../services/status.service";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { from, mergeMap, Observable, switchMap } from "rxjs";
+import { ConfigurationService } from "../../services/configuration.service";
 
 /**
  * Entire configuration page including the algorithm selection,
@@ -54,6 +55,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     constructor(
         protected readonly algorithmService: AlgorithmService,
         private readonly changeDetectorRef: ChangeDetectorRef,
+        private readonly configurationService: ConfigurationService,
         private httpClient: HttpClient,
         private readonly router: Router,
         private readonly statusService: StatusService,
@@ -61,6 +63,9 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     }
 
     ngOnInit() {
+        const registryData = this.configurationService.getRegisteredConfigurationByName(this.algorithmService.getConfigurationName());
+        this.disabled = this.statusService.isStepCompleted(registryData?.lockedAfterStep);
+
         // Set callback functions
         this.algorithmService.setDoGetConfig(() => this.getConfig());
         this.algorithmService.setDoSetConfig((error: string | null) => this.setConfig(error));

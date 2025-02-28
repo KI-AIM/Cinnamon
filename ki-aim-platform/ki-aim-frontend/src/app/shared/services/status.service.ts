@@ -107,12 +107,12 @@ export class StatusService {
 
     /**
      * Checks if a given step is completed.
-     * If the step is null, returns false.
+     * If the step is null or undefined, returns false.
      *
      * @param step The step to check.
      * @returns If the given step is completed.
      */
-    public isStepCompleted(step: Steps | null) {
+    public isStepCompleted(step: Steps | null | undefined) {
         if (step == null) {
             return false;
         }

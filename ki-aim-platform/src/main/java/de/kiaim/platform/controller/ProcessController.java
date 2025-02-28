@@ -10,7 +10,6 @@ import de.kiaim.platform.model.dto.ExecutionStepInformation;
 import de.kiaim.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.mapper.ExecutionStepMapper;
 import de.kiaim.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,19 +40,17 @@ public class ProcessController {
 
 	private final ProcessService processService;
 	private final ProjectService projectService;
-	private final StatusService statusService;
 	private final StepService stepService;
 	private final UserService userService;
 	private final ExecutionStepMapper executionStepMapper;
 
 	public ProcessController(final ProcessService processService, final ProjectService projectService,
 	                         final StepService stepService, final UserService userService,
-	                         final StatusService statusService, final ExecutionStepMapper executionStepMapper) {
+	                         final ExecutionStepMapper executionStepMapper) {
 		this.processService = processService;
 		this.projectService = projectService;
 		this.stepService = stepService;
 		this.userService = userService;
-		this.statusService = statusService;
 		this.executionStepMapper = executionStepMapper;
 	}
 
@@ -129,21 +126,8 @@ public class ProcessController {
 		// Configure process
 		processService.configureProcess(project, stage, job, requestData.isSkip());
 
-		// Go to the next step
-		var configuredStep = Step.getStep(requestData.getJobName());
-		final var nextStep = configuredStep != null ? switch (configuredStep) {
-			case ANONYMIZATION -> Step.SYNTHETIZATION;
-			case SYNTHETIZATION -> Step.EXECUTION;
-			case TECHNICAL_EVALUATION -> Step.RISK_EVALUATION;
-			case RISK_EVALUATION -> Step.EVALUATION;
-			default -> Step.ANONYMIZATION;
-		} : Step.EVALUATION;
-
-		statusService.updateCurrentStep(project, nextStep);
-
 		return ResponseEntity.ok().build();
 	}
-
 
 	@Operation(summary = "Starts the execution.",
 	           description = "Starts the execution.")
@@ -249,16 +233,6 @@ public class ProcessController {
 			final MultipartHttpServletRequest request
 	) throws ApiException {
 		processService.finishProcess(processId, request.getFileMap().entrySet());
-		return ResponseEntity.ok().body(null);
-	}
-
-	@PostMapping(value = "/confirm", consumes = {MediaType.ALL_VALUE})
-	public ResponseEntity<String> confirm(
-			@AuthenticationPrincipal final UserEntity requestUser
-	) {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
-		statusService.updateCurrentStep(project, Step.TECHNICAL_EVALUATION);
 		return ResponseEntity.ok().body(null);
 	}
 

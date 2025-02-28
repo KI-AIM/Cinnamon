@@ -1,14 +1,12 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ProcessStatus } from "../../../../core/enums/process-status";
-import { environments } from "../../../../../environments/environment";
-import { HttpClient } from "@angular/common/http";
 import { ExecutionStep } from "../../../../shared/model/execution-step";
 import { TitleService } from "../../../../core/services/title-service.service";
 import { Steps } from "../../../../core/enums/steps";
 import { Router } from "@angular/router";
 import { ExecutionService } from "../../services/execution.service";
 import { StatusService } from "../../../../shared/services/status.service";
-import {Observable} from "rxjs";
+import { Observable } from "rxjs";
 import { StatisticsService } from "../../../../shared/services/statistics.service";
 import { StageDefinition } from "../../../../shared/services/execution-step.service";
 import { SynthetizationProcess } from "../../../../shared/model/synthetization-process";
@@ -26,7 +24,6 @@ export class ExecutionComponent implements OnInit, OnDestroy {
 
     constructor(
         protected readonly executionService: ExecutionService,
-        private readonly http: HttpClient,
         private readonly router: Router,
         private readonly statisticsService: StatisticsService,
         private readonly statusService: StatusService,
@@ -45,10 +42,9 @@ export class ExecutionComponent implements OnInit, OnDestroy {
     }
 
     protected continue() {
-        this.http.post(environments.apiUrl + "/api/process/confirm", {}).subscribe({
+        this.statusService.updateNextStep(Steps.TECHNICAL_EVALUATION).subscribe({
             next: () => {
                 this.router.navigateByUrl("/technicalEvaluationConfiguration");
-                this.statusService.setNextStep(Steps.TECHNICAL_EVALUATION);
             },
             error: (e) =>{
                 console.error(e);

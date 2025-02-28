@@ -89,7 +89,7 @@ export const StepConfiguration = {
         id: "navLinkEvalution",
         text: "Evaluation",
         enum: Steps.EVALUATION,
-        dependsOn: Steps.TECHNICAL_EVALUATION,
+        dependsOn: Steps.RISK_EVALUATION,
         index: 9,
     },
 };

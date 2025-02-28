@@ -194,7 +194,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 	private navigateToNextStep() {
 		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/dataConfiguration");
-        this.statusService.setNextStep(Steps.DATA_CONFIG);
+        this.statusService.updateNextStep(Steps.DATA_CONFIG).subscribe();
 	}
 
 	private handleError(error: string) {

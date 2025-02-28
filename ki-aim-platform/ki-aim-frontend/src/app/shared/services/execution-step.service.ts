@@ -14,6 +14,8 @@ import {
     tap
 } from "rxjs";
 import { plainToInstance } from "class-transformer";
+import { StatusService } from "./status.service";
+import { Steps } from "../../core/enums/steps";
 
 @Injectable({
     providedIn: 'root'
@@ -38,6 +40,7 @@ export abstract class ExecutionStepService {
 
     protected constructor(
         private readonly http: HttpClient,
+        private readonly statusService: StatusService,
     ) {
         // Create the status observer
         this.statusObserver$ = interval(2000).pipe(
@@ -64,6 +67,9 @@ export abstract class ExecutionStepService {
      * @protected
      */
     public start() {
+        // Sets the step in case later steps have already been completed.
+        this.statusService.updateNextStep(this.getStep()).subscribe();
+
         this.asyncStart().subscribe();
     }
 
@@ -124,6 +130,12 @@ export abstract class ExecutionStepService {
      * Name of the step. Must be equal to the name of the step in the backend.
      */
     protected abstract getStageName(): string;
+
+    /**
+     * Corresponding step of the execution page.
+     * @protected
+     */
+    protected abstract getStep(): Steps;
 
     /**
      * Starts or stops listening to the status based on the given status.

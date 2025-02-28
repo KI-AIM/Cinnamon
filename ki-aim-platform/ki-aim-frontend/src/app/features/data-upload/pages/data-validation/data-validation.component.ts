@@ -9,7 +9,7 @@ import { MatDialog } from "@angular/material/dialog";
 import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
 import { ErrorMessageService } from "src/app/shared/services/error-message.service";
 import {DataSetInfoService} from "../../services/data-set-info.service";
-import {map, Observable} from "rxjs";
+import { map, Observable, switchMap } from "rxjs";
 import { StatusService } from "../../../../shared/services/status.service";
 import {FileService} from "../../services/file.service";
 
@@ -63,18 +63,25 @@ export class DataValidationComponent implements OnInit {
 	confirmData() {
 		this.loadingService.setLoadingStatus(true);
 
-        this.dataService.confirmData().subscribe({
+        this.dataService.confirmData().pipe(
+            switchMap(() => {
+                return this.statusService.updateNextStep(Steps.ANONYMIZATION);
+            }),
+        ).subscribe({
             next: () => this.handleConfirm(),
             error: (e) => this.handleError(e),
         });
 	}
 
     protected deleteData() {
-        this.dataService.deleteData().subscribe({
+        this.dataService.deleteData().pipe(
+                switchMap(() => {
+                    return this.statusService.updateNextStep(Steps.UPLOAD);
+                }),
+            ).subscribe({
             next: () => {
                 this.fileService.invalidateCache();
                 this.router.navigateByUrl("/upload");
-                this.statusService.setNextStep(Steps.UPLOAD);
             }
         });
     }
@@ -82,7 +89,6 @@ export class DataValidationComponent implements OnInit {
 	private handleConfirm() {
 		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/anonymizationConfiguration");
-        this.statusService.setNextStep(Steps.ANONYMIZATION)
 	}
 
 	private handleError(error: HttpErrorResponse) {

@@ -179,8 +179,19 @@ public class ProjectService {
 	@Transactional
 	public void setMode(final ProjectEntity project, final Mode mode) {
 		project.getStatus().setMode(mode);
-		project.getStatus().setCurrentStep(Step.UPLOAD);
 		userRepository.save(project.getUser());
+	}
+
+	/**
+	 * Sets the current step of the given project to the given step.
+	 *
+	 * @param project The project to be updated.
+	 * @param currentStep The new step.
+	 */
+	@Transactional
+	public void updateCurrentStep(final ProjectEntity project, final Step currentStep) {
+		project.getStatus().setCurrentStep(currentStep);
+		projectRepository.save(project);
 	}
 
 	/**

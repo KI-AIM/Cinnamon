@@ -4,7 +4,7 @@ import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService, ConfigData } from "../../services/algorithm.service";
 import { stringify } from "yaml";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
-import { StepConfiguration, Steps } from "../../../core/enums/steps";
+import { Steps } from "../../../core/enums/steps";
 import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../../environments/environment";
@@ -299,7 +299,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
 
         this.router.navigateByUrl(nextUrl);
         if (!this.statusService.isStepCompleted(nextStep)) {
-            this.statusService.setNextStep(nextStep);
+            this.statusService.updateNextStep(nextStep).subscribe();
         }
     }
 }

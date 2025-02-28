@@ -11,7 +11,6 @@ import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.RowSelector;
-import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.file.FileConfiguration;
 import de.kiaim.platform.repository.DataSetRepository;
 import de.kiaim.platform.service.ProjectService;
@@ -132,9 +131,6 @@ class DataControllerTest extends ControllerTest {
 		final DataConfiguration expectedConfiguration = DataConfigurationTestHelper.generateEstimatedConfiguration();
 
 		assertEquals(expectedConfiguration, dataConfiguration, "Returned configuration is wrong!");
-
-		assertEquals(Step.UPLOAD, testProject.getStatus().getCurrentStep(),
-		             "The current step should not have been updated!");
 	}
 
 	@Test

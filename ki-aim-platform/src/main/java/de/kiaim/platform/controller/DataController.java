@@ -11,7 +11,6 @@ import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.platform.model.enumeration.RowSelector;
-import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.processor.DataProcessor;
@@ -64,18 +63,16 @@ public class DataController {
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
 	private final ProjectService projectService;
-	private final StatusService statusService;
 	private final UserService userService;
 
 	@Autowired
 	public DataController(final DatabaseService databaseService, final DataProcessorService dataProcessorService,
 	                      final DataSetService dataSetService, final ProjectService projectService,
-	                      final StatusService statusService, final UserService userService) {
+	                      final UserService userService) {
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
 		this.projectService = projectService;
-		this.statusService = statusService;
 		this.userService = userService;
 	}
 
@@ -134,7 +131,6 @@ public class DataController {
 
 		final FileInformation fileInformation = databaseService.storeFile(projectEntity, requestData.getFile(),
 		                                                                  requestData.getFileConfiguration());
-		statusService.updateCurrentStep(projectEntity, Step.DATA_CONFIG);
 		return ResponseEntity.ok(fileInformation);
 	}
 
@@ -581,7 +577,6 @@ public class DataController {
 		switch (requestType) {
 			case CONFIRM_DATE_SET -> {
 				databaseService.confirmDataSet(projectEntity);
-				statusService.updateCurrentStep(projectEntity, Step.ANONYMIZATION);
 				result = null;
 			}
 			case ESTIMATE -> {
@@ -606,7 +601,6 @@ public class DataController {
 			}
 			case DELETE -> {
 				databaseService.delete(projectEntity);
-				statusService.updateCurrentStep(projectEntity, Step.UPLOAD);
 				result = null;
 			}
 			case INFO -> {
@@ -650,8 +644,6 @@ public class DataController {
 				                                                                     file.getFileConfiguration(),
 				                                                                     configuration);
 				result = databaseService.storeOriginalTransformationResult(transformationResult, projectEntity);
-
-				statusService.updateCurrentStep(projectEntity, Step.VALIDATION);
 			}
 			default -> {
 				throw new InternalMissingHandlingException(InternalMissingHandlingException.REQUEST_TYPE,

@@ -3,6 +3,7 @@ package de.kiaim.test.platform.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import de.kiaim.platform.model.dto.ProjectConfigurationDTO;
 import de.kiaim.platform.model.enumeration.Mode;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.test.platform.ControllerTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ public class ProjectControllerTest extends ControllerTest {
 				                .param("mode", Mode.EXPERT.name()))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.mode").value("EXPERT"))
-		       .andExpect(jsonPath("$.currentStep").value("UPLOAD"));
+		       .andExpect(jsonPath("$.currentStep").value("WELCOME"));
 	}
 
 	@Test
@@ -41,6 +42,16 @@ public class ProjectControllerTest extends ControllerTest {
 		mockMvc.perform(get("/api/project/status"))
 		       .andExpect(status().isOk())
 				.andExpect(jsonPath("$.currentStep").value("WELCOME"));
+	}
+
+	@Test
+	public void confirm() throws Exception {
+		mockMvc.perform(post("/api/project/step")
+				                .contentType(MediaType.MULTIPART_FORM_DATA)
+				                .param("step", "TECHNICAL_EVALUATION"))
+		       .andExpect(status().isOk());
+		var updateTestProject = getTestProject();
+		assertEquals(Step.TECHNICAL_EVALUATION, updateTestProject.getStatus().getCurrentStep());
 	}
 
 	@Test

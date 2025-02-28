@@ -10,7 +10,6 @@ import de.kiaim.platform.model.dto.DataSetSource;
 import de.kiaim.platform.model.entity.DataSetEntity;
 import de.kiaim.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
-import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.service.DataSetService;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.UserService;
@@ -684,14 +683,6 @@ public class ProcessControllerTest extends ControllerTest {
 				                .file(result))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("No process with the given ID '" + id + "' exists!"));
-	}
-
-	@Test
-	public void confirm() throws Exception {
-		mockMvc.perform(post("/api/process/confirm"))
-		       .andExpect(status().isOk());
-		var updateTestProject = getTestProject();
-		assertEquals(Step.TECHNICAL_EVALUATION, updateTestProject.getStatus().getCurrentStep());
 	}
 
 }

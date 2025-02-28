@@ -20,7 +20,7 @@ import { ErrorMessageService } from 'src/app/shared/services/error-message.servi
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
-import { debounceTime, distinctUntilChanged, map, Observable, Subscription, switchMap } from "rxjs";
+import { debounceTime, distinctUntilChanged, map, Observable, of, Subscription, switchMap } from "rxjs";
 import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
 import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
@@ -107,21 +107,21 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         const config = plainToInstance(DataConfiguration, this.form.value);
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
-        if (this.createSplit) {
-            this.dataService.storeData(config).pipe(
-                switchMap(() => {
+        this.dataService.storeData(config).pipe(
+            switchMap(() => {
+                if (this.createSplit) {
                     return this.dataService.createHoldOutSplit(this.holdOutSplitPercentage);
-                }),
-            ).subscribe({
-                next: () => this.handleUpload(),
-                error: (e) => this.handleError(e),
-            });
-        } else {
-            this.dataService.storeData(config).subscribe({
-                next: () => this.handleUpload(),
-                error: (e) => this.handleError(e),
-            });
-        }
+                } else {
+                    return of();
+                }
+            }),
+            switchMap(() => {
+                return this.statusService.updateNextStep(Steps.VALIDATION);
+            }),
+        ).subscribe({
+            next: () => this.handleUpload(),
+            error: (e) => this.handleError(e),
+        });
     }
 
     protected updateCreateSplit(newValue: boolean) {
@@ -144,7 +144,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         this.dataSetInfoService.invalidateCache();
 
         this.router.navigateByUrl("/dataValidation");
-        this.statusService.setNextStep(Steps.VALIDATION);
     }
 
     private handleError(error: HttpErrorResponse) {

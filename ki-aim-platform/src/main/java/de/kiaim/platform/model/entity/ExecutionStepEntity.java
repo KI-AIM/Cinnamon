@@ -4,7 +4,6 @@ import de.kiaim.platform.converter.StageAttributeConverter;
 import de.kiaim.platform.model.configuration.Job;
 import de.kiaim.platform.model.configuration.Stage;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
-import de.kiaim.platform.model.enumeration.Step;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

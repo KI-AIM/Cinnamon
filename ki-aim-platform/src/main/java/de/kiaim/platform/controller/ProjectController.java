@@ -10,6 +10,7 @@ import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.StatusEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.model.enumeration.Mode;
+import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.mapper.ProjectConfigurationMapper;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.StepService;
@@ -44,7 +45,8 @@ public class ProjectController {
 	private final ProjectConfigurationMapper projectConfigurationMapper;
 
 	public ProjectController(final ProjectService projectService, final StepService stepService,
-	                         final UserService userService, final ProjectConfigurationMapper projectConfigurationMapper) {
+	                         final UserService userService,
+	                         final ProjectConfigurationMapper projectConfigurationMapper) {
 		this.projectService = projectService;
 		this.stepService = stepService;
 		this.userService = userService;
@@ -86,6 +88,15 @@ public class ProjectController {
 		return projectService.getProject(requestUser).getStatus();
 	}
 
+	@PostMapping(value = "/step")
+	public void postStep(
+			@RequestParam(required = true) final Step step,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		projectService.updateCurrentStep(project, step);
+	}
 
 	@Operation(summary = "Returns the configuration of the user's project.",
 	           description = "Returns the configuration of the user's project.")

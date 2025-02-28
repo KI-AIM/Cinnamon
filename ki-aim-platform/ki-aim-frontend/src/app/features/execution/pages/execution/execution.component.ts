@@ -11,6 +11,8 @@ import { StatusService } from "../../../../shared/services/status.service";
 import {Observable} from "rxjs";
 import { StatisticsService } from "../../../../shared/services/statistics.service";
 import { StageDefinition } from "../../../../shared/services/execution-step.service";
+import { SynthetizationProcess } from "../../../../shared/model/synthetization-process";
+import { plainToInstance } from "class-transformer";
 
 @Component({
   selector: 'app-execution',
@@ -22,9 +24,6 @@ export class ExecutionComponent implements OnInit, OnDestroy {
     protected stage$: Observable<ExecutionStep | null>;
     protected stageDefinition$: Observable<StageDefinition>;
 
-
-    protected expanded: Array<Array<boolean>>;
-
     constructor(
         protected readonly executionService: ExecutionService,
         private readonly http: HttpClient,
@@ -34,14 +33,6 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         private readonly titleService: TitleService,
     ) {
         this.titleService.setPageTitle("Execution");
-        this.expanded = [
-            [
-                false, false, false
-            ],
-            [
-                false, false, false
-            ],
-        ]
     }
 
     ngOnDestroy() {
@@ -51,10 +42,6 @@ export class ExecutionComponent implements OnInit, OnDestroy {
     ngOnInit() {
         this.stage$ = this.executionService.status$;
         this.stageDefinition$ = this.executionService.fetchStageDefinition$();
-    }
-
-    protected get status(): ExecutionStep {
-        return this.executionService.status;
     }
 
     protected continue() {
@@ -69,12 +56,12 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         });
     }
 
-    protected isObject(value: string | object) {
-        return typeof value === 'object';
-    }
+    protected getSynthetizationStatus(value: string): SynthetizationProcess | null {
+        if (!value.startsWith('{')) {
+            return null;
+        }
 
-    protected castObject(value: any): any {
-        return value as any;
+        return plainToInstance(SynthetizationProcess, JSON.parse(value));
     }
 
     protected formatTime(step: any): string {

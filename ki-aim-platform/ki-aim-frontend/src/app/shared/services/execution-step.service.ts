@@ -21,9 +21,7 @@ import { plainToInstance } from "class-transformer";
 export abstract class ExecutionStepService {
     private readonly baseUrl = environments.apiUrl + "/api/process";
 
-    private _disabled: boolean = false;
     private _error: string | null = null;
-    private _status: ExecutionStep = new ExecutionStep();
 
     private _statusSubject: BehaviorSubject<ExecutionStep | null>;
 
@@ -41,10 +39,6 @@ export abstract class ExecutionStepService {
     protected constructor(
         private readonly http: HttpClient,
     ) {
-        // Create the initial status object so something can be displayed
-        this._status.status = ProcessStatus.NOT_STARTED;
-        this._status.processes = [];
-
         // Create the status observer
         this.statusObserver$ = interval(2000).pipe(
             switchMap(() => {
@@ -56,16 +50,8 @@ export abstract class ExecutionStepService {
         );
     }
 
-    public get disabled(): boolean {
-        return this._disabled;
-    }
-
     public get error(): string | null {
         return this._error;
-    }
-
-    public get status(): ExecutionStep {
-        return this._status;
     }
 
     public get status$(): Observable<ExecutionStep | null> {
@@ -139,8 +125,6 @@ export abstract class ExecutionStepService {
      */
     protected abstract getStageName(): string;
 
-    protected abstract setCustomStatus(key: string, status: string | null, processSteps: string[]): void;
-
     /**
      * Starts or stops listening to the status based on the given status.
      * @param status
@@ -149,10 +133,8 @@ export abstract class ExecutionStepService {
     private setState(status: ProcessStatus): void {
         if (status === ProcessStatus.SCHEDULED || status === ProcessStatus.RUNNING) {
             this.startListenToStatus();
-            this._disabled = true;
         } else {
             this.stopListenToStatus();
-            this._disabled = false;
         }
     }
 
@@ -207,11 +189,7 @@ export abstract class ExecutionStepService {
 
     private update(executionStep: ExecutionStep) {
         this._error = null;
-        this._status = executionStep;
         this.setState(executionStep.status);
-        for (const status of executionStep.processes) {
-            this.setCustomStatus(status.step, status.status, status.processSteps);
-        }
         this._statusSubject.next(executionStep);
     }
 }

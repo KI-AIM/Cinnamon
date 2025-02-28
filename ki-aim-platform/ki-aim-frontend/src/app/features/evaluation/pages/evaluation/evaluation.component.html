@@ -6,13 +6,15 @@
 <div *ngIf="(stage$ | async) as status">
 
     <div class="stage-head">
-        <button type="submit" mat-raised-button color="primary" [disabled]="evaluationService.disabled"
-                (click)="start()">
+        <button type="submit" mat-raised-button color="primary"
+                [disabled]="status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING"
+                (click)="evaluationService.start();">
             Start
             <mat-icon fontIcon="play_arrow" ></mat-icon>
         </button>
 
-        <button type="submit" mat-raised-button color="warn" [disabled]="!evaluationService.disabled"
+        <button type="submit" mat-raised-button color="warn"
+                [disabled]="!(status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING)"
                 (click)="evaluationService.cancel()">
             Cancel
             <mat-icon fontIcon="stop"></mat-icon>
@@ -30,8 +32,8 @@
     </div>
 
     <!-- Steps on the right -->
-    <div *ngIf="(stage$ | async) as stage" class="stage-tree-steps">
-        <div *ngFor="let process of stage.processes; let i = index" class="stage-tree-step">
+    <div *ngIf="{stage: stage$ | async, stageDefinition: stageDefinition$ | async} as data" class="stage-tree-steps">
+        <div *ngFor="let job of data.stageDefinition?.jobs; let i = index" class="stage-tree-step">
 
             <!-- Line to box -->
             <div class="stage-tree-line-horizontal">
@@ -44,34 +46,36 @@
             <div class="mb-2 box step-wrapper">
                 <!-- Head -->
                 <div class="step-head">
-                    <span> {{ getJobName(stage.processes[i]) }} </span>
-                    <span class="status" [ngClass]="stage.processes[i].externalProcessStatus">
-                        <span>{{ stage.processes[i].externalProcessStatus.replace("_", " ") }}</span>
+                    <span> {{ getJobName(job) }} </span>
+                    <span *ngIf="data.stage && data.stage.processes[i] as process" class="status" [ngClass]="process.externalProcessStatus">
+                        <span>{{ process.externalProcessStatus.replace("_", " ") }}</span>
                     </span>
                 </div>
 
                 <div class="step-body">
                     <mat-accordion>
                         <!-- Status -->
-                        <mat-expansion-panel [(expanded)]="expanded[stage.processes[i].step + '_status']">
+                        <mat-expansion-panel>
                             <mat-expansion-panel-header>
                                 <mat-panel-title>Status</mat-panel-title>
                                 <mat-panel-description></mat-panel-description>
                             </mat-expansion-panel-header>
 
-                            <div *ngIf="stage.processes[i].status">
-                                {{ stage.processes[i].status }}
+                            <div *ngIf="data.stage && data.stage.processes[i].status as status; else noStatus">
+                                {{ status }}
                             </div>
-                            <div *ngIf="!stage.processes[i].status">
-                                No Status Available
-                            </div>
+                            <ng-template #noStatus>
+                                <div>
+                                    No Status Available
+                                </div>
+                            </ng-template>
                         </mat-expansion-panel>
 
-                        <ng-container *ngIf="stage.processes[i].step === 'technical_evaluation'">
+                        <ng-container *ngIf="job === 'technical_evaluation'">
 
-                            <ng-container *ngIf="stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED && (getStatistics() | async) as statistics">
+                            <ng-container *ngIf="data.stage && data.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED && (statistics$ | async) as statistics">
 
-                                <mat-expansion-panel [(expanded)]="expanded[stage.processes[i].step + '_resemblance']">
+                                <mat-expansion-panel>
                                     <mat-expansion-panel-header>
                                         <mat-panel-title>{{ statistics.resemblance.display_name }}</mat-panel-title>
                                         <mat-panel-description>{{ statistics.resemblance.description }}</mat-panel-description>
@@ -79,13 +83,12 @@
 
                                     <div>
                                         <app-data-inspection sourceProcess="TECHNICAL_EVALUATION" mainData="synthetic"
-                                                             [processingSteps]="evaluationService.processSteps"></app-data-inspection>
+                                                             [processingSteps]="data.stage.processes[i].processSteps"></app-data-inspection>
                                     </div>
 
                                 </mat-expansion-panel>
 
-                                <mat-expansion-panel *ngIf="statistics.utility as utility"
-                                                     [(expanded)]="expanded[stage.processes[i].step + '_utility']">
+                                <mat-expansion-panel *ngIf="statistics.utility as utility">
                                 <mat-expansion-panel-header>
                                         <mat-panel-title>{{ utility.display_name }}</mat-panel-title>
                                         <mat-panel-description>{{ utility.description }}</mat-panel-description>
@@ -152,15 +155,15 @@
                             </ng-container>
                         </ng-container>
 
-                        <ng-container *ngIf="stage.processes[i].step === 'risk_evaluation'">
+                        <ng-container *ngIf="job === 'risk_evaluation'">
 
-                            <mat-expansion-panel [(expanded)]="expanded[stage.processes[i].step + '_risk_assessment']">
+                            <mat-expansion-panel>
                                 <mat-expansion-panel-header>
                                     <mat-panel-title>Risks</mat-panel-title>
                                     <mat-panel-description>Risk assessment</mat-panel-description>
                                 </mat-expansion-panel-header>
 
-                                <ng-container *ngIf="stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED && (risks$ | async) as risks; else noRisks">
+                                <ng-container *ngIf="data.stage && data.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED && (risks$ | async) as risks; else noRisks">
                                     <div style="display: flex;" class="mb-2 pt-2 border-top border-1">
                                         <span style="font-size: 1.2rem; margin-right: 0.2rem;">
                                             Privacy Risk Summary
@@ -407,14 +410,14 @@
                             </mat-expansion-panel>
                         </ng-container>
 
-                        <ng-container *ngIf="stage.processes[i].step === 'base_evaluation'">
-                            <mat-expansion-panel [(expanded)]="expanded[stage.processes[i].step + '_base_assessment']">
+                        <ng-container *ngIf="job === 'base_evaluation'">
+                            <mat-expansion-panel>
                                 <mat-expansion-panel-header>
                                     <mat-panel-title>Risks</mat-panel-title>
                                     <mat-panel-description>Base assessment</mat-panel-description>
                                 </mat-expansion-panel-header>
 
-                                <div *ngIf="stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED && (risks2$ | async) as risks; else noRisks2">
+                                <div *ngIf="data.stage && data.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED && (risks2$ | async) as risks; else noRisks2">
                                     {{ risks }}
                                 </div>
                                 <ng-template #noRisks2>

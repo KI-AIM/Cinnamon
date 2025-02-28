@@ -3,14 +3,16 @@
     <div>{{ executionService.error }}</div>
 </app-info-card>
 
-<div class="stage-head">
-    <button type="submit" mat-raised-button color="primary" [disabled]="executionService.disabled"
+<div *ngIf="(stage$ | async) as status" class="stage-head">
+    <button type="submit" mat-raised-button color="primary"
+            [disabled]="status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING"
             (click)="executionService.start()">
         Start
         <mat-icon fontIcon="play_arrow"></mat-icon>
     </button>
 
-    <button type="submit" mat-raised-button color="warn" [disabled]="!executionService.disabled"
+    <button type="submit" mat-raised-button color="warn"
+            [disabled]="!(status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING)"
             (click)="executionService.cancel()">
         Cancel
         <mat-icon fontIcon="stop"></mat-icon>
@@ -28,8 +30,8 @@
     </div>
 
     <!-- Steps on the right -->
-    <div *ngIf="(stageDefinition$ | async) as stage" class="stage-tree-steps">
-        <div *ngFor="let process of stage.jobs; let i = index" class="stage-tree-step">
+    <div *ngIf="{stage: stage$ | async, stageDefinition: stageDefinition$ | async} as data" class="stage-tree-steps">
+        <div *ngFor="let process of data.stageDefinition?.jobs; let i = index" class="stage-tree-step">
 
             <!-- Line to box -->
             <div class="stage-tree-line-horizontal">
@@ -43,31 +45,28 @@
                 <!-- Head -->
                 <div class="step-head">
                     <span> {{ getJobName(process) }} </span>
-                    <span *ngIf="status.processes[i]" class="status" [ngClass]="status.processes[i].externalProcessStatus">
-                        <span>{{ status.processes[i].externalProcessStatus.replace("_", " ") }}</span>
+                    <span *ngIf="data.stage && data.stage.processes[i] as process" class="status" [ngClass]="process.externalProcessStatus">
+                        <span>{{ process.externalProcessStatus.replace("_", " ") }}</span>
                     </span>
                 </div>
 
                 <div class="step-body">
                     <mat-accordion>
                         <!-- Status -->
-                        <mat-expansion-panel [(expanded)]="expanded[i][0]">
+                        <mat-expansion-panel>
                             <mat-expansion-panel-header>
                                 <mat-panel-title>Status</mat-panel-title>
                                 <mat-panel-description></mat-panel-description>
                             </mat-expansion-panel-header>
 
-                            <ng-container *ngIf="i == 0">
-                                <div *ngIf="executionService.anonProcess !== null">
-                                    {{ executionService.anonProcess }}
-                                </div>
-                                <div *ngIf="executionService.anonProcess === null">
-                                    No Status Available
+                            <ng-container *ngIf="process === 'anonymization'">
+                                <div *ngIf="data.stage && data.stage.processes[i].status as status; else noStatus">
+                                    {{ status }}
                                 </div>
                             </ng-container>
-                            <ng-container *ngIf="i == 1">
-                                <div *ngIf="executionService.synthProcess !== null">
-                                    <div *ngIf="isObject(executionService.synthProcess); else statusIsString">
+                            <ng-container *ngIf="process === 'synthetization'">
+                                <div *ngIf="data.stage && data.stage.processes[i].status as status; else noStatus">
+                                    <div *ngIf="getSynthetizationStatus(status) as synthetizationProcess; else statusIsString">
                                         <table class="table">
                                             <thead>
                                             <th>Step</th>
@@ -75,7 +74,7 @@
                                             <th>Remaining Time/ Duration</th>
                                             </thead>
                                             <tbody>
-                                            <tr *ngFor="let step of castObject(executionService.synthProcess).status">
+                                            <tr *ngFor="let step of synthetizationProcess.status">
                                                 <td>{{ step.step }}</td>
                                                 <td>{{ step?.completed }}</td>
                                                 <td>{{ formatTime(step) }}</td>
@@ -84,26 +83,25 @@
                                         </table>
                                     </div>
                                     <ng-template #statusIsString>
-                                            {{ executionService.synthProcess }}
+                                            {{ status }}
                                     </ng-template>
                                 </div>
-                                <div *ngIf="!executionService.synthProcess">
-                                    No Status Available
-                                </div>
                             </ng-container>
+                            <ng-template #noStatus>
+                                <div>No Status Available</div>
+                            </ng-template>
 
                         </mat-expansion-panel>
 
                         <!-- Data -->
-                        <mat-expansion-panel [(expanded)]="expanded[i][1]">
+                        <mat-expansion-panel>
                             <mat-expansion-panel-header>
                                 <mat-panel-title>Data</mat-panel-title>
                                 <mat-panel-description></mat-panel-description>
                             </mat-expansion-panel-header>
 
                             <div>
-                                <div
-                                    *ngIf="status.processes[i]?.externalProcessStatus == ProcessStatus.FINISHED; else anonNoData">
+                                <div *ngIf="data.stage && data.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED; else anonNoData">
 <!--                                    <app-data-table [sourceDataset]="getJobName(i)"></app-data-table>-->
                                     <app-data-table [sourceProcess]="getJobName(process)"></app-data-table>
                                 </div>
@@ -117,7 +115,7 @@
                         </mat-expansion-panel>
 
                         <!-- Inspection -->
-                        <mat-expansion-panel [(expanded)]="expanded[i][2]">
+                        <mat-expansion-panel>
                             <mat-expansion-panel-header>
                                 <mat-panel-title>Inspection</mat-panel-title>
                                 <mat-panel-description></mat-panel-description>
@@ -127,7 +125,7 @@
 
                                 <div class="mt-1">
                                     <div
-                                        *ngIf="status.processes[i].externalProcessStatus == ProcessStatus.FINISHED; else synthNoData">
+                                        *ngIf="data.stage && data.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED; else synthNoData">
                                         <app-data-inspection [sourceDataset]="process"></app-data-inspection>
                                     </div>
                                     <ng-template #synthNoData>
@@ -149,7 +147,7 @@
     </div>
 </div>
 
-<div class="box">
+<div class="box" *ngIf="(stage$ | async) as status">
     <button type="button" mat-raised-button color="primary" [disabled]="status.status != ProcessStatus.FINISHED"
             (click)="continue()">
         Continue

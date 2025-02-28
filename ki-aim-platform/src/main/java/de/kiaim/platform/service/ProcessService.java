@@ -251,19 +251,11 @@ public class ProcessService {
 	 *
 	 * @param processId   The ID of the process to finish.
 	 * @param resultFiles All files send in the callback request.
-	 * @throws BadDataSetIdException                     If the data set could not be exported.
-	 * @throws BadProcessIdException                     If the given process ID is not valid.
-	 * @throws BadStateException                         If the file for the dataset has not been stored.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
-	 * @throws InternalInvalidResultException            If the estimation of the configuration produced an invalid configuration.
-	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
-	 * @throws InternalIOException                       If a result file could not be read.
-	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
+	 * @throws BadProcessIdException If the given process ID is not valid.
 	 */
 	@Transactional
 	public void finishProcess(final UUID processId, final Set<Map.Entry<String, MultipartFile>> resultFiles)
-			throws BadProcessIdException, BadStateException, InternalDataSetPersistenceException, InternalMissingHandlingException, InternalInvalidStateException, InternalIOException, InternalRequestException {
+			throws BadProcessIdException {
 		final Optional<BackgroundProcessEntity> backgroundProcessOptional = backgroundProcessRepository.findByUuid(
 				processId);
 		// Invalid processID
@@ -280,7 +272,7 @@ public class ProcessService {
 		if (process instanceof ExternalProcessEntity externalProcess) {
 			// Start the next step of this process
 			if (!containsError) {
-				startNext(externalProcess.getExecutionStep());
+				tryStartNext(externalProcess);
 			}
 
 			// Start the next process of the same step
@@ -308,6 +300,20 @@ public class ProcessService {
 		projectService.saveProject(project);
 
 		return containsError;
+	}
+
+
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	protected void tryStartNext(final ExternalProcessEntity process) {
+		try {
+			startNext(process.getExecutionStep());
+		} catch (final Exception e) {
+			log.error("Failed to start process!", e);
+			setProcessError(process, e.getMessage());
+
+			final ProjectEntity project = process.getProject();
+			projectService.saveProject(project);
+		}
 	}
 
 	/**
@@ -586,7 +592,6 @@ public class ProcessService {
 	 * @throws InternalMissingHandlingException    If no implementation exists for a valid configuration.
 	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
 	 */
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	protected void startNext(final ExecutionStepEntity executionStep)
 			throws BadStateException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		// Get the next step
@@ -740,7 +745,7 @@ public class ProcessService {
 			doStartBackgroundProcess(externalProcess);
 		} catch (final ApiException e) {
 			log.warn("Failed to start scheduled process!", e);
-			externalProcess.setExternalProcessStatus(ProcessStatus.ERROR);
+			setProcessError(externalProcess, e.getMessage());
 		}
 
 		externalProcess.setScheduledTime(null);
@@ -956,6 +961,7 @@ public class ProcessService {
 
 	private void setProcessError(final BackgroundProcessEntity process, final String message) {
 		process.setExternalProcessStatus(ProcessStatus.ERROR);
+		process.setUuid(null);
 
 		if (process instanceof ExternalProcessEntity externalProcess) {
 			externalProcess.setStatus(message);

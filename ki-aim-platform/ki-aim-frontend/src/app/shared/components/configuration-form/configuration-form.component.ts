@@ -235,7 +235,7 @@ export class ConfigurationFormComponent implements OnInit {
                 } else if (inputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
                     group[inputDefinition.name] = new FormArray([], Validators.required);
                     if (inputDefinition.invert) {
-                        group[inputDefinition.invert] = new FormArray([]);
+                        group[inputDefinition.invert] = new FormArray([], Validators.required);
                     }
                 } else {
                     // Add validators of the input

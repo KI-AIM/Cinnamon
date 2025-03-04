@@ -46,7 +46,8 @@ export class ConfigurationInputComponent implements OnInit, OnDestroy {
      * If the input is valid.
      */
      protected get isValid() {
-        return !this.form.controls[this.configurationInputDefinition.name].invalid;
+        return !this.form.controls[this.configurationInputDefinition.name].invalid &&
+            (!this.configurationInputDefinition.invert || !this.form.controls[this.configurationInputDefinition.invert].invalid);
     }
 
     /**

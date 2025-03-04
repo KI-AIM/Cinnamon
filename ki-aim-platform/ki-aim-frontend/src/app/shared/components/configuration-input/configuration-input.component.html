@@ -1,4 +1,4 @@
-<div class="d-flex flex-row w-100">
+<div class="d-flex flex-row w-100" style="gap: 16px;">
 
     <div class="d-flex flex-column input-height justify-content-center" style="width: 10%; min-width: 100px;">
         <mat-label [style.color]="isValid ? '' : 'red'" style="transition: color .1s linear"
@@ -7,7 +7,7 @@
         </mat-label>
     </div>
 
-    <span style="flex: 1 1 auto;" [formGroup]="form">
+    <span style="flex: 1 1 auto; width: 80%;" [formGroup]="form">
         <ng-container [ngSwitch]="configurationInputDefinition.type">
             <!-- Switch cases for all supported configuration types -->
             <ng-container *ngSwitchCase="ConfigurationInputType.ATTRIBUTE">
@@ -120,7 +120,7 @@
         </ng-container>
     </span>
 
-    <div class="d-flex input-height ms-3">
+    <div class="d-flex input-height">
         <div class="me-2 d-flex flex-column justify-content-center">
             <a *ngIf="!disabled" title="Set to default" (click)="setToDefault()"
                style="vertical-align: middle; color: black">

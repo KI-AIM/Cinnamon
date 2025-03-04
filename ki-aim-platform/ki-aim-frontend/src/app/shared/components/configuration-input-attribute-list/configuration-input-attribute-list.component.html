@@ -11,3 +11,11 @@
         </div>
     </div>
 </div>
+<div style="padding-left: 16px; font-size: 12px;">
+    <mat-error *ngIf="formArray.hasError('required')">
+        At least one attribute must be selected
+    </mat-error>
+    <mat-error *ngIf="formArrayInverted && formArrayInverted.hasError('required')">
+        At least one attributes must be unselected
+    </mat-error>
+</div>

@@ -115,7 +115,11 @@ export class ConfigurationFormComponent implements OnInit {
         if (this.anonService.configCache[this.algorithm.name]) {
             //Timeout is 0, so function is called before data is overwritten
             setTimeout(() => {
-                this.setConfiguration(this.anonService.configCache[this.anonService.selectCache!.name]);
+                const config = this.anonService.configCache[this.anonService.selectCache!.name];
+                // config can be undefined if no changes have been made
+                if (config) {
+                    this.setConfiguration(this.anonService.configCache[this.anonService.selectCache!.name]);
+                }
             }, 0);
         }
     }

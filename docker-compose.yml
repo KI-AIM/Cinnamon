@@ -52,10 +52,8 @@ services:
             KI-AIM.EXTERNAL-SERVER.2.CALLBACK-HOST: ki-aim-platform
             KI-AIM.EXTERNAL-SERVER.2.URL-SERVER: http://ki-aim-evaluation:5010
 
-#            KI-AIM.EXTERNAL-SERVER.3.CALLBACK-HOST: ki-aim-platform
-#            KI-AIM.EXTERNAL-SERVER.3.URL-SERVER: http://ki-aim-risk-assessment:8000
-            KI-AIM.EXTERNAL-SERVER.3.CALLBACK-HOST: localhost
-            KI-AIM.EXTERNAL-SERVER.3.URL-SERVER: http://host.docker.internal:8000
+            KI-AIM.EXTERNAL-SERVER.3.CALLBACK-HOST: ki-aim-platform
+            KI-AIM.EXTERNAL-SERVER.3.URL-SERVER: http://ki-aim-risk-assessment:8000
         depends_on:
             - ki-aim-db
     ki-aim-synthetization:

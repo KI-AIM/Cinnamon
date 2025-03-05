@@ -1,0 +1,15 @@
+evaluation_configuration:
+  data_format: cross-sectional
+  resemblance:
+    mean: transform_in_iso_datetime
+    standard_deviation: transform_in_time_distance
+    variance: transform_in_time_distance
+    fifth_percentile: transform_in_iso_datetime
+    q1: transform_in_iso_datetime
+    median: transform_in_iso_datetime
+    q3: transform_in_iso_datetime
+    ninety_fifth_percentile: transform_in_iso_datetime
+    minimum: transform_in_iso_datetime
+    maximum: transform_in_iso_datetime
+    density: transform_in_iso_datetime
+    histogram: transform_in_iso_datetime

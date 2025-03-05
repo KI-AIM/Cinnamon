@@ -1,0 +1,16 @@
+session_key: '3'
+status:
+- completed: 'True'
+  duration: '0.1270899772644043'
+  step: initialization
+- completed: 'True'
+  duration: '26.40655016899109'
+  remaining_time: '0'
+  step: fitting
+- completed: 'True'
+  duration: '0.13793706893920898'
+  remaining_time: '0'
+  step: sampling
+- completed: 'True'
+  step: callback
+synthesizer_name: tvae

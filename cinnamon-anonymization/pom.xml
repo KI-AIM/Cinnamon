@@ -9,7 +9,7 @@
         <version>0.0.1</version>
     </parent>
 
-    <artifactId>ki-aim-anon</artifactId>
+    <artifactId>cinnamon-anonymization</artifactId>
     <packaging>war</packaging>
     <name>ki-aim-anon</name>
     <description>Anonymization module for KI-AIM.</description>

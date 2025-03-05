@@ -44,7 +44,7 @@ services:
 
             # Anonymization
             CINNAMON.EXTERNAL-SERVER.0.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.0.URL-SERVER: http://ki-aim-anon:8080
+            CINNAMON.EXTERNAL-SERVER.0.URL-SERVER: http://cinnamon-anonymization:8080
             # Synthetization
             CINNAMON.EXTERNAL-SERVER.1.CALLBACK-HOST: cinnamon-platform
             CINNAMON.EXTERNAL-SERVER.1.URL-SERVER: http://ki-aim-synthetization:5000
@@ -83,12 +83,12 @@ services:
             - "127.0.0.1:8000:8000"
         networks:
             - evaluation-network
-    ki-aim-anon:
-        image: ki-aim-anon
+    cinnamon-anonymization:
+        image: cinnamon-anonymization
         build:
             context: ./
-            dockerfile: ./ki-aim-anon/Dockerfile
-        container_name: ki-aim-anon
+            dockerfile: ./cinnamon-anonymization/Dockerfile
+        container_name: cinnamon-anonymization
         restart: unless-stopped
         ports:
             - "127.0.0.1:8081:8080"

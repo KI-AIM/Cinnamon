@@ -28,7 +28,7 @@
     <modules>
         <module>cinnamon-model</module>
         <module>cinnamon-platform</module>
-        <module>ki-aim-anon</module>
+        <module>cinnamon-anonymization</module>
         <module>cinnamon-test</module>
     </modules>
 

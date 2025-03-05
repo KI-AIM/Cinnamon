@@ -12,12 +12,12 @@ For more information, read the README.md of the submodules.
 
 The [Cinnamon-Model](./cinnamon-model/README.md) submodule contains commonly used model classes like configurations.
 
-### KI-AIM-Anon
+### Cinnamon-Anonymization
 Submodule providing an API for anonymizing a dataset.
 
 Running the anonymization modules requires to install arx:
 ```bash
-mvn install:install-file -Dfile=ki-aim-anon/src/main/resources/lib/libarx-3.9.1.jar -DgroupId=org.deidentifier -DartifactId=arx -Dversion=3.9.1 -Dpackaging=jar
+mvn install:install-file -Dfile=cinnamon-anonymization/src/main/resources/lib/libarx-3.9.1.jar -DgroupId=org.deidentifier -DartifactId=arx -Dversion=3.9.1 -Dpackaging=jar
 ```
 
 ### Cinnamon-Platform
@@ -78,5 +78,5 @@ services:
   ki-aim-platform:
     environment:
       CINNAMON.EXTERNAL-SERVER.0.CALLBACK-HOST: ki-aim-platform
-      CINNAMON.EXTERNAL-SERVER.0.URL-SERVER: http://ki-aim-anon:8080
+      CINNAMON.EXTERNAL-SERVER.0.URL-SERVER: http://cinnamon-anonymization:8080
 ```

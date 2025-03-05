@@ -11,11 +11,11 @@
     </parent>
 
     <groupId>de.ki-aim</groupId>
-    <artifactId>ki-aim-parent</artifactId>
+    <artifactId>cinnamon-parent</artifactId>
     <version>0.0.1</version>
     <packaging>pom</packaging>
-    <name>ki-aim-parent</name>
-    <description>The root for the KI-AIM project.</description>
+    <name>cinnamon-parent</name>
+    <description>The root for the Cinnamon project.</description>
 
     <properties>
         <java.version>17</java.version>

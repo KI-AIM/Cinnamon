@@ -5,14 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>de.ki-aim</groupId>
-        <artifactId>ki-aim-parent</artifactId>
+        <artifactId>cinnamon-parent</artifactId>
         <version>0.0.1</version>
     </parent>
 
     <artifactId>cinnamon-anonymization</artifactId>
     <packaging>war</packaging>
     <name>ki-aim-anon</name>
-    <description>Anonymization module for KI-AIM.</description>
+    <description>Anonymization module for Cinnamon.</description>
 
     <dependencies>
         <dependency>

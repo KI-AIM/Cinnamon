@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>de.ki-aim</groupId>
-        <artifactId>ki-aim-parent</artifactId>
+        <artifactId>cinnamon-parent</artifactId>
         <version>0.0.1</version>
     </parent>
 

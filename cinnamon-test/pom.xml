@@ -21,7 +21,7 @@
         </dependency>
         <dependency>
             <groupId>de.ki-aim</groupId>
-            <artifactId>ki-aim-platform</artifactId>
+            <artifactId>cinnamon-platform</artifactId>
             <version>${project.version}</version>
             <classifier>classes</classifier>
         </dependency>

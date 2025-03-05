@@ -20,9 +20,9 @@ Running the anonymization modules requires to install arx:
 mvn install:install-file -Dfile=ki-aim-anon/src/main/resources/lib/libarx-3.9.1.jar -DgroupId=org.deidentifier -DartifactId=arx -Dversion=3.9.1 -Dpackaging=jar
 ```
 
-### KI-AIM-Platform
+### Cinnamon-Platform
 
-The [KI-AIM-Platform](./ki-aim-platform/README.md) provides data management as well as the front end of the project.
+The [Cinnamon-Platform](./cinnamon-platform/README.md) provides data management as well as the front end of the project.
 
 ### Cinnamon-Test
 

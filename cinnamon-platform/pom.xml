@@ -9,10 +9,10 @@
 		<version>0.0.1</version>
 	</parent>
 
-	<artifactId>ki-aim-platform</artifactId>
+	<artifactId>cinnamon-platform</artifactId>
 	<packaging>war</packaging>
-	<name>ki-aim-platform</name>
-	<description>The base project for KI-AIM, that includes the web app for data management, anonymization and evaluation.</description>
+	<name>cinnamon-platform</name>
+	<description>The base project for Cinnamon, that includes the web app for data management, anonymization and evaluation.</description>
 
 	<properties>
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>

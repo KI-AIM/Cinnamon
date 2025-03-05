@@ -47,36 +47,36 @@ services:
             CINNAMON.EXTERNAL-SERVER.0.URL-SERVER: http://cinnamon-anonymization:8080
             # Synthetization
             CINNAMON.EXTERNAL-SERVER.1.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.1.URL-SERVER: http://ki-aim-synthetization:5000
+            CINNAMON.EXTERNAL-SERVER.1.URL-SERVER: http://cinnamon-synthetization:5000
             # Evaluation
             CINNAMON.EXTERNAL-SERVER.2.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.2.URL-SERVER: http://ki-aim-evaluation:5010
+            CINNAMON.EXTERNAL-SERVER.2.URL-SERVER: http://cinnamon-evaluation:5010
 
             CINNAMON.EXTERNAL-SERVER.3.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.3.URL-SERVER: http://ki-aim-risk-assessment:8000
+            CINNAMON.EXTERNAL-SERVER.3.URL-SERVER: http://cinnamon-risk-assessment:8000
         depends_on:
             - cinnamon-db
-    ki-aim-synthetization:
+    cinnamon-synthetization:
         image: synthetization_module
-        container_name: ki-aim-synthetization
+        container_name: cinnamon-synthetization
         restart: unless-stopped
         ports:
 #            - "5000:5000"
             - "127.0.0.1:5000:5000"
         networks:
             - synthetization-network
-    ki-aim-evaluation:
+    cinnamon-evaluation:
         image: evaluation_module
-        container_name: ki-aim-evaluation
+        container_name: cinnamon-evaluation
         restart: unless-stopped
         ports:
 #            - "5010:5010"
             - "127.0.0.1:5010:5010"
         networks:
             - evaluation-network
-    ki-aim-risk-assessment:
+    cinnamon-risk-assessment:
         image: risk_assessment_module
-        container_name: ki-aim-risk-assessment
+        container_name: cinnamon-risk-assessment
         restart: unless-stopped
         ports:
 #            - "8000:8000"

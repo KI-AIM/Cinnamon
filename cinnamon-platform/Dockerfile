@@ -4,7 +4,7 @@ FROM maven:3.8.5-openjdk-17 AS build
 WORKDIR /cinnamon-platform
 
 COPY ../pom.xml .
-COPY ../ki-aim-anon/pom.xml ki-aim-anon/
+COPY ../cinnamon-anonymization/pom.xml cinnamon-anonymization/
 COPY ../cinnamon-model/pom.xml cinnamon-model/
 COPY ../cinnamon-platform/pom.xml cinnamon-platform/
 COPY ../cinnamon-test/pom.xml cinnamon-test/

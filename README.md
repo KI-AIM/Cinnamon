@@ -75,8 +75,8 @@ When changing container names or ports, the configurations for the external serv
 
 ```yaml
 services:
-  ki-aim-platform:
+  cinnamon-platform:
     environment:
-      CINNAMON.EXTERNAL-SERVER.0.CALLBACK-HOST: ki-aim-platform
+      CINNAMON.EXTERNAL-SERVER.0.CALLBACK-HOST: cinnamon-platform
       CINNAMON.EXTERNAL-SERVER.0.URL-SERVER: http://cinnamon-anonymization:8080
 ```

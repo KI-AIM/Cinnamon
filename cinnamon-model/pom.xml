@@ -8,10 +8,10 @@
     <version>0.0.1</version>
   </parent>
 
-  <artifactId>ki-aim-model</artifactId>
+  <artifactId>cinnamon-model</artifactId>
   <packaging>jar</packaging>
-  <name>ki-aim-model</name>
-  <description>Model classes of the KI-AIM projects.</description>
+  <name>cinnamon-model</name>
+  <description>Model classes of the Cinnamon projects.</description>
 
   <dependencies>
     <!-- Jackson -->

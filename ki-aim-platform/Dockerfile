@@ -5,11 +5,11 @@ WORKDIR /ki-aim-platform
 
 COPY ../pom.xml .
 COPY ../ki-aim-anon/pom.xml ki-aim-anon/
-COPY ../ki-aim-model/pom.xml ki-aim-model/
+COPY ../cinnamon-model/pom.xml cinnamon-model/
 COPY ../ki-aim-platform/pom.xml ki-aim-platform/
 COPY ../cinnamon-test/pom.xml cinnamon-test/
 
-COPY ../ki-aim-model/src ki-aim-model/src
+COPY ../cinnamon-model/src cinnamon-model/src
 COPY ../ki-aim-platform/src ki-aim-platform/src
 COPY ../ki-aim-platform/cinnamon-frontend ki-aim-platform/cinnamon-frontend
 

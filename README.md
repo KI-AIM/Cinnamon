@@ -8,9 +8,9 @@ A platform for providing anonymized data by combining anonymization and syntheti
 This project contains the following submodules.
 For more information, read the README.md of the submodules.
 
-### KI-AIM-Model
+### Cinnamon-Model
 
-The [KI-AIM-Model](./ki-aim-model/README.md) submodule contains commonly used model classes like configurations.
+The [Cinnamon-Model](./cinnamon-model/README.md) submodule contains commonly used model classes like configurations.
 
 ### KI-AIM-Anon
 Submodule providing an API for anonymizing a dataset.

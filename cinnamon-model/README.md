@@ -1,4 +1,4 @@
-# KI-AIM-Model
+# Cinnamon-Model
 
 This module contains all commonly used model classes as well as custom serializers.
 

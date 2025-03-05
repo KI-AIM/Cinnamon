@@ -11,7 +11,7 @@
 
     <artifactId>cinnamon-anonymization</artifactId>
     <packaging>war</packaging>
-    <name>ki-aim-anon</name>
+    <name>cinnamon-anon</name>
     <description>Anonymization module for Cinnamon.</description>
 
     <dependencies>

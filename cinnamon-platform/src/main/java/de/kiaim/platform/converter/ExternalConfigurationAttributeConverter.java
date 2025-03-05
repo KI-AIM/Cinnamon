@@ -1,8 +1,7 @@
 package de.kiaim.platform.converter;
 
 import de.kiaim.platform.model.configuration.ExternalConfiguration;
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
-import de.kiaim.platform.model.configuration.Stage;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -15,10 +14,10 @@ import jakarta.persistence.Converter;
 @Converter
 public class ExternalConfigurationAttributeConverter implements AttributeConverter<ExternalConfiguration, String> {
 
-	private final KiAimConfiguration kiAimConfiguration;
+	private final CinnamonConfiguration cinnamonConfiguration;
 
-	public ExternalConfigurationAttributeConverter(final KiAimConfiguration kiAimConfiguration) {
-		this.kiAimConfiguration = kiAimConfiguration;
+	public ExternalConfigurationAttributeConverter(final CinnamonConfiguration cinnamonConfiguration) {
+		this.cinnamonConfiguration = cinnamonConfiguration;
 	}
 
 	@Override public String convertToDatabaseColumn(final ExternalConfiguration attribute) {
@@ -26,6 +25,6 @@ public class ExternalConfigurationAttributeConverter implements AttributeConvert
 	}
 
 	@Override public ExternalConfiguration convertToEntityAttribute(final String dbData) {
-		return kiAimConfiguration.getExternalConfiguration().get(dbData);
+		return cinnamonConfiguration.getExternalConfiguration().get(dbData);
 	}
 }

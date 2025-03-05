@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.exception.InternalRequestException;
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.platform.model.configuration.Stage;
 import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
@@ -36,7 +36,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@Value("${server.port}") private int port;
 	@Autowired private SerializationConfig serializationConfig;
-	@Autowired private KiAimConfiguration kiAimConfiguration;
+	@Autowired private CinnamonConfiguration cinnamonConfiguration;
 	@Autowired private DataSetService dataSetService;
 	@Autowired private StepService stepService = mock(StepService.class);
 
@@ -60,9 +60,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		DatabaseService databaseService = mock(DatabaseService.class);
 		ProjectService projectService = mock(ProjectService.class);
 
-		this.processService = new ProcessService(serializationConfig, port, kiAimConfiguration,
+		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
 		                                         backgroundProcessRepository, csvProcessor, databaseService,
-												 dataSetService, projectService, stepService);
+		                                         dataSetService, projectService, stepService);
 
 		mockBackEnd = new MockWebServer();
 		mockBackEnd.start(mockBackEndPort);
@@ -79,7 +79,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@Test
 	public void fetchStatusError() throws IOException {
-		final Stage stage = kiAimConfiguration.getPipeline().getStageList().get(0);
+		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
@@ -113,7 +113,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@Test
 	public void fetchStatusUnavailable() throws IOException {
-		final Stage stage = kiAimConfiguration.getPipeline().getStageList().get(0);
+		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);

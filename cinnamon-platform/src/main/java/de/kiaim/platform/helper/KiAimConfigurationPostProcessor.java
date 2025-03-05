@@ -1,6 +1,6 @@
 package de.kiaim.platform.helper;
 
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 
@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class KiAimConfigurationPostProcessor {
 
-	private final KiAimConfiguration config;
+	private final CinnamonConfiguration config;
 
-	public KiAimConfigurationPostProcessor(final KiAimConfiguration config) {
+	public KiAimConfigurationPostProcessor(final CinnamonConfiguration config) {
 		this.config = config;
 	}
 

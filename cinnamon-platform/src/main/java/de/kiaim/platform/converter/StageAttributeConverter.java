@@ -1,6 +1,6 @@
 package de.kiaim.platform.converter;
 
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.platform.model.configuration.Stage;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
@@ -14,10 +14,10 @@ import jakarta.persistence.Converter;
 @Converter
 public class StageAttributeConverter implements AttributeConverter<Stage, String> {
 
-	private final KiAimConfiguration kiAimConfiguration;
+	private final CinnamonConfiguration cinnamonConfiguration;
 
-	public StageAttributeConverter(final KiAimConfiguration kiAimConfiguration) {
-		this.kiAimConfiguration = kiAimConfiguration;
+	public StageAttributeConverter(final CinnamonConfiguration cinnamonConfiguration) {
+		this.cinnamonConfiguration = cinnamonConfiguration;
 	}
 
 	@Override public String convertToDatabaseColumn(final Stage attribute) {
@@ -25,6 +25,6 @@ public class StageAttributeConverter implements AttributeConverter<Stage, String
 	}
 
 	@Override public Stage convertToEntityAttribute(final String dbData) {
-		return kiAimConfiguration.getStages().get(dbData);
+		return cinnamonConfiguration.getStages().get(dbData);
 	}
 }

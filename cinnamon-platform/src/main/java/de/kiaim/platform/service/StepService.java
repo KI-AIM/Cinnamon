@@ -15,18 +15,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class StepService {
 
-	private final KiAimConfiguration kiAimConfiguration;
+	private final CinnamonConfiguration cinnamonConfiguration;
 
-	public StepService(KiAimConfiguration kiAimConfiguration) {
-		this.kiAimConfiguration = kiAimConfiguration;
+	public StepService(CinnamonConfiguration cinnamonConfiguration) {
+		this.cinnamonConfiguration = cinnamonConfiguration;
 	}
 
 	public ExternalEndpoint getExternalServerEndpointConfiguration(final Job stepConfiguration) {
-		return kiAimConfiguration.getExternalServerEndpoints().get(stepConfiguration.getExternalServerEndpointIndex());
+		return cinnamonConfiguration.getExternalServerEndpoints().get(stepConfiguration.getExternalServerEndpointIndex());
 	}
 
 	public ExternalServer getExternalServerConfiguration(final ExternalEndpoint externalServerEndpoint) {
-		return kiAimConfiguration.getExternalServer().get(externalServerEndpoint.getExternalServerIndex());
+		return cinnamonConfiguration.getExternalServer().get(externalServerEndpoint.getExternalServerIndex());
 	}
 
 	/**
@@ -36,12 +36,12 @@ public class StepService {
 	 * @throws BadStepNameException If no configuration could be found.
 	 */
 	public Job getStepConfiguration(final String stepName) throws BadStepNameException {
-		if (!kiAimConfiguration.getSteps().containsKey(stepName.toLowerCase())) {
+		if (!cinnamonConfiguration.getSteps().containsKey(stepName.toLowerCase())) {
 			throw new BadStepNameException(BadStepNameException.NOT_FOUND,
 			                               "The job '" + stepName + "' is not defined!");
 		}
 
-		return kiAimConfiguration.getSteps().get(stepName.toLowerCase());
+		return cinnamonConfiguration.getSteps().get(stepName.toLowerCase());
 	}
 
 	/**
@@ -52,22 +52,22 @@ public class StepService {
 	 * @throws BadStepNameException If no configuration could be found.
 	 */
 	public Stage getStageConfiguration(final String stageName) throws BadStepNameException {
-		if (!kiAimConfiguration.getStages().containsKey(stageName.toLowerCase())) {
+		if (!cinnamonConfiguration.getStages().containsKey(stageName.toLowerCase())) {
 			throw new BadStepNameException(BadStepNameException.NOT_FOUND,
 			                               "The step '" + stageName + "' is not defined!");
 		}
 
-		return kiAimConfiguration.getStages().get(stageName.toLowerCase());
+		return cinnamonConfiguration.getStages().get(stageName.toLowerCase());
 	}
 
 	public ExternalConfiguration getExternalConfiguration(final String configurationName) throws BadConfigurationNameException {
-		if (!kiAimConfiguration.getExternalConfiguration().containsKey(configurationName.toLowerCase())) {
+		if (!cinnamonConfiguration.getExternalConfiguration().containsKey(configurationName.toLowerCase())) {
 			throw new BadConfigurationNameException(BadConfigurationNameException.NOT_FOUND,
 			                                        "No configuration with name '" + configurationName +
 			                                        "' registered!");
 		}
 
-		return kiAimConfiguration.getExternalConfiguration().get(configurationName.toLowerCase());
+		return cinnamonConfiguration.getExternalConfiguration().get(configurationName.toLowerCase());
 	}
 
 	public ExternalProcessEntity getProcess(final String jobName, final ProjectEntity project) throws BadStepNameException {

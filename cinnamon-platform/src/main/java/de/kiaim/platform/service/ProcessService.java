@@ -67,7 +67,7 @@ public class ProcessService {
 	private final ObjectMapper jsonMapper;
 	private final ObjectMapper yamlMapper;
 
-	private final KiAimConfiguration kiAimConfiguration;
+	private final CinnamonConfiguration cinnamonConfiguration;
 
 	private final BackgroundProcessRepository backgroundProcessRepository;
 
@@ -78,7 +78,7 @@ public class ProcessService {
 	private final StepService stepService;
 
 	public ProcessService(final SerializationConfig serializationConfig,
-	                      @Value("${server.port}") final int port, final KiAimConfiguration kiAimConfiguration,
+	                      @Value("${server.port}") final int port, final CinnamonConfiguration cinnamonConfiguration,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
 	                      final CsvProcessor csvProcessor, final DatabaseService databaseService,
 	                      final DataSetService dataSetService, final ProjectService projectService,
@@ -88,7 +88,7 @@ public class ProcessService {
 		this.yamlMapper = serializationConfig.yamlMapper();
 
 		this.port = port;
-		this.kiAimConfiguration = kiAimConfiguration;
+		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.backgroundProcessRepository = backgroundProcessRepository;
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
@@ -336,7 +336,7 @@ public class ProcessService {
 	                                  final Set<Map.Entry<String, MultipartFile>> resultFiles
 	) throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 
-		final var endpoint = kiAimConfiguration.getExternalServerEndpoints().get(process.getEndpoint());
+		final var endpoint = cinnamonConfiguration.getExternalServerEndpoints().get(process.getEndpoint());
 
 		ExternalProcessEntity externalProcess = null;
 		DataProcessingEntity dataProcessing = null;
@@ -482,8 +482,8 @@ public class ProcessService {
 	public void startOrScheduleBackendProcess(final BackgroundProcessEntity externalProcess)
 			throws BadStateException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		// Get configuration
-		final ExternalEndpoint endpoint = kiAimConfiguration.getExternalServerEndpoints()
-		                                                    .get(externalProcess.getEndpoint());
+		final ExternalEndpoint endpoint = cinnamonConfiguration.getExternalServerEndpoints()
+		                                                       .get(externalProcess.getEndpoint());
 		final ExternalServer server = endpoint.getServer();
 
 		// Check if max number of processes is reached
@@ -766,7 +766,7 @@ public class ProcessService {
 	 */
 	private void doStartBackgroundProcess(final BackgroundProcessEntity externalProcess)
 			throws InternalDataSetPersistenceException, InternalIOException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
-		final var endpoint = kiAimConfiguration.getExternalServerEndpoints().get(externalProcess.getEndpoint());
+		final var endpoint = cinnamonConfiguration.getExternalServerEndpoints().get(externalProcess.getEndpoint());
 
 		final ExternalServer es = stepService.getExternalServerConfiguration(endpoint);
 

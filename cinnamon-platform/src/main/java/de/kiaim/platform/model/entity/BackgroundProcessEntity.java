@@ -1,6 +1,6 @@
 package de.kiaim.platform.model.entity;
 
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -44,7 +44,7 @@ public class BackgroundProcessEntity {
 
 	/**
 	 * The endpoint used for this process.
-	 * Index is based on the list {@link KiAimConfiguration#getExternalServerEndpoints()}
+	 * Index is based on the list {@link CinnamonConfiguration#getExternalServerEndpoints()}
 	 */
 	@Column(nullable = false)
 	private int endpoint;

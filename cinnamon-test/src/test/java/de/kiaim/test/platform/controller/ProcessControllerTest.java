@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.model.status.synthetization.SynthetizationStepStatus;
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.platform.model.configuration.Stage;
 import de.kiaim.platform.model.dto.DataSetSource;
 import de.kiaim.platform.model.entity.DataSetEntity;
@@ -67,7 +67,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private MockWebServer mockBackEnd;
 
-	@Autowired private KiAimConfiguration kiAimConfiguration;
+	@Autowired private CinnamonConfiguration cinnamonConfiguration;
 
 	@Autowired private DataSetService dataSetService;
 	@Autowired private UserService userService;
@@ -188,7 +188,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		final Stage firstStage = kiAimConfiguration.getPipeline().getStageList().get(0);
+		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 
 		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start"))
 		       .andExpect(status().isOk())
@@ -280,7 +280,7 @@ public class ProcessControllerTest extends ControllerTest {
 	private void finish1() throws Exception {
 		var updateTestProject = getTestProject();
 
-		final Stage firstStage = kiAimConfiguration.getPipeline().getStageList().get(0);
+		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 
 		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
 		String id = process.getUuid().toString();
@@ -351,7 +351,7 @@ public class ProcessControllerTest extends ControllerTest {
 	private void finish2() throws Exception {
 		var updateTestProject = getTestProject();
 
-		final Stage firstStage = kiAimConfiguration.getPipeline().getStageList().get(0);
+		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 
 		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(1);
 		String id = process.getUuid().toString();

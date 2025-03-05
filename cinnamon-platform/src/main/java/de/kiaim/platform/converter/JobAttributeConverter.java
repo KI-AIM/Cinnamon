@@ -1,7 +1,7 @@
 package de.kiaim.platform.converter;
 
 
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.platform.model.configuration.Job;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
@@ -15,10 +15,10 @@ import jakarta.persistence.Converter;
 @Converter
 public class JobAttributeConverter implements AttributeConverter<Job, String> {
 
-	private final KiAimConfiguration kiAimConfiguration;
+	private final CinnamonConfiguration cinnamonConfiguration;
 
-	public JobAttributeConverter(final KiAimConfiguration kiAimConfiguration) {
-		this.kiAimConfiguration = kiAimConfiguration;
+	public JobAttributeConverter(final CinnamonConfiguration cinnamonConfiguration) {
+		this.cinnamonConfiguration = cinnamonConfiguration;
 	}
 
 	@Override
@@ -28,6 +28,6 @@ public class JobAttributeConverter implements AttributeConverter<Job, String> {
 
 	@Override
 	public Job convertToEntityAttribute(final String dbData) {
-		return kiAimConfiguration.getSteps().get(dbData);
+		return cinnamonConfiguration.getSteps().get(dbData);
 	}
 }

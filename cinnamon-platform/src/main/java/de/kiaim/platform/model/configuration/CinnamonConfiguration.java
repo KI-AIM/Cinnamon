@@ -17,7 +17,7 @@ import java.util.TreeMap;
 @Component
 @ConfigurationProperties(prefix = "cinnamon")
 @Getter @Setter
-public class KiAimConfiguration {
+public class CinnamonConfiguration {
 	/**
 	 * Map containing all steps.
 	 */

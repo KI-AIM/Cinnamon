@@ -4,7 +4,7 @@ import de.kiaim.model.configuration.data.DataConfiguration;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.configuration.ExternalEndpoint;
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.platform.model.dto.DataSetSource;
 import de.kiaim.platform.model.dto.LoadDataRequest;
 import de.kiaim.platform.model.entity.*;
@@ -34,15 +34,15 @@ public class DataSetService {
 
 	private final UserRepository userRepository;
 
-	private final KiAimConfiguration kiAimConfiguration;
+	private final CinnamonConfiguration cinnamonConfiguration;
 
 	private final StepService stepService;
 
 	@Autowired
-	public DataSetService(final UserRepository userRepository, final KiAimConfiguration kiAimConfiguration,
+	public DataSetService(final UserRepository userRepository, final CinnamonConfiguration cinnamonConfiguration,
 	                      final StepService stepService) {
 		this.userRepository = userRepository;
-		this.kiAimConfiguration = kiAimConfiguration;
+		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.stepService = stepService;
 	}
 
@@ -292,7 +292,7 @@ public class DataSetService {
 	 */
 	public DataSetEntity getDataSet(final ExternalProcessEntity externalProcess)
 			throws BadStateException, InternalApplicationConfigurationException, InternalInvalidStateException, InternalMissingHandlingException {
-		final ExternalEndpoint ese = kiAimConfiguration.getExternalServerEndpoints().get(externalProcess.getEndpoint());
+		final ExternalEndpoint ese = cinnamonConfiguration.getExternalServerEndpoints().get(externalProcess.getEndpoint());
 		// TODO Hard coded first data set
 		return getDataSet(ese.getInputs().get(ese.getInputs().size() - 1).getSelector(), externalProcess);
 	}

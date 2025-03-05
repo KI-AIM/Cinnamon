@@ -1,7 +1,7 @@
 package de.kiaim.test.platform.service;
 
 import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.platform.exception.*;
 import de.kiaim.platform.model.TransformationResult;
 import de.kiaim.platform.model.entity.*;
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ProjectServiceTest extends DatabaseTest {
 
-	@Autowired KiAimConfiguration kiAimConfiguration;
+	@Autowired CinnamonConfiguration cinnamonConfiguration;
 	@Autowired UserRepository userRepository;
 	@Autowired DatabaseService databaseService;
 	@Autowired DataProcessorService dataProcessorService;
@@ -51,11 +51,11 @@ public class ProjectServiceTest extends DatabaseTest {
 		assertEquals(1, project.getPipelines().size(), "Unexpected  number of created pipelines!");
 		var pipeline = project.getPipelines().get(0);
 		assertEquals(2, pipeline.getStages().size(), "Unexpected number of created executions!");
-		assertTrue(pipeline.containsStage(kiAimConfiguration.getPipeline().getStageList().get(0)),
+		assertTrue(pipeline.containsStage(cinnamonConfiguration.getPipeline().getStageList().get(0)),
 		           "No execution has been created for step 'EVALUATION'!");
-		assertTrue(pipeline.containsStage(kiAimConfiguration.getPipeline().getStageList().get(1)),
+		assertTrue(pipeline.containsStage(cinnamonConfiguration.getPipeline().getStageList().get(1)),
 		           "No execution has been created for step 'EXECUTION'!");
-		var stage = kiAimConfiguration.getPipeline().getStageList().get(0);
+		var stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 		var exec = pipeline.getStageByStep(stage);
 
 		assertEquals(exec.getStage(), stage, "Unexpected step!");
@@ -85,7 +85,7 @@ public class ProjectServiceTest extends DatabaseTest {
 	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, BadFileException, InternalApplicationConfigurationException, BadConfigurationNameException {
 		// Preparation
 		final var project = projectService.createProject(System.currentTimeMillis());
-		final var stage = kiAimConfiguration.getPipeline().getStageList().get(0);
+		final var stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 		final var file = ResourceHelper.loadCsvFile();
 		final var csvFileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 		final var fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();

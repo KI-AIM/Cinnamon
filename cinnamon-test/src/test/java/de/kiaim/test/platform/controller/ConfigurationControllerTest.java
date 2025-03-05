@@ -1,6 +1,6 @@
 package de.kiaim.test.platform.controller;
 
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
 import de.kiaim.platform.service.ProjectService;
@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WithUserDetails("test_user")
 class ConfigurationControllerTest extends ControllerTest {
 
-	@Autowired private KiAimConfiguration kiAimConfiguration;
+	@Autowired private CinnamonConfiguration cinnamonConfiguration;
 
 	@Autowired
 	ProjectService projectService;
@@ -70,8 +70,8 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Test
 	void loadNoConfiguration() throws Exception {
-		final String configName = kiAimConfiguration.getPipeline().getStageList().get(0).getJobList().get(0)
-		                                            .getEndpoint().getConfiguration().getConfigurationName();
+		final String configName = cinnamonConfiguration.getPipeline().getStageList().get(0).getJobList().get(0)
+		                                               .getEndpoint().getConfiguration().getConfigurationName();
 
 		final ProjectEntity project = projectService.getProject(getTestUser());
 

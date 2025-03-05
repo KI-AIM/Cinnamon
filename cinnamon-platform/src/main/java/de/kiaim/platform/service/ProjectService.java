@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.platform.model.configuration.Stage;
 import de.kiaim.platform.model.configuration.Job;
 import de.kiaim.platform.exception.InternalApplicationConfigurationException;
@@ -36,18 +36,18 @@ import java.util.zip.ZipOutputStream;
 public class ProjectService {
 
 	private final ObjectMapper yamlMapper;
-	private final KiAimConfiguration kiAimConfiguration;
+	private final CinnamonConfiguration cinnamonConfiguration;
 	private final ProjectRepository projectRepository;
 	private final UserRepository userRepository;
 	private final DatabaseService databaseService;
 	private final StepService stepService;
 
-	public ProjectService(final ObjectMapper yamlMapper, final KiAimConfiguration kiAimConfiguration,
+	public ProjectService(final ObjectMapper yamlMapper, final CinnamonConfiguration cinnamonConfiguration,
 	                      final ProjectRepository projectRepository, final UserRepository userRepository,
 	                      final DatabaseService databaseService,
 	                      final StepService stepService) {
 		this.yamlMapper = yamlMapper;
-		this.kiAimConfiguration = kiAimConfiguration;
+		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.projectRepository = projectRepository;
 		this.userRepository = userRepository;
 		this.databaseService = databaseService;
@@ -115,24 +115,24 @@ public class ProjectService {
 		project.addPipeline(pipeline);
 
 		// Create entities for external processes
-		for (final String stageName : kiAimConfiguration.getPipeline().getStages()) {
-			if (!kiAimConfiguration.getStages().containsKey(stageName)) {
+		for (final String stageName : cinnamonConfiguration.getPipeline().getStages()) {
+			if (!cinnamonConfiguration.getStages().containsKey(stageName)) {
 				throw new InternalApplicationConfigurationException(
 						InternalApplicationConfigurationException.MISSING_STAGE_CONFIGURATION,
 						"No configuration for stage '" + stageName + "'!");
 			}
 
-			final Stage stageConfiguration = kiAimConfiguration.getStages().get(stageName);
+			final Stage stageConfiguration = cinnamonConfiguration.getStages().get(stageName);
 			final ExecutionStepEntity stage = new ExecutionStepEntity();
 
 			for (final String jobName : stageConfiguration.getJobs()) {
-				if (!kiAimConfiguration.getSteps().containsKey(jobName)) {
+				if (!cinnamonConfiguration.getSteps().containsKey(jobName)) {
 					throw new InternalApplicationConfigurationException(
 							InternalApplicationConfigurationException.MISSING_STEP_CONFIGURATION,
 							"No configuration for step '" + jobName + "'!");
 				}
 
-				final Job stepConfiguration = kiAimConfiguration.getSteps().get(jobName);
+				final Job stepConfiguration = cinnamonConfiguration.getSteps().get(jobName);
 				ExternalProcessEntity job = switch (stepConfiguration.getStepType()) {
 					case DATA_PROCESSING -> new DataProcessingEntity();
 					case EVALUATION -> new EvaluationProcessingEntity();

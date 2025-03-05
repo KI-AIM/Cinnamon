@@ -1,7 +1,7 @@
 package de.kiaim.platform.converter;
 
 import de.kiaim.platform.model.configuration.Job;
-import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.CinnamonConfiguration;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -14,10 +14,10 @@ public class StepListAttributeConverter implements AttributeConverter<List<Job>,
 
 	private static final String SEPARATOR = ",";
 
-	private final KiAimConfiguration kiAimConfiguration;
+	private final CinnamonConfiguration cinnamonConfiguration;
 
-	public StepListAttributeConverter(final KiAimConfiguration kiAimConfiguration) {
-		this.kiAimConfiguration = kiAimConfiguration;
+	public StepListAttributeConverter(final CinnamonConfiguration cinnamonConfiguration) {
+		this.cinnamonConfiguration = cinnamonConfiguration;
 	}
 
 
@@ -37,7 +37,7 @@ public class StepListAttributeConverter implements AttributeConverter<List<Job>,
 		}
 
 		return Arrays.stream(dbData.split(SEPARATOR))
-		             .map(name -> kiAimConfiguration.getSteps().get(name))
+		             .map(name -> cinnamonConfiguration.getSteps().get(name))
 		             .collect(Collectors.toList());
 	}
 }

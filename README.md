@@ -54,18 +54,18 @@ When changing the configuration of the database (e.g. the password) make sure to
 
 ```yaml
 services:
-  ki-aim-db:
+  cinnamon-db:
     environment:
-      # Has to match the datasource settings of the ki-aim-platform container
-      - POSTGRES_DB=ki_aim_db
-      - POSTGRES_USER=ki_aim_user
+      # Has to match the datasource settings of the cinnamon-platform container
+      - POSTGRES_DB=cinnamon_db
+      - POSTGRES_USER=cinnamon_user
       - POSTGRES_PASSWORD=changeme
-    ki-aim-platform:
+    cinnamon-platform:
       environment:
-        # Datasource has to match with the configuration of the ki-aim-db container
+        # Datasource has to match with the configuration of the cinnamon-db container
         SPRING_DATASOURCE_PASSWORD: changeme
-        SPRING_DATASOURCE_URL: jdbc:postgresql://ki-aim-db:5432/ki_aim_db
-        SPRING.DATASOURCE.USERNAME: ki_aim_user
+        SPRING_DATASOURCE_URL: jdbc:postgresql://cinnamon-db:5432/cinnamon_db
+        SPRING.DATASOURCE.USERNAME: cinnamon_user
 ```
 
 > [!WARNING]

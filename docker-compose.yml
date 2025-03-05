@@ -43,17 +43,17 @@ services:
             SPRING.DATASOURCE.USERNAME: ki_aim_user
 
             # Anonymization
-            KI-AIM.EXTERNAL-SERVER.0.CALLBACK-HOST: ki-aim-platform
-            KI-AIM.EXTERNAL-SERVER.0.URL-SERVER: http://ki-aim-anon:8080
+            CINNAMON.EXTERNAL-SERVER.0.CALLBACK-HOST: ki-aim-platform
+            CINNAMON.EXTERNAL-SERVER.0.URL-SERVER: http://ki-aim-anon:8080
             # Synthetization
-            KI-AIM.EXTERNAL-SERVER.1.CALLBACK-HOST: ki-aim-platform
-            KI-AIM.EXTERNAL-SERVER.1.URL-SERVER: http://ki-aim-synthetization:5000
+            CINNAMON.EXTERNAL-SERVER.1.CALLBACK-HOST: ki-aim-platform
+            CINNAMON.EXTERNAL-SERVER.1.URL-SERVER: http://ki-aim-synthetization:5000
             # Evaluation
-            KI-AIM.EXTERNAL-SERVER.2.CALLBACK-HOST: ki-aim-platform
-            KI-AIM.EXTERNAL-SERVER.2.URL-SERVER: http://ki-aim-evaluation:5010
+            CINNAMON.EXTERNAL-SERVER.2.CALLBACK-HOST: ki-aim-platform
+            CINNAMON.EXTERNAL-SERVER.2.URL-SERVER: http://ki-aim-evaluation:5010
 
-            KI-AIM.EXTERNAL-SERVER.3.CALLBACK-HOST: ki-aim-platform
-            KI-AIM.EXTERNAL-SERVER.3.URL-SERVER: http://ki-aim-risk-assessment:8000
+            CINNAMON.EXTERNAL-SERVER.3.CALLBACK-HOST: ki-aim-platform
+            CINNAMON.EXTERNAL-SERVER.3.URL-SERVER: http://ki-aim-risk-assessment:8000
         depends_on:
             - ki-aim-db
     ki-aim-synthetization:

@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
 
 	@Bean
-	public OpenAPI customOpenAPI(@Value("${ki-aim.version}") final String kiAimVersion) {
+	public OpenAPI customOpenAPI(@Value("${cinnamon.version}") final String kiAimVersion) {
 		return new OpenAPI()
 				.components(new Components().addSecuritySchemes("Basic Authentication", new SecurityScheme().type(
 						SecurityScheme.Type.HTTP).scheme("basic")))

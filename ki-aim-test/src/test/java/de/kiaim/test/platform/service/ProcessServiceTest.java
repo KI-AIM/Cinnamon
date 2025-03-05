@@ -47,9 +47,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("ki-aim.external-server.2.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("ki-aim.external-server.1.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("ki-aim.external-server.0.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.2.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.1.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.0.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
 	}
 
 	@BeforeEach

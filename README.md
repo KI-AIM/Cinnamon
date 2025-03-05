@@ -77,6 +77,6 @@ When changing container names or ports, the configurations for the external serv
 services:
   ki-aim-platform:
     environment:
-      KI-AIM.EXTERNAL-SERVER.0.CALLBACK-HOST: ki-aim-platform
-      KI-AIM.EXTERNAL-SERVER.0.URL-SERVER: http://ki-aim-anon:8080
+      CINNAMON.EXTERNAL-SERVER.0.CALLBACK-HOST: ki-aim-platform
+      CINNAMON.EXTERNAL-SERVER.0.URL-SERVER: http://ki-aim-anon:8080
 ```

@@ -15,7 +15,7 @@ import java.util.TreeMap;
  * Model for the steps defined in the application properties.
  */
 @Component
-@ConfigurationProperties(prefix = "ki-aim")
+@ConfigurationProperties(prefix = "cinnamon")
 @Getter @Setter
 public class KiAimConfiguration {
 	/**

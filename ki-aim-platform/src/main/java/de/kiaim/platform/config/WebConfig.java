@@ -14,7 +14,7 @@ public class WebConfig implements WebMvcConfigurer {
 	private final String[] corsAllowedOrigins;
 	private final FormatBasedMessageConverter formatBasedMessageConverter;
 
-	public WebConfig(@Value("${ki-aim.corsAllowedOrigins}") final String[] corsAllowedOrigins,
+	public WebConfig(@Value("${cinnamon.corsAllowedOrigins}") final String[] corsAllowedOrigins,
 	                 final FormatBasedMessageConverter formatBasedMessageConverter) {
 		this.corsAllowedOrigins = corsAllowedOrigins;
 		this.formatBasedMessageConverter = formatBasedMessageConverter;

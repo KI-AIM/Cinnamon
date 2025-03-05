@@ -1,10 +1,10 @@
 package util;
 
-import de.kiaim.model.configuration.data.ColumnConfiguration;
-import de.kiaim.model.configuration.data.DataConfiguration;
-import de.kiaim.model.data.*;
-import de.kiaim.model.enumeration.DataScale;
-import de.kiaim.model.enumeration.DataType;
+import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.data.*;
+import de.kiaim.cinnamon.model.enumeration.DataScale;
+import de.kiaim.cinnamon.model.enumeration.DataType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,11 +40,11 @@ public class GenerateTestDatasets {
      */
     public static List<DataRow> generateDataRows() {
         final List<Data> data1 = List.of(new BooleanData(true),
-                new DateData(LocalDate.of(2023, 11, 20)),
-                new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456000)),
-                new DecimalData(4.2f),
-                new IntegerData(42),
-                new StringData("Hello World!"));
+                                         new DateData(LocalDate.of(2023, 11, 20)),
+                                         new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456000)),
+                                         new DecimalData(4.2f),
+                                         new IntegerData(42),
+                                         new StringData("Hello World!"));
         final List<Data> data2 = List.of(new BooleanData(false),
                 new DateData(LocalDate.of(2023, 11, 20)),
                 new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456000)),

@@ -1,8 +1,7 @@
 package org.bihmi.jal.anon;
 
-import de.kiaim.anon.exception.ArxDataSetProcessingException;
-import de.kiaim.anon.exception.ArxGeneralException;
-import de.kiaim.anon.exception.UnexpectedAnonymizationException;
+import de.kiaim.cinnamon.anonymization.exception.ArxDataSetProcessingException;
+import de.kiaim.cinnamon.anonymization.exception.ArxGeneralException;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -12,11 +11,9 @@ import org.bihmi.jal.anon.util.Hierarchy;
 import org.bihmi.jal.config.AttributeConfig;
 import org.bihmi.jal.config.HierarchyConfig;
 import org.bihmi.jal.config.QualityModelConfig;
-import org.bihmi.jal.enums.MicroAggregationFunction;
 import org.deidentifier.arx.*;
 import org.deidentifier.arx.criteria.PrivacyCriterion;
 // import org.deidentifier.arx.exceptions.RollbackRequiredException;
-import org.deidentifier.arx.io.CSVDataOutput;
 import org.deidentifier.arx.metric.Metric;
 
 import java.io.IOException;

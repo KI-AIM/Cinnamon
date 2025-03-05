@@ -1,4 +1,4 @@
-# KI-AIM
+# CINNAMON
 
 This is the main repository for the [KI-AIM](https://www.forschung-it-sicherheit-kommunikationssysteme.de/projekte/ki-aim) project.
 A platform for providing anonymized data by combining anonymization and synthetization methods.

@@ -1,13 +1,31 @@
-<h3>Welcome to the KI-AIM platform. This tool is designed to anonymize your data by providing methods both for direct
+<h3>Welcome to Cinnamon. This tool is designed to anonymize your data by providing methods both for direct
     anonymization as well as data generation with synthetic methods. </h3>
 
 <br />
 <p>The application will guide you through the different steps, that are shown on the left side of the screen. Completed
-    steps will be marked accordingly. It is possible to always switch back to completed steps, to adjust the
-    configuration. Elements will be marked by <mat-icon fontIcon="info"></mat-icon> if they have an explanation
-    attatched to them. </p>
+    steps will be marked accordingly. The steps can be grouped into three categories: </p>
 
+<ul>
+    <li>Upload of the data</li>
+    <li>Configuration and execution of the anonymization</li>
+    <li>Evaluation of the anonymized data</li>
+</ul>
 
+<p>During the data upload, the metadata for the source data is configured.
+    The anonymization and evaluation is precede by two configuration pages for configuring the algorithms.
+    Elements will be marked by
+    <mat-icon fontIcon="info" style="vertical-align: bottom;"></mat-icon>
+    if they have an explanation attached to them.
+    It is possible to always switch back to completed steps, to adjust the configuration. Be aware that this will delete
+    the results of completed steps following the modified configuration.
+</p>
+
+<button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);" [disabled]="locked">
+    Start
+</button>
+
+<!-- TODO Enable selection if both modes are implemented -->
+<!--
 <h3 class="mb-5">Please choose your desired mode: </h3>
 
 
@@ -48,3 +66,4 @@
         </mat-card-actions>
     </mat-card>
 </div>
+-->

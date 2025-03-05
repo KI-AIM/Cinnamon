@@ -7,7 +7,7 @@ COPY ../pom.xml .
 COPY ../ki-aim-anon/pom.xml ki-aim-anon/
 COPY ../ki-aim-model/pom.xml ki-aim-model/
 COPY ../ki-aim-platform/pom.xml ki-aim-platform/
-COPY ../ki-aim-test/pom.xml ki-aim-test/
+COPY ../cinnamon-test/pom.xml cinnamon-test/
 
 COPY ../ki-aim-model/src ki-aim-model/src
 COPY ../ki-aim-platform/src ki-aim-platform/src

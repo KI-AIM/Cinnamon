@@ -24,7 +24,7 @@ mvn install:install-file -Dfile=ki-aim-anon/src/main/resources/lib/libarx-3.9.1.
 
 The [KI-AIM-Platform](./ki-aim-platform/README.md) provides data management as well as the front end of the project.
 
-### KI-AIM-Test
+### Cinnamon-Test
 
 Submodule containing all tests for the other modules as well as test utilities.
 

@@ -9,8 +9,8 @@
         <version>0.0.1</version>
     </parent>
 
-    <artifactId>ki-aim-test</artifactId>
-    <name>ki-aim-test</name>
+    <artifactId>cinnamon-test</artifactId>
+    <name>cinnamon-test</name>
     <description>Project for tests.</description>
 
     <dependencies>

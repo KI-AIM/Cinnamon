@@ -37,17 +37,17 @@ It is also possible to run the angular application by itself to have an auto-upd
 ng serve --open
 ```
 
-inside the `/ki-aim-frontend` directory. 
+inside the `/cinnamon-frontend` directory. 
 
 For this, a local version of node, npm and the angular cli has to be installed. The build process however should work without any additional installations.
 
 ## Spring and Angular
 The project works by including the built angular web application as a static resource into the Spring webapp. 
-Everything is handled by the Spring project. To compile the angular app, the `frontend-maven-plugin` is used that installs a local version of node and npm and compiles the frontend. The distribution folder `ki-aim-frontend/dist/ki-aim-frontend` is then added as a resource in the [`pom.xml`](pom.xml):
+Everything is handled by the Spring project. To compile the angular app, the `frontend-maven-plugin` is used that installs a local version of node and npm and compiles the frontend. The distribution folder `cinnamon-frontend/dist/cinnamon-frontend` is then added as a resource in the [`pom.xml`](pom.xml):
 ```xml
 <resources>
     <resource>
-        <directory>./ki-aim-frontend/dist/ki-aim-frontend</directory>
+        <directory>./cinnamon-frontend/dist/cinnamon-frontend</directory>
         <targetPath>static</targetPath>
     </resource>
 </resources>
@@ -56,4 +56,4 @@ Everything is handled by the Spring project. To compile the angular app, the `fr
 ## Angular Frontend
 More detailed information can be found [**here**](angular-info.md).
 
-The angular frontend is structured to comply to best practices. This means that under `ki-aim-frontend/src/app` several folders were created to structure the application. To find out, what every subdirectory should be used for and how the components inside should be designed, refer to the `ABOUT` documents inside the folders.
+The angular frontend is structured to comply to best practices. This means that under `cinnamon-frontend/src/app` several folders were created to structure the application. To find out, what every subdirectory should be used for and how the components inside should be designed, refer to the `ABOUT` documents inside the folders.

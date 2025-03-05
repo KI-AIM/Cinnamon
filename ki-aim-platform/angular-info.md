@@ -217,12 +217,12 @@ export class UploadFileComponent {
 To achieve the same on the root application level, the provider has to registered in the root module.
 
 # Managing and synchronizing configurations
-Managing generic configurations can be done by using the [ConfigurationsService](ki-aim-frontend/src/app/shared/services/configuration.service.ts).
+Managing generic configurations can be done by using the [ConfigurationsService](cinnamon-frontend/src/app/shared/services/configuration.service.ts).
 This service provides the utility to import/export configurations and automatically synchronizations with the backend.
-In order to use the ConfigurationService, the configuration has to be registered beforehand by calling the `registerConfiguration(data: ConfigurationRegisterData)` function with a configured [ConfigurationRegisterData](/ki-aim-frontend/src/app/shared/model/configuration-register-data.ts) object.
+In order to use the ConfigurationService, the configuration has to be registered beforehand by calling the `registerConfiguration(data: ConfigurationRegisterData)` function with a configured [ConfigurationRegisterData](/cinnamon-frontend/src/app/shared/model/configuration-register-data.ts) object.
 The details are described in the documentation of the fields.
 The configurations can be registered at application start by using the provider in the module declaration.
-Below is an example from the [DataUploadModule](ki-aim-frontend/src/app/features/data-upload/data-upload.module.ts).
+Below is an example from the [DataUploadModule](cinnamon-frontend/src/app/features/data-upload/data-upload.module.ts).
 
 ```ts
 @NgModule({
@@ -242,13 +242,13 @@ export class DataUploadModule {}
 ```
 
 A registered configuration gets fetched when the page is loaded.
-For this the auth guard [state-guard](ki-aim-frontend/src/app/core/guards/state.guard.ts) is used to trigger the request.
+For this the auth guard [state-guard](cinnamon-frontend/src/app/core/guards/state.guard.ts) is used to trigger the request.
 When exporting or importing a configuration, the configuration gets pushed to the backend.
 
 # Working with configuration pages
-The [ConfigurationPage](ki-aim-frontend/src/app/shared/components/configuration-page) component and the [AlgorithmService](ki-aim-frontend/src/app/shared/services/algorithm.service.ts) together provide the utility to display a form based on a given configuration definition.
+The [ConfigurationPage](cinnamon-frontend/src/app/shared/components/configuration-page) component and the [AlgorithmService](cinnamon-frontend/src/app/shared/services/algorithm.service.ts) together provide the utility to display a form based on a given configuration definition.
 Each step that uses this utility should have its own module.
-See the [Synthetization](ki-aim-frontend/src/app/features/synthetization) as an example.
+See the [Synthetization](cinnamon-frontend/src/app/features/synthetization) as an example.
 A minimal setup requires a module containing a component that includes the `ConfigurationPage` component and a service that extends the `AlgorithmService`.
 The module declaration and the service are used to register the configuration as shown in the previous section.
 Additionally, three functions have to be implemented in the service.
@@ -322,10 +322,10 @@ When selecting an algorithm, the definition is fetched and the form is created d
 For that, the form object and the corresponding HTML form are created with a matching structure.
 
 ## New input types
-New form elements can be added by creating a new switch case inside [configuration-input.component.html](ki-aim-frontend/src/app/shared/components/configuration-input/configuration-input.component.html).
-For this, a new value of [ConfigurationInputType](ki-aim-frontend/src/app/shared/model/configuration-input-type.ts) should be created.
-In special cases, the function `setToDefault()` inside [configuration-input.component.ts](ki-aim-frontend/src/app/shared/components/configuration-input/configuration-input.component.ts) has to be adapted as well.
-New validations can be added by modifying the `createFrom` method inside [configuration-form.component.ts](ki-aim-frontend/src/app/shared/components/configuration-form/configuration-form.component.ts) and by adding new `<mat-error>` elements to the input in [configuration-input.component.html](ki-aim-frontend/src/app/shared/components/configuration-input/configuration-input.component.html)
+New form elements can be added by creating a new switch case inside [configuration-input.component.html](cinnamon-frontend/src/app/shared/components/configuration-input/configuration-input.component.html).
+For this, a new value of [ConfigurationInputType](cinnamon-frontend/src/app/shared/model/configuration-input-type.ts) should be created.
+In special cases, the function `setToDefault()` inside [configuration-input.component.ts](cinnamon-frontend/src/app/shared/components/configuration-input/configuration-input.component.ts) has to be adapted as well.
+New validations can be added by modifying the `createFrom` method inside [configuration-form.component.ts](cinnamon-frontend/src/app/shared/components/configuration-form/configuration-form.component.ts) and by adding new `<mat-error>` elements to the input in [configuration-input.component.html](cinnamon-frontend/src/app/shared/components/configuration-input/configuration-input.component.html)
 For complex inputs, the `createForm` method must be adapted as well to create the matching form object.
 
 # Styling conventions

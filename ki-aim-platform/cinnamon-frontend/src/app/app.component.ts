@@ -9,7 +9,7 @@ import { StateManagementService } from './core/services/state-management.service
     providers: [],
 })
 export class AppComponent {
-    title = "ki-aim-frontend"
+    title = "cinnamon-frontend"
     constructor(private titleService: TitleService, stateManagement: StateManagementService) {
     }
 

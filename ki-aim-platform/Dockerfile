@@ -11,7 +11,7 @@ COPY ../ki-aim-test/pom.xml ki-aim-test/
 
 COPY ../ki-aim-model/src ki-aim-model/src
 COPY ../ki-aim-platform/src ki-aim-platform/src
-COPY ../ki-aim-platform/ki-aim-frontend ki-aim-platform/ki-aim-frontend
+COPY ../ki-aim-platform/cinnamon-frontend ki-aim-platform/cinnamon-frontend
 
 RUN mvn clean package -pl ki-aim-platform -am -DskipTests
 

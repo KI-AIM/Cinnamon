@@ -176,7 +176,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<workingDirectory>ki-aim-frontend</workingDirectory>
+					<workingDirectory>cinnamon-frontend</workingDirectory>
 					<nodeVersion>v20.9.0</nodeVersion>
 					<npmVersion>10.2.3</npmVersion>
 				</configuration>
@@ -195,7 +195,7 @@
 
 		<resources>
 			<resource>
-				<directory>./ki-aim-frontend/dist/ki-aim-frontend</directory>
+				<directory>./cinnamon-frontend/dist/cinnamon-frontend</directory>
 				<targetPath>static</targetPath>
 			</resource>
 			<resource>

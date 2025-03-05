@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "ki-aim-frontend": {
+    "cinnamon-frontend": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "dist/ki-aim-frontend",
+            "outputPath": "dist/cinnamon-frontend",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": [
@@ -73,10 +73,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "ki-aim-frontend:build:production"
+              "browserTarget": "cinnamon-frontend:build:production"
             },
             "development": {
-              "browserTarget": "ki-aim-frontend:build:development"
+              "browserTarget": "cinnamon-frontend:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -84,7 +84,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "ki-aim-frontend:build"
+            "browserTarget": "cinnamon-frontend:build"
           }
         },
         "test": {

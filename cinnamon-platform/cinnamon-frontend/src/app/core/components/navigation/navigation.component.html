@@ -1,0 +1,49 @@
+<div class="d-flex flex-column navbar-side">
+    <h1 class="align-self-center">Cinnamon</h1>
+
+    <hr class="hr">
+
+    <ul class="nav flex-column justify-content-start">
+
+        <li *ngFor="let step of StepConfiguration | keyvalue: indexOrderAsc" class="nav-item">
+            <a class="nav-link"
+            [id]="step.value.id"
+            [routerLink]="[step.value.path]"
+            [routerLinkActive]="['active']"
+            [ngClass]="{'completed': statusService.getCompletedSteps().contains(step.value.enum), 'disabled': !userService.isAuthenticated() || !statusService.getCompletedSteps().contains(step.value.dependsOn) && step.value.dependsOn.toString() !== ''}">
+                {{step.value.text}}
+            </a>
+        </li>
+    </ul>
+
+    <hr class="hr">
+    <ul class="nav flex-column justify-content-start">
+        <li class="nav-item">
+            <a class="nav-link" title="Configuration" (click)="openConfigurations()"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                    Configuration Download
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" title="Configuration" (click)="downloadResult()"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                Project Download
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" title="Configuration" (click)="metricConfigurationComponent.open();"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                Metrics
+            </a>
+        </li>
+    </ul>
+
+
+    <div [hidden]="!userService.isAuthenticated()" class="logout" (click)="onLogout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+    </div>
+
+    <app-configuration-management></app-configuration-management>
+    <app-metric-configuration #metricConfigurationComponent></app-metric-configuration>
+</div>

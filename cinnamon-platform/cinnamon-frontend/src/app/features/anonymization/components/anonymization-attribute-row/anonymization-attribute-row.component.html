@@ -1,0 +1,150 @@
+<div class="d-flex flex-row mb-2 justify-content-between" [formGroup]="form">
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>
+                Column name
+            </mat-label>
+
+            <input
+                type="text"
+                matInput
+                [id]="formElements.name.name"
+                [formControlName]="formElements.name.name"
+            />
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>
+                Column type
+            </mat-label>
+            <mat-select
+                [id]="formElements.dataType.name"
+                [formControlName]="formElements.dataType.name"
+            >
+                <mat-option
+                    *ngFor="let type of getAllTypes().getAll()"
+                    [value]="type"
+                >
+                    {{ type }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>
+                Column scale
+            </mat-label>
+            <mat-select
+                [id]="formElements.scale.name"
+                [formControlName]="formElements.scale.name"
+            >
+                <mat-option
+                    *ngFor="let scale of getAllDataScales().getAll()"
+                    [value]="scale"
+                >
+                    {{ scale }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>
+                Transformation type
+            </mat-label>
+            <mat-select
+                [id]="formElements.transformationType.name"
+                (selectionChange)="updateTransformationType(); setIntervalConditions(); updateForm();"
+                [formControlName]="formElements.transformationType.name"
+            >
+                <mat-option
+                    *ngFor="let transformation of getTransformations().getAll()"
+                    [value]="transformation"
+                    >{{ transformation }}
+                </mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.controls[formElements.transformationType.name].hasError('required')">
+                Value must not be empty
+             </mat-error>
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field [hideRequiredMarker]="form.controls[formElements.interval.name].disabled">
+            <mat-label>
+                <!-- Change label according to selected Transformation Type -->
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'MASKING'">
+                    Masked characters
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'RECORD_DELETION'">
+                    Using suppression limit
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'ATTRIBUTE_DELETION'">
+                    Column deletion
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'NO_PROTECTION'">
+                    Original data remains
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'DATE_GENERALIZATION'">
+                    Generalization interval
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'GENERALIZATION'">
+                    Generalization interval
+                </ng-container>
+                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'MICRO_AGGREGATION'">
+                    Aggregation interval
+                </ng-container>
+            </mat-label>
+            <ng-container *ngIf="!intervalIsSelect; else selectField">
+                <input
+                    type="number"
+                    [min]="intervalMin"
+                    [max]="intervalMax"
+                    [step]="intervalMin"
+                    [id]="formElements.interval.name"
+                    (change)="updateIntervalSize(); updateForm();"
+                    [formControlName]="formElements.interval.name"
+                    matInput
+                >
+            </ng-container>
+
+            <ng-template #selectField>
+                <mat-select
+                    [id]="formElements.interval.name"
+                    [formControlName]="formElements.interval.name"
+                    (change)="updateIntervalSize(); updateForm();"
+                >
+                    <mat-option
+                        *ngFor="let interval of getIntervalEnumOptions().getAll()"
+                        [value]="interval"
+                    >
+                    {{ interval }}
+                    </mat-option>
+                </mat-select>
+            </ng-template>
+
+            <mat-error *ngIf="form.controls[formElements.interval.name].hasError('required')">
+                Value must not be empty
+             </mat-error>
+             <mat-error *ngIf="form.controls[formElements.interval.name].hasError('max')">
+                 Value must be less than or equal to {{ this.intervalMax }}
+             </mat-error>
+             <mat-error *ngIf="form.controls[formElements.interval.name].hasError('min')">
+                 Value must be greater than or equal to {{ this.intervalMin }}
+             </mat-error>
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2">
+        <div class="h-100 d-flex justify-content-center align-items-center">
+            <a title="Remove configuration" (click)="removeCurrentRow()">
+                <mat-icon fontIcon="delete_forever"></mat-icon>
+            </a>
+        </div>
+    </div>
+</div>

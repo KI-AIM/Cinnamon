@@ -1,0 +1,59 @@
+<ng-template #metricSelectionDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Metric Settings</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <div class="vertical-boxes" *ngIf="algorithmDefinition$ | async as algorithmDefinition" [formGroup]="importanceForm">
+
+            <div class="box">
+                <div class="box-name">
+                    Colors
+                </div>
+
+                <mat-form-field style="width: 100%;">
+                    <mat-select formControlName="colorScheme">
+                        <mat-option *ngFor="let colorD of statisticsService.colorDefinitions" [value]="colorD.name">{{ colorD.name }}
+                            <div style="display: flex; flex-direction: row;">
+                                <div *ngFor="let color of colorD.colors" [style.background-color]="color"
+                                     style="width: 22px; height: 22px;">
+                                </div>
+                            </div>
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div >
+                <div class="box">
+                    <div class="box-name">
+                        Importance
+                    </div>
+                    <mat-checkbox formControlName="useUserDefinedImportance">Use User Defined Importance</mat-checkbox>
+
+                    <div *ngFor="let configGroup of algorithmDefinition.configurations | keyvalue" style="margin-top: 1rem;">
+                        <div class="box-name">
+                            {{ configGroup.value.display_name }}
+                        </div>
+
+                        <table formGroupName="userDefinedImportance">
+                            <tr *ngFor="let optionGroup of configGroup.value.options | keyvalue">
+                                <td>
+                                    {{ optionGroup.value.display_name }}
+                                </td>
+                                <td>
+                                    <mat-radio-group [formControlName]="optionGroup.key" [id]="optionGroup.key">
+                                        <mat-radio-button *ngFor="let importance of Object.values(MetricImportance)" [value]="importance">
+                                            {{ MetricImportanceData[importance].label }}
+                                        </mat-radio-button>
+                                    </mat-radio-group>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
+    </mat-dialog-actions>
+</ng-template>

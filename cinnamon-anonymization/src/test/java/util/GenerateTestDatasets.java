@@ -157,7 +157,7 @@ public class GenerateTestDatasets {
         for (ColumnConfiguration config : configurations) {
             header.append(String.format("%-20s", config.getName()));
         }
-        System.out.println(header.toString());
+//        System.out.println(header.toString());
 
         // Add rows as string
         for (DataRow row : dataSet.getDataRows()) {
@@ -169,7 +169,7 @@ public class GenerateTestDatasets {
                     rowString.append(String.format("%-20s", ""));
                 }
             }
-            System.out.println(rowString.toString());
+//            System.out.println(rowString.toString());
         }
     }
 

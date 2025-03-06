@@ -21,8 +21,8 @@ public class FrontendAnonConfigConverterTest extends AbstractAnonymizationTests 
         // Convert frontend config in JAL anon config
         AnonymizationConfig anonymizationConfig = FrontendAnonConfigConverter.convertToJALConfig(frontendAnonConfig.getAnonymization(), dataSet);
 
-        System.out.println("Anonymization Config");
-        System.out.println(anonymizationConfig);
+//        System.out.println("Anonymization Config");
+//        System.out.println(anonymizationConfig);
 
 //         Check conversion
         assertNotNull(anonymizationConfig);

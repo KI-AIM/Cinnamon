@@ -13,6 +13,7 @@ The platform can be installed as a `.war` file or via Docker.
 For the installation as a `.war` file, the following software has been verified to work: 
 - Java 17 (LTS)
 - Tomcat 10.1.15 (LTS)
+- PostgreSql
 
 ## Build & Run 
 

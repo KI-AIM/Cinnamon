@@ -115,7 +115,11 @@ export class ConfigurationFormComponent implements OnInit {
         if (this.anonService.configCache[this.algorithm.name]) {
             //Timeout is 0, so function is called before data is overwritten
             setTimeout(() => {
-                this.setConfiguration(this.anonService.configCache[this.anonService.selectCache!.name]);
+                const config = this.anonService.configCache[this.anonService.selectCache!.name];
+                // config can be undefined if no changes have been made
+                if (config) {
+                    this.setConfiguration(this.anonService.configCache[this.anonService.selectCache!.name]);
+                }
             }, 0);
         }
     }
@@ -231,7 +235,7 @@ export class ConfigurationFormComponent implements OnInit {
                 } else if (inputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
                     group[inputDefinition.name] = new FormArray([], Validators.required);
                     if (inputDefinition.invert) {
-                        group[inputDefinition.invert] = new FormArray([]);
+                        group[inputDefinition.invert] = new FormArray([], Validators.required);
                     }
                 } else {
                     // Add validators of the input

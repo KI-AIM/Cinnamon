@@ -1133,6 +1133,7 @@ public class DatabaseService {
 
 		dataSet.getDataTransformationErrors().clear();
 		dataSet.setStoredData(false);
+		dataSet.setConfirmedData(false);
 		dataSet.getStatisticsProcess().reset();
 
 		final OriginalDataEntity original = dataSet.getOriginalData();

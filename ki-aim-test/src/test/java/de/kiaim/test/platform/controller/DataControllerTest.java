@@ -190,15 +190,15 @@ class DataControllerTest extends ControllerTest {
 		assertEquals(dataSetId, dataSetEntity.getId(), "User has been associated with the wrong dataset!");
 		assertTrue(dataSetEntity.isStoredData(), "Flag that the data is stored should be true!");
 		assertFalse(dataSetEntity.isConfirmedData(), "Flag that the data is confirmed should be false!");
-		// TODO fix when creating projects dynamically
-//		assertEquals(Step.ANONYMIZATION, testUser.getProject().getStatus().getCurrentStep(),
-//		             "The current step has not been updated!");
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk());
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
+
+		final DataSetEntity deletedDataSet = dataSetRepository.findById(dataSetId).orElse(null);
+		assertFalse(deletedDataSet.isStoredData(), "Flag that the data is stored should be false!");
 	}
 
 	@Test
@@ -232,6 +232,24 @@ class DataControllerTest extends ControllerTest {
 				                       objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Storing the dataset requires the file for the dataset to be selected!"));
+	}
+
+	@Test
+	void confirmDataAndDeleteData() throws Exception {
+		final Long dataSetId = postData(false);
+
+		mockMvc.perform(post("/api/data/confirm"))
+		       .andExpect(status().isOk());
+
+		final DataSetEntity dataSetEntity = dataSetRepository.findById(dataSetId).get();
+		assertTrue(dataSetEntity.isConfirmedData(), "Flag that the data is confirmed should be true!");
+
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
+		       .andExpect(status().isOk());
+
+		final DataSetEntity deletedDataSet = dataSetRepository.findById(dataSetId).get();
+		assertFalse(deletedDataSet.isConfirmedData(), "Flag that the data is confirmed should be false!");
 	}
 
 	@Test

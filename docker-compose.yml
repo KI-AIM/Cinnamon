@@ -26,7 +26,6 @@ services:
         container_name: cinnamon-platform
         restart: unless-stopped
         ports:
-#            - "8080:8080"
             - "127.0.0.1:8080:8080"
             - "127.0.0.1:9000:8000"
         volumes:
@@ -57,20 +56,24 @@ services:
         depends_on:
             - cinnamon-db
     cinnamon-synthetization:
-        image: synthetization_module
+        image: cinnamon-synthetization
+        build:
+            context: ./cinnamon-synthetization
+            dockerfile: Dockerfile
         container_name: cinnamon-synthetization
         restart: unless-stopped
         ports:
-#            - "5000:5000"
             - "127.0.0.1:5000:5000"
         networks:
             - synthetization-network
     cinnamon-evaluation:
-        image: evaluation_module
+        image: cinnamon-evaluation
+        build:
+            context: ./cinnamon-evaluation
+            dockerfile: Dockerfile
         container_name: cinnamon-evaluation
         restart: unless-stopped
         ports:
-#            - "5010:5010"
             - "127.0.0.1:5010:5010"
         networks:
             - evaluation-network

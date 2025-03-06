@@ -1,0 +1,245 @@
+resemblance:
+  display_name: Resemblance Metrics
+  description: Statistical metrics used to evaluate the resemblance between the real and synthetic data. Here the real data is used as the reference data and the synthetic data is compared to it.
+  metrics:
+    - display_name: "Mode"
+      function_name: mode
+      description: "Mode of categorical variables i.e., the most frequent value"
+      interpretation: "Compare if the most frequent categories in the synthetic data match those in the real data, both in terms of the category value and its relative frequency"
+      visualization_type: "important_metrics"
+      version: "0.0.1"
+
+    - display_name: "Frequency Plot"
+      function_name: frequency_plot
+      description: "Percentage of each value in the real and synthetic data"
+      interpretation: "Compare if the frequencies of values in the synthetic data maintain similar proportions to those in the real data, accounting for dataset size differences"
+      visualization_type: "plot"
+      version: "0.0.1"
+
+    - display_name: "Mean"
+      function_name: mean
+      description: "Average value of numerical variables"
+      interpretation: "Compare if the synthetic data's mean falls within an acceptable deviation range from the real data's mean, typically within one standard deviation"
+      visualization_type: "important_metrics"
+      version: "0.0.1"
+
+    - display_name: "Variance"
+      function_name: variance
+      description: "Measure of the amount of variation of a set of values"
+      interpretation: "Verify if the synthetic data preserves similar spread of values as the real data, with variance ratios ideally close to 1"
+      visualization_type: "important_metrics"
+      version: "0.0.1"
+
+    - display_name: "Standard Deviation"
+      function_name: standard_deviation
+      description: "Measure of the amount of variation or dispersion of a set of values"
+      interpretation: "Check if the synthetic data maintains a similar level of dispersion as the real data, with the ratio of standard deviations ideally close to 1"
+      visualization_type: "important_metrics"
+      version: "0.0.1"
+
+    - display_name: "Fifth Percentile"
+      function_name: fifth_percentile
+      description: "5th percentile of the data"
+      interpretation: "Compare if the synthetic data maintains similar distribution shapes as the real data, with similar distribution of fifth percentiles"
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "First Quartile"
+      function_name: q1
+      description: "25th percentile of the data"
+      interpretation: "Compare if the synthetic data maintains similar distribution shapes as the real data, with similar distribution of first quartiles"
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Median"
+      function_name: median
+      description: "50th percentile of the data"
+      interpretation: "Compare if the synthetic data maintains similar distribution shapes as the real data, with similar distribution of medians"
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Third Quartile"
+      function_name: q3
+      description: "75th percentile of the data"
+      interpretation: "Compare if the synthetic data maintains similar distribution shapes as the real data, with similar distribution of third quartiles"
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Ninety Fifth Percentile"
+      function_name: ninety_fifth_percentile
+      description: "95th percentile of the data"
+      interpretation: "Compare if the synthetic data maintains similar distribution shapes as the real data, with similar distribution of ninety-fifth percentiles"
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Skewness"
+      function_name: skewness
+      description: "Measure of the asymmetry of the probability distribution of a real-valued random variable about its mean"
+      interpretation: "Verify if the synthetic data preserves similar directional bias (asymmetry) as the real data, with skewness values having the same sign and similar magnitude"
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Kurtosis"
+      function_name: kurtosis
+      description: "Measure of the 'tailedness' of the probability distribution of a real-valued random variable"
+      interpretation: "Compare if the synthetic data maintains similar tail heaviness and peak characteristics as the real data, with kurtosis values in a similar range"
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Minimum"
+      function_name: minimum
+      description: "Smallest value in a column"
+      interpretation: "Check if the synthetic data covers a similar value as the real data, particularly important for maintaining realistic minimum bounds"
+      visualization_type: "important_metrics"
+      version: "0.0.1"
+
+    - display_name: "Maximum"
+      function_name: maximum
+      description: "Largest value in a column"
+      interpretation: "Check if the synthetic data covers a similar value as the real data, particularly important for maintaining realistic maximum bounds"
+      visualization_type: "important_metrics"
+      version: "0.0.1"
+
+    - display_name: "Density"
+      function_name: density
+      description: "Probability density function of the real and synthetic data"
+      interpretation: "Compare if the shape and characteristics of the probability distribution in synthetic data closely matches the real data's distribution"
+      visualization_type: "plot"
+      version: "0.0.1"
+
+    - display_name: "Histogram"
+      function_name: histogram
+      description: "Histogram with at most 25 bins"
+      interpretation: "Shows the difference in each bin of the Histogramm, when te difference is higher the results are worse"
+      visualization_type: "plot"
+      version: "0.0.1"
+
+    - display_name: "Kolmogorov-Smirnov"
+      function_name: kolmogorov_smirnov
+      description: "Non-parametric test of the equality of continuous, one-dimensional probability distributions"
+      interpretation: "Assess if the distributions are statistically similar, with lower KS statistic values indicating better similarity between synthetic and real data"
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Hellinger Distance"
+      function_name: hellinger_distance
+      description: "Distance metric for comparing distributions of categorical data"
+      interpretation: "The higher the value, the more dissimilar the distributions are. The Hellinger Distance is calculated on the complete attribute not on the top categories shown."
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Missing Values Count"
+      function_name: missing_values_count
+      description: "Count of missing values in the real and synthetic data"
+      interpretation: "Compare if the absolute number of missing values in synthetic data maintains similar proportions to the real data, accounting for dataset size differences"
+      visualization_type: "important_metrics"
+      version: "0.0.1"
+
+    - display_name: "Missing Values Percentage"
+      function_name: missing_values_percentage
+      description: "Percentage of missing values in the real and synthetic data"
+      interpretation: "Verify if the relative frequency of missing values in synthetic data matches the real data, regardless of dataset size"
+      visualization_type: "important_metrics"
+      version: "0.0.1"
+
+    - display_name: "Distinct Values"
+      function_name: distinct_values
+      description: "Count of distinct values in the real and synthetic data"
+      interpretation: "Compare if the synthetic data maintains a similar level of uniqueness/cardinality as the real data, accounting for dataset size differences"
+      visualization_type: "important_metrics"
+      version: "0.0.1"
+
+    - display_name: "Observation Length Distribution"
+      function_name: observation_length_distribution
+      description: "Count of each observation length in the real and synthetic data"
+      interpretation: "Verify if the distribution of observation lengths in synthetic data matches the patterns found in real data, maintaining similar proportions of different lengths"
+      visualization_type: "overview"
+      version: "0.0.1"
+      parameters:
+        - name: "identifier_column"
+          label: "Identifier Column"
+          description: "The name of the column in the DataFrame that contains the observation names"
+          type: string
+
+    - display_name: "Event Distribution"
+      function_name: event_distribution
+      description: "Count of each event type in the real and synthetic data"
+      interpretation: "Compare if the frequency distribution of different event types in synthetic data maintains similar proportions as in the real data"
+      visualization_type: "overview"
+      version: "0.0.1"
+      parameters:
+        - name: "event_column"
+          label: "Event Column"
+          description: "The name of the column in the DataFrame that contains the event names"
+          type: string
+
+    - display_name: "Trace Length Distribution"
+      function_name: trace_length_distribution
+      description: "Count of each trace length in the real and synthetic data"
+      interpretation: "Verify if the distribution of trace lengths in synthetic data reflects similar patterns as the real data, maintaining realistic process flows"
+      visualization_type: "overview"
+      version: "0.0.1"
+      parameters:
+        - name: "case_identifier_column"
+          label: "Case Identifier Column"
+          description: "The name of the column in the DataFrame that contains the case identifiers"
+          type: string
+
+    - display_name: "Throughput Time"
+      function_name: throughput_time
+      description: "Time between the first and the last event of a trace"
+      interpretation: "Compare if the synthetic data maintains similar process duration patterns as the real data, with similar distribution of throughput times"
+      visualization_type: "overview"
+      version: "0.0.1"
+
+    - display_name: "Start Event Distribution"
+      function_name: start_event_distribution
+      description: "Count of each start event type in the real and synthetic data"
+      interpretation: "Verify if the synthetic data preserves similar patterns in process initiation, with comparable distributions of starting events"
+      visualization_type: "overview"
+      version: "0.0.1"
+      parameters:
+        - name: "case_identifier_column"
+          label: "Case Identifier Column"
+          description: "The name of the column in the DataFrame that contains the case identifiers"
+          type: string
+        - name: "event_column"
+          label: "Event Column"
+          description: "The name of the column in the DataFrame that contains the event names"
+          type: string
+
+    - display_name: "End Event Distribution"
+      function_name: end_event_distribution
+      description: "Count of each end event type in the real and synthetic data"
+      interpretation: "Compare if the synthetic data maintains similar process completion patterns, with comparable distributions of ending events"
+      visualization_type: "overview"
+      version: "0.0.1"
+      parameters:
+        - name: "case_identifier_column"
+          label: "Case Identifier Column"
+          description: "The name of the column in the DataFrame that contains the case identifiers"
+          type: string
+        - name: "event_column"
+          label: "Event Column"
+          description: "The name of the column in the DataFrame that contains the event names"
+          type: string
+
+    - display_name: "Trace Variant Distribution"
+      function_name: trace_variant_distribution
+      description: "Count of each trace variant in the real and synthetic data"
+      interpretation: "Verify if the synthetic data preserves similar process path variations as the real data, maintaining realistic process flow patterns"
+      visualization_type: "overview"
+      version: "0.0.1"
+      parameters:
+        - name: "case_identifier_column"
+          label: "Case Identifier Column"
+          description: "The name of the column in the DataFrame that contains the case identifiers"
+          type: string
+        - name: "event_column"
+          label: "Event Column"
+          description: "The name of the column in the DataFrame that contains the event names"
+          type: string
+        - name: "timestamp_column"
+          label: "Timestamp Column"
+          description: "The name of the column in the DataFrame that contains the timestamps"
+          type: string

@@ -33,8 +33,8 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
     @Test
     public void testObject() throws Exception {
         String jsonRequest = objectMapper.writeValueAsString(request);
-        System.out.println("JSON Request");
-        System.out.println(request.getSession_key());
+//        System.out.println("JSON Request");
+//        System.out.println(request.getSession_key());
 
     }
 
@@ -67,7 +67,7 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
                 .andReturn();
 
         String responseContent = result.getResponse().getContentAsString();
-        System.out.println("Response content: " + responseContent);
+//        System.out.println("Response content: " + responseContent);
 
         assertNotNull(responseContent);
         assertTrue(responseContent.contains(request.getSession_key()));
@@ -144,7 +144,7 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
         // Optionally, check file content
         String fileContentAsString = new String(fileContent);
-        System.out.println("Config File Content: " + fileContentAsString.substring(0, 300) + "...");
+//        System.out.println("Config File Content: " + fileContentAsString.substring(0, 300) + "...");
     }
 
     @Test
@@ -158,6 +158,6 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
         // Optionally, check file content
         String fileContentAsString = new String(fileContent);
-        System.out.println("Config File Content: " + fileContentAsString.substring(0, 200));
+//        System.out.println("Config File Content: " + fileContentAsString.substring(0, 200));
     }
 }

@@ -209,17 +209,6 @@ export class StatisticsService {
         );
     }
 
-    public fetchRisksString(): Observable<any> {
-        return this.httpClient.get<any>(environments.apiUrl + `/api/project/resultFile`,
-            {
-                params: {
-                    executionStepName: 'EVALUATION',
-                    processStepName: 'RISK_EVALUATION',
-                    name: 'risks.json',
-                }
-            });
-    }
-
     public fetchRisks(): Observable<RiskEvaluation> {
         return this.httpClient.get<any>(environments.apiUrl + `/api/project/resultFile`,
             {

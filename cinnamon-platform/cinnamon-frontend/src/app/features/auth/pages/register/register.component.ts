@@ -63,8 +63,8 @@ export class RegisterComponent {
 
     handleRegisterFailed(error: HttpErrorResponse) {
         this.registerError = [];
-        for (const field in error.error.errors) {
-            for (const fieldError of error.error.errors[field]) {
+        for (const field in error.error.errorDetails) {
+            for (const fieldError of error.error.errorDetails[field]) {
                 this.registerError.push(fieldError);
             }
         }

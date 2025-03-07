@@ -311,7 +311,11 @@ export class StatisticsService {
         }
 
         if (options.unit) {
-            return numberValue + ' ' + options.unit;
+            if (options.unitSpace) {
+                numberValue += ' ';
+            }
+
+            return numberValue + options.unit;
         } else {
             return numberValue;
         }
@@ -382,4 +386,5 @@ export interface FormatNumberOptions {
     max?: number | null;
     maximumFractionDigits?: number;
     unit?: string;
+    unitSpace?: boolean;
 }

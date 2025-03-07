@@ -95,7 +95,7 @@ export class ChartFrequencyComponent extends ChartComponent {
                     type: 'shadow',
                 },
                 // @ts-ignore
-                valueFormatter: (value) => this.formatNumber(value, null),
+                valueFormatter: (value) => this.statisticsService.formatNumber(value, {dataType: null, max: 3, min: 3, unit: "%"})
             },
             xAxis: {
                 type: 'category',
@@ -109,6 +109,7 @@ export class ChartFrequencyComponent extends ChartComponent {
                 minInterval: 1,
                 axisLabel: {
                     show: !this.simple,
+                    formatter: '{value}%'
                 },
             },
         };

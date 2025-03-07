@@ -1,6 +1,5 @@
-package de.kiaim.cinnamon.platform.config;
+package de.kiaim.cinnamon.platform.model.configuration;
 
-import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import lombok.Getter;
 import lombok.Setter;
 

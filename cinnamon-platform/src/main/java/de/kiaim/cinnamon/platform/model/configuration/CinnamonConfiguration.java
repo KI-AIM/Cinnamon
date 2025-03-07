@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.platform.model.configuration;
 
-import de.kiaim.cinnamon.platform.config.PipelineConfiguration;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;

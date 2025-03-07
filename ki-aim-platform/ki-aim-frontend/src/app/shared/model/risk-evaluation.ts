@@ -36,6 +36,28 @@ export class AttributeRiskResult {
     value: RiskResults;
 }
 
+export class InferenceAverageRiskResults {
+    risk_value?: number;
+    priv_risk?: number;
+
+    n_attacks: number;
+    n_success: number;
+    n_baseline: number;
+    n_control: number;
+
+    execution_time?: number;
+
+    // Spécifique à inference_average_risk
+    attack_rate_success_rate: number;
+    attack_rate_error: number;
+    
+    baseline_rate_success_rate: number;
+    baseline_rate_error: number;
+    
+    control_rate_success_rate: number;
+    control_rate_error: number;
+}
+
 export class RiskEvaluation {
     @Transform(({ value }) => value.map(([name, obj]: [string, any]) => plainToInstance(AttributeRiskEvaluation, { name, value: obj })), { toClassOnly: true })
     inference_risk: AttributeRiskEvaluation[];
@@ -43,8 +65,8 @@ export class RiskEvaluation {
     @Transform(({ value }) => value.map(([name, obj]: [string, any]) => plainToInstance(AttributeRiskResult, { name, value: obj })), { toClassOnly: true })
     inference_results: AttributeRiskResult[];
 
-    @Type(() => RiskResults)
-    inference_average_risk: RiskResults;
+    @Type(() => InferenceAverageRiskResults)
+    inference_average_risk: InferenceAverageRiskResults;
 
     @Type(() => RiskResults)
     linkage_health_risk: RiskResults;

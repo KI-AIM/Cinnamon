@@ -33,7 +33,6 @@ export class EvaluationComponent implements OnInit {
     protected statistics$: Observable<Statistics | null>;
 
     protected risks$: Observable<RiskEvaluation>;
-    protected risksString$: Observable<any>;
     protected risks2$: Observable<any>;
 
     protected riskMetrics: {
@@ -61,7 +60,6 @@ export class EvaluationComponent implements OnInit {
     ngOnInit() {
         this.projectConfig$ = this.projectConfigService.projectSettings$;
 
-        this.risksString$ = this.statisticsService.fetchRisksString();
         this.risks$ = this.statisticsService.fetchRisks().pipe(
             tap(risks => console.log("Risks data:", risks)) // Debug
         );

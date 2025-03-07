@@ -78,7 +78,7 @@ services:
         networks:
             - evaluation-network
     cinnamon-risk-assessment:
-        image: risk_assessment_module
+        image: cinnamon-risk-assessment
         container_name: cinnamon-risk-assessment
         restart: unless-stopped
         ports:

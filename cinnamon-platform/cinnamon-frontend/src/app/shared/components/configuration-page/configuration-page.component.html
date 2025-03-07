@@ -3,45 +3,54 @@
     <div>{{ error }}</div>
 </app-info-card>
 
-<!-- Upload -->
-<div class="mb-2">
-    <app-configuration-upload [configurationNameObservable]="this.algorithmService.stepConfig" [disabled]="disabled">
-    </app-configuration-upload>
-</div>
+<div class="vertical-boxes">
 
-<div [class.d-none]="!hasAlgorithmSelection">
-    <h3>Algorithm Selection</h3>
-
-    <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled" (change)="updateSelectCache()">
-    </app-configuration-selection>
-</div>
-
-
-<h3>Algorithm Configuration</h3>
-
-<div *ngIf="!selection.selectedOption; else configurationForms" id="placeholder" class="w-100 mt-4">
-    <div class="ms-auto me-auto" style="width: fit-content">
-        Please select an algorithm
+    <!-- Upload -->
+    <div class="box">
+        <app-configuration-upload [configurationNameObservable]="this.algorithmService.stepConfig"
+                                  [disabled]="disabled">
+        </app-configuration-upload>
     </div>
-</div>
-<ng-template #configurationForms>
-    <ng-content></ng-content>
 
-    <div *ngFor="let item of algorithms" [id]="item">
-        <ng-container *ngIf="selection.selectedOption.name === item.name">
-            <p>{{ item.description }}</p>
+    <div [class.d-none]="!hasAlgorithmSelection" class="box">
+        <h3>Algorithm Selection</h3>
 
-            <app-configuration-form #form [algorithm]="item" [disabled]="disabled" (onChange)="updateConfigCache()"
-                                    (submitConfiguration)="onSubmit($event)" (onError)="handleError($event)"
-                                    [additionalConfigs]="additionalConfigs">
-            </app-configuration-form>
-        </ng-container>
+        <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"
+                                     (change)="updateSelectCache()">
+        </app-configuration-selection>
     </div>
-</ng-template>
 
-<div class="mt-2">
-    <button type="submit" mat-raised-button color="primary" (click)="skip()">
-        Skip
-    </button>
+    <div class="box">
+
+    <h3>Algorithm Configuration</h3>
+
+        <div *ngIf="!selection.selectedOption; else configurationForms" id="placeholder" class="w-100 mt-4">
+            <div class="ms-auto me-auto" style="width: fit-content">
+                Please select an algorithm
+            </div>
+        </div>
+        <ng-template #configurationForms>
+            <ng-content></ng-content>
+
+            <div *ngFor="let item of algorithms" [id]="item">
+                <ng-container *ngIf="selection.selectedOption.name === item.name">
+                    <p>{{ item.description }}</p>
+
+                    <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
+                                            (onChange)="updateConfigCache()"
+                                            (submitConfiguration)="onSubmit($event)" (onError)="handleError($event)"
+                                            [additionalConfigs]="additionalConfigs">
+                    </app-configuration-form>
+                </ng-container>
+            </div>
+        </ng-template>
+
+        <div class="mt-2">
+            <button type="submit" mat-raised-button color="primary" (click)="skip()">
+                Skip
+            </button>
+        </div>
+
+    </div>
+
 </div>
-

@@ -1,8 +1,7 @@
-<a *ngIf="!disabled" title="Additional Settings" (click)="openDialog(inputArrayDialog)"
-   style="vertical-align: middle; color: black;">
+<a *ngIf="!disabled" title="Additional Settings" (click)="openDialog(inputArrayDialog)" class="icon-enabled">
     <mat-icon fontIcon="settings"></mat-icon>
 </a>
-<span *ngIf="disabled" title="Additional Settings" style="vertical-align: middle; color: gray;">
+<span *ngIf="disabled" title="Additional Settings" class="icon-disabled">
     <mat-icon fontIcon="settings"></mat-icon>
 </span>
 

@@ -220,7 +220,7 @@
         <td>{{ statisticsService.formatNumber(getDifference(data[1], 'absolute')) }}</td>
         <td>{{ statisticsService.formatNumber(getDifference(data[1], 'percentage')) }}</td>
         <td class="information-column">
-            <a title="Show information" style="vertical-align: middle;" (click)="metricInfoTableComponent.open(data[1])">
+            <a title="Show information" (click)="metricInfoTableComponent.open(data[1])" class="icon-enabled">
                 <mat-icon fontIcon="info"></mat-icon>
             </a>
         </td>
@@ -261,7 +261,7 @@
 </mat-menu>
 
 <ng-template #statusLegend>
-    <span title="Show information" style="vertical-align: middle;" [matMenuTriggerFor]="colorLegend" (click)="$event.stopPropagation();">
+    <span title="Show information" [matMenuTriggerFor]="colorLegend" (click)="$event.stopPropagation();" class="icon-enabled">
         <mat-icon fontIcon="info"></mat-icon>
     </span>
 </ng-template>

@@ -52,7 +52,7 @@
             </mat-expansion-panel-header>
 
             <div>
-                <mat-checkbox [checked]="createSplit" (change)="updateCreateSplit($event.checked)" [disabled]="locked">
+                <mat-checkbox [checked]="createSplit" (change)="updateCreateSplit($event.checked)" [disabled]="locked" color="primary">
                     Should an extended analysis of the data be carried out automatically (this reduces the amount of usable data and possibly worsens the results)
                 </mat-checkbox>
                 <div style="margin-left: 40px;">
@@ -73,9 +73,11 @@
 
     </mat-accordion>
 
-    <div class="btn-group mt-2">
-        <div class="px-1">
-            <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()" [disabled]="form.invalid || locked">Confirm configuration and start validation</button>
+    <div class="box mt-2">
+        <div class="btn-group mt-2">
+            <div class="px-1">
+                <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()" [disabled]="form.invalid || locked">Confirm configuration and start validation</button>
+            </div>
         </div>
     </div>
 </div>

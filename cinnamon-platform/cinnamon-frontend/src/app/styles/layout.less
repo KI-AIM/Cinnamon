@@ -12,7 +12,7 @@ html {
 
 body {
     background-color: @color-gray-background;
-    color: @color-black;
+    color: @color-text;
     display: flex;
     flex-direction: column;
     min-height: 100%;
@@ -51,7 +51,7 @@ app-navigation{
     padding-right: 0px;
     box-shadow: @box-shadow-material-md;
     color: @color-white;
-    background-color: @mdc-dark-blue-grey-900;
+    background-color: @color-side;
     border: @border-width;
     border-color: @color-gray-border;
     z-index: 1;
@@ -64,19 +64,19 @@ app-navigation{
 
 .dialog-title {
     box-shadow: @box-shadow-material-md;
-    color: @color-black;
+    color: @color-text;
     font-family: Roboto, sans-serif;
 }
 
 .dialog-content {
-    background-color: #F5F5F5;
+    background-color: @color-background;
     padding-top: 20px !important;
 }
 
 .title-wrapper {
     .dialog-title;
     display: flex;
-    background-color: @color-white;
+    background-color: @color-foreground;
     border: @border-width;
     border-color: @color-gray-border;
     align-content: center;
@@ -91,21 +91,23 @@ app-navigation{
     margin: 0px;
     border: @border-width;
     border-color: @color-gray-border;
-    background-color: @mdc-grey-100;
+    background-color: @color-background;
     padding: 40px;
     flex-grow: 1;
     overflow: auto;
 }
 
 .box {
-    background-color: white;
+    background-color: @color-foreground;
     border-radius: 0.3rem;
+    color: @color-text;
     padding: 1rem;
     box-shadow: rgba(100, 100, 111, 0.2) 0 1px 5px 0;
 }
 
 .box-name {
     border-bottom: 1px solid black;
+    color: @color-text;
     font-weight: bold;
     padding-bottom: 0.4rem;
     margin-bottom: 0.25rem;

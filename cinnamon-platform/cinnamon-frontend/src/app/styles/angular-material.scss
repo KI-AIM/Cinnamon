@@ -1,17 +1,83 @@
-/** 
-Special stylesheet that makes use of the Angular material mixins 
-to design the Angular material elements. 
-Has to be SASS, in order to be functional 
+/**
+Special stylesheet that makes use of the Angular material mixins
+to design the Angular material elements.
+Has to be SASS, in order to be functional
 */
 
 @use '@angular/material' as mat;
 
-$my-primary: mat.define-palette(mat.$indigo-palette, 500); //Sync with @color-primary in colors.less 
+//@include mat.core();
+
+$my-dark-primary-text: rgba(black, 0.87);
+$my-light-primary-text: white;
+
+$my-primary-palette: (
+    50: #e5f3fe,
+    100: #c0e0fe,
+    200: #98cefe,
+    300: #72bbfc,
+    400: #58abfb,
+    500: #459dfa,
+    600: #418fec,
+    700: #3b7dd8,
+    800: #366bc6,
+    900: #2e4da6,
+    contrast: (
+        50: $my-dark-primary-text,
+        100: $my-dark-primary-text,
+        200: $my-dark-primary-text,
+        300: $my-light-primary-text,
+        400: $my-light-primary-text,
+        500: $my-light-primary-text,
+        600: $my-light-primary-text,
+        700: $my-light-primary-text,
+        800: $my-light-primary-text,
+        900: $my-light-primary-text,
+    )
+);
+
+$my-warn-palette: (
+    50: #e5f3fe,
+    100: #c0e0fe,
+    200: #98cefe,
+    300: #72bbfc,
+    400: #58abfb,
+    500: #459dfa,
+    600: #e63946,
+    700: #3b7dd8,
+    800: #366bc6,
+    900: #2e4da6,
+    contrast: (
+        50: $my-dark-primary-text,
+        100: $my-dark-primary-text,
+        200: $my-dark-primary-text,
+        300: $my-light-primary-text,
+        400: $my-light-primary-text,
+        500: $my-light-primary-text,
+        600: $my-light-primary-text,
+        700: $my-light-primary-text,
+        800: $my-light-primary-text,
+        900: $my-light-primary-text,
+    )
+);
+
+$my-primary: mat.define-palette($my-primary-palette, 700); //Sync with @color-primary in colors.less
 $my-accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
 
 // The "warn" palette is optional and defaults to red if not specified.
-$my-warn: mat.define-palette(mat.$red-palette);
+$my-warn: mat.define-palette($my-warn-palette, 600);
 
+$my-theme: mat.define-light-theme((
+    color: (
+        primary: $my-primary,
+        accent: $my-accent,
+        warn: $my-warn,
+    ),
+    typography: mat.define-typography-config(),
+    density: 0,
+));
+
+@include mat.all-component-themes($my-theme);
 
 .mat-mdc-paginator-container {
     justify-content: flex-start !important;

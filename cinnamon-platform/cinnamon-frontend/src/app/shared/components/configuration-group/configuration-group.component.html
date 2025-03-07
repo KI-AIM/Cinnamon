@@ -8,7 +8,7 @@
 
         <mat-expansion-panel>
             <mat-expansion-panel-header>
-                <mat-panel-title [style]="formGroup.controls[groupDefinition.key].invalid ? 'color: red;' :''">
+                <mat-panel-title [class.invalid-group]="formGroup.controls[groupDefinition.key].invalid">
                     {{ groupDefinition.value.display_name }}
                 </mat-panel-title>
                 <mat-panel-description>
@@ -28,9 +28,9 @@
                              [hideToggle]="isGroupEmpty(groupDefinition.value)">
             <mat-expansion-panel-header>
 
-                <mat-panel-title [style]="formGroup.controls[groupDefinition.key].invalid ? 'color: red;' :''">
+                <mat-panel-title [class.invalid-group]="formGroup.controls[groupDefinition.key].invalid">
                     <mat-checkbox #optionCheckboxes [id]="'isActive' + groupDefinition.key" [value]="groupDefinition.key" (change)="toggleActive($event);" [checked]="true"
-                                  (click)="$event.stopPropagation();" class="allow-click">
+                                  (click)="$event.stopPropagation();" class="allow-click" color="primary">
                     </mat-checkbox>
                     {{ groupDefinition.value.display_name }}
                 </mat-panel-title>

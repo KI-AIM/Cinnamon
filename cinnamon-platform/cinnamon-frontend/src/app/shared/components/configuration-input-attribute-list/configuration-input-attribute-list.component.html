@@ -3,7 +3,7 @@
     <div *ngFor="let attribute of dataConfiguration.configurations">
         <div>
             <mat-checkbox [disabled]="disabled" [checked]="formArray.value.includes(attribute.name)"
-                          (change)="toggleCheckbox(attribute.name, $event.checked)">
+                          (change)="toggleCheckbox(attribute.name, $event.checked)" color="primary">
                 <span style="margin-left: -10px;">
                     {{ attribute.name }}
                 </span>

@@ -1,7 +1,7 @@
 <div class="d-flex flex-row w-100" style="gap: 16px;">
 
     <div class="d-flex flex-column input-height justify-content-center" style="width: 10%; min-width: 100px;">
-        <mat-label [style.color]="isValid ? '' : 'red'" style="transition: color .1s linear"
+        <mat-label [class.invalid-input]="!isValid" style="transition: color .1s linear"
                    [attr.for]="configurationInputDefinition.name">
             {{ configurationInputDefinition.label }}
         </mat-label>
@@ -44,7 +44,7 @@
             </ng-container>
 
             <ng-container *ngSwitchCase="ConfigurationInputType.BOOLEAN">
-                <mat-checkbox [formControlName]="configurationInputDefinition.name">
+                <mat-checkbox [formControlName]="configurationInputDefinition.name" color="primary">
                 </mat-checkbox>
             </ng-container>
 
@@ -122,11 +122,10 @@
 
     <div class="d-flex input-height">
         <div class="me-2 d-flex flex-column justify-content-center">
-            <a *ngIf="!disabled" title="Set to default" (click)="setToDefault()"
-               style="vertical-align: middle; color: black">
+            <a *ngIf="!disabled" title="Set to default" (click)="setToDefault()" class="icon-enabled">
                 <mat-icon fontIcon="replay"></mat-icon>
             </a>
-            <span *ngIf="disabled" title="Set to default" style="vertical-align: middle; color: grey;">
+            <span *ngIf="disabled" title="Set to default" class="icon-disabled">
                 <mat-icon fontIcon="replay"></mat-icon>
             </span>
         </div>

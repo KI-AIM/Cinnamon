@@ -115,3 +115,49 @@ input[type="file"]::file-selector-button {
     margin: 1rem;
     font-weight: 500;
   }
+
+input[type="file"]:hover::-webkit-file-upload-button {
+    background: @color-highlight;
+}
+
+input[type="file"]:disabled::-webkit-file-upload-button {
+    background: @color-disabled;
+    color: @color-unimportant;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+.icon-enabled .mat-icon {
+    color: @color-primary-icon;
+    vertical-align: middle;
+}
+
+.icon-disabled .mat-icon {
+    color: @color-secondary-icon;
+    vertical-align: middle;
+}
+
+.mat-mdc-raised-button:disabled {
+    background-color: @color-disabled !important;
+    color: @color-unimportant !important;
+}
+
+.mat-mdc-raised-button:hover {
+    background-color: @color-highlight !important;
+}
+
+.mat-mdc-input-element.mat-mdc-form-field-input-control:not(.prio) {
+    color: @color-unimportant
+}
+
+.mat-mdc-select-value:not(.prio),
+.mat-mdc-dialog-content > h1,
+.mat-mdc-input-element.mat-mdc-form-field-input-control:not(:disabled):not(.prio),
+.mat-mdc-header-row .mat-mdc-header-cell,
+.mat-mdc-row .mat-mdc-cell,
+.mat-mdc-dialog-container .mat-mdc-dialog-content,
+.mat-mdc-checkbox .mdc-form-field:not(.prio),
+.mat-expansion-panel .mat-expansion-panel-body,
+.mat-expansion-panel .mat-expansion-panel-header-title {
+    color: @color-text;
+}

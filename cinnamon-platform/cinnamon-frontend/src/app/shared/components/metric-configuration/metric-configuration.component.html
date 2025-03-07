@@ -25,7 +25,7 @@
                     <div class="box-name">
                         Importance
                     </div>
-                    <mat-checkbox formControlName="useUserDefinedImportance">Use User Defined Importance</mat-checkbox>
+                    <mat-checkbox formControlName="useUserDefinedImportance" color="primary">Use User Defined Importance</mat-checkbox>
 
                     <div *ngFor="let configGroup of algorithmDefinition.configurations | keyvalue" style="margin-top: 1rem;">
                         <div class="box-name">
@@ -39,7 +39,7 @@
                                 </td>
                                 <td>
                                     <mat-radio-group [formControlName]="optionGroup.key" [id]="optionGroup.key">
-                                        <mat-radio-button *ngFor="let importance of Object.values(MetricImportance)" [value]="importance">
+                                        <mat-radio-button *ngFor="let importance of Object.values(MetricImportance)" [value]="importance" color="primary">
                                             {{ MetricImportanceData[importance].label }}
                                         </mat-radio-button>
                                     </mat-radio-group>

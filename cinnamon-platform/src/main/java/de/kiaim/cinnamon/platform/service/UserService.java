@@ -1,5 +1,7 @@
 package de.kiaim.cinnamon.platform.service;
 
+import de.kiaim.cinnamon.platform.exception.BadDataSetIdException;
+import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -18,10 +21,14 @@ public class UserService implements UserDetailsService {
 
 	private final PasswordEncoder passwordEncoder;
 
+	private final ProjectService projectService;
+
 	@Autowired
-	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+	                   final ProjectService projectService) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.projectService = projectService;
 	}
 
 	@Nullable
@@ -47,6 +54,20 @@ public class UserService implements UserDetailsService {
 		userRepository.save(userEntity);
 
 		return userEntity;
+	}
+
+	@Transactional
+	public void deleteUser(final UserEntity user) throws InternalDataSetPersistenceException, BadDataSetIdException {
+		projectService.deleteProject(user);
+		userRepository.delete(user);
+	}
+
+	@Transactional
+	public void deleteAllUsers() throws InternalDataSetPersistenceException, BadDataSetIdException {
+		final var users = userRepository.findAll();
+		for (final var user : users) {
+			deleteUser(user);
+		}
 	}
 
 	//==============================

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.BadDataSetIdException;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
@@ -176,6 +177,13 @@ public class ProjectService {
 
 		final UserEntity user2 = userRepository.findById(user.getEmail()).get();
 		return user2.getProject();
+	}
+
+	@Transactional
+	public void deleteProject(final UserEntity user) throws InternalDataSetPersistenceException, BadDataSetIdException {
+		final ProjectEntity p = getProject(user);
+		databaseService.delete(p);
+		projectRepository.deleteById(user.getProject().getId());
 	}
 
 	@Transactional

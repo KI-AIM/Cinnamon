@@ -1143,8 +1143,6 @@ public class DatabaseService {
 		if (original != null) {
 			original.setHasHoldOut(false);
 		}
-
-		projectRepository.save(dataSet.getProject());
 	}
 
 	/**
@@ -1166,6 +1164,7 @@ public class DatabaseService {
 			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been stored!");
 		} else if (dataSet.isStoredData()) {
 			deleteDataSet(dataSet);
+			projectRepository.save(dataSet.getProject());
 		}
 	}
 

@@ -1,0 +1,185 @@
+id,name,birthdate,death_date,Age,Sex,ChestPainType,RestingBP,Cholesterol,FastingBS,RestingECG,MaxHR,ExerciseAngina,Oldpeak,ST_Slope,HeartDisease
+258548,Charles Tromp,1932-01-31,2007-03-10,75,M,ASY,160,310,True,Normal,112,Y,2.0,Down,False
+511425,Jacques Carroll,1931-11-16,1989-11-21,58,M,ATA,120,284,False,LVH,160,N,1.8,Flat,True
+383704,Warren Rath,1941-10-02,2008-12-03,67,M,ASY,146,369,False,Normal,110,Y,1.9,Flat,True
+464839,Patti Kiehn,1933-04-21,1999-06-28,66,M,ASY,140,139,False,Normal,94,Y,1.0,Flat,True
+118225,Vivien Lebsack,1914-02-20,1969-04-23,55,M,ATA,160,292,True,Normal,143,Y,2.0,Flat,True
+450408,Deann Nikolaus,1946-04-13,1987-05-18,41,M,NAP,130,214,False,LVH,168,N,2.0,Flat,False
+922978,Chanel Rowe CPA,1942-03-02,1996-05-06,54,M,ATA,160,195,False,ST,130,N,1.0,Up,False
+509761,Tia Schaefer,1943-11-04,1998-11-06,55,M,ASY,150,160,False,ST,150,N,0.0,Up,False
+76089,Jennine Paucek Sr.,1902-08-16,1934-09-19,32,M,ATA,125,254,False,Normal,155,N,0.0,Up,False
+613485,Marita Hoppe PhD,1938-03-07,2000-05-11,62,M,NAP,138,204,False,ST,122,Y,1.2,Flat,True
+865487,Alison Bednar IV,1926-07-30,1955-09-04,29,M,ATA,120,243,False,Normal,160,N,0.0,Up,False
+32239,Esteban Grant,1944-12-30,1993-05-01,48,M,ASY,122,222,False,LVH,186,N,0.0,Up,False
+822351,Bambi Wiza DDS,1954-07-16,2023-08-22,69,M,TA,160,234,True,LVH,131,N,0.1,Flat,False
+244069,Holly Bernhard,1967-10-06,2015-01-12,47,M,NAP,138,257,False,LVH,156,N,0.0,Up,False
+649575,Danny Mann,1901-12-29,1956-03-05,54,M,ASY,120,188,False,Normal,113,N,1.4,Flat,True
+371059,Malik Cruickshank,1905-08-21,1971-11-24,66,F,TA,150,226,False,Normal,114,N,2.6,Down,False
+233572,Gene Cassin,1938-04-21,1996-04-22,58,M,ASY,130,263,False,Normal,140,Y,2.0,Flat,True
+516522,Rev. Brandi Kohler,1911-07-20,1966-10-21,55,M,ASY,135,204,True,ST,126,Y,1.1,Flat,True
+350138,Newton Steuber,1919-06-25,1974-06-28,55,M,ATA,145,326,False,Normal,155,N,0.0,Up,False
+552729,Maria Brown,1915-10-31,1967-12-01,52,F,NAP,136,196,False,LVH,169,N,0.1,Flat,False
+793378,Wally Kuphal,1925-06-17,1994-09-23,69,M,ASY,142,210,True,ST,112,Y,1.5,Flat,True
+933116,Gene Klocko,1922-06-19,1967-08-20,45,M,ASY,142,309,False,LVH,147,Y,0.0,Flat,True
+323180,Alberto Bednar,1911-12-22,1969-04-25,57,M,ASY,139,277,True,ST,118,Y,1.9,Flat,True
+340632,Martha Graham,1929-06-26,2003-08-27,74,M,TA,145,216,True,Normal,116,Y,1.8,Flat,True
+571794,Miss Erica Schowalter,1951-12-28,2014-01-03,62,F,ASY,140,394,False,LVH,157,N,1.2,Flat,False
+48435,Amiee Streich,1946-06-23,1981-10-23,35,M,ATA,120,308,False,LVH,180,N,0.0,Up,False
+775659,Niki Heathcote CPA,1948-03-02,2009-04-05,61,M,ASY,130,0,False,LVH,115,N,0.0,Flat,True
+96867,Ashley Hermiston,1911-06-19,1969-07-28,58,M,ASY,170,0,True,ST,105,Y,0.0,Flat,True
+317392,Warren Will,1950-06-05,2005-06-11,55,M,ATA,130,262,False,Normal,155,N,0.0,Up,False
+788633,Edward Kris,1931-03-20,1985-03-29,54,M,NAP,120,217,False,Normal,137,N,0.0,Up,False
+160855,Michel Wilderman,1952-08-12,2006-08-14,54,M,NAP,150,195,False,Normal,122,N,0.0,Up,False
+884311,Rashad Padberg,1940-12-21,1992-02-29,51,F,NAP,120,295,False,LVH,157,N,0.6,Up,False
+817342,Ms. Willena Becker,1952-04-02,2006-05-11,54,M,NAP,120,258,False,LVH,147,N,0.4,Flat,False
+453579,Tabatha Brekke,1951-09-14,2006-10-21,55,M,ASY,122,223,True,ST,100,N,0.0,Flat,True
+435061,Ivelisse Lockman,1901-02-28,1966-05-31,65,F,NAP,160,360,False,LVH,151,N,0.8,Up,False
+537461,Vida Spinka,1937-04-21,1985-06-23,48,M,NAP,132,220,True,ST,162,N,0.0,Flat,True
+319906,Noelle Haag,1924-08-19,1979-09-27,55,F,ASY,180,327,False,ST,117,Y,3.4,Flat,True
+109459,Emerson Considine,1947-10-16,1991-11-17,44,F,NAP,118,242,False,Normal,149,N,0.3,Flat,False
+612682,Jed Graham,1946-05-14,2002-07-15,56,M,ASY,120,85,False,Normal,140,N,0.0,Up,False
+815988,Miss Kathaleen Gottlieb,1923-09-17,1983-10-17,60,F,ASY,158,305,False,LVH,161,N,0.0,Up,True
+523803,Fr. Milissa Botsford,1926-06-30,1998-08-05,72,M,ASY,160,123,True,LVH,130,N,1.5,Flat,True
+181148,Elza Greenholt,1964-01-11,2021-05-13,57,M,ASY,140,0,True,Normal,100,Y,0.0,Flat,True
+796700,Ty Larson,1946-06-07,2015-09-11,69,M,ASY,140,208,False,ST,140,Y,2.0,Flat,True
+930097,Prince White,1947-03-26,1997-06-28,50,M,ATA,140,216,False,Normal,170,N,0.0,Up,False
+371078,Major Waelchi,1942-01-03,1996-03-09,54,M,ASY,125,224,False,Normal,122,N,2.0,Flat,True
+612626,Jamal Nitzsche,1915-07-17,1958-11-22,43,M,ASY,110,211,False,Normal,161,N,0.0,Up,False
+910464,Ambrose Bayer,1945-12-24,1993-03-27,47,M,TA,110,249,False,Normal,150,N,0.0,Up,False
+997824,Myron Emard Sr.,1909-05-26,1970-10-01,61,F,ASY,130,294,False,ST,120,Y,1.0,Flat,False
+215633,Shantel Lang DVM,1933-11-11,1985-11-18,52,M,ATA,120,284,False,Normal,118,N,0.0,Up,False
+590272,Audria Kautzer,1946-10-30,1986-02-05,39,F,NAP,138,220,False,Normal,152,N,0.0,Flat,False
+407470,Sage Beier,1934-10-08,1972-01-11,37,M,ASY,130,315,False,Normal,158,N,0.0,Up,False
+32576,Olen Schumm,1909-06-29,1963-10-06,54,M,ASY,136,220,False,Normal,140,Y,3.0,Flat,True
+164480,Suzi Oberbrunner,1914-12-18,1960-02-20,45,M,ATA,128,308,False,LVH,170,N,0.0,Up,False
+859097,Louie Donnelly,1926-02-15,1996-06-17,70,M,ASY,140,0,True,Normal,157,Y,2.0,Flat,True
+109000,Twyla Crooks,1956-07-16,2004-08-18,48,F,ATA,133,308,False,ST,156,N,2.0,Up,False
+276792,Johnathon Beatty,1925-09-17,1985-09-22,60,M,ASY,132,218,False,ST,140,Y,1.5,Down,True
+46209,Brandi O'Reilly,1944-08-11,2006-08-14,62,M,ATA,120,281,False,LVH,103,N,1.4,Flat,True
+958749,Andres Koch,1941-05-26,2011-10-02,70,M,ASY,115,0,False,ST,92,Y,0.0,Flat,True
+905187,Scotty Cummings,1940-02-22,2001-04-28,61,M,ASY,190,287,True,LVH,150,Y,2.0,Down,True
+869760,Gretta Greenholt,1926-02-13,1993-06-23,67,M,ASY,160,384,True,ST,130,Y,0.0,Flat,True
+704126,Dawne Krajcik,1930-12-21,1984-12-29,54,M,ASY,140,166,False,Normal,118,Y,0.0,Flat,True
+800534,Charley Rempel,1957-10-12,2002-12-17,45,M,ASY,140,224,False,Normal,144,N,0.0,Up,False
+22560,Trinh Murphy DVM,1917-06-19,1985-09-21,68,M,ASY,138,0,False,Normal,130,Y,3.0,Flat,True
+581478,Prof. Meghann Reilly,1939-06-28,1976-06-30,37,F,NAP,120,215,False,Normal,170,N,0.0,Up,False
+325314,Rep. Louie Osinski,1939-08-21,1993-11-22,54,F,ATA,120,230,True,Normal,140,N,0.0,Up,False
+337919,Avery Johnson,1913-03-17,1970-07-21,57,M,ASY,110,335,False,Normal,143,Y,3.0,Flat,True
+414607,Maryann Schamberger,1945-11-19,2010-03-24,64,M,ASY,130,223,False,ST,128,N,0.5,Flat,False
+514165,Larry Herman,1944-08-10,1994-09-18,50,F,ATA,110,202,False,Normal,145,N,0.0,Up,False
+772317,Vern Ward,1907-12-18,1950-03-26,42,F,NAP,115,211,False,ST,137,N,0.0,Up,False
+208123,Fr. Kareem Kertzmann,1902-09-11,1940-11-19,38,M,ASY,110,190,False,Normal,150,Y,1.0,Flat,True
+187449,Onie Hettinger,1902-08-28,1956-09-29,54,F,ATA,150,230,False,Normal,130,N,0.0,Up,False
+665386,Tomas Hirthe Ret.,1930-08-21,1979-10-22,49,M,TA,130,0,False,ST,145,N,3.0,Flat,True
+805542,Arden Johnston,1935-03-01,1985-05-10,50,M,ASY,120,0,False,ST,156,Y,0.0,Up,True
+782858,Amb. Arron Terry,1945-04-09,1986-05-17,41,M,ASY,120,237,True,Normal,138,Y,1.0,Flat,True
+989474,Ellis Mante,1941-11-08,1999-11-16,58,M,NAP,132,224,False,LVH,173,N,3.2,Up,True
+862820,Noah Johnson,1932-08-15,1971-11-15,39,M,ASY,110,280,False,Normal,150,N,0.0,Flat,True
+150069,In Denesik DO,1927-05-14,1978-08-20,51,M,ASY,140,298,False,Normal,122,Y,4.2,Flat,True
+696697,Desmond Kub,1939-05-15,1984-08-20,45,M,ATA,140,224,True,Normal,122,N,0.0,Up,False
+660145,Shenna Heidenreich,1903-11-07,1967-02-09,63,M,ASY,150,0,True,ST,154,N,3.7,Up,True
+952765,Mrs. Shakia Reinger,1912-07-30,1976-10-09,64,M,ASY,120,246,False,LVH,96,Y,2.2,Down,True
+860879,Isaac Sipes,1925-05-18,1988-08-26,63,M,ASY,130,254,False,LVH,147,N,1.4,Flat,True
+326619,Amb. Jackie Vandervort,1903-03-17,1948-04-26,45,F,ATA,112,160,False,Normal,138,N,0.0,Flat,False
+525203,Marketta Boehm,1906-10-31,1967-11-08,61,M,ASY,105,0,True,Normal,110,Y,1.5,Up,True
+72291,Alonso Jacobson Ret.,1905-08-22,1967-08-23,62,M,ATA,128,208,True,LVH,140,N,0.0,Up,False
+220028,Francisco Ondricka,1956-01-15,2004-01-15,48,M,ASY,120,260,False,Normal,115,N,2.0,Flat,True
+557794,Rev. Rosenda Kohler,1946-09-23,1987-09-30,41,M,ATA,110,235,False,Normal,153,N,0.0,Up,False
+479965,Dario Waelchi,1906-05-31,1969-06-06,63,M,ASY,136,0,False,Normal,84,Y,0.0,Flat,True
+111532,Tawna Emard,1943-05-03,2002-05-03,59,M,ASY,154,0,False,ST,131,Y,1.5,Up,False
+524468,Kathi Collins,1941-02-16,1998-02-22,57,M,ASY,130,131,False,Normal,115,Y,1.2,Flat,True
+30436,Olen Casper,1918-12-20,1987-04-28,68,M,NAP,118,277,False,Normal,151,N,1.0,Up,False
+808626,Lemuel Hilpert,1933-12-08,1981-02-12,47,F,NAP,130,235,False,Normal,145,N,2.0,Flat,False
+203548,Ailene Wolf,1920-03-25,1966-04-30,46,M,NAP,120,230,False,Normal,150,N,0.0,Up,False
+571839,Peter Gleichner,1902-11-26,1951-12-31,49,M,ASY,128,212,False,Normal,96,Y,0.0,Flat,True
+895191,Drew Jacobs,1904-09-15,1963-01-22,58,M,NAP,150,219,False,ST,118,Y,0.0,Flat,True
+366860,Jon Ondricka,1912-05-16,1954-09-20,42,M,ATA,120,295,False,Normal,162,N,0.0,Up,False
+701646,Earnest Moen,1930-04-21,1981-04-27,51,M,ASY,130,0,True,ST,163,N,0.0,Flat,True
+244212,Daron McLaughlin,1940-12-23,2000-04-28,59,M,TA,178,270,False,LVH,145,N,4.2,Down,False
+869315,Josef Gorczany PhD,1930-03-25,1981-04-02,51,M,ASY,132,218,True,LVH,139,N,0.1,Up,False
+543291,Mr. Danille Bode,1924-02-21,1984-03-29,60,F,NAP,102,318,False,Normal,160,N,0.0,Up,False
+141065,Coreen Zemlak,1903-08-26,1958-10-30,55,M,ASY,140,217,False,Normal,111,Y,5.6,Down,True
+504104,Rev. Sueann Herman,1904-12-28,1962-05-01,57,M,ATA,140,260,True,Normal,140,N,0.0,Up,False
+724798,Glenna McClure,1936-05-07,1997-05-07,61,M,ASY,141,292,False,ST,115,Y,1.7,Flat,True
+629200,Pres. Jeannetta Bauch,1939-06-15,2000-08-19,61,M,ASY,160,0,True,ST,145,N,1.0,Flat,True
+283963,Helaine Skiles,1935-03-29,1984-05-02,49,F,NAP,160,180,False,Normal,156,N,1.0,Flat,True
+293358,Melynda Jakubowski,1909-03-20,1971-04-28,62,F,ASY,140,268,False,LVH,160,N,3.6,Down,True
+169047,Amberly Brown,1958-01-20,2012-05-30,54,M,ATA,132,182,False,ST,141,N,0.1,Up,False
+883913,Anika Pollich,1913-05-14,1968-08-20,55,M,NAP,110,277,False,Normal,160,N,0.0,Up,False
+463414,Wyatt Osinski,1902-04-25,1952-08-27,50,M,ASY,150,215,False,Normal,140,Y,0.0,Up,False
+1560,Miguel Hane,1936-05-29,1979-09-06,43,F,ATA,150,186,False,Normal,154,N,0.0,Up,False
+370578,Nova Greenfelder DVM,1922-10-14,1961-01-22,38,M,TA,120,231,False,Normal,182,Y,3.8,Flat,True
+495651,Alda Kirlin,1945-05-14,2012-06-16,67,M,ASY,120,0,True,Normal,150,N,1.5,Down,True
+856759,Britni Terry,1905-11-15,1964-12-16,59,M,ASY,140,0,False,ST,117,Y,1.0,Flat,True
+97157,So Cummerata,1954-06-16,2012-08-19,58,M,ASY,136,203,True,Normal,123,Y,1.2,Flat,True
+153886,Joleen Howe,1912-10-31,1974-01-06,61,M,ASY,150,0,False,Normal,117,Y,2.0,Flat,True
+711028,Darell Goldner,1954-06-24,1993-08-31,39,M,ASY,130,307,False,Normal,140,N,0.0,Up,False
+579284,Morgan Hodkiewicz,1943-06-07,2007-10-11,64,F,ASY,95,0,True,Normal,145,N,1.1,Down,True
+724789,Elden Welch,1905-08-09,1962-09-16,57,M,ASY,144,270,True,ST,160,Y,2.0,Flat,True
+689061,Alfred Gorczany VM,1948-03-05,2017-04-11,69,M,ASY,135,0,False,Normal,130,N,0.0,Flat,True
+413023,Shana Brekke,1933-08-24,1995-10-03,62,F,ASY,150,244,False,Normal,154,Y,1.4,Flat,True
+924529,Sade Weber,1926-02-16,1980-04-16,54,M,ASY,200,198,False,Normal,142,Y,2.0,Flat,True
+912483,Carita Walker,1945-08-22,1994-08-24,49,M,ASY,140,234,False,Normal,140,Y,1.0,Flat,True
+245755,Sen. Nia Smith,1966-05-26,2040-09-04,74,M,ATA,145,0,True,ST,123,N,1.3,Up,True
+670570,Abbie Casper,1908-02-26,1965-03-01,57,M,ASY,130,207,False,ST,96,Y,1.0,Flat,False
+652130,Dr. Chet Lind,1939-12-06,1993-03-15,53,M,ASY,130,0,False,LVH,135,Y,1.0,Flat,True
+36002,Rep. Natasha Dickinson,1912-08-23,1967-12-02,55,M,NAP,120,220,False,LVH,134,N,0.0,Up,False
+62636,Tennie Boehm,1906-10-23,1957-02-26,50,M,ASY,140,231,False,ST,140,Y,5.0,Flat,True
+225847,Mrs. Shanice Volkman,1921-03-18,1962-05-18,41,M,ATA,135,203,False,Normal,132,N,0.0,Flat,False
+393346,Lewis Runolfsson DC,1933-11-20,1993-01-28,59,M,ASY,164,176,True,LVH,90,N,1.0,Flat,True
+353255,Dexter Collier,1926-02-24,1992-02-25,66,M,ASY,160,228,False,LVH,138,N,2.3,Up,False
+764366,Claris Schultz,1962-02-19,2013-04-19,51,M,ASY,140,299,False,Normal,173,Y,1.6,Up,True
+344566,Stefan Wehner,1952-08-29,2017-10-31,65,M,ASY,134,0,False,Normal,112,Y,1.1,Flat,True
+823446,Elenor Kuhlman,1927-01-31,1988-06-03,61,M,ASY,148,203,False,Normal,161,N,0.0,Up,True
+993484,Sheena Watsica MD,1957-09-18,2020-01-18,62,M,ASY,158,210,True,Normal,112,Y,3.0,Down,True
+877433,Lewis Howell,1914-02-18,1977-05-25,63,F,NAP,135,252,False,LVH,172,N,0.0,Up,False
+51214,Edmund Keeling,1946-07-13,1989-09-15,43,F,ATA,120,266,False,Normal,118,N,0.0,Up,False
+136977,Msgr. Cole Luettgen,1943-08-27,1984-12-06,41,M,ASY,150,171,False,Normal,128,Y,1.5,Flat,False
+596974,Calvin Raynor,1946-05-09,2005-07-18,59,M,ASY,140,274,False,Normal,154,Y,2.0,Flat,False
+460521,Palmer Collins DO,1937-03-14,1994-03-16,57,F,ASY,120,354,False,Normal,163,Y,0.6,Up,False
+135197,Clyde Lang,1940-07-17,1993-10-26,53,M,ASY,180,285,False,ST,120,Y,1.5,Flat,True
+104991,Vance Schiller,1936-04-07,1989-07-08,53,M,NAP,130,197,True,LVH,152,N,1.2,Down,False
+987535,Zackary Sawayn II,1912-01-25,1969-02-02,57,M,ASY,110,201,False,Normal,126,Y,1.5,Flat,False
+963730,Lory Moen,1941-04-27,2000-05-06,59,M,ASY,178,0,True,LVH,120,Y,0.0,Flat,True
+330408,Conrad Willms,1908-08-23,1959-10-31,51,M,ASY,140,261,False,LVH,186,Y,0.0,Up,False
+395192,Rolanda Leffler Jr.,1965-06-10,2025-08-11,60,M,ASY,136,195,False,Normal,126,N,0.3,Up,False
+723871,Eldora Dach MD,1953-09-16,2007-09-21,54,M,ASY,150,365,False,ST,134,N,1.0,Up,False
+802391,Samantha Carroll,1945-07-26,2007-11-01,62,M,ATA,131,0,False,Normal,130,N,0.1,Up,False
+702860,Lawrence Pagac,1911-11-19,1965-11-19,54,M,NAP,133,203,False,ST,137,N,0.2,Up,False
+999730,Cheryl Windler LLD,1926-10-16,1966-02-26,39,M,NAP,140,321,False,LVH,182,N,0.0,Up,False
+343593,Michal Kihn VM,1906-08-31,1948-09-05,42,M,ASY,140,226,False,Normal,178,N,0.0,Up,False
+244371,Mrs. Shelby Gulgowski,1938-06-21,1999-10-01,61,M,ASY,125,292,False,ST,115,Y,0.0,Up,False
+313408,Louann D'Amore,1903-03-01,1947-04-11,44,M,ATA,120,184,False,Normal,142,N,1.0,Flat,False
+311496,Heath Graham,1949-08-08,1983-09-12,34,M,ASY,115,0,True,Normal,154,N,0.2,Up,True
+603292,Alva Huel V,1911-03-17,1952-07-26,41,M,ASY,104,0,False,ST,111,N,0.0,Up,False
+279789,Luther Brown,1957-09-24,2016-10-26,59,M,ASY,140,264,True,LVH,119,Y,0.0,Flat,True
+505128,Lorina Schaden,1950-12-03,2002-01-11,51,M,NAP,135,160,False,Normal,150,N,2.0,Flat,True
+439084,Marcene Torphy,1903-07-04,1953-08-14,50,M,ATA,170,209,False,ST,116,N,0.0,Up,False
+992152,Donny Glover,1945-11-03,2007-03-11,61,M,ASY,150,0,False,Normal,105,Y,0.0,Flat,True
+798977,Gilbert Larson,1943-03-11,1997-07-19,54,M,ASY,140,239,False,Normal,160,N,1.2,Up,False
+160936,Bettie Lindgren,1949-05-24,2005-08-24,56,M,NAP,125,0,True,Normal,98,N,-2.0,Flat,True
+468582,Otilia Carter,1953-06-27,2028-08-28,75,M,ASY,170,203,True,ST,108,N,0.0,Flat,True
+278067,Santos Spinka,1935-06-10,1987-10-15,52,M,ASY,130,0,True,Normal,120,N,0.0,Flat,True
+150709,Cathleen Stoltenberg,1904-03-02,1955-03-06,51,F,NAP,130,256,False,LVH,149,N,0.5,Up,False
+15497,Sen. Jan Mohr,1909-10-25,1968-01-02,58,M,ASY,115,0,True,Normal,138,N,0.5,Up,True
+172327,Msgr. Avril Lebsack,1929-12-23,1979-04-27,49,M,NAP,118,149,False,LVH,126,N,0.8,Up,True
+111571,Toshia Monahan DO,1933-01-16,1971-01-16,38,M,NAP,145,292,False,Normal,130,N,0.0,Up,False
+634317,Miss Malia Pouros,1908-01-23,1974-06-01,66,M,ATA,160,246,False,Normal,120,Y,0.0,Flat,True
+554029,Elizebeth Collier,1932-09-12,1993-09-16,61,M,NAP,150,243,True,Normal,137,Y,1.0,Flat,False
+159642,Sen. Gale Orn,1933-04-02,1974-04-07,41,M,ATA,125,269,False,Normal,144,N,0.0,Up,False
+189333,Violeta Harvey,1929-10-16,1992-11-24,63,M,ASY,185,0,False,Normal,98,Y,0.0,Up,True
+309919,Ayanna Stokes,1968-08-01,2021-11-09,53,F,ATA,140,216,False,Normal,142,Y,2.0,Flat,False
+50500,Milo Zulauf,1953-10-08,2014-12-17,61,M,ASY,134,0,True,ST,86,N,1.5,Flat,True
+582850,Alvaro Feest,1932-09-10,1992-11-18,60,M,NAP,115,0,True,Normal,143,N,2.4,Up,True
+290547,Pres. Roxane Hayes,1903-01-19,1950-02-28,47,M,ASY,150,226,False,Normal,98,Y,1.5,Flat,True
+8952,Kristle Goodwin Esq.,1945-11-02,2001-01-08,55,M,NAP,120,0,False,ST,125,Y,2.5,Flat,True
+385357,Ms. Carmen Wehner,1916-10-19,1968-10-21,52,F,NAP,125,272,False,Normal,139,N,0.0,Up,False
+328185,Vikki Rempel IV,1940-12-29,2003-02-06,62,M,ATA,120,254,False,LVH,93,Y,0.0,Flat,True
+519190,Amb. Yael Hermiston,1942-07-08,1985-08-13,43,F,TA,100,223,False,Normal,142,N,0.0,Up,False
+796673,Jim Donnelly DO,1954-12-03,1997-01-07,42,M,TA,148,244,False,LVH,178,N,0.8,Up,False
+1940,Jodie Goldner,1938-03-25,1982-07-03,44,M,ATA,130,215,False,Normal,135,N,0.0,Up,False
+235775,Rocco Conn,1940-03-13,1988-05-17,48,F,ASY,120,254,False,ST,110,N,0.0,Up,False
+659708,Stephaine Halvorson,1939-05-06,1984-08-09,45,M,ASY,120,225,False,Normal,140,N,0.0,Up,False
+833728,Isiah Rosenbaum,1923-04-29,1983-08-02,60,M,ASY,130,253,False,Normal,144,Y,1.4,Up,True
+422613,Bertram Rolfson,1927-05-24,1987-08-29,60,M,ASY,152,0,False,ST,118,Y,0.0,Up,False
+315671,Jarrod Terry Sr.,1909-02-20,1949-03-25,40,F,ASY,150,392,False,Normal,130,N,2.0,Flat,True

@@ -32,7 +32,7 @@ export class RiskAssessmentService extends AlgorithmService {
     }
 
     override getJobs(): string[] {
-        return ["risk_evaluation", "base_evaluation"];
+        return ["risk_evaluation"];
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {

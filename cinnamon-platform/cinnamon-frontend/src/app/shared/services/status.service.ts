@@ -5,7 +5,7 @@ import { Status } from "../model/status";
 import { Mode } from "../../core/enums/mode";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
-import { Observable, of, tap } from "rxjs";
+import { finalize, Observable, of, share, tap } from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -14,6 +14,7 @@ export class StatusService {
     private readonly baseUrl: string = environments.apiUrl + "/api/project"
 
     private status: Status;
+    private status$: Observable<Status> | null = null;
     private fetched: boolean = false;
 
     /**
@@ -90,14 +91,24 @@ export class StatusService {
             return of(this.status);
         }
 
-        return this.http.get<Status>(this.baseUrl + "/status")
+        if (this.status$) {
+            return this.status$;
+        }
+
+        this.status$ = this.http.get<Status>(this.baseUrl + "/status")
             .pipe(
                 tap(value => {
                     this.fetched = true;
                     this.status = value;
                     this.setNextStep(value.currentStep);
                 }),
+                share(),
+                finalize(() => {
+                    this.status$ = null;
+                }),
             );
+
+        return this.status$;
     }
 
     private postStep(step: Steps): Observable<void> {

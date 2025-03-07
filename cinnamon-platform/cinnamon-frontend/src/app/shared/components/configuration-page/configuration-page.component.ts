@@ -40,7 +40,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * If this form is disabled.
      * @protected
      */
-    protected disabled: boolean = false;
+    protected disabled: boolean = true;
 
     /**
      * Error displayed on the top of the page.
@@ -63,12 +63,16 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     }
 
     ngOnInit() {
-        const registryData = this.configurationService.getRegisteredConfigurationByName(this.algorithmService.getConfigurationName());
-        this.disabled = this.statusService.isStepCompleted(registryData?.lockedAfterStep);
-
         // Set callback functions
         this.algorithmService.setDoGetConfig(() => this.getConfig());
         this.algorithmService.setDoSetConfig((error: string | null) => this.setConfig(error));
+
+        this.statusService.fetchStatus().subscribe({
+            next: value => {
+                const registryData = this.configurationService.getRegisteredConfigurationByName(this.algorithmService.getConfigurationName());
+                this.disabled = this.statusService.isStepCompleted(registryData?.lockedAfterStep);
+            }
+        });
 
         // Get available algorithms
         this.algorithmService.algorithms.subscribe({

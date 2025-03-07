@@ -108,11 +108,11 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
         this.dataService.storeData(config).pipe(
-            switchMap(() => {
+            switchMap(id => {
                 if (this.createSplit) {
                     return this.dataService.createHoldOutSplit(this.holdOutSplitPercentage);
                 } else {
-                    return of();
+                    return of(id);
                 }
             }),
             switchMap(() => {

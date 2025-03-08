@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { TitleService } from './core/services/title-service.service';
-import { StateManagementService } from './core/services/state-management.service';
+import { AppConfigService } from "./shared/services/app-config.service";
 
 @Component({
     selector: 'app-root',
@@ -10,7 +10,11 @@ import { StateManagementService } from './core/services/state-management.service
 })
 export class AppComponent {
     title = "cinnamon-frontend"
-    constructor(private titleService: TitleService, stateManagement: StateManagementService) {
+
+    constructor(
+        protected readonly appConfigService: AppConfigService,
+        private titleService: TitleService,
+    ) {
     }
 
     getTitle(): String {

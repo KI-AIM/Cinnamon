@@ -181,9 +181,11 @@ public class ProjectService {
 
 	@Transactional
 	public void deleteProject(final UserEntity user) throws InternalDataSetPersistenceException, BadDataSetIdException {
-		final ProjectEntity p = getProject(user);
-		databaseService.delete(p);
-		projectRepository.deleteById(user.getProject().getId());
+		if (hasProject(user)) {
+			final ProjectEntity p = getProject(user);
+			databaseService.delete(p);
+			projectRepository.deleteById(user.getProject().getId());
+		}
 	}
 
 	@Transactional

@@ -79,6 +79,9 @@ services:
             - evaluation-network
     cinnamon-risk-assessment:
         image: cinnamon-risk-assessment
+        build:
+            context: ./cinnamon-risk-assessment
+            dockerfile: Dockerfile
         container_name: cinnamon-risk-assessment
         restart: unless-stopped
         ports:

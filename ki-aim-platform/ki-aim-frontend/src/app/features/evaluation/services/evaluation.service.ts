@@ -2,35 +2,25 @@ import { Injectable } from '@angular/core';
 import { ExecutionStepService } from "../../../shared/services/execution-step.service";
 import { HttpClient } from "@angular/common/http";
 import {Steps} from "../../../core/enums/steps";
+import { StatusService } from "../../../shared/services/status.service";
 
 @Injectable({
     providedIn: 'root'
 })
 export class EvaluationService extends ExecutionStepService {
 
-    private _technicalEvaluationStatus: string | null = null;
-    private _processSteps: Steps[] = [];
-
     constructor(
         http: HttpClient,
+        statusService: StatusService,
     ) {
-        super(http);
+        super(http, statusService);
     }
 
-    public get technicalEvaluationStatus(): string | null {
-        return this._technicalEvaluationStatus;
+    protected override getStageName(): string {
+        return "evaluation";
     }
 
-    public get processSteps(): Steps[] {
-        return this._processSteps;
-    }
-
-    protected override getStepName(): string {
-        return "EVALUATION";
-    }
-
-    protected override setCustomStatus(key: Steps, status: string | null, processSteps: Steps[]): void {
-        this._technicalEvaluationStatus = status;
-        this._processSteps = processSteps;
+    protected override getStep(): Steps {
+        return Steps.EVALUATION;
     }
 }

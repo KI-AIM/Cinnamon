@@ -6,6 +6,8 @@ export class ProjectSettings {
 }
 
 export class MetricSettings  {
+    colorScheme: string = "Default";
+
     useUserDefinedImportance: boolean;
     userDefinedImportance: MetricImportanceDefinition;
 }

@@ -19,11 +19,19 @@ export class SynthetizationService extends AlgorithmService {
     }
 
     public override getStepName() {
-        return "SYNTHETIZATION";
+        return "synthetization";
+    }
+
+    public override getConfigurationName(): string {
+        return "synthetization_configuration";
     }
 
     public override getExecStepName(): string {
-        return "EXECUTION";
+        return "execution";
+    }
+
+    override getJobs(): string[] {
+        return ["synthetization"];
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {

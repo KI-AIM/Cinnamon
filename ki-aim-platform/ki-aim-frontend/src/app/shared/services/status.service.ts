@@ -39,21 +39,28 @@ export class StatusService {
      * Sets the mode to the given value and synchronizes the status with the backend.
      * @param mode The selected mode.
      */
-    setMode(mode: Mode) {
+    setMode(mode: Mode): Observable<void> {
         this.status.mode = mode;
 
         const formData = new FormData();
 
         formData.append("mode", mode.toString());
-        this.http.post(this.baseUrl, formData).subscribe({
-            error: err => {
-                console.log(err);
-            }
-        });
+        return this.http.post<void>(this.baseUrl, formData);
     }
 
     getCompletedSteps(): List<Object> {
         return this.completedSteps;
+    }
+
+    /**
+     * Sets the given step to the current steps, marks all previous steps as completed and updates the backend.
+     * Steps after the given step will be removed from the list of completed steps.
+     *
+     * @param step
+     */
+    public updateNextStep(step: Steps): Observable<void> {
+        this.setNextStep(step);
+        return this.postStep(step);
     }
 
     /**
@@ -93,6 +100,14 @@ export class StatusService {
             );
     }
 
+    private postStep(step: Steps): Observable<void> {
+        const stepValue = typeof step === "number" ? Steps[step] : step;
+
+        const formData = new FormData();
+        formData.append("step", stepValue);
+        return this.http.post<void>(this.baseUrl + "/step", formData);
+    }
+
     addCompletedStep(step: Steps): void {
         if (!this.completedSteps.contains(step)) {
             this.completedSteps.add(step);
@@ -107,12 +122,12 @@ export class StatusService {
 
     /**
      * Checks if a given step is completed.
-     * If the step is null, returns false.
+     * If the step is null or undefined, returns false.
      *
      * @param step The step to check.
      * @returns If the given step is completed.
      */
-    public isStepCompleted(step: Steps | null) {
+    public isStepCompleted(step: Steps | null | undefined) {
         if (step == null) {
             return false;
         }

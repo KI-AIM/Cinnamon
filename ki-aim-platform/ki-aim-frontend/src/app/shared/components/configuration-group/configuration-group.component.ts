@@ -1,8 +1,17 @@
-import {Component, Input, QueryList, ViewChildren} from '@angular/core';
+import {
+    AfterViewInit, ChangeDetectorRef,
+    Component,
+    Input,
+    QueryList,
+    ViewChild,
+    ViewChildren,
+    ViewContainerRef
+} from '@angular/core';
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
 import { FormGroup } from "@angular/forms";
 import {ConfigurationInputComponent} from "../configuration-input/configuration-input.component";
 import { MatCheckbox, MatCheckboxChange } from "@angular/material/checkbox";
+import { ConfigurationAdditionalConfigs } from "../../model/configuration-additional-configs";
 
 /**
  * Component for a collapsable input group.
@@ -12,7 +21,12 @@ import { MatCheckbox, MatCheckboxChange } from "@angular/material/checkbox";
   templateUrl: './configuration-group.component.html',
   styleUrls: ['./configuration-group.component.less']
 })
-export class ConfigurationGroupComponent {
+export class ConfigurationGroupComponent implements AfterViewInit {
+
+    /**
+     * Configurations displayed additionally to the given definition.
+     */
+    @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
 
     /**
      * The parent form object.
@@ -58,13 +72,30 @@ export class ConfigurationGroupComponent {
     @ViewChildren('optionCheckboxes') private matCheckboxes: QueryList<MatCheckbox>;
 
     /**
+     * List of all group components that are configurations.
+     * @private
+     */
+    @ViewChildren('configurations') private configurations: QueryList<ConfigurationGroupComponent>;
+
+    /**
      * List of all group components that are options.
      * @private
      */
-    @ViewChildren('options') private groups: QueryList<ConfigurationGroupComponent>;
+    @ViewChildren('options') private options: QueryList<ConfigurationGroupComponent>;
+
+    /**
+     * Container for the additional configs.
+     */
+    @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
 
     constructor(
+        private readonly cdRef: ChangeDetectorRef,
     ) {
+    }
+
+    public ngAfterViewInit() {
+        this.loadComponents();
+        this.cdRef.detectChanges();
     }
 
     /**
@@ -85,13 +116,25 @@ export class ConfigurationGroupComponent {
      * @param groupConfig The configuration object.
      */
     public removeInactiveGroups(groupConfig: any): any {
-        for (const group of this.groups) {
+        let configGroup;
+        if (this.fromGroupName) {
+            configGroup = groupConfig[this.fromGroupName];
+        } else {
+            configGroup = groupConfig;
+        }
+
+        for (const group of this.configurations) {
+            group.removeInactiveGroups(configGroup);
+        }
+        for (const group of this.options) {
+            group.removeInactiveGroups(configGroup);
+
             if (!group.isActive) {
-                delete groupConfig[group.fromGroupName];
+                delete configGroup[group.fromGroupName];
             }
         }
 
-        return groupConfig;
+        return configGroup;
     }
 
     /**
@@ -99,13 +142,19 @@ export class ConfigurationGroupComponent {
      * @param configuration The configuration object.
      */
     public handleMissingOptions(configuration: any) {
-        const configGroup = configuration[this.fromGroupName];
-        for (const group of this.groups) {
+        let configGroup;
+        if (this.fromGroupName) {
+            configGroup = configuration[this.fromGroupName];
+        } else {
+            configGroup = configuration;
+        }
+
+        for (const group of this.options) {
             group.handleMissingOptions(configGroup);
         }
 
         if (this.group.options) {
-            for (const def of this.groups) {
+            for (const def of this.options) {
                 if (!Object.hasOwn(configGroup, def.fromGroupName)) {
                     for (const cb of this.matCheckboxes) {
                         if (cb.id === 'isActive' + def.fromGroupName) {
@@ -117,6 +166,13 @@ export class ConfigurationGroupComponent {
                 }
             }
         }
+
+        for (const group of this.configurations) {
+            group.handleMissingOptions(configGroup);
+        }
+        for (const group of this.options) {
+            group.handleMissingOptions(configGroup);
+        }
     }
 
     /**
@@ -124,10 +180,10 @@ export class ConfigurationGroupComponent {
      * @protected
      */
     protected get formGroup(): FormGroup {
-        if (this.isOption) {
+        if (this.fromGroupName) {
             return this.form.controls[this.fromGroupName] as FormGroup;
         } else {
-            return this.form.controls[this.fromGroupName] as FormGroup;
+            return this.form;
         }
     }
 
@@ -137,7 +193,7 @@ export class ConfigurationGroupComponent {
      * @protected
      */
     protected toggleActive(event: MatCheckboxChange): void {
-        for (const group of this.groups) {
+        for (const group of this.options) {
             if (group.fromGroupName === event.source.value) {
                 group.setActive(event.checked);
                 break;
@@ -152,6 +208,20 @@ export class ConfigurationGroupComponent {
      */
     protected isGroupEmpty(group: ConfigurationGroupDefinition) {
         return (!group.parameters || group.parameters.length === 0) && !group.configurations && !group.options;
+    }
+
+    /**
+     * Loads additional config components
+     * and injects them into the component container.
+     * Also attaches the form to the component
+     */
+    private loadComponents() {
+        if (this.additionalConfigs !== null) {
+            this.additionalConfigs?.configs.forEach(config => {
+                const componentRef: any = this.componentContainer.createComponent(config.component);
+                componentRef.instance.form = this.form;
+            });
+        }
     }
 
 }

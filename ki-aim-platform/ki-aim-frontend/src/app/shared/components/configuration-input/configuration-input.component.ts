@@ -1,9 +1,9 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { ConfigurationInputDefinition } from "../../model/configuration-input-definition";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import {AbstractControl, FormArray, FormControl, FormGroup, Validators} from "@angular/forms";
 import { DataConfigurationService } from "../../services/data-configuration.service";
-import { map, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { ColumnConfiguration } from '../../model/column-configuration';
 
 /**
@@ -16,7 +16,7 @@ import { ColumnConfiguration } from '../../model/column-configuration';
   templateUrl: './configuration-input.component.html',
   styleUrls: ['./configuration-input.component.less']
 })
-export class ConfigurationInputComponent {
+export class ConfigurationInputComponent implements OnInit, OnDestroy {
     protected readonly ConfigurationInputType = ConfigurationInputType;
     protected readonly Math = Math;
 
@@ -46,7 +46,8 @@ export class ConfigurationInputComponent {
      * If the input is valid.
      */
      protected get isValid() {
-        return !this.form.controls[this.configurationInputDefinition.name].invalid;
+        return !this.form.controls[this.configurationInputDefinition.name].invalid &&
+            (!this.configurationInputDefinition.invert || !this.form.controls[this.configurationInputDefinition.invert].invalid);
     }
 
     /**
@@ -139,6 +140,18 @@ export class ConfigurationInputComponent {
             formArray.clear();
             for (const defaultValue of this.configurationInputDefinition.default_value as number[]) {
                 formArray.push(new FormControl(defaultValue, Validators.required));
+            }
+        } else if (this.configurationInputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
+            const formArray = this.form.controls[this.configurationInputDefinition.name] as FormArray
+            formArray.clear();
+
+            if (this.configurationInputDefinition.invert) {
+                const formArrayInverted = this.form.controls[this.configurationInputDefinition.invert] as FormArray
+                formArrayInverted.clear();
+
+                this.dataConfiguration.forEach(attribute => {
+                    formArrayInverted.push(new FormControl(attribute.name));
+                });
             }
         } else {
             this.form.controls[this.configurationInputDefinition.name].setValue(this.configurationInputDefinition.default_value);

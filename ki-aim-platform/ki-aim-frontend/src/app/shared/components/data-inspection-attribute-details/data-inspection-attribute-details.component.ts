@@ -1,17 +1,15 @@
-import {Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import {
     AttributeStatistics,
     StatisticsData,
     StatisticsValues,
-   StatisticsValueTypes
+    StatisticsValueTypes
 } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
-import {Steps} from "../../../core/enums/steps";
-import {processEnumValue} from "../../helper/enum-helper";
-import {MetricImportance, MetricImportanceData, MetricSettings} from "../../model/project-settings";
-import {ProjectConfigurationService} from "../../services/project-configuration.service";
-import {map, Observable} from "rxjs";
+import { MetricImportance, MetricImportanceData, MetricSettings } from "../../model/project-settings";
+import { ProjectConfigurationService } from "../../services/project-configuration.service";
+import { map, Observable } from "rxjs";
 import { MetricTableData, MetricTableFilterData, MetricTableSortData, SortType } from "../../model/metric-table-data";
 
 @Component({
@@ -24,13 +22,12 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     protected readonly MetricTableData = MetricTableData
     protected readonly MetricTableFilterData = MetricTableFilterData;
     protected readonly MetricTableSortData = MetricTableSortData;
-    protected readonly Object = Object;
 
     @Input() public attributeStatistics!: AttributeStatistics;
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
     @Input() public mainData: 'real' | 'synthetic' = 'real';
-    @Input() public processingSteps: Steps[] = [];
+    @Input() public processingSteps: string[] = [];
 
     protected graphType: string = 'histogram';
     protected hasSynthetic: boolean = false;
@@ -38,6 +35,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     protected importantMetricsTableData = new MetricTableData();
     protected additionalMetricsTableData = new MetricTableData();
 
+    protected originalDisplayName: string;
     protected datasetDisplayName: string;
 
     protected metricConfig$: Observable<MetricSettings>;
@@ -61,7 +59,8 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
             this.additionalMetricsTableData.sort.column = 'colorIndex';
         }
 
-        this.datasetDisplayName = this.getSyntheticName();
+        this.originalDisplayName = this.statisticsService.getOriginalName(this.sourceDataset);
+        this.datasetDisplayName = this.statisticsService.getSyntheticName(this.processingSteps)
         this.metricConfig$ = this.projectConfigService.projectSettings$.pipe(
             map(val => val.metricConfiguration)
         );
@@ -106,22 +105,4 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
             return [value[0], value[1], MetricImportanceData[config.userDefinedImportance[value[0]]].value];
         });
     }
-
-    /**
-     * Creates the name of the dataset based on the steps applied to this dataset.
-     * @protected
-     */
-    private getSyntheticName(): string {
-        const names = ['','','','','','','','',''];
-        names[Steps.ANONYMIZATION] = "Anonymized";
-        names[Steps.SYNTHETIZATION] = "Synthesized";
-
-        let syntheticName = this.processingSteps
-            .map(value => processEnumValue(Steps, value))
-            .map(value => names[value])
-            .join(" and ");
-        syntheticName = syntheticName + " Values"
-        return syntheticName;
-    }
 }
-

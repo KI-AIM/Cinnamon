@@ -16,7 +16,7 @@
                 </mat-panel-description>
             </mat-expansion-panel-header>
 
-            <app-configuration-group [form]="formGroup" [fromGroupName]="groupDefinition.key"
+            <app-configuration-group #configurations [form]="formGroup" [fromGroupName]="groupDefinition.key"
                                      [group]="groupDefinition.value" [disabled]="disabled" [isOption]="false">
             </app-configuration-group>
         </mat-expansion-panel>
@@ -45,4 +45,18 @@
         </mat-expansion-panel>
 
     </ng-container>
+
+    <ng-container *ngIf="additionalConfigs">
+        <ng-container *ngFor="let additionalConfig of additionalConfigs.configs">
+            <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                    <mat-panel-title>{{additionalConfig.title}}</mat-panel-title>
+                    <mat-panel-description>{{additionalConfig.description}}</mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <ng-container #dynamicComponentContainer></ng-container>
+            </mat-expansion-panel>
+        </ng-container>
+    </ng-container>
+
 </mat-accordion>

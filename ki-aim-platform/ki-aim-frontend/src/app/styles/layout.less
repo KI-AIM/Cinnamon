@@ -108,6 +108,7 @@ app-navigation{
     border-bottom: 1px solid black;
     font-weight: bold;
     padding-bottom: 0.4rem;
+    margin-bottom: 0.25rem;
 }
 
 .vertical-boxes {
@@ -131,6 +132,12 @@ app-navigation{
     }
 }
 
+.step-wrapper {
+    // I have no idea why width: 10% and flex-grow: 1 is doing what I want to do
+    flex-grow: 1;
+    padding-top: 0.3rem;
+    width: 10%;
+}
 
 .step-head {
     display: flex;
@@ -144,4 +151,61 @@ app-navigation{
     > :last-child {
         margin-left: auto;
     }
+}
+
+.step-body {
+    margin-top: 0.4rem;
+}
+
+.stage-tree {
+    display: flex;
+    width: 100%;
+}
+
+.stage-tree-steps {
+    display: flex;
+    flex-direction: column;
+    margin-top: 2rem;
+    width: 100%;
+}
+
+.stage-tree-step {
+    display: flex;
+    width: 100%;
+}
+
+@stage-tree-line-width: 2px;
+
+.stage-tree-line {
+    background-color: black;
+}
+
+.stage-tree-line-vertical {
+    .stage-tree-line;
+
+    max-width: @stage-tree-line-width;
+    min-width: @stage-tree-line-width;
+    width: @stage-tree-line-width;
+}
+
+.stage-tree-line-horizontal {
+    padding-top: 0.3rem;
+}
+
+.stage-tree-line-horizontal > div {
+    display: flex;
+    height: 3rem;
+}
+
+.stage-tree-line-horizontal > div > div {
+    .stage-tree-line;
+
+    height: @stage-tree-line-width;
+    max-height: @stage-tree-line-width;
+    min-height: @stage-tree-line-width;
+
+    min-width: 2rem;
+
+    margin-bottom: auto;
+    margin-top: auto;
 }

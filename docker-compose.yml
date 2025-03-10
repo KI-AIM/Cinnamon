@@ -8,7 +8,7 @@ services:
     ki-aim-db:
         image: postgres:16.2-alpine
         container_name: ki-aim-db
-        restart: always
+        restart: unless-stopped
         networks:
             - data-management-network
         environment:
@@ -24,7 +24,7 @@ services:
             context: ./
             dockerfile: ./ki-aim-platform/Dockerfile
         container_name: ki-aim-platform
-        restart: always
+        restart: unless-stopped
         ports:
 #            - "8080:8080"
             - "127.0.0.1:8080:8080"
@@ -51,12 +51,15 @@ services:
             # Evaluation
             KI-AIM.EXTERNAL-SERVER.2.CALLBACK-HOST: ki-aim-platform
             KI-AIM.EXTERNAL-SERVER.2.URL-SERVER: http://ki-aim-evaluation:5010
+
+            KI-AIM.EXTERNAL-SERVER.3.CALLBACK-HOST: ki-aim-platform
+            KI-AIM.EXTERNAL-SERVER.3.URL-SERVER: http://ki-aim-risk-assessment:8000
         depends_on:
             - ki-aim-db
     ki-aim-synthetization:
         image: synthetization_module
         container_name: ki-aim-synthetization
-        restart: always
+        restart: unless-stopped
         ports:
 #            - "5000:5000"
             - "127.0.0.1:5000:5000"
@@ -65,10 +68,19 @@ services:
     ki-aim-evaluation:
         image: evaluation_module
         container_name: ki-aim-evaluation
-        restart: always
+        restart: unless-stopped
         ports:
 #            - "5010:5010"
             - "127.0.0.1:5010:5010"
+        networks:
+            - evaluation-network
+    ki-aim-risk-assessment:
+        image: risk_assessment_module
+        container_name: ki-aim-risk-assessment
+        restart: unless-stopped
+        ports:
+#            - "8000:8000"
+            - "127.0.0.1:8000:8000"
         networks:
             - evaluation-network
     ki-aim-anon:
@@ -77,7 +89,7 @@ services:
             context: ./
             dockerfile: ./ki-aim-anon/Dockerfile
         container_name: ki-aim-anon
-        restart: always
+        restart: unless-stopped
         ports:
             - "127.0.0.1:8081:8080"
             - "127.0.0.1:9001:8000"

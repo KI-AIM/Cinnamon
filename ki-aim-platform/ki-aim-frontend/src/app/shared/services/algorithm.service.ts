@@ -36,7 +36,16 @@ export abstract class AlgorithmService {
      */
     abstract getStepName(): string;
 
+    // TODO fetch
+    abstract getConfigurationName(): string;
+
+
     abstract getExecStepName(): string;
+
+    /**
+     * Name of the jobs to be configured by this configuration page.
+     */
+    abstract getJobs(): string[];
 
     /**
      * Creates the YAML configuration object sent to the backend as well as to the external module.
@@ -143,7 +152,7 @@ export abstract class AlgorithmService {
      */
     public get stepConfig(): Observable<StepConfiguration> {
         if (this._stepConfig == null) {
-            return this.loadStepConfig(this.getStepName())
+            return this.loadStepConfig(this.getConfigurationName())
                 .pipe(tap(value => this._stepConfig = value));
         }
         return of(this._stepConfig);
@@ -207,8 +216,8 @@ export abstract class AlgorithmService {
         return this.http.get<string>(url, {responseType: 'text' as 'json'});
     }
 
-    private loadStepConfig(stepName: string): Observable<StepConfiguration> {
-        return this.http.get<StepConfiguration>(environments.apiUrl + `/api/step/${stepName}`);
+    private loadStepConfig(configName: string): Observable<StepConfiguration> {
+        return this.http.get<StepConfiguration>(environments.apiUrl + `/api/step/${configName}`);
     }
 }
 

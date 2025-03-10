@@ -47,6 +47,7 @@ import {MatRadioModule} from "@angular/material/radio";
 import {InstanceOfPipe} from "./pipes/instance-of.pipe";
 import { MetricInfoTableComponent } from './components/metric-info-table/metric-info-table.component';
 import { MetricConfigurationComponent } from './components/metric-configuration/metric-configuration.component';
+import { ConfigurationInputAttributeListComponent } from './components/configuration-input-attribute-list/configuration-input-attribute-list.component';
 
 @NgModule({
     declarations: [
@@ -83,6 +84,7 @@ import { MetricConfigurationComponent } from './components/metric-configuration/
         MetricSorterPipe,
         StatisticsFilterPipe,
         MetricConfigurationComponent,
+        ConfigurationInputAttributeListComponent,
     ],
     imports: [
         CommonModule,

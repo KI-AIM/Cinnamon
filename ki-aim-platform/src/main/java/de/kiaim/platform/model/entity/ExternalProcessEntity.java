@@ -1,6 +1,7 @@
 package de.kiaim.platform.model.entity;
 
-import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.converter.JobAttributeConverter;
+import de.kiaim.platform.model.configuration.Job;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,7 +10,6 @@ import org.springframework.lang.Nullable;
 
 /**
  * Entity representing a planned or running external process like the anonymization.
- * TODO move the configuration into a separate object, add directly to the project and reference here
  */
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -18,18 +18,11 @@ import org.springframework.lang.Nullable;
 public abstract class ExternalProcessEntity extends BackgroundProcessEntity {
 
 	/**
-	 * Associated step of the process.
+	 * Name of the job.
 	 */
+	@Convert(converter = JobAttributeConverter.class)
 	@Column(nullable = false)
-	@Enumerated(EnumType.STRING)
-	private Step step;
-
-	/**
-	 * The configuration for this process.
-	 */
-	@Column(length = Integer.MAX_VALUE)
-	@Nullable
-	private String configuration;
+	private Job job;
 
 	/**
 	 * Detailed status information.

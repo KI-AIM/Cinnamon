@@ -5,14 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.model.data.DataRow;
 import de.kiaim.model.data.DataSet;
 import de.kiaim.platform.model.configuration.KiAimConfiguration;
-import de.kiaim.platform.model.configuration.StageConfiguration;
-import de.kiaim.platform.model.configuration.StepConfiguration;
+import de.kiaim.platform.model.configuration.Stage;
+import de.kiaim.platform.model.configuration.Job;
 import de.kiaim.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.platform.exception.InternalIOException;
 import de.kiaim.platform.model.entity.*;
-import de.kiaim.platform.model.enumeration.Mode;
-import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.enumeration.*;
 import de.kiaim.platform.repository.ProjectRepository;
 import de.kiaim.platform.repository.UserRepository;
 import org.apache.commons.csv.CSVFormat;
@@ -68,17 +67,33 @@ public class ProjectService {
 	/**
 	 * Creates and returns a new project for the given user if they do not have one.
 	 * Otherwise, returns the existing project.
+	 * Creates a random seed.
+	 *
 	 * @param user The user.
 	 * @return The projects of the user.
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
 	 */
 	@Transactional
 	public ProjectEntity createProject(final UserEntity user) throws InternalApplicationConfigurationException {
+		return createProject(user, System.currentTimeMillis());
+	}
+
+	/**
+	 * Creates and returns a new project for the given user if they do not have one.
+	 * Otherwise, returns the existing project.
+	 *
+	 * @param user        The user.
+	 * @param projectSeed The seed used for the project.
+	 * @return The projects of the user.
+	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
+	 */
+	@Transactional
+	public ProjectEntity createProject(final UserEntity user, final long projectSeed) throws InternalApplicationConfigurationException {
 		if (hasProject(user)) {
 			return user.getProject();
 		}
 
-		final ProjectEntity project = createProject();
+		final ProjectEntity project = createProject(projectSeed);
 		user.setProject(project);
 
 		userRepository.save(user);
@@ -89,45 +104,46 @@ public class ProjectService {
 	/**
 	 * Creates a new empty project that is not associated to any user.
 	 *
+	 * @param projectSeed The seed used for the projects.
 	 * @return The project.
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
 	 */
-	public ProjectEntity createProject() throws InternalApplicationConfigurationException {
-		final ProjectEntity project = new ProjectEntity();
+	public ProjectEntity createProject(final long projectSeed) throws InternalApplicationConfigurationException {
+		final ProjectEntity project = new ProjectEntity(projectSeed);
 
 		final PipelineEntity pipeline = new PipelineEntity();
 		project.addPipeline(pipeline);
 
 		// Create entities for external processes
-		for (final Step stageStep : kiAimConfiguration.getPipeline().getStages()) {
-			if (!kiAimConfiguration.getStages().containsKey(stageStep)) {
+		for (final String stageName : kiAimConfiguration.getPipeline().getStages()) {
+			if (!kiAimConfiguration.getStages().containsKey(stageName)) {
 				throw new InternalApplicationConfigurationException(
 						InternalApplicationConfigurationException.MISSING_STAGE_CONFIGURATION,
-						"No configuration for stage '" + stageStep + "'!");
+						"No configuration for stage '" + stageName + "'!");
 			}
 
-			final StageConfiguration stageConfiguration = kiAimConfiguration.getStages().get(stageStep);
+			final Stage stageConfiguration = kiAimConfiguration.getStages().get(stageName);
 			final ExecutionStepEntity stage = new ExecutionStepEntity();
 
-			for (final Step jobStep : stageConfiguration.getJobs()) {
-				if (!kiAimConfiguration.getSteps().containsKey(jobStep)) {
+			for (final String jobName : stageConfiguration.getJobs()) {
+				if (!kiAimConfiguration.getSteps().containsKey(jobName)) {
 					throw new InternalApplicationConfigurationException(
 							InternalApplicationConfigurationException.MISSING_STEP_CONFIGURATION,
-							"No configuration for step '" + jobStep + "'!");
+							"No configuration for step '" + jobName + "'!");
 				}
 
-				final StepConfiguration stepConfiguration = kiAimConfiguration.getSteps().get(jobStep);
+				final Job stepConfiguration = kiAimConfiguration.getSteps().get(jobName);
 				ExternalProcessEntity job = switch (stepConfiguration.getStepType()) {
 					case DATA_PROCESSING -> new DataProcessingEntity();
 					case EVALUATION -> new EvaluationProcessingEntity();
 				};
 
 				job.setEndpoint(stepConfiguration.getExternalServerEndpointIndex());
-				job.setStep(jobStep);
+				job.setJob(stepConfiguration);
 				stage.addProcess(job);
 			}
 
-			pipeline.addStage(stageStep, stage);
+			pipeline.addStage(stageConfiguration, stage);
 		}
 
 		return project;
@@ -163,8 +179,19 @@ public class ProjectService {
 	@Transactional
 	public void setMode(final ProjectEntity project, final Mode mode) {
 		project.getStatus().setMode(mode);
-		project.getStatus().setCurrentStep(Step.UPLOAD);
 		userRepository.save(project.getUser());
+	}
+
+	/**
+	 * Sets the current step of the given project to the given step.
+	 *
+	 * @param project The project to be updated.
+	 * @param currentStep The new step.
+	 */
+	@Transactional
+	public void updateCurrentStep(final ProjectEntity project, final Step currentStep) {
+		project.getStatus().setCurrentStep(currentStep);
+		projectRepository.save(project);
 	}
 
 	/**
@@ -192,7 +219,7 @@ public class ProjectService {
 
 				// Add data set
 				if (dataSetEntity.isStoredData()) {
-					final DataSet dataSet = databaseService.exportDataSet(dataSetEntity);
+					final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, HoldOutSelector.ALL);
 					addCsvToZip(zipOut, dataSet, "original");
 				}
 
@@ -212,20 +239,20 @@ public class ProjectService {
 				for (final ExecutionStepEntity executionStep : pipeline.getStages()) {
 					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {
 						// Add configuration
-						if (externalProcess.getConfiguration() != null) {
-							final String configurationName = stepService.getExternalServerEndpointConfiguration(externalProcess.getStep())
+						if (externalProcess.getConfigurationString() != null) {
+							final String configurationName = stepService.getExternalServerEndpointConfiguration(externalProcess.getJob())
 							                                            .getConfigurationName();
 							final ZipEntry configZipEntry = new ZipEntry(configurationName + ".yaml");
 							zipOut.putNextEntry(configZipEntry);
-							zipOut.write(externalProcess.getConfiguration().getBytes());
+							zipOut.write(externalProcess.getConfigurationString().getBytes());
 							zipOut.closeEntry();
 						}
 
 						// Add data set
 						if (externalProcess instanceof DataProcessingEntity dataProcessing ) {
 							if (dataProcessing.getDataSet() != null && dataProcessing.getDataSet().isStoredData()) {
-								addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet()),
-								            dataProcessing.getDataSet().getProcessed().stream().map(Step::name)
+								addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet(), HoldOutSelector.ALL),
+								            dataProcessing.getDataSet().getProcessed().stream().map(Job::getName)
 								                          .collect(Collectors.joining("-")));
 							}
 						}
@@ -252,7 +279,7 @@ public class ProjectService {
 			}
 
 			zipOut.finish();
-		} catch (final IOException | InternalApplicationConfigurationException e) {
+		} catch (final IOException e) {
 			throw new InternalIOException(InternalIOException.ZIP_CREATION, "Failed to create the ZIP file!", e);
 		}
 	}

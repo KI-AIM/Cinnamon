@@ -50,6 +50,11 @@ public class InternalDataSetPersistenceException extends InternalException {
 	 */
 	public static final String DATA_SET_COUNT= "9";
 
+	/**
+	 * Exception code for errors when managing the hold out split.
+	 */
+	public static final String HOLD_OUT = "10";
+
 	public InternalDataSetPersistenceException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

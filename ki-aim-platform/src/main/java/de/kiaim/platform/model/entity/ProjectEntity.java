@@ -1,12 +1,13 @@
 package de.kiaim.platform.model.entity;
 
+import de.kiaim.platform.model.configuration.ExternalConfiguration;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.lang.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Class to represent a project in the database.
@@ -28,6 +29,20 @@ public class ProjectEntity {
 	private Long id;
 
 	/**
+	 * Seed for the random operations.
+	 */
+	@Column(nullable = false)
+	@Getter(AccessLevel.NONE)
+	private long seed;
+
+	/**
+	 * Number of times the random has been called.
+	 */
+	@Column(nullable = false)
+	@Getter(AccessLevel.NONE)
+	private int randomCalls = 0;
+
+	/**
 	 * Current status of the project.
 	 */
 	@OneToOne(optional = false, fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
@@ -46,7 +61,14 @@ public class ProjectEntity {
 	 */
 	@OneToOne(optional = false, fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
 	@JoinColumn(name = "original_data_id", referencedColumnName = "id", nullable = false)
-	private OriginalDataEntity originalData = new OriginalDataEntity(this);
+	private final OriginalDataEntity originalData = new OriginalDataEntity(this);
+
+	/**
+	 * List of configurations for each configuration definition.
+	 */
+	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+	@Getter
+	private final Set<ConfigurationListEntity> configurations = new HashSet<>();
 
 	/**
 	 * Pipelines of the project.
@@ -60,6 +82,15 @@ public class ProjectEntity {
 	 */
 	@OneToOne(mappedBy = "project", optional = false, orphanRemoval = false, cascade = CascadeType.PERSIST)
 	private UserEntity user;
+
+	/**
+	 * Creates a new project with the given seed.
+	 *
+	 * @param seed The seed.
+	 */
+	public ProjectEntity(final long seed) {
+		this.seed = seed;
+	}
 
 	/**
 	 * Adas a new pipeline to the project and links the entities.
@@ -89,5 +120,59 @@ public class ProjectEntity {
 		if (newUser != null && newUser.getProject() != this) {
 			newUser.setProject(this);
 		}
+	}
+
+	/**
+	 * Returns the configuration list for the given definition.
+	 * The list will be created if it doesn't exist yet.
+	 *
+	 * @param configuration The definition.
+	 * @return The list.
+	 */
+	public ConfigurationListEntity addConfigurationList(final ExternalConfiguration configuration) {
+		ConfigurationListEntity configurationList = getConfigurationList(configuration);
+		if (configurationList == null) {
+			configurationList = new ConfigurationListEntity(configuration);
+			configurations.add(configurationList);
+		}
+		return configurationList;
+	}
+
+	/**
+	 * Returns the configuration list for the given definition.
+	 * If no list exists, return null.
+	 *
+	 * @param configuration The definition.
+	 * @return The list.
+	 */
+	@Nullable
+	public ConfigurationListEntity getConfigurationList(final ExternalConfiguration configuration) {
+		for (ConfigurationListEntity configurationList : configurations) {
+			if (configurationList.getConfiguration().equals(configuration)) {
+				return configurationList;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Creates a random double using the seed of the project.
+	 *
+	 * @param origin The min value (inclusive).
+	 * @param bound  The max value (exclusive).
+	 * @return The random double.
+	 */
+	public double randomDouble(final double origin, final double bound) {
+		Random random = prepareRandom();
+		randomCalls++;
+		return random.nextDouble(origin, bound);
+	}
+
+	private Random prepareRandom() {
+		Random random = new Random(seed);
+		for (int i = 0; i < randomCalls; i++) {
+			random.nextInt();
+		}
+		return random;
 	}
 }

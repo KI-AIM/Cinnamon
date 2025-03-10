@@ -9,7 +9,6 @@
                 type="text"
                 matInput
                 [id]="formElements.name.name"
-                [(ngModel)]="anonymizationRowConfiguration.name"
                 [formControlName]="formElements.name.name"
             />
         </mat-form-field>
@@ -23,7 +22,6 @@
             <mat-select
                 [id]="formElements.dataType.name"
                 [formControlName]="formElements.dataType.name"
-                [(ngModel)]="anonymizationRowConfiguration.dataType"
             >
                 <mat-option
                     *ngFor="let type of getAllTypes().getAll()"
@@ -42,7 +40,6 @@
             </mat-label>
             <mat-select
                 [id]="formElements.scale.name"
-                (ngModelChange)="setIntervalConditions()"
                 [formControlName]="formElements.scale.name"
             >
                 <mat-option
@@ -62,8 +59,7 @@
             </mat-label>
             <mat-select
                 [id]="formElements.transformationType.name"
-                [(ngModel)]="anonymizationRowConfiguration.attributeProtection"
-                (ngModelChange)="setIntervalConditions(); updateForm()"
+                (selectionChange)="updateTransformationType(); setIntervalConditions(); updateForm();"
                 [formControlName]="formElements.transformationType.name"
             >
                 <mat-option
@@ -111,8 +107,7 @@
                     [max]="intervalMax"
                     [step]="intervalMin"
                     [id]="formElements.interval.name"
-                    [(ngModel)]="anonymizationRowConfiguration.intervalSize"
-                    (ngModelChange)="updateForm()"
+                    (change)="updateIntervalSize(); updateForm();"
                     [formControlName]="formElements.interval.name"
                     matInput
                 >
@@ -120,10 +115,9 @@
 
             <ng-template #selectField>
                 <mat-select
-                    [(ngModel)]="anonymizationRowConfiguration.intervalSize"
                     [id]="formElements.interval.name"
-                    (ngModelChange)="updateForm()"
                     [formControlName]="formElements.interval.name"
+                    (change)="updateIntervalSize(); updateForm();"
                 >
                     <mat-option
                         *ngFor="let interval of getIntervalEnumOptions().getAll()"

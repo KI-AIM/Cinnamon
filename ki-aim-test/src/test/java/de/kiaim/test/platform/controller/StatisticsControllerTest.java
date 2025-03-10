@@ -1,7 +1,6 @@
 package de.kiaim.test.platform.controller;
 
 import de.kiaim.model.dto.ExternalProcessResponse;
-import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.test.platform.ControllerTest;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
@@ -50,7 +49,8 @@ public class StatisticsControllerTest extends ControllerTest {
 
 	@Test
 	public void getStatisticsNoData() throws Exception {
-		mockMvc.perform(get("/api/statistics/validation"))
+		mockMvc.perform(get("/api/statistics")
+				                .param("selector", "original"))
 		       .andExpect(status().isBadRequest());
 	}
 
@@ -70,7 +70,8 @@ public class StatisticsControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		mockMvc.perform(get("/api/statistics/validation"))
+		mockMvc.perform(get("/api/statistics")
+				                .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(""));
 
@@ -99,7 +100,8 @@ public class StatisticsControllerTest extends ControllerTest {
 				                    .body("error")
 				                    .build());
 
-		mockMvc.perform(get("/api/statistics/validation"))
+		mockMvc.perform(get("/api/statistics")
+				                .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string("\"" + statisticsContent + "\"\n"));
 

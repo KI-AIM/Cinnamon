@@ -1,7 +1,7 @@
 package de.kiaim.platform.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.kiaim.platform.model.enumeration.Step;
+import de.kiaim.platform.model.configuration.Stage;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -49,13 +49,14 @@ public class PipelineEntity {
 	private ProjectEntity project;
 
 	/**
-	 * Checks if this pipeline contains a stage for the given step.
-	 * @param step The step.
-	 * @return If this pipeline contains a stage for the given step.
+	 * Checks if this pipeline contains a stage with the given name.
+	 *
+	 * @param stageName The name fo the stage.
+	 * @return If this pipeline contains a stage with the given name.
 	 */
-	public boolean containsStage(final Step step) {
+	public boolean containsStage(final Stage stageName) {
 		for (final ExecutionStepEntity stage : stages) {
-			if (stage.getStep().equals(step)) {
+			if (stage.getStage().equals(stageName)) {
 				return true;
 			}
 		}
@@ -64,34 +65,46 @@ public class PipelineEntity {
 	}
 
 	/**
-	 * Adds the given stage to this pipeline if no stage for the given step exists.
+	 * Adds the given stage to this pipeline if no stage with the given name exists.
 	 * Otherwise, does nothing.
-	 * @param step          The step of the stage.
+	 *
+	 * @param stage         The the stage.
 	 * @param executionStep The stage.
 	 */
-	public void addStage(final Step step, final ExecutionStepEntity executionStep) {
-		if (!containsStage(step)) {
+	public void addStage(final Stage stage, final ExecutionStepEntity executionStep) {
+		if (!containsStage(stage)) {
 			executionStep.setStageIndex(stages.size());
 			executionStep.setPipeline(this);
-			executionStep.setStep(step);
+			executionStep.setStage(stage);
 			stages.add(executionStep);
 		}
 	}
 
 	/**
 	 * Return the stage for the given step.
-	 * @param step The step.
+	 *
+	 * @param stage The stage.
 	 * @return The stage.
 	 */
 	@Nullable
-	public ExecutionStepEntity getStageByStep(final Step step) {
+	public ExecutionStepEntity getStageByStep(final Stage stage) {
 		for (final ExecutionStepEntity stepEntity : this.stages) {
-			if (stepEntity.getStep().equals(step)) {
+			if (stepEntity.getStage().equals(stage)) {
 				return stepEntity;
 			}
 		}
 
 		return null;
+	}
+
+	/**
+	 * Return the stage for the given index.
+	 *
+	 * @param index The index of the stage.
+	 * @return The stage.
+	 */
+	public ExecutionStepEntity getStageByIndex(final Integer index) {
+		return stages.get(index);
 	}
 
 }

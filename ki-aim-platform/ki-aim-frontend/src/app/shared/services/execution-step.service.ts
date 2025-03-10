@@ -6,14 +6,16 @@ import { ProcessStatus } from "../../core/enums/process-status";
 import {
     BehaviorSubject,
     catchError,
-    interval,
+    interval, map,
     Observable,
     of,
     Subscription,
     switchMap,
     tap
 } from "rxjs";
-import {Steps} from "../../core/enums/steps";
+import { plainToInstance } from "class-transformer";
+import { StatusService } from "./status.service";
+import { Steps } from "../../core/enums/steps";
 
 @Injectable({
     providedIn: 'root'
@@ -21,9 +23,7 @@ import {Steps} from "../../core/enums/steps";
 export abstract class ExecutionStepService {
     private readonly baseUrl = environments.apiUrl + "/api/process";
 
-    private _disabled: boolean = false;
     private _error: string | null = null;
-    private _status: ExecutionStep = new ExecutionStep();
 
     private _statusSubject: BehaviorSubject<ExecutionStep | null>;
 
@@ -40,11 +40,8 @@ export abstract class ExecutionStepService {
 
     protected constructor(
         private readonly http: HttpClient,
+        private readonly statusService: StatusService,
     ) {
-        // Create the initial status object so something can be displayed
-        this._status.status = ProcessStatus.NOT_STARTED;
-        this._status.processes = [];
-
         // Create the status observer
         this.statusObserver$ = interval(2000).pipe(
             switchMap(() => {
@@ -56,16 +53,8 @@ export abstract class ExecutionStepService {
         );
     }
 
-    public get disabled(): boolean {
-        return this._disabled;
-    }
-
     public get error(): string | null {
         return this._error;
-    }
-
-    public get status(): ExecutionStep {
-        return this._status;
     }
 
     public get status$(): Observable<ExecutionStep | null> {
@@ -78,14 +67,26 @@ export abstract class ExecutionStepService {
      * @protected
      */
     public start() {
-        this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStepName() + "/start", {}).subscribe({
-            next: value => {
-                this.update(value);
-            },
-            error: () => {
-                this.fetchStatus();
-            }
-        });
+        // Sets the step in case later steps have already been completed.
+        this.statusService.updateNextStep(this.getStep()).subscribe();
+
+        this.asyncStart().subscribe();
+    }
+
+    /**
+     * Returns an observable for starting the process.
+     * @protected
+     */
+    public asyncStart(): Observable<ExecutionStep | null> {
+        return this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStageName() + "/start", {}).pipe(
+            tap(value => {
+                    // For some reason value is a plain object here
+                    this.update(plainToInstance(ExecutionStep, value));
+            }),
+            catchError(() => {
+                return this.fetchStatus();
+            }),
+        );
     }
 
     /**
@@ -93,7 +94,7 @@ export abstract class ExecutionStepService {
      * @protected
      */
     public cancel() {
-        this.http.post<ExecutionStep>(this.baseUrl + '/' + this.getStepName() + '/cancel', {}).subscribe({
+        this.http.post<ExecutionStep>(this.baseUrl + '/' + this.getStageName() + '/cancel', {}).subscribe({
             next: (executionStep: ExecutionStep) => {
                 this.update(executionStep);
             },
@@ -128,9 +129,13 @@ export abstract class ExecutionStepService {
     /**
      * Name of the step. Must be equal to the name of the step in the backend.
      */
-    protected abstract getStepName(): string;
+    protected abstract getStageName(): string;
 
-    protected abstract setCustomStatus(key: Steps, status: string | null, processSteps: Steps[]): void;
+    /**
+     * Corresponding step of the execution page.
+     * @protected
+     */
+    protected abstract getStep(): Steps;
 
     /**
      * Starts or stops listening to the status based on the given status.
@@ -140,11 +145,16 @@ export abstract class ExecutionStepService {
     private setState(status: ProcessStatus): void {
         if (status === ProcessStatus.SCHEDULED || status === ProcessStatus.RUNNING) {
             this.startListenToStatus();
-            this._disabled = true;
         } else {
             this.stopListenToStatus();
-            this._disabled = false;
         }
+    }
+
+    /**
+     * Fetches the stage definition.
+     */
+    public fetchStageDefinition$(): Observable<StageDefinition> {
+        return this.http.get<StageDefinition>(environments.apiUrl + '/api/step/stage/' + this.getStageName());
     }
 
     /**
@@ -154,7 +164,7 @@ export abstract class ExecutionStepService {
     public fetchStatus(): Observable<ExecutionStep | null> {
         return this.getProcess().pipe(
             tap(value => {
-                this.update(value)
+                this.update(value);
             }),
             catchError((error) => {
                 this._error = `Failed to update status. Status: ${error.status} (${error.statusText})`;
@@ -169,7 +179,12 @@ export abstract class ExecutionStepService {
      * @private
      */
     private getProcess(): Observable<ExecutionStep> {
-        return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStepName());
+        return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStageName()).pipe(
+            // For some reason value is a plain object here
+            map(value => {
+                return plainToInstance(ExecutionStep, value);
+            }),
+        );
     }
 
     private initializeProjectSettings(): void {
@@ -186,11 +201,12 @@ export abstract class ExecutionStepService {
 
     private update(executionStep: ExecutionStep) {
         this._error = null;
-        this._status = executionStep;
         this.setState(executionStep.status);
-        for (const status of executionStep.processes) {
-            this.setCustomStatus(status.step, status.status, status.processSteps);
-        }
         this._statusSubject.next(executionStep);
     }
+}
+
+export class StageDefinition {
+    jobs: string[];
+    stageName: string;
 }

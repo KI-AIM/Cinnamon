@@ -8,37 +8,57 @@ import {environments} from "../../../../environments/environment";
     providedIn: 'root'
 })
 export class DataSetInfoService {
-    private dataSetInfo: DataSetInfo | null = null;
-    private dataSetInfo$: Observable<DataSetInfo> | null = null;
+    private cache: Record<string, {
+        dateSetInfo: DataSetInfo | null,
+        dataSetInfo$: Observable<DataSetInfo> | null
+    }> = {};
 
     constructor(private readonly http: HttpClient) {
     }
 
     /**
-     * Returns the information to the dataset of the validation step.
+     * Returns the information to the original dataset
      */
-    public getDataSetInfo(): Observable<DataSetInfo> {
-        if (this.dataSetInfo) {
-            return of(this.dataSetInfo);
-        }
-        if (this.dataSetInfo$) {
-            return this.dataSetInfo$;
+    public getDataSetInfoOriginal$(): Observable<DataSetInfo> {
+        return this.getDataSetInfo("validation");
+    }
+
+    /**
+     * Returns the information to the dataset of the given step.
+     * @param step The step of the data set.
+     */
+    public getDataSetInfo(step: string): Observable<DataSetInfo> {
+        const dataSetInfo = this.cache[step]?.dateSetInfo;
+        if (dataSetInfo) {
+            return of(dataSetInfo);
         }
 
-        this.dataSetInfo$ = this.http.get<DataSetInfo>(environments.apiUrl + "/api/data/validation/info").pipe(
+        const observable = this.cache[step]?.dataSetInfo$;
+        if (observable) {
+            return observable;
+        }
+
+        const params = {
+            selector: step.toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
+            jobName: step.toLowerCase(),
+        }
+        const dataSetInfo$ = this.http.get<DataSetInfo>(environments.apiUrl + "/api/data/info", {params: params}).pipe(
             tap(value => {
-                this.dataSetInfo = value;
+                this.cache[step] = {dateSetInfo: value, dataSetInfo$: of(value)};
             }),
             share(),
             finalize(() => {
-                this.dataSetInfo$ = null;
+                if (this.cache[step]) {
+                    this.cache[step].dataSetInfo$ = null;
+                }
             }),
         );
-        return this.dataSetInfo$;
+
+        this.cache[step] = {dateSetInfo: null, dataSetInfo$};
+        return dataSetInfo$;
     }
 
     public invalidateCache() {
-        this.dataSetInfo = null;
-        this.dataSetInfo$ = null;
+        this.cache = {};
     }
 }

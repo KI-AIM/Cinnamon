@@ -56,22 +56,32 @@
                     Frequency
                 </ng-container>
             </div>
-            <div class="w-100 h-100">
+            <div class="w-100 h-100" *ngIf="metricConfig$ | async as mc">
                 <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
                     <div style="margin-top: .5rem;">
                         <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="color-legend-button flat-mat-form-button" style="margin-bottom: -32px; margin-left: 70px;">Legend</button>
                         <app-chart-select [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType"></app-chart-select>
 
                         <ng-container *ngIf="graphType === 'density'">
-                            <app-chart-density [columnConfiguration]="attributeStatistics.attribute_information"
-                                               [data]="attributeStatistics.plot.density"></app-chart-density>
+                            <app-chart-density [colorScheme]="mc.colorScheme"
+                                               [columnConfiguration]="attributeStatistics.attribute_information"
+                                               [data]="attributeStatistics.plot.density"
+                                               [originalSeriesLabel]="originalDisplayName"
+                                               [syntheticSeriesLabel]="datasetDisplayName">
+                            </app-chart-density>
                         </ng-container>
                         <ng-container *ngIf="graphType === 'histogram'">
-                            <app-chart-frequency [data]="attributeStatistics.plot.histogram!" [limit]="null"></app-chart-frequency>
+                            <app-chart-frequency [colorScheme]="mc.colorScheme"
+                                                 [data]="attributeStatistics.plot.histogram!" [limit]="null"
+                                                 [originalSeriesLabel]="originalDisplayName"
+                                                 [syntheticSeriesLabel]="datasetDisplayName">
+                            ></app-chart-frequency>
                         </ng-container>
 
                         <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
-                            <app-chart-calendar [data]="attributeStatistics.plot.density"></app-chart-calendar>
+                            <app-chart-calendar [data]="attributeStatistics.plot.density"
+                                                [syntheticSeriesLabel]="datasetDisplayName">
+                            </app-chart-calendar>
                         </ng-container>
                     </div>
 
@@ -79,7 +89,10 @@
                 <ng-template #frequency>
                     <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="color-legend-button flat-mat-form-button">Legend</button>
                     <ng-container *ngIf="attributeStatistics.plot.frequency_plot; else noChart">
-                        <app-chart-frequency [data]="attributeStatistics.plot.frequency_plot" [limit]="null"></app-chart-frequency>
+                        <app-chart-frequency [colorScheme]="mc.colorScheme"
+                                             [data]="attributeStatistics.plot.frequency_plot" [limit]="null"
+                                             [originalSeriesLabel]="originalDisplayName"
+                                             [syntheticSeriesLabel]="datasetDisplayName"></app-chart-frequency>
                     </ng-container>
                 </ng-template>
                 <ng-template #noChart>
@@ -104,14 +117,14 @@
                     Original Values
                 </div>
 
-                <app-data-table sourceDataset="VALIDATION"
+                <app-data-table sourceDataset="VALIDATION" [hideHoldOutSplit]="true"
                                 [columnIndex]="attributeStatistics.attribute_information.index"></app-data-table>
             </div>
 
             <div class="box" style="height: 100%; flex-shrink: 1; flex-basis: 50%;">
 
                 <div class="box-name">
-                    {{ datasetDisplayName }}
+                    {{ hasSynthetic ? datasetDisplayName : originalDisplayName }} Values
                 </div>
 
                 <app-data-table [sourceDataset]="sourceDataset" [sourceProcess]="sourceProcess"
@@ -124,7 +137,7 @@
 
             <div class="box">
                 <div class="box-name">
-                    Metric Comparison
+                    Additional Metrics
                 </div>
 
                 <ng-container *ngTemplateOutlet="metricComparisonTable; context: {tableData: additionalMetricsTableData}"></ng-container>
@@ -175,8 +188,8 @@
             <tr class="no-select">
                 <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', sortData: tableData.sort, type: 'colorIndex', item: statusLegend}"></ng-container>
                 <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', sortData: tableData.sort, type: 'metric'}"></ng-container>
-                <th>Real</th>
-                <th>Synth</th>
+                <th>Original</th>
+                <th>{{ datasetDisplayName }}</th>
                 <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (#)', sortData: tableData.sort, type: 'absolute'}"></ng-container>
                 <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (%)', sortData: tableData.sort, type: 'percentage'}"></ng-container>
                 <th></th>
@@ -184,7 +197,7 @@
 
             <ng-container *ngIf="(metricConfig$ | async) as mc">
                 <ng-container *ngFor="let metricData of  injectImportance(projectConfigService.filterMetrics(mc, tableData.filter.importance, attributeStatistics), mc) | metricFilter:tableData.filter.filterText:null | metricSorter:tableData.sort.direction:tableData.sort.column">
-                    <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData}">
+                    <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData, mc: mc}">
                     </ng-container>
                 </ng-container>
             </ng-container>
@@ -192,11 +205,11 @@
     </div>
 </ng-template>
 
-<ng-template #metricComparison let-data='data'>
+<ng-template #metricComparison let-data='data' let-mc='mc'>
     <tr>
         <td>
             <div *ngIf="data && data[1].difference" class="metric-similarity"
-                 [style.background-color]="statisticsService.colors[getColorIndex(data[1])]">
+                 [style.background-color]="statisticsService.getColorScheme(mc.colorScheme)[getColorIndex(data[1])]">
             </div>
         </td>
         <td>

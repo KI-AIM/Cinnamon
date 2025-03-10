@@ -7,6 +7,7 @@ export enum Steps {
     SYNTHETIZATION,
     EXECUTION,
     TECHNICAL_EVALUATION,
+    RISK_EVALUATION,
     EVALUATION,
 }
 
@@ -75,12 +76,20 @@ export const StepConfiguration = {
         dependsOn: Steps.EXECUTION,
         index: 7,
     },
+    RISK_EVALUATION : {
+        path: "riskEvaluationConfiguration",
+        id: "navLinkRiskEvalutionConfiguration",
+        text: "Risk Evaluation configuration",
+        enum: Steps.RISK_EVALUATION,
+        dependsOn: Steps.TECHNICAL_EVALUATION,
+        index: 8,
+    },
     EVALUATION : {
         path: "evaluation",
         id: "navLinkEvalution",
         text: "Evaluation",
         enum: Steps.EVALUATION,
-        dependsOn: Steps.TECHNICAL_EVALUATION,
-        index: 8,
+        dependsOn: Steps.RISK_EVALUATION,
+        index: 9,
     },
 };

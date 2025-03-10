@@ -20,7 +20,7 @@ import { ErrorMessageService } from 'src/app/shared/services/error-message.servi
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
-import { debounceTime, distinctUntilChanged, map, Observable, Subscription } from "rxjs";
+import { debounceTime, distinctUntilChanged, map, Observable, of, Subscription, switchMap } from "rxjs";
 import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
 import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
@@ -40,6 +40,9 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     private dataConfigurationSubscription: Subscription;
 
     protected form: FormGroup;
+    protected isAdvanceConfigurationExpanded: boolean = false;
+    protected createSplit: boolean = false;
+    protected holdOutSplitPercentage: number = 0.2;
 
     protected isFileTypeXLSX$: Observable<boolean>;
 
@@ -85,6 +88,15 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                 this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
             });
         });
+
+        this.dataSetInfoService.getDataSetInfoOriginal$().subscribe({
+            next: value => {
+                this.createSplit = value.hasHoldOutSplit;
+                if (value.hasHoldOutSplit) {
+                    this.holdOutSplitPercentage = value.holdOutPercentage;
+                }
+            }
+        });
     }
 
     ngOnDestroy() {
@@ -95,10 +107,28 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         const config = plainToInstance(DataConfiguration, this.form.value);
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
-        this.dataService.storeData(config).subscribe({
-            next: (d) => this.handleUpload(d),
+        this.dataService.storeData(config).pipe(
+            switchMap(() => {
+                if (this.createSplit) {
+                    return this.dataService.createHoldOutSplit(this.holdOutSplitPercentage);
+                } else {
+                    return of();
+                }
+            }),
+            switchMap(() => {
+                return this.statusService.updateNextStep(Steps.VALIDATION);
+            }),
+        ).subscribe({
+            next: () => this.handleUpload(),
             error: (e) => this.handleError(e),
         });
+    }
+
+    protected updateCreateSplit(newValue: boolean) {
+        this.createSplit = newValue;
+        if (!newValue) {
+            this.isAdvanceConfigurationExpanded = false;
+        }
     }
 
     private setEmptyColumnNames(dataConfiguration: DataConfiguration) {
@@ -109,12 +139,11 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         });
     }
 
-    private handleUpload(data: Object) {
+    private handleUpload() {
         this.loadingService.setLoadingStatus(false);
         this.dataSetInfoService.invalidateCache();
 
         this.router.navigateByUrl("/dataValidation");
-        this. statusService.setNextStep(Steps.VALIDATION);
     }
 
     private handleError(error: HttpErrorResponse) {

@@ -1,7 +1,6 @@
 package de.kiaim.test.platform.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import de.kiaim.platform.model.configuration.StageConfiguration;
+import de.kiaim.platform.model.configuration.Stage;
 import de.kiaim.platform.model.dto.StepConfigurationResponse;
 import de.kiaim.test.platform.ControllerTest;
 import org.junit.jupiter.api.Test;
@@ -27,7 +26,7 @@ public class StepControllerTest extends ControllerTest {
 	public void getInvalidName() throws Exception {
 		mockMvc.perform(get("/api/step/invalidStepName"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("The step 'invalidStepName' is not defined!"));
+		       .andExpect(errorMessage("No configuration with name 'invalidStepName' registered!"));
 	}
 
 	@Test
@@ -35,7 +34,7 @@ public class StepControllerTest extends ControllerTest {
 		final var config = mockMvc.perform(get("/api/step/stage/execution"))
 		                          .andExpect(status().isOk())
 		                          .andReturn().getResponse().getContentAsString();
-		final var stageConfig = objectMapper.readValue(config, StageConfiguration.class);
+		final var stageConfig = objectMapper.readValue(config, Stage.class);
 		assertEquals(2, stageConfig.getJobs().size(), "Unexpected number of jobs!");
 	}
 

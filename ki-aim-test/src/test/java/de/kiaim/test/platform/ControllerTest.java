@@ -83,7 +83,7 @@ public class ControllerTest extends DatabaseTest {
 		postData(true);
 	}
 
-	protected void postData(final boolean withErrors) throws Exception {
+	protected Long postData(final boolean withErrors) throws Exception {
 		postFile(withErrors);
 
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
@@ -93,7 +93,7 @@ public class ControllerTest extends DatabaseTest {
 		                       .andExpect(status().isOk())
 		                       .andReturn().getResponse().getContentAsString();
 
-		assertDoesNotThrow(() -> Long.parseLong(result.trim()));
+		return assertDoesNotThrow(() -> Long.parseLong(result.trim()));
 	}
 
 	protected void postData(final boolean withErrors, final String user) throws Exception {

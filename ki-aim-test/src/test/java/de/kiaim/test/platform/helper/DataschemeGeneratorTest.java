@@ -32,7 +32,9 @@ class DataschemeGeneratorTest {
 		                        "\"column2_date_time\" timestamp," +
 		                        "\"column3_decimal\" numeric," +
 		                        "\"column4_integer\" integer," +
-		                        "\"column5_string\" character varying" +
+		                        "\"column5_string\" character varying," +
+		                        "\"is_hold_out\" boolean," +
+		                        "\"row_index\" integer" +
 		                        ");";
 
 		assertEquals(expected, query);

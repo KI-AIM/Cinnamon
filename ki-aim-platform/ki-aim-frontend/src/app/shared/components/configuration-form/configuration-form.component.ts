@@ -1,10 +1,12 @@
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren, ViewChild, ViewContainerRef } from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { AlgorithmService } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
-import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
+import {
+    ConfigurationGroupDefinition,
+} from "../../model/configuration-group-definition";
 import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { HttpErrorResponse } from "@angular/common/http";
@@ -62,8 +64,6 @@ export class ConfigurationFormComponent implements OnInit {
 
     @ViewChildren(ConfigurationGroupComponent) private groups: QueryList<ConfigurationGroupComponent>;
 
-    @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
-
     constructor(
         private readonly anonService: AlgorithmService,
     ) {
@@ -79,13 +79,7 @@ export class ConfigurationFormComponent implements OnInit {
                         this.algorithmDefinition = value
                         this.form = this.createForm(value);
                         this.updateForm();
-
-                        setTimeout(() => {
-                            if (this.componentContainer) {
-                                this.componentContainer.clear();
-                            }
-                            this.loadComponents();
-                        }, 200);
+                        this.readFromCache();
 
                         this.form.valueChanges.subscribe(() => {
                             this.onChange.emit();
@@ -115,12 +109,33 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     /**
+     * Reads the configuration from the cache.
+     */
+    public readFromCache(): void {
+        if (this.anonService.configCache[this.algorithm.name]) {
+            //Timeout is 0, so function is called before data is overwritten
+            setTimeout(() => {
+                const config = this.anonService.configCache[this.anonService.selectCache!.name];
+                // config can be undefined if no changes have been made
+                if (config) {
+                    this.setConfiguration(this.anonService.configCache[this.anonService.selectCache!.name]);
+                }
+            }, 0);
+        }
+    }
+
+    /**
      * Sets the values of the form from the given JSON object.
      * @param configuration JSON of the form.
      */
     public setConfiguration(configuration: Object) {
         //Wait here so that form is loaded before updating it
         setTimeout(() => {
+            if (Object.keys(this.form.controls).length === 0) {
+                return;
+            }
+
+            this.fixAttributeLists(this.algorithmDefinition, configuration, this.form);
             for (const group of this.groups) {
                 group.handleMissingOptions(configuration);
             }
@@ -128,16 +143,41 @@ export class ConfigurationFormComponent implements OnInit {
         }, 100);
     }
 
-    /**
-     * Returns the names of the groups in the configuration definition.
-     * @protected
-     */
-    protected getGroupNames(): Array<string> {
-        if (this.algorithmDefinition == undefined) {
-            return [];
+    private fixAttributeLists(cde: ConfigurationGroupDefinition, obj: Object, form: FormGroup) {
+        if (cde.options) {
+            for (const [key, value] of Object.entries(cde.options)) {
+                this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup);
+            }
         }
+        if (cde.configurations) {
+            for (const [key, value] of Object.entries(cde.configurations)) {
+                this.fixAttributeLists(value, (obj as Record<string, any>)[key] as Object, form.controls[key] as FormGroup);
+            }
+        }
+        if (cde.parameters) {
+            for (const key of cde.parameters) {
+                if (key.type === ConfigurationInputType.ATTRIBUTE_LIST) {
 
-        return Object.keys(this.algorithmDefinition.configurations);
+                    const list = (obj as Record<string, any>)[key.name];
+                    if (Array.isArray(list)) {
+                        (form.get(key.name) as FormArray).clear();
+                        for (const item of list) {
+                            (form.get(key.name) as FormArray).push(new FormControl());
+                        }
+                    }
+
+                    if (key.invert) {
+                        const invert = (obj as Record<string, any>)[key.invert];
+                        if (Array.isArray(invert)) {
+                            (form.get(key.invert) as FormArray).clear();
+                            for (const item of invert) {
+                                (form.get(key.invert) as FormArray).push(new FormControl());
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -185,10 +225,18 @@ export class ConfigurationFormComponent implements OnInit {
                 if (inputDefinition.type === ConfigurationInputType.LIST) {
                     const controls = [];
                     for (const defaultValue of inputDefinition.default_value as number[]) {
-                        controls.push(new FormControl({value: defaultValue, disabled: this.disabled}, Validators.required));
+                        controls.push(new FormControl({
+                            value: defaultValue,
+                            disabled: this.disabled
+                        }, Validators.required));
                     }
 
-                    group[inputDefinition.name] = new FormArray(controls, Validators.required)
+                    group[inputDefinition.name] = new FormArray(controls, Validators.required);
+                } else if (inputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
+                    group[inputDefinition.name] = new FormArray([], Validators.required);
+                    if (inputDefinition.invert) {
+                        group[inputDefinition.invert] = new FormArray([], Validators.required);
+                    }
                 } else {
                     // Add validators of the input
                     const validators = [Validators.required];
@@ -221,21 +269,9 @@ export class ConfigurationFormComponent implements OnInit {
      */
     private removeUncheckedGroups(object: any): any {
         for (const group of this.groups) {
-            group.removeInactiveGroups(object[group.fromGroupName]);
+            group.removeInactiveGroups(object);
         }
 
         return object;
-    }
-
-    /**
-     * Loads additional config components
-     * and injects them into the component container.
-     * Also attaches the form to the component
-     */
-    loadComponents() {
-        this.additionalConfigs?.configs.forEach(config => {
-            const componentRef: any = this.componentContainer.createComponent(config.component);
-            componentRef.instance.form = this.form;
-        });
     }
 }

@@ -1,9 +1,11 @@
 package de.kiaim.platform.model.dto;
 
+import de.kiaim.platform.model.enumeration.HoldOutSelector;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,8 +29,19 @@ public class LoadDataRequest {
 	                              }))
 	private String columns = "";
 
-	@Parameter(description = "Default encoding for all transformation errors. Special values are '$null' for JSON null and '$value' for the original value.",
+	@Parameter(description = "Which rows should be included in regards to the hold out flag.",
+	           required = false,
+	           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
+	                              schema = @Schema(implementation = String.class),
+	                              examples = {
+			                              @ExampleObject("ALL"),
+			                              @ExampleObject("HOLD_OUT"),
+			                              @ExampleObject("REST")
+	                              }))
+	@NotNull
+	private HoldOutSelector holdOutSelector = HoldOutSelector.NOT_HOLD_OUT;
 
+	@Parameter(description = "Default encoding for all transformation errors. Special values are '$null' for JSON null and '$value' for the original value.",
 	           required = false,
 	           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
 	                              schema = @Schema(implementation = String.class),

@@ -42,6 +42,27 @@ public class OriginalDataEntity {
 	private DataSetEntity dataSet = null;
 
 	/**
+	 * If the data set has a hold-out split.
+	 */
+	@Column(nullable = false)
+	@Setter
+	private boolean hasHoldOut = false;
+
+	/**
+	 * Seed that is used for generating the hold-out split.
+	 */
+	@Column(nullable = false)
+	@Setter
+	private double holdOutSeed = 0.0f;
+
+	/**
+	 * The percentage or rows that are assigned to the hold-out split.
+	 */
+	@Column(nullable = false)
+	@Setter
+	private float holdOutPercentage = 0.0f;
+
+	/**
 	 * The corresponding project.
 	 */
 	@JsonIgnore

@@ -1,7 +1,9 @@
 package de.kiaim.platform.model.entity;
 
+import de.kiaim.platform.converter.StageAttributeConverter;
+import de.kiaim.platform.model.configuration.Job;
+import de.kiaim.platform.model.configuration.Stage;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
-import de.kiaim.platform.model.enumeration.Step;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,11 +25,11 @@ public class ExecutionStepEntity extends ProcessOwner {
 	private Integer stageIndex;
 
 	/**
-	 * Associated step of the process.
+	 * The stage.
 	 */
 	@Column(nullable = false)
-	@Enumerated(EnumType.STRING)
-	private Step step;
+	@Convert(converter = StageAttributeConverter.class)
+	private Stage stage;
 
 	/**
 	 * The status of the external processing.
@@ -62,7 +64,7 @@ public class ExecutionStepEntity extends ProcessOwner {
 	 * @param externalProcess The process to be added.
 	 */
 	public void addProcess(final ExternalProcessEntity externalProcess) {
-		if (!this.containsJob(externalProcess.getStep())) {
+		if (!this.containsJob(externalProcess.getJob())) {
 			externalProcess.setJobIndex(processes.size());
 			externalProcess.setExecutionStep(this);
 			processes.add(externalProcess);
@@ -71,12 +73,13 @@ public class ExecutionStepEntity extends ProcessOwner {
 
 	/**
 	 * Returns the process for the given Step.
-	 * @param step The Step.
+	 *
+	 * @param job The job.
 	 * @return The process.
 	 */
-	public Optional<ExternalProcessEntity> getProcess(final Step step) {
+	public Optional<ExternalProcessEntity> getProcess(final Job job) {
 		for (final ExternalProcessEntity externalProcess : getProcesses()) {
-			if (externalProcess.getStep().equals(step)) {
+			if (externalProcess.getJob().equals(job)) {
 				return Optional.of(externalProcess);
 			}
 		}
@@ -86,20 +89,6 @@ public class ExecutionStepEntity extends ProcessOwner {
 
 	public ExternalProcessEntity getProcess(final Integer index) {
 		return (ExternalProcessEntity) processes.get(index);
-	}
-
-	/**
-	 * Returns the step of the current process.
-	 * @return The step of the current process.
-	 */
-	@Nullable
-	public Step getCurrentStep() {
-		final var currentProcess = getCurrentProcess();
-		if (currentProcess != null) {
-			return currentProcess.getStep();
-		} else {
-			return null;
-		}
 	}
 
 	@Nullable
@@ -126,13 +115,13 @@ public class ExecutionStepEntity extends ProcessOwner {
 	}
 
 	/**
-	 * Checks if this stage contains a job for the given step.
-	 * @param step The step.
-	 * @return If this stage contains a job for the given step.
+	 * Checks if this stage contains a job with the given name.
+	 * @param job The name of the job.
+	 * @return If this stage contains a job with the given name.
 	 */
-	private boolean containsJob(final Step step) {
+	private boolean containsJob(final Job job) {
 		for (final ExternalProcessEntity externalProcess : getProcesses()) {
-			if (externalProcess.getStep().equals(step)) {
+			if (externalProcess.getJob().equals(job)) {
 				return true;
 			}
 		}

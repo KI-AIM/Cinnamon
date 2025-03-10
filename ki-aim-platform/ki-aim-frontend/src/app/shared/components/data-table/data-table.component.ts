@@ -1,40 +1,51 @@
-import {AfterViewInit, Component, Input, ViewChild} from "@angular/core";
+import { AfterViewInit, Component, Input, OnInit, ViewChild } from "@angular/core";
 import { DataSet } from "src/app/shared/model/data-set";
 import { MatTableDataSource } from "@angular/material/table";
 import { MatPaginator } from "@angular/material/paginator";
 import { DataRowTransformationError } from "src/app/shared/model/data-row-transformation-error";
-import {catchError, map, of, startWith, switchMap} from "rxjs";
+import { catchError, map, Observable, of, startWith, switchMap } from "rxjs";
 import {DataConfigurationService} from "../../services/data-configuration.service";
 import {DataConfiguration} from "../../model/data-configuration";
 import {HttpClient} from "@angular/common/http";
 import {environments} from "../../../../environments/environment";
+import { DataSetInfo } from "../../model/data-set-info";
+import { DataSetInfoService } from "../../../features/data-upload/services/data-set-info.service";
 
 @Component({
 	selector: "app-data-table",
 	templateUrl: "./data-table.component.html",
 	styleUrls: ["./data-table.component.less"],
 })
-export class DataTableComponent implements AfterViewInit {
+export class DataTableComponent implements OnInit, AfterViewInit {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
     @Input() public columnIndex: number | null = null;
+    @Input() public hideHoldOutSplit: boolean = false;
 
 	dataSource = new MatTableDataSource<TableElement>();
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	displayedColumns: string[] = ['position'];
     protected rowIndexOffset: number = 0;
-	filterCriteria = "ALL";
+	protected errorFilter = "ALL";
+    protected holdOutFilter = "NOT_HOLD_OUT";
 
     protected isLoading: boolean = false;
     protected total: number;
 
+    protected dataSetInfo$: Observable<DataSetInfo>;
+
 	constructor(
         private readonly dataConfigurationService: DataConfigurationService,
+        private readonly dataSetInfoService: DataSetInfoService,
         private readonly http: HttpClient,
 	) {
 	}
 
-	ngAfterViewInit() {
+    ngOnInit() {
+        this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfo(this.getSource());
+    }
+
+    ngAfterViewInit() {
 		this.dataSource.paginator = this.paginator;
 
         this.dataConfigurationService.downloadDataConfigurationAsJson().subscribe(
@@ -54,14 +65,17 @@ export class DataTableComponent implements AfterViewInit {
                         startWith({}),
                         switchMap(() => {
                             this.isLoading = true;
-                            return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/" + this.getSource() + "/transformationResult/page", {
+                            return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/transformationResult/page", {
                                 params: {
+                                    selector: this.getSource().toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
+                                    jobName: this.getSource(),
+
                                     defaultNullEncoding: "$value",
                                     columns: columnName,
+                                    holdOutSelector: this.holdOutFilter,
                                     page: this.paginator.pageIndex + 1,
                                     perPage: this.paginator.pageSize,
-                                    rowSelector: this.filterCriteria,
-                                    source: this.getSourceType(),
+                                    rowSelector: this.errorFilter,
                                 }
                             }).pipe(catchError(() => of(null)));
                         }),
@@ -181,10 +195,21 @@ export class DataTableComponent implements AfterViewInit {
      *
 	 * @param $event the selectionChange event
 	 */
-	applyFilter($event: any) {
-		this.filterCriteria = $event.value;
+	applyErrorFilter($event: any) {
+		this.errorFilter = $event.value;
         this.paginator.page.emit();
 	}
+
+    /**
+     * Applies the hold-out split filter of the event.
+     * It triggers the table to fetch the data from the backend.
+     *
+     * @param $event Event
+     */
+    applyHoldOutFilter($event: any) {
+        this.holdOutFilter = $event.value;
+        this.paginator.page.emit();
+    }
 
     private getSource(): string {
         if (this.sourceProcess) {
@@ -195,17 +220,6 @@ export class DataTableComponent implements AfterViewInit {
         }
 
         return 'VALIDATION';
-    }
-
-    private getSourceType(): string {
-        if (this.sourceProcess) {
-            return 'JOB';
-        }
-        if (this.sourceDataset) {
-            return 'DATASET';
-        }
-
-        return 'DATASET';
     }
 }
 

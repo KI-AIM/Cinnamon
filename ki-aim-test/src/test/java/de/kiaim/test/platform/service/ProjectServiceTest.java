@@ -51,11 +51,14 @@ public class ProjectServiceTest extends DatabaseTest {
 		assertEquals(1, project.getPipelines().size(), "Unexpected  number of created pipelines!");
 		var pipeline = project.getPipelines().get(0);
 		assertEquals(2, pipeline.getStages().size(), "Unexpected number of created executions!");
-		assertTrue(pipeline.containsStage(Step.EVALUATION), "No execution has been created for step 'EVALUATION'!");
-		assertTrue(pipeline.containsStage(Step.EXECUTION), "No execution has been created for step 'EXECUTION'!");
-		var exec = pipeline.getStageByStep(Step.EXECUTION);
+		assertTrue(pipeline.containsStage(kiAimConfiguration.getPipeline().getStageList().get(0)),
+		           "No execution has been created for step 'EVALUATION'!");
+		assertTrue(pipeline.containsStage(kiAimConfiguration.getPipeline().getStageList().get(1)),
+		           "No execution has been created for step 'EXECUTION'!");
+		var stage = kiAimConfiguration.getPipeline().getStageList().get(0);
+		var exec = pipeline.getStageByStep(stage);
 
-		assertEquals(exec.getStep(), Step.EXECUTION, "Unexpected step!");
+		assertEquals(exec.getStage(), stage, "Unexpected step!");
 		assertEquals(ProcessStatus.NOT_STARTED, exec.getStatus(), "Unexpected process status!");
 		assertNull(exec.getCurrentProcessIndex(), "No step has been created!");
 		assertEquals(2, exec.getProcesses().size(), "Unexpected number of processes!");
@@ -81,7 +84,8 @@ public class ProjectServiceTest extends DatabaseTest {
 	@Test
 	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, BadFileException, InternalApplicationConfigurationException, BadConfigurationNameException {
 		// Preparation
-		final var project = projectService.createProject();
+		final var project = projectService.createProject(System.currentTimeMillis());
+		final var stage = kiAimConfiguration.getPipeline().getStageList().get(0);
 		final var file = ResourceHelper.loadCsvFile();
 		final var csvFileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 		final var fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
@@ -92,17 +96,17 @@ public class ProjectServiceTest extends DatabaseTest {
 		                                                                     configuration);
 		databaseService.storeFile(project, file, fileConfiguration);
 		databaseService.storeOriginalTransformationResult(transformationResult, project);
-		databaseService.storeConfiguration("anonymization", "key = value", project);
+		databaseService.storeConfiguration("anonymization", null, "key = value", project);
 
 		var pipeline = new PipelineEntity();
 		project.addPipeline(pipeline);
 
 		var execution = new ExecutionStepEntity();
-		pipeline.addStage(Step.EXECUTION, execution);
+		pipeline.addStage(stage, execution);
 
-		for (final var processStep : kiAimConfiguration.getStages().get(Step.EXECUTION).getJobs()) {
+		for (final var processStep : stage.getJobList()) {
 			final var process = new DataProcessingEntity();
-			process.setStep(processStep);
+			process.setJob(processStep);
 			execution.addProcess(process);
 		}
 
@@ -112,7 +116,7 @@ public class ProjectServiceTest extends DatabaseTest {
 		                                                                     configuration);
 		databaseService.storeTransformationResult(otherTransformationResult,
 		                                          (DataProcessingEntity) execution.getProcesses().get(0),
-		                                          List.of(Step.ANONYMIZATION));
+		                                          List.of(stage.getJobList().get(0)));
 
 		// The test
 		var out = new ByteArrayOutputStream();
@@ -130,7 +134,7 @@ public class ProjectServiceTest extends DatabaseTest {
 					stringBuilder.append(new String(buffer, 0 , read));
 				}
 
-				if (zipEntry.getName().equals("ANONYMIZATION.csv")) {
+				if (zipEntry.getName().equals("anonymization.csv")) {
 					var result = ResourceHelper.loadCsvFileWithErrorsAsString();
 					var resultBuilder = new StringBuilder(result);
 					resultBuilder.delete(result.length() - 24, result.length() - 15);

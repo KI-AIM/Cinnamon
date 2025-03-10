@@ -2,6 +2,8 @@ package de.kiaim.platform.controller;
 
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
+import de.kiaim.platform.model.configuration.Job;
+import de.kiaim.platform.model.configuration.Stage;
 import de.kiaim.platform.model.dto.ErrorResponse;
 import de.kiaim.platform.model.dto.ProjectConfigurationDTO;
 import de.kiaim.platform.model.entity.ProjectEntity;
@@ -11,6 +13,7 @@ import de.kiaim.platform.model.enumeration.Mode;
 import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.model.mapper.ProjectConfigurationMapper;
 import de.kiaim.platform.service.ProjectService;
+import de.kiaim.platform.service.StepService;
 import de.kiaim.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,13 +39,16 @@ import java.io.IOException;
 public class ProjectController {
 
 	private final ProjectService projectService;
+	private final StepService stepService;
 	private final UserService userService;
 
 	private final ProjectConfigurationMapper projectConfigurationMapper;
 
-	public ProjectController(final ProjectService projectService, final UserService userService,
+	public ProjectController(final ProjectService projectService, final StepService stepService,
+	                         final UserService userService,
 	                         final ProjectConfigurationMapper projectConfigurationMapper) {
 		this.projectService = projectService;
+		this.stepService = stepService;
 		this.userService = userService;
 		this.projectConfigurationMapper = projectConfigurationMapper;
 	}
@@ -82,6 +88,15 @@ public class ProjectController {
 		return projectService.getProject(requestUser).getStatus();
 	}
 
+	@PostMapping(value = "/step")
+	public void postStep(
+			@RequestParam(required = true) final Step step,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		projectService.updateCurrentStep(project, step);
+	}
 
 	@Operation(summary = "Returns the configuration of the user's project.",
 	           description = "Returns the configuration of the user's project.")
@@ -179,11 +194,11 @@ public class ProjectController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		final Step executionStep = Step.getStepOrThrow(executionStepName);
-		final Step processStep = Step.getStepOrThrow(processStepName);
+		final Stage stage = stepService.getStageConfiguration(executionStepName);
+		final Job job = stepService.getStepConfiguration(processStepName);
 
-		final var content = project.getPipelines().get(0).getStageByStep(executionStep)
-		                           .getProcess(processStep).get()
+		final var content = project.getPipelines().get(0).getStageByStep(stage)
+		                           .getProcess(job).get()
 		                           .getResultFiles().get(name);
 		if (content == null) {
 			throw new BadQueryException(BadQueryException.RESULT_FILE, "The file '" + name + "' could not be found!");

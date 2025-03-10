@@ -1,4 +1,4 @@
-    
+
 <div class="d-flex flex-column w-100">
     <mat-form-field>
         <mat-label>Select an attribute to configure</mat-label>
@@ -29,10 +29,10 @@
 
 <div class="mt-4" >
     <app-anonymization-attribute-row
-        *ngFor="let attrConfig of this.getAttributeConfiguration()?.attributeConfiguration, index as i"
+        *ngFor="let attrConfig of this.getAttributeConfiguration()?.attributeConfiguration"
         #configRow
         [anonymizationRowConfiguration]="attrConfig"
-        [configurationRow]="getConfigurationForIndex(i)"
+        [configurationRow]="getConfigurationForIndex(attrConfig.index)"
         [form]="form"
         (removeEvent)="removeAttributeConfigurationRow(attrConfig)"
     >

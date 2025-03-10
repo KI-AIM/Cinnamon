@@ -7,6 +7,10 @@ package de.kiaim.platform.model.enumeration;
  */
 public enum DataSetSelector {
 	/**
+	 * Selects the hold-out split from the original data set.
+	 */
+	HOLD_OUT,
+	/**
 	 * Selects the last data set that has been created in the current project.
 	 * If none has been created, the original is selected instead.
 	 */

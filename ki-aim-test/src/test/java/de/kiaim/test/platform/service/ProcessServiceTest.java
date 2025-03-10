@@ -5,15 +5,12 @@ import de.kiaim.model.dto.ExternalProcessResponse;
 import de.kiaim.platform.config.SerializationConfig;
 import de.kiaim.platform.exception.InternalRequestException;
 import de.kiaim.platform.model.configuration.KiAimConfiguration;
+import de.kiaim.platform.model.configuration.Stage;
 import de.kiaim.platform.model.entity.*;
 import de.kiaim.platform.model.enumeration.ProcessStatus;
-import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.processor.CsvProcessor;
 import de.kiaim.platform.repository.BackgroundProcessRepository;
-import de.kiaim.platform.service.DatabaseService;
-import de.kiaim.platform.service.ProcessService;
-import de.kiaim.platform.service.ProjectService;
-import de.kiaim.platform.service.StepService;
+import de.kiaim.platform.service.*;
 import de.kiaim.test.platform.ContextRequiredTest;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
@@ -25,7 +22,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
@@ -41,6 +37,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@Value("${server.port}") private int port;
 	@Autowired private SerializationConfig serializationConfig;
 	@Autowired private KiAimConfiguration kiAimConfiguration;
+	@Autowired private DataSetService dataSetService;
 	@Autowired private StepService stepService = mock(StepService.class);
 
 	private ObjectMapper jsonMapper = null;
@@ -65,7 +62,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		this.processService = new ProcessService(serializationConfig, port, kiAimConfiguration,
 		                                         backgroundProcessRepository, csvProcessor, databaseService,
-		                                         projectService, stepService);
+												 dataSetService, projectService, stepService);
 
 		mockBackEnd = new MockWebServer();
 		mockBackEnd.start(mockBackEndPort);
@@ -82,9 +79,11 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@Test
 	public void fetchStatusError() throws IOException {
+		final Stage stage = kiAimConfiguration.getPipeline().getStageList().get(0);
+
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
-		externalProcess.setStep(Step.ANONYMIZATION);
+		externalProcess.setJob(stage.getJobList().get(0));
 		externalProcess.setUuid(UUID.randomUUID());
 
 		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
@@ -94,8 +93,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		final ProjectEntity project = new ProjectEntity();
 		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
-		final Step step = Step.EXECUTION;
-		pipeline.addStage(step, executionStep);
+		pipeline.addStage(stage, executionStep);
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setError("An error occurred!");
@@ -106,18 +104,20 @@ public class ProcessServiceTest extends ContextRequiredTest {
 				                    .build());
 
 		final var exception = assertThrows(InternalRequestException.class, () -> {
-			processService.getStatus(project, step);
+			processService.getStatus(project, stage);
 		});
 
-		assertEquals("Failed to fetch the status! Got status of 500 INTERNAL_SERVER_ERROR with message: 'null'",
+		assertEquals("Failed to fetch the status! Got status of '500 INTERNAL_SERVER_ERROR'. Got error: 'An error occurred!'.",
 		             exception.getMessage());
 	}
 
 	@Test
 	public void fetchStatusUnavailable() throws IOException {
+		final Stage stage = kiAimConfiguration.getPipeline().getStageList().get(0);
+
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
-		externalProcess.setStep(Step.ANONYMIZATION);
+		externalProcess.setJob(stage.getJobList().get(0));
 		externalProcess.setUuid(UUID.randomUUID());
 
 		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
@@ -127,15 +127,14 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		final ProjectEntity project = new ProjectEntity();
 		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
-		final Step step = Step.EXECUTION;
-		pipeline.addStage(step, executionStep);
+		pipeline.addStage(stage, executionStep);
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setError("An error occurred!");
 		mockBackEnd.shutdown();
 
 		final var exception = assertThrows(InternalRequestException.class, () -> {
-			processService.getStatus(project, step);
+			processService.getStatus(project, stage);
 		});
 
 		// Got different error messages on different machines, so only checking a part of it

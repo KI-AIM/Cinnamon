@@ -2,21 +2,21 @@ package de.kiaim.platform.controller;
 
 import de.kiaim.model.spring.CustomMediaType;
 import de.kiaim.platform.exception.*;
+import de.kiaim.platform.model.dto.DataSetSource;
 import de.kiaim.platform.model.entity.ProjectEntity;
 import de.kiaim.platform.model.entity.UserEntity;
-import de.kiaim.platform.model.enumeration.Step;
 import de.kiaim.platform.service.ProjectService;
 import de.kiaim.platform.service.StatisticsService;
 import de.kiaim.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -49,18 +49,16 @@ public class StatisticsController {
 			             description = "Response contains the statistics.",
 			             content = @Content()),
 	})
-	@GetMapping(value = "/{stepName}", produces = CustomMediaType.APPLICATION_YAML_VALUE)
+	@GetMapping(value = "", produces = CustomMediaType.APPLICATION_YAML_VALUE)
 	public String getStatistics(
-			@Parameter(description = "Step of which the statistics belong to.")
-			@PathVariable final String stepName,
+			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@AuthenticationPrincipal final UserEntity requestUser
 	)
-			throws InternalIOException, InternalDataSetPersistenceException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException, BadDataSetIdException, BadStepNameException {
+			throws InternalIOException, InternalDataSetPersistenceException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException, BadDataSetIdException, BadStepNameException, InternalApplicationConfigurationException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
-		final Step step = Step.getStepOrThrow(stepName);
 
-		return statisticsService.getStatistics(projectEntity, step);
+		return statisticsService.getStatistics(projectEntity, dataSetSource);
 	}
 
 }

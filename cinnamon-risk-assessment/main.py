@@ -1,0 +1,201 @@
+import errno
+import multiprocessing
+import os
+import io
+from typing import Optional
+
+import pandas as pd
+import yaml
+from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Path
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
+
+from base_assessment.general_assessment_process import general_assessment
+from models.AttributeConfig import AttributeConfigList
+from models.RiskAssessmentConfig import RiskAssessmentConfig
+from risk_assessment.RiskAssessmentProcess import risk_assessment
+
+############## SECTION APP DEFINITION ###################
+app = FastAPI()
+
+origins = [
+    "http://localhost:8000"
+    "http://127.0.0.1:8000"
+]
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+##################### END SECTION ###################
+
+tasks = {}
+task_locks = {}
+
+
+def kill_process(process_id):
+    if process_id not in tasks:
+        return {"status": "200", 'message': 'Risk assessment canceled', 'session_key': process_id}
+
+    try:
+        task_process = tasks[process_id]
+        task_pid = task_process.pid
+        os.kill(int(task_pid), 9)
+
+        return {"status": "200", 'message': 'Risk assessment canceled', 'session_key': process_id, 'pid': task_pid}
+    except OSError as err:
+        if err.errno == errno.ESRCH:
+            # ESRCH == No such process
+            return {"status": "200", 'message': 'Risk assessment canceled', 'session_key': process_id, 'pid': task_pid}
+        elif err.errno == errno.EPERM:
+            # EPERM clearly means there's a process to deny access to
+            raise HTTPException(status_code=500, detail=f'Could not cancel process {process_id}')
+        else:
+            raise
+    except Exception as e:
+        # log e
+        print("Exception:")
+        print(e)
+        raise HTTPException(status_code=500, detail=f'Exception occurred during cancellation of {process_id}')
+
+
+@app.delete("/risk_assessments/{process_id}")
+async def cancel_risk_assessment(
+        process_id: str = Path()
+):
+    return kill_process(process_id)
+
+
+def load_yaml_config(config_file: str):
+    """Loads YAML configuration and returns it as a dictionary."""
+    config_path = Path(config_file)
+    if not config_path.exists():
+        return {"error": "Configuration file not found"}
+
+    with open(config_path, "r") as file:
+        return yaml.safe_load(file)
+
+
+@app.get("/risk_assessment_config")
+async def get_risk_assessment_frontend_config():
+    """GET endpoint to retrieve configuration as JSON."""
+    config = load_yaml_config(r"frontend_configs/risk_assessment_config.yaml")
+    return config
+
+
+@app.post("/risk_assessments/{process_id}")
+async def start_risk_assessment(
+        process_id: str = Path(),
+        callback_url: str = Form(...),
+        attribute_config: UploadFile = File(...),
+        risk_assessment_config: UploadFile = File(...),
+        original_data: UploadFile = File(...),
+        synthetic_data: UploadFile = File(...),
+        holdout_data: Optional[UploadFile] = File(None),
+):
+    # TODO: check if actual rights exist to create task??
+    attribute_config_model = await load_attribute_config(attribute_config)
+    risk_assessment_config_model = await load_risk_assessment_config(risk_assessment_config)
+
+    original_data_df = await load_dataset(original_data, "original")
+    synthetic_data_df = await load_dataset(synthetic_data, "synthetic")
+
+    holdout_data_df = None
+    if holdout_data:
+        holdout_data_df = await load_dataset(holdout_data, "hold out")
+
+    print('Data successfully loaded')
+
+    try:
+        # Create and start the multiprocessing process, targeting the `risk_assessment` method of `process_instance`
+        task_process = multiprocessing.Process(target=risk_assessment, args=(process_id, callback_url,
+                                                                             attribute_config_model,
+                                                                             risk_assessment_config_model,
+                                                                             original_data_df,
+                                                                             synthetic_data_df,
+                                                                             holdout_data_df))
+        tasks[process_id] = task_process
+        task_process.start()
+        pid = task_process.pid
+
+        return {"status": "202", 'message': 'Risk assessment started', 'session_key': process_id, 'pid': pid}
+
+    except Exception as e:
+        # log e
+        raise HTTPException(status_code=500,
+                            detail=f'Exception occurred during risk assessment for process {process_id}')
+
+
+@app.post("/base_assessments/{process_id}")
+async def start_base_assessment(
+        process_id: str = Path(),
+        callback_url: str = Form(...),
+        attribute_config: UploadFile = File(...),
+        risk_assessment_config: UploadFile = File(...),
+        original_data: UploadFile = File(...)
+):
+    # TODO: check if actual rights exist to create task??
+    attribute_config_model = await load_attribute_config(attribute_config)
+    risk_assessment_config_model = await load_risk_assessment_config(risk_assessment_config)
+
+    original_data_df = await load_dataset(original_data, "original")
+
+    print('Data successfully loaded')
+
+    try:
+        # Create and start the multiprocessing process, targeting the `risk_assessment` method of `process_instance`
+        task_process = multiprocessing.Process(target=general_assessment, args=(process_id, callback_url,
+                                                                                attribute_config_model,
+                                                                                risk_assessment_config_model,
+                                                                                original_data_df))
+        tasks[process_id] = task_process
+        task_process.start()
+        pid = task_process.pid
+
+        return {"status": "202", 'message': 'Risk assessment started', 'session_key': process_id, 'pid': pid}
+
+    except Exception as e:
+        # log e
+        raise HTTPException(status_code=500,
+                            detail=f'Exception occurred during risk assessment for process {process_id}')
+
+
+async def load_dataset(data, dataset_name):
+    try:
+        data_content = await data.read()
+        data_df = pd.read_csv(io.StringIO(data_content.decode('utf-8')))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error when importing {dataset_name} data: {e}")
+    return data_df
+
+
+async def load_risk_assessment_config(risk_assessment_config):
+    try:
+        risk_assessment_config_data = yaml.safe_load(await risk_assessment_config.read())
+        risk_assessment_config_model = RiskAssessmentConfig(
+            **risk_assessment_config_data["risk_assessment_configuration"])
+    except yaml.YAMLError as yaml_error:
+        raise HTTPException(status_code=400, detail=f"Invalid YAML in risk_assessment_config: {yaml_error}")
+    except ValidationError as validation_error:
+        raise HTTPException(status_code=400, detail=f"Attribute config validation error: {validation_error}")
+    return risk_assessment_config_model
+
+
+async def load_attribute_config(attribute_config):
+    try:
+        attribute_config_data = yaml.safe_load(await attribute_config.read())
+        attribute_config_model = AttributeConfigList(**attribute_config_data)
+    except yaml.YAMLError as yaml_error:
+        raise HTTPException(status_code=400, detail=f"Invalid YAML in attribute_config: {yaml_error}")
+    except ValidationError as validation_error:
+        raise HTTPException(status_code=400, detail=f"Attribute config validation error: {validation_error}")
+    return attribute_config_model
+
+
+@app.delete("/base_assessments/{process_id}")
+async def cancel_base_assessment(process_id: str = Path()):
+    return kill_process(process_id)

@@ -46,3 +46,6 @@ Detailed documentation will be available soon.
 ## Licence
 Cinnamon is open-source.
 The licence will be decided later.
+
+## Acknowledgement
+Supported by BMBF grant No. 16KISA115K

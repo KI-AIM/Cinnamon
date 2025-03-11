@@ -3,8 +3,7 @@ name: Build and Push Docker Images
 on:
   push:
     branches:
-      # TODO set to main
-      - demo-flag
+      - main
 
 env:
   # Define the registry and images

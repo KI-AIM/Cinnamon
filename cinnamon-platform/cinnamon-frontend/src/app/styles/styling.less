@@ -1,0 +1,163 @@
+@import 'variables';
+@import 'colors';
+
+html.cdk-global-scrollblock {
+    position: static !important;
+    top: 0 !important;
+}
+
+.mat-shadow-sm {
+    box-shadow: @box-shadow-material-sm;
+}
+
+.mat-shadow-md {
+    box-shadow: @box-shadow-material-md;
+}
+
+.mat-shadow-lg {
+    box-shadow: @box-shadow-material-lg;
+}
+
+.mat-shadow-xl {
+    box-shadow: @box-shadow-material-xl;
+}
+
+.mat-shadow-xxl {
+    box-shadow: @box-shadow-material-xxl;
+}
+
+.pre-wrapper {
+    background-color: @mdc-grey-200;
+    border: solid 1px;
+    border-color: @mdc-grey-300;
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+::ng-deep .flat-mat-form-field .mat-mdc-form-field-infix {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    min-height: 0 !important;
+}
+
+.flat-mat-form-button {
+    background-color: whitesmoke !important;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom: 1px solid black;
+    display: flex;
+    height: 32px;
+    margin-left: 25px;
+}
+
+input[type="file"]::file-selector-button {
+    box-shadow: 0px 3px 1px -2px rgb(0 0 0 / 20%), 0px 2px 2px 0px rgb(0 0 0 / 14%), 0px 1px 5px 0px rgb(0 0 0 / 12%);
+    background: @color-primary;
+    color: @color-primary-text-color;
+    box-sizing: border-box;
+    position: relative;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    outline: none;
+    border: none;
+    -webkit-tap-highlight-color: transparent;
+    display: inline-block;
+    white-space: nowrap;
+    text-decoration: none;
+    vertical-align: baseline;
+    text-align: center;
+    margin: 0;
+    min-width: 64px;
+    line-height: 36px;
+    padding: 0 16px;
+    border-radius: 4px;
+    overflow: visible;
+    transform: translate3d(0, 0, 0);
+    transition: background 400ms cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 1rem;
+    margin-left: 0;
+  }
+
+
+  /*  fallback for older browsers supporting the -webkit prefix */
+
+  input[type="file"]::-webkit-file-upload-button {
+    box-shadow: 0px 3px 1px -2px rgb(0 0 0 / 20%), 0px 2px 2px 0px rgb(0 0 0 / 14%), 0px 1px 5px 0px rgb(0 0 0 / 12%);
+    background: @color-primary;
+    color: @color-primary-text-color;
+    box-sizing: border-box;
+    position: relative;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    outline: none;
+    border: none;
+    -webkit-tap-highlight-color: transparent;
+    display: inline-block;
+    white-space: nowrap;
+    text-decoration: none;
+    vertical-align: baseline;
+    text-align: center;
+    margin: 0;
+    min-width: 64px;
+    line-height: 36px;
+    padding: 0 16px;
+    border-radius: 4px;
+    overflow: visible;
+    transform: translate3d(0, 0, 0);
+    transition: background 400ms cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 1rem;
+    font-weight: 500;
+  }
+
+input[type="file"]:hover::-webkit-file-upload-button {
+    background: @color-highlight;
+}
+
+input[type="file"]:disabled::-webkit-file-upload-button {
+    background: @color-disabled;
+    color: @color-unimportant;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+.icon-enabled .mat-icon {
+    color: @color-primary-icon;
+    vertical-align: middle;
+}
+
+.icon-disabled .mat-icon {
+    color: @color-secondary-icon;
+    vertical-align: middle;
+}
+
+.mat-mdc-raised-button:disabled {
+    background-color: @color-disabled !important;
+    color: @color-unimportant !important;
+}
+
+.mat-mdc-raised-button:hover {
+    background-color: @color-highlight !important;
+}
+
+.mat-mdc-input-element.mat-mdc-form-field-input-control:not(.prio) {
+    color: @color-unimportant
+}
+
+.mat-mdc-select-value:not(.prio),
+.mat-mdc-dialog-content > h1,
+.mat-mdc-input-element.mat-mdc-form-field-input-control:not(:disabled):not(.prio),
+.mat-mdc-header-row .mat-mdc-header-cell,
+.mat-mdc-row .mat-mdc-cell,
+.mat-mdc-dialog-container .mat-mdc-dialog-content,
+.mat-mdc-checkbox .mdc-form-field:not(.prio),
+.mat-expansion-panel .mat-expansion-panel-body,
+.mat-expansion-panel .mat-expansion-panel-header-title {
+    color: @color-text;
+}

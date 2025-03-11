@@ -1,0 +1,48 @@
+name: par
+version: "0.1"
+type: longitudinal
+display_name: Probabilistic Auto-Regressive Model
+description: Is a model for synthesizing longitudinal data.
+URL: /start_synthetization_process/par
+configurations:
+  model_parameter:
+    display_name: Model Parameters
+    description: Define the model parameters, that are used for training the model. The model parameters are used to configure the model architecture and training process.
+    parameter:
+      - name: epochs
+        type: integer
+        label: Number of Epochs
+        description: Number of training epochs.
+        default_value: 300
+        min_value: 1
+        max_value: 10000
+      - name: sample_size
+        type: integer
+        label: Number of Samples
+        description: Number of times the model will generate a sequence for a given context before selecting the best one based on the highest log likelihood. Enhances the model’s ability to generate a more accurate and reliable sequence.
+        default_value: 1
+        min_value: 1
+        max_value: 10
+  model_fitting:
+    display_name: Model Fitting
+    description: Define the model fitting parameters, that are used for training the model. The model fitting parameters are used to configure the model fitting process.
+    parameters:
+      - name: train
+        type: float
+        label: Train
+        description: Configure the Train set. Configure the Train dataset. The remaining data is used for the test dataset. If a test dataset is desired the value should be lower then 1.0.
+        default_value: 0.8
+        min_value: 0.0
+        max_value: 1.0
+  sampling:
+    display_name: Sampling
+    description: Define the sampling parameters, that are used for generating synthetic data. The sampling parameters are used to configure the number of samples.
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Samples
+        description: The number of entities to sample.
+        default_value: 10000
+        min_value: 1
+        max_value: 1000000
+

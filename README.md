@@ -1,82 +1,51 @@
-# KI-AIM
+# Cinnamon
 
-This is the main repository for the [KI-AIM](https://www.forschung-it-sicherheit-kommunikationssysteme.de/projekte/ki-aim) project.
-A platform for providing anonymized data by combining anonymization and synthetization methods.
+<img src="./cinnamon-platform/cinnamon-frontend/src/app/assets/cinnamon-logo.png" alt="Cinnamon logo" width="100">
 
-## Submodules
+Cinnamon is a modular application designed to offer robust functionalities for data anonymization, synthetization, and evaluation.
 
-This project contains the following submodules.
-For more information, read the README.md of the submodules.
+The platform has been developed as part of the [KI-AIM](https://www.forschung-it-sicherheit-kommunikationssysteme.de/projekte/ki-aim) project.
 
-### KI-AIM-Model
+## Key-Features
 
-The [KI-AIM-Model](./ki-aim-model/README.md) submodule contains commonly used model classes like configurations.
+- **Modular Framework**: Cinnamon's design makes it simple to add new features and functionalities. This modular
+  approach ensures the platform can be customized to fit specific requirements.
 
-### KI-AIM-Anon
-Submodule providing an API for anonymizing a dataset.
 
-Running the anonymization modules requires to install arx:
-```bash
-mvn install:install-file -Dfile=ki-aim-anon/src/main/resources/lib/libarx-3.9.1.jar -DgroupId=org.deidentifier -DartifactId=arx -Dversion=3.9.1 -Dpackaging=jar
-```
+- **Data Anonymization and Synthetization**: By incorporating methods for anonymizing and synthetizing data, Cinnamon
+  helps protect sensitive information while still allowing for data use.
 
-### KI-AIM-Platform
 
-The [KI-AIM-Platform](./ki-aim-platform/README.md) provides data management as well as the front end of the project.
+- **Comprehensive Evaluation Module**: The evaluation module provides clear, concise results, converting complex data
+  protection processes into understandable insights.
 
-### KI-AIM-Test
 
-Submodule containing all tests for the other modules as well as test utilities.
+- **Support for Various Data Formats**: Cinnamon handles multiple data formats, including CSV and Excel, and we're
+  working to include support for medical formats like FHIR, enabling versatility across industries.
 
-## Build & Run
-To build the entire project with all submodules, run
 
-```bash
-mvn clean install
-```
+- **Guided Workflow**: Cinnamon offers guidance through complex data protection functions, making it accessible to users
+  regardless of their experience level.
 
-You can also build only specific submodules by executing the command in the directory of the submodule.
-The README.md of the submodules will also provide additional instructions.
+## Demonstration
+It is planned to publish a video tutorial and to host a demonstration server in the future.
 
-## Deployment
-
-For deploying the entire project, a docker compose file is provided.
-
-To build all images, run
+## Quick Start
+Cinnamon with all its modules can be installed with Docker Compose.
+Clone the repository and run the following command in the root directory:
 
 ```bash
-docker-compose build
+docker-compose up -d
 ```
 
-### Configuration
+The website is available at http://localhost:8080.
 
-When changing the configuration of the database (e.g. the password) make sure to also change the configuration of the platform accordingly.
+## Documentation
+Detailed documentation will be available soon.
 
-```yaml
-services:
-  ki-aim-db:
-    environment:
-      # Has to match the datasource settings of the ki-aim-platform container
-      - POSTGRES_DB=ki_aim_db
-      - POSTGRES_USER=ki_aim_user
-      - POSTGRES_PASSWORD=changeme
-    ki-aim-platform:
-      environment:
-        # Datasource has to match with the configuration of the ki-aim-db container
-        SPRING_DATASOURCE_PASSWORD: changeme
-        SPRING_DATASOURCE_URL: jdbc:postgresql://ki-aim-db:5432/ki_aim_db
-        SPRING.DATASOURCE.USERNAME: ki_aim_user
-```
+## Licence
+Cinnamon is open-source.
+The licence will be decided later.
 
-> [!WARNING]
-> Please change the password of the PostgreSQL user before deploying.
-
-When changing container names or ports, the configurations for the external server have to be changed as well.
-
-```yaml
-services:
-  ki-aim-platform:
-    environment:
-      KI-AIM.EXTERNAL-SERVER.0.CALLBACK-HOST: ki-aim-platform
-      KI-AIM.EXTERNAL-SERVER.0.URL-SERVER: http://ki-aim-anon:8080
-```
+## Acknowledgement
+Supported by BMBF grant No. 16KISA115K

@@ -1,0 +1,6 @@
+### Angular ###
+cinnamon-frontend/.angular
+cinnamon-frontend/.vscode
+cinnamon-frontend/dist
+cinnamon-frontend/node_modules
+cinnamon-frontend/node

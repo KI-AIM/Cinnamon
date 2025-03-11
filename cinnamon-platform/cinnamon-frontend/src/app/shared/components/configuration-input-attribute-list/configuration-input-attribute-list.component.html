@@ -1,0 +1,21 @@
+<div *ngIf="dataConfiguration$ | async as dataConfiguration"
+     style="display: flex; flex-wrap: wrap;">
+    <div *ngFor="let attribute of dataConfiguration.configurations">
+        <div>
+            <mat-checkbox [disabled]="disabled" [checked]="formArray.value.includes(attribute.name)"
+                          (change)="toggleCheckbox(attribute.name, $event.checked)" color="primary">
+                <span style="margin-left: -10px;">
+                    {{ attribute.name }}
+                </span>
+            </mat-checkbox>
+        </div>
+    </div>
+</div>
+<div style="padding-left: 16px; font-size: 12px;">
+    <mat-error *ngIf="formArray.hasError('required')">
+        At least one attribute must be selected
+    </mat-error>
+    <mat-error *ngIf="formArrayInverted && formArrayInverted.hasError('required')">
+        At least one attributes must be unselected
+    </mat-error>
+</div>

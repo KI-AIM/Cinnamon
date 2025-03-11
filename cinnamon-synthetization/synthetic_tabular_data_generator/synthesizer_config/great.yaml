@@ -1,0 +1,96 @@
+name: great
+version: "0.1"
+type: cross-sectional
+display_name: Generation of Realistic Tabular Data with Pretrained Transformer-based Language Models (GReaT)
+description:
+  Generation of Realistic Tabular data with pretrained Transformer-based language models (GReaT) implementation.
+  Based on https://openreview.net/forum?id=cEygmQNOeI
+URL: /start_synthetization_process/great
+configurations:
+  model_parameter:
+    display_name: Model Parameters
+    description: Define the model parameters that are used for training the model. These parameters configure the model architecture and training process.
+    parameters:
+      - name: n_iter
+        type: integer
+        label: Number of Iterations
+        description: Number of iterations or epochs to train the model. More iterations mean the model can learn better but may take longer.
+        default_value: 100
+        min_value: 1
+        max_value: 100000
+      - name: llm
+        type: string
+        label: Language Model
+        description: HuggingFace checkpoint of a pretrained large language model to use as the basis. These models help generate synthetic data.
+        default_value: distilgpt2
+      - name: experiment_dir
+        type: string
+        label: Experiment Directory
+        description: A folder where all training progress, results, and model data are saved.
+        default_value: trainer_great
+      - name: batch_size
+        type: integer
+        label: Batch Size
+        description: How many data points the model processes at once during training. Larger numbers make training faster but need more memory.
+        default_value: 8
+        min_value: 1
+        max_value: 1024
+      - name: logging_epoch
+        type: integer
+        label: Logging Epoch
+        description: The number of epochs after which training logs will be saved.
+        default_value: 100
+      - name: device
+        type: string
+        label: Device
+        description: The hardware the model will use. It automatically uses a GPU (if available) for faster training; otherwise, it uses the CPU.
+        default_value: cuda
+      - name: random_state
+        type: integer
+        label: Random State
+        description: A fixed number to ensure you get the same results every time you run the model.
+        default_value: 0
+      - name: sampling_patience
+        type: integer
+        label: Sampling Patience
+        description: The maximum number of tries the model will make to generate data that fits your requirements before stopping.
+        default_value: 500
+        min_value: 1
+        max_value: 10000
+      - name: workspace
+        type: path
+        label: Workspace
+        description: A folder where all the intermediate files, logs, and model outputs are stored.
+        default_value: workspace
+      - name: compress_dataset
+        type: boolean
+        label: Compress Dataset
+        description: If turned on, the model removes unnecessary information from your data before training.
+        default_value: False
+      - name: dataloader_sampler
+        type: any
+        label: Dataloader Sampler
+        description: An optional setting to control how data is picked during training. If not set, the model chooses randomly.
+        default_value: null
+  model_fitting:
+    display_name: Model Fitting
+    description: Define the model fitting parameters, that are used for training the model. The model fitting parameters are used to configure the training data and the test data.
+    parameters:
+      - name: train
+        type: float
+        label: Train
+        description: Configure the Train dataset. The remaining data is used for the test dataset. If a test dataset is desired the value should be lower then 1.0.
+        default_value: 0.8
+        min_value: 0.0
+        max_value: 1.0
+  sampling:
+    display_name: Sampling
+    description: Define the sampling parameters, that are used for generating the synthetic data. The sampling parameters are used to configure the number of samples.
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Samples
+        description: Configure the Samples.
+        default_value: 10000
+        min_value: 1
+        max_value: 1000000

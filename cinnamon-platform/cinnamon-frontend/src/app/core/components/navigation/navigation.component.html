@@ -1,0 +1,100 @@
+<div class="d-flex flex-column navbar-side">
+    <div class="d-flex flex-row justify-content-center">
+        <img src="./app/assets/cinnamon-logo.png" alt="logo" width="60">
+        <h1 class="align-self-center ms-2 mt-auto mb-auto">Cinnamon</h1>
+    </div>
+
+    <hr class="hr">
+
+    <ul class="nav flex-column justify-content-start">
+
+        <li *ngFor="let step of StepConfiguration | keyvalue: indexOrderAsc" class="nav-item">
+            <a class="nav-link"
+            [id]="step.value.id"
+            [routerLink]="[step.value.path]"
+            [routerLinkActive]="['active']"
+            [ngClass]="{'completed': statusService.getCompletedSteps().contains(step.value.enum), 'disabled': !userService.isAuthenticated() || !statusService.getCompletedSteps().contains(step.value.dependsOn) && step.value.dependsOn.toString() !== ''}">
+                {{step.value.text}}
+            </a>
+        </li>
+    </ul>
+
+    <hr class="hr">
+    <ul class="nav flex-column justify-content-start">
+        <li class="nav-item">
+            <a class="nav-link" title="Configuration" (click)="openConfigurations()"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                    Configuration Download
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" title="Configuration" (click)="downloadResult()"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                Project Download
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" title="Configuration" (click)="metricConfigurationComponent.open();"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                Metrics
+            </a>
+        </li>
+    </ul>
+
+
+    <div class="nav-bottom">
+
+        <div [hidden]="!userService.isAuthenticated()" class="logout" (click)="onLogout()">
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+        </div>
+
+        <div class="nav-bottom-right">
+            <div class="site-link">
+                <a (click)="openDialog(imprintDialog)">Imprint</a>
+            </div>
+            <div class="site-link">
+                <a href="https://www.medizin.uni-muenster.de/en/faculty-of-medicine/dataprotection.html"
+                   target="_blank">Data Privacy</a>
+            </div>
+        </div>
+    </div>
+
+    <app-configuration-management></app-configuration-management>
+    <app-metric-configuration #metricConfigurationComponent></app-metric-configuration>
+</div>
+
+
+<ng-template #imprintDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Imprint</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+
+        <div class="box">
+
+
+            Universität Münster<br>
+            Schlossplatz 2, 48149 Münster<br>
+            Telephone: +49 (251) 83-0<br>
+            Fax: +49 (251) 83-3 20 90<br>
+            E-mail: <a href="mailto:verwaltung@uni-muenster.de">verwaltung@uni-muenster.de</a><br>
+            <br>
+            The University Münster is a statutory body and an institution of the Land of North Rhine-Westphalia. It is
+            represented by the Rector, Professor Dr. Johannes Wessels.<br>
+            <br>
+            Turnover tax identification number: DE 126118759<br>
+            <br>
+            Edited in accordance with §5 TMG by:<br>
+            Univ.-Prof. Dr. rer. nat. Dominik Heider<br>
+            Institute of Medical Informatics<br>
+            Albert-Schweizer-Campus 1, Building A11<br>
+            48149 Münster, Germany<br>
+            Telephone: +49 (251) 83-55262<br>
+            E-mail: <a href="mailto:imi@uni-muenster.de">imi@uni-muenster.de</a><br>
+
+        </div>
+
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
+    </mat-dialog-actions>
+</ng-template>

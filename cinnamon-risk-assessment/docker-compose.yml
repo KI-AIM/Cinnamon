@@ -1,0 +1,14 @@
+#version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cinnamon-risk-assessment
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app  # Mount local code to the container
+    environment:
+      - PYTHONPATH=/app

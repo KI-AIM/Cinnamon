@@ -19,7 +19,7 @@ services:
 #        volumes:
 #            - ./volumes/cinnamon-db/data:/var/lib/postgresql/data
     cinnamon-platform:
-        image: cinnamon-platform
+        image: ghcr.io/ki-aim/cinnamon-platform:latest
         build:
             context: ./
             dockerfile: ./cinnamon-platform/Dockerfile
@@ -58,7 +58,7 @@ services:
         depends_on:
             - cinnamon-db
     cinnamon-synthetization:
-        image: cinnamon-synthetization
+        image: ghcr.io/ki-aim/cinnamon-synthetization:latest
         build:
             context: ./cinnamon-synthetization
             dockerfile: Dockerfile
@@ -69,7 +69,7 @@ services:
         networks:
             - synthetization-network
     cinnamon-evaluation:
-        image: cinnamon-evaluation
+        image: ghcr.io/ki-aim/cinnamon-evaluation:latest
         build:
             context: ./cinnamon-evaluation
             dockerfile: Dockerfile
@@ -80,7 +80,7 @@ services:
         networks:
             - evaluation-network
     cinnamon-risk-assessment:
-        image: cinnamon-risk-assessment
+        image: ghcr.io/ki-aim/cinnamon-risk-assessment:latest
         build:
             context: ./cinnamon-risk-assessment
             dockerfile: Dockerfile
@@ -92,7 +92,7 @@ services:
         networks:
             - evaluation-network
     cinnamon-anonymization:
-        image: cinnamon-anonymization
+        image:  ghcr.io/ki-aim/cinnamon-anonymization:latest
         build:
             context: ./
             dockerfile: ./cinnamon-anonymization/Dockerfile

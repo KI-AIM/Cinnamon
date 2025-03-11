@@ -1,0 +1,12 @@
+fastapi~=0.115.5
+gunicorn
+uvicorn[standard]
+requests~=2.32.3
+PyYAML==6.0.1
+pandas~=2.2.3
+numpy~=1.26.4
+scikit-learn~=1.5.2
+anonymeter==1.0.0
+python-multipart
+pydantic~=2.9.2
+scipy~=1.14.1

@@ -1,0 +1,20 @@
+synthetization_configuration:
+  algorithm:
+    synthesizer: bayesian_network
+    type: cross-sectional
+    version: "0.1"
+    model_parameter:
+      struct_learning_n_iter: 1000
+      struct_learning_search_method: tree_search  # hillclimb, pc, tree_search, mmhc, exhaustive
+      struct_learning_score: k2  # k2, bdeu, bic, bds
+      struct_max_indegree: 4
+      encoder_max_clusters: 10
+      encoder_noise_scale: 0.1
+      compress_dataset: false
+      random_state: 0
+      sampling_patience: 500
+      workspace: workspace
+    model_fitting:
+      train: 0.8
+    sampling:
+      num_samples: 1000

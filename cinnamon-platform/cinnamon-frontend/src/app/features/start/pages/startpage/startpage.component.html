@@ -3,7 +3,15 @@
     <h3>Welcome to Cinnamon. This tool is designed to anonymize your data by providing methods both for direct
         anonymization as well as data generation with synthetic methods. </h3>
 
-    <br/>
+    <p>Read the information on this page carefully and continue with the
+
+        <button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);" [disabled]="locked">
+            Start
+        </button>
+
+        button.
+    </p>
+
     <p>The application will guide you through the different steps, that are shown on the left side of the screen.
         Completed
         steps will be marked accordingly. The steps can be grouped into three categories: </p>
@@ -23,10 +31,6 @@
         delete
         the results of completed steps following the modified configuration.
     </p>
-
-    <button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);" [disabled]="locked">
-        Start
-    </button>
 
     <!-- TODO Enable selection if both modes are implemented -->
     <!--

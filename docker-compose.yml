@@ -19,7 +19,7 @@ services:
 #        volumes:
 #            - ./volumes/cinnamon-db/data:/var/lib/postgresql/data
     cinnamon-platform:
-        image: cinnamon-platform:0.0.1
+        image: cinnamon-platform
         build:
             context: ./
             dockerfile: ./cinnamon-platform/Dockerfile
@@ -80,7 +80,10 @@ services:
         networks:
             - evaluation-network
     cinnamon-risk-assessment:
-        image: risk_assessment_module
+        image: cinnamon-risk-assessment
+        build:
+            context: ./cinnamon-risk-assessment
+            dockerfile: Dockerfile
         container_name: cinnamon-risk-assessment
         restart: unless-stopped
         ports:

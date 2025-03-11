@@ -7,17 +7,17 @@ It is responsible for:
 - The process management
 - The Angular frontend
 
-## Requirements
-The platform can be installed as a `.war` file or via Docker.
+## Build & Run
 
-For the installation as a `.war` file, the following software has been verified to work: 
+### Docker
+It is recommended to use the [docker-compose.yml](../docker-compose.yml) in the root directory of this repository for building and running the platform with Docker.
+
+### WAR
+
+For the installation as a `.war` file, the following software has been verified to work:
 - Java 17 (LTS)
 - Tomcat 10.1.15 (LTS)
 - PostgreSql
-
-## Build & Run 
-
-### WAR
 
 To build this project as a WAR file simply run
 
@@ -28,9 +28,6 @@ mvn clean install
 The project will automatically build the angular web application for deployment and serve it as a static resource. 
 The build process will generate a `.war` archive that is deployable with a tomcat server.
 
-### Docker
-
-It is recommended to use the [docker-compose.yml](../docker-compose.yml) for building and running the platform with Docker.
 
 ## Development
 The following setup has been tests for developing the project:

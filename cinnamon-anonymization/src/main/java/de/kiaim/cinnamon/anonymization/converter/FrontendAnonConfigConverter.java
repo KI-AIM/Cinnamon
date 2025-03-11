@@ -200,8 +200,9 @@ public class FrontendAnonConfigConverter {
 
     /**
      * Generate default attribute config for attributes not configured.
-     * For now the default config delete the attribute.
-     * TODO : change to Default generalization
+     * For the standard mode of the platformm the default let the attribute unchanged.
+     * The attribute can then be protected latter, using synthetization.
+     * For the expert mode, this would need to be adapted.
      */
     private static AttributeConfig createDefaultAttributeConfig(ColumnConfiguration columnConfig) throws InvalidAttributeConfigException {
         AttributeConfig defaultConfig = new AttributeConfig();
@@ -209,7 +210,7 @@ public class FrontendAnonConfigConverter {
         defaultConfig.setDataType(columnConfig.getType().toString());
 
         // TODO : change to generalize ? improve default hierarchy
-        defaultConfig.setAttributeType("IDENTIFYING_ATTRIBUTE"); //By default, attribute is deleted
+        defaultConfig.setAttributeType("INSENSITIVE_ATTRIBUTE"); //By default, attribute is not protected
         defaultConfig.setHierarchyConfig(null);
 
         if (columnConfig.getType() == DataType.INTEGER || columnConfig.getType() == DataType.DECIMAL) {

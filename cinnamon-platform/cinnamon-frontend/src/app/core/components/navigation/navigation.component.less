@@ -49,17 +49,42 @@
 }
 
 .logout {
+    width: fit-content;
     padding-left: 20px;
+    padding-right: 20px;
     margin-top: auto;
     padding-top: 6px;
     cursor: pointer;
     color: @color-white;
-    transition: @transition-value;
 
-    &:hover {
-        background-color: @mdc-dark-blue-grey-600;
-    }
     span {
-        position: absolute;
+        vertical-align: super;
     }
+}
+
+.site-link {
+    margin-bottom: auto;
+    margin-top: auto;
+
+    a {
+        text-align: center;
+        cursor: pointer;
+        color: @color-white;
+        text-decoration: none;
+    }
+}
+
+.nav-bottom {
+    display: flex;
+    flex-direction: row;
+    height: 40px;
+    margin-top: auto;
+}
+
+.nav-bottom-right {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    margin-left: auto;
+    padding-right: 20px;
 }

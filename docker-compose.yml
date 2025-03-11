@@ -105,13 +105,3 @@ services:
             - anonymization-network
         volumes:
             - ~/.m2:/root/.m2
-    cinnamon-nginx:
-        image: nginx:latest
-        container_name: cinnamon-nginx
-        restart: unless-stopped
-        ports:
-            - "80:80"
-        volumes:
-            - ./cinnamon-nginx/proxy.conf:/etc/nginx/conf.d/default.conf:ro
-        depends_on:
-            - cinnamon-platform

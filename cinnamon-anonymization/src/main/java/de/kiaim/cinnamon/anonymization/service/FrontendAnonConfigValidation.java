@@ -60,6 +60,7 @@ public class FrontendAnonConfigValidation {
         return protection == AttributeProtection.MASKING ||
                 protection == AttributeProtection.GENERALIZATION ||
                 protection == AttributeProtection.MICRO_AGGREGATION ||
-                protection == AttributeProtection.RECORD_DELETION;
+                protection == AttributeProtection.RECORD_DELETION ||
+                protection == AttributeProtection.DATE_GENERALIZATION;
     }
 }

@@ -8,7 +8,7 @@ on:
 
 env:
   # Define the registry and images
-  REGISTRY: ghcr.io/ki-aim/ki-aim-platform
+  REGISTRY: ghcr.io/ki-aim
 
 jobs:
   build-and-push:

@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { Mode } from '../../enums/mode';
 import { StepConfiguration, Steps } from '../../enums/steps';
 import { KeyValue } from '@angular/common';
@@ -7,6 +7,7 @@ import { ConfigurationManagementComponent } from 'src/app/shared/components/conf
 import { StatusService } from "../../../shared/services/status.service";
 import { environments } from "../../../../environments/environment";
 import { HttpClient } from "@angular/common/http";
+import { MatDialog } from "@angular/material/dialog";
 
 @Component({
     selector: 'app-navigation',
@@ -22,6 +23,7 @@ export class NavigationComponent {
     @ViewChild(ConfigurationManagementComponent) configManagement: ConfigurationManagementComponent;
 
     constructor(
+        private readonly dialog: MatDialog,
         private readonly http: HttpClient,
         protected statusService: StatusService,
         public userService: UserService,
@@ -61,4 +63,11 @@ export class NavigationComponent {
             }
         });
     }
+
+    protected openDialog(templateRef: TemplateRef<any>) {
+        this.dialog.open(templateRef, {
+            width: '60%'
+        });
+    }
+
 }

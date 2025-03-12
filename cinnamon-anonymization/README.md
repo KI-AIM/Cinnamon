@@ -6,7 +6,7 @@ The **Anonymization Module** is responsible for dataset anonymization. The modul
 ## Build & Run
 
 ### Docker
-To build and run the module with Docker, you can follow the instruction mention in the **[Platform Repository README](../README.md)**.
+To build and run the module with Docker, you can follow the instruction mention in the **[Cinnamon Repository README](../README.md)**.
 
 ## Usage
 1. Ensure the **platform Docker environment** is set up.

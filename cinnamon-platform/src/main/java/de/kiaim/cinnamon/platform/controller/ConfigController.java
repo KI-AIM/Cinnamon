@@ -17,9 +17,9 @@ public class ConfigController {
 	private boolean isDemoInstance;
 
 	@GetMapping(value = "/config.json", produces = MediaType.APPLICATION_JSON_VALUE)
-	public Map<String, String> getConfig() {
-		Map<String, String> config = new HashMap<>();
-		config.put("isDemoInstance", String.valueOf(isDemoInstance));
+	public Map<String, Object> getConfig() {
+		Map<String, Object> config = new HashMap<>();
+		config.put("isDemoInstance", isDemoInstance);
 		return config;
 	}
 }

@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { TitleService } from './core/services/title-service.service';
-import { AppConfigService } from "./shared/services/app-config.service";
+import { AppConfig, AppConfigService } from "./shared/services/app-config.service";
+import { Observable } from "rxjs";
 
 @Component({
     selector: 'app-root',
@@ -8,13 +9,19 @@ import { AppConfigService } from "./shared/services/app-config.service";
     styleUrls: ['./app.component.less'],
     providers: [],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
     title = "cinnamon-frontend"
 
+    protected appConfig$: Observable<AppConfig>;
+
     constructor(
-        protected readonly appConfigService: AppConfigService,
+        private readonly appConfigService: AppConfigService,
         private titleService: TitleService,
     ) {
+    }
+
+    public ngOnInit(): void {
+        this.appConfig$ = this.appConfigService.appConfig$;
     }
 
     getTitle(): String {

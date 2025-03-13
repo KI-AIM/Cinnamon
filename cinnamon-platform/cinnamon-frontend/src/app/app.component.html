@@ -12,7 +12,9 @@
         <div class="page-content">
 
             <app-info-card [hidden]="!appConfigService.config?.isDemoInstance" typeClass="card-warn">
-                This is a demo instance. Accounts will be deleted every day at 02:00 am.
+                This is a demo instance.
+                Please do not upload any real data!
+                Accounts will be deleted every day at 02:00 am.
             </app-info-card>
 
             <router-outlet></router-outlet>

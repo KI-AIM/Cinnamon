@@ -1,9 +1,9 @@
 package de.kiaim.cinnamon.platform.cronjob;
 
-import de.kiaim.cinnamon.platform.exception.BadDataSetIdException;
-import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.cinnamon.platform.service.UserService;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -13,9 +13,13 @@ import org.springframework.stereotype.Component;
 @Log4j2
 public class ResetUsersCronjob {
 
+	private final boolean isDemoInstance;
 	private final UserService userService;
 
-	public ResetUsersCronjob(final UserService userService) {
+	public ResetUsersCronjob(
+			@Value("${cinnamon.is-demo-instance}") final boolean isDemoInstance,
+			final UserService userService) {
+		this.isDemoInstance = isDemoInstance;
 		this.userService = userService;
 	}
 
@@ -28,6 +32,13 @@ public class ResetUsersCronjob {
 			log.info("Finished resetting users.");
 		} catch (final Exception e) {
 			log.error("Error resetting users", e);
+		}
+	}
+
+	@PostConstruct
+	public void logStatus() {
+		if (isDemoInstance) {
+			log.info("Running demo instance. Cronjob for resetting users is enabled.");
 		}
 	}
 

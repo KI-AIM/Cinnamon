@@ -233,11 +233,9 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * @private
      */
     private postConfig(configuration: Object, url: string): Observable<void> {
-        const formData = new FormData();
-        formData.append("configuration", stringify(this.algorithmService.createConfiguration(configuration, this.selection.selectedOption)));
-        formData.append("configurationName", this.algorithmService.getConfigurationName());
-        formData.append("url", url);
-        return this.httpClient.post<void>(environments.apiUrl + "/api/config", formData);
+        const configurationName = this.algorithmService.getConfigurationName();
+        const configurationString = stringify(this.algorithmService.createConfiguration(configuration, this.selection.selectedOption));
+        return this.configurationService.storeConfig(configurationName, configurationString, url);
     }
 
     /**

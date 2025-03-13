@@ -89,6 +89,11 @@ export class ConfigurationInputComponent implements OnInit, OnDestroy {
                 // Watch for changes on the dependent field
                 this.form.controls[dependentField].valueChanges.subscribe((value) => {
                     this.applySwitchLogic(value, switchDefinition);
+
+                    // Update the default value and re-evaluate validators
+                    const control = this.form.controls[this.configurationInputDefinition.name];
+                    control.setValue(this.configurationInputDefinition.default_value);
+                    control.updateValueAndValidity();
                 });
 
                 // Immediately apply the switch logic for initialization
@@ -122,11 +127,6 @@ export class ConfigurationInputComponent implements OnInit, OnDestroy {
             if (matchedCondition.max_value !== undefined) {
                 this.configurationInputDefinition.max_value = matchedCondition.max_value;
             }
-
-            // Update the default value and re-evaluate validators
-            const control = this.form.controls[this.configurationInputDefinition.name];
-            control.setValue(this.configurationInputDefinition.default_value);
-            control.updateValueAndValidity();
         }
     }
 

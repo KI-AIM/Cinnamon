@@ -13,9 +13,9 @@ services:
             - data-management-network
         environment:
             # Has to match the datasource settings of the cinnamon-platform container
-            - POSTGRES_DB=cinnamon_db
-            - POSTGRES_USER=cinnamon_user
-            - POSTGRES_PASSWORD=changeme
+            - POSTGRES_DB=${PG_DATABASE}
+            - POSTGRES_USER=${PG_USERNAME}
+            - POSTGRES_PASSWORD=${PG_PASSWORD}
 #        volumes:
 #            - ./volumes/cinnamon-db/data:/var/lib/postgresql/data
     cinnamon-platform:
@@ -37,11 +37,13 @@ services:
             - evaluation-network
         environment:
             # Datasource has to match with the configuration of the cinnamon-db container
-            SPRING_DATASOURCE_PASSWORD: changeme
-            SPRING_DATASOURCE_URL: jdbc:postgresql://cinnamon-db:5432/cinnamon_db
-            SPRING.DATASOURCE.USERNAME: cinnamon_user
+            SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD}
+            SPRING_DATASOURCE_URL: jdbc:postgresql://cinnamon-db:5432/${PG_DATABASE}
+            SPRING.DATASOURCE.USERNAME: ${PG_USERNAME}
 
             CINNAMON.CORSALLOWEDORIGINS: http://127:0:0:1,http://localhost:4200,http://127.0.0.1:8080
+
+            CINNAMON_IS-DEMO-INSTANCE: ${IS_DEMO_INSTANCE:-false}
 
             # Anonymization
             CINNAMON.EXTERNAL-SERVER.0.CALLBACK-HOST: cinnamon-platform

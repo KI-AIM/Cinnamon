@@ -43,9 +43,8 @@ The website is available at http://localhost:8080.
 ## Documentation
 Detailed documentation will be available soon.
 
-## Licence
-Cinnamon is open-source.
-The licence will be decided later.
+## License
+Cinnamon is open source published under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0.html).
 
 ## Acknowledgement
 Supported by BMBF grant No. 16KISA115K

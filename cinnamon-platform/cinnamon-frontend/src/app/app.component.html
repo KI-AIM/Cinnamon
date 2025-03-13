@@ -10,6 +10,9 @@
             {{getTitle()}}
         </div>
         <div class="page-content">
+            <app-info-card [hidden]="appConfigService.cinnamonAvailable" typeClass="card-failure">
+                Cinnamon is currently unavailable. Please try again later.
+            </app-info-card>
 
             <app-info-card [hidden]="!appConfigService.config?.isDemoInstance" typeClass="card-warn">
                 This is a demo instance.

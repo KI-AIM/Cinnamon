@@ -32,7 +32,8 @@ The platform has been developed as part of the [KI-AIM](https://www.forschung-it
 A demonstration server is available at the following address: [http://cinnamon-demo.uni-muenster.de](http://cinnamon-demo.uni-muenster.de).
 You can use the sample dataset and configurations provided in the [/sample](./sample/Heart_Disease_Dataset) directory of this repository.
 
-It is planned to publish a video tutorial in the future.
+## Getting Started with Cinnamon
+[![Getting Started with Cinnamon](https://img.youtube.com/vi/KQ0WHKMXXA8/0.jpg)](https://www.youtube.com/watch?v=KQ0WHKMXXA8)
 
 ## Quick Start
 Cinnamon with all its modules can be installed with Docker Compose.

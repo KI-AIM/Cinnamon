@@ -1,0 +1,40 @@
+anonymization:
+  privacyModels:
+    - name: anonymization_tabular
+      type: tabular
+      modelConfiguration:
+        riskThresholdType: Avg
+        riskThresholdValue: 0.5
+        generalizationSetting: Global
+        suppressionLimit: 0.5
+  attributeConfiguration:
+    - attributeProtection: ATTRIBUTE_DELETION
+      index: 0
+      name: Identifier
+      dataType: INTEGER
+      scale: INTERVAL
+      intervalSize: null
+    - attributeProtection: DATE_GENERALIZATION
+      index: 2
+      name: birthdate
+      dataType: DATE
+      scale: DATE
+      intervalSize: year
+    - attributeProtection: DATE_GENERALIZATION
+      index: 3
+      name: death_date
+      dataType: DATE
+      scale: DATE
+      intervalSize: year
+    - attributeProtection: MICRO_AGGREGATION
+      index: 4
+      name: Age
+      dataType: INTEGER
+      scale: INTERVAL
+      intervalSize: 10
+    - attributeProtection: MICRO_AGGREGATION
+      index: 11
+      name: MaxHR
+      dataType: INTEGER
+      scale: INTERVAL
+      intervalSize: 10

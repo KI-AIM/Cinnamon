@@ -33,6 +33,9 @@ A demonstration server is available at the following address: [http://cinnamon-d
 You can use the sample dataset and configurations provided in the [/sample](./sample/Heart_Disease_Dataset) directory of this repository.
 
 ## Getting Started with Cinnamon
+
+The following video provides an overview of the Cinnamon Platform:
+
 [![Getting Started with Cinnamon](https://img.youtube.com/vi/KQ0WHKMXXA8/0.jpg)](https://www.youtube.com/watch?v=KQ0WHKMXXA8)
 
 ## Quick Start

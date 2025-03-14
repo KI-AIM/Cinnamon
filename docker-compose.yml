@@ -13,13 +13,13 @@ services:
             - data-management-network
         environment:
             # Has to match the datasource settings of the cinnamon-platform container
-            - POSTGRES_DB=cinnamon_db
-            - POSTGRES_USER=cinnamon_user
-            - POSTGRES_PASSWORD=changeme
+            - POSTGRES_DB=${PG_DATABASE}
+            - POSTGRES_USER=${PG_USERNAME}
+            - POSTGRES_PASSWORD=${PG_PASSWORD}
 #        volumes:
 #            - ./volumes/cinnamon-db/data:/var/lib/postgresql/data
     cinnamon-platform:
-        image: cinnamon-platform
+        image: ghcr.io/ki-aim/cinnamon-platform:latest
         build:
             context: ./
             dockerfile: ./cinnamon-platform/Dockerfile
@@ -28,8 +28,8 @@ services:
         ports:
             - "127.0.0.1:8080:8080"
             - "127.0.0.1:9000:8000"
-        volumes:
-            - ~/.m2:/root/.m2
+#        volumes:
+#            - ~/.m2:/root/.m2
         networks:
             - data-management-network
             - synthetization-network
@@ -37,9 +37,13 @@ services:
             - evaluation-network
         environment:
             # Datasource has to match with the configuration of the cinnamon-db container
-            SPRING_DATASOURCE_PASSWORD: changeme
-            SPRING_DATASOURCE_URL: jdbc:postgresql://cinnamon-db:5432/cinnamon_db
-            SPRING.DATASOURCE.USERNAME: cinnamon_user
+            SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD}
+            SPRING_DATASOURCE_URL: jdbc:postgresql://cinnamon-db:5432/${PG_DATABASE}
+            SPRING.DATASOURCE.USERNAME: ${PG_USERNAME}
+
+            CINNAMON.CORSALLOWEDORIGINS: http://127:0:0:1,http://localhost:4200,http://127.0.0.1:8080
+
+            CINNAMON_IS-DEMO-INSTANCE: ${IS_DEMO_INSTANCE:-false}
 
             # Anonymization
             CINNAMON.EXTERNAL-SERVER.0.CALLBACK-HOST: cinnamon-platform
@@ -56,7 +60,7 @@ services:
         depends_on:
             - cinnamon-db
     cinnamon-synthetization:
-        image: cinnamon-synthetization
+        image: ghcr.io/ki-aim/cinnamon-synthetization:latest
         build:
             context: ./cinnamon-synthetization
             dockerfile: Dockerfile
@@ -67,7 +71,7 @@ services:
         networks:
             - synthetization-network
     cinnamon-evaluation:
-        image: cinnamon-evaluation
+        image: ghcr.io/ki-aim/cinnamon-evaluation:latest
         build:
             context: ./cinnamon-evaluation
             dockerfile: Dockerfile
@@ -78,7 +82,7 @@ services:
         networks:
             - evaluation-network
     cinnamon-risk-assessment:
-        image: cinnamon-risk-assessment
+        image: ghcr.io/ki-aim/cinnamon-risk-assessment:latest
         build:
             context: ./cinnamon-risk-assessment
             dockerfile: Dockerfile
@@ -90,7 +94,7 @@ services:
         networks:
             - evaluation-network
     cinnamon-anonymization:
-        image: cinnamon-anonymization
+        image:  ghcr.io/ki-aim/cinnamon-anonymization:latest
         build:
             context: ./
             dockerfile: ./cinnamon-anonymization/Dockerfile
@@ -101,5 +105,5 @@ services:
             - "127.0.0.1:9001:8000"
         networks:
             - anonymization-network
-        volumes:
-            - ~/.m2:/root/.m2
+#        volumes:
+#            - ~/.m2:/root/.m2

@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { TitleService } from './core/services/title-service.service';
-import { StateManagementService } from './core/services/state-management.service';
+import { AppConfig, AppConfigService } from "./shared/services/app-config.service";
+import { Observable } from "rxjs";
+import { StateManagementService } from "./core/services/state-management.service";
 
 @Component({
     selector: 'app-root',
@@ -8,9 +10,21 @@ import { StateManagementService } from './core/services/state-management.service
     styleUrls: ['./app.component.less'],
     providers: [],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
     title = "cinnamon-frontend"
-    constructor(private titleService: TitleService, stateManagement: StateManagementService) {
+
+    protected appConfig$: Observable<AppConfig>;
+
+    constructor(
+        private readonly appConfigService: AppConfigService,
+        // StateManagementService is injected so it gets initialized
+        private readonly stateManagementService: StateManagementService,
+        private titleService: TitleService,
+    ) {
+    }
+
+    public ngOnInit(): void {
+        this.appConfig$ = this.appConfigService.appConfig$;
     }
 
     getTitle(): String {

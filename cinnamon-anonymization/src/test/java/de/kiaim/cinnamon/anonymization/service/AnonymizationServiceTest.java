@@ -106,7 +106,7 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
             mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
             Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);
             var result = future.get();
-            assertNull(result, "Iteration " + j + " returned a result.");
+            assertNotNull(result, "Iteration " + j + " returned no result.");
         }
     }
 

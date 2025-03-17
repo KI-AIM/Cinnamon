@@ -6,9 +6,9 @@ anonymization:
         riskThresholdType: Avg
         riskThresholdValue: 0.5
         generalizationSetting: Global
-        suppressionLimit: 0.5
+        suppressionLimit: 0.6
   attributeConfiguration:
-    - attributeProtection: RECORD_DELETION
+    - attributeProtection: ATTRIBUTE_DELETION
       index: 0
       name: Identifier
       dataType: INTEGER

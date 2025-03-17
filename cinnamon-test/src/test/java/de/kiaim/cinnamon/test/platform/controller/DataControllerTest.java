@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -167,6 +168,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void storeDataAndDeleteData() throws Exception {
 		postFile();
 
@@ -632,6 +634,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void loadTransformationResultPageSelectErrors() throws Exception {
 		postData();
 
@@ -648,6 +651,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void loadTransformationResultPageSelectValid() throws Exception {
 		postData();
 

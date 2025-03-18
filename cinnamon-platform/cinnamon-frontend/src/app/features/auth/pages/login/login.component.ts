@@ -3,6 +3,7 @@ import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { TitleService } from "../../../../core/services/title-service.service";
 import { UserService } from "src/app/shared/services/user.service";
+import { StateManagementService } from "../../../../core/services/state-management.service";
 
 interface LoginForm {
 	email: FormControl<string>;
@@ -18,13 +19,13 @@ interface LoginForm {
 export class LoginComponent implements OnInit {
 	loginForm: FormGroup<LoginForm>;
 	mode: string;
-	infoText: string;
 
 	constructor(
 		private readonly activateRoute: ActivatedRoute,
 		private readonly router: Router,
 		private readonly titleService: TitleService,
-		private readonly userService: UserService
+		private readonly userService: UserService,
+        private readonly stateManagementService: StateManagementService,
 	) {
 		this.loginForm = new FormGroup<LoginForm>({
 			email: new FormControl<string>("", {
@@ -40,6 +41,10 @@ export class LoginComponent implements OnInit {
 	}
 
 	ngOnInit() {
+        if (this.userService.isAuthenticated()) {
+            this.stateManagementService.fetchAndRouteToCurrentStep();
+        }
+
 		this.activateRoute.params.subscribe((params) => {
 			if (params["mode"]) {
 				this.mode = params["mode"];
@@ -54,7 +59,7 @@ export class LoginComponent implements OnInit {
 			this.loginForm.value as { email: string; password: string },
 			(error) => {
 				if (error === "") {
-					this.router.navigateByUrl("/");
+                    this.stateManagementService.fetchAndRouteToCurrentStep();
 				} else {
 					this.router.navigate(["/login", { mode: "fail" }]);
 				}

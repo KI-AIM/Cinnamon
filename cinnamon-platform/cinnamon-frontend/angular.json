@@ -79,10 +79,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "cinnamon-frontend:build:production"
+              "buildTarget": "cinnamon-frontend:build:production"
             },
             "development": {
-              "browserTarget": "cinnamon-frontend:build:development"
+              "buildTarget": "cinnamon-frontend:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -90,7 +90,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "cinnamon-frontend:build"
+            "buildTarget": "cinnamon-frontend:build"
           }
         },
         "test": {

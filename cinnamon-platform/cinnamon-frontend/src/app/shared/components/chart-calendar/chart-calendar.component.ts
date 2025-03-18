@@ -1,9 +1,9 @@
 import { Component, Input } from '@angular/core';
 import { ChartComponent, Entries } from "../chart/chart.component";
-import { EChartsOption } from "echarts";
 import { DensityPlotData, StatisticsData } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
+import { EChartsCoreOption } from "echarts/core";
 
 @Component({
     selector: 'app-chart-calendar',
@@ -77,7 +77,7 @@ export class ChartCalendarComponent extends ChartComponent {
         });
     }
 
-    protected override createChartOptions(): EChartsOption {
+    protected override createChartOptions(): EChartsCoreOption {
         const dataSetLabels: StatisticsData<string> = {
             real: "Original",
             synthetic: this.syntheticSeriesLabel,
@@ -121,7 +121,7 @@ export class ChartCalendarComponent extends ChartComponent {
             });
         }
 
-        const options: EChartsOption = {
+        const options: EChartsCoreOption = {
             ...this.graphOptions(this.simple),
             visualMap: {
                 show: false,
@@ -200,7 +200,7 @@ export class ChartCalendarComponent extends ChartComponent {
                 },
             ],
             series: zoomSeries,
-        } as EChartsOption;
+        } as EChartsCoreOption;
 
         return options;
     }

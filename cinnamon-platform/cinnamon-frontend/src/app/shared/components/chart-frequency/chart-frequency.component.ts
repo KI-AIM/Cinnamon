@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
-import {EChartsOption} from "echarts";
 import {HistogramPlotData, StatisticsData} from "../../model/statistics";
 import {ChartComponent, Entries} from "../chart/chart.component";
+import { EChartsCoreOption } from "echarts/core";
 
 @Component({
     selector: 'app-chart-frequency',
@@ -17,7 +17,7 @@ export class ChartFrequencyComponent extends ChartComponent {
     @Input() public originalSeriesLabel: string = "Original";
     @Input() syntheticSeriesLabel: string = "Synthetic";
 
-    protected override createChartOptions(): EChartsOption {
+    protected override createChartOptions(): EChartsCoreOption {
         const dataSetLabels: StatisticsData<string> = {
             real: this.originalSeriesLabel,
             synthetic: this.syntheticSeriesLabel,
@@ -88,7 +88,7 @@ export class ChartFrequencyComponent extends ChartComponent {
             displayedKeys = keys!;
         }
 
-        const options: EChartsOption = {
+        const options: EChartsCoreOption = {
             ...this.graphOptions(this.simple),
             tooltip: {
                 trigger: 'axis',

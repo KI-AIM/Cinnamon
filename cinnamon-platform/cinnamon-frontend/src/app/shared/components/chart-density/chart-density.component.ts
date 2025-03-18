@@ -1,8 +1,8 @@
 import {Component, Input} from '@angular/core';
-import {EChartsOption} from "echarts";
 import { DensityPlotData, StatisticsData } from "../../model/statistics";
 import {ChartComponent, Entries} from "../chart/chart.component";
 import {ColumnConfiguration} from "../../model/column-configuration";
+import { EChartsCoreOption } from "echarts/core";
 
 @Component({
     selector: 'app-chart-density',
@@ -18,7 +18,7 @@ export class ChartDensityComponent extends ChartComponent {
     @Input() simple: boolean = false;
     @Input() syntheticSeriesLabel: string = "Synthetic";
 
-    protected override createChartOptions(): EChartsOption {
+    protected override createChartOptions(): EChartsCoreOption {
         const dataSetLabels: StatisticsData<string> = {
             real: this.originalSeriesLabel,
             synthetic: this.syntheticSeriesLabel,
@@ -38,7 +38,7 @@ export class ChartDensityComponent extends ChartComponent {
             reference = value;
         }
 
-        const options: EChartsOption = {
+        const options: EChartsCoreOption = {
             ...this.graphOptions(this.simple),
             tooltip: {
                 trigger: 'axis',

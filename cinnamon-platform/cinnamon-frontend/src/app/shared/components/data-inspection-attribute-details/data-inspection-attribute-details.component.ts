@@ -15,7 +15,8 @@ import { MetricTableData, MetricTableFilterData, MetricTableSortData, SortType }
 @Component({
     selector: 'app-data-inspection-attribute-details',
     templateUrl: './data-inspection-attribute-details.component.html',
-    styleUrls: ['./data-inspection-attribute-details.component.less']
+    styleUrls: ['./data-inspection-attribute-details.component.less'],
+    standalone: false
 })
 export class DataInspectionAttributeDetailsComponent implements OnInit {
     protected readonly DataType = DataType;

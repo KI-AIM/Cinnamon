@@ -14,7 +14,8 @@ interface RegisterForm {
 @Component({
     selector: 'app-register',
     templateUrl: './register.component.html',
-    styleUrls: ['./register.component.less']
+    styleUrls: ['./register.component.less'],
+    standalone: false
 })
 export class RegisterComponent {
     registerError: string[];

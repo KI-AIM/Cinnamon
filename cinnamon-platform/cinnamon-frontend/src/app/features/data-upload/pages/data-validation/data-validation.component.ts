@@ -14,9 +14,10 @@ import { StatusService } from "../../../../shared/services/status.service";
 import {FileService} from "../../services/file.service";
 
 @Component({
-	selector: "app-data-validation",
-	templateUrl: "./data-validation.component.html",
-	styleUrls: ["./data-validation.component.less"],
+    selector: "app-data-validation",
+    templateUrl: "./data-validation.component.html",
+    styleUrls: ["./data-validation.component.less"],
+    standalone: false
 })
 export class DataValidationComponent implements OnInit {
     protected numberRows$: Observable<number>;

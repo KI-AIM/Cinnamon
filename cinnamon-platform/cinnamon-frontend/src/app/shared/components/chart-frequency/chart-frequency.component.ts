@@ -7,6 +7,7 @@ import {ChartComponent, Entries} from "../chart/chart.component";
     selector: 'app-chart-frequency',
     templateUrl: '../chart/chart.component.html',
     styleUrls: ['../chart/chart.component.less'],
+    standalone: false
 })
 export class ChartFrequencyComponent extends ChartComponent {
     @Input() public colorScheme!: string;

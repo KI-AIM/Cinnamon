@@ -6,7 +6,8 @@ import { StatisticsService } from "../../services/statistics.service";
 @Component({
     selector: 'app-data-inspection',
     templateUrl: './data-inspection.component.html',
-    styleUrls: ['./data-inspection.component.less']
+    styleUrls: ['./data-inspection.component.less'],
+    standalone: false
 })
 export class DataInspectionComponent implements OnInit {
     @Input() public sourceDataset: string | null = null;

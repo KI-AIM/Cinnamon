@@ -8,6 +8,7 @@ import {ColumnConfiguration} from "../../model/column-configuration";
     selector: 'app-chart-density',
     templateUrl: '../chart/chart.component.html',
     styleUrls: ['../chart/chart.component.less'],
+    standalone: false
 })
 export class ChartDensityComponent extends ChartComponent {
     @Input() public colorScheme!: string;

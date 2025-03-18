@@ -12,9 +12,10 @@ import { DataSetInfo } from "../../model/data-set-info";
 import { DataSetInfoService } from "../../../features/data-upload/services/data-set-info.service";
 
 @Component({
-	selector: "app-data-table",
-	templateUrl: "./data-table.component.html",
-	styleUrls: ["./data-table.component.less"],
+    selector: "app-data-table",
+    templateUrl: "./data-table.component.html",
+    styleUrls: ["./data-table.component.less"],
+    standalone: false
 })
 export class DataTableComponent implements OnInit, AfterViewInit {
     @Input() public sourceDataset: string | null = null;

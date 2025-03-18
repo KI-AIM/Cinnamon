@@ -6,9 +6,10 @@ import { Configuration } from "src/app/shared/model/configuration";
 import { FormArray, FormGroup } from "@angular/forms";
 
 @Component({
-	selector: "app-added-configuration-list",
-	templateUrl: "./added-configuration-list.component.html",
-	styleUrls: ["./added-configuration-list.component.less"],
+    selector: "app-added-configuration-list",
+    templateUrl: "./added-configuration-list.component.html",
+    styleUrls: ["./added-configuration-list.component.less"],
+    standalone: false
 })
 export class AddedConfigurationListComponent {
     @Input() disabled: boolean = false;

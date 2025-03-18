@@ -14,7 +14,8 @@ import { AdditionalConfig, ConfigurationAdditionalConfigs } from 'src/app/shared
             provide: AlgorithmService,
             useExisting: AnonymizationService
         },
-    ]
+    ],
+    standalone: false
 })
 export class AnonymizationConfigurationComponent {
     configs = new Array(

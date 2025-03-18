@@ -9,6 +9,7 @@ import { DataType } from "../../model/data-type";
     selector: 'app-chart-calendar',
     templateUrl: '../chart/chart.component.html',
     styleUrls: ['../chart/chart.component.less'],
+    standalone: false
 })
 export class ChartCalendarComponent extends ChartComponent {
     @Input() data!: StatisticsData<DensityPlotData>;

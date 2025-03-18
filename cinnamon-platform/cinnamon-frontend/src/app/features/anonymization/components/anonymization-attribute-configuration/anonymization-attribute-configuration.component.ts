@@ -13,6 +13,7 @@ import { AnonymizationAttributeRowComponent } from '../anonymization-attribute-r
     selector: 'app-anonymization-attribute-configuration',
     templateUrl: './anonymization-attribute-configuration.component.html',
     styleUrls: ['./anonymization-attribute-configuration.component.less'],
+    standalone: false
 })
 export class AnonymizationAttributeConfigurationComponent implements OnInit {
 

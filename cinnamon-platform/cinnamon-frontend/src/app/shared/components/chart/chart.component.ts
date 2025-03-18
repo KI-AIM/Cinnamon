@@ -6,7 +6,8 @@ import { StatisticsService } from "../../services/statistics.service";
 @Component({
     selector: 'app-chart',
     templateUrl: './chart.component.html',
-    styleUrls: ['./chart.component.less']
+    styleUrls: ['./chart.component.less'],
+    standalone: false
 })
 export class ChartComponent implements OnInit, OnChanges {
     protected options: EChartsOption;

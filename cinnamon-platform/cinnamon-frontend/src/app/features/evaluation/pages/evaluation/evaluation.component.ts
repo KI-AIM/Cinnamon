@@ -20,6 +20,7 @@ import { StageDefinition } from "../../../../shared/services/execution-step.serv
     selector: 'app-evaluation',
     templateUrl: './evaluation.component.html',
     styleUrls: ['./evaluation.component.less'],
+    standalone: false
 })
 export class EvaluationComponent implements OnInit {
     protected readonly ProcessStatus = ProcessStatus;

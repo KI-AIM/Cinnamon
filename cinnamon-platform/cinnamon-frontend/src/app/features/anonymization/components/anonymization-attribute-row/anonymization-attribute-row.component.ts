@@ -34,6 +34,7 @@ type FormElements = {
     selector: 'app-anonymization-attribute-row',
     templateUrl: './anonymization-attribute-row.component.html',
     styleUrls: ['./anonymization-attribute-row.component.less'],
+    standalone: false
 })
 export class AnonymizationAttributeRowComponent implements OnInit {
     @Input() configurationRow: ColumnConfiguration | null;

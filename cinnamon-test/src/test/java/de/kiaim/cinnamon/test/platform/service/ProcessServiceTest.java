@@ -138,8 +138,8 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		});
 
 		// Got different error messages on different machines, so only checking a part of it
-		assertTrue(exception.getMessage().startsWith("Failed to fetch the status! Connection refused:"));
-		assertTrue(exception.getMessage().endsWith("localhost/127.0.0.1:" + mockBackEndPort));
+		assertTrue(exception.getMessage().startsWith("Failed to fetch the status! Connection refused:"), "Unexpected error message: " + exception.getMessage());
+		assertTrue(exception.getMessage().endsWith("localhost/127.0.0.1:" + mockBackEndPort),"Unexpected error message: " + exception.getMessage());
 	}
 
 }

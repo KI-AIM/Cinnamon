@@ -78,4 +78,5 @@ jobs:
         id: testReport
         uses: mikepenz/action-junit-report@v5
         with:
-          report_paths: '**/target/surefire-reports/*.xml'
+          report_paths: 'cinnamon-*/target/surefire-reports/*.xml'
+          allow_empty_report: false

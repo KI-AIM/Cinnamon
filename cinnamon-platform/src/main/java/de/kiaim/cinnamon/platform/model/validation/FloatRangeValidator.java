@@ -3,6 +3,13 @@ package de.kiaim.cinnamon.platform.model.validation;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
+/**
+ * Validates min and max values for floats.
+ * {@code null} values are considered valid.
+ * Implementation for {@link FloatRange}.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 public class FloatRangeValidator implements ConstraintValidator<FloatRange, Float> {
 
 	private Float min;

@@ -195,7 +195,7 @@
 
 		<resources>
 			<resource>
-				<directory>./cinnamon-frontend/dist/cinnamon-frontend</directory>
+				<directory>./cinnamon-frontend/dist/cinnamon-frontend/browser</directory>
 				<targetPath>static</targetPath>
 			</resource>
 			<resource>

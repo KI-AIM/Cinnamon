@@ -14,6 +14,9 @@ public class FloatRangeValidator implements ConstraintValidator<FloatRange, Floa
 	}
 
 	@Override public boolean isValid(Float value, ConstraintValidatorContext context) {
+		if (value == null) {
+			return true;
+		}
 		return value >= min && value <= max;
 	}
 }

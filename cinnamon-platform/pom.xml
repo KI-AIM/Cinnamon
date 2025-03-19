@@ -177,8 +177,8 @@
 				</executions>
 				<configuration>
 					<workingDirectory>cinnamon-frontend</workingDirectory>
-					<nodeVersion>v20.9.0</nodeVersion>
-					<npmVersion>10.2.3</npmVersion>
+					<nodeVersion>v22.14.0</nodeVersion>
+					<npmVersion>10.9.2</npmVersion>
 				</configuration>
 			</plugin>
 

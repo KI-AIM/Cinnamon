@@ -66,6 +66,8 @@ jobs:
         continue-on-error: true
 
   publish:
+    permissions:
+      checks: write
     runs-on: ubuntu-latest
     needs: test
     steps:

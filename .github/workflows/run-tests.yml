@@ -63,7 +63,7 @@ jobs:
 
       - name: Run tests for modules
         run: mvn -B clean test --file ${{ matrix.module }}/
-        continue-on-error: true
+#        continue-on-error: true
 
   publish:
     permissions:
@@ -79,4 +79,4 @@ jobs:
         uses: mikepenz/action-junit-report@v5
         with:
           report_paths: 'cinnamon-*/target/surefire-reports/*.xml'
-          allow_empty_report: false
+#          allow_empty_report: false

@@ -34,7 +34,13 @@ jobs:
         mkdir -p test-results
         python -m xmlrunner discover -s cinnamon-risk-assessment/Tests -p "*.py" -o test-results
 
-    - name: Upload Test Results to Report
-      uses: actions/upload-test-results@v2
+#    - name: Upload Test Results to Report
+#      uses: actions/upload-test-results@v2
+#      with:
+#        path: test-results/
+
+    - name: Upload Test Results Artifact
+      uses: actions/upload-artifact@v3
       with:
+        name: unittest-results
         path: test-results/

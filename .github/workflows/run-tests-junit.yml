@@ -4,8 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - 167-automated-tests
-#      - main
+      - main
 
 jobs:
   test:
@@ -79,7 +78,7 @@ jobs:
           report_paths: ${{ matrix.module }}/target/surefire-reports/*.xml
 
       - name: Upload Surefire test reports
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: surefire-reports-${{ matrix.module }}

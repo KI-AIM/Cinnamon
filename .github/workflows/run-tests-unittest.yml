@@ -36,6 +36,12 @@ jobs:
         mkdir -p test-results
         python -m xmlrunner discover -s Tests -p "*.py" -o test-results
 
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: success() || failure()
+      with:
+        files: cinnamon-risk-assessment/test-results/*.xml
+
     - name: Upload Test Results Artifact
       if: success() || failure()
       uses: actions/upload-artifact@v4

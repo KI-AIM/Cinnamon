@@ -27,7 +27,7 @@ jobs:
         ports:
           - 5432:5432
         env:
-          POSTGRES_PASSWORD: changeme
+          POSTGRES_PASSWORD: postgres
           POSTGRES_USER: cinnamon_user
           POSTGRES_DB: cinnamon_test_db
         options: >-
@@ -35,6 +35,9 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
+    env:
+      SPRING_DATASOURCE_PASSWORD: postgres
 
     steps:
       - name: Check out code
@@ -73,5 +76,4 @@ jobs:
         id: test-report
         uses: mikepenz/action-junit-report@v5
         with:
-          name: surefire-reports-${{ matrix.module }}
           report_paths: ${{ matrix.module }}/target/surefire-reports/*.xml

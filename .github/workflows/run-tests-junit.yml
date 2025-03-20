@@ -1,11 +1,10 @@
 name: test
 
-# TODO switch condition
-#on: pull_request
 on:
+  pull_request:
   push:
     branches:
-      - 167-automated-tests
+      - main
 
 jobs:
   test:

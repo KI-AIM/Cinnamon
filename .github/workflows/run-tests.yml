@@ -9,10 +9,14 @@ on:
 
 jobs:
   test:
+    permissions:
+      checks: write
+
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
+        fail-fast: false
         module:
           - cinnamon-test
           - cinnamon-anonymization
@@ -63,20 +67,11 @@ jobs:
 
       - name: Run tests for modules
         run: mvn -B clean test --file ${{ matrix.module }}/
-#        continue-on-error: true
-
-  publish:
-    permissions:
-      checks: write
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Collect Test Reports
-        uses: actions/checkout@v4
 
       - name: Publish Test Report
-        id: testReport
+        if: success() || failure()
+        id: test-report
         uses: mikepenz/action-junit-report@v5
         with:
-          report_paths: 'cinnamon-*/target/surefire-reports/*.xml'
-#          allow_empty_report: false
+          name: surefire-reports-${{ matrix.module }}
+          report_paths: ${{ matrix.module }}/target/surefire-reports/*.xml

@@ -4,8 +4,7 @@ on:
   pull_request:
   push:
     branches:
-#      - main
-      - 167-automated-tests
+      - main
 
 jobs:
   test:
@@ -43,7 +42,7 @@ jobs:
         files: cinnamon-risk-assessment/test-results/*.xml
 
     - name: Upload Test Results Artifact
-      if: success() || failure()
+      if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: unittest-results

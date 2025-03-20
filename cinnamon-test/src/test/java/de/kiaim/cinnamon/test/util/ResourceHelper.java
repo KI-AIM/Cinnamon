@@ -19,7 +19,7 @@ public class ResourceHelper {
 	}
 
 	public static String loadCsvFileAsString() throws IOException {
-		return new String(loadCsvFile().getBytes(), StandardCharsets.UTF_8);
+		return unifyLineEndings(new String(loadCsvFile().getBytes(), StandardCharsets.UTF_8));
 	}
 
 	public static MockMultipartFile loadCsvFileWithErrors() throws IOException {
@@ -29,6 +29,11 @@ public class ResourceHelper {
 	}
 
 	public static String loadCsvFileWithErrorsAsString() throws IOException {
-		return new String(loadCsvFileWithErrors().getBytes(), StandardCharsets.UTF_8);
+		return unifyLineEndings(new String(loadCsvFileWithErrors().getBytes(), StandardCharsets.UTF_8));
+	}
+
+	public static String unifyLineEndings(final String value) {
+		return value.replaceAll("\r\n", "\n")
+		            .replaceAll("\n", "\r\n");
 	}
 }

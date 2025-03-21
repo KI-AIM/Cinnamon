@@ -1,8 +1,3 @@
-<!-- Error -->
-<app-info-card [hidden]="evaluationService.error === null" typeClass="card-failure">
-    <div>{{ evaluationService.error }}</div>
-</app-info-card>
-
 <div *ngIf="(stage$ | async) as status">
 
     <div class="stage-head">
@@ -286,7 +281,7 @@
                                                         </span>
                                                         <span>{{ risks?.linkage_health_risk?.attack_rate?.error | number:'1.2-2'}}</span>
                                                     </div>
-                                                    
+
                                                     <div class="classifier-cell">
                                                         <span class="metric-similarity"
                                                               [style.background-color]="statisticsService.getColorScheme(projectConfig.metricConfiguration.colorScheme)[generateRiskColorIndex(risks?.univariate_singling_out_risk?.attack_rate?.error)]">

@@ -3,6 +3,7 @@ import {ExecutionStepService} from "../../../shared/services/execution-step.serv
 import { HttpClient } from "@angular/common/http";
 import { StatusService } from "../../../shared/services/status.service";
 import { Steps } from "../../../core/enums/steps";
+import { ErrorHandlingService } from "../../../shared/services/error-handling.service";
 
 @Injectable({
   providedIn: 'root'
@@ -10,10 +11,11 @@ import { Steps } from "../../../core/enums/steps";
 export class ExecutionService extends ExecutionStepService {
 
     constructor(
+        errorHandlingService: ErrorHandlingService,
         http: HttpClient,
         statusService: StatusService,
     ) {
-        super(http, statusService);
+        super(errorHandlingService, http, statusService);
     }
 
     protected override getStageName(): string {

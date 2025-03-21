@@ -1,8 +1,3 @@
-<!-- Error -->
-<app-info-card [hidden]="executionService.error === null" typeClass="card-failure">
-    <div>{{ executionService.error }}</div>
-</app-info-card>
-
 <div *ngIf="(stage$ | async) as status" class="stage-head">
     <button type="submit" mat-raised-button color="primary"
             [disabled]="status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING"

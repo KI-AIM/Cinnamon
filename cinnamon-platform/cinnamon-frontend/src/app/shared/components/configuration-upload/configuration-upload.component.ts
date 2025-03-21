@@ -12,7 +12,7 @@ import { StepConfiguration } from "../../model/step-configuration";
     standalone: false
 })
 export class ConfigurationUploadComponent implements OnInit{
-  protected error: string;
+  protected hasFile: boolean = false;
 
   /**
    * Registered name of the configuration to upload.
@@ -28,7 +28,6 @@ export class ConfigurationUploadComponent implements OnInit{
     private configurationService: ConfigurationService,
     private dialog: MatDialog,
   ) {
-    this.error = "";
   }
 
   ngOnInit() {
@@ -41,10 +40,6 @@ export class ConfigurationUploadComponent implements OnInit{
       }
   }
 
-  public setError(error: string): void {
-      this.error = error;
-  }
-
   /**
    * Opens the import dialog.
    * @param templateRef Reference to the dialog.
@@ -52,6 +47,10 @@ export class ConfigurationUploadComponent implements OnInit{
   openDialog(templateRef: TemplateRef<any>) {
     this.dialog.open(templateRef, {
       width: '60%'
+    }).afterClosed().subscribe({
+        next: () => {
+            this.hasFile = false;
+        }
     });
   }
 
@@ -60,6 +59,16 @@ export class ConfigurationUploadComponent implements OnInit{
    */
   public closeDialog() {
     this.dialog.closeAll();
+  }
+
+    /**
+     * Activates/deactivates the upload button if an input is made.
+     * @param event Input event of the file input.
+     * @protected
+     */
+  protected updateUploadButton(event: Event) {
+      const input = event.target as HTMLInputElement;
+      this.hasFile = input.files != null && input.files.length > 0;
   }
 
   /**
@@ -71,7 +80,7 @@ export class ConfigurationUploadComponent implements OnInit{
   uploadConfiguration() {
     const files = (document.getElementById("configInput") as HTMLInputElement).files;
     if (!files || files.length === 0) {
-      this.error = "Please select a file!";
+      console.error("No file selected. This should be prevented by disabling the upload button.");
       return;
     }
 

@@ -44,13 +44,6 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      */
     protected disabled: boolean = true;
 
-    /**
-     * Error displayed on the top of the page.
-     * Not visible if null.
-     * @protected
-     */
-    protected error: string | null = null;
-
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') private forms: ConfigurationFormComponent;
 
@@ -127,15 +120,6 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
                 this.forms.readFromCache();
             }
         }
-    }
-
-    /**
-     * Handles the given error by displaying the error on top of the page.
-     * @param err The error message.
-     * @protected
-     */
-    protected handleError(err: string) {
-        this.error = err;
     }
 
     /**

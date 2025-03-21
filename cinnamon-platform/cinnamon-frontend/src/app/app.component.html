@@ -14,7 +14,7 @@
             <!-- Error -->
             <ng-container *ngIf="error$ | async as error">
                 <app-info-card typeClass="card-failure">
-                    {{ error }}
+                    <div style="white-space: pre-line;">{{ error }}</div>
                 </app-info-card>
             </ng-container>
 

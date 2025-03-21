@@ -16,6 +16,7 @@ import {
 import { plainToInstance } from "class-transformer";
 import { StatusService } from "./status.service";
 import { Steps } from "../../core/enums/steps";
+import { ErrorHandlingService } from "./error-handling.service";
 
 @Injectable({
     providedIn: 'root'
@@ -39,6 +40,7 @@ export abstract class ExecutionStepService {
     private statusSubscription: Subscription | null = null;
 
     protected constructor(
+        private readonly errorHandlingService: ErrorHandlingService,
         private readonly http: HttpClient,
         private readonly statusService: StatusService,
     ) {
@@ -51,10 +53,6 @@ export abstract class ExecutionStepService {
                 this.update(value)
             }),
         );
-    }
-
-    public get error(): string | null {
-        return this._error;
     }
 
     public get status$(): Observable<ExecutionStep | null> {
@@ -99,7 +97,7 @@ export abstract class ExecutionStepService {
                 this.update(executionStep);
             },
             error: err => {
-                this._error = `Failed to cancel the process. Status: ${err.status} (${err.statusText})`;
+                this.errorHandlingService.setError(err, "Failed to cancel the process.");
             }
         });
     }
@@ -167,7 +165,7 @@ export abstract class ExecutionStepService {
                 this.update(value);
             }),
             catchError((error) => {
-                this._error = `Failed to update status. Status: ${error.status} (${error.statusText})`;
+                this.errorHandlingService.setError(error, "Failed to update status.");
                 return of(null);
             }),
         );
@@ -200,6 +198,7 @@ export abstract class ExecutionStepService {
     }
 
     private update(executionStep: ExecutionStep) {
+        this.errorHandlingService.clearError();
         this._error = null;
         this.setState(executionStep.status);
         this._statusSubject.next(executionStep);

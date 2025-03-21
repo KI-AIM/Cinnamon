@@ -12,6 +12,7 @@ import { StatusService } from "../../services/status.service";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { from, mergeMap, Observable, switchMap } from "rxjs";
 import { ConfigurationService } from "../../services/configuration.service";
+import { ErrorHandlingService } from "../../services/error-handling.service";
 
 /**
  * Entire configuration page including the algorithm selection,
@@ -57,6 +58,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         protected readonly algorithmService: AlgorithmService,
         private readonly changeDetectorRef: ChangeDetectorRef,
         private readonly configurationService: ConfigurationService,
+        private readonly errorHandlingService: ErrorHandlingService,
         private httpClient: HttpClient,
         private readonly router: Router,
         private readonly statusService: StatusService,
@@ -78,15 +80,14 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         // Get available algorithms
         this.algorithmService.algorithms.subscribe({
             next: value => {
-                this.error = null;
+                this.errorHandlingService.clearError();
                 this.algorithms = value;
                 if (!this.hasAlgorithmSelection) {
                     this.algorithmService.selectCache = this.algorithms[0];
                     this.readFromCache();
                 }
             }, error: error => {
-                console.log(error);
-                this.error = `Failed to load available algorithms. Status: ${error.status} (${error.statusText})`;
+                this.errorHandlingService.setError(error, "Failed to load available algorithms.");
             }
         });
     }
@@ -161,7 +162,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * @private
      */
     private setConfig(error: string | null) {
-        this.error = error;
+        this.errorHandlingService.setError(error);
         if (error === null) {
             this.readFromCache();
         }
@@ -186,7 +187,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         ).subscribe({
             next: () => this.finish(),
             error: err => {
-                this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
+                this.errorHandlingService.setError(err, "Failed to save configuration.");
             }
         });
     }
@@ -204,7 +205,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
             this.configureJobs(true).subscribe({
                     next: () => this.finish(),
                     error: err => {
-                        this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
+                        this.errorHandlingService.setError(err, "Failed to save configuration.");
                     }
                 }
             );
@@ -221,7 +222,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
             ).subscribe({
                 next: () => this.finish(),
                 error: err => {
-                    this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
+                    this.errorHandlingService.setError(err, "Failed to save configuration.");
                 }
             });
         }

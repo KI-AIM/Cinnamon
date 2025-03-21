@@ -1,8 +1,3 @@
-<!-- Error -->
-<app-info-card [hidden]="error === null" typeClass="card-failure">
-    <div>{{ error }}</div>
-</app-info-card>
-
 <div class="vertical-boxes">
 
     <!-- Upload -->
@@ -37,8 +32,7 @@
                     <p>{{ item.description }}</p>
 
                     <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
-                                            (onChange)="updateConfigCache()"
-                                            (submitConfiguration)="onSubmit($event)" (onError)="handleError($event)"
+                                            (onChange)="updateConfigCache()" (submitConfiguration)="onSubmit($event)"
                                             [additionalConfigs]="additionalConfigs">
                     </app-configuration-form>
                 </ng-container>

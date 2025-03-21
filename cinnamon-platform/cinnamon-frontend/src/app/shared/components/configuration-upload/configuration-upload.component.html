@@ -11,21 +11,15 @@
 
 <ng-template #configurationUpload>
     <mat-dialog-content class="mat-typography">
-
-        <!-- Error -->
-        <app-info-card [hidden]="error === ''" typeClass="card-failure">
-            <div>{{error}}</div>
-        </app-info-card>
-
         <div>Select a file to upload</div>
 
         <div class="mb-2">
-            <input id="configInput" type="file" accept=".yml,.yaml">
+            <input type="file" accept=".yml,.yaml" (input)="updateUploadButton($event);">
         </div>
         <div *ngIf="configurationName !== null">
             <div>Click to upload</div>
             <div>
-                <button mat-raised-button color="primary" (click)="uploadConfiguration()">
+                <button mat-raised-button color="primary" (click)="uploadConfiguration()" [disabled]="!hasFile">
                     <mat-icon>file_upload</mat-icon>
                     Upload
                 </button>

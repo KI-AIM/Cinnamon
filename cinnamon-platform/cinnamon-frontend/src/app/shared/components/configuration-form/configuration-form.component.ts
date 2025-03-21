@@ -10,6 +10,7 @@ import {
 import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { HttpErrorResponse } from "@angular/common/http";
+import { ErrorHandlingService } from "../../services/error-handling.service";
 
 /**
  * HTML form and submit button for one algorithm.
@@ -58,15 +59,11 @@ export class ConfigurationFormComponent implements OnInit {
      */
     @Output() public submitConfiguration = new EventEmitter<Object>();
 
-    /**
-     * Event that gets triggered when an error occurs in the form.
-     */
-    @Output() public onError: EventEmitter<string> = new EventEmitter();
-
     @ViewChildren(ConfigurationGroupComponent) private groups: QueryList<ConfigurationGroupComponent>;
 
     constructor(
         private readonly anonService: AlgorithmService,
+        private readonly errorHandlingService: ErrorHandlingService,
     ) {
        this.form = new FormGroup({});
     }
@@ -87,7 +84,7 @@ export class ConfigurationFormComponent implements OnInit {
                         });
                     },
                 error: (err: HttpErrorResponse) => {
-                    this.onError.emit(`Failed to load algorithm definition! Status: ${err.status} (${err.statusText})`);
+                    this.errorHandlingService.setError(err, "Failed to load algorithm definition!");
                 },
             });
 

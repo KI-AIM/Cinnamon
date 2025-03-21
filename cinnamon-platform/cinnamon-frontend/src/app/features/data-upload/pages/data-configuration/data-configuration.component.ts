@@ -15,8 +15,6 @@ import {
     ConfigurationUploadComponent
 } from "../../../../shared/components/configuration-upload/configuration-upload.component";
 import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
-import { ErrorResponse } from 'src/app/shared/model/error-response';
-import { ErrorMessageService } from 'src/app/shared/services/error-message.service';
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
@@ -28,6 +26,7 @@ import { DateTimeFormatConfiguration } from "../../../../shared/model/date-time-
 import { RangeConfiguration } from "../../../../shared/model/range-configuration";
 import { StringPatternConfiguration } from "../../../../shared/model/string-pattern-configuration";
 import { DataSetInfoService } from "../../services/data-set-info.service";
+import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
 
 @Component({
     selector: 'app-data-configuration',
@@ -36,8 +35,6 @@ import { DataSetInfoService } from "../../services/data-set-info.service";
     standalone: false
 })
 export class DataConfigurationComponent implements OnInit, OnDestroy {
-    error: string;
-
     private dataConfigurationSubscription: Subscription;
 
     protected form: FormGroup;
@@ -54,15 +51,14 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         public configuration: DataConfigurationService,
         public dataService: DataService,
         private dataSetInfoService: DataSetInfoService,
+        private readonly errorHandlingService: ErrorHandlingService,
         public fileService: FileService,
         private readonly formBuilder: FormBuilder,
         private titleService: TitleService,
         private router: Router,
         private readonly statusService: StatusService,
         public loadingService: LoadingService,
-		private errorMessageService: ErrorMessageService,
     ) {
-        this.error = "";
         this.titleService.setPageTitle("Data configuration");
     }
 
@@ -149,7 +145,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     private handleError(error: HttpErrorResponse) {
         this.loadingService.setLoadingStatus(false);
-        this.error = this.errorMessageService.extractErrorMessage(error);
+        this.errorHandlingService.setError(error);
 
         window.scroll(0, 0);
     }
@@ -194,28 +190,13 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     protected handleConfigUpload(result: ImportPipeData[] | null) {
         if (result === null) {
-            this.error = "Something went wrong! Please try again later.";
+            this.errorHandlingService.setError("Something went wrong! Please try again later.");
             return;
         }
 
         const configImportData = result[0]
         if (configImportData.hasOwnProperty('error') && configImportData['error'] instanceof HttpErrorResponse) {
-            let errorMessage = "";
-            const errorResponse = plainToInstance(ErrorResponse, configImportData.error.error);
-
-            if (errorResponse.errorCode === '3-2-1') {
-                for (const [field, errors] of Object.entries(errorResponse.errorDetails)) {
-                    const parts = field.split(".");
-                    if (parts.length === 3) {
-                    } else {
-                        errorMessage += (errors as string[]).join(", ") + "\n";
-                    }
-                }
-
-            } else {
-                errorMessage = errorResponse.errorMessage;
-            }
-            this.error = errorMessage;
+            this.errorHandlingService.setError(configImportData.error);
         }
 
         this.configurationUpload.closeDialog();

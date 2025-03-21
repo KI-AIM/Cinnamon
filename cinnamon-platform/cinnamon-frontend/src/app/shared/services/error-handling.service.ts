@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from "rxjs";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ErrorResponse } from "../model/error-response";
+import { plainToInstance } from "class-transformer";
 
 /**
  * Service for central error handling.
@@ -38,9 +39,21 @@ export class ErrorHandlingService {
      * @param error The new error.
      * @param message Additional message.
      */
-    public setError(error: ErrorResponse | HttpErrorResponse | any, message?: string) {
+    public setError(error: ErrorResponse | HttpErrorResponse | string | any, message?: string) {
+        console.log(error);
+        // TODO(DPM) Is this a good idea?
         if (error == null) {
             this.clearError();
+            return;
+        }
+
+        if (typeof error === 'string') {
+            this.errorSubject.next(error);
+            return;
+        }
+        if (error instanceof HttpErrorResponse) {
+            this.handleHttpErrorResponse(error);
+            return;
         }
 
         if (error.status != null) {
@@ -55,6 +68,52 @@ export class ErrorHandlingService {
      */
     public clearError(): void {
         this.errorSubject.next(null);
+    }
+
+    private handleHttpErrorResponse(response: HttpErrorResponse): void {
+        if (response.status != null) {
+            if (response.status === 0) {
+                this.errorSubject.next("Cinnamon is currently unavailable. Please try again later.");
+                return;
+            } else if (response.status === 504) {
+                this.errorSubject.next("The API at " + response.url + " could not be reached");
+                return;
+            }
+        }
+
+        if (typeof response.error === 'string') {
+            this.errorSubject.next(response.error);
+            return;
+        } else {
+            const errorResponse = plainToInstance(ErrorResponse, response.error);
+            this.handleErrorResponse(errorResponse);
+            return;
+        }
+    }
+
+    private handleErrorResponse(error: ErrorResponse): void {
+        let errorMessage = "";
+
+        if (error.errorCode === 'PLATFORM_3_2_1') {
+            for (const [field, errors] of Object.entries(error.errorDetails)) {
+                const parts = field.split(".");
+                if (parts.length === 3) {
+                } else {
+                    console.log(errorMessage);
+                    errorMessage += (errors as string[]).join(", ") + "\n";
+                    console.log(errors);
+                }
+            }
+
+        } else {
+            errorMessage = error.errorMessage;
+        }
+
+        this.errorSubject.next(errorMessage);
+    }
+
+    private wrapErrorMessage(errorMessage: string) {
+        return "<div class='pre-wrapper'><pre>" + errorMessage + "</pre></div>";
     }
 
 }

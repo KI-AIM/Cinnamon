@@ -3,9 +3,10 @@ import {MatSelectChange} from "@angular/material/select";
 import { DataType } from "../../model/data-type";
 
 @Component({
-  selector: 'app-chart-select',
-  templateUrl: './chart-select.component.html',
-  styleUrls: ['./chart-select.component.less']
+    selector: 'app-chart-select',
+    templateUrl: './chart-select.component.html',
+    styleUrls: ['./chart-select.component.less'],
+    standalone: false
 })
 export class ChartSelectComponent {
     @Input() dataType!: DataType;

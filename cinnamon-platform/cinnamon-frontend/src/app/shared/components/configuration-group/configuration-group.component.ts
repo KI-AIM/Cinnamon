@@ -17,9 +17,10 @@ import { ConfigurationAdditionalConfigs } from "../../model/configuration-additi
  * Component for a collapsable input group.
  */
 @Component({
-  selector: 'app-configuration-group',
-  templateUrl: './configuration-group.component.html',
-  styleUrls: ['./configuration-group.component.less']
+    selector: 'app-configuration-group',
+    templateUrl: './configuration-group.component.html',
+    styleUrls: ['./configuration-group.component.less'],
+    standalone: false
 })
 export class ConfigurationGroupComponent implements AfterViewInit {
 

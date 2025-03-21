@@ -70,10 +70,10 @@ public class ProjectServiceTest extends DatabaseTest {
 	@Test
 	public void getExistingProject() {
 		final UserEntity user = getTestUser();
-		final ProjectEntity initialProject = new ProjectEntity();
+		ProjectEntity initialProject = new ProjectEntity();
 		initialProject.getStatus().setCurrentStep(Step.VALIDATION);
 		user.setProject(initialProject);
-		userRepository.save(user);
+		initialProject = userRepository.save(user).getProject();
 
 		final ProjectEntity project = projectService.getProject(user);
 
@@ -109,6 +109,8 @@ public class ProjectServiceTest extends DatabaseTest {
 			process.setJob(processStep);
 			execution.addProcess(process);
 		}
+
+		execution = projectService.saveProject(project).getPipelines().get(0).getStages().get(0);
 
 		var otherFile = ResourceHelper.loadCsvFileWithErrors();
 		final TransformationResult otherTransformationResult = dataProcessor.read(otherFile.getInputStream(),

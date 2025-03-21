@@ -80,17 +80,17 @@
 		<dependency>
 			<groupId>org.dhatim</groupId>
 			<artifactId>fastexcel-reader</artifactId>
-			<version>0.18.0</version>
+			<version>0.18.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-csv</artifactId>
-			<version>1.10.0</version>
+			<version>1.11.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.hypersistence</groupId>
 			<artifactId>hypersistence-utils-hibernate-62</artifactId>
-			<version>3.6.1</version>
+			<version>3.9.4</version>
 		</dependency>
 
 		<dependency>
@@ -177,8 +177,8 @@
 				</executions>
 				<configuration>
 					<workingDirectory>cinnamon-frontend</workingDirectory>
-					<nodeVersion>v20.9.0</nodeVersion>
-					<npmVersion>10.2.3</npmVersion>
+					<nodeVersion>v22.14.0</nodeVersion>
+					<npmVersion>10.9.2</npmVersion>
 				</configuration>
 			</plugin>
 
@@ -195,7 +195,7 @@
 
 		<resources>
 			<resource>
-				<directory>./cinnamon-frontend/dist/cinnamon-frontend</directory>
+				<directory>./cinnamon-frontend/dist/cinnamon-frontend/browser</directory>
 				<targetPath>static</targetPath>
 			</resource>
 			<resource>

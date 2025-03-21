@@ -242,7 +242,7 @@ export class DataUploadModule {}
 ```
 
 A registered configuration gets fetched when the page is loaded.
-For this the auth guard [state-guard](cinnamon-frontend/src/app/core/guards/state.guard.ts) is used to trigger the request.
+For this the [StateManagementService](cinnamon-frontend/src/app/core/services/state-management.service.ts) gets initialized in the [AppComponent](cinnamon-frontend/src/app/app.component.ts) and triggers the request.
 When exporting or importing a configuration, the configuration gets pushed to the backend.
 
 # Working with configuration pages

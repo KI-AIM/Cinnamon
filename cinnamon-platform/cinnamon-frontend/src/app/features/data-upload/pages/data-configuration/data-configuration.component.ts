@@ -33,6 +33,7 @@ import { DataSetInfoService } from "../../services/data-set-info.service";
     selector: 'app-data-configuration',
     templateUrl: './data-configuration.component.html',
     styleUrls: ['./data-configuration.component.less'],
+    standalone: false
 })
 export class DataConfigurationComponent implements OnInit, OnDestroy {
     error: string;

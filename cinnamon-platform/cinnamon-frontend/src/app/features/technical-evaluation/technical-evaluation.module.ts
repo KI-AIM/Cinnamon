@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule, inject, provideAppInitializer } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
     TechnicalEvaluationConfigurationComponent
@@ -15,15 +15,12 @@ import { TechnicalEvaluationService } from "./services/technical-evaluation.serv
         SharedModule
     ],
     providers: [
-        {
-            // Calls the useFactory function when starting the application
-            provide: APP_INITIALIZER,
-            useFactory: (service: TechnicalEvaluationService) => function () {
+        provideAppInitializer(() => {
+        const initializerFn = ((service: TechnicalEvaluationService) => function () {
                 return service.registerConfig();
-            },
-            deps: [TechnicalEvaluationService],
-            multi: true,
-        },
+            })(inject(TechnicalEvaluationService));
+        return initializerFn();
+      }),
     ],
 })
 export class TechnicalEvaluationModule {

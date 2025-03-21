@@ -20,6 +20,7 @@ import { HttpErrorResponse } from "@angular/common/http";
     selector: 'app-configuration-form',
     templateUrl: './configuration-form.component.html',
     styleUrls: ['./configuration-form.component.less'],
+    standalone: false
 })
 export class ConfigurationFormComponent implements OnInit {
 

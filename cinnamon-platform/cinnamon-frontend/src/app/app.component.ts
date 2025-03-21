@@ -9,6 +9,7 @@ import { StateManagementService } from "./core/services/state-management.service
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.less'],
     providers: [],
+    standalone: false
 })
 export class AppComponent implements OnInit {
     title = "cinnamon-frontend"

@@ -14,9 +14,10 @@ import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { DataType, dataTypeFromString } from "../../../../shared/model/data-type";
 
 @Component({
-	selector: "app-additional-configuration",
-	templateUrl: "./additional-configuration.component.html",
-	styleUrls: ["./additional-configuration.component.less"],
+    selector: "app-additional-configuration",
+    templateUrl: "./additional-configuration.component.html",
+    styleUrls: ["./additional-configuration.component.less"],
+    standalone: false
 })
 export class AdditionalConfigurationComponent {
 	@Input() attrNumber: Number;

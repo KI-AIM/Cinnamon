@@ -5,9 +5,10 @@ import { ConfigurationService } from 'src/app/shared/services/configuration.serv
 import { StatusService } from "../../services/status.service";
 
 @Component({
-  selector: 'app-configuration-management',
-  templateUrl: './configuration-management.component.html',
-  styleUrls: ['./configuration-management.component.less']
+    selector: 'app-configuration-management',
+    templateUrl: './configuration-management.component.html',
+    styleUrls: ['./configuration-management.component.less'],
+    standalone: false
 })
 export class ConfigurationManagementComponent {
     protected readonly Steps = Steps;

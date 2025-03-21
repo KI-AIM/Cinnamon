@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule, inject, provideAppInitializer } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
     SynthetizationConfigurationComponent
@@ -13,15 +13,12 @@ import { SynthetizationService } from "./services/synthetization.service";
         SharedModule
     ],
     providers: [
-        {
-            // Calls the useFactory function when starting the application
-            provide: APP_INITIALIZER,
-            useFactory: (service: SynthetizationService) => function () {
+        provideAppInitializer(() => {
+        const initializerFn = ((service: SynthetizationService) => function () {
                 return service.registerConfig();
-            },
-            deps: [SynthetizationService],
-            multi: true,
-        },
+            })(inject(SynthetizationService));
+        return initializerFn();
+      }),
     ]
 })
 export class SynthetizationModule {

@@ -6,9 +6,10 @@ import { FormArray, FormControl, FormGroup } from "@angular/forms";
 import { ConfigurationInputDefinition } from "../../model/configuration-input-definition";
 
 @Component({
-  selector: 'app-configuration-input-attribute-list',
-  templateUrl: './configuration-input-attribute-list.component.html',
-  styleUrls: ['./configuration-input-attribute-list.component.less']
+    selector: 'app-configuration-input-attribute-list',
+    templateUrl: './configuration-input-attribute-list.component.html',
+    styleUrls: ['./configuration-input-attribute-list.component.less'],
+    standalone: false
 })
 export class ConfigurationInputAttributeListComponent implements OnInit {
     @Input() public configurationInputDefinition!: ConfigurationInputDefinition;

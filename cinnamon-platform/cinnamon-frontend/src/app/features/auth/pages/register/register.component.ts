@@ -1,7 +1,7 @@
 import {Component} from '@angular/core';
 import {FormControl, FormGroup, Validators} from "@angular/forms";
 import {UserService} from "../../../../shared/services/user.service";
-import {HttpErrorResponse} from "@angular/common/http";
+import { HttpErrorResponse } from "@angular/common/http";
 import {Router} from "@angular/router";
 import {TitleService} from "../../../../core/services/title-service.service";
 
@@ -14,7 +14,8 @@ interface RegisterForm {
 @Component({
     selector: 'app-register',
     templateUrl: './register.component.html',
-    styleUrls: ['./register.component.less']
+    styleUrls: ['./register.component.less'],
+    standalone: false
 })
 export class RegisterComponent {
     registerError: string[];

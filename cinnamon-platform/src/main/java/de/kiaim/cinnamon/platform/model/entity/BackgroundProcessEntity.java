@@ -80,11 +80,9 @@ public class BackgroundProcessEntity {
 	/**
 	 * Additional files created during the process.
 	 */
-	@ElementCollection(fetch = FetchType.LAZY)
 	@CollectionTable(name = "background_process_result_files", joinColumns = @JoinColumn(name = "background_process_id"))
 	@MapKeyColumn(name = "filename")
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-	@JoinColumn(name = "lob_id")
 	private final Map<String, LobWrapperEntity> resultFiles = new HashMap<>();
 
 	/**

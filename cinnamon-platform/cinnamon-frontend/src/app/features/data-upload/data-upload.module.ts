@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, NgModule } from "@angular/core";
+import { NgModule, inject, provideAppInitializer } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { AdditionalConfigurationComponent } from "./components/additional-configuration/additional-configuration.component";
 import { AttributeConfigurationComponent } from "./components/attribute-configuration/attribute-configuration.component";
@@ -64,13 +64,10 @@ import { NgxEchartsModule } from "ngx-echarts";
 	providers: [
 		FileService,
 		CdkColumnDef,
-		{
-			// Calls the useFactory function when starting the application
-			provide: APP_INITIALIZER,
-			useFactory: (service: DataConfigurationService) => function () { return service.registerConfig(); },
-			deps: [DataConfigurationService],
-			multi: true,
-		},
+		provideAppInitializer(() => {
+        const initializerFn = ((service: DataConfigurationService) => function () { return service.registerConfig(); })(inject(DataConfigurationService));
+        return initializerFn();
+      }),
 	],
 })
 export class DataUploadModule {}

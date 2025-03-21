@@ -7,7 +7,8 @@ import { StatisticsService } from "../../services/statistics.service";
 @Component({
     selector: 'app-metric-info-table',
     templateUrl: './metric-info-table.component.html',
-    styleUrls: ['./metric-info-table.component.less']
+    styleUrls: ['./metric-info-table.component.less'],
+    standalone: false
 })
 export class MetricInfoTableComponent {
 

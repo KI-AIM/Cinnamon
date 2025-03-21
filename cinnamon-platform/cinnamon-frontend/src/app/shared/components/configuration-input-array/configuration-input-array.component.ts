@@ -4,9 +4,10 @@ import { MatDialog } from "@angular/material/dialog";
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 
 @Component({
-  selector: 'app-configuration-input-array',
-  templateUrl: './configuration-input-array.component.html',
-  styleUrls: ['./configuration-input-array.component.less']
+    selector: 'app-configuration-input-array',
+    templateUrl: './configuration-input-array.component.html',
+    styleUrls: ['./configuration-input-array.component.less'],
+    standalone: false
 })
 export class ConfigurationInputArrayComponent {
     @Input() configurationInputDefinition!: ConfigurationInputDefinition;

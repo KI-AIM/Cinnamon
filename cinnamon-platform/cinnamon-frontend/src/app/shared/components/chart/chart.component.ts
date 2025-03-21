@@ -1,18 +1,19 @@
 import { Component, OnChanges, OnInit } from '@angular/core';
-import {ECharts, EChartsOption} from "echarts";
 import {DataType} from "../../model/data-type";
 import { StatisticsService } from "../../services/statistics.service";
+import { EChartsCoreOption, EChartsType } from "echarts/core";
 
 @Component({
     selector: 'app-chart',
     templateUrl: './chart.component.html',
-    styleUrls: ['./chart.component.less']
+    styleUrls: ['./chart.component.less'],
+    standalone: false
 })
 export class ChartComponent implements OnInit, OnChanges {
-    protected options: EChartsOption;
-    protected chartInstances: ECharts;
-    protected zoomInstance: ECharts | null = null;
-    protected zoom: EChartsOption | null = null;
+    protected options: EChartsCoreOption;
+    protected chartInstances: EChartsType;
+    protected zoomInstance: EChartsType | null = null;
+    protected zoom: EChartsCoreOption | null = null;
 
     constructor(
         protected statisticsService: StatisticsService,
@@ -27,7 +28,7 @@ export class ChartComponent implements OnInit, OnChanges {
         this.options = this.createChartOptions();
     }
 
-    protected onChartInit(event: ECharts) {
+    protected onChartInit(event: EChartsType) {
         this.chartInstances = event;
         this.afterChartInit();
     }
@@ -35,7 +36,7 @@ export class ChartComponent implements OnInit, OnChanges {
     protected afterChartInit(): void {
     }
 
-    protected onZoomInit(event: ECharts) {
+    protected onZoomInit(event: EChartsType) {
         this.zoomInstance = event;
         this.afterZoomInit();
     }
@@ -43,7 +44,7 @@ export class ChartComponent implements OnInit, OnChanges {
     protected afterZoomInit(): void {
     }
 
-    protected createChartOptions(): EChartsOption {
+    protected createChartOptions(): EChartsCoreOption {
         return {};
     }
 
@@ -63,7 +64,7 @@ export class ChartComponent implements OnInit, OnChanges {
         a.click();
     }
 
-    protected graphOptions(simple: boolean): EChartsOption {
+    protected graphOptions(simple: boolean): EChartsCoreOption {
         return {
             grid: {
                 left: simple ? 25 : 70,

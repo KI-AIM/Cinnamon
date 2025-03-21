@@ -5,9 +5,10 @@ import { ProjectSettings } from "../../model/project-settings";
 import { ProjectConfigurationService } from "../../services/project-configuration.service";
 
 @Component({
-  selector: 'app-color-legend',
-  templateUrl: './color-legend.component.html',
-  styleUrls: ['./color-legend.component.less']
+    selector: 'app-color-legend',
+    templateUrl: './color-legend.component.html',
+    styleUrls: ['./color-legend.component.less'],
+    standalone: false
 })
 export class ColorLegendComponent {
     @Input() goodLabel: string = "Similar";

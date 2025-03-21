@@ -21,9 +21,10 @@ import { Observable } from "rxjs";
 import { FileInformation } from "../../../../shared/model/file-information";
 
 @Component({
-	selector: "app-upload-file",
-	templateUrl: "./upload-file.component.html",
-	styleUrls: ["./upload-file.component.less"],
+    selector: "app-upload-file",
+    templateUrl: "./upload-file.component.html",
+    styleUrls: ["./upload-file.component.less"],
+    standalone: false
 })
 export class UploadFileComponent implements OnInit, OnDestroy {
 	Steps = Steps;

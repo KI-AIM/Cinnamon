@@ -10,7 +10,8 @@ import { Router } from "@angular/router";
     selector: 'app-startpage',
     templateUrl: './startpage.component.html',
     styleUrls: ['./startpage.component.less'],
-    providers: []
+    providers: [],
+    standalone: false
 })
 export class StartpageComponent {
     Mode = Mode;

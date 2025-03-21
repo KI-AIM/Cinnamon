@@ -4,7 +4,8 @@ import { SortDirection, SortType } from "../model/metric-table-data";
 
 @Pipe({
     name: 'metricSorter',
-    pure: false
+    pure: false,
+    standalone: false
 })
 export class MetricSorterPipe implements PipeTransform {
 

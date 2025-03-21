@@ -3,9 +3,10 @@ import { DataType } from 'src/app/shared/model/data-type';
 import { FormGroup } from "@angular/forms";
 
 @Component({
-  selector: 'app-range',
-  templateUrl: './range.component.html',
-  styleUrls: ['./range.component.less']
+    selector: 'app-range',
+    templateUrl: './range.component.html',
+    styleUrls: ['./range.component.less'],
+    standalone: false
 })
 export class RangeComponent {
     @Input() type: DataType;

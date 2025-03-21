@@ -3,9 +3,10 @@ import { MatSelect, MatSelectChange } from "@angular/material/select";
 import { Algorithm } from "../../model/algorithm";
 
 @Component({
-  selector: 'app-configuration-selection',
-  templateUrl: './configuration-selection.component.html',
-  styleUrls: ['./configuration-selection.component.less']
+    selector: 'app-configuration-selection',
+    templateUrl: './configuration-selection.component.html',
+    styleUrls: ['./configuration-selection.component.less'],
+    standalone: false
 })
 export class ConfigurationSelectionComponent {
     @Input() public algorithms!: Algorithm[]

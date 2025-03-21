@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {finalize, Observable, of, share, tap} from "rxjs";
 import {DataSetInfo} from "../../../shared/model/data-set-info";
 import {environments} from "../../../../environments/environment";

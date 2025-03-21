@@ -9,9 +9,10 @@ import { ConfigurationInputType } from "../../model/configuration-input-type";
  * @author Daniel Preciado-Marquez
  */
 @Component({
-  selector: 'app-configuration-input-info',
-  templateUrl: './configuration-input-info.component.html',
-  styleUrls: ['./configuration-input-info.component.less']
+    selector: 'app-configuration-input-info',
+    templateUrl: './configuration-input-info.component.html',
+    styleUrls: ['./configuration-input-info.component.less'],
+    standalone: false
 })
 export class ConfigurationInputInfoComponent {
     protected readonly ConfigurationInputType = ConfigurationInputType;

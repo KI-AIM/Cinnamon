@@ -1,7 +1,8 @@
 import { Directive, ViewContainerRef } from '@angular/core';
 
 @Directive({
-  selector: '[appAnonymizationAttributeConfigurationDirective]'
+    selector: '[appAnonymizationAttributeConfigurationDirective]',
+    standalone: false
 })
 export class AnonymizationAttributeConfigurationDirective {
 

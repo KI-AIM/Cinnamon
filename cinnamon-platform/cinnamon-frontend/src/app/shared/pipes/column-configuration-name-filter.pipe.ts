@@ -3,6 +3,7 @@ import {ColumnConfiguration} from "../model/column-configuration";
 
 @Pipe({
     name: 'columnConfigurationNameFilter',
+    standalone: false
 })
 export class ColumnConfigurationNameFilterPipe implements PipeTransform {
 

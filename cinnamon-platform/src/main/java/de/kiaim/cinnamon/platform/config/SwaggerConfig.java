@@ -19,10 +19,10 @@ public class SwaggerConfig {
 				.components(new Components().addSecuritySchemes("Basic Authentication", new SecurityScheme().type(
 						SecurityScheme.Type.HTTP).scheme("basic")))
 				.addSecurityItem(new SecurityRequirement().addList("Basic Authentication"))
-				.info(new Info().title("KI-AIM-Platform API")
+				.info(new Info().title("Cinnamon Platform API")
 				                .version(kiAimVersion)
-				                .contact(new Contact().name("Github").url("https://github.com/KI-AIM/KI-AIM-Platform"))
-				                .description("KI-AIM-Platform provides the data management for the KI-AIM project."));
+				                .contact(new Contact().name("Github").url("https://github.com/KI-AIM/Cinnamon"))
+				                .description("Cinnamon Platform provides the data management for the KI-AIM project."));
 	}
 
 }

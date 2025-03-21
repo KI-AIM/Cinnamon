@@ -10,14 +10,15 @@ export function noSpaceValidator(): ValidatorFn {
 }
 
 @Directive({
-  selector: '[appNoSpaceValidator]',
-  providers: [
-    {
-      provide: NG_VALIDATORS,
-      useExisting: NoSpaceValidatorDirective,
-      multi: true,
-    }
-  ],
+    selector: '[appNoSpaceValidator]',
+    providers: [
+        {
+            provide: NG_VALIDATORS,
+            useExisting: NoSpaceValidatorDirective,
+            multi: true,
+        }
+    ],
+    standalone: false
 })
 export class NoSpaceValidatorDirective implements Validator {
 

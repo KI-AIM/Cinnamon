@@ -15,11 +15,15 @@
 
         <div class="mb-2">
             <input type="file" accept=".yml,.yaml" (input)="updateUploadButton($event);">
+
+            <div class="cinnamon-file-input-error" *ngIf="isFileTypeInvalid">
+                Please select a YAML file.
+            </div>
         </div>
         <div *ngIf="configurationName !== null">
             <div>Click to upload</div>
             <div>
-                <button mat-raised-button color="primary" (click)="uploadConfiguration()" [disabled]="!hasFile">
+                <button mat-raised-button color="primary" (click)="uploadConfiguration()" [disabled]="!hasFile || isFileTypeInvalid">
                     <mat-icon>file_upload</mat-icon>
                     Upload
                 </button>

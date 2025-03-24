@@ -13,6 +13,7 @@ import { StepConfiguration } from "../../model/step-configuration";
 })
 export class ConfigurationUploadComponent implements OnInit{
   protected hasFile: boolean = false;
+  protected isFileTypeInvalid: boolean = false;
 
   /**
    * Registered name of the configuration to upload.
@@ -69,6 +70,14 @@ export class ConfigurationUploadComponent implements OnInit{
   protected updateUploadButton(event: Event) {
       const input = event.target as HTMLInputElement;
       this.hasFile = input.files != null && input.files.length > 0;
+      this.isFileTypeInvalid = false;
+
+      if (this.hasFile) {
+          const fileExtension = this.getFileExtension(input.files![0]);
+          if (fileExtension == null || !["yaml", "yml"].includes(fileExtension)) {
+              this.isFileTypeInvalid = true;
+          }
+      }
   }
 
   /**
@@ -100,5 +109,15 @@ export class ConfigurationUploadComponent implements OnInit{
     });
     this.closeDialog();
   }
+
+    /**
+     * Extracts the file extension from the given file.
+     * @param file The File
+     * @return The file extension without `.`.
+     * @private
+     */
+    private getFileExtension(file: File): string | undefined {
+        return file.name.split(".").pop();
+    }
 
 }

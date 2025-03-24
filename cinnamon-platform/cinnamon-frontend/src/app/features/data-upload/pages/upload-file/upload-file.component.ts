@@ -34,6 +34,9 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
     protected fileInfo$: Observable<FileInformation>;
 
+    protected isDataFileTypeInvalid: boolean = false;
+    protected isConfigFileTypeInvalid: boolean = false;
+
 	@ViewChild("uploadErrorModal") errorModal: TemplateRef<NgbModal>;
 	@ViewChild("fileForm") fileInput: ElementRef;
 
@@ -81,6 +84,33 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         this.fileInfo$ = this.fileService.fileInfo$;
     }
 
+    /**
+     * Checks if the data file input is invalid.
+     * @return If the data file input is invalid.
+     * @protected
+     */
+    protected get isDataFileInvalid(): boolean {
+        return this.dataFile == null || this.isDataFileTypeInvalid;
+    }
+
+    /**
+     * Checks if the configuration file input is invalid.
+     * @return If the configuration file input is invalid.
+     * @protected
+     */
+    protected get isConfigFileInvalid(): boolean {
+        return this.isConfigFileTypeInvalid;
+    }
+
+    /**
+     * Checks if any file input is invalid.
+     * @return If any file input is invalid.
+     * @protected
+     */
+    protected get isInvalid(): boolean {
+        return this.isDataFileInvalid || this.isConfigFileInvalid;
+    }
+
     protected get locked(): boolean {
         return this.statusService.isStepCompleted(Steps.VALIDATION);
     }
@@ -89,17 +119,25 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 		const files = (event.target as HTMLInputElement)?.files;
 
 		if (files) {
-			this.dataFile = files[0];
-            this.setFileType(this.dataFile);
+            const fileExtension = this.getFileExtension(files[0]);
+            const validFileExtensions = ["csv", "xlsx"];
+
+            if (fileExtension && validFileExtensions.includes(fileExtension)) {
+                this.isDataFileTypeInvalid = false;
+                this.dataFile = files[0];
+                this.setFileType(fileExtension);
+            } else {
+                this.isDataFileTypeInvalid = true;
+            }
 		}
 	}
 
-    private getFileExtension(file: File): string {
-		var fileExtension = file.name.split(".").pop();
+    private getFileExtension(file: File): string | null {
+		const fileExtension = file.name.split(".").pop();
 		if (fileExtension != undefined) {
 			return fileExtension;
 		} else {
-			return "csv";
+			return null;
 		}
 	}
 
@@ -107,7 +145,15 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         const files = (event.target as HTMLInputElement)?.files;
 
         if (files) {
-            this.configurationFile = files[0];
+            const fileExtension = this.getFileExtension(files[0]);
+            const validFileExtensions = ["yml", "yaml"];
+
+            if (fileExtension && validFileExtensions.includes(fileExtension)) {
+                this.isConfigFileTypeInvalid = false;
+                this.configurationFile = files[0];
+            } else {
+                this.isConfigFileTypeInvalid = true;
+            }
         }
     }
 
@@ -168,8 +214,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         }
     }
 
-	setFileType(file: File) {
-		switch (this.getFileExtension(file)) {
+	setFileType(fileExtension: string) {
+		switch (fileExtension) {
 			case "csv":
 				this.fileConfiguration.fileType = FileType.CSV;
 				break;

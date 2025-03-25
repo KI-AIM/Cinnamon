@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable } from "rxjs";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ErrorResponse } from "../model/error-response";
 import { plainToInstance } from "class-transformer";
+import { UserService } from "./user.service";
 
 /**
  * Service for central error handling.
@@ -17,7 +18,9 @@ export class ErrorHandlingService {
 
     private errorSubject: BehaviorSubject<string | null>;
 
-    constructor() {
+    constructor(
+        private readonly userService: UserService,
+    ) {
         this.errorSubject = new BehaviorSubject<string | null>(null);
     }
 
@@ -74,6 +77,9 @@ export class ErrorHandlingService {
                     this.errorSubject.next("Cinnamon is currently unavailable. Please try again later.");
                 }
 
+                return;
+            } else if (response.status === 401) {
+                this.userService.invalidate();
                 return;
             } else if (response.status === 504) {
                 this.errorSubject.next("The API at " + response.url + " could not be reached");

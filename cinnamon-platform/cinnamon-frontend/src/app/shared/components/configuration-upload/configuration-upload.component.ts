@@ -4,6 +4,7 @@ import { ConfigurationService } from 'src/app/shared/services/configuration.serv
 import { ImportPipeData } from "../../model/import-pipe-data";
 import { Observable } from "rxjs";
 import { StepConfiguration } from "../../model/step-configuration";
+import { ErrorHandlingService } from "../../services/error-handling.service";
 
 @Component({
     selector: 'app-configuration-upload',
@@ -12,9 +13,6 @@ import { StepConfiguration } from "../../model/step-configuration";
     standalone: false
 })
 export class ConfigurationUploadComponent implements OnInit{
-  protected hasFile: boolean = false;
-  protected isFileTypeInvalid: boolean = false;
-
   /**
    * Registered name of the configuration to upload.
    * If null, all configurations in the selected will be uploaded
@@ -24,12 +22,15 @@ export class ConfigurationUploadComponent implements OnInit{
   @Input() public disabled: boolean = false;
   @Output() onUpload: EventEmitter<ImportPipeData[] | null> = new EventEmitter();
 
+    protected configFile: File | null = null;
+    protected isFileTypeInvalid: boolean = false;
 
-  constructor(
-    private configurationService: ConfigurationService,
-    private dialog: MatDialog,
-  ) {
-  }
+    constructor(
+        private readonly errorHandlingService: ErrorHandlingService,
+        private configurationService: ConfigurationService,
+        private dialog: MatDialog,
+    ) {
+    }
 
   ngOnInit() {
       if (this.configurationNameObservable !== null) {
@@ -50,7 +51,7 @@ export class ConfigurationUploadComponent implements OnInit{
       width: '60%'
     }).afterClosed().subscribe({
         next: () => {
-            this.hasFile = false;
+            this.configFile = null;
         }
     });
   }
@@ -69,13 +70,19 @@ export class ConfigurationUploadComponent implements OnInit{
      */
   protected updateUploadButton(event: Event) {
       const input = event.target as HTMLInputElement;
-      this.hasFile = input.files != null && input.files.length > 0;
+      const hasFile = input.files != null && input.files.length > 0;
+
+      this.configFile = null;
       this.isFileTypeInvalid = false;
 
-      if (this.hasFile) {
-          const fileExtension = this.getFileExtension(input.files![0]);
+      if (hasFile) {
+          const file = input.files![0];
+          const fileExtension = this.getFileExtension(file);
+
           if (fileExtension == null || !["yaml", "yml"].includes(fileExtension)) {
               this.isFileTypeInvalid = true;
+          } else {
+              this.configFile =  file;
           }
       }
   }
@@ -87,8 +94,7 @@ export class ConfigurationUploadComponent implements OnInit{
    * If configured, stores the configuration under the configured name into the database.
    */
   uploadConfiguration() {
-    const files = (document.getElementById("configInput") as HTMLInputElement).files;
-    if (!files || files.length === 0) {
+    if (!this.configFile) {
       console.error("No file selected. This should be prevented by disabling the upload button.");
       return;
     }
@@ -104,9 +110,14 @@ export class ConfigurationUploadComponent implements OnInit{
       }
     }
 
-    this.configurationService.uploadAllConfigurations(files[0], included).subscribe(result => {
-        this.onUpload.emit(result);
-    });
+      this.configurationService.uploadAllConfigurations(this.configFile, included).subscribe({
+          next: result => {
+              this.onUpload.emit(result);
+          },
+          error: error => {
+              this.errorHandlingService.setError(error, "Could not upload configuration.");
+          },
+      });
     this.closeDialog();
   }
 

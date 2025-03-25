@@ -23,7 +23,7 @@
         <div *ngIf="configurationName !== null">
             <div>Click to upload</div>
             <div>
-                <button mat-raised-button color="primary" (click)="uploadConfiguration()" [disabled]="!hasFile || isFileTypeInvalid">
+                <button #configInput mat-raised-button color="primary" (click)="uploadConfiguration()" [disabled]="configFile == null || isFileTypeInvalid">
                     <mat-icon>file_upload</mat-icon>
                     Upload
                 </button>

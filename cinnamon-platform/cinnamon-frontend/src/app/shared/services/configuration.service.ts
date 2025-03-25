@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, toArray } from "rxjs";
+import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, throwError, toArray } from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { FileUtilityService } from './file-utility.service';
 import { parse, stringify } from 'yaml';
@@ -244,10 +244,26 @@ export class ConfigurationService {
                     }),
                 );
             }),
-            catchError((error) => {
-                console.log('Error during configuration read:', error);
-                return of(null);
+            switchMap(result => {
+                if (includedConfigurations !== null && result) {
+                    // Look if all configurations are present
+                    const missing: string[] = [];
+                    for (const config of includedConfigurations) {
+                        if (!result.some(value => value.name === config)) {
+                            missing.push(config);
+                        }
+                    }
+
+                    if (missing.length > 0) {
+                        return throwError(() => "Invalid configuration file! The configuration must contain the following properties: " + missing.map(val => "'" + val + "'").join(", "));
+                    }
+                }
+                return of(result);
             }),
+            // catchError((error) => {
+            //     console.log('Error during configuration read:', error);
+            //     return of(null);
+            // }),
         );
     }
 

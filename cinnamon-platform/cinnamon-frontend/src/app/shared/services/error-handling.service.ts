@@ -40,7 +40,6 @@ export class ErrorHandlingService {
      * @param message Additional message.
      */
     public setError(error: ErrorResponse | HttpErrorResponse | string | any, message?: string) {
-        console.log(error);
         // TODO(DPM) Is this a good idea?
         if (error == null) {
             this.clearError();
@@ -52,15 +51,11 @@ export class ErrorHandlingService {
             return;
         }
         if (error instanceof HttpErrorResponse) {
-            this.handleHttpErrorResponse(error);
+            this.handleHttpErrorResponse(error, message);
             return;
         }
 
-        if (error.status != null) {
-            if (error.status === 0) {
-                this.errorSubject.next("Cinnamon is currently unavailable. Please try again later.");
-            }
-        }
+        this.errorSubject.next("An unexpected error occurred. Please contact the administrator.");
     }
 
     /**
@@ -70,10 +65,15 @@ export class ErrorHandlingService {
         this.errorSubject.next(null);
     }
 
-    private handleHttpErrorResponse(response: HttpErrorResponse): void {
+    private handleHttpErrorResponse(response: HttpErrorResponse, message?: string): void {
         if (response.status != null) {
             if (response.status === 0) {
-                this.errorSubject.next("Cinnamon is currently unavailable. Please try again later.");
+                if (message != null) {
+                    this.errorSubject.next(message);
+                } else {
+                    this.errorSubject.next("Cinnamon is currently unavailable. Please try again later.");
+                }
+
                 return;
             } else if (response.status === 504) {
                 this.errorSubject.next("The API at " + response.url + " could not be reached");

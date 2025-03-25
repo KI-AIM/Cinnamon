@@ -41,7 +41,7 @@ export class ConfigurationFormComponent implements OnInit {
      * The definition of the configuration fetched from the external API.
      * @protected
      */
-    protected algorithmDefinition: AlgorithmDefinition;
+    protected algorithmDefinition: AlgorithmDefinition | null = null;
     /**
      * Dynamically created form for the configuration.
      * @protected
@@ -84,11 +84,9 @@ export class ConfigurationFormComponent implements OnInit {
                         });
                     },
                 error: (err: HttpErrorResponse) => {
-                    this.errorHandlingService.setError(err, "Failed to load algorithm definition!");
+                    this.errorHandlingService.setError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
                 },
             });
-
-
     }
 
     /**
@@ -129,7 +127,7 @@ export class ConfigurationFormComponent implements OnInit {
     public setConfiguration(configuration: Object) {
         //Wait here so that form is loaded before updating it
         setTimeout(() => {
-            if (Object.keys(this.form.controls).length === 0) {
+            if (this.algorithmDefinition === null || Object.keys(this.form.controls).length === 0) {
                 return;
             }
 

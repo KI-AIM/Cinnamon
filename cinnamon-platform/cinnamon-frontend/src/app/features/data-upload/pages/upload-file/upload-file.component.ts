@@ -19,6 +19,7 @@ import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
 import { StatusService } from "../../../../shared/services/status.service";
 import { Observable } from "rxjs";
 import { FileInformation } from "../../../../shared/model/file-information";
+import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
 
 @Component({
     selector: "app-upload-file",
@@ -71,6 +72,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 		public loadingService: LoadingService,
         private configurationService: ConfigurationService,
 		private errorMessageService: ErrorMessageService,
+        private readonly errorHandlingService: ErrorHandlingService,
 	) {
 		this.titleService.setPageTitle("Upload data");
 		this.fileConfiguration = fileService.getFileConfiguration();
@@ -171,17 +173,23 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                     // Estimate data configuration based on the data set
                     this.dataService.estimateData().subscribe({
                         next: (d) => this.handleUpload(d),
-                        error: (e) => this.handleError("Failed to estimate the data types" + this.errorMessageService.convertResponseToMessage(e)),
+                        error: (e) => this.handleError(e, "Failed to estimate the data configuration"),
                     });
                 } else {
                     // Use data configuration from the selected file
-                    this.configurationService.uploadAllConfigurations(this.configurationFile, null).subscribe(result => {
-                        this.handleConfigurationUpload(result);
-                    });
+                    this.configurationService.uploadAllConfigurations(this.configurationFile, [this.dataConfigurationService.CONFIGURATION_NAME]).subscribe(
+                        {
+                            next: result => {
+                                this.handleConfigurationUpload(result);
+                            },
+                            error: err => {
+                                this.handleError(err, "Failed to import data configuration");
+                            },
+                        });
                 }
             },
             error: err => {
-                this.handleError("Failed to upload file" + this.errorMessageService.convertResponseToMessage(err));
+                this.handleError(err, "Failed to upload file");
             },
         });
 	}
@@ -192,24 +200,13 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      * @param result The result.
      */
     private handleConfigurationUpload(result: ImportPipeData[] | null) {
-        let hasError = false;
-        let errorMessage = "";
-
-        if (result === null) {
-            errorMessage = "An unexpected error occurred!";
-            hasError = true;
+        if (result === null || result.length === 0) {
+            this.handleError("An unexpected error occurred!");
+        } else if (result[0].error !== null) {
+            // Only one configuration is imported as defined when calling the upload
+            this.handleError(result[0].error);
         } else {
-            for (const importData of result) {
-                if (importData.error !== null) {
-                    hasError = true;
-                    errorMessage += "Errors for '" + importData.name + "':" + this.errorMessageService.convertResponseToMessage(importData.error);
-                }
-            }
-        }
-
-        if (hasError) {
-            this.handleError("Failed to import the configurations<br>" + errorMessage);
-        } else {
+            // No error occurred
             this.navigateToNextStep();
         }
     }
@@ -244,9 +241,10 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         this.statusService.updateNextStep(Steps.DATA_CONFIG).subscribe();
 	}
 
-	private handleError(error: string) {
+	private handleError(err: any, message?: string) {
 		this.loadingService.setLoadingStatus(false);
-		this.showErrorDialog(error);
+        this.errorHandlingService.setError(err, message);
+		// this.showErrorDialog(error);
 	}
 
 	private showErrorDialog(error: string) {

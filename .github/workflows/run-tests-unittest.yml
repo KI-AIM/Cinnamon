@@ -37,6 +37,7 @@ jobs:
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: success() || failure()
       with:
+        comment_mode: off
         files: cinnamon-risk-assessment/test-results/*.xml
 
     - name: Upload Test Results Artifact

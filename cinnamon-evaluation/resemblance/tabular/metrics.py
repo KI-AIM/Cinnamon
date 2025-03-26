@@ -29,9 +29,6 @@ def validate_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> 
     except TypeError as e:
         raise TypeError(f"Error selecting numeric columns: {str(e)}")
 
-    if real_numeric.empty or synthetic_numeric.empty:
-        raise ValueError("No numeric columns found in one or both datasets")
-
     real_cols = set(real_numeric.columns)
     synthetic_cols = set(synthetic_numeric.columns)
     if real_cols != synthetic_cols:
@@ -43,7 +40,7 @@ def validate_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> 
 
 def validate_categorical_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> tuple:
     """
-    Validates categorical columns in real and synthetic dataframes.
+    Validates two dataframes for categorical comparison operations.
 
     Args:
         real: Original dataset to validate
@@ -53,26 +50,23 @@ def validate_categorical_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame)
         tuple: (real_categorical, synthetic_categorical) Validated categorical dataframes
 
     Raises:
-        ValueError: If no categorical columns found or column mismatch between dataframes
+        TypeError: If inputs aren't DataFrames or categorical conversion fails
+        ValueError: If no categorical columns or mismatched columns
     """
-    real_categorical = real.select_dtypes(include=['object'])
-    synthetic_categorical = synthetic.select_dtypes(include=['object'])
+    if not all(isinstance(df, pd.DataFrame) for df in [real, synthetic]):
+        raise TypeError("Both inputs must be pandas DataFrames")
 
-    if len(real_categorical.columns) == 0 or len(synthetic_categorical.columns) == 0:
-        raise ValueError("No categorical columns found in one or both dataframes")
+    try:
+        real_categorical = real.select_dtypes(include=['object'])
+        synthetic_categorical = synthetic.select_dtypes(include=['object'])
+    except TypeError as e:
+        raise TypeError(f"Error selecting categorical columns: {str(e)}")
 
     real_cols = set(real_categorical.columns)
     synthetic_cols = set(synthetic_categorical.columns)
-
     if real_cols != synthetic_cols:
-        missing_real = synthetic_cols - real_cols
-        missing_synthetic = real_cols - synthetic_cols
-        error_msg = []
-        if missing_real:
-            error_msg.append(f"Missing columns in real data: {missing_real}")
-        if missing_synthetic:
-            error_msg.append(f"Missing columns in synthetic data: {missing_synthetic}")
-        raise ValueError(". ".join(error_msg))
+        raise ValueError(
+            f"Mismatched categorical columns. \nReal columns: {real_cols}\nSynthetic columns: {synthetic_cols}")
 
     return real_categorical, synthetic_categorical
 
@@ -460,12 +454,6 @@ def calculate_kolmogorov_smirnov(real, synthetic):
     Returns:
         dict: A dictionary containing the Kolmogorov-Smirnov test results for each column in the real and synthetic dataframes.
     """
-
-    def get_color_index(ks_stat):
-        if pd.isna(ks_stat):
-            return 'NA'
-        return min(10, max(1, int(ks_stat * 10) + 1))
-
     ks_results = {'real': {}, 'synthetic': {}}
     try:
         real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
@@ -474,38 +462,17 @@ def calculate_kolmogorov_smirnov(real, synthetic):
             synthetic_col_data = synthetic_numeric[column].dropna()
 
             if len(real_col_data) == 0 or len(synthetic_col_data) == 0:
-                ks_results['real'][column] = {
-                    'KS_statistic': 'NA',
-                    'color_index': 'NA'
-                }
-
-                ks_results['synthetic'][column] = {
-                    'KS_statistic': 'NA',
-                    'color_index': 'NA'
-                }
+                ks_results['real'][column] = 'NA'
+                ks_results['synthetic'][column] = 'NA'
             else:
                 try:
                     statistic, p_value = stats.ks_2samp(real_col_data, synthetic_col_data)
+                    ks_results['real'][column] = 0
+                    ks_results['synthetic'][column] = float(statistic)
 
-                    ks_results['real'][column] = {
-                        'KS_statistic': float(statistic),
-                        'color_index': get_color_index(statistic)
-                    }
-
-                    ks_results['synthetic'][column] = {
-                        'KS_statistic': float(statistic),
-                        'color_index': get_color_index(statistic)
-                    }
                 except:
-                    ks_results['real'][column] = {
-                        'KS_statistic': 'NA',
-                        'color_index': 'NA'
-                    }
-
-                    ks_results['synthetic'][column] = {
-                        'KS_statistic': 'NA',
-                        'color_index': 'NA'
-                    }
+                    ks_results['real'][column] = 'NA'
+                    ks_results['synthetic'][column] = 'NA'
 
         return ks_results
     except Exception as e:
@@ -761,14 +728,6 @@ def calculate_hellinger_distance(real, synthetic):
         dict: A dictionary with column names as keys and Hellinger distance values.
     """
 
-    def get_color_index(hellinger_distribution):
-        """
-        Determine color index based on Hellinger distance (1-10).
-        Since Hellinger distance is already between 0 and 1, we multiply by 10 and round up.
-        Lower Hellinger values indicate better similarity, so 0 maps to 1 and 1 maps to 10.
-        """
-        return min(10, max(1, int(hellinger_distribution * 10) + 1))
-
     hellinger_distances = {'real': {}, 'synthetic': {}}
     freq_results = calculate_frequencies(real, synthetic)
 
@@ -788,15 +747,9 @@ def calculate_hellinger_distance(real, synthetic):
 
         hellinger_dist = float(distance.euclidean(np.sqrt(vec_real), np.sqrt(vec_synthetic)) / np.sqrt(2))
 
-        hellinger_distances['real'][column] = {
-            'hellinger_distance': hellinger_dist,
-            'color_index': get_color_index(hellinger_dist)
-        }
+        hellinger_distances['real'][column] = 0
 
-        hellinger_distances['synthetic'][column] = {
-            'hellinger_distance': hellinger_dist,
-            'color_index': get_color_index(hellinger_dist)
-        }
+        hellinger_distances['synthetic'][column] = hellinger_dist
 
     return hellinger_distances
 
@@ -991,22 +944,3 @@ def missing_values_count(real, synthetic):
     except Exception as e:
         raise ValueError(f"Error calculating missing values count: {str(e)}")
 
-
-def missing_values_percentage(real, synthetic):
-    """
-    Calculate the percentage of missing values for each column in real and synthetic DataFrames.
-
-    Args:
-        real (pd.DataFrame): The real DataFrame
-        synthetic (pd.DataFrame): The synthetic DataFrame
-
-    Returns:
-        dict: Dictionary containing missing value percentages for both DataFrames
-    """
-    try:
-        return {
-            'real': (real.isnull().mean() * 100).to_dict(),
-            'synthetic': (synthetic.isnull().mean() * 100).to_dict()
-        }
-    except Exception as e:
-        raise ValueError(f"Error calculating missing values percentage: {str(e)}")

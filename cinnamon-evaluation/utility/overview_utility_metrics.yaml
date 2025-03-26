@@ -1,6 +1,6 @@
 utility:
   display_name: Utility Metrics
-  description: Utility metrics are used to evaluate how well synthetic data replicates the utility of the real data. These metrics typically compare model performance between real and synthetic data.
+  description: Measures how effectively anonymized data performs in standard machine learning applications.
   metrics:
     - display_name: "Machine Learning Utility"
       function_name: machine_learning

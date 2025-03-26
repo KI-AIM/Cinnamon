@@ -82,11 +82,11 @@ export class DetailMetrics {
     @Type(() => StatisticsValues)
     kurtosis: StatisticsValues;
 
-    @Type(() => StatisticsValuesNominal<KolmogorovSmirnovData>)
-    kolmogorov_smirnov: StatisticsValuesNominal<KolmogorovSmirnovData>;
+    @Type(() => StatisticsValues)
+    kolmogorov_smirnov: StatisticsValues;
 
-    @Type(() => StatisticsValuesNominal<HellingerDistanceData>)
-    hellinger_distance: StatisticsValuesNominal<HellingerDistanceData>;
+    @Type(() => StatisticsValues)
+    hellinger_distance: StatisticsValues;
 }
 
 export class PlotData {
@@ -114,6 +114,7 @@ export class StatisticsValues extends StatisticsMetaData {
     difference: StatisticsDifference;
 }
 
+/*
 export class KolmogorovSmirnovData {
     KS_statistic: number;
     p_value: number;
@@ -124,6 +125,7 @@ export class HellingerDistanceData {
     hellinger_distance: number;
     color_index: number;
 }
+*/
 
 export class StatisticsValuesNominal<T> extends StatisticsMetaData {
     @Type(() => StatisticsData<T>)

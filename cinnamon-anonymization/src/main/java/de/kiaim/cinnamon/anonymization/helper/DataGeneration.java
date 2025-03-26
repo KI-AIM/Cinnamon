@@ -41,12 +41,12 @@ public class DataGeneration {
         if (value == null) {
             // TODO : discuss default values
             return switch (type) {
-                case DATE -> new DateData(LocalDate.of(1, 1, 1));
-                case DATE_TIME -> new DateTimeData(LocalDateTime.of(1, 1, 1, 0, 0));
-                case INTEGER -> new IntegerData(0);
-                case DECIMAL -> new DecimalData(0.0f);
-                case BOOLEAN -> new BooleanData(false);
-                case STRING -> new StringData("");
+                case DATE -> new DateData(null);
+                case DATE_TIME -> new DateTimeData(null);
+                case INTEGER -> new IntegerData(null);
+                case DECIMAL -> new DecimalData(null);
+                case BOOLEAN -> new BooleanData(null);
+                case STRING -> new StringData("DELETE");
                 default -> throw new IllegalArgumentException("Unsupported data type: " + type);
             };
         } else {

@@ -99,9 +99,7 @@ public class ProjectService {
 		final ProjectEntity project = createProject(projectSeed);
 		user.setProject(project);
 
-		userRepository.save(user);
-
-		return project;
+		return userRepository.save(user).getProject();
 	}
 
 	/**
@@ -157,8 +155,8 @@ public class ProjectService {
 	 * @param projectEntity Entity to be saved.
 	 */
 	@Transactional
-	public void saveProject(final ProjectEntity projectEntity) {
-		projectRepository.save(projectEntity);
+	public ProjectEntity saveProject(final ProjectEntity projectEntity) {
+		return projectRepository.save(projectEntity);
 	}
 
 	/**

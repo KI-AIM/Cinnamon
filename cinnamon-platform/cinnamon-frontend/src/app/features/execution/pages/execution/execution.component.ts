@@ -13,9 +13,10 @@ import { SynthetizationProcess } from "../../../../shared/model/synthetization-p
 import { plainToInstance } from "class-transformer";
 
 @Component({
-  selector: 'app-execution',
-  templateUrl: './execution.component.html',
-  styleUrls: ['./execution.component.less'],
+    selector: 'app-execution',
+    templateUrl: './execution.component.html',
+    styleUrls: ['./execution.component.less'],
+    standalone: false
 })
 export class ExecutionComponent implements OnInit, OnDestroy {
     protected readonly ProcessStatus = ProcessStatus;

@@ -9,6 +9,7 @@ import { DataType } from 'src/app/shared/model/data-type';
     selector: 'app-attribute-configuration',
     templateUrl: './attribute-configuration.component.html',
     styleUrls: ['./attribute-configuration.component.less'],
+    standalone: false
 })
 export class AttributeConfigurationComponent implements AfterViewInit {
     @Input() attrNumber: String;

@@ -30,11 +30,11 @@ The build process will generate a `.war` archive that is deployable with a tomca
 
 
 ## Development
-The following setup has been tests for developing the project:
+The following setup has been tested for developing the project:
 - Java 17 (LTS)
 - Tomcat 10.1.15 (LTS)
-- Node 20.9.0 (Latest version supported by Angular)
-- NPM 10.2.3 (Latest)
+- Node 22.14.0 (LTS)
+- NPM 10.9.2 (Latest)
 - Angular CLI 17.0.0 (Latest)
 
 ### Spring and Angular

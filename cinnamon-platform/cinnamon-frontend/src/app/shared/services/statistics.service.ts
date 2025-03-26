@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {environments} from "../../../environments/environment";
 import {finalize, map, Observable, of, share, tap} from "rxjs";
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {Statistics, StatisticsData} from "../model/statistics";
 import {parse} from "yaml";
 import {plainToInstance} from "class-transformer";

@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule, inject, provideAppInitializer } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnonymizationConfigurationComponent } from './pages/anonymization-configuration/anonymization-configuration.component';
 import { SharedModule } from '../../shared/shared.module';
@@ -42,16 +42,13 @@ import { AnonymizationAttributeConfigurationDirective } from './directives/anony
         ReactiveFormsModule
     ],
     providers: [
-        {
-            // Calls the useFactory function when starting the application
-            provide: APP_INITIALIZER,
-            useFactory: (service: AnonymizationService) =>
+        provideAppInitializer(() => {
+        const initializerFn = ((service: AnonymizationService) =>
                 function () {
                     return service.registerConfig();
-                },
-            deps: [AnonymizationService],
-            multi: true,
-        },
+                })(inject(AnonymizationService));
+        return initializerFn();
+      }),
     ],
 })
 export class AnonymizationModule {}

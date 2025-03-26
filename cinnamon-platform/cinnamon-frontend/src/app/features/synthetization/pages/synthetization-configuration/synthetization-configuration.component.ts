@@ -12,7 +12,8 @@ import { SynthetizationService } from "../../services/synthetization.service";
             provide: AlgorithmService,
             useExisting: SynthetizationService
         },
-    ]
+    ],
+    standalone: false
 })
 export class SynthetizationConfigurationComponent {
 

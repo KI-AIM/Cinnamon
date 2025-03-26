@@ -2,7 +2,8 @@ import { Pipe, PipeTransform } from '@angular/core';
 import {AttributeStatistics} from "../model/statistics";
 
 @Pipe({
-  name: 'statisticsFilter'
+    name: 'statisticsFilter',
+    standalone: false
 })
 export class StatisticsFilterPipe implements PipeTransform {
 

@@ -14,7 +14,8 @@ import { ProjectConfigurationService } from "../../services/project-configuratio
 @Component({
     selector: 'app-data-inspection-attribute',
     templateUrl: './data-inspection-attribute.component.html',
-    styleUrls: ['./data-inspection-attribute.component.less']
+    styleUrls: ['./data-inspection-attribute.component.less'],
+    standalone: false
 })
 export class DataInspectionAttributeComponent implements OnInit {
     @Input() public attributeStatistics!: AttributeStatistics;

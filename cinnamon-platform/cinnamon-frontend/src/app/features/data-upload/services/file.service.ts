@@ -1,7 +1,7 @@
 import { FileConfiguration } from "../../../shared/model/file-configuration";
 import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "../../../shared/model/csv-file-configuration";
 import { XlsxFileConfiguration } from "src/app/shared/model/xlsx-file-configuration";
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {environments} from "../../../../environments/environment";
 import { finalize, Observable, of, share, tap } from "rxjs";
 import {Injectable} from "@angular/core";

@@ -12,9 +12,10 @@ import { ColumnConfiguration } from '../../model/column-configuration';
  * @author Daniel Preciado-Marquez
  */
 @Component({
-  selector: 'app-configuration-input',
-  templateUrl: './configuration-input.component.html',
-  styleUrls: ['./configuration-input.component.less']
+    selector: 'app-configuration-input',
+    templateUrl: './configuration-input.component.html',
+    styleUrls: ['./configuration-input.component.less'],
+    standalone: false
 })
 export class ConfigurationInputComponent implements OnInit, OnDestroy {
     protected readonly ConfigurationInputType = ConfigurationInputType;

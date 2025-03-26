@@ -14,7 +14,8 @@ import { StatisticsService } from "../../services/statistics.service";
 @Component({
     selector: 'app-metric-configuration',
     templateUrl: './metric-configuration.component.html',
-    styleUrls: ['./metric-configuration.component.less']
+    styleUrls: ['./metric-configuration.component.less'],
+    standalone: false
 })
 export class MetricConfigurationComponent implements OnInit, OnDestroy {
     protected readonly MetricImportance = MetricImportance;

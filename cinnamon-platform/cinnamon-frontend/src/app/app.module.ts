@@ -7,7 +7,7 @@ import { NavigationComponent } from './core/components/navigation/navigation.com
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { TitleService } from './core/services/title-service.service';
 import { StateManagementService } from './core/services/state-management.service';
-import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { DataService } from './shared/services/data.service';
 import { DataConfigurationService } from './shared/services/data-configuration.service';
 import { DataUploadModule } from './features/data-upload/data-upload.module';
@@ -49,7 +49,6 @@ import { RiskAssessmentModule } from "./features/risk-assessment/risk-assessment
         TechnicalEvaluationModule,
         RiskAssessmentModule,
         DataUploadModule,
-        HttpClientModule,
         NgbModule,
         BrowserAnimationsModule,
         MatIconModule,
@@ -66,7 +65,8 @@ import { RiskAssessmentModule } from "./features/risk-assessment/risk-assessment
         UserService,
         DataService,
         DataConfigurationService,
-        {provide: HTTP_INTERCEPTORS, useClass: XhrInterceptor, multi: true},
+        { provide: HTTP_INTERCEPTORS, useClass: XhrInterceptor, multi: true },
+        provideHttpClient(withInterceptorsFromDi()),
     ],
     bootstrap: [AppComponent]
 })

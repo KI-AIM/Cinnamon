@@ -23,6 +23,7 @@ import { ConfigurationService } from "../../services/configuration.service";
     selector: 'app-configuration-page',
     templateUrl: './configuration-page.component.html',
     styleUrls: ['./configuration-page.component.less'],
+    standalone: false
 })
 export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null

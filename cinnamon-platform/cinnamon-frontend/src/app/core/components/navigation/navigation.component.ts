@@ -13,6 +13,7 @@ import { MatDialog } from "@angular/material/dialog";
     selector: 'app-navigation',
     templateUrl: './navigation.component.html',
     styleUrls: ['./navigation.component.less'],
+    standalone: false
 })
 
 export class NavigationComponent {

@@ -12,7 +12,8 @@ import { TitleService } from "../../../../core/services/title-service.service";
             provide: AlgorithmService,
             useExisting: RiskAssessmentService
         },
-    ]
+    ],
+    standalone: false
 })
 export class RiskAssessmentConfigurationComponent {
 

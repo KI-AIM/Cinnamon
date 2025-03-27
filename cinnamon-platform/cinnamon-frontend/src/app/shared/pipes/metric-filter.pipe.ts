@@ -4,7 +4,8 @@ import { MetricImportance, MetricImportanceData } from "../model/project-setting
 
 @Pipe({
     name: 'metricFilter',
-    pure: false
+    pure: false,
+    standalone: false
 })
 export class MetricFilterPipe implements PipeTransform {
 

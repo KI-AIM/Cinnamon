@@ -23,8 +23,7 @@ import de.kiaim.cinnamon.test.util.TransformationResultTestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,7 +47,7 @@ class DatabaseServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void storeAndDelete() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
 
@@ -69,11 +68,10 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(dataSetEntity.isStoredData(), "Flag that the data is stored should be false!");
-
 	}
 
 	@Test
-	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void storeAndDeleteWithErrors() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(true);
 
@@ -98,7 +96,6 @@ class DatabaseServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	@Transactional
 	void storeConfiguration() {
 		final String config = """
 				configurations:
@@ -123,7 +120,6 @@ class DatabaseServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	@Transactional
 	void storeConfigurationOverwrite() {
 		final String config = "Test config";
 
@@ -195,7 +191,6 @@ class DatabaseServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	@Transactional
 	void exportConfiguration() {
 		final String config = """
 				configurations:
@@ -217,7 +212,6 @@ class DatabaseServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	@Transactional
 	void exportConfigurationNoConfiguration() {
 		final UserEntity user = getTestUser();
 		final ProjectEntity project = projectService.getProject(user);
@@ -228,7 +222,6 @@ class DatabaseServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	@Transactional
 	void exportConfigurationInvalidName() {
 		final String invalidConfigName = "invalidConfigName";
 		final String config = "Test config";

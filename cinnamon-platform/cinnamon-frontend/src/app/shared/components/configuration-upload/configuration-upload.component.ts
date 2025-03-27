@@ -6,9 +6,10 @@ import { Observable } from "rxjs";
 import { StepConfiguration } from "../../model/step-configuration";
 
 @Component({
-  selector: 'app-configuration-upload',
-  templateUrl: './configuration-upload.component.html',
-  styleUrls: ['./configuration-upload.component.less']
+    selector: 'app-configuration-upload',
+    templateUrl: './configuration-upload.component.html',
+    styleUrls: ['./configuration-upload.component.less'],
+    standalone: false
 })
 export class ConfigurationUploadComponent implements OnInit{
   protected error: string;

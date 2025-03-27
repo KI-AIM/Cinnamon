@@ -6,15 +6,16 @@ import { DataRowTransformationError } from "src/app/shared/model/data-row-transf
 import { catchError, map, Observable, of, startWith, switchMap } from "rxjs";
 import {DataConfigurationService} from "../../services/data-configuration.service";
 import {DataConfiguration} from "../../model/data-configuration";
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {environments} from "../../../../environments/environment";
 import { DataSetInfo } from "../../model/data-set-info";
 import { DataSetInfoService } from "../../../features/data-upload/services/data-set-info.service";
 
 @Component({
-	selector: "app-data-table",
-	templateUrl: "./data-table.component.html",
-	styleUrls: ["./data-table.component.less"],
+    selector: "app-data-table",
+    templateUrl: "./data-table.component.html",
+    styleUrls: ["./data-table.component.less"],
+    standalone: false
 })
 export class DataTableComponent implements OnInit, AfterViewInit {
     @Input() public sourceDataset: string | null = null;

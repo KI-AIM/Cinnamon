@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -167,6 +168,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void storeDataAndDeleteData() throws Exception {
 		postFile();
 
@@ -469,6 +471,30 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(content().json("[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!'],[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']]"));
 	}
 
+	@Test
+	void generateHoldOutSplitInvalidPercentageBig() throws Exception {
+		postData(false);
+
+		mockMvc.perform(post("/api/data/hold-out")
+				                .param("holdOutPercentage", String.valueOf(1.3)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"))
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("holdOutPercentage", "Value must be between 0.0 and 1.0"));
+	}
+
+	@Test
+	void generateHoldOutSplitInvalidPercentageNegative() throws Exception {
+		postData(false);
+
+		mockMvc.perform(post("/api/data/hold-out")
+				                .param("holdOutPercentage", String.valueOf(-0.01)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"))
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("holdOutPercentage", "Value must be between 0.0 and 1.0"));
+	}
+
 	// ================================================================================================================
 	// endregion
 	// ================================================================================================================
@@ -632,6 +658,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void loadTransformationResultPageSelectErrors() throws Exception {
 		postData();
 
@@ -648,6 +675,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void loadTransformationResultPageSelectValid() throws Exception {
 		postData();
 

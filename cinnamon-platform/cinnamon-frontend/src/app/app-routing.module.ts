@@ -11,7 +11,6 @@ import { AnonymizationConfigurationComponent } from './features/anonymization/pa
 import {
     SynthetizationConfigurationComponent
 } from "./features/synthetization/pages/synthetization-configuration/synthetization-configuration.component";
-import { StateGuard } from "./core/guards/state.guard";
 import { ExecutionComponent } from "./features/execution/pages/execution/execution.component";
 import {
     TechnicalEvaluationConfigurationComponent
@@ -22,7 +21,7 @@ import {
 } from "./features/risk-assessment/pages/risk-assessment-configuration/risk-assessment-configuration.component";
 
 const routes: Routes = [
-    {path: '', redirectTo: '', pathMatch: 'full', canActivate: [AuthGuard, StateGuard]},
+    {path: '', redirectTo: 'login', pathMatch: 'full'},
     {path: 'login' , component: LoginComponent},
     {path: 'register', component: RegisterComponent},
     {path: 'start', component: StartpageComponent, canActivate: [AuthGuard]},

@@ -139,11 +139,6 @@ public class DatabaseTest extends ContextRequiredTest {
 
 	private void doCleanDatabase() {
 		try {
-			if (this.testUser != null) {
-				this.testUser.setProject(null);
-				userRepository.save(this.testUser);
-			}
-
 			projectRepository.deleteAll();
 			dataTransformationErrorRepository.deleteAll();
 			databaseService.executeStatement("SELECT setval('project_entity_seq', 1, true)");

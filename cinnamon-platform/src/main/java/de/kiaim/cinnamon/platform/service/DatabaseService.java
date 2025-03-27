@@ -188,22 +188,19 @@ public class DatabaseService {
 	 */
 	@Transactional
 	public Long storeOriginalTransformationResult(final TransformationResult transformationResult,
-	                                              final ProjectEntity project)
+	                                              ProjectEntity project)
 			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 
 		// Store configuration
 		final DataSet dataSet = transformationResult.getDataSet();
-		final DataSetEntity dataSetEntity = doStoreOriginalDataConfiguration(project, dataSet.getDataConfiguration());
+		DataSetEntity dataSetEntity = doStoreOriginalDataConfiguration(project, dataSet.getDataConfiguration());
 
 		// Store transformation errors
 		convertTransformationErrors(transformationResult, dataSetEntity);
 
-		projectRepository.save(project);
-
-		storeDataSet(dataSet, dataSetEntity);
-
+		dataSetEntity = storeDataSet(dataSet, dataSetEntity);
 		return dataSetEntity.getId();
 	}
 
@@ -811,7 +808,7 @@ public class DatabaseService {
 		return Optional.ofNullable(project.getOriginalData().getDataSet());
 	}
 
-	private DataSetEntity doStoreOriginalDataConfiguration(final ProjectEntity project,
+	private DataSetEntity doStoreOriginalDataConfiguration(ProjectEntity project,
 	                                                       final DataConfiguration dataConfiguration)
 			throws BadDataConfigurationException, BadStateException {
 		checkFile(project, dataConfiguration);
@@ -826,9 +823,9 @@ public class DatabaseService {
 
 		dataSetEntity.setDataConfiguration(dataConfiguration);
 
-		projectRepository.save(project);
+		project = projectRepository.save(project);
 
-		return dataSetEntity;
+		return project.getOriginalData().getDataSet();
 	}
 
 	private DataSetEntity doStoreDataConfiguration(final ProjectEntity project,
@@ -849,9 +846,7 @@ public class DatabaseService {
 		dataSetEntity.setDataConfiguration(dataConfiguration);
 		dataSetEntity.setProcessed(processed);
 
-		projectRepository.save(project);
-
-		return dataSetEntity;
+		return dataSetRepository.save(dataSetEntity);
 	}
 
 	private void checkFile(final ProjectEntity project, final DataConfiguration dataConfiguration
@@ -870,7 +865,7 @@ public class DatabaseService {
 		}
 	}
 
-	private void storeDataSet(final DataSet dataSet, final DataSetEntity dataSetEntity)
+	private DataSetEntity storeDataSet(final DataSet dataSet, final DataSetEntity dataSetEntity)
 			throws BadDataConfigurationException, InternalDataSetPersistenceException {
 		final String tableName = getTableName(dataSetEntity.getId());
 
@@ -918,7 +913,7 @@ public class DatabaseService {
 		}
 
 		dataSetEntity.setStoredData(true);
-		dataSetRepository.save(dataSetEntity);
+		return dataSetRepository.save(dataSetEntity);
 	}
 
 

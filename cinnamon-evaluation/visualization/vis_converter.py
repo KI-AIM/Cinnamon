@@ -505,3 +505,48 @@ def add_resembance_description(enriched_dict, yaml_config):
     }
 
     return enriched_dict
+
+
+def add_overview_to_config(config_data):
+    """
+    Processes the config data to add an overview section to each attribute containing 
+    all metrics with their percentage differences and the overall average difference.
+    
+    Args:
+        config_data: The configuration data containing metrics information
+        
+    Returns:
+        dict: The modified config data with added overview sections
+    """
+    modified_config = config_data.copy()
+    
+    if "resemblance" not in modified_config or "attributes" not in modified_config["resemblance"]:
+        return modified_config
+        
+    attributes = modified_config["resemblance"]["attributes"]
+    
+    for i, attr in enumerate(attributes):
+        overview = {}
+        all_percentages = []
+        
+        if "important_metrics" in attr:
+            for metric_name, metric_data in attr["important_metrics"].items():
+                if "difference" in metric_data and "percentage" in metric_data["difference"]:
+                    percentage = metric_data["difference"]["percentage"]
+                    all_percentages.append(percentage)
+                    overview[metric_name] = percentage
+        
+        if "details" in attr:
+            for metric_name, metric_data in attr["details"].items():
+                if "difference" in metric_data and "percentage" in metric_data["difference"]:
+                    percentage = metric_data["difference"]["percentage"]
+                    all_percentages.append(percentage)
+                    overview[metric_name] = percentage
+        
+        if all_percentages:
+            overview["overall_avg_difference"] = sum(all_percentages) / len(all_percentages)
+        
+        if overview:
+            modified_config["resemblance"]["attributes"][i]["overview"] = overview
+    
+    return modified_config

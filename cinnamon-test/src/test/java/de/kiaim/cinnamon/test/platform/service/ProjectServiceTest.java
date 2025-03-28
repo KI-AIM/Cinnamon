@@ -141,13 +141,13 @@ public class ProjectServiceTest extends DatabaseTest {
 					var resultBuilder = new StringBuilder(result);
 					resultBuilder.delete(result.length() - 24, result.length() - 15);
 
-					assertEquals(resultBuilder.toString(), stringBuilder.toString(), "Unexpected configuration!");
+					assertEquals(resultBuilder.toString(), stringBuilder.toString(), "Unexpected anonymized data!");
 				} else if (zipEntry.getName().equals("attribute_config.yaml")) {
 					assertEquals(DataConfigurationTestHelper.generateDataConfigurationAsYaml(), stringBuilder.toString(), "Unexpected data configuration!");
 				} else if(zipEntry.getName().equals("original.csv")) {
-					assertEquals(ResourceHelper.loadCsvFileAsString(), stringBuilder.toString(), "Unexpected configuration!");
+					assertEquals(ResourceHelper.loadCsvFileAsString(), stringBuilder.toString(), "Unexpected original data!");
 				} else if(zipEntry.getName().equals("anonymization.yaml")) {
-					assertEquals("key = value", stringBuilder.toString(), "Unexpected configuration!");
+					assertEquals("key = value", stringBuilder.toString(), "Unexpected anonymization configuration!");
 				} else {
 					fail("Unexpected ZIP entry: " + zipEntry.getName());
 				}

@@ -1,0 +1,83 @@
+name: JUnit Workflow
+
+on:
+  pull_request:
+  workflow_call:
+
+jobs:
+  test-junit:
+    permissions:
+      checks: write
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - cinnamon-test
+          - cinnamon-anonymization
+
+    services:
+      postgres:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: cinnamon_user
+          POSTGRES_DB: cinnamon_test_db
+        options: >-
+          --health-cmd "pg_isready -U cinnamon_user -d cinnamon_test_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SPRING_DATASOURCE_PASSWORD: postgres
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Cache Maven Repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install External JAR into Maven Repository
+        run: |
+          mvn install:install-file \
+            -Dfile=cinnamon-anonymization/src/main/resources/lib/libarx-3.9.1.jar \
+            -DgroupId=org.deidentifier \
+            -DartifactId=arx \
+            -Dversion=3.9.1 \
+            -Dpackaging=jar
+
+      - name: Install with Maven
+        run: mvn -B clean install -DskipTests=true
+
+      - name: Run tests for modules
+        run: mvn -B clean test --file ${{ matrix.module }}/
+
+      - name: Publish Test Report
+        if: success() || failure()
+        id: test-report
+        uses: mikepenz/action-junit-report@v5
+        with:
+          report_paths: ${{ matrix.module }}/target/surefire-reports/*.xml
+
+      - name: Upload Surefire test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-${{ matrix.module }}
+          path: ${{ matrix.module }}/target/surefire-reports

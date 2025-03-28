@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-      # TODO(DPM)
-      - 167-automated-tests
 
 env:
   # Define the registry and images
@@ -50,28 +48,28 @@ jobs:
       - name: Build and Push cinnamon-anonymization
         run: |
           docker build -t $REGISTRY/cinnamon-anonymization:latest -f ./cinnamon-anonymization/Dockerfile ./
-#          docker push $REGISTRY/cinnamon-anonymization:latest
+          docker push $REGISTRY/cinnamon-anonymization:latest
 
       # Build and Push cinnamon-evaluation
       - name: Build and Push cinnamon-evaluation
         run: |
           docker build -t $REGISTRY/cinnamon-evaluation:latest ./cinnamon-evaluation
-#          docker push $REGISTRY/cinnamon-evaluation:latest
+          docker push $REGISTRY/cinnamon-evaluation:latest
 
       # Build and Push cinnamon-platform
       - name: Build and Push cinnamon-platform
         run: |
           docker build -t $REGISTRY/cinnamon-platform:latest -f ./cinnamon-platform/Dockerfile ./
-#          docker push $REGISTRY/cinnamon-platform:latest
+          docker push $REGISTRY/cinnamon-platform:latest
 
       # Build and Push cinnamon-risk-assessment
       - name: Build and Push cinnamon-anonymization
         run: |
           docker build -t $REGISTRY/cinnamon-risk-assessment:latest ./cinnamon-risk-assessment
-#          docker push $REGISTRY/cinnamon-risk-assessment:latest
+          docker push $REGISTRY/cinnamon-risk-assessment:latest
 
       # Build and Push cinnamon-synthetization
       - name: Build and Push cinnamon-synthetization
         run: |
           docker build -t $REGISTRY/cinnamon-synthetization:latest ./cinnamon-synthetization
-#          docker push $REGISTRY/cinnamon-synthetization:latest
+          docker push $REGISTRY/cinnamon-synthetization:latest

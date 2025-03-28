@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -5,7 +6,7 @@ from scipy.spatial import distance
 from scipy.stats import gaussian_kde
 
 
-def validate_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> tuple:
+def extract_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Validates two dataframes for numeric comparison operations.
 
@@ -20,25 +21,27 @@ def validate_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> 
         TypeError: If inputs aren't DataFrames or numeric conversion fails
         ValueError: If no numeric columns or mismatched columns
     """
-    if not all(isinstance(df, pd.DataFrame) for df in [real, synthetic]):
-        raise TypeError("Both inputs must be pandas DataFrames")
-
+    if not isinstance(real, pd.DataFrame):
+        raise TypeError("Parameter 'real' must be a pandas DataFrame")
+    if not isinstance(synthetic, pd.DataFrame):
+        raise TypeError("Parameter 'synthetic' must be a pandas DataFrame")
+        
     try:
         real_numeric = real.select_dtypes(include=['number'])
         synthetic_numeric = synthetic.select_dtypes(include=['number'])
     except TypeError as e:
         raise TypeError(f"Error selecting numeric columns: {str(e)}")
-
+    
     real_cols = set(real_numeric.columns)
     synthetic_cols = set(synthetic_numeric.columns)
-    if real_cols != synthetic_cols:
-        raise ValueError(
-            f"Mismatched numeric columns. \nReal columns: {real_cols}\nSynthetic columns: {synthetic_cols}")
 
+    if real_cols != synthetic_cols:
+        raise ValueError(f"Mismatched numeric columns. Real columns: {real_cols}, Synthetic columns: {synthetic_cols}")
+    
     return real_numeric, synthetic_numeric
 
 
-def validate_categorical_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> tuple:
+def extract_categorical_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Validates two dataframes for categorical comparison operations.
 
@@ -53,21 +56,23 @@ def validate_categorical_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame)
         TypeError: If inputs aren't DataFrames or categorical conversion fails
         ValueError: If no categorical columns or mismatched columns
     """
-    if not all(isinstance(df, pd.DataFrame) for df in [real, synthetic]):
-        raise TypeError("Both inputs must be pandas DataFrames")
-
+    if not isinstance(real, pd.DataFrame):
+        raise TypeError("Parameter 'real' must be a pandas DataFrame")
+    if not isinstance(synthetic, pd.DataFrame):
+        raise TypeError("Parameter 'synthetic' must be a pandas DataFrame")
+        
     try:
         real_categorical = real.select_dtypes(include=['object'])
         synthetic_categorical = synthetic.select_dtypes(include=['object'])
     except TypeError as e:
         raise TypeError(f"Error selecting categorical columns: {str(e)}")
-
+    
     real_cols = set(real_categorical.columns)
     synthetic_cols = set(synthetic_categorical.columns)
-    if real_cols != synthetic_cols:
-        raise ValueError(
-            f"Mismatched categorical columns. \nReal columns: {real_cols}\nSynthetic columns: {synthetic_cols}")
 
+    if real_cols != synthetic_cols:
+        raise ValueError(f"Mismatched categorical columns. Real columns: {real_cols}, Synthetic columns: {synthetic_cols}")
+    
     return real_categorical, synthetic_categorical
 
 
@@ -86,7 +91,7 @@ def mean(real, synthetic):
     means = {'real': {}, 'synthetic': {}}
 
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
 
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
@@ -122,7 +127,7 @@ def standard_deviation(real, synthetic):
     stds = {'real': {}, 'synthetic': {}}
 
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
 
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
@@ -157,7 +162,7 @@ def calculate_variance(real, synthetic):
     """
     variances = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
             if real_col_data.isna().all():
@@ -188,7 +193,7 @@ def calculate_fifth_percentile(real, synthetic):
     """
     fifth_percentile_dict = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             fifth_percentile_dict['real'][column] = float(real_numeric[column].quantile(0.05))
             fifth_percentile_dict['synthetic'][column] = float(synthetic_numeric[column].quantile(0.05))
@@ -211,7 +216,7 @@ def calculate_q1(real, synthetic):
     """
     q1_dict = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
             if real_col_data.isna().all():
@@ -242,7 +247,7 @@ def calculate_median(real, synthetic):
     """
     median_dict = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
             if real_col_data.isna().all():
@@ -273,7 +278,7 @@ def calculate_q3(real, synthetic):
     """
     q3_dict = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
             if real_col_data.isna().all():
@@ -304,7 +309,7 @@ def calculate_ninety_fifth_percentile(real, synthetic):
     """
     ninety_fifth_dict = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
             if real_col_data.isna().all():
@@ -335,7 +340,7 @@ def skewness(real, synthetic):
     """
     skews = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
             if real_col_data.isna().all():
@@ -366,7 +371,7 @@ def kurtosis(real, synthetic):
     """
     kurtosis_dict = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
             if real_col_data.isna().all():
@@ -396,7 +401,7 @@ def calculate_min(real, synthetic):
     """
     min_dict = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
             if real_col_data.isna().all():
@@ -426,7 +431,7 @@ def calculate_max(real, synthetic):
     """
     max_dict = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             real_col_data = real_numeric[column]
             if real_col_data.isna().all():
@@ -456,7 +461,7 @@ def calculate_kolmogorov_smirnov(real, synthetic):
     """
     ks_results = {'real': {}, 'synthetic': {}}
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
             real_col_data = real_numeric[column].dropna()
             synthetic_col_data = synthetic_numeric[column].dropna()
@@ -494,7 +499,7 @@ def calculate_density(real, synthetic, num_points=50):
     density_results = {'real': {}, 'synthetic': {}}
 
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
 
         for column in real_numeric.columns:
             real_col_data = real_numeric[column].dropna()
@@ -601,7 +606,7 @@ def calculate_histogram(real, synthetic, method='auto', max_bins=25):
     histogram_results = {'real': {}, 'synthetic': {}}
 
     try:
-        real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
+        real_numeric, synthetic_numeric = extract_numeric_dataframes(real, synthetic)
 
         for column in real_numeric.columns:
             try:
@@ -859,7 +864,7 @@ def calculate_mode(real, synthetic):
         dict: A dictionary containing the mode of each categorical column in the dataframes.
     """
     try:
-        real_categorical, synthetic_categorical = validate_categorical_dataframes(real, synthetic)
+        real_categorical, synthetic_categorical = extract_categorical_dataframes(real, synthetic)
         modes = {'real': {}, 'synthetic': {}}
 
         for column in real_categorical.columns:
@@ -885,7 +890,7 @@ def calculate_distinct_values(real, synthetic):
         dict: A dictionary containing the number of distinct values in each categorical column in the dataframes.
     """
     try:
-        real_categorical, synthetic_categorical = validate_categorical_dataframes(real, synthetic)
+        real_categorical, synthetic_categorical = extract_categorical_dataframes(real, synthetic)
         return {
             'real': real_categorical.nunique().to_dict(),
             'synthetic': synthetic_categorical.nunique().to_dict()
@@ -906,7 +911,7 @@ def pairwise_correlation(real, synthetic):
         dict: A dictionary containing the pairwise correlation between each categorical column in the dataframes.
     """
     try:
-        real_categorical, synthetic_categorical = validate_categorical_dataframes(real, synthetic)
+        real_categorical, synthetic_categorical = extract_categorical_dataframes(real, synthetic)
 
         real_encoded = pd.get_dummies(real_categorical)
         synthetic_encoded = pd.get_dummies(synthetic_categorical)

@@ -1,7 +1,6 @@
 import cloudpickle
 import pandas
 
-from data_processing.train_test import split_train_test_cross_sectional as split_train_test
 from data_processing.pre_process import pre_process_dataframe
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
 from synthetic_tabular_data_generator.ctgan import CTGAN
@@ -45,22 +44,23 @@ class CtganSynthesizer(TabularDataSynthesizer):
                     - 'sampling': Number of samples.
         """
         synth_params = config['synthetization_configuration']['algorithm']['model_parameter']
+        training_params = config['synthetization_configuration']['algorithm']['model_fitting']
         self._model_kwargs = {
             'embedding_dim': synth_params['embedding_dim'],
             'generator_dim': synth_params['generator_dim'],
             'discriminator_dim': synth_params['discriminator_dim'],
-            'generator_lr': float(synth_params['generator_lr']),
-            'generator_decay': float(synth_params['generator_decay']),
-            'discriminator_lr': float(synth_params['discriminator_lr']),
-            'discriminator_decay': float(synth_params['discriminator_decay']),
-            'batch_size': synth_params['batch_size'],
-            'discriminator_steps': synth_params['discriminator_steps'],
-            'log_frequency': synth_params['log_frequency'],
+            'batch_size': training_params['batch_size'],
+            'epochs': training_params['epochs'],
+            'generator_lr': float(2e-4),
+            'generator_decay': float(1e-6),
+            'discriminator_lr': float(2e-4),
+            'discriminator_decay': float(1e-6),
+            'discriminator_steps': 1,
+            'log_frequency': True,
+            'pac': 10,
             'verbose': True,
-            'epochs': synth_params['epochs'],
-            'pac': synth_params['pac']
+            'cuda': True
         }
-        self._model_fitting = config['synthetization_configuration']['algorithm']['model_fitting']
         self._sampling = config['synthetization_configuration']['algorithm']['sampling']
 
     def initialize_attribute_configuration(self, attribute_config):
@@ -83,10 +83,9 @@ class CtganSynthesizer(TabularDataSynthesizer):
             df,
             self.attribute_config['configurations']
         )
-        self.trainDataset, self.validateDataset = split_train_test(
-            self._model_fitting,
-            self.dataset
-        )
+
+        self.trainDataset = self.dataset
+        self.validateDataset = self.dataset
 
     def initialize_synthesizer(self):
         """

@@ -1,7 +1,6 @@
 import cloudpickle
 import pandas
 
-from data_processing.train_test import split_train_test_cross_sectional as split_train_test
 from data_processing.pre_process import pre_process_dataframe
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
 from synthetic_tabular_data_generator.ctgan import TVAE
@@ -26,7 +25,6 @@ class TvaeSynthesizer(TabularDataSynthesizer):
         self.validateDataset = None
         self.trainDataset = None
         self._sampling = None
-        self._model_fitting = None
         self._data = None
         self._model_kwargs = None
         self.dataset = None
@@ -45,15 +43,16 @@ class TvaeSynthesizer(TabularDataSynthesizer):
                     - 'sampling': Number of samples.
         """
         synth_params = config['synthetization_configuration']['algorithm']['model_parameter']
+        training_params = config['synthetization_configuration']['algorithm']['model_fitting']
         self._model_kwargs = {
             'embedding_dim': synth_params['embedding_dim'],
             'compress_dims': synth_params['compress_dims'],
             'decompress_dims': synth_params['decompress_dims'],
-            'l2scale': float(synth_params['l2scale']),
-            'loss_factor': synth_params['loss_factor'],
-            'epochs': synth_params['epochs'],
+            'l2scale': float(1e-5),
+            'loss_factor': float(2),
+            'batch_size': training_params['batch_size'],
+            'epochs': training_params['epochs']
         }
-        self._model_fitting = config['synthetization_configuration']['algorithm']['model_fitting']
         self._sampling = config['synthetization_configuration']['algorithm']['sampling']
 
     def initialize_attribute_configuration(self, attribute_config):
@@ -76,10 +75,10 @@ class TvaeSynthesizer(TabularDataSynthesizer):
             df,
             self.attribute_config['configurations']
         )
-        self.trainDataset, self.validateDataset = split_train_test(
-            self._model_fitting,
-            self.dataset
-        )
+
+        self.trainDataset = self.dataset
+        self.validateDataset = self.dataset
+
 
     def initialize_synthesizer(self):
         """

@@ -401,8 +401,6 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
     # Add overview to Config 
     enriched_metrics = add_overview_to_config(enriched_metrics)
 
-    print(enriched_metrics)
-
     try:
         files = prepare_callback_data(enriched_metrics)
         requests.post(callback_url, files=files, data={'session_key': session_key})

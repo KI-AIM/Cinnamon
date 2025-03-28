@@ -1,14 +1,14 @@
 from resemblance.tabular.metrics import (mean, standard_deviation, calculate_variance, calculate_fifth_percentile,
                                          calculate_median, calculate_q1, calculate_q3,
                                          calculate_ninety_fifth_percentile,
-                                         calculate_mode, skewness, kurtosis, calculate_min, calculate_max,
+                                         skewness, kurtosis, calculate_min, calculate_max,
                                          calculate_density,
                                          calculate_histogram,
                                          calculate_kolmogorov_smirnov, calculate_distinct_values,
                                          calculate_frequencies_plot,
                                          calculate_hellinger_distance,
                                          pairwise_correlation,
-                                         missing_values_count, missing_values_percentage)
+                                         missing_values_count)
 
 from resemblance.longitudinal.metrics import calculate_observation_length_distribution
 
@@ -27,7 +27,6 @@ metric_functions_descriptive = {
         'standard_deviation': standard_deviation,
         'variance': calculate_variance,
         'skewness': skewness,
-        'mode': calculate_mode,
         'distinct_values': calculate_distinct_values,
         'fifth_percentile': calculate_fifth_percentile,
         'median': calculate_median,
@@ -40,8 +39,7 @@ metric_functions_descriptive = {
         'density': calculate_density,
         'histogram': calculate_histogram,
         'frequency_plot': calculate_frequencies_plot,
-        'missing_values_count': missing_values_count,
-        'missing_values_percentage': missing_values_percentage
+        'missing_values_count': missing_values_count
     },
     "utility": {}
 }
@@ -53,7 +51,6 @@ metric_functions_cross_sectional = {
         'standard_deviation': standard_deviation,
         'variance': calculate_variance,
         'skewness': skewness,
-        'mode': calculate_mode,
         'distinct_values': calculate_distinct_values,
         'fifth_percentile': calculate_fifth_percentile,
         'median': calculate_median,
@@ -69,8 +66,7 @@ metric_functions_cross_sectional = {
         'hellinger_distance': calculate_hellinger_distance,
         'frequency_plot': calculate_frequencies_plot,
         'correlation': pairwise_correlation,
-        'missing_values_count': missing_values_count,
-        'missing_values_percentage': missing_values_percentage
+        'missing_values_count': missing_values_count
     },
     "utility": {
         'machine_learning': calculate_machine_learning_utility,
@@ -84,7 +80,6 @@ metric_functions_longitudinal = {
         'mean': mean,
         'standard_deviation': standard_deviation,
         'skewness': skewness,
-        'mode': calculate_mode,
         'fifth_percentile': calculate_fifth_percentile,
         'median': calculate_median,
         'q1': calculate_q1,
@@ -99,8 +94,7 @@ metric_functions_longitudinal = {
         'frequency_plot': calculate_frequencies_plot,
         'correlation': pairwise_correlation,
         'observation_length_distribution': calculate_observation_length_distribution,
-        'missing_values_count': missing_values_count,
-        'missing_values_percentage': missing_values_percentage
+        'missing_values_count': missing_values_count
     },
     'utility': {}
 }
@@ -110,7 +104,6 @@ metric_functions_process_oriented = {
         'mean': mean,
         'standard_deviation': standard_deviation,
         'skewness': skewness,
-        'mode': calculate_mode,
         'fifth_percentile': calculate_fifth_percentile,
         'median': calculate_median,
         'q1': calculate_q1,
@@ -129,8 +122,7 @@ metric_functions_process_oriented = {
         'start_event_distribution': calculate_start_event_distribution,
         'end_event_distribution': calculate_end_event_distribution,
         'trace_variant_distribution': calculate_trace_variant_distribution,
-        'missing_values_count': missing_values_count,
-        'missing_values_percentage': missing_values_percentage
+        'missing_values_count': missing_values_count
     },
     'utility': {}
 }

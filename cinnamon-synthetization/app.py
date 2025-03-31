@@ -75,35 +75,24 @@ def initialize_input_data(synthesizer_name):
     return session_key, callback_url, file_path_status, attribute_config, algorithm_config, data
 
 
-def prepare_callback_data(samples, train_dataset, test_dataset, synthesizer_model):
+def prepare_callback_data(samples, synthesizer_model):
     """
     Prepare synthetic data and model for callback.
 
     Args:
         samples (pd.DataFrame): Generated synthetic data.
-        train_dataset (pd.DataFrame): Training dataset.
-        test_dataset (pd.DataFrame): Testing dataset.
         synthesizer_model (bytes): Serialized synthesizer model.
 
     Returns:
         dict: A dictionary of file-like objects for callback POST request.
     """
-    # Convert DataFrames to CSV strings
     csv_synthetic_data = samples.to_csv(index=False)
-    csv_train = train_dataset.to_csv(index=False)
-    csv_test = test_dataset.to_csv(index=False)
 
-    # Store CSV data in in-memory file-like objects
     synthetic_data = io.BytesIO(csv_synthetic_data.encode('utf-8'))
-    train = io.BytesIO(csv_train.encode('utf-8'))
-    test = io.BytesIO(csv_test.encode('utf-8'))
     synthesizer_model = io.BytesIO(synthesizer_model)
 
-    # Prepare files for POST request
     files = {
         'synthetic_data': ('synthetic_data.csv', synthetic_data),
-        'train': ('train.csv', train),
-        'test': ('test.csv', test),
         'model': ('model.pkl', synthesizer_model),
     }
 
@@ -192,8 +181,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         print('Model retrieved')
 
         # Prepare Callback
-        files = prepare_callback_data(samples, synthesizer_class.trainDataset,
-                                      synthesizer_class.validateDataset, synthesizer_model)
+        files = prepare_callback_data(samples, synthesizer_model)
         try:
             requests.post(callback_url, files=files, data={'session_key': session_key})
             update_status(file_path_status, 'callback', completed=True)

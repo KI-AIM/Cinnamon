@@ -6,7 +6,7 @@ description: An implementation of Adversarial Random Forest for data generation 
 URL: /start_synthetization_process/arf
 configurations:
   model_parameter:
-    display_name: Model Parameters
+    display_name: Model Architecture
     description: Define the model parameters, used to configure the architecture and training of the adversarial model.
     parameters:
       - name: num_trees
@@ -16,20 +16,6 @@ configurations:
         default_value: 30
         min_value: 1
         max_value: 100
-      - name: delta
-        type: float
-        label: Delta
-        description: Delta parameter for the model.
-        default_value: 0
-        min_value: 0
-        max_value: 1.0
-      - name: max_iters
-        type: integer
-        label: Maximum Iterations
-        description: The maximum number of iterations for training.
-        default_value: 10
-        min_value: 1
-        max_value: 1000
       - name: min_node_size
         type: integer
         label: Minimum Node Size
@@ -37,37 +23,17 @@ configurations:
         default_value: 5
         min_value: 1
         max_value: 100
-      - name: random_state
-        type: integer
-        label: Random State
-        description: Random seed for reproducibility.
-        default_value: 0
-      - name: sampling_patience
-        type: integer
-        label: Sampling Patience
-        description: Maximum number of sampling attempts.
-        default_value: 500
-      - name: compress_dataset
-        type: boolean
-        label: Compress Dataset
-        description: Whether to compress the dataset.
-        default_value: False
-      - name: early_stop
-        type: boolean
-        label: Early Stop
-        description: Whether to enable early stopping during training.
-        default_value: True
   model_fitting:
     display_name: Model Fitting
     description: Parameters for setting up how to train and test the model with your data.
     parameters:
-      - name: train
-        type: float
-        label: Train Data Fraction
-        description: The fraction of data used for training.
-        default_value: 0.8
-        min_value: 0.0
-        max_value: 1.0
+      - name: max_iters
+        type: integer
+        label: Maximum Iterations
+        description: The maximum number of iterations for training.
+        default_value: 10
+        min_value: 1
+        max_value: 1000
   sampling:
     display_name: Sampling
     description: Parameters for generating synthetic data from the trained model.

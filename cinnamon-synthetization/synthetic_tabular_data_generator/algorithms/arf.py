@@ -1,5 +1,5 @@
 import cloudpickle
-import pandas as pd
+import pandas
 
 from pathlib import Path
 from synthcity.plugins import Plugins
@@ -47,20 +47,21 @@ class AdversarialRandomForestsSynthesizer(TabularDataSynthesizer):
                     - 'sampling': Number of samples.
         """
         synth_params = config['synthetization_configuration']['algorithm']['model_parameter']
+        training_params = config['synthetization_configuration']['algorithm']['model_fitting']
         self._model_kwargs = {
             'num_trees': int(synth_params['num_trees']),
-            'delta': int(synth_params['delta']),
-            'max_iters': int(synth_params['max_iters']),
-            'early_stop': bool(synth_params['early_stop']),
-            'verbose': True,
             'min_node_size': int(synth_params['min_node_size']),
+            'max_iters': int(training_params['max_iters']),
+            #'batch_size': int(training_params['batch_size']),
+            'delta': int(0),
+            'early_stop': bool(True),
+            'verbose': True,
             'device': 'DEVICE',
-            'random_state': int(synth_params['random_state']),
-            'sampling_patience': int(synth_params['sampling_patience']),
+            'random_state': int(42),
+            'sampling_patience': int(1000),
             'workspace': Path('workspace'),
-            'compress_dataset': bool(synth_params['compress_dataset']),
+            'compress_dataset': bool(False),
         }
-        self._model_fitting = config['synthetization_configuration']['algorithm']['model_fitting']
         self._sampling = config['synthetization_configuration']['algorithm']['sampling']
 
     def initialize_attribute_configuration(self, attribute_config):
@@ -72,15 +73,21 @@ class AdversarialRandomForestsSynthesizer(TabularDataSynthesizer):
         """
         self.attribute_config = attribute_config
 
-    def initialize_dataset(self, df:pd.DataFrame):
+    def initialize_dataset(self, df:pandas.DataFrame):
         """
         Preprocess the dataset and split it into training and validation sets.
 
         Args:
             df (pd.DataFrame): The pandas datafrane to be processed.
         """
-        self.dataset, self.discrete_columns = pre_process_dataframe(df, self.attribute_config['configurations'])
-        self.trainDataset, self.validateDataset = split_train_test(self._model_fitting, self.dataset)
+        self.dataset, self.discrete_columns = pre_process_dataframe(
+            df,
+            self.attribute_config['configurations']
+        )
+
+        self.trainDataset = self.dataset
+        self.validateDataset = self.dataset
+
 
     def initialize_synthesizer(self):
         """
@@ -96,7 +103,7 @@ class AdversarialRandomForestsSynthesizer(TabularDataSynthesizer):
         """
         self.synthesizer.fit(self.trainDataset)
 
-    def sample(self) -> pd.DataFrame:
+    def sample(self) -> pandas.DataFrame:
         """
         Sample the indicated number of rows from the trained model.
 

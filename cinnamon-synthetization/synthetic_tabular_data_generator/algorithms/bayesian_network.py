@@ -1,5 +1,5 @@
 import cloudpickle
-import pandas as pd
+import pandas
 
 from pathlib import Path
 from synthcity.plugins import Plugins
@@ -47,21 +47,23 @@ class BayesianNetworkSynthesizer(TabularDataSynthesizer):
                     - 'sampling': Number of samples.
         """
         synth_params = configuration_file['synthetization_configuration']['algorithm']['model_parameter']
+        training_params = configuration_file['synthetization_configuration']['algorithm']['model_fitting']
         self._model_kwargs = {
-            'struct_learning_n_iter': int(synth_params['struct_learning_n_iter']),
-            'struct_learning_search_method': str(synth_params['struct_learning_search_method']),
-            'struct_learning_score': str(synth_params['struct_learning_score']),
-            'struct_max_indegree': int(synth_params['struct_max_indegree']),
             'encoder_max_clusters': int(synth_params['encoder_max_clusters']),
             'encoder_noise_scale': float(synth_params['encoder_noise_scale']),
+            'struct_learning_n_iter': int(training_params['struct_learning_n_iter']),
+
+            'struct_learning_search_method': str("tree_search"),
+            'struct_learning_score': str("bic"),
+            'struct_max_indegree': int(3),
+            'sampling_patience': int(1000),
+            'compress_dataset': bool(False),
+            'random_state': int(42),
             'workspace': Path('workspace'),
-            'compress_dataset': bool(synth_params['compress_dataset']),
-            'random_state': int(synth_params['random_state']),
-            'sampling_patience': int(synth_params['sampling_patience']),
+            
         }
-        self._model_fitting = configuration_file['synthetization_configuration']['algorithm']['model_fitting']
         self._sampling = configuration_file['synthetization_configuration']['algorithm']['sampling']
-        pass
+
 
     def initialize_attribute_configuration(self, attribute_config):
         """
@@ -72,20 +74,20 @@ class BayesianNetworkSynthesizer(TabularDataSynthesizer):
         """
         self.attribute_config = attribute_config
 
-    def initialize_dataset(self, df:pd.DataFrame):
+    def initialize_dataset(self, df:pandas.DataFrame):
         """
         Preprocess the dataset and split it into training and validation sets.
 
         Args:
-            df (pd.DataFrame): The pandas datafrane to be processed.
+            df (pandas.DataFrame): The pandas datafrane to be processed.
         """
         self.dataset, self.discrete_columns = pre_process_dataframe(
             df,
             self.attribute_config['configurations']
         )
-        self.trainDataset, self.validateDataset = split_train_test(
-            self._model_fitting,
-            self.dataset)
+
+        self.trainDataset = self.dataset
+        self.validateDataset = self.dataset
 
     def initialize_synthesizer(self):
         """
@@ -100,7 +102,7 @@ class BayesianNetworkSynthesizer(TabularDataSynthesizer):
         """
         self.synthesizer.fit(self.trainDataset)
 
-    def sample(self) -> pd.DataFrame:
+    def sample(self) -> pandas.DataFrame:
         """
         Sample the indicated number of rows from the trained model.
 

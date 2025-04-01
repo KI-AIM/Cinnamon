@@ -92,7 +92,8 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                 if (value.hasHoldOutSplit) {
                     this.holdOutSplitPercentage = value.holdOutPercentage;
                 }
-            }
+            },
+            error: (e) => this.handleError(e),
         });
     }
 

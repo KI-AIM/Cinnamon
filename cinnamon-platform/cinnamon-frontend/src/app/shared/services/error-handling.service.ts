@@ -93,11 +93,11 @@ export class ErrorHandlingService {
             }
         }
 
-        if (typeof response.error === 'string') {
-            return response.error;
-        } else {
-            const errorResponse = plainToInstance(ErrorResponse, response.error);
+        if (this.isJsonString(response.error)) {
+            const errorResponse = plainToInstance(ErrorResponse, JSON.parse(response.error));
             return this.handleErrorResponse(errorResponse);
+        } else {
+            return response.error;
         }
     }
 
@@ -122,6 +122,15 @@ export class ErrorHandlingService {
 
     private wrapErrorMessage(errorMessage: string) {
         return "<div class='pre-wrapper'><pre>" + errorMessage + "</pre></div>";
+    }
+
+    private isJsonString(str: string) {
+        try {
+            JSON.parse(str);
+        } catch (e) {
+            return false;
+        }
+        return true;
     }
 
 }

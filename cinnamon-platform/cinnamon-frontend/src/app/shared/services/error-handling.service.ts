@@ -16,88 +16,92 @@ import { UserService } from "./user.service";
 })
 export class ErrorHandlingService {
 
-    private errorSubject: BehaviorSubject<string | null>;
+    /**
+     * List of all unresolved errors.
+     * @private
+     */
+    private errorListSubject: BehaviorSubject<string[]>;
 
     constructor(
         private readonly userService: UserService,
     ) {
-        this.errorSubject = new BehaviorSubject<string | null>(null);
+        this.errorListSubject = new BehaviorSubject<string[]>([]);
     }
 
     /**
-     * Observable for listening to errors.
-     * `null` value means there is currently no error.
+     * Observable for listening to unresolved errors.
      *
-     * @return Error message or null.
+     * @return List of all unresolved Error message.
      */
-    public get error$(): Observable<string | null> {
-        return this.errorSubject.asObservable();
+    public get errorList$(): Observable<string[]> {
+        return this.errorListSubject.asObservable();
     }
 
     /**
-     * Sets the current error.
-     * Triggers an update of the subject.
-     * `null` value is valid and indicates that the error is resolved.
+     * Adds the given error to the list of current errors.
+     * Triggers an update of the {@link errorListSubject}.
      *
      * @param error The new error.
      * @param message Additional message.
      */
-    public setError(error: ErrorResponse | HttpErrorResponse | string | any, message?: string) {
-        // TODO(DPM) Is this a good idea?
+    public addError(error: ErrorResponse | HttpErrorResponse | string | any, message?: string) {
         if (error == null) {
-            this.clearError();
+            console.error("Error is null!");
             return;
         }
+
+        let errorMessage = null;
 
         if (typeof error === 'string') {
-            this.errorSubject.next(error);
-            return;
-        }
-        if (error instanceof HttpErrorResponse) {
-            this.handleHttpErrorResponse(error, message);
-            return;
+            errorMessage = error;
+        } else if (error instanceof HttpErrorResponse) {
+            errorMessage = this.handleHttpErrorResponse(error, message);
         }
 
-        this.errorSubject.next("An unexpected error occurred. Please contact the administrator.");
+        if (!errorMessage) {
+            errorMessage = "An unexpected error occurred. Please contact the administrator.";
+        }
+
+        const current = this.errorListSubject.value;
+        current.push(errorMessage);
+        this.errorListSubject.next(current);
     }
 
     /**
-     * Clears the current error.
+     * Removes the error at the given index from the list of unresolved error.
      */
-    public clearError(): void {
-        this.errorSubject.next(null);
+    public clearError(index: number): void {
+        const current = this.errorListSubject.value;
+        current.splice(index, 1);
+        this.errorListSubject.next(current);
     }
 
-    private handleHttpErrorResponse(response: HttpErrorResponse, message?: string): void {
+    private handleHttpErrorResponse(response: HttpErrorResponse, message?: string): string {
         if (response.status != null) {
             if (response.status === 0) {
                 if (message != null) {
-                    this.errorSubject.next(message);
+                    return message;
                 } else {
-                    this.errorSubject.next("Cinnamon is currently unavailable. Please try again later.");
+                    return "Cinnamon is currently unavailable. Please try again later.";
                 }
 
-                return;
             } else if (response.status === 401) {
                 this.userService.invalidate();
-                return;
+                return "Session expired. Please log in again.";
             } else if (response.status === 504) {
-                this.errorSubject.next("The API at " + response.url + " could not be reached");
-                return;
+                return "The API at " + response.url + " could not be reached";
             }
         }
 
         if (typeof response.error === 'string') {
-            this.errorSubject.next(response.error);
-            return;
+            return response.error;
         } else {
             const errorResponse = plainToInstance(ErrorResponse, response.error);
-            this.handleErrorResponse(errorResponse);
-            return;
+            return this.handleErrorResponse(errorResponse);
         }
     }
 
-    private handleErrorResponse(error: ErrorResponse): void {
+    private handleErrorResponse(error: ErrorResponse): string {
         let errorMessage = "";
 
         if (error.errorCode === 'PLATFORM_3_2_1') {
@@ -105,9 +109,7 @@ export class ErrorHandlingService {
                 const parts = field.split(".");
                 if (parts.length === 3) {
                 } else {
-                    console.log(errorMessage);
                     errorMessage += (errors as string[]).join(", ") + "\n";
-                    console.log(errors);
                 }
             }
 
@@ -115,7 +117,7 @@ export class ErrorHandlingService {
             errorMessage = error.errorMessage;
         }
 
-        this.errorSubject.next(errorMessage);
+        return errorMessage;
     }
 
     private wrapErrorMessage(errorMessage: string) {

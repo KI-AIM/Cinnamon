@@ -33,7 +33,7 @@ export class AppConfigService {
             }),
             share(),
             catchError((e) => {
-                this.errorHandlingService.setError(e, "Cinnamon is currently unavailable. Please try again later.");
+                this.errorHandlingService.addError(e, "Cinnamon is currently unavailable. Please try again later.");
                 return of({isDemoInstance: false});
             }),
             finalize(() => {

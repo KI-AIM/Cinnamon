@@ -16,11 +16,11 @@ export class AppComponent implements OnInit {
     title = "cinnamon-frontend"
 
     protected appConfig$: Observable<AppConfig>;
-    protected error$: Observable<string | null>;
+    protected errorList$: Observable<string[]>;
 
     constructor(
         private readonly appConfigService: AppConfigService,
-        private readonly errorHandlingService: ErrorHandlingService,
+        protected readonly errorHandlingService: ErrorHandlingService,
         // StateManagementService is injected so it gets initialized
         private readonly stateManagementService: StateManagementService,
         private titleService: TitleService,
@@ -29,7 +29,7 @@ export class AppComponent implements OnInit {
 
     public ngOnInit(): void {
         this.appConfig$ = this.appConfigService.appConfig$;
-        this.error$ = this.errorHandlingService.error$;
+        this.errorList$ = this.errorHandlingService.errorList$;
     }
 
     getTitle(): String {

@@ -73,14 +73,13 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         // Get available algorithms
         this.algorithmService.algorithms.subscribe({
             next: value => {
-                this.errorHandlingService.clearError();
                 this.algorithms = value;
                 if (!this.hasAlgorithmSelection) {
                     this.algorithmService.selectCache = this.algorithms[0];
                     this.readFromCache();
                 }
             }, error: error => {
-                this.errorHandlingService.setError(error, "Failed to load available algorithms. You can skip this step or try again later.");
+                this.errorHandlingService.addError(error, "Failed to load available algorithms. You can skip this step or try again later.");
             }
         });
     }
@@ -146,7 +145,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * @private
      */
     private setConfig(error: string | null) {
-        this.errorHandlingService.setError(error);
+        this.errorHandlingService.addError(error);
         if (error === null) {
             this.readFromCache();
         }
@@ -171,7 +170,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         ).subscribe({
             next: () => this.finish(),
             error: err => {
-                this.errorHandlingService.setError(err, "Failed to save configuration.");
+                this.errorHandlingService.addError(err, "Failed to save configuration.");
             }
         });
     }
@@ -189,7 +188,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
             this.configureJobs(true).subscribe({
                     next: () => this.finish(),
                     error: err => {
-                        this.errorHandlingService.setError(err, "Failed to save configuration.");
+                        this.errorHandlingService.addError(err, "Failed to save configuration.");
                     }
                 }
             );
@@ -206,7 +205,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
             ).subscribe({
                 next: () => this.finish(),
                 error: err => {
-                    this.errorHandlingService.setError(err, "Failed to save configuration.");
+                    this.errorHandlingService.addError(err, "Failed to save configuration.");
                 }
             });
         }

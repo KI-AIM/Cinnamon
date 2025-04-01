@@ -115,7 +115,7 @@ export class ConfigurationUploadComponent implements OnInit{
               this.onUpload.emit(result);
           },
           error: error => {
-              this.errorHandlingService.setError(error, "Could not upload configuration.");
+              this.errorHandlingService.addError(error, "Could not upload configuration.");
           },
       });
     this.closeDialog();

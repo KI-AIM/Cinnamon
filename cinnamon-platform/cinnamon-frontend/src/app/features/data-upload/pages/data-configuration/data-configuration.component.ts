@@ -145,7 +145,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     private handleError(error: HttpErrorResponse) {
         this.loadingService.setLoadingStatus(false);
-        this.errorHandlingService.setError(error);
+        this.errorHandlingService.addError(error);
 
         window.scroll(0, 0);
     }
@@ -190,13 +190,13 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     protected handleConfigUpload(result: ImportPipeData[] | null) {
         if (result === null) {
-            this.errorHandlingService.setError("Something went wrong! Please try again later.");
+            this.errorHandlingService.addError("Something went wrong! Please try again later.");
             return;
         }
 
         const configImportData = result[0]
         if (configImportData.hasOwnProperty('error') && configImportData['error'] instanceof HttpErrorResponse) {
-            this.errorHandlingService.setError(configImportData.error);
+            this.errorHandlingService.addError(configImportData.error);
         }
 
         this.configurationUpload.closeDialog();

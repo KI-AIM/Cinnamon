@@ -84,7 +84,7 @@ export class ConfigurationFormComponent implements OnInit {
                         });
                     },
                 error: (err: HttpErrorResponse) => {
-                    this.errorHandlingService.setError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
+                    this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
                 },
             });
     }

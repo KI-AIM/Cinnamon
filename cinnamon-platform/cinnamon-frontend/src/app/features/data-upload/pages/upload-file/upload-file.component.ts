@@ -243,7 +243,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
 	private handleError(err: any, message?: string) {
 		this.loadingService.setLoadingStatus(false);
-        this.errorHandlingService.setError(err, message);
+        this.errorHandlingService.addError(err, message);
 		// this.showErrorDialog(error);
 	}
 

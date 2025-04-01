@@ -12,10 +12,12 @@
         <div class="page-content">
 
             <!-- Error -->
-            <ng-container *ngIf="error$ | async as error">
-                <app-info-card typeClass="card-failure">
-                    <div style="white-space: pre-line;">{{ error }}</div>
-                </app-info-card>
+            <ng-container *ngIf="errorList$ | async as errorList">
+                <ng-container *ngFor="let error of errorList; let i = index">
+                    <app-info-card typeClass="card-failure" [closable]="true" (onClose)="errorHandlingService.clearError(i)">
+                        <div style="white-space: pre-line;">{{ error }}</div>
+                    </app-info-card>
+                </ng-container>
             </ng-container>
 
             <!-- Demo disclaimer -->

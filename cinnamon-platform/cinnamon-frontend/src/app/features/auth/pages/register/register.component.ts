@@ -63,6 +63,6 @@ export class RegisterComponent {
     }
 
     handleRegisterFailed(error: HttpErrorResponse) {
-        this.errorHandlingService.setError(error);
+        this.errorHandlingService.addError(error);
     }
 }

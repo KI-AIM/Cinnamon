@@ -97,7 +97,7 @@ export abstract class ExecutionStepService {
                 this.update(executionStep);
             },
             error: err => {
-                this.errorHandlingService.setError(err, "Failed to cancel the process.");
+                this.errorHandlingService.addError(err, "Failed to cancel the process.");
             }
         });
     }
@@ -165,7 +165,7 @@ export abstract class ExecutionStepService {
                 this.update(value);
             }),
             catchError((error) => {
-                this.errorHandlingService.setError(error, "Failed to update status.");
+                this.errorHandlingService.addError(error, "Failed to update status.");
                 return of(null);
             }),
         );
@@ -198,7 +198,6 @@ export abstract class ExecutionStepService {
     }
 
     private update(executionStep: ExecutionStep) {
-        this.errorHandlingService.clearError();
         this._error = null;
         this.setState(executionStep.status);
         this._statusSubject.next(executionStep);

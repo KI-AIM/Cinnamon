@@ -20,6 +20,11 @@ public class InternalRequestException extends InternalException {
 	 */
 	public static final String PROCESS_STATUS = "3";
 
+	/**
+	 * Exception code for failing algorithms fetching.
+	 */
+	public static final String ALGORITHMS = "4";
+
 	public InternalRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

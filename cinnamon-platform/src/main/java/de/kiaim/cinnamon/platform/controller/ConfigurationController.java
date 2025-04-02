@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.platform.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.DatabaseService;
+import de.kiaim.cinnamon.platform.service.ExternalConfigurationService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,12 +30,15 @@ import org.springframework.web.bind.annotation.*;
                                          "Configurations are associated with the user of the request.")
 public class ConfigurationController {
 
+	private final ExternalConfigurationService externalConfigurationService;
 	private final DatabaseService databaseService;
 	private final ProjectService projectService;
 	private final UserService userService;
 
-	public ConfigurationController(final DatabaseService databaseService, final ProjectService projectService,
+	public ConfigurationController(final ExternalConfigurationService externalConfigurationService,
+	                               final DatabaseService databaseService, final ProjectService projectService,
 	                               final UserService userService) {
+		this.externalConfigurationService = externalConfigurationService;
 		this.databaseService = databaseService;
 		this.projectService = projectService;
 		this.userService = userService;
@@ -89,6 +94,61 @@ public class ConfigurationController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 		return databaseService.exportConfiguration(configurationName, project);
+	}
+
+	@Operation(summary = "Loads available algorithm from the server corresponding to the given configuration name.",
+	           description = "Loads available algorithm from the server corresponding to the given configuration name.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully returns the available algorithms.",
+			             content = @Content(mediaType = CustomMediaType.TEXT_YAML_VALUE,
+			                                schema = @Schema(implementation = String.class))),
+			@ApiResponse(responseCode = "400",
+			             description = "The given configuration name is invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "The request to the external server failed.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@GetMapping(value = "/algorithms", produces = {CustomMediaType.TEXT_YAML_VALUE})
+	public String getAvailableAlgorithms(
+			@RequestParam @NotBlank final String configurationName
+	) throws InternalRequestException, BadConfigurationNameException {
+		return externalConfigurationService.fetchAvailableAlgorithms(configurationName);
+	}
+
+	@Operation(summary = "Loads the configuration definition for the given algorithm.",
+	           description = "Loads the configuration definition for the given algorithm.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully returns the configuration definition.",
+			             content = @Content(mediaType = CustomMediaType.TEXT_YAML_VALUE,
+			                                schema = @Schema(implementation = String.class))),
+			@ApiResponse(responseCode = "400",
+			             description = "The given configuration name is invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "The request to the external server failed.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@GetMapping(value = "/algorithm", produces = {CustomMediaType.TEXT_YAML_VALUE})
+	public String getAlgorithmDefinition(
+			@RequestParam @NotBlank final String configurationName,
+			@RequestParam @NotBlank final String definitionPath
+	) throws InternalRequestException, BadConfigurationNameException {
+		return externalConfigurationService.fetchAlgorithmDefinition(configurationName, definitionPath);
 	}
 
 }

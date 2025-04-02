@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -100,5 +101,12 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                      .param("name", invalidConfigName))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("No configuration with name '" + invalidConfigName + "' registered!"));
+	}
+
+	@Test
+	void getAvailableAlgorithmsMissingParam() throws Exception {
+		mockMvc.perform(get("/api/config/algorithms"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_1_1"));
 	}
 }

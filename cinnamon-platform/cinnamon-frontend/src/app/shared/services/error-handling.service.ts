@@ -96,6 +96,9 @@ export class ErrorHandlingService {
         if (this.isJsonString(response.error)) {
             const errorResponse = plainToInstance(ErrorResponse, JSON.parse(response.error));
             return this.handleErrorResponse(errorResponse);
+        } else if(typeof response.error === 'object') {
+            const errorResponse = plainToInstance(ErrorResponse, response.error);
+            return this.handleErrorResponse(errorResponse);
         } else {
             return response.error;
         }

@@ -191,6 +191,7 @@ export class DataTableComponent implements OnInit, AfterViewInit {
 
 	/**
 	 * Applies a filter to the table based on the select menu in frontend.
+     * Goes to the first page of the table.
 	 * Shows different data depending on the number of errors in a row.
      * It triggers the table to fetch the data from the backend.
      *
@@ -198,17 +199,20 @@ export class DataTableComponent implements OnInit, AfterViewInit {
 	 */
 	applyErrorFilter($event: any) {
 		this.errorFilter = $event.value;
+        this.paginator.firstPage()
         this.paginator.page.emit();
 	}
 
     /**
      * Applies the hold-out split filter of the event.
+     * Goes to the first page of the table.
      * It triggers the table to fetch the data from the backend.
      *
      * @param $event Event
      */
     applyHoldOutFilter($event: any) {
         this.holdOutFilter = $event.value;
+        this.paginator.firstPage()
         this.paginator.page.emit();
     }
 

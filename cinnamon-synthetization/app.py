@@ -114,6 +114,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
     """
     try:
         print('Synthesizer selected:', synthesizer_name)
+        init_time = time.time()
 
         # Check if the synthesizer exists
         if synthesizer_name not in synthesizer_classes:
@@ -180,7 +181,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             }
 
         # Update status after initialization
-        init_time = time.time()
+        init_time = time.time() - init_time
         update_status(file_path_status, step='initialization', duration=init_time, completed=True)
 
         # Step 5: Fit the synthesizer

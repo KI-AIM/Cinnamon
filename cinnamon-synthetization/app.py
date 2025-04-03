@@ -2,7 +2,6 @@ import io
 import os
 import sys
 import time
-import logging
 from multiprocessing import Process
 from threading import Event
 
@@ -12,7 +11,6 @@ import yaml
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 
-import api_utility.logging.logger
 from api_utility.status.status_updater import initialize_status_file
 from api_utility.status.status_updater import update_status
 from api_utility.status.status_updater import InterceptStdOut
@@ -21,10 +19,8 @@ from data_processing.post_process import post_process_dataframe
 
 
 app = Flask(__name__)
-
 tasks = {}
 task_locks = {}
-
 CORS(app)
 
 
@@ -117,8 +113,9 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         dict: Result of the synthesis process.
     """
     try:
-        print('Synthesizer selected: ', synthesizer_name)
-        # Synthesize Data
+        print('Synthesizer selected:', synthesizer_name)
+
+        # Check if the synthesizer exists
         if synthesizer_name not in synthesizer_classes:
             return {
                 'message': f"Error: Synthesizer '{synthesizer_name}' not found",
@@ -126,81 +123,144 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 400
             }
 
-        print('Synthesizer found: ', synthesizer_name)
+        # Step 0: Initialize the synthesizer
+        try:
+            synthesizer_class = synthesizer_classes[synthesizer_name]['class']()
+            print('Synthesizer class initialized:', synthesizer_name)
+        except RuntimeError as e:
+            return {
+                'message': f"Error during initialization of synthesizer: {str(e)}",
+                'session_key': session_key,
+                'status_code': 400
+            } 
+            
+
+        # Step 1: Initialize anonymization configuration
+        try:
+            synthesizer_class.initialize_anonymization_configuration(algorithm_config)
+            print('Anonymization configuration initialized.')
+        except RuntimeError as e:
+            return {
+                'message': f"Error during anonymization configuration: {str(e)}",
+                'session_key': session_key,
+                'status_code': 400
+            }
+
+        # Step 2: Initialize attribute configuration
+        try:
+            synthesizer_class.initialize_attribute_configuration(attribute_config)
+            print('Attribute configuration initialized.')
+        except RuntimeError as e:
+            return {
+                'message': f"Error during attribute configuration: {str(e)}",
+                'session_key': session_key,
+                'status_code': 400
+            }
+
+        # Step 3: Initialize dataset
+        try:
+            synthesizer_class.initialize_dataset(data)
+            print('Dataset initialized.')
+        except RuntimeError as e:
+            return {
+                'message': f"Error during dataset initialization: {str(e)}",
+                'session_key': session_key,
+                'status_code': 400
+            }
+
+        # Step 4: Initialize synthesizer
+        try:
+            synthesizer_class.initialize_synthesizer()
+            print('Synthesizer initialized.')
+        except RuntimeError as e:
+            return {
+                'message': f"Error during synthesizer initialization: {str(e)}",
+                'session_key': session_key,
+                'status_code': 500
+            }
+
+        # Update status after initialization
         init_time = time.time()
-        synthesizer_class = synthesizer_classes[synthesizer_name]['class']()
-        print('Synthesizer selected: ', synthesizer_name)
-
-        # Initialize anonymization configuration
-        synthesizer_class.initialize_anonymization_configuration(algorithm_config)
-        print('Anonymization configuration initialized')
-
-        # Initialize Attribute Configuration
-        synthesizer_class.initialize_attribute_configuration(attribute_config)
-        print('Attribute configuration initialized')
-
-        # Initialize Dataset
-        synthesizer_class.initialize_dataset(data)
-        print('Dataset initialized')
-
-        # Initialize Synthesizer
-        synthesizer_class.initialize_synthesizer()
-
-        # Get time duration for init
-        init_time = time.time() - init_time
         update_status(file_path_status, step='initialization', duration=init_time, completed=True)
 
-        print('Synthesizer initialized')
-
-        # Fit Synthesizer
-        fit_time = time.time()
-        sys.stdout = InterceptStdOut(file_path_status, 'fitting')
-        synthesizer_class.fit()
-
-        # Get time duration for fit
-        fit_time = time.time() - fit_time
-        update_status(file_path_status, 'fitting', duration=fit_time, completed=True, remaining_time="0")
-        print('Synthesizer fitted')
-
-        # Sample data from synthesizer
-        sample_time = time.time()
-        sys.stdout = sys.__stdout__
-        sys.stdout = InterceptStdOut(file_path_status, 'sampling')
-        samples = synthesizer_class.sample()
-
-        # Get time duration for sample
-        sample_time = time.time() - sample_time
-        update_status(file_path_status, 'sampling', duration=sample_time, completed=True, remaining_time="0")
-        print('Data sampled')
-
-        # Postprocessing -> pd.Dataframe
-        samples = post_process_dataframe(samples, attribute_config['configurations'])
-
-        # Get Model
-        synthesizer_model = synthesizer_class.get_model()
-        print('Model retrieved')
-
-        # Prepare Callback
-        files = prepare_callback_data(samples, synthesizer_model)
+        # Step 5: Fit the synthesizer
         try:
+            fit_time = time.time()
+            sys.stdout = InterceptStdOut(file_path_status, 'fitting')
+            synthesizer_class.fit()
+            fit_time = time.time() - fit_time
+            update_status(file_path_status, 'fitting', duration=fit_time, completed=True, remaining_time="0")
+            print('Synthesizer fitted.')
+        except RuntimeError as e:
+            return {
+                'message': f"Error during synthesizer fitting: {str(e)}",
+                'session_key': session_key,
+                'status_code': 500
+            }
+
+        # Step 6: Sample data
+        try:
+            sample_time = time.time()
+            sys.stdout = sys.__stdout__
+            sys.stdout = InterceptStdOut(file_path_status, 'sampling')
+            samples = synthesizer_class.sample()
+            sample_time = time.time() - sample_time
+            update_status(file_path_status, 'sampling', duration=sample_time, completed=True, remaining_time="0")
+            print('Data sampled.')
+        except RuntimeError as e:
+            return {
+                'message': f"Error during data sampling: {str(e)}",
+                'session_key': session_key,
+                'status_code': 500
+            }
+
+        # Step 7: Post-process sampled data
+        try:
+            samples = post_process_dataframe(samples, attribute_config['configurations'])
+        except Exception as e:
+            return {
+                'message': f"Error during post-processing: {str(e)}",
+                'session_key': session_key,
+                'status_code': 500
+            }
+
+        # Step 8: Retrieve the model
+        try:
+            synthesizer_model = synthesizer_class.get_model()
+            print('Model retrieved.')
+        except RuntimeError as e:
+            return {
+                'message': f"Error during model retrieval: {str(e)}",
+                'session_key': session_key,
+                'status_code': 500
+            }
+        
+
+        # Step 9: Send callback
+        try:
+            files = prepare_callback_data(samples, synthesizer_model)
             requests.post(callback_url, files=files, data={'session_key': session_key})
             update_status(file_path_status, 'callback', completed=True)
             return {
                 'message': 'Synthetization Finished, successfully sent callback notification',
-                'session_key': session_key
+                'session_key': session_key,
+                'status_code': 200
             }
-
         except requests.exceptions.RequestException as e:
             return {
                 'message': 'Synthetization Finished, failed to send callback notification',
                 'error': str(e),
-                'session_key': session_key
+                'session_key': session_key,
+                'status_code': 500
             }
 
     except Exception as e:
+        # Catch any unexpected errors
+        print(f"Unexpected error during the synthesis process: {str(e)}")
         return {
-            'message': f'Error during synthetization: {str(e)}',
-            'session_key': session_key
+            'message': f"Unexpected error occurred during synthetization: {str(e)}",
+            'session_key': session_key,
+            'status_code': 500
         }
 
 
@@ -396,9 +456,5 @@ def test_callback():
 
 
 if __name__ == '__main__':
-    api_utility.logging.logger.setup_logging()
-    logger = logging.getLogger()
-    logger.info('Starting API server')
-
     app.run(debug=True)
 

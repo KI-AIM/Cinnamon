@@ -4,7 +4,6 @@ from pathlib import Path
 from synthcity.plugins import Plugins
 from typing import Dict, Any, List, Optional
 
-from data_processing.pre_process import pre_process_dataframe
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
 
 
@@ -65,10 +64,7 @@ class AdversarialRandomForestsSynthesizer(TabularDataSynthesizer):
         """
         Core logic for initializing the dataset.
         """
-        self.dataset, self.discrete_columns = pre_process_dataframe(
-            df,
-            self.attribute_config['configurations']
-        )
+        self.dataset = df
 
     def _initialize_synthesizer(self) -> None:
         """

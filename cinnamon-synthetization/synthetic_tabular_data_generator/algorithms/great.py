@@ -4,7 +4,6 @@ from pathlib import Path
 from synthcity.plugins import Plugins
 from typing import Dict, Any, Optional, List
 
-from data_processing.pre_process import pre_process_dataframe
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
 
 
@@ -61,12 +60,9 @@ class GreatSynthesizer(TabularDataSynthesizer):
 
     def _initialize_dataset(self, df: pd.DataFrame) -> None:
         """
-        Core logic for preprocessing the dataset.
+        Core logic for initializing the dataset.
         """
-        self.dataset, self.discrete_columns = pre_process_dataframe(
-            df,
-            self.attribute_config['configurations']
-        )
+        self.dataset = df
 
     def _initialize_synthesizer(self) -> None:
         """

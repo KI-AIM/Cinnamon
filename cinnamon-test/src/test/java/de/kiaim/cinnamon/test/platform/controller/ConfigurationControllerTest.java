@@ -107,6 +107,22 @@ class ConfigurationControllerTest extends ControllerTest {
 	void getAvailableAlgorithmsMissingParam() throws Exception {
 		mockMvc.perform(get("/api/config/algorithms"))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorCode("PLATFORM_3_1_1"));
+		       .andExpect(errorCode("PLATFORM_3_2_1"));
+	}
+
+	@Test
+	void getAvailableAlgorithmsBlankParam() throws Exception {
+		mockMvc.perform(get("/api/config/algorithms")
+				                .param("configurationName", " "))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"))
+		       .andExpect(validationError("configurationName", "must not be blank"));
+	}
+
+	@Test
+	void getAvailableAlgorithmMissingParam() throws Exception {
+		mockMvc.perform(get("/api/config/algorithm"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"));
 	}
 }

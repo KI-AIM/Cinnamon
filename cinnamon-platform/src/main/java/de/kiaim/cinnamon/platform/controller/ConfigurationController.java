@@ -2,6 +2,8 @@ package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.*;
+import de.kiaim.cinnamon.platform.model.dto.AlgorithmDefinitionRequest;
+import de.kiaim.cinnamon.platform.model.dto.AvailableAlgorithmsRequest;
 import de.kiaim.cinnamon.platform.model.dto.ConfigurationRequest;
 import de.kiaim.cinnamon.platform.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
@@ -18,7 +20,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -118,9 +119,9 @@ public class ConfigurationController {
 	})
 	@GetMapping(value = "/algorithms", produces = {CustomMediaType.TEXT_YAML_VALUE})
 	public String getAvailableAlgorithms(
-			@RequestParam @NotBlank final String configurationName
+			@Valid final AvailableAlgorithmsRequest request
 	) throws InternalRequestException, BadConfigurationNameException {
-		return externalConfigurationService.fetchAvailableAlgorithms(configurationName);
+		return externalConfigurationService.fetchAvailableAlgorithms(request.getConfigurationName());
 	}
 
 	@Operation(summary = "Loads the configuration definition for the given algorithm.",
@@ -145,10 +146,10 @@ public class ConfigurationController {
 	})
 	@GetMapping(value = "/algorithm", produces = {CustomMediaType.TEXT_YAML_VALUE})
 	public String getAlgorithmDefinition(
-			@RequestParam @NotBlank final String configurationName,
-			@RequestParam @NotBlank final String definitionPath
+			@Valid final AlgorithmDefinitionRequest request
 	) throws InternalRequestException, BadConfigurationNameException {
-		return externalConfigurationService.fetchAlgorithmDefinition(configurationName, definitionPath);
+		return externalConfigurationService.fetchAlgorithmDefinition(request.getConfigurationName(),
+		                                                             request.getDefinitionPath());
 	}
 
 }

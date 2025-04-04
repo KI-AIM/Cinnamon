@@ -181,7 +181,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
 
         # Step 5: Initialize dataset
         try:
-            synthesizer_class.initialize_dataset(pre_processed_data)
+            synthesizer_class.initialize_dataset("pre_processed_data")
             print('Dataset initialized.')
         except RuntimeError as e:
             print("Error in Dataset Initialoization")
@@ -515,23 +515,25 @@ def send_callback_error(callback_url, session_key, message, status_code):
         session_key (str): Unique session identifier.
         message (str): The error message to send.
         status_code (int): The HTTP status code to include in the callback.
+        part_name (str): Name of the part for the error message (as specified in application.properties).
     """
-    # Prepare the error payload as file-like objects
-    error_message = io.BytesIO(message.encode('utf-8'))  # Convert message to bytes
-    files = {
-        'error_message': ('error_message.txt', error_message),  # Error message as a file
-    }
+    # Prepare the error message as a file-like object
+    error_message = io.BytesIO(message.encode('utf-8'))  # Convert error message to bytes
 
-    # Add session key and status code as form fields
+    # Prepare the data for the multipart/form-data request
+    files = {
+        'error_message': ('error_message.txt', error_message, 'text/plain'),  # Error message as a form part
+    }
     data = {
-        'session_key': session_key,
-        'status_code': status_code,
+        'session_key': session_key,  # Include session key as form data
+        'status_code': status_code,  # Include status code as form data
     }
 
     try:
         print(f"Sending error callback to {callback_url} with data: {data} and files: {files}")
         response = requests.post(callback_url, files=files, data=data, timeout=5)
         print(f"Response status code: {response.status_code}")
+        print(f"Response text: {response.text}")
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"Failed to send error to callback URL: {str(e)}")

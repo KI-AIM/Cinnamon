@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.serialization.ColumnConfigurationDeserializer;
 import de.kiaim.cinnamon.model.validation.DataTypeNotUndefined;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -63,8 +64,12 @@ public class ColumnConfiguration {
     /**
      * A list of configurations for the column
      */
-    @Schema(description = "List of different configurations depending on the data type.",
-            example = "[{\"name\": \"DateFormatConfiguration\", \"dataFormatter\": \"yyyy-MM-dd\"}]")
+    @ArraySchema(
+            schema = @Schema(
+                    description = "List of different configurations depending on the data type.",
+                    example = "[{\"name\": \"DateFormatConfiguration\", \"dataFormatter\": \"yyyy-MM-dd\"}]",
+            anyOf = {DateFormatConfiguration.class, DateTimeFormatConfiguration.class, RangeConfiguration.class,
+                     StringPatternConfiguration.class}))
     @Valid
     List<Configuration> configurations = new ArrayList<>();
 

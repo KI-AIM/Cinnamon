@@ -25,4 +25,9 @@ public abstract class CustomMediaType {
 	 * Custom media type for ZIP files.
 	 */
 	public static final MediaType APPLICATION_ZIP = new MediaType("application", "zip");
+
+	/**
+	 * Custom media type value for YAML.
+	 */
+	public static final String TEXT_YAML_VALUE = "text/yaml";
 }

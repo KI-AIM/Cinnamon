@@ -62,6 +62,6 @@ inside the `/cinnamon-frontend` directory.
 For this, a local version of node, npm and the angular cli has to be installed. The build process however should work without any additional installations.
 
 ### Angular Frontend
-More detailed information can be found [**here**](angular-info.md).
+More detailed information can be found [**here**](https://ki-aim.github.io/cinnamon-docs/contribution/platform).
 
 The angular frontend is structured to comply to best practices. This means that under `cinnamon-frontend/src/app` several folders were created to structure the application. To find out, what every subdirectory should be used for and how the components inside should be designed, refer to the `ABOUT` documents inside the folders.

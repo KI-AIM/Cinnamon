@@ -8,6 +8,7 @@ jobs:
   test-junit:
     permissions:
       checks: write
+      pull-requests: write
 
     runs-on: ubuntu-latest
 
@@ -73,10 +74,12 @@ jobs:
         id: test-report
         uses: mikepenz/action-junit-report@v5
         with:
+          check_name: ${{ matrix.module }} Test Report
+          comment: true
           report_paths: ${{ matrix.module }}/target/surefire-reports/*.xml
 
       - name: Upload Surefire test reports
-        if: failure()
+        if: success() || failure()
         uses: actions/upload-artifact@v4
         with:
           name: surefire-reports-${{ matrix.module }}

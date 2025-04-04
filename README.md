@@ -9,11 +9,11 @@
 <div align="center">
 
 <a href="https://github.com/KI-AIM/Cinnamon/blob/main/LICENSE">
-  <img alt="GitHub License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg">
+  <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg">
 </a>
 
 <a href="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml">
-  <img alt="GitHub License" src="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml/badge.svg">
+  <img alt="Build and Push Docker Images" src="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml/badge.svg">
 </a>
 
 </div>

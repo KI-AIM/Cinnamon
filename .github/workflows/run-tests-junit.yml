@@ -76,6 +76,7 @@ jobs:
         with:
           comment: true
           report_paths: ${{ matrix.module }}/target/surefire-reports/*.xml
+          updateComment: false
 
       - name: Upload Surefire test reports
         if: success() || failure()

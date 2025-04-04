@@ -62,12 +62,9 @@ class BayesianNetworkSynthesizer(TabularDataSynthesizer):
 
     def _initialize_dataset(self, df: pd.DataFrame) -> None:
         """
-        Core logic for preprocessing the dataset.
+        Core logic for initializing the dataset.
         """
-        self.dataset, self.discrete_columns = pre_process_dataframe(
-            df,
-            self.attribute_config['configurations']
-        )
+        self.dataset = df
 
     def _initialize_synthesizer(self) -> None:
         """

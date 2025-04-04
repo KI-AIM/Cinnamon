@@ -16,6 +16,7 @@ from api_utility.status.status_updater import update_status
 from api_utility.status.status_updater import InterceptStdOut
 from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
+from data_processing.pre_process import pre_process_dataframe
 
 
 app = Flask(__name__)
@@ -116,7 +117,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         print('Synthesizer selected:', synthesizer_name)
         init_time = time.time()
 
-        # Check if the synthesizer exists
+        # Step 0: Check if the synthesizer exists
         if synthesizer_name not in synthesizer_classes:
             return {
                 'message': f"Error: Synthesizer '{synthesizer_name}' not found",
@@ -124,7 +125,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 400
             }
 
-        # Step 0: Initialize the synthesizer
+        # Step 1: Initialize the synthesizer
         try:
             synthesizer_class = synthesizer_classes[synthesizer_name]['class']()
             print('Synthesizer class initialized:', synthesizer_name)
@@ -136,7 +137,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             } 
             
 
-        # Step 1: Initialize anonymization configuration
+        # Step 2: Initialize anonymization configuration
         try:
             synthesizer_class.initialize_anonymization_configuration(algorithm_config)
             print('Anonymization configuration initialized.')
@@ -147,7 +148,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 400
             }
 
-        # Step 2: Initialize attribute configuration
+        # Step 3: Initialize attribute configuration
         try:
             synthesizer_class.initialize_attribute_configuration(attribute_config)
             print('Attribute configuration initialized.')
@@ -158,9 +159,19 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 400
             }
 
-        # Step 3: Initialize dataset
+        # Step 4: Pre-process sampled data
         try:
-            synthesizer_class.initialize_dataset(data)
+            pre_processed_data = pre_process_dataframe(data, attribute_config['configurations'])
+        except Exception as e:
+            return {
+                'message': f"Error during pre-processing: {str(e)}",
+                'session_key': session_key,
+                'status_code': 500
+            }
+
+        # Step 5: Initialize dataset
+        try:
+            synthesizer_class.initialize_dataset(pre_processed_data)
             print('Dataset initialized.')
         except RuntimeError as e:
             return {
@@ -169,10 +180,12 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 400
             }
 
-        # Step 4: Initialize synthesizer
+        # Step 6: Initialize synthesizer
         try:
             synthesizer_class.initialize_synthesizer()
             print('Synthesizer initialized.')
+            init_time = time.time() - init_time
+            update_status(file_path_status, step='initialization', duration=init_time, completed=True)
         except RuntimeError as e:
             return {
                 'message': f"Error during synthesizer initialization: {str(e)}",
@@ -180,11 +193,8 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 500
             }
 
-        # Update status after initialization
-        init_time = time.time() - init_time
-        update_status(file_path_status, step='initialization', duration=init_time, completed=True)
 
-        # Step 5: Fit the synthesizer
+        # Step 7: Fit the synthesizer
         try:
             fit_time = time.time()
             sys.stdout = InterceptStdOut(file_path_status, 'fitting')
@@ -199,7 +209,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 500
             }
 
-        # Step 6: Sample data
+        # Step 8: Sample data
         try:
             sample_time = time.time()
             sys.stdout = sys.__stdout__
@@ -215,7 +225,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 500
             }
 
-        # Step 7: Post-process sampled data
+        # Step 9: Post-process sampled data
         try:
             samples = post_process_dataframe(samples, attribute_config['configurations'])
         except Exception as e:
@@ -225,7 +235,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 500
             }
 
-        # Step 8: Retrieve the model
+        # Step 10: Retrieve the model
         try:
             synthesizer_model = synthesizer_class.get_model()
             print('Model retrieved.')
@@ -237,7 +247,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             }
         
 
-        # Step 9: Send callback
+        # Step 11: Send callback
         try:
             files = prepare_callback_data(samples, synthesizer_model)
             requests.post(callback_url, files=files, data={'session_key': session_key})

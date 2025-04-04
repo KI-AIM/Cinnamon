@@ -2,7 +2,6 @@ import cloudpickle
 import pandas as pd
 from typing import Dict, Any, List, Optional 
 
-from data_processing.pre_process import pre_process_dataframe
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
 from synthetic_tabular_data_generator.ctgan import CTGAN
 
@@ -65,12 +64,17 @@ class CtganSynthesizer(TabularDataSynthesizer):
 
     def _initialize_dataset(self, df: pd.DataFrame) -> None:
         """
-        Core logic for preprocessing the dataset.
+        Core logic for initializing the dataset.
         """
-        self.dataset, self.discrete_columns = pre_process_dataframe(
-            df,
-            self.attribute_config['configurations']
-        )
+        config = self.attribute_config['configurations']
+
+        self.discrete_columns = []  
+        for column_config in config:  
+            if column_config['type'] in ['STRING', 'BOOLEAN']:
+                self.discrete_columns.append(column_config['name'])
+
+        self.dataset = df
+            
 
     def _initialize_synthesizer(self) -> None:
         """

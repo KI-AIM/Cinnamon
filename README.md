@@ -1,6 +1,22 @@
-# Cinnamon
+<h1 align="center">
+  Cinnamon
+</h1>
 
-<img src="./cinnamon-platform/cinnamon-frontend/src/app/assets/cinnamon-logo.png" alt="Cinnamon logo" width="100">
+<div align="center">
+  <img src="./cinnamon-platform/cinnamon-frontend/src/app/assets/cinnamon-logo.png" alt="Cinnamon logo" width="100">
+</div>
+
+<div align="center">
+
+<a href="https://github.com/KI-AIM/Cinnamon/blob/main/LICENSE">
+  <img alt="GitHub License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg">
+</a>
+
+<a href="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml">
+  <img alt="GitHub License" src="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml/badge.svg">
+</a>
+
+</div>
 
 Cinnamon is a modular application designed to offer robust functionalities for data anonymization, synthetization, and evaluation.
 

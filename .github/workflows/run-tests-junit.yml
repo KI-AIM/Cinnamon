@@ -8,6 +8,7 @@ jobs:
   test-junit:
     permissions:
       checks: write
+      pull-requests: write
 
     runs-on: ubuntu-latest
 
@@ -73,6 +74,7 @@ jobs:
         id: test-report
         uses: mikepenz/action-junit-report@v5
         with:
+          comment: true
           report_paths: ${{ matrix.module }}/target/surefire-reports/*.xml
 
       - name: Upload Surefire test reports

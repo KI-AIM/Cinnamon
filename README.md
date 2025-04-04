@@ -49,7 +49,7 @@ docker-compose up -d
 The website is available at http://localhost:8080.
 
 ## Documentation
-Detailed documentation will be available soon.
+Detailed information about Cinnamon's features, configuration, and development is available in our [documentation](https://ki-aim.github.io/cinnamon-docs/).
 
 ## License
 Cinnamon is open source published under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0.html).

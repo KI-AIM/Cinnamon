@@ -94,6 +94,9 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     real_target = real[target_variable]
     synthetic_target = synthetic[target_variable]
 
+    real = impute_missing_values(real, 'MISSING_VALUE')
+    synthetic = impute_missing_values(synthetic, 'MISSING_VALUE')
+
     real_features = real.drop(columns=[target_variable])
     synthetic_features = synthetic.drop(columns=[target_variable])
     combined_features = pd.concat([real_features, synthetic_features], axis=0)
@@ -169,12 +172,14 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
                                                            y_test_real)
 
         models_real, predictions_real = lazy.fit(X_train_real, X_test_real, y_train_real, y_test_real)
-        machine_learning_dict['real']['predictions'] = predictions_real.to_dict()
-        machine_learning_dict['synthetic']['predictions'] = predictions_synthetic.to_dict()
+        predictions_real = remove_roc_auc(predictions_real.to_dict())
+        predictions_synthetic = remove_roc_auc(predictions_synthetic.to_dict())
+        machine_learning_dict['real']['predictions'] = predictions_real
+        machine_learning_dict['synthetic']['predictions'] = predictions_synthetic
         machine_learning_dict['difference'] = calculate_differences_as_dict(machine_learning_dict)
 
     machine_learning_dict['real'] = transform_predictions_with_color_coding(
-        predictions_real.to_dict(), MACHINE_LEARNING_RANGES)
+        predictions_real, MACHINE_LEARNING_RANGES)
 
     machine_learning_dict['synthetic'] = transform_predictions_with_color_coding(
         predictions_synthetic, MACHINE_LEARNING_RANGES)
@@ -204,6 +209,9 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
     real['Synthetic'] = 0
     synthetic['Synthetic'] = 1
 
+    real = impute_missing_values(real, 'MISSING_VALUE')
+    synthetic = impute_missing_values(synthetic, 'MISSING_VALUE')
+
     # Merge and shuffle datasets
     merged_data = pd.concat([real, synthetic], ignore_index=True)
     merged_data = shuffle(merged_data, random_state=random_state)
@@ -219,6 +227,7 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
 
     # Encode categorical features
     categorical_cols = merged_data.select_dtypes(exclude=['number']).columns
+    merged_data[categorical_cols] = merged_data[categorical_cols].astype(str)
     encoder = OrdinalEncoder()
     merged_data[categorical_cols] = encoder.fit_transform(merged_data[categorical_cols])
 
@@ -232,6 +241,7 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
     filtered_classifiers = [clf for clf in CLASSIFIERS if clf[0] in VALID_CLASSIFIERS]
     lazy = LazyClassifier(verbose=0, ignore_warnings=False, custom_metric=None, classifiers=filtered_classifiers)
     models, predictions = lazy.fit(X_train, X_test, y_train, y_test)
+    predictions = remove_roc_auc(predictions.to_dict())
 
     return transform_predictions_with_color_coding(predictions, DISCRIMINATOR_RANGES)
 
@@ -251,11 +261,25 @@ def calculate_differences_as_dict(result_dict):
     synthetic = result_dict["synthetic"]
 
     for key in ["predictions"]:
+        if key not in real or key not in synthetic:
+            continue
+            
         for metric, classifiers in real[key].items():
-            differences[key][metric] = {}
+            if metric == "ROC AUC":
+                continue
+                
+            if metric not in differences[key]:
+                differences[key][metric] = {}
+                
             for clf, real_value in classifiers.items():
-                synthetic_value = synthetic[key][metric].get(clf, 0)
-                differences[key][metric][clf] = abs(real_value - synthetic_value)
+                synthetic_value = None
+                if metric in synthetic[key] and clf in synthetic[key][metric]:
+                    synthetic_value = synthetic[key][metric][clf]
+                
+                if real_value is not None and synthetic_value is not None:
+                    differences[key][metric][clf] = abs(real_value - synthetic_value)
+                else:
+                    differences[key][metric][clf] = None
 
     return differences
 
@@ -350,3 +374,38 @@ def transform_predictions_with_color_coding(predictions, interpretation_ranges):
             results_dict['predictions'][metric].append(result)
 
     return results_dict
+
+def remove_roc_auc(predictions_dict):
+    if 'ROC AUC' in predictions_dict:
+        predictions_dict.pop('ROC AUC')
+    return predictions_dict
+
+
+
+def impute_missing_values(df: pd.DataFrame, missing_value_placeholder: str = "MISSING_VALUE") -> pd.DataFrame:
+    """
+    Imputes missing values in a DataFrame.
+    - Numeric columns are imputed with the mean of the column.
+    - Categorical columns are converted to strings and imputed with a placeholder value.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to impute.
+        missing_value_placeholder (str, optional): The placeholder for missing categorical values.
+            Defaults to "MISSING_VALUE".
+
+    Returns:
+        pd.DataFrame: The imputed DataFrame.
+    """
+    df_imputed = df.copy()
+    
+    numeric_cols = df_imputed.select_dtypes(include=['number']).columns
+    for col in numeric_cols:
+        mean_val = df_imputed[col].mean()
+        df_imputed[col] = df_imputed[col].fillna(mean_val)
+    
+    categorical_cols = df_imputed.select_dtypes(exclude=['number']).columns
+    for col in categorical_cols:
+        df_imputed[col] = df_imputed[col].astype(str)  
+        df_imputed[col] = df_imputed[col].fillna(missing_value_placeholder)
+    
+    return df_imputed

@@ -31,7 +31,6 @@ def extract_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> T
         synthetic_numeric = synthetic.select_dtypes(include=['number'])
     except TypeError as e:
         raise TypeError(f"Error selecting numeric columns: {str(e)}")
-    
     real_cols = set(real_numeric.columns)
     synthetic_cols = set(synthetic_numeric.columns)
 

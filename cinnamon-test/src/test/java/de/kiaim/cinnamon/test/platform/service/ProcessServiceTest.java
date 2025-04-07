@@ -38,6 +38,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@Autowired private SerializationConfig serializationConfig;
 	@Autowired private CinnamonConfiguration cinnamonConfiguration;
 	@Autowired private DataSetService dataSetService;
+	@Autowired private HttpService httpService;
 	@Autowired private StepService stepService = mock(StepService.class);
 
 	private ObjectMapper jsonMapper = null;
@@ -62,7 +63,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
 		                                         backgroundProcessRepository, csvProcessor, databaseService,
-		                                         dataSetService, projectService, stepService);
+		                                         dataSetService, httpService, projectService, stepService);
 
 		mockBackEnd = new MockWebServer();
 		mockBackEnd.start(mockBackEndPort);
@@ -138,8 +139,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		});
 
 		// Got different error messages on different machines, so only checking a part of it
-		assertTrue(exception.getMessage().startsWith("Failed to fetch the status! Connection refused:"));
-		assertTrue(exception.getMessage().endsWith("localhost/127.0.0.1:" + mockBackEndPort));
+		assertTrue(exception.getMessage().startsWith("Failed to fetch the status!"), "Unexpected error message: '" + exception.getMessage() + "'");
+		assertTrue(exception.getMessage().contains("Connection refused:"), "Unexpected error message: '" + exception.getMessage() + "'");
+		assertTrue(exception.getMessage().endsWith("localhost/127.0.0.1:" + mockBackEndPort),"Unexpected error message: " + exception.getMessage() + "'");
 	}
 
 }

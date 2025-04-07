@@ -30,12 +30,6 @@ public class ExternalServer {
 	@NotBlank
 	private String urlServer;
 
-	/**
-	 * URL of the server for clients.
-	 */
-	@NotBlank
-	private String urlClient;
-
 	//=========================
 	//--- Automatically set ---
 	//=========================

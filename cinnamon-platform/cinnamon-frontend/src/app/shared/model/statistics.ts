@@ -18,11 +18,11 @@ export class ResemblanceStatistics {
 }
 
 export class AttributeStatistics {
-    @Type(() => ImportantMetrics)
-    important_metrics: ImportantMetrics;
+    @Transform(transformStatisticsValuesRecord, { toClassOnly: true })
+    important_metrics: Record<string, StatisticsValueTypes>;
 
-    @Type(() => DetailMetrics)
-    details: DetailMetrics;
+    @Transform(transformStatisticsValuesRecord, { toClassOnly: true })
+    details: Record<string, StatisticsValueTypes>;
 
     @Type(() => PlotData)
     plot: PlotData;
@@ -31,63 +31,6 @@ export class AttributeStatistics {
     attribute_information: ColumnConfiguration;
 }
 
-export class ImportantMetrics {
-    @Type(() => StatisticsValues)
-    distinct_values?: StatisticsValues;
-
-    @Type(() => StatisticsValuesNominal<string>)
-    mode?: StatisticsValuesNominal<string>;
-
-    @Type(() => StatisticsValues)
-    mean?: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    variance?: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    standard_deviation?: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    minimum?: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    maximum?: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    missing_values_count: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    missing_values_percentage: StatisticsValues;
-}
-
-export class DetailMetrics {
-    @Type(() => StatisticsValues)
-    fifth_percentile: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    q1: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    median: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    q3: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    ninety_fifth_percentile: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    skewness: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    kurtosis: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    kolmogorov_smirnov: StatisticsValues;
-
-    @Type(() => StatisticsValues)
-    hellinger_distance: StatisticsValues;
-}
 
 export class PlotData {
     @Type(() => StatisticsData<DensityPlotData>)
@@ -114,23 +57,13 @@ export class StatisticsValues extends StatisticsMetaData {
     difference: StatisticsDifference;
 }
 
-/*
-export class KolmogorovSmirnovData {
-    KS_statistic: number;
-    p_value: number;
-    color_index: number;
-}
-
-export class HellingerDistanceData {
-    hellinger_distance: number;
-    color_index: number;
-}
-*/
 
 export class StatisticsValuesNominal<T> extends StatisticsMetaData {
     @Type(() => StatisticsData<T>)
     values: StatisticsData<T>;
 }
+
+export type StatisticsValueTypes = StatisticsValues | StatisticsValuesNominal<any>;
 
 export class StatisticsDifference {
     absolute: number;
@@ -164,8 +97,6 @@ export class HistogramData {
     color_index: number;
     label: string;
 }
-
-export type StatisticsValueTypes = StatisticsValues | StatisticsValuesNominal<any>;
 
 export class UtilityMetricData2 extends StatisticsMetaData {
     @Type(() => Predictions)
@@ -204,6 +135,22 @@ export class UtilityStatistics {
 }
 
 export type UtilityMetricDataObject = { [key: string]: UtilityMetricData2 | UtilityMetricData3 };
+
+function transformStatisticsValuesRecord(params: TransformFnParams): Record<string, StatisticsValueTypes> {
+    if (!params.value) {
+        return {};
+    }
+
+    return Object.fromEntries(
+        Object.entries(params.value).map(([key, val]) => {
+            if (val instanceof Object && Object.keys(val).includes('difference')) {
+                return [key, plainToInstance(StatisticsValues, val)];
+            } else {
+                return [key, plainToInstance(StatisticsValuesNominal<any>, val)];
+            }
+        })
+    );
+}
 
 function transformUtilityMetricData(params: TransformFnParams): UtilityMetricDataObject {
     if (!params.value) {

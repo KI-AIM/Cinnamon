@@ -65,8 +65,6 @@ public class AnonymizationConfig {
             jalConfig.setName(name);
             System.out.println(this.privacyModelList);
             jalConfig.setPrivacyModelList(this.privacyModelList);
-            jalConfig.setHeuristicSearchStepLimit(1000);
-            jalConfig.setHeuristicSearchTimeLimit(30);
             System.out.println(this.suppressionLimit);
             jalConfig.setSuppressionLimit(this.suppressionLimit);
             System.out.println(this.qualityModel);

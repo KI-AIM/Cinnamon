@@ -2,7 +2,7 @@ import { StepConfiguration } from "../model/step-configuration";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { concatMap, map, Observable, of, tap } from "rxjs";
+import { map, Observable, of, tap } from "rxjs";
 import { parse, stringify } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
@@ -10,6 +10,7 @@ import { ImportPipeData } from "../model/import-pipe-data";
 import { environments } from "../../../environments/environment";
 
 export abstract class AlgorithmService {
+    private readonly baseURL = environments.apiUrl + "/api/config";
 
     private _stepConfig: StepConfiguration | null = null;
     private _algorithms: Algorithm[] | null = null;
@@ -132,15 +133,11 @@ export abstract class AlgorithmService {
      */
     public getAlgorithmDefinition(algorithm: Algorithm): Observable<AlgorithmDefinition> {
         if (!(algorithm.name in this.algorithmDefinitions)) {
-            return this.stepConfig
-                .pipe(
-                    concatMap(value => {
-                        return this.loadAlgorithmDefinition(value.urlClient, algorithm)
-                    }),
-                    tap(value => {
-                        this.algorithmDefinitions[algorithm.name] = value;
-                    }),
-                );
+            return this.loadAlgorithmDefinition(algorithm).pipe(
+                tap(value => {
+                    this.algorithmDefinitions[algorithm.name] = value;
+                }),
+            );
         }
 
         return of(this.algorithmDefinitions[algorithm.name]);
@@ -163,30 +160,23 @@ export abstract class AlgorithmService {
      */
     public get algorithms(): Observable<Algorithm[]> {
         if (this._algorithms === null) {
-            return this.stepConfig
-                .pipe(
-                    concatMap(value => {
-                        return this.loadAlgorithms(value.urlClient)
-                    }),
-                    tap(value =>  {
-                        this._algorithms = value
-                        if (this._cachedImportPipeData !== null) {
-                            // Fallback if the page load was slower than the request
-                            this.setConfig(this._cachedImportPipeData);
-                            this._cachedImportPipeData = null;
-                        }
-                    }),
-                );
+            return this.loadAlgorithms().pipe(
+                tap(value =>  {
+                    this._algorithms = value
+                    if (this._cachedImportPipeData !== null) {
+                        // Fallback if the page load was slower than the request
+                        this.setConfig(this._cachedImportPipeData);
+                        this._cachedImportPipeData = null;
+                    }
+                }),
+            );
         } else {
             return of(this._algorithms);
         }
     }
 
-    private loadAlgorithms(url: string): Observable<Algorithm[]> {
-        return this.stepConfig.pipe(
-            concatMap(value => {
-                return this.fetchAlgorithms(url + value.algorithmEndpoint);
-            }),
+    private loadAlgorithms(): Observable<Algorithm[]> {
+        return this.fetchAlgorithms().pipe(
             map(value => {
                 const response = parse(value) as { [available_synthesizers: string]: Object[] };
                 const result: Algorithm[] = [];
@@ -198,22 +188,32 @@ export abstract class AlgorithmService {
 
     /**
      * Fetches the list of available algorithms as a YAML string.
-     * @param url Url.
      * @protected
      */
-    protected fetchAlgorithms(url: string): Observable<string> {
-        return this.http.get<string>(url, {responseType: 'text' as 'json'});
+    protected fetchAlgorithms(): Observable<string> {
+        return this.http.get<string>(this.baseURL + "/algorithms", {
+            params: {configurationName: this.getConfigurationName()},
+            responseType: 'text' as 'json'
+        });
     }
 
-    private loadAlgorithmDefinition(url: string, algorithm: Algorithm): Observable<AlgorithmDefinition> {
-        return this.fetchAlgorithmDefinition(url + algorithm.URL)
+    private loadAlgorithmDefinition(algorithm: Algorithm): Observable<AlgorithmDefinition> {
+        return this.fetchAlgorithmDefinition(algorithm.URL)
             .pipe(map(value => {
                 return plainToInstance(AlgorithmDefinition, parse(value));
             }));
     }
 
-    protected fetchAlgorithmDefinition(url: string): Observable<string> {
-        return this.http.get<string>(url, {responseType: 'text' as 'json'});
+    /**
+     * Loads the configuration definition from the given path.
+     * @param definitionPath The path for fetching the definition from the external server.
+     * @protected
+     */
+    protected fetchAlgorithmDefinition(definitionPath: string): Observable<string> {
+        return this.http.get<string>(this.baseURL + "/algorithm", {
+            params: {configurationName: this.getConfigurationName(), definitionPath: definitionPath},
+            responseType: 'text' as 'json'
+        });
     }
 
     private loadStepConfig(configName: string): Observable<StepConfiguration> {

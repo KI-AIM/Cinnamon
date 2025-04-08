@@ -1,13 +1,11 @@
-name: test
+name: JUnit Workflow
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+  workflow_call:
 
 jobs:
-  test:
+  test-junit:
     permissions:
       checks: write
 

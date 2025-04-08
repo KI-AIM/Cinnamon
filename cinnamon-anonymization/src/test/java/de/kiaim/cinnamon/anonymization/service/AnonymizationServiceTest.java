@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -84,6 +86,27 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
             throw e;
+        }
+    }
+
+    @Test
+    public void testAnonymizationService_repeat() throws Exception {
+        ClassLoader classLoader = AnonymizationServiceTest.class.getClassLoader();
+
+        String heartDatasetPath = "data.json-dataset-heart-failure.json";
+        String heartFrontendAnonConfigPath = "src/test/resources/anonymization.yaml";
+
+        var processId = "testProcess123";
+        var heartDataset = objectMapper.readValue(classLoader.getResourceAsStream(heartDatasetPath), DataSet.class);
+        var heartFrontendAnonConfig = importFrontendAnonConfig(heartFrontendAnonConfigPath);
+        var mockUrl = mockWebServer.url("/test/callback").toString();
+        var request = new AnonymizationRequest(processId, heartDataset, heartFrontendAnonConfig.getAnonymization(), mockUrl);
+
+        for (int j = 0; j < 10; j++) {
+            mockWebServer.enqueue(new MockResponse().setBody("ok").setResponseCode(200));
+            Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);
+            var result = future.get();
+            assertNotNull(result, "Iteration " + j + " returned no result.");
         }
     }
 

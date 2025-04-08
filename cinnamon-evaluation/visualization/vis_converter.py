@@ -183,12 +183,25 @@ def add_value_differences(metrics_dict):
         """Calculate absolute and percentage differences between real and synthetic values."""
         if isinstance(real, (int, float)) and isinstance(synthetic, (int, float)):
             abs_diff = abs(real - synthetic)
-            # Avoid division by zero
-            if real != 0:
-                pct_diff = (abs_diff / abs(real)) * 100
+            
+            is_distance_metric = abs(real) == 0 and 0 <= synthetic <= 1
+            
+            if is_distance_metric:
+                normalized_diff = synthetic
             else:
-                pct_diff = 0 if synthetic == 0 else 100
-
+                if real == 0 and synthetic == 0:
+                    normalized_diff = 0
+                elif (real > 0 and synthetic < 0) or (real < 0 and synthetic > 0):
+                    normalized_diff = abs_diff / (abs(real) + abs(synthetic))
+                elif real < 0 and synthetic < 0:
+                    abs_real = abs(real)
+                    abs_synthetic = abs(synthetic)
+                    normalized_diff = abs(abs_real - abs_synthetic) / (abs_real + abs_synthetic)
+                else:
+                    normalized_diff = abs_diff / (abs(real) + abs(synthetic))
+            
+            pct_diff = normalized_diff * 100
+                
             return {
                 'absolute': abs_diff,
                 'percentage': pct_diff,
@@ -200,7 +213,7 @@ def add_value_differences(metrics_dict):
                 'percentage': 'NA',
                 'color_index': 'NA'
             }
-
+        
     def process_metric(metric_data):
         """Process a single metric."""
         if not isinstance(metric_data, dict):

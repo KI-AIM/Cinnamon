@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.service;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.model.dto.ErrorResponse;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
@@ -34,7 +35,8 @@ public class ResponseService {
 	public ErrorResponse prepareErrorResponseBody(final HttpStatusCode status, final String path,
 	                                              final String errorCode, final String message,
 	                                              @Nullable final Object details) {
-		return new ErrorResponse(status.value(), path, errorCode, message, details);
+		return new ErrorResponse("about:blank", HttpStatus.valueOf(status.value()).name(), status.value(), path,
+		                         errorCode, message, details);
 	}
 
 }

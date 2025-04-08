@@ -56,7 +56,7 @@ public class ExternalConfigurationService {
 			final String message = httpService.buildError(e, "fetch the status");
 			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message);
 		} catch (WebClientRequestException e) {
-			var message = "Failed to fetch available algorithms for configuration '" + configurationName + "'!" +
+			var message = "Failed to fetch available algorithms for configuration '" + configurationName + "'! " +
 			              e.getMessage();
 			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message);
 		}

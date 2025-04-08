@@ -18,11 +18,4 @@ public class StepConfigurationResponse {
 	 */
 	@Schema(description = "Name of the configuration.", example = "anonConfig")
 	private String configurationName;
-
-	/**
-	 * URL of the server for clients.
-	 */
-	@Schema(description = "URL of the corresponding server for the client.",
-	        example = "https://my-anonymization-server.de")
-	private String urlClient;
 }

@@ -107,4 +107,5 @@ jobs:
         with:
           check_name: JUnit Test Report
           comment: true
+          group_reports: false
           report_paths: ./artifacts/**/*.xml

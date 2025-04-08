@@ -145,9 +145,10 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * @private
      */
     private setConfig(error: string | null) {
-        this.errorHandlingService.addError(error);
         if (error === null) {
             this.readFromCache();
+        } else {
+            this.errorHandlingService.addError(error);
         }
     }
 

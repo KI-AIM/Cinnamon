@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
-import {environments} from "../../../environments/environment";
-import {finalize, map, Observable, of, share, tap} from "rxjs";
+import { environments } from "../../../environments/environment";
+import { finalize, map, Observable, of, share, tap } from "rxjs";
 import { HttpClient } from "@angular/common/http";
-import {Statistics, StatisticsData} from "../model/statistics";
-import {parse} from "yaml";
-import {plainToInstance} from "class-transformer";
+import { Statistics, StatisticsData, StatisticsResponse } from "../model/statistics";
+import { plainToInstance } from "class-transformer";
 import { DataType } from "../model/data-type";
 import { RiskEvaluation } from '../model/risk-evaluation';
+import { ProcessStatus } from "../../core/enums/process-status";
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +14,8 @@ import { RiskEvaluation } from '../model/risk-evaluation';
 export class StatisticsService {
     private readonly baseUrl: string = environments.apiUrl + "/api/statistics";
 
-    private _statistics: Statistics | null = null;
-    private _statistics$: Observable<Statistics> | null = null;
+    private _statistics: StatisticsResponse | null = null;
+    private _statistics$: Observable<StatisticsResponse> | null = null;
 
     private readonly labels: Record<string, string> = {
         "anonymization": "Anonymized",
@@ -178,7 +178,7 @@ export class StatisticsService {
         return this.colorDefinitions.find(value => value.name === name)?.colors ?? [];
     }
 
-    public get statistics$(): Observable<Statistics | null> {
+    public get statistics$(): Observable<StatisticsResponse> {
         if (this._statistics) {
             return of(this._statistics);
         }
@@ -196,7 +196,7 @@ export class StatisticsService {
     }
 
     // TODO use statistics endpoint
-    public fetchResult(): Observable<Statistics> {
+    public fetchResult(): Observable<StatisticsResponse> {
         return this.httpClient.get<string>(environments.apiUrl + `/api/project/resultFile`,
             {
                 params: {
@@ -205,7 +205,13 @@ export class StatisticsService {
                     name: 'metrics.json',
                 }
             }).pipe(
-            map(value => plainToInstance(Statistics, JSON.parse(value)))
+            map(value => plainToInstance(Statistics, JSON.parse(value))),
+            map(value => {
+                const response = new StatisticsResponse();
+                response.status = ProcessStatus.FINISHED;
+                response.statistics = value;
+                return response;
+            }),
         );
     }
 
@@ -310,22 +316,31 @@ export class StatisticsService {
         }
     }
 
-    public fetchStatistics(stepName: string): Observable<Statistics | null> {
+    public fetchStatistics(stepName: string): Observable<StatisticsResponse> {
         const params = {
             selector: stepName.toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
             jobName: stepName.toLowerCase(),
         }
 
-        return this.httpClient.get<string>(this.baseUrl, {params: params, responseType: 'text' as 'json'})
-            .pipe(
-                map(value => {
-                    if (value) {
-                        return plainToInstance(Statistics, parse(parse(value)));
-                    } else {
-                        return null;
-                    }
-                }),
-            );
+        return this.httpClient.get<StatisticsResponse>(this.baseUrl, {params: params}).pipe(
+            map(value => {
+                return plainToInstance(StatisticsResponse, value);
+            }),
+        );
+    }
+
+    /**
+     * Cancels the statistics calculation.
+     * @param stepName The name of the job or 'validation' for the original data set.
+     */
+    public cancelStatistics(stepName: string): Observable<StatisticsResponse> {
+        const params = {
+            selector: stepName.toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
+            jobName: stepName.toLowerCase(),
+            action: 'cancel',
+        }
+
+        return this.httpClient.get<StatisticsResponse>(this.baseUrl, {params: params});
     }
 
     public getValue(data: StatisticsData<any>, which : 'real' | 'synthetic'): number | string {

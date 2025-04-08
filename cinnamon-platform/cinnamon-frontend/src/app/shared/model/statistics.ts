@@ -1,6 +1,20 @@
 import { ColumnConfiguration } from "./column-configuration";
 import { plainToInstance, Transform, Type } from "class-transformer";
 import { TransformFnParams } from "class-transformer/types/interfaces";
+import { ProcessStatus } from "../../core/enums/process-status";
+
+export class StatisticsResponse {
+    status: ProcessStatus;
+
+    @Transform(params => plainToInstance(Statistics, JSON.parse(params.value)), {toClassOnly: true})
+    statistics: Statistics | null;
+
+    constructor(status?: ProcessStatus) {
+        if (status != null) {
+            this.status = status;
+        }
+    }
+}
 
 export class Statistics {
     @Type(() => ResemblanceStatistics)

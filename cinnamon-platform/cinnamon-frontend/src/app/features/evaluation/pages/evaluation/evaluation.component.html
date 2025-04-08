@@ -72,8 +72,8 @@
 
                                 <mat-expansion-panel>
                                     <mat-expansion-panel-header>
-                                        <mat-panel-title>{{ statistics.resemblance.display_name }}</mat-panel-title>
-                                        <mat-panel-description>{{ statistics.resemblance.description }}</mat-panel-description>
+                                        <mat-panel-title>{{ statistics.statistics!.resemblance.display_name }}</mat-panel-title>
+                                        <mat-panel-description>{{ statistics.statistics!.resemblance.description }}</mat-panel-description>
                                     </mat-expansion-panel-header>
 
                                     <div>
@@ -83,7 +83,7 @@
 
                                 </mat-expansion-panel>
 
-                                <mat-expansion-panel *ngIf="statistics.utility as utility">
+                                <mat-expansion-panel *ngIf="statistics.statistics!.utility as utility">
                                 <mat-expansion-panel-header>
                                         <mat-panel-title>{{ utility.display_name }}</mat-panel-title>
                                         <mat-panel-description>{{ utility.description }}</mat-panel-description>

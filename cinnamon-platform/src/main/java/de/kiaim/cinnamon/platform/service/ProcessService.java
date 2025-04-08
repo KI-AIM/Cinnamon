@@ -84,8 +84,7 @@ public class ProcessService {
 	                      final BackgroundProcessRepository backgroundProcessRepository,
 	                      final CsvProcessor csvProcessor, final DatabaseService databaseService,
 	                      final DataSetService dataSetService, final ProjectService projectService,
-	                      final StepService stepService
-	) {
+	                      final StepService stepService) {
 		this.jsonMapper = serializationConfig.jsonMapper();
 		this.yamlMapper = serializationConfig.yamlMapper();
 
@@ -278,7 +277,7 @@ public class ProcessService {
 			}
 
 			// Start the next process of the same step
-			startScheduledProcess(externalProcess.getJob());
+			startScheduledProcess(externalProcess.getJob().getEndpoint());
 		}
 
 	}
@@ -532,32 +531,33 @@ public class ProcessService {
 		startOrScheduleBackendProcess(externalProcess);
 	}
 
-
 	/**
 	 * Cancels the given process.
+	 * Starts the next scheduled process using the same external server.
 	 *
-	 * @param externalProcess The process to be canceled.
+	 * @param backgroundProcess The process to be canceled.
 	 */
-	private void cancelProcess(final ExternalProcessEntity externalProcess) {
-		if (!(externalProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
-		      externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING)) {
+	@Transactional
+	public void cancelProcess(final BackgroundProcessEntity backgroundProcess) {
+		if (!(backgroundProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
+		      backgroundProcess.getExternalProcessStatus() == ProcessStatus.RUNNING)) {
 			return;
 		}
 
-		if (externalProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED) {
-			externalProcess.setScheduledTime(null);
+		final ExternalEndpoint ese = stepService.getExternalServerEndpointConfiguration(backgroundProcess);
+
+		if (backgroundProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED) {
+			backgroundProcess.setScheduledTime(null);
 		} else {
 			// Get configuration
-			final Job stepConfiguration = externalProcess.getJob();
-			final ExternalEndpoint ese = stepService.getExternalServerEndpointConfiguration(stepConfiguration);
 			final ExternalServer es = stepService.getExternalServerConfiguration(ese);
 
 			final String serverUrl = es.getUrlServer();
-			final String cancelEndpoint = injectUrlParameter(ese.getCancelEndpoint(), externalProcess);
+			final String cancelEndpoint = injectUrlParameter(ese.getCancelEndpoint(), backgroundProcess);
 
 			final MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-			formData.add("session_key", externalProcess.getUuid().toString());
-			formData.add("pid", externalProcess.getExternalId());
+			formData.add("session_key", backgroundProcess.getUuid().toString());
+			formData.add("pid", backgroundProcess.getExternalId());
 
 			// Do the request
 			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
@@ -575,8 +575,10 @@ public class ProcessService {
 			         .block();
 		}
 
-		externalProcess.setExternalProcessStatus(ProcessStatus.CANCELED);
-		startScheduledProcess(externalProcess.getJob());
+		backgroundProcess.setExternalProcessStatus(ProcessStatus.CANCELED);
+		startScheduledProcess(ese);
+
+		backgroundProcessRepository.save(backgroundProcess);
 	}
 
 	/**
@@ -724,13 +726,13 @@ public class ProcessService {
 	}
 
 	/**
-	 * Starts a scheduled process for the given job name.
+	 * Starts the next scheduled process for the given endpoint.
 	 *
-	 * @param job The job.
+	 * @param endpoint The endpoint.
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	protected void startScheduledProcess(final Job job) {
-		final var server = job.getServer();
+	protected void startScheduledProcess(final ExternalEndpoint endpoint) {
+		final var server = endpoint.getServer();
 
 		final Set<Integer> endpoints = server.getEndpoints().stream()
 		                                     .map(ExternalEndpoint::getIndex)

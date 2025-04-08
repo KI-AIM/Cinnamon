@@ -5,7 +5,7 @@ import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.AlgorithmDefinitionRequest;
 import de.kiaim.cinnamon.platform.model.dto.AvailableAlgorithmsRequest;
 import de.kiaim.cinnamon.platform.model.dto.ConfigurationRequest;
-import de.kiaim.cinnamon.platform.model.dto.ErrorResponse;
+import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.DatabaseService;

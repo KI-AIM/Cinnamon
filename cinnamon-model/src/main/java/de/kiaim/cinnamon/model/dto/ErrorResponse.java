@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.platform.model.dto;
+package de.kiaim.cinnamon.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

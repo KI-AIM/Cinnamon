@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.platform.exception.ApiException;
-import de.kiaim.cinnamon.platform.model.dto.ErrorResponse;
+import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;

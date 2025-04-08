@@ -116,6 +116,8 @@ export class ErrorHandlingService {
                 }
             }
 
+        } else if (error.errorCode === 'PLATFORM_2_4_4') {
+            errorMessage = "Failed to fetch available algorithms. Please try again later.";
         } else {
             errorMessage = error.errorMessage;
         }

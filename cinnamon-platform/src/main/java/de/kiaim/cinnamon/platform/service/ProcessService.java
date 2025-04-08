@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.serialization.mapper.YamlMapper;
@@ -410,7 +411,8 @@ public class ProcessService {
 						}
 						case ERROR -> {
 							containsError = true;
-							errorMessage = new String(value.getBytes());
+							var errorRequest = jsonMapper.readValue(value.getBytes(), ErrorRequest.class);
+							errorMessage = errorRequest.getErrorMessage();
 						}
 						case FILE -> {
 							files.put(value.getOriginalFilename(), new LobWrapperEntity(value.getBytes()));

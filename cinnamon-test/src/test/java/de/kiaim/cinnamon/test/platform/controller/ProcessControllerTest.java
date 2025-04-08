@@ -1,7 +1,9 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
@@ -609,9 +611,11 @@ public class ProcessControllerTest extends ControllerTest {
 
 
 		// Send callback request with error
-		final MockMultipartFile resultData = new MockMultipartFile("exception_message", "exception_message.txt",
-		                                                           MediaType.TEXT_PLAIN_VALUE,
-		                                                           "An error occurred!".getBytes());
+		ErrorRequest errorResponse = new ErrorRequest("about:blank", "SYNTH_1_2_3", "An error occurred!", "An error occurred!");
+		var errorJson = JsonMapper.jsonMapper().writeValueAsString(errorResponse);
+		final MockMultipartFile resultData = new MockMultipartFile("error", "exception_message.txt",
+		                                                           MediaType.APPLICATION_JSON_VALUE,
+		                                                           errorJson.getBytes());
 		mockMvc.perform(multipart("/api/process/" + id + "/callback")
 				                .file(resultData))
 				                .andExpect(status().isOk());

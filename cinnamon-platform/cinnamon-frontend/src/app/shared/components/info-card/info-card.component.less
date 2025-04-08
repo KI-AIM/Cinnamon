@@ -9,3 +9,30 @@
 .card-warn {
     background-color: @color-conflict-background;
 }
+
+.card-icon {
+    display: flex;
+    flex-direction: row;
+    margin-right: 10px;
+
+    > * {
+        margin: auto;
+    }
+}
+
+.card-close-icon {
+    display: flex;
+    flex-direction: row;
+    margin-left: auto;
+    padding-left: 10px;
+}
+
+.card-close-icon > * {
+    color: @color-primary-icon;
+    cursor: pointer;
+    margin: auto;
+}
+
+.card-close-icon > *:hover {
+    color: @color-secondary-icon;
+}

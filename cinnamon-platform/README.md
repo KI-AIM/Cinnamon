@@ -10,7 +10,19 @@ It is responsible for:
 ## Build & Run
 
 ### Docker
-It is recommended to use the [docker-compose.yml](../docker-compose.yml) in the root directory of this repository for building and running the platform with Docker.
+
+It is recommended to use the [docker-compose-build.yml](../docker-compose-build.yml) for building [docker-compose.yml](../docker-compose.yml) for running the platform with Docker.
+
+Run the following command in the root directory to build Cinnamon Platform:
+```sh
+docker compose -f docker-compose-build.yml build cinnamon-platform 
+```
+
+To start Cinnamon Platform, create a `.env`, paste the content of `.env.example` into the new `.env` file and set the `PG_PASSWORD` variable.
+Then start Cinnamon Platform by executing this command:
+```sh
+docker compose up -d cinnamon-platform
+```
 
 ### WAR
 
@@ -62,6 +74,6 @@ inside the `/cinnamon-frontend` directory.
 For this, a local version of node, npm and the angular cli has to be installed. The build process however should work without any additional installations.
 
 ### Angular Frontend
-More detailed information can be found [**here**](angular-info.md).
+More detailed information can be found [**here**](https://ki-aim.github.io/cinnamon-docs/contribution/platform).
 
 The angular frontend is structured to comply to best practices. This means that under `cinnamon-frontend/src/app` several folders were created to structure the application. To find out, what every subdirectory should be used for and how the components inside should be designed, refer to the `ABOUT` documents inside the folders.

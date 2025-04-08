@@ -4,5 +4,6 @@ public enum StepOutputEncoding {
 	DATA,
 	DATA_SET,
 	ERROR,
+	ERROR_MESSAGE,
 	FILE,
 }

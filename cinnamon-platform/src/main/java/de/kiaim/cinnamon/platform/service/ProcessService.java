@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.serialization.mapper.YamlMapper;
@@ -76,6 +77,7 @@ public class ProcessService {
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
 	private final DataSetService dataSetService;
+	private final HttpService httpService;
 	private final ProjectService projectService;
 	private final StepService stepService;
 
@@ -83,8 +85,9 @@ public class ProcessService {
 	                      @Value("${server.port}") final int port, final CinnamonConfiguration cinnamonConfiguration,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
 	                      final CsvProcessor csvProcessor, final DatabaseService databaseService,
-	                      final DataSetService dataSetService, final ProjectService projectService,
-	                      final StepService stepService) {
+	                      final DataSetService dataSetService, final HttpService httpService,
+	                      final ProjectService projectService, final StepService stepService
+	) {
 		this.jsonMapper = serializationConfig.jsonMapper();
 		this.yamlMapper = serializationConfig.yamlMapper();
 
@@ -94,27 +97,36 @@ public class ProcessService {
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
 		this.dataSetService = dataSetService;
+		this.httpService = httpService;
 		this.stepService = stepService;
 		this.projectService = projectService;
 	}
 
 	/**
-	 * Updates and returns the status of the execution of the given step in the given project.
+	 * Updates and returns the process status of the given step in the given project.
 	 * If a process is running, the status of that process will be fetched from the external server.
+	 * If fetching the status fails,the process will be set to error and the next process of the same job will be started.
 	 *
 	 * @param project The project.
 	 * @param stage   The stage.
 	 * @return The updated execution.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalRequestException                  If the request to the external server failed.
 	 */
 	@Transactional
-	public ExecutionStepEntity getStatus(final ProjectEntity project, final Stage stage)
-			throws InternalRequestException, InternalApplicationConfigurationException {
+	public ExecutionStepEntity getStatus(final ProjectEntity project, final Stage stage) {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
-			updateProcessStatus(executionStep.getCurrentProcess());
+			final var process = executionStep.getCurrentProcess();
+			try {
+				updateProcessStatus(process);
+			} catch (final InternalRequestException e) {
+				setProcessError(executionStep, e.getMessage());
+
+				// Start the next process of the same step
+				startScheduledProcess(process.getJob().getEndpoint());
+			}
+
+			projectService.saveProject(executionStep.getProject());
 		}
 
 		return executionStep;
@@ -209,9 +221,11 @@ public class ProcessService {
 		executionStep.getProcesses().forEach(ExternalProcessEntity::reset);
 
 		// Start the first step
-		startNext(executionStep);
-
-		projectService.saveProject(project);
+		try {
+			startNext(executionStep);
+		} finally {
+			projectService.saveProject(project);
+		}
 
 		return executionStep;
 	}
@@ -310,11 +324,10 @@ public class ProcessService {
 			startNext(process.getExecutionStep());
 		} catch (final Exception e) {
 			log.error("Failed to start process!", e);
-			setProcessError(process, e.getMessage());
-
-			final ProjectEntity project = process.getProject();
-			projectService.saveProject(project);
 		}
+
+		final ProjectEntity project = process.getProject();
+		projectService.saveProject(project);
 	}
 
 	/**
@@ -406,6 +419,11 @@ public class ProcessService {
 							databaseService.storeTransformationResult(transformationResult, dataProcessing, processed);
 						}
 						case ERROR -> {
+							containsError = true;
+							var errorRequest = jsonMapper.readValue(value.getBytes(), ErrorRequest.class);
+							errorMessage = errorRequest.getErrorMessage();
+						}
+						case ERROR_MESSAGE -> {
 							containsError = true;
 							errorMessage = new String(value.getBytes());
 						}
@@ -596,7 +614,7 @@ public class ProcessService {
 	 * @throws InternalMissingHandlingException    If no implementation exists for a valid configuration.
 	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
 	 */
-	protected void startNext(final ExecutionStepEntity executionStep)
+	private void startNext(final ExecutionStepEntity executionStep)
 			throws BadStateException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		// Get the next step
 		Integer nextJob = null;
@@ -657,21 +675,24 @@ public class ProcessService {
 		if (nextJob != null) {
 			if (nextProcess.getExternalProcessStatus() != ProcessStatus.SCHEDULED &&
 			    nextProcess.getExternalProcessStatus() != ProcessStatus.RUNNING) {
-				startOrScheduleProcess(nextProcess);
+
+				try {
+					startOrScheduleProcess(nextProcess);
+				} catch (final Exception e) {
+					setProcessError(nextProcess, e.getMessage());
+					throw e;
+				}
 			}
 		} else {
 			executionStep.setStatus(ProcessStatus.FINISHED);
 		}
-
-		projectService.saveProject(executionStep.getProject());
 	}
 
 	/**
 	 * Fetches the staus of the given process from the external server.
 	 *
 	 * @param externalProcess The process.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalRequestException                  If the request failed.
+	 * @throws InternalRequestException If the request failed.
 	 */
 	private void fetchStatus(final ExternalProcessEntity externalProcess) throws InternalRequestException {
 		// Get configuration
@@ -697,22 +718,17 @@ public class ProcessService {
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
 			                                        errorResponse -> errorResponse.toEntity(String.class)
-			                                                                      .map(this::buildErrorResponse))
+			                                                                      .map(httpService::buildErrorResponse))
 			                              .bodyToMono(String.class)
 			                              .block();
 			externalProcess.setStatus(response);
 		} catch (final RequestRuntimeException e) {
-			final String message = buildError(e, "fetch the status");
-			setProcessError(externalProcess, message);
+			final String message = httpService.buildError(e, "fetch the status");
 			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
 		} catch (WebClientRequestException e) {
 			var message = "Failed to fetch the status! " + e.getMessage();
-			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
 		}
-
-		// Update status
-		projectService.saveProject(externalProcess.getProject());
 	}
 
 	/**
@@ -738,24 +754,25 @@ public class ProcessService {
 		                                     .map(ExternalEndpoint::getIndex)
 		                                     .collect(Collectors.toSet());
 		// TODO account for endpoint max processes
-		final var process = backgroundProcessRepository.findFirstByEndpointInAndExternalProcessStatusOrderByScheduledTimeAsc(
+		final List<BackgroundProcessEntity> processes = backgroundProcessRepository.findByEndpointInAndExternalProcessStatusOrderByScheduledTimeAsc(
 				endpoints, ProcessStatus.SCHEDULED);
 
-		if (process.isEmpty()) {
+		if (processes.isEmpty()) {
 			return;
 		}
-		final var externalProcess = process.get();
 
-		try {
-			doStartBackgroundProcess(externalProcess);
-		} catch (final ApiException e) {
-			log.warn("Failed to start scheduled process!", e);
-			setProcessError(externalProcess, e.getMessage());
+		for (final var externalProcess : processes) {
+			try {
+				doStartBackgroundProcess(externalProcess);
+				externalProcess.setScheduledTime(null);
+				projectService.saveProject(externalProcess.getProject());
+				break;
+			} catch (final ApiException e) {
+				log.warn("Failed to start scheduled process!", e);
+				setProcessError(externalProcess, e.getMessage());
+				projectService.saveProject(externalProcess.getProject());
+			}
 		}
-
-		externalProcess.setScheduledTime(null);
-
-		projectService.saveProject(externalProcess.getProject());
 	}
 
 	/**
@@ -822,7 +839,7 @@ public class ProcessService {
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
 			                                        errorResponse -> errorResponse.toEntity(String.class)
-			                                                                      .map(this::buildErrorResponse))
+			                                                                      .map(httpService::buildErrorResponse))
 			                              .bodyToMono(ExternalProcessResponse.class)
 			                              .block();
 
@@ -833,8 +850,7 @@ public class ProcessService {
 			externalProcess.setExternalId(response.getPid());
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
 		} catch (final RequestRuntimeException e) {
-			final String message = buildError(e, "start the process");
-			setProcessError(externalProcess, message);
+			final String message = httpService.buildError(e, "start the process");
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		} catch (WebClientRequestException e) {
 			var message = "Failed to start the process! ";
@@ -843,10 +859,10 @@ public class ProcessService {
 			} else if (e.getMessage() != null) {
 				message += e.getMessage();
 			}
-			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		}
 	}
+
 	private void addConfig(final String configuration, final ExternalEndpoint stepConfiguration,
 	                       final MultipartBodyBuilder bodyBuilder)
 			throws InternalIOException, InternalMissingHandlingException {
@@ -964,8 +980,9 @@ public class ProcessService {
 		}
 	}
 
-	private void setProcessError(final BackgroundProcessEntity process, final String message) {
+	public void setProcessError(final BackgroundProcessEntity process, final String message) {
 		process.setExternalProcessStatus(ProcessStatus.ERROR);
+		process.setScheduledTime(null);
 		process.setUuid(null);
 
 		if (process instanceof ExternalProcessEntity externalProcess) {
@@ -977,36 +994,21 @@ public class ProcessService {
 		}
 	}
 
+	private void setProcessError(final ExecutionStepEntity executionStep, final String message) {
+		final var currentProcess = executionStep.getCurrentProcess();
+		if (currentProcess != null) {
+			currentProcess.setExternalProcessStatus(ProcessStatus.ERROR);
+			currentProcess.setUuid(null);
+			currentProcess.setScheduledTime(null);
+			currentProcess.setStatus(message);
+		}
+
+		executionStep.setStatus(ProcessStatus.ERROR);
+		executionStep.setCurrentProcessIndex(null);
+	}
+
 	private String injectUrlParameter(final String url, final BackgroundProcessEntity externalProcess) {
 		return url.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getUuid().toString());
-	}
-
-	private RequestRuntimeException buildErrorResponse(final ResponseEntity<String> response) {
-		ExternalProcessResponse responseBody;
-		try {
-			responseBody = jsonMapper.readValue(response.getBody(), ExternalProcessResponse.class);
-		} catch (JsonProcessingException e) {
-			responseBody = new ExternalProcessResponse();
-			responseBody.setError(response.getBody());
-		}
-
-		final ResponseEntity<ExternalProcessResponse> responseEntity = ResponseEntity.status(response.getStatusCode())
-		                                                                             .headers(response.getHeaders())
-		                                                                             .body(responseBody);
-		return new RequestRuntimeException(responseEntity);
-	}
-
-	private String buildError(final RequestRuntimeException e, final String action) {
-		var message = "Failed to " + action + "! Got status of '" + e.getResponse().getStatusCode() + "'.";
-		if (e.getResponse().getBody() != null) {
-			if (e.getResponse().getBody().getMessage() != null) {
-				message += " Got message: '" + e.getResponse().getBody().getMessage() + "'.";
-			}
-			if (e.getResponse().getBody().getError() != null) {
-				message += " Got error: '" + e.getResponse().getBody().getError() + "'.";
-			}
-		}
-		return message;
 	}
 
 }

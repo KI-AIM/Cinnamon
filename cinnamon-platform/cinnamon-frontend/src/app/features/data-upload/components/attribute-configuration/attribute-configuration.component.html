@@ -24,6 +24,9 @@
             <mat-select [id]="'type_' + attrNumber" formControlName="type">
                 <mat-option *ngFor="let type of getDataTypes().getAll()" [value]="type">{{type}}</mat-option>
             </mat-select>
+            <mat-error *ngIf="columnConfigurationForm.controls['type'].hasError('undefined')">
+                Type must not be 'UNDEFINED'
+            </mat-error>
         </mat-form-field>
     </div>
 

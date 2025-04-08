@@ -1,7 +1,3 @@
-<app-info-card [hidden]="registerError.length === 0" typeClass="card-warn">
-    <div *ngFor="let line of registerError">{{ line }}</div>
-</app-info-card>
-
 <div class="bg-white p-5 rounded border">
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
         <mat-form-field>

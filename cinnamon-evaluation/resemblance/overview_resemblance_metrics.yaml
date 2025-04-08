@@ -1,6 +1,6 @@
 resemblance:
   display_name: Resemblance Metrics
-  description: Statistical metrics used to evaluate the resemblance between the real and synthetic data. Here the real data is used as the reference data and the synthetic data is compared to it.
+  description: Measures how closely the anonymized data matches the patterns and characteristics of original data 
   metrics:
     - display_name: "Mode"
       function_name: mode
@@ -132,13 +132,6 @@ resemblance:
       function_name: missing_values_count
       description: "Count of missing values in the real and synthetic data"
       interpretation: "Compare if the absolute number of missing values in synthetic data maintains similar proportions to the real data, accounting for dataset size differences"
-      visualization_type: "important_metrics"
-      version: "0.0.1"
-
-    - display_name: "Missing Values Percentage"
-      function_name: missing_values_percentage
-      description: "Percentage of missing values in the real and synthetic data"
-      interpretation: "Verify if the relative frequency of missing values in synthetic data matches the real data, regardless of dataset size"
       visualization_type: "important_metrics"
       version: "0.0.1"
 

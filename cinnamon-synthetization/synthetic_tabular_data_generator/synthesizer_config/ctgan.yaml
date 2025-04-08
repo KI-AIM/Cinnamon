@@ -6,111 +6,52 @@ description: Is a GAN for synthesizing cross-sectional data.
 URL: /start_synthetization_process/ctgan
 configurations:
   model_parameter:
-    display_name: Model Parameters
-    description: Define the model parameters, that are used for training the model. The model parameters are used to configure the model architecture and training process.
+    display_name: Model Architecture
+    description: Define the model architecture and training process.
     parameters:
       - name: embedding_dim
         type: integer
         label: Embedding Dimensions
-        description: is the size of the initial random input vector that is passed to the generator. This vector is a latent vector representing a point in the latent space, from which the generator will produce synthetic data. The embedding_dim determines the dimensionality of this latent space vector. A higher embedding_dim provides a larger latent space, potentially allowing the generator to capture more complex patterns and variations in the data. Conversely, a lower embedding_dim might limit the capacity of the generator to capture complex relationships.
+        description: Embedding Dimensions controls how much detail the model can capture when learning from the data. Higher values allow the model to represent more differences between data points, while lower values may lead to simpler, more compressed representations. Using low values can reduce training time.
         default_value: 128
         min_value: 1
         max_value: 1000
       - name: generator_dim
         type: list
         label: Generator Dimensions
-        description: Refers to the sizes of the intermediate layers in the generator network of a generative model. Given as a tuple or list where each number specifies the number of neurons in a corresponding layer, it determines the structure and capacity of the generator, influencing how well it can produce realistic synthetic data. If the dimensions are too small, the generated data might lack detail. Larger values allow for more detailed and realistic synthetic data.
-        default_value: [256, 256, 256]
+        description: Fewer dimensions or smaller values create a simpler network that trains faster but may struggle to capture complex patterns.
+        default_value: [256, 256]
       - name: discriminator_dim
         type: list
         label: Discriminator Dimensions
-        description: the sizes of the intermediate layers in the discriminator network of the GAN. Given as a tuple or list where each number specifies the number of neurons in a corresponding layer, it determines the structure and capacity of the discriminator, influencing how well it can distinguish between real and fake data. If the dimensions are too small, the discriminator might not be effective. Larger values help the discriminator become more accurate, leading to the generation of more realistic data.
-        default_value: [256, 256, 256]
-      - name: generator_lr
-        type: float
-        label: Generator Learning Rate
-        description: The learning rate used for updating the parameters of the generator network in CTGAN. As the learning rate controls the step size for weight updates during the training process, it affects how quickly the generator learns to produce realistic data samples. A smaller learning rate makes training slower but more stable, potentially leading to more realistic data. A larger learning rate can speed up training but might result in less accurate data generation.
-        default_value: 0.004
-        min_value: 0.000000001
-        max_value: 1.0
-      - name: generator_decay
-        type: float
-        label: Generator Decay
-        description: Specifies the weight decay (regularization) parameter for the generator's Adam optimizer. By adding a penalty to the loss function to keep the generator's weights small and prevent overfitting, it helps maintain a balance between the generator and the discriminator, ensuring more stable and generalizable adversarial training. Based on the specific problem and the dataset, generator_decay needs to be tuned carefully. High values lead to higher learning rate, whereas a low value leads to a lower learning rate for the generator.
-        default_value: 0.000001
-        min_value: 0.000000001
-        max_value: 1.0
-      - name: discriminator_lr
-        type: float
-        label: Discriminator Learning Rate
-        description: The learning rate used for updating the parameters of the discriminator network in CTGAN. As the learning rate controls the step size for weight updates during the training process, it affects how quickly the discriminator learns to differentiate between real and synthetic data samples. A smaller learning rate helps the discriminator learn more carefully, leading to better detection of synthetic data. A larger learning rate might make the discriminator too aggressive, resulting in less realistic data generation.
-        default_value: 0.004
-        min_value: 0.000000001
-        max_value: 1.0
-      - name: discriminator_decay
-        type: float
-        label: Discriminator Decay
-        description: Specifies the weight decay (regularization) parameter for the discriminator's Adam optimizer. By adding a penalty to the loss function to keep the discriminator's weights small and prevent overfitting, it helps maintaining a balance between the discriminator and the generator, ensuring more stable and generalizable adversarial training. Based on the specific problem and the dataset discriminator_decay needs to be tuned carefully. High values lead to higher learning rate, wheras a low value leads to a lower learning rate for the discriminator.
-        default_value: 0.000001
-        min_value: 0.000000001
-        max_value: 1.0
+        description: The discriminator learns to strictly evaluate how synthetic or real the data is. To keep training balanced, the discriminator should have similar dimenesions and values as the generator. Smaller dimensions tend to reduce the training time.
+        default_value: [256, 256]
+  model_fitting:
+    display_name: Training Parameters
+    description: Define the parameters, that are used for training the model. 
+    parameters:
       - name: batch_size
         type: integer
         label: Batch Size
-        description: Number of training samples processed before the model's internal parameters are updated. It affects memory usage, training speed, gradient estimation, and overall training dynamics. Smaller values might produce less consistent results, while larger values can help generate more reliable synthetic data.
-        default_value: 500
+        description: Controls how many samples are used per training step. Lower batch sizes can increase diversity but add noise, higher batch sizes make the data more consistent but may miss subtle variations. Low values lead to longer training times.
+        default_value: 128
         min_value: 1
         max_value: 1024
-      - name: discriminator_steps
-        type: integer
-        label: Discriminator Steps
-        description: Number of updates to the discriminator per generator update. More discriminator updates can help the discriminator learn better and provide more accurate gradients for the generator, potentially leading to better convergence. This can lead to more realistic data, but if too many steps are used, it might make training less efficient
-        default_value: 1
-        max_value: 10
-      - name: log_frequency
-        type: boolean
-        label: Log Frequency
-        description: Whether to use log frequency of categorical levels in conditional sampling. The model will use a balanced view of categories by considering the logarithm of their frequencies. If set to True, the model better handles rare cases in your data, leading to more accurate and realistic data generation for all types of samples.
-        default_value: True
-      - name: verbose
-        type: boolean
-        label: Verbose
-        description: Whether to have print statements for progress results.
-        default_value: True
       - name: epochs
         type: integer
         label: Number of Epochs
-        description: Number of training epochs.
-        default_value: 300
+        description: Fewer epochs may lead the model to learn only basic patterns, while more epochs help capture complex structures. Very high values can cause the model to memorize the training data instead of learning to generalize. Higher values lead to longer training times.
+        default_value: 100
         min_value: 1
         max_value: 10000
-      - name: pac
-        type: integer
-        label: Pac
-        description: Number of samples to group together when applying the discriminator. A smaller pac value might make it easier for the discriminator to spot synthetic data, leading to less realistic results. A larger value can help generate more convincing and realistic synthetic data.
-        default_value: 10
-        min_value: 1
-        max:value: 1000
-  model_fitting:
-    display_name: Model Fitting
-    description: Define the model fitting parameters, that are used for training the model. The model fitting parameters are used to configure the training data and the test data.
-    parameters:
-      - name: train
-        type: float
-        label: Train
-        description: Configure the Train dataset. The remaining data is used for the test dataset. If a test dataset is desired the value should be lower then 1.0.
-        default_value: 0.8
-        min_value: 0.0
-        max_value: 1.0
   sampling:
     display_name: Sampling
-    description: Define the sampling parameters, that are used for generating the synthetic data. The sampling parameters are used to configure the number of samples.
+    description: Define the sampling parameters, that are used for generating the synthetic data. 
     parameters:
       - name: num_samples
         type: integer
         label: Samples
-        description: Configure the Samples.
+        description: The number of synthetic data samples to generate. A high number of samples will increase the time required for sampling.
         default_value: 1000
         min_value: 1
         max_value: 1000000
-

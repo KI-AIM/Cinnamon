@@ -12,6 +12,7 @@ import {DataSetInfoService} from "../../services/data-set-info.service";
 import { map, Observable, switchMap } from "rxjs";
 import { StatusService } from "../../../../shared/services/status.service";
 import {FileService} from "../../services/file.service";
+import { ConfigurationService } from "../../../../shared/services/configuration.service";
 
 @Component({
     selector: "app-data-validation",
@@ -27,6 +28,7 @@ export class DataValidationComponent implements OnInit {
 		private loadingService: LoadingService,
 		private router: Router,
         private statusService: StatusService,
+        private readonly configurationService: ConfigurationService,
         protected dataSetInfoService: DataSetInfoService,
         private readonly fileService: FileService,
 		private dataService: DataService,
@@ -81,7 +83,9 @@ export class DataValidationComponent implements OnInit {
                 }),
             ).subscribe({
             next: () => {
+                this.configurationService.invalidateCache();
                 this.fileService.invalidateCache();
+                this.dataSetInfoService.invalidateCache();
                 this.router.navigateByUrl("/upload");
             }
         });

@@ -1,5 +1,15 @@
 import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { debounceTime, distinctUntilChanged, map, Observable, Subscription, switchMap, tap } from "rxjs";
+import {
+    catchError,
+    debounceTime,
+    distinctUntilChanged,
+    map,
+    Observable,
+    of,
+    Subscription,
+    switchMap,
+    tap
+} from "rxjs";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import {
     TechnicalEvaluationService
@@ -10,6 +20,7 @@ import { ConfigurationGroupDefinition } from "../../model/configuration-group-de
 import { MetricImportance, MetricImportanceData } from "../../model/project-settings";
 import { MatDialog } from "@angular/material/dialog";
 import { StatisticsService } from "../../services/statistics.service";
+import { ErrorHandlingService } from "../../services/error-handling.service";
 
 @Component({
     selector: 'app-metric-configuration',
@@ -29,6 +40,7 @@ export class MetricConfigurationComponent implements OnInit, OnDestroy {
     @ViewChild('metricSelectionDialog') private dialogWrap: TemplateRef<any>;
 
     constructor(
+        private readonly errorHandlingService: ErrorHandlingService,
         private readonly matDialog: MatDialog,
         private readonly projectConfigurationService: ProjectConfigurationService,
         protected readonly statisticsService: StatisticsService,
@@ -42,6 +54,10 @@ export class MetricConfigurationComponent implements OnInit, OnDestroy {
         this.algorithmDefinition$ = this.technicalEvaluationService.algorithms.pipe(
             switchMap(value => {
                 return this.technicalEvaluationService.getAlgorithmDefinition(value[0]);
+            }),
+            catchError(error => {
+                this.errorHandlingService.addError(error, "Failed to load metrics!");
+                return of(new AlgorithmDefinition());
             }),
             tap(value => {
                 // Create form

@@ -1,138 +1,108 @@
 import cloudpickle
-import pandas
+import pandas as pd
+from typing import Dict, Any, Optional, List
 
-from data_processing.train_test import split_train_test_cross_sectional as split_train_test
-from data_processing.pre_process import pre_process_dataframe
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
 from synthetic_tabular_data_generator.ctgan import TVAE
 
 
 class TvaeSynthesizer(TabularDataSynthesizer):
     """
-    Model wrapping ``TVAE`` model
+    Model wrapping `TVAE` model for synthetic data generation.
     """
 
-    def __init__(self, attribute_configuration=None, anonymization_configuration=None):
+    def __init__(
+        self,
+        attribute_configuration: Optional[Dict[str, Any]] = None,
+        anonymization_configuration: Optional[Dict[str, Any]] = None
+    ) -> None:
         """
-         Initialize the TvaeSynthesizer instance.
-
-         Args:
-             attribute_configuration (dict, optional): Configuration for dataset attributes.
-             anonymization_configuration (dict, optional): Configuration for anonymizing the data.
-         """
-        super().__init__(attribute_configuration, anonymization_configuration)
-        self.discrete_columns = None
-        self.attribute_config = None
-        self.validateDataset = None
-        self.trainDataset = None
-        self._sampling = None
-        self._model_fitting = None
-        self._data = None
-        self._model_kwargs = None
-        self.dataset = None
-        self.synthesizer = None
-        self.config = None
-
-    def initialize_anonymization_configuration(self, config):
-        """
-        Configure anonymization settings for the synthesizer.
+        Initialize the TvaeSynthesizer instance.
 
         Args:
-            config (dict): Configuration dictionary containing:
-                - 'synthetization_configuration': Algorithm settings, including:
-                    - 'model_parameter': Model hyperparameters.
-                    - 'model_fitting': Fitting configurations.
-                    - 'sampling': Number of samples.
+            attribute_configuration (dict, optional): Configuration for dataset attributes.
+            anonymization_configuration (dict, optional): Configuration for anonymizing the data.
+        """
+        super().__init__(attribute_configuration, anonymization_configuration)
+        self.attribute_config: Optional[Dict[str, Any]] = None
+        self.discrete_columns: Optional[List[str]] = None
+        self.dataset: Optional[pd.DataFrame] = None
+        self._model_kwargs: Optional[Dict[str, Any]] = None
+        self.synthesizer = None
+        self._sampling: Optional[Dict[str, Any]] = None
+
+    def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
+        """
+        Core logic for initializing anonymization configuration.
         """
         synth_params = config['synthetization_configuration']['algorithm']['model_parameter']
+        training_params = config['synthetization_configuration']['algorithm']['model_fitting']
+
         self._model_kwargs = {
             'embedding_dim': synth_params['embedding_dim'],
             'compress_dims': synth_params['compress_dims'],
             'decompress_dims': synth_params['decompress_dims'],
-            'l2scale': float(synth_params['l2scale']),
-            'loss_factor': synth_params['loss_factor'],
-            'epochs': synth_params['epochs'],
+            'l2scale': float(1e-5),
+            'loss_factor': float(2),
+            'batch_size': training_params['batch_size'],
+            'epochs': training_params['epochs'],
         }
-        self._model_fitting = config['synthetization_configuration']['algorithm']['model_fitting']
         self._sampling = config['synthetization_configuration']['algorithm']['sampling']
 
-    def initialize_attribute_configuration(self, attribute_config):
+    def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
         """
-        Initializes the configuration for handling attributes based on the provided configuration.
-
-        Args:
-            attribute_config: configuration for various attributes
+        Core logic for initializing attribute configuration.
         """
         self.attribute_config = attribute_config
 
-    def initialize_dataset(self, df:pandas.DataFrame):
+    def _initialize_dataset(self, df: pd.DataFrame) -> None:
         """
-        Preprocess the dataset and split it into training and validation sets.
+        Core logic for initializing the dataset.
+        """
+        config = self.attribute_config['configurations']
 
-        Args:
-            df (pd.DataFrame): The pandas datafrane to be processed.
-        """
-        self.dataset, self.discrete_columns = pre_process_dataframe(
-            df,
-            self.attribute_config['configurations']
-        )
-        self.trainDataset, self.validateDataset = split_train_test(
-            self._model_fitting,
-            self.dataset
-        )
+        self.discrete_columns = []  
+        for column_config in config:  
+            if column_config['type'] in ['STRING', 'BOOLEAN']:
+                self.discrete_columns.append(column_config['name'])
 
-    def initialize_synthesizer(self):
-        """
-        Initialize the synthesizer model with the configured Args.
-        """
-        self.synthesizer = TVAE(
-            **self._model_kwargs
-        )
+        self.dataset = df
 
-    def fit(self):
+    def _initialize_synthesizer(self) -> None:
         """
-        Fit the synthesizer model to the dataset using the specified configurations.
+        Core logic for initializing the synthesizer.
         """
-        self.synthesizer.fit(self.trainDataset, self.discrete_columns)
+        self.synthesizer = TVAE(**self._model_kwargs)
 
-    def sample(self) -> pandas.DataFrame:
+    def _fit(self) -> None:
         """
-        Sample the indicated number of rows from the trained model.
-
-        Returns:
-            pandas.DataFrame: Sampled data.
+        Core logic for fitting the synthesizer.
         """
-        return self.synthesizer.sample(self._sampling['num_samples'])
+        self.synthesizer.fit(self.dataset, self.discrete_columns)
 
-    def get_model(self):
+    def _sample(self) -> pd.DataFrame:
         """
-        Serialize and return the model object using cloudpickle.
+        Core logic for sampling data from the synthesizer.
+        """
+        num_samples: int = self._sampling['num_samples']
+        return self.synthesizer.sample(num_samples)
 
-        Returns:
-            bytes: Serialized model object using cloudpickle.
+    def _get_model(self) -> bytes:
+        """
+        Core logic for serializing the model object.
         """
         return cloudpickle.dumps(self)
 
-    def load_model(self, filepath):
+    def _load_model(self, filepath: str) -> 'TvaeSynthesizer':
         """
-        Load a serialized TvaeSynthesizer instance from a file
-
-        Args:
-            filepath (str): The filepath of a saved synthesizer model.
-
-        Returns:
-            TvaeSynthesizer: The loaded synthesizer instance.
+        Core logic for loading a serialized synthesizer instance from a file.
         """
         with open(filepath, 'rb') as f:
-            model = cloudpickle.load(f)
-            return model
+            model: 'TvaeSynthesizer' = cloudpickle.load(f)
+        return model
 
-    def save_data(self, sample: pandas.DataFrame, filename: str):
+    def _save_data(self, sample: pd.DataFrame, filename: str) -> None:
         """
-        Save a data sample to a CSV file.
-
-        Args:
-            sample: The data sample to be saved.
-            filename: The name of the file where the data will be saved.
+        Core logic for saving a data sample to a CSV file.
         """
         sample.to_csv(filename, index=False)

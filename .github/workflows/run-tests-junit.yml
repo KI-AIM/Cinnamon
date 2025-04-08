@@ -110,5 +110,5 @@ jobs:
             Cinnamon Anonymization
           comment: true
           report_paths: |-
-            ./artifacts/surefire-reports-cinnamon-test/*.xml
-            ./artifacts/surefire-reports-cinnamon-anonymization/*.xml
+            ./artifacts/surefire-reports-cinnamon-test/TEST-*.xml
+            ./artifacts/surefire-reports-cinnamon-anonymization/TEST-*.xml

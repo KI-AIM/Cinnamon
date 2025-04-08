@@ -9,6 +9,7 @@ import de.kiaim.cinnamon.test.util.DataSetTestHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DataSetTest {
@@ -24,6 +25,7 @@ public class DataSetTest {
 
 	@Test
 	public void serializeJson() throws JsonProcessingException {
+		fail();
 		final DataSet dataSet = DataSetTestHelper.generateDataSet(true);
 		final String json = jsonMapper.writeValueAsString(dataSet);
 		final String expected = DataSetTestHelper.generateDataSetAsJson();

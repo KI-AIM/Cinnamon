@@ -68,15 +68,16 @@ jobs:
 
       - name: Run tests for modules
         run: mvn -B clean test --file ${{ matrix.module }}/
+        continue-on-error: true
 
-      - name: Publish Test Report
-        if: success() || failure()
-        id: test-report
-        uses: mikepenz/action-junit-report@v5
-        with:
-          check_name: ${{ matrix.module }} Test Report
-          comment: true
-          report_paths: ${{ matrix.module }}/target/surefire-reports/*.xml
+#      - name: Publish Test Report
+#        if: success() || failure()
+#        id: test-report
+#        uses: mikepenz/action-junit-report@v5
+#        with:
+#          check_name: ${{ matrix.module }} Test Report
+#          comment: true
+#          report_paths: ${{ matrix.module }}/target/surefire-reports/*.xml
 
       - name: Upload Surefire test reports
         if: success() || failure()
@@ -84,3 +85,26 @@ jobs:
         with:
           name: surefire-reports-${{ matrix.module }}
           path: ${{ matrix.module }}/target/surefire-reports
+
+  report:
+    permissions:
+      checks: write
+      pull-requests: write
+
+    needs: test-junit
+    runs-on: ubuntu-latest
+
+    name: Generate JUnit Report
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        with:
+          check_name: JUnit Test Report
+          comment: true
+          report_paths: ./artifacts/**/*.xml

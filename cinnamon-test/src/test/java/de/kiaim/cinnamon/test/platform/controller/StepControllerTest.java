@@ -19,7 +19,8 @@ public class StepControllerTest extends ControllerTest {
 		                          .andExpect(status().isOk())
 		                          .andReturn().getResponse().getContentAsString();
 		final var stepConfig = objectMapper.readValue(config, StepConfigurationResponse.class);
-		assertEquals("http://anonymization.de", stepConfig.getUrlClient(), "Unexpected URL!");
+		assertEquals(stepConfig.getAlgorithmEndpoint(), "/api/anonymization/algorithms", "Unexpected algorithm endpoint!");
+		assertEquals(stepConfig.getConfigurationName(), "anonymization", "Unexpected configuration name!");
 	}
 
 	@Test

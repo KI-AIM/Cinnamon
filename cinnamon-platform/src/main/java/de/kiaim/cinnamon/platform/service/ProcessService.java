@@ -31,7 +31,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.Nullable;
@@ -76,6 +75,7 @@ public class ProcessService {
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
 	private final DataSetService dataSetService;
+	private final HttpService httpService;
 	private final ProjectService projectService;
 	private final StepService stepService;
 
@@ -83,8 +83,8 @@ public class ProcessService {
 	                      @Value("${server.port}") final int port, final CinnamonConfiguration cinnamonConfiguration,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
 	                      final CsvProcessor csvProcessor, final DatabaseService databaseService,
-	                      final DataSetService dataSetService, final ProjectService projectService,
-	                      final StepService stepService
+	                      final DataSetService dataSetService, final HttpService httpService,
+	                      final ProjectService projectService, final StepService stepService
 	) {
 		this.jsonMapper = serializationConfig.jsonMapper();
 		this.yamlMapper = serializationConfig.yamlMapper();
@@ -95,6 +95,7 @@ public class ProcessService {
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
 		this.dataSetService = dataSetService;
+		this.httpService = httpService;
 		this.stepService = stepService;
 		this.projectService = projectService;
 	}
@@ -695,12 +696,12 @@ public class ProcessService {
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
 			                                        errorResponse -> errorResponse.toEntity(String.class)
-			                                                                      .map(this::buildErrorResponse))
+			                                                                      .map(httpService::buildErrorResponse))
 			                              .bodyToMono(String.class)
 			                              .block();
 			externalProcess.setStatus(response);
 		} catch (final RequestRuntimeException e) {
-			final String message = buildError(e, "fetch the status");
+			final String message = httpService.buildError(e, "fetch the status");
 			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
 		} catch (WebClientRequestException e) {
@@ -820,7 +821,7 @@ public class ProcessService {
 			                              .retrieve()
 			                              .onStatus(HttpStatusCode::isError,
 			                                        errorResponse -> errorResponse.toEntity(String.class)
-			                                                                      .map(this::buildErrorResponse))
+			                                                                      .map(httpService::buildErrorResponse))
 			                              .bodyToMono(ExternalProcessResponse.class)
 			                              .block();
 
@@ -831,7 +832,7 @@ public class ProcessService {
 			externalProcess.setExternalId(response.getPid());
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
 		} catch (final RequestRuntimeException e) {
-			final String message = buildError(e, "start the process");
+			final String message = httpService.buildError(e, "start the process");
 			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		} catch (WebClientRequestException e) {
@@ -977,34 +978,6 @@ public class ProcessService {
 
 	private String injectUrlParameter(final String url, final BackgroundProcessEntity externalProcess) {
 		return url.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getUuid().toString());
-	}
-
-	private RequestRuntimeException buildErrorResponse(final ResponseEntity<String> response) {
-		ExternalProcessResponse responseBody;
-		try {
-			responseBody = jsonMapper.readValue(response.getBody(), ExternalProcessResponse.class);
-		} catch (JsonProcessingException e) {
-			responseBody = new ExternalProcessResponse();
-			responseBody.setError(response.getBody());
-		}
-
-		final ResponseEntity<ExternalProcessResponse> responseEntity = ResponseEntity.status(response.getStatusCode())
-		                                                                             .headers(response.getHeaders())
-		                                                                             .body(responseBody);
-		return new RequestRuntimeException(responseEntity);
-	}
-
-	private String buildError(final RequestRuntimeException e, final String action) {
-		var message = "Failed to " + action + "! Got status of '" + e.getResponse().getStatusCode() + "'.";
-		if (e.getResponse().getBody() != null) {
-			if (e.getResponse().getBody().getMessage() != null) {
-				message += " Got message: '" + e.getResponse().getBody().getMessage() + "'.";
-			}
-			if (e.getResponse().getBody().getError() != null) {
-				message += " Got error: '" + e.getResponse().getBody().getError() + "'.";
-			}
-		}
-		return message;
 	}
 
 }

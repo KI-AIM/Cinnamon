@@ -29,7 +29,6 @@ def pre_process_dataframe(df: pd.DataFrame, config):
                 - list[str]: A list of column names identified as discrete values.
 
     """
-    discrete_values = []
     for column_config in config:
         column_name = column_config['name']
         column_type = column_config['type']
@@ -37,14 +36,12 @@ def pre_process_dataframe(df: pd.DataFrame, config):
         if column_type == 'STRING':
             df[column_name] = df[column_name].astype(str)
             df[column_name] = df[column_name].replace(['nan', ''], np.nan)
-            discrete_values.append(column_name)
             continue
 
         if column_type == 'BOOLEAN':
             df[column_name] = df[column_name].astype(str)
             df[column_name] = df[column_name].replace(['nan', ''], np.nan)
             df[column_name] = df[column_name].map(BOOLEAN_MAP)
-            discrete_values.append(column_name)
             continue
 
         if column_type == 'ID':
@@ -68,4 +65,4 @@ def pre_process_dataframe(df: pd.DataFrame, config):
             df[column_name].fillna(column_mean, inplace=True)
             continue
 
-    return df, discrete_values
+    return df

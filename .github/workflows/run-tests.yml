@@ -106,13 +106,6 @@ jobs:
           python -m xmlrunner discover -s Tests -p "*.py" -o test-results
         continue-on-error: true
 
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: success() || failure()
-        with:
-          comment_mode: always
-          files: cinnamon-risk-assessment/test-results/*.xml
-
       - name: Upload Test Results Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -139,9 +132,9 @@ jobs:
         uses: mikepenz/action-junit-report@v5
         with:
           check_name: |-
-            Cinnamon Test
-            Cinnamon Anonymization
-            Cinnamon Risk-Assessment
+            Cinnamon Test - Test Report
+            Cinnamon Anonymization - Test Report
+            Cinnamon Risk-Assessment - Test Report
           comment: true
           fail_on_failure: true
           report_paths: |-

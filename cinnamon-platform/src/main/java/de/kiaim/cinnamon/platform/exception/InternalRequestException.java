@@ -1,5 +1,7 @@
 package de.kiaim.cinnamon.platform.exception;
 
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
+
 /**
  * Exception for failed HTTP requests with other modules.
  */
@@ -27,6 +29,10 @@ public class InternalRequestException extends InternalException {
 
 	public InternalRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
+	}
+
+	public InternalRequestException(final String exceptionCode, final String message, final ErrorDetails errorDetails) {
+		super(exceptionCode, message, errorDetails);
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.service;
 
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import org.springframework.http.HttpHeaders;
@@ -18,15 +19,16 @@ public class ResponseService {
 		final String path = ((ServletWebRequest) webRequest).getRequest().getRequestURI();
 		return new ResponseEntity<>(
 				prepareErrorResponseBody(apiException.getStatus(), path, apiException.getErrorCode(),
-				                         apiException.getMessage(), null), apiException.getStatus());
+				                         apiException.getMessage(), apiException.getErrorDetails()),
+				apiException.getStatus());
 	}
 
 	public ResponseEntity<Object> prepareErrorResponseEntity(final HttpHeaders headers,
-															 final WebRequest webRequest,
+	                                                         final WebRequest webRequest,
 	                                                         final HttpStatusCode status,
-															 final String errorCode,
-															 final String message,
-	                                                         @Nullable final Object details) {
+	                                                         final String errorCode,
+	                                                         final String message,
+	                                                         @Nullable final ErrorDetails details) {
 		final String path = ((ServletWebRequest) webRequest).getRequest().getRequestURI();
 		return new ResponseEntity<>(prepareErrorResponseBody(status, path, errorCode, message, details), headers,
 		                            status);
@@ -34,9 +36,9 @@ public class ResponseService {
 
 	public ErrorResponse prepareErrorResponseBody(final HttpStatusCode status, final String path,
 	                                              final String errorCode, final String message,
-	                                              @Nullable final Object details) {
+	                                              @Nullable final ErrorDetails errorDetails) {
 		return new ErrorResponse("about:blank", HttpStatus.valueOf(status.value()).name(), status.value(), path,
-		                         errorCode, message, details);
+		                         errorCode, message, errorDetails);
 	}
 
 }

@@ -70,5 +70,5 @@ public class ErrorResponse {
 	@Schema(description = "JSON containing a detailed error description. Not always available.",
 	        example = "{\"email\":\"Email is not available!\"}", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	@Nullable
-	final Object errorDetails;
+	final ErrorDetails errorDetails;
 }

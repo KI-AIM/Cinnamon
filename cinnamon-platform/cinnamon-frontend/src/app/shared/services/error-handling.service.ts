@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from "rxjs";
 import { HttpErrorResponse } from "@angular/common/http";
-import { ErrorResponse } from "../model/error-response";
+import { ErrorDetails, ErrorResponse } from "../model/error-response";
 import { plainToInstance } from "class-transformer";
 import { UserService } from "./user.service";
 
@@ -108,7 +108,12 @@ export class ErrorHandlingService {
         let errorMessage = "";
 
         if (error.errorCode === 'PLATFORM_3_2_1') {
-            for (const [field, errors] of Object.entries(error.errorDetails)) {
+            if (error.errorDetails?.validationErrors == null) {
+                console.error("Validation error details are null!");
+                return "Request validation failed.";
+            }
+
+            for (const [field, errors] of Object.entries(error.errorDetails?.validationErrors)) {
                 const parts = field.split(".");
                 if (parts.length === 3) {
                 } else {
@@ -117,7 +122,7 @@ export class ErrorHandlingService {
             }
 
         } else if (error.errorCode === 'PLATFORM_2_4_4') {
-            errorMessage = "Failed to fetch available algorithms. Please try again later.";
+            errorMessage = `Failed to fetch available algorithms for the ${this.getConfigurationDisplayName(error.errorDetails)}. Please try again later.`;
         } else {
             errorMessage = error.errorMessage;
         }
@@ -136,6 +141,28 @@ export class ErrorHandlingService {
             return false;
         }
         return true;
+    }
+
+    private readonly configurationNames: Record<string, string> = {
+        "anonymization": "anonymization configuration",
+        "synthetization_configuration": "synthetization configuration",
+        "evaluation_configuration": "evaluation configuration",
+    }
+
+    private getConfigurationDisplayName(errorDetails: ErrorDetails | null): string {
+        if (errorDetails == null || errorDetails.configurationName == null) {
+            console.error("No configuration name available!");
+            return "configuration";
+        }
+
+        const configurationName = errorDetails.configurationName;
+
+        if (this.configurationNames[configurationName]) {
+            return this.configurationNames[configurationName];
+        } else {
+            console.error("No display name available for configuration: " + configurationName);
+            return configurationName;
+        }
     }
 
 }

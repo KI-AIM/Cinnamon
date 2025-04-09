@@ -1,3 +1,5 @@
+import { Type } from "class-transformer";
+
 /**
  * Class representing an error response from the API.
  */
@@ -9,5 +11,12 @@ export class ErrorResponse {
     path: string;
     errorCode: string;
     errorMessage: string;
-    errorDetails: object;
+
+    @Type(() => ErrorDetails)
+    errorDetails: ErrorDetails | null;
+}
+
+export class ErrorDetails {
+    configurationName: string | null;
+    validationErrors: Record<string, string[]> | null;
 }

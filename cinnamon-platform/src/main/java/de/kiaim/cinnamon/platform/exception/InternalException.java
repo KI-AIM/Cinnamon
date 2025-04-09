@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.exception;
 
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 
@@ -46,6 +47,11 @@ public abstract class InternalException extends ApiException {
 	public InternalException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}
+
+	public InternalException(final String exceptionCode, final String message, final ErrorDetails errorDetails) {
+		super(exceptionCode, message, errorDetails);
+	}
+
 
 	public InternalException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);

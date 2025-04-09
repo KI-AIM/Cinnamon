@@ -16,8 +16,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -56,7 +56,12 @@ public class ControllerTest extends DatabaseTest {
 		return  mvcResult -> {
 			final String response = mvcResult.getResponse().getContentAsString();
 			final ErrorResponse errorResponse = objectMapper.readValue(response, ErrorResponse.class);
-			final LinkedHashMap<String, List<String>> errors = (LinkedHashMap) errorResponse.getErrorDetails();
+
+			assertNotNull(errorResponse.getErrorDetails(), "No errors details present!");
+
+			final Map<String, List<String>> errors = errorResponse.getErrorDetails().getValidationErrors();
+
+			assertNotNull(errors, "No validation errors present!");
 			assertEquals(1, errors.size(), "Number of errors not correct!");
 			assertTrue(errors.containsKey(key), "No error for '" + key + "' present!");
 			assertEquals(expectedErrors, errors.get(key), "Unexpected message!");

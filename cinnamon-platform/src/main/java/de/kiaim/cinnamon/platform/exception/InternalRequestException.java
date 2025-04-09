@@ -27,6 +27,11 @@ public class InternalRequestException extends InternalException {
 	 */
 	public static final String ALGORITHMS = "4";
 
+	/**
+	 * Exception code for failed fetching of configuration definition.
+	 */
+	public static final String CONFIGURATION_DEFINITION = "5";
+
 	public InternalRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

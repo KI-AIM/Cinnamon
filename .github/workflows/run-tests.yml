@@ -137,7 +137,9 @@ jobs:
             Cinnamon Risk-Assessment - Test Report
           comment: true
           fail_on_failure: true
+          include_time_in_summary: true
           report_paths: |-
             ./artifacts/surefire-reports-cinnamon-test/TEST-*.xml
             ./artifacts/surefire-reports-cinnamon-anonymization/TEST-*.xml
             ./artifacts/unittest-results-cinnamon-risk-assessment/TEST-*.xml
+          verbose_summary: false

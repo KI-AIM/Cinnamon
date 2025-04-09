@@ -79,7 +79,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
                     this.readFromCache();
                 }
             }, error: error => {
-                this.errorHandlingService.addError(error, "Failed to load available algorithms. You can skip this step or try again later.");
+                this.errorHandlingService.addError(error);
             }
         });
     }

@@ -122,7 +122,9 @@ export class ErrorHandlingService {
             }
 
         } else if (error.errorCode === 'PLATFORM_2_4_4') {
-            errorMessage = `Failed to fetch available algorithms for the ${this.getConfigurationDisplayName(error.errorDetails)}. Please try again later.`;
+            errorMessage = `Failed to fetch available algorithms for the ${this.getConfigurationDisplayName(error.errorDetails)}. You can skip this step or try again later.`;
+        } else if (error.errorCode === 'PLATFORM_2_4_5') {
+            errorMessage = `Failed to fetch the configuration definition for the ${this.getConfigurationDisplayName(error.errorDetails)}. You can skip this step or try again later.`;
         } else {
             errorMessage = error.errorMessage;
         }
@@ -146,7 +148,7 @@ export class ErrorHandlingService {
     private readonly configurationNames: Record<string, string> = {
         "anonymization": "anonymization configuration",
         "synthetization_configuration": "synthetization configuration",
-        "evaluation_configuration": "evaluation configuration",
+        "evaluation_configuration": "technical evaluation configuration",
     }
 
     private getConfigurationDisplayName(errorDetails: ErrorDetails | null): string {

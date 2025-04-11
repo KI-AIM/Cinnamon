@@ -9,7 +9,7 @@
     <mat-accordion>
         <mat-expansion-panel>
             <mat-expansion-panel-header>
-                <mat-panel-title>Attribute Configuration</mat-panel-title>
+                <mat-panel-title [class.invalid-group]="attributeConfigurationform.invalid">Attribute Configuration</mat-panel-title>
                 <mat-panel-description></mat-panel-description>
             </mat-expansion-panel-header>
 
@@ -25,9 +25,9 @@
             </div>
 
             <div class="d-flex flex-column">
-                <form *ngIf="form" [formGroup]="form">
+                <form *ngIf="attributeConfigurationform" [formGroup]="attributeConfigurationform">
                     <div formArrayName="configurations">
-                        <div *ngFor="let columnConfig of getColumnConfigurationForms(form); let i = index" [formGroupName]="i">
+                        <div *ngFor="let columnConfig of getColumnConfigurationForms(attributeConfigurationform); let i = index" [formGroupName]="i">
                             <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()"
                                                          [disabled]="locked" (onInput)="checkUniqueColumnNames()"
                                                          [columnConfigurationForm]="columnConfig">
@@ -39,25 +39,24 @@
             </div>
         </mat-expansion-panel>
 
-        <mat-expansion-panel>
+        <mat-expansion-panel *ngIf="dataSetInfo$ | async">
             <mat-expansion-panel-header>
-                <mat-panel-title>Data Set Configuration</mat-panel-title>
+                <mat-panel-title [class.invalid-group]="isDataSetConfigurationFormInvalid">Data Set Configuration</mat-panel-title>
                 <mat-panel-description></mat-panel-description>
             </mat-expansion-panel-header>
 
-            <div>
-                <mat-checkbox [checked]="createSplit" (change)="updateCreateSplit($event.checked)" [disabled]="locked" color="primary">
+            <div [formGroup]="dataSetConfigurationForm!">
+                <mat-checkbox color="primary" formControlName="createHoldOutSplit">
                     Should an extended analysis of the data be carried out automatically (this reduces the amount of usable data and possibly worsens the results)
                 </mat-checkbox>
                 <div style="margin-left: 40px;">
-                    <mat-expansion-panel [disabled]="!createSplit" [(expanded)]="isAdvanceConfigurationExpanded">
+                    <mat-expansion-panel [disabled]="!createHoldOutSplit" [(expanded)]="isAdvanceConfigurationExpanded">
                         <mat-expansion-panel-header>
                             <mat-panel-title>Advanced Configuration</mat-panel-title>
                         </mat-expansion-panel-header>
                         <mat-form-field style="width: 100%;">
                             <mat-label>Percentage of Hold-Out split</mat-label>
-                            <input matInput type="number" [disabled]="!createSplit || locked"
-                                   [(ngModel)]="holdOutSplitPercentage" required min="0" max="1"/>
+                            <input matInput type="number" formControlName="holdOutSplitPercentage"/>
                             <mat-error>Percentage must be between 0 and 1</mat-error>
                         </mat-form-field>
                     </mat-expansion-panel>
@@ -70,7 +69,10 @@
     <div class="box mt-2">
         <div class="btn-group mt-2">
             <div class="px-1">
-                <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()" [disabled]="form.invalid || locked">Confirm configuration and start validation</button>
+                <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()"
+                        [disabled]="attributeConfigurationform.invalid || isDataSetConfigurationFormInvalid || locked">
+                    Confirm configuration and start validation
+                </button>
             </div>
         </div>
     </div>

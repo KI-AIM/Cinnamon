@@ -4,6 +4,7 @@ import pandas as pd
 from scipy import stats
 from scipy.spatial import distance
 from scipy.stats import gaussian_kde
+from typing import Dict, Any
 
 
 def extract_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -699,23 +700,41 @@ def calculate_frequencies(real, synthetic):
     column names as keys and percentage data as values.
 
     Args:
-        real (pandas.DataFrame): The real dataframe.
-        synthetic (pandas.DataFrame): The synthetic dataframe.
+        real: The real dataframe.
+        synthetic: The synthetic dataframe.
 
     Returns:
-        dict: A dictionary containing the frequency percentages for each column in the real and synthetic dataframes.
+        A dictionary containing the frequency percentages for each column in the real and synthetic dataframes.
     """
     freq_results = {'real': {}, 'synthetic': {}}
 
-    real_categorical = real.select_dtypes(include=['object'])
-    synthetic_categorical = synthetic.select_dtypes(include=['object'])
+    try:
+        real_categorical = real.select_dtypes(include=['object'])
+        synthetic_categorical = synthetic.select_dtypes(include=['object'])
 
-    for column in real_categorical.columns:
-        freq_real = (real_categorical[column].value_counts() / len(real_categorical)) * 100
-        freq_synthetic = (synthetic_categorical[column].value_counts() / len(synthetic_categorical)) * 100
+        if real_categorical.empty or synthetic_categorical.empty:
+            return freq_results
 
-        freq_results['real'][column] = freq_real.to_dict()
-        freq_results['synthetic'][column] = freq_synthetic.to_dict()
+        for column in real_categorical.columns:
+            try:
+                if column not in synthetic_categorical.columns:
+                    continue
+                    
+                real_column_data = real_categorical[column].dropna()
+                synthetic_column_data = synthetic_categorical[column].dropna()
+                
+                if len(real_column_data) == 0 or len(synthetic_column_data) == 0:
+                    continue
+                
+                freq_real = (real_column_data.value_counts() / len(real_column_data)) * 100
+                freq_synthetic = (synthetic_column_data.value_counts() / len(synthetic_column_data)) * 100
+                
+                freq_results['real'][column] = freq_real.to_dict()
+                freq_results['synthetic'][column] = freq_synthetic.to_dict()
+            except Exception as e:
+                continue
+    except Exception as e:
+        pass
 
     return freq_results
 
@@ -726,60 +745,75 @@ def calculate_hellinger_distance(real, synthetic):
     column names as keys and Hellinger distance values.
 
     Args:
-        real (pandas.DataFrame): The real data table.
-        synthetic (pandas.DataFrame): The synthetic data table.
+        real: The real data table.
+        synthetic: The synthetic data table.
 
     Returns:
-        dict: A dictionary with column names as keys and Hellinger distance values.
+        A dictionary with column names as keys and Hellinger distance values.
     """
-
     hellinger_distances = {'real': {}, 'synthetic': {}}
-    freq_results = calculate_frequencies(real, synthetic)
-
-    for column in freq_results['real']:
-        freq_real = freq_results['real'][column]
-        freq_synthetic = freq_results['synthetic'][column]
-
-        total_real = sum(freq_real.values())
-        total_synthetic = sum(freq_synthetic.values())
-
-        prob_real = {k: v / total_real for k, v in freq_real.items()}
-        prob_synthetic = {k: v / total_synthetic for k, v in freq_synthetic.items()}
-
-        all_categories = set(prob_real.keys()).union(set(prob_synthetic.keys()))
-        vec_real = [prob_real.get(k, 0) for k in all_categories]
-        vec_synthetic = [prob_synthetic.get(k, 0) for k in all_categories]
-
-        hellinger_dist = float(distance.euclidean(np.sqrt(vec_real), np.sqrt(vec_synthetic)) / np.sqrt(2))
-
-        hellinger_distances['real'][column] = 0
-
-        hellinger_distances['synthetic'][column] = hellinger_dist
-
+    
+    try:
+        freq_results = calculate_frequencies(real, synthetic)
+        
+        if not freq_results['real'] or not freq_results['synthetic']:
+            return hellinger_distances
+        
+        for column in freq_results['real']:
+            try:
+                if column not in freq_results['synthetic']:
+                    continue
+                    
+                freq_real = freq_results['real'][column]
+                freq_synthetic = freq_results['synthetic'][column]
+                
+                if not freq_real or not freq_synthetic:
+                    continue
+                
+                total_real = sum(freq_real.values())
+                total_synthetic = sum(freq_synthetic.values())
+                
+                if total_real == 0 or total_synthetic == 0:
+                    continue
+                
+                prob_real = {k: v / total_real for k, v in freq_real.items()}
+                prob_synthetic = {k: v / total_synthetic for k, v in freq_synthetic.items()}
+                
+                all_categories = set(prob_real.keys()).union(set(prob_synthetic.keys()))
+                vec_real = [prob_real.get(k, 0) for k in all_categories]
+                vec_synthetic = [prob_synthetic.get(k, 0) for k in all_categories]
+                
+                hellinger_dist = float(distance.euclidean(np.sqrt(vec_real), np.sqrt(vec_synthetic)) / np.sqrt(2))
+                
+                hellinger_distances['real'][column] = 0
+                hellinger_distances['synthetic'][column] = hellinger_dist
+            except Exception as e:
+                continue
+    except Exception as e:
+        pass
+        
     return hellinger_distances
 
-
-def calculate_frequencies_plot(real, synthetic):
+def calculate_frequencies_plot(real: pd.DataFrame, synthetic: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     """
     Calculate frequency percentages for each categorical attribute of the two tables. Only including the top 25 most
     common categories and grouping the rest as 'other'. Returns a dictionary with column names as keys and percentage
     data as values, including additional keys for axis labels.
 
     Args:
-        real (pandas.DataFrame): The real data table.
-        synthetic (pandas.DataFrame): The synthetic data table.
+        real: The real data table.
+        synthetic: The synthetic data table.
 
     Returns:
-        dict: A dictionary with column names as keys and percentage data as values, including additional keys for
+        A dictionary with column names as keys and percentage data as values, including additional keys for
         axis labels.
     """
-
-    def get_color_index(perc_difference):
+    def get_color_index(perc_difference: float) -> int:
         capped_diff = min(100, max(0, perc_difference))
         index = min(10, max(1, int(capped_diff / 10) + 1))
         return index
 
-    def calculate_percentage_diff(orig_value, synthetic_value):
+    def calculate_percentage_diff(orig_value: float, synthetic_value: float) -> float:
         if orig_value == 0:
             return 100 if synthetic_value > 0 else 0
         return abs((synthetic_value - orig_value) / orig_value * 100)
@@ -788,94 +822,128 @@ def calculate_frequencies_plot(real, synthetic):
     top_categories = 25
     freq_results = {'real': {}, 'synthetic': {}}
 
-    real_categorical = real.select_dtypes(include=['object'])
-    synthetic_categorical = synthetic.select_dtypes(include=['object'])
+    try:
+        real_categorical = real.select_dtypes(include=['object'])
+        synthetic_categorical = synthetic.select_dtypes(include=['object'])
+        
+        if real_categorical.empty or synthetic_categorical.empty:
+            return freq_results
 
-    for column in real_categorical.columns:
-        real_counts = real_categorical[column].value_counts()
-        synthetic_counts = synthetic_categorical[column].value_counts()
-        real_percentages = (real_counts / len(real_categorical)) * 100
-        synthetic_percentages = (synthetic_counts / len(synthetic_categorical)) * 100
-        real_top = real_percentages.nlargest(top_categories)
-        real_other = real_percentages[~real_percentages.index.isin(real_top.index)].sum()
-        top_categories_list = list(real_top.index)
+        for column in real_categorical.columns:
+            try:
+                # Skip columns that don't exist in synthetic dataframe
+                if column not in synthetic_categorical.columns:
+                    continue
+                    
+                real_counts = real_categorical[column].value_counts()
+                synthetic_counts = synthetic_categorical[column].value_counts()
+                
+                if len(real) == 0 or len(synthetic) == 0:
+                    continue
+                    
+                real_percentages = (real_counts / len(real_categorical)) * 100
+                synthetic_percentages = (synthetic_counts / len(synthetic_categorical)) * 100
+                real_top = real_percentages.nlargest(top_categories)
+                
+                if real_top.empty:
+                    continue
+                    
+                real_other = real_percentages[~real_percentages.index.isin(real_top.index)].sum()
+                top_categories_list = list(real_top.index)
 
-        real_frequencies = []
-        synthetic_frequencies = []
+                real_frequencies = []
+                synthetic_frequencies = []
 
-        for category in top_categories_list:
-            real_value = real_percentages[category]
-            syn_value = synthetic_percentages.get(category, 0)
-            perc_diff = calculate_percentage_diff(real_value, syn_value)
-            color_index = get_color_index(perc_diff)
+                for category in top_categories_list:
+                    real_value = real_percentages[category]
+                    syn_value = synthetic_percentages.get(category, 0)
+                    perc_diff = calculate_percentage_diff(real_value, syn_value)
+                    color_index = get_color_index(perc_diff)
 
-            real_frequencies.append({
-                'label': str(category),
-                'value': float(real_value),
-                'color_index': 0
-            })
+                    real_frequencies.append({
+                        'label': str(category),
+                        'value': float(real_value),
+                        'color_index': 0
+                    })
 
-            synthetic_frequencies.append({
-                'label': str(category),
-                'value': float(syn_value),
-                'color_index': color_index
-            })
+                    synthetic_frequencies.append({
+                        'label': str(category),
+                        'value': float(syn_value),
+                        'color_index': color_index
+                    })
 
-        if real_other > 0:
-            synthetic_other = synthetic_percentages[~synthetic_percentages.index.isin(real_top.index)].sum()
-            other_perc_diff = calculate_percentage_diff(real_other, synthetic_other)
-            other_color_index = get_color_index(other_perc_diff)
+                if real_other > 0:
+                    synthetic_other = synthetic_percentages[~synthetic_percentages.index.isin(real_top.index)].sum()
+                    other_perc_diff = calculate_percentage_diff(real_other, synthetic_other)
+                    other_color_index = get_color_index(other_perc_diff)
 
-            real_frequencies.append({
-                'label': 'Other',
-                'value': float(real_other),
-                'color_index': 0
-            })
+                    real_frequencies.append({
+                        'label': 'Other',
+                        'value': float(real_other),
+                        'color_index': 0
+                    })
 
-            synthetic_frequencies.append({
-                'label': 'Other',
-                'value': float(synthetic_other),
-                'color_index': other_color_index
-            })
+                    synthetic_frequencies.append({
+                        'label': 'Other',
+                        'value': float(synthetic_other),
+                        'color_index': other_color_index
+                    })
 
-        freq_results['real'][column] = {
-            'frequencies': real_frequencies,
-            'x_axis': column,
-            'y_axis': "Percentage"
-        }
-        freq_results['synthetic'][column] = {
-            'frequencies': synthetic_frequencies,
-            'x_axis': column,
-            'y_axis': "Percentage"
-        }
-
+                freq_results['real'][column] = {
+                    'frequencies': real_frequencies,
+                    'x_axis': column,
+                    'y_axis': "Percentage"
+                }
+                freq_results['synthetic'][column] = {
+                    'frequencies': synthetic_frequencies,
+                    'x_axis': column,
+                    'y_axis': "Percentage"
+                }
+            except Exception as e:
+                continue  # Skip this column if any error occurs
+    except Exception as e:
+        pass  # Return empty results if major error occurs
+        
     return freq_results
 
 
-def calculate_mode(real, synthetic):
+def calculate_mode(real: pd.DataFrame, synthetic: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     """
     Calculates the mode of a categorical column in a dataframe.
 
     Args:
-        real (pandas.DataFrame): The real dataframe.
-        synthetic (pandas.DataFrame): The synthetic dataframe.
+        real: The real dataframe.
+        synthetic: The synthetic dataframe.
 
     Returns:
-        dict: A dictionary containing the mode of each categorical column in the dataframes.
+        A dictionary containing the mode of each categorical column in the dataframes.
     """
+    modes = {'real': {}, 'synthetic': {}}
+    
     try:
-        real_categorical, synthetic_categorical = extract_categorical_dataframes(real, synthetic)
-        modes = {'real': {}, 'synthetic': {}}
+        # Need to handle extract_categorical_dataframes function call or implement it here
+        real_categorical = real.select_dtypes(include=['object'])
+        synthetic_categorical = synthetic.select_dtypes(include=['object'])
+        
+        if real_categorical.empty or synthetic_categorical.empty:
+            return modes
 
         for column in real_categorical.columns:
-            modes['real'][column] = real_categorical[column].mode().iloc[0] if not real_categorical[
-                column].mode().empty else None
-            modes['synthetic'][column] = synthetic_categorical[column].mode().iloc[0] if not synthetic_categorical[
-                column].mode().empty else None
-
-        return modes
+            try:
+                if column not in synthetic_categorical.columns:
+                    continue
+                    
+                real_mode = real_categorical[column].mode()
+                synthetic_mode = synthetic_categorical[column].mode()
+                
+                modes['real'][column] = real_mode.iloc[0] if not real_mode.empty else None
+                modes['synthetic'][column] = synthetic_mode.iloc[0] if not synthetic_mode.empty else None
+            except Exception as e:
+                continue
     except Exception as e:
-        raise ValueError(f"Error calculating modes: {str(e)}")
+        pass
+        
+    return modes
 
 
 def calculate_distinct_values(real, synthetic):

@@ -399,7 +399,9 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
     enriched_metrics = add_resembance_description(enriched_metrics, overview_metrics)
 
     # Add overview to Config 
-    enriched_metrics = add_overview_to_config(enriched_metrics)
+    #enriched_metrics = add_overview_to_config(enriched_metrics)
+
+    print(enriched_metrics)
 
     try:
         files = prepare_callback_data(enriched_metrics)

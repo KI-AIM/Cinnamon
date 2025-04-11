@@ -93,13 +93,13 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     """
     machine_learning_dict = {'real': {'predictions': {}}, 'synthetic': {'predictions': {}}, 'difference': {}}
 
-    # Store original target values before any transformation
-    real_target_original = real[target_variable].copy()
-    synthetic_target_original = synthetic[target_variable].copy()
-
     # Handle missing values
     real = impute_missing_values(real, 'MISSING_VALUE')
     synthetic = impute_missing_values(synthetic, 'MISSING_VALUE')
+
+     # Store original target values before any transformation
+    real_target_original = real[target_variable].copy()
+    synthetic_target_original = synthetic[target_variable].copy()
 
     # Separate features and targets
     real_features = real.drop(columns=[target_variable])
@@ -126,6 +126,15 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     real_processed[target_variable] = real_target_original.values
     synthetic_processed[target_variable] = synthetic_target_original.values
     
+    # Identify columns that are 100% NA in either dataframe
+    columns_all_na_real = real_processed.columns[real_processed.isna().all()]
+    columns_all_na_synthetic = synthetic_processed.columns[synthetic_processed.isna().all()]
+    columns_to_drop = set(columns_all_na_real).union(set(columns_all_na_synthetic))
+
+    # Remove the identified columns from both dataframes
+    real_processed = real_processed.drop(columns=columns_to_drop)
+    synthetic_processed = synthetic_processed.drop(columns=columns_to_drop)
+
     # Remove any rows with NaN values
     real_processed = real_processed.dropna()
     synthetic_processed = synthetic_processed.dropna()
@@ -182,6 +191,8 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
         machine_learning_dict['real']['predictions'] = predictions_real.to_dict()
         machine_learning_dict['synthetic']['predictions'] = predictions_synthetic.to_dict()
         machine_learning_dict['difference'] = calculate_differences_as_dict(machine_learning_dict)
+
+        print(machine_learning_dict)
     else:
         print('Classification Activated')
         # Encode labels consistently
@@ -215,6 +226,8 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
         machine_learning_dict['real']['predictions'] = predictions_real
         machine_learning_dict['synthetic']['predictions'] = predictions_synthetic
         machine_learning_dict['difference'] = calculate_differences_as_dict(machine_learning_dict)
+
+        print(machine_learning_dict)
     
     machine_learning_dict['real'] = transform_predictions_with_color_coding(
         predictions_real, MACHINE_LEARNING_RANGES)
@@ -225,6 +238,8 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     machine_learning_dict['difference'] = transform_predictions_with_color_coding(
         machine_learning_dict['difference']['predictions'], MACHINE_LEARNING_DIFFERENCES)
     
+    
+
     return machine_learning_dict
 
 

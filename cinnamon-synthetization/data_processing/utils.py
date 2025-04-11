@@ -2,6 +2,8 @@ import pandas as pd
 from datetime import datetime
 
 
+MISSING_VALUE_STRING = "__MISSING_VALUE__"  
+MISSING_BOOLEAN = False  
 BOOLEAN_MAP = {
     'True': True, 'true': True, '1': True, 1: True, '1.0': True, 1.0: True, 'YES': True, 'yes': True, 'Y': True,
     'y': True,

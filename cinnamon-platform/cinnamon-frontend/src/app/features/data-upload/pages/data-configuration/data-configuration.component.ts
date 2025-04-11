@@ -18,7 +18,17 @@ import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
-import { debounceTime, distinctUntilChanged, map, Observable, of, Subscription, switchMap } from "rxjs";
+import {
+    catchError,
+    debounceTime,
+    distinctUntilChanged,
+    map,
+    Observable,
+    of,
+    Subscription,
+    switchMap,
+    tap,
+} from "rxjs";
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from "@angular/forms";
 import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
 import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
@@ -27,6 +37,7 @@ import { RangeConfiguration } from "../../../../shared/model/range-configuration
 import { StringPatternConfiguration } from "../../../../shared/model/string-pattern-configuration";
 import { DataSetInfoService } from "../../services/data-set-info.service";
 import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
+import { DataSetInfo } from "../../../../shared/model/data-set-info";
 
 @Component({
     selector: 'app-data-configuration',
@@ -37,11 +48,12 @@ import { ErrorHandlingService } from "../../../../shared/services/error-handling
 export class DataConfigurationComponent implements OnInit, OnDestroy {
     private dataConfigurationSubscription: Subscription;
 
-    protected form: FormGroup;
-    protected isAdvanceConfigurationExpanded: boolean = false;
-    protected createSplit: boolean = false;
-    protected holdOutSplitPercentage: number = 0.2;
+    protected attributeConfigurationform: FormGroup;
+    protected dataSetConfigurationForm: FormGroup | null;
 
+    protected isAdvanceConfigurationExpanded: boolean = false;
+
+    protected dataSetInfo$: Observable<DataSetInfo | null>;
     protected isFileTypeXLSX$: Observable<boolean>;
 
     @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
@@ -75,39 +87,51 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
         this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
             if (this.configuration.localDataConfiguration !== null) {
-                this.form = this.createForm(this.configuration.localDataConfiguration);
+                this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration);
             } else {
                 this.setEmptyColumnNames(value);
-                this.form = this.createForm(value);
+                this.attributeConfigurationform = this.createAttributeConfigurationForm(value);
             }
 
-            this.form.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
+            this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
                 this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
             });
         });
 
-        this.dataSetInfoService.getDataSetInfoOriginal$().subscribe({
-            next: value => {
-                this.createSplit = value.hasHoldOutSplit;
-                if (value.hasHoldOutSplit) {
-                    this.holdOutSplitPercentage = value.holdOutPercentage;
-                }
-            },
-            error: (e) => this.handleError(e),
-        });
+        this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
+            tap(value => {
+                this.createDataSetConfigurationForm(value);
+            }),
+            catchError(error => {
+                this.handleError(error);
+                return of(null);
+            }),
+        );
     }
 
     ngOnDestroy() {
         this.dataConfigurationSubscription.unsubscribe();
     }
 
+    protected get createHoldOutSplit(): boolean {
+        return this.dataSetConfigurationForm?.controls['createHoldOutSplit'].value;
+    }
+
+    protected get holdOutSplitPercentage(): number {
+        return this.dataSetConfigurationForm?.controls['holdOutSplitPercentage'].value;
+    }
+
+    protected get isDataSetConfigurationFormInvalid(): boolean {
+        return this.dataSetConfigurationForm ? this.dataSetConfigurationForm.invalid : true;
+    }
+
     confirmConfiguration() {
-        const config = plainToInstance(DataConfiguration, this.form.value);
+        const config = plainToInstance(DataConfiguration, this.attributeConfigurationform.value);
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
         this.dataService.storeData(config).pipe(
             switchMap(id => {
-                if (this.createSplit) {
+                if (this.createHoldOutSplit) {
                     return this.dataService.createHoldOutSplit(this.holdOutSplitPercentage);
                 } else {
                     return of(id);
@@ -120,13 +144,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
             next: () => this.handleUpload(),
             error: (e) => this.handleError(e),
         });
-    }
-
-    protected updateCreateSplit(newValue: boolean) {
-        this.createSplit = newValue;
-        if (!newValue) {
-            this.isAdvanceConfigurationExpanded = false;
-        }
     }
 
     private setEmptyColumnNames(dataConfiguration: DataConfiguration) {
@@ -158,7 +175,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         const names: string[] = [];
         const duplicates: string[] = [];
 
-        const configurationsFrom = (this.form.controls['configurations'] as FormArray).controls
+        const configurationsFrom = (this.attributeConfigurationform.controls['configurations'] as FormArray).controls
         // Find duplicate column names
         for (const f of Object.values(configurationsFrom)) {
             const fg = (f as FormGroup).controls['name'];
@@ -207,7 +224,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         return (form.controls['configurations'] as FormArray).controls as FormGroup[];
     }
 
-    private createForm(dataConfiguration: DataConfiguration): FormGroup {
+    private createAttributeConfigurationForm(dataConfiguration: DataConfiguration): FormGroup {
         const formArray: any[] = [];
         dataConfiguration.configurations.forEach(columnConfiguration=> {
             const addConfigs = [];
@@ -284,6 +301,34 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         });
 
         return this.formBuilder.group({configurations: this.formBuilder.array(formArray)});
+    }
+
+    /**
+     * Creates the form for the data set configuration.
+     * Initializes the form based on the given data set info.
+     *
+     * @param dataSetInfo The data set info to initialize the form with.
+     * @private
+     */
+    private createDataSetConfigurationForm(dataSetInfo: DataSetInfo): void {
+        this.dataSetConfigurationForm = this.formBuilder.group({
+            createHoldOutSplit: [{value: dataSetInfo.hasHoldOutSplit, disabled: this.locked}],
+            holdOutSplitPercentage: [{
+                value: dataSetInfo.holdOutPercentage !== 0 ? dataSetInfo.holdOutPercentage : 0.2,
+                disabled: !dataSetInfo.hasHoldOutSplit || this.locked
+            }, {
+                validators: [Validators.required, Validators.min(0), Validators.max(1)],
+            }],
+        });
+
+        this.dataSetConfigurationForm.controls['createHoldOutSplit'].valueChanges.subscribe(value => {
+            if (!value) {
+                this.dataSetConfigurationForm!.controls['holdOutSplitPercentage'].disable();
+                this.isAdvanceConfigurationExpanded = false;
+            } else {
+                this.dataSetConfigurationForm!.controls['holdOutSplitPercentage'].enable();
+            }
+        });
     }
 
     /**

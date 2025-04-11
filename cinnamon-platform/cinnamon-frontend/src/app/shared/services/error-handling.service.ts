@@ -116,6 +116,15 @@ export class ErrorHandlingService {
             for (const [field, errors] of Object.entries(error.errorDetails?.validationErrors)) {
                 const parts = field.split(".");
                 if (parts.length === 3) {
+
+                    // Data configuration
+                    if (parts[0] === "configuration" && parts[1].startsWith("configurations")) {
+                        const index = parseInt(parts[1].split("[")[1].split("]")[0]);
+                        errorMessage += "The " + parts[2] + " of the " + (index + 1) + ". attribute has the following errors:\n";
+                        for (const error of errors) {
+                            errorMessage += "- " + error + "\n";
+                        }
+                    }
                 } else {
                     errorMessage += (errors as string[]).join(", ") + "\n";
                 }

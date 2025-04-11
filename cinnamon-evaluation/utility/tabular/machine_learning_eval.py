@@ -97,9 +97,14 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     real = impute_missing_values(real, 'MISSING_VALUE')
     synthetic = impute_missing_values(synthetic, 'MISSING_VALUE')
 
-     # Store original target values before any transformation
+    # Store original target values before any transformation
     real_target_original = real[target_variable].copy()
     synthetic_target_original = synthetic[target_variable].copy()
+    
+    # If target variable is categorical and has mixed types, convert both to string
+    if not pd.api.types.is_numeric_dtype(real[target_variable]) or not pd.api.types.is_numeric_dtype(synthetic[target_variable]):
+        real_target_original = real_target_original.astype(str)
+        synthetic_target_original = synthetic_target_original.astype(str)
 
     # Separate features and targets
     real_features = real.drop(columns=[target_variable])
@@ -113,8 +118,14 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     if len(numeric_cols) > 0:
         combined_features[numeric_cols] = minmax_scale(combined_features[numeric_cols])
     
+    # Fix for the mixed data types error:
+    # Convert all categorical columns to string type before encoding
     categorical_cols = combined_features.select_dtypes(exclude=['number']).columns
     if len(categorical_cols) > 0:
+        # Convert all categorical columns to string type
+        for col in categorical_cols:
+            combined_features[col] = combined_features[col].astype(str)
+        
         encoder = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)
         combined_features[categorical_cols] = encoder.fit_transform(combined_features[categorical_cols])
     
@@ -238,8 +249,6 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     machine_learning_dict['difference'] = transform_predictions_with_color_coding(
         machine_learning_dict['difference']['predictions'], MACHINE_LEARNING_DIFFERENCES)
     
-    
-
     return machine_learning_dict
 
 

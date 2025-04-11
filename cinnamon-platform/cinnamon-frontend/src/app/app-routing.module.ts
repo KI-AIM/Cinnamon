@@ -20,6 +20,7 @@ import { EvaluationComponent } from "./features/evaluation/pages/evaluation/eval
 import {
     RiskAssessmentConfigurationComponent
 } from "./features/risk-assessment/pages/risk-assessment-configuration/risk-assessment-configuration.component";
+import { ReportComponent } from "./features/report/pages/report/report.component";
 
 const routes: Routes = [
     {path: '', redirectTo: 'open', pathMatch: 'full'},
@@ -35,6 +36,7 @@ const routes: Routes = [
     {path: 'technicalEvaluationConfiguration', component: TechnicalEvaluationConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'riskEvaluationConfiguration', component: RiskAssessmentConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'evaluation', component: EvaluationComponent, canActivate: [AuthGuard]},
+    {path: 'report', component: ReportComponent , canActivate: [AuthGuard]},
     {path: '**', component: NotFoundComponent},
 ];
 

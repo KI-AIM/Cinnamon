@@ -533,6 +533,13 @@
         </div>
     </div>
 
+    <div class="box" *ngIf="pageData.stage as status">
+        <button type="button" mat-raised-button color="primary" [disabled]="status.status != ProcessStatus.FINISHED"
+                (click)="continue()">
+            Continue
+        </button>
+    </div>
+
     <ng-template #utilityMetricTable let-predictions="predictions">
         <div *ngIf="(predictions | instanceOf:UtilityData) as p"
              style="display: flex; flex-direction: row; width: 100%; justify-content: space-between;">

@@ -606,7 +606,6 @@ public class DatabaseService {
 		var calcRowNumbers = rowSelector != RowSelector.ALL;
 
 		final var startRow = (pageNumber - 1) * pageSize;
-		final var endRow = startRow + pageSize;
 
 		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
 		final DataSet dataSet = exportDataSet(dataSetEntity, rowSelector, columnNames,
@@ -618,6 +617,7 @@ public class DatabaseService {
 			rowNumbers = dataSet.getData().stream().map(a -> (Integer) a.get(a.size() - 1)).toList();
 			errors = errorRepository.findByDataSetIdAndRowIndexIn(dataSetEntity.getId(), rowNumbers);
 		} else {
+			var endRow = startRow + dataSet.getDataRows().size();
 			errors = errorRepository.findByDataSetIdAndRowIndexBetween(dataSetEntity.getId(), startRow, endRow - 1);
 		}
 

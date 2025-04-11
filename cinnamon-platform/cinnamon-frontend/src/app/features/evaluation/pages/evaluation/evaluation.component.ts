@@ -15,6 +15,9 @@ import { RiskEvaluation } from '../../../../shared/model/risk-evaluation';
 import { ProjectConfigurationService } from "../../../../shared/services/project-configuration.service";
 import { ProjectSettings } from "../../../../shared/model/project-settings";
 import { StageDefinition } from "../../../../shared/services/execution-step.service";
+import { StepConfiguration, Steps } from "../../../../core/enums/steps";
+import { StatusService } from "../../../../shared/services/status.service";
+import { Router } from "@angular/router";
 
 @Component({
     selector: 'app-evaluation',
@@ -51,7 +54,9 @@ export class EvaluationComponent implements OnInit {
 
     constructor(
         protected readonly evaluationService: EvaluationService,
+        private readonly router: Router,
         protected readonly statisticsService: StatisticsService,
+        private readonly statusService: StatusService,
         private readonly titleService: TitleService,
         protected readonly projectConfigService: ProjectConfigurationService,
     ) {
@@ -95,6 +100,17 @@ export class EvaluationComponent implements OnInit {
         };
 
         return jobNames[name];
+    }
+
+    protected continue() {
+        this.statusService.updateNextStep(Steps.REPORT).subscribe({
+            next: (v) => {
+                this.router.navigateByUrl(StepConfiguration.REPORT.path);
+            },
+            error: (e) =>{
+                console.error(e);
+            }
+        });
     }
 
     // Method for generatting color index

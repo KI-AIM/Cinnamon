@@ -401,6 +401,8 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
     # Add overview to Config 
     enriched_metrics = add_overview_to_config(enriched_metrics)
 
+    print(enriched_metrics)
+
     try:
         files = prepare_callback_data(enriched_metrics)
         requests.post(callback_url, files=files, data={'session_key': session_key})
@@ -412,6 +414,7 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
 
 @app.route('/get_evaluation_metrics/<string:data_format>', methods=['GET'])
 def get_evaluation_metrics(data_format):
+    print("Get Metrics")
     
     file_path_resemblance = os.path.join(app_dir, 'resemblance', 'overview_resemblance_metrics.yaml')
     with open(file_path_resemblance, 'r') as res_file:
@@ -456,9 +459,11 @@ def get_evaluation_metrics(data_format):
 
 @app.route('/start_evaluation', methods=['POST'])
 def start_evaluation():
+    print("Start Evaluation")
     task_id = request.form['session_key']
     stop_event = Event()
     task_locks[task_id] = stop_event
+    print("Initialized IDs and Events")
     try:
         session_key, callback_url, attribute_config, evaluation_config, real_data, synthetic_data = initialize_input_evaluation()
         print('Data succesfully loaded')
@@ -478,9 +483,11 @@ def start_evaluation():
 
 @app.route('/calculate_descriptive_statistics', methods=['POST'])
 def calculate_descriptive_statistics():
+    print("Start Evaluation")
     task_id = request.form['session_key']
     stop_event = Event()
     task_locks[task_id] = stop_event
+    print("Initialized IDs and Events")
 
     try:
         session_key, callback_url, attribute_config, evaluation_config, real_data = initialize_input_statistics()
@@ -528,4 +535,4 @@ def test_callback():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5010)

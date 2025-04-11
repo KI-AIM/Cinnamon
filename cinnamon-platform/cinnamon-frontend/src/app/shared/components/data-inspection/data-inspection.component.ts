@@ -61,6 +61,7 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
                         take(1),
                         catchError(() => {
                             this.errorHandlingService.addError("Failed to calculate statistics!");
+                            this.statisticsSubject.next(new StatisticsResponse(ProcessStatus.ERROR));
                             return of(new StatisticsResponse(ProcessStatus.ERROR));
                         }),
                     );

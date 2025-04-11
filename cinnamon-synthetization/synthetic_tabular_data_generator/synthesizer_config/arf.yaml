@@ -12,14 +12,14 @@ configurations:
       - name: num_trees
         type: integer
         label: Number of Trees
-        description: The number of trees in the random forest.
+        description: Smaller values may appropriate when the convergence is large, in order to regularize the forest. Adding more trees tends to improve density estimates, though this incurs extra computational cost in time and memory.
         default_value: 30
         min_value: 1
         max_value: 100
       - name: min_node_size
         type: integer
         label: Minimum Node Size
-        description: The minimum size of nodes in the trees.
+        description: Minimum node size is the threshold of samples below which a node cannot be split and becomes a leaf. Smaller values lead the trees to grow too deep, and leaves will not contain enough data to accurately estimate marginal densities; higher node size value lead the trees to grow too shallow, and ARFs may not satisfy the local independence criterion.
         default_value: 5
         min_value: 1
         max_value: 100
@@ -30,7 +30,7 @@ configurations:
       - name: max_iters
         type: integer
         label: Maximum Iterations
-        description: The maximum number of iterations for training.
+        description: The maximum number of iterations for training until accuracy plateaus.
         default_value: 10
         min_value: 1
         max_value: 1000

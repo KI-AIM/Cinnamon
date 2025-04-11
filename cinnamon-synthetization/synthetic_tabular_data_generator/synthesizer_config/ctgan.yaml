@@ -12,19 +12,19 @@ configurations:
       - name: embedding_dim
         type: integer
         label: Embedding Dimensions
-        description: is the size of the initial random input vector that is passed to the generator. This vector is a latent vector representing a point in the latent space, from which the generator will produce synthetic data. The embedding_dim determines the dimensionality of this latent space vector. A higher embedding_dim provides a larger latent space, potentially allowing the generator to capture more complex patterns and variations in the data. Conversely, a lower embedding_dim might limit the capacity of the generator to capture complex relationships.
+        description: The embedding dimension is the size of the input noise vector. Lower values may lead to low diversity in the generated data, while higher values can produce more diverse data patterns
         default_value: 128
         min_value: 1
         max_value: 1000
       - name: generator_dim
         type: list
         label: Generator Dimensions
-        description: Refers to the sizes of the intermediate layers in the generator network of a generative model. Given as a tuple or list where each number specifies the number of neurons in a corresponding layer, it determines the structure and capacity of the generator, influencing how well it can produce realistic synthetic data. If the dimensions are too small, the generated data might lack detail. Larger values allow for more detailed and realistic synthetic data.
+        description: Each value in the tuple represents one processing stage in the network. Fewer stages or smaller values create a simpler network that trains faster but may struggle to capture complex patterns.
         default_value: [256, 256, 256]
       - name: discriminator_dim
         type: list
         label: Discriminator Dimensions
-        description: the sizes of the intermediate layers in the discriminator network of the GAN. Given as a tuple or list where each number specifies the number of neurons in a corresponding layer, it determines the structure and capacity of the discriminator, influencing how well it can distinguish between real and fake data. If the dimensions are too small, the discriminator might not be effective. Larger values help the discriminator become more accurate, leading to the generation of more realistic data.
+        description: The discriminator learns to strictly evaluate how synthetic or real the data is. To keep training balanced, discriminator_dim should have a similar stages and values as generator_dim
         default_value: [256, 256, 256]
   model_fitting:
     display_name: Training Parameters
@@ -33,14 +33,14 @@ configurations:
       - name: batch_size
         type: integer
         label: Batch Size
-        description: Number of training samples processed before the model's internal parameters are updated. It affects memory usage, training speed, gradient estimation, and overall training dynamics. Smaller values might produce less consistent results, while larger values can help generate more reliable synthetic data.
+        description: each column is divided into groups of size batch_size, meaning the model processes batch_size samples per column in each training step. Low batch_size leads to noisier but faster updates, while high batch_size results in more stable training
         default_value: 128
         min_value: 1
         max_value: 1024
       - name: epochs
         type: integer
         label: Number of Epochs
-        description: Number of training epochs.
+        description: Number of training epochs. The process does not stop automatically when the model's performance plateaus.
         default_value: 300
         min_value: 1
         max_value: 10000

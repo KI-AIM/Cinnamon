@@ -12,7 +12,7 @@ configurations:
       - name: epochs
         type: integer
         label: Number of Epochs
-        description: Number of training epochs.
+        description: Number of training epochs. The process does not stop automatically when the model's performance plateaus.
         default_value: 300
         min_value: 1
         max_value: 10000

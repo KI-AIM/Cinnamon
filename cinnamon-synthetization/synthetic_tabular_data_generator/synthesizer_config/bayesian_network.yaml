@@ -12,7 +12,7 @@ configurations:
       - name: encoder_max_clusters
         type: integer
         label: Maximum Number of Data Clusters
-        description: The maximum number of clusters for encoding the data. More clusters allow finer granularity in the encoding.
+        description: Fewer clusters lead the network to learn broader, more general patterns. More clusters help the model capture finer details but can lead to data leakage if too specific.
         default_value: 10
         min_value: 1
         max_value: 50
@@ -30,7 +30,7 @@ configurations:
       - name: struct_learning_n_iter
         type: integer
         label: Iterations
-        description: The number of times the model will try to learn the best network structure. More iterations can help improve the structure.
+        description: The number of times the model will try to learn the best network structure. More iterations can help improve the structure. # does only apply to hillcimb estimator
         default_value: 100
         min_value: 1
         max_value: 1000

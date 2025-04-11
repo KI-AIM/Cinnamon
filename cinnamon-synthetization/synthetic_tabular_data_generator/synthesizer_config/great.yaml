@@ -14,7 +14,7 @@ configurations:
       - name: n_iter
         type: integer
         label: Number of Iterations
-        description: Number of iterations or epochs to train the model. More iterations mean the model can learn better but may take longer.
+        description: Number of iterations or training epochs. The process does not stop automatically when the model's performance plateaus.
         default_value: 100
         min_value: 1
         max_value: 100000
@@ -31,7 +31,7 @@ configurations:
       - name: batch_size
         type: integer
         label: Batch Size
-        description: How many data points the model processes at once during training. Larger numbers make training faster but need more memory.
+        description: Each column is divided into groups of size batch_size, meaning the model processes batch_size samples per column in each training step. Low batch_size leads to noisier but faster updates, while high batch_size results in more stable training
         default_value: 8
         min_value: 1
         max_value: 1024

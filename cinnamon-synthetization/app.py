@@ -168,7 +168,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
 
         # Step 4: Pre-process sampled data
         try:
-            pre_processed_data = pre_process_dataframe(data, attribute_config['configurations'])
+            pre_processed_data, all_missing_values_column = pre_process_dataframe(data, attribute_config['configurations'])
             print("Dataset preprocessed.")
         except Exception as e:
             error_message = f"Error during pre-processing. {str(e)}"
@@ -178,10 +178,12 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'session_key': session_key,
                 'status_code': 500
             }
+        
+        print(pre_processed_data.head().to_string())
 
         # Step 5: Initialize dataset
         try:
-            synthesizer_class.initialize_dataset("pre_processed_data")
+            synthesizer_class.initialize_dataset(pre_processed_data)
             print('Dataset initialized.')
         except RuntimeError as e:
             print("Error in Dataset Initialoization")
@@ -242,12 +244,17 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'session_key': session_key,
                 'status_code': 500
             }
+        
+        print(samples)
 
         # Step 9: Post-process sampled data
         try:
-            samples = post_process_dataframe(samples, attribute_config['configurations'])
+            print('Starting Post-processing')
+            samples = post_process_dataframe(samples, attribute_config['configurations'], all_missing_values_column)
+            print('Data Post-processed')
         except Exception as e:
             error_message = f"Error during post-processing. {str(e)}"
+            print(error_message)
             send_callback_error(callback_url, session_key, error_message, 500)
             return {
                 'message': error_message,

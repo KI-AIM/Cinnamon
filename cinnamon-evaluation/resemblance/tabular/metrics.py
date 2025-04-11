@@ -62,8 +62,8 @@ def extract_categorical_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) 
         raise TypeError("Parameter 'synthetic' must be a pandas DataFrame")
         
     try:
-        real_categorical = real.select_dtypes(include=['object'])
-        synthetic_categorical = synthetic.select_dtypes(include=['object'])
+        real_categorical = real.select_dtypes(include=['object', 'boolean'])
+        synthetic_categorical = synthetic.select_dtypes(include=['object', 'boolean'])
     except TypeError as e:
         raise TypeError(f"Error selecting categorical columns: {str(e)}")
     

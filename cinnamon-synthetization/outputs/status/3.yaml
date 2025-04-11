@@ -1,14 +1,14 @@
 session_key: '3'
 status:
 - completed: 'True'
-  duration: '0.10558652877807617'
+  duration: '0.11025643348693848'
   step: initialization
 - completed: 'True'
-  duration: '130.6388556957245'
+  duration: '25.562142848968506'
   remaining_time: '0'
   step: fitting
 - completed: 'True'
-  duration: '0.1773519515991211'
+  duration: '0.18660736083984375'
   remaining_time: '0'
   step: sampling
 - completed: 'True'

@@ -9,6 +9,7 @@ export enum Steps {
     TECHNICAL_EVALUATION,
     RISK_EVALUATION,
     EVALUATION,
+    REPORT,
 }
 
 export const StepConfiguration = {
@@ -92,4 +93,12 @@ export const StepConfiguration = {
         dependsOn: Steps.RISK_EVALUATION,
         index: 9,
     },
+    REPORT: {
+        path: "/report",
+        id: "navLinkReport",
+        text: "Report",
+        enum: Steps.REPORT,
+        dependsOn: Steps.EVALUATION,
+        index: 10,
+    }
 };

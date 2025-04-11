@@ -19,7 +19,7 @@ import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "../../../../shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { debounceTime, distinctUntilChanged, map, Observable, of, Subscription, switchMap } from "rxjs";
-import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from "@angular/forms";
 import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
 import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
 import { DateTimeFormatConfiguration } from "../../../../shared/model/date-time-format-configuration";
@@ -268,7 +268,11 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                 name: [{value: columnConfiguration.name, disabled: this.locked}, {
                     validators: [Validators.required, noSpaceValidator()]
                 }],
-                type: [{value: columnConfiguration.type, disabled: this.locked}, {validators: [Validators.required]}],
+                type: [{
+                    value: columnConfiguration.type, disabled: this.locked
+                }, {
+                    validators: [Validators.required, this.dataTypeNotUndefined]
+                }],
                 scale: [{value: columnConfiguration.scale, disabled: this.locked}, {
                     disabled: this.locked,
                     validators: [Validators.required]
@@ -280,5 +284,17 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         });
 
         return this.formBuilder.group({configurations: this.formBuilder.array(formArray)});
+    }
+
+    /**
+     * Custom validator to check if the data type is not {@link DataType#UNDEFINED}.
+     * @param control The form control to validate.
+     * @return Validation errors if the data type is UNDEFINED, null otherwise.
+     * @private
+     */
+    private dataTypeNotUndefined(control: AbstractControl): ValidationErrors | null {
+        return (typeof control.value === 'string') && control.value === 'UNDEFINED'
+            ? {undefined: {value: control.value}}
+            : null
     }
 }

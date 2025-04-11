@@ -19,6 +19,7 @@ public enum Step {
 	TECHNICAL_EVALUATION(7),
 	RISK_EVALUATION(8),
 	EVALUATION(9),
+	REPORT(10),
 	;
 
 	/**

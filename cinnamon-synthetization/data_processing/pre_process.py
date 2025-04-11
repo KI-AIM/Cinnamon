@@ -106,7 +106,7 @@ def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tup
                     if pd.isna(column_mean):
                         raise ValueError(f"Cannot calculate mean for INTEGER column '{column_name}', all values are non-numeric")
                     df[column_name].fillna(round(column_mean), inplace=True)
-                    df[column_name] = df[column_name].astype('Int64')  # Use pandas nullable integer type
+                    df[column_name] = df[column_name].astype(float).astype(int)  # Use regular int instead of Int64
                 except Exception as e:
                     raise TypeError(f"Error converting '{column_name}' to INTEGER: {str(e)}")
                 continue

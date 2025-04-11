@@ -65,16 +65,13 @@ class CtganSynthesizer(TabularDataSynthesizer):
     def _initialize_dataset(self, df: pd.DataFrame) -> None:
         """
         Core logic for initializing the dataset.
+        Identifies and stores all categorical and boolean columns from the input dataframe.
         """
-        config = self.attribute_config['configurations']
-
-        self.discrete_columns = []  
-        for column_config in config:  
-            if column_config['type'] in ['STRING', 'BOOLEAN']:
-                self.discrete_columns.append(column_config['name'])
-
-        self.dataset = df
-            
+        # Select both categorical and boolean columns directly into discrete_columns
+        self.discrete_columns = df.select_dtypes(include=['object', 'category', 'bool']).columns.tolist()
+        
+        # Store the dataframe
+        self.dataset = df         
 
     def _initialize_synthesizer(self) -> None:
         """

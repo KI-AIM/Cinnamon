@@ -398,11 +398,6 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
     # Add the description of the resemblance utility metric to the enriched dictionary
     enriched_metrics = add_resembance_description(enriched_metrics, overview_metrics)
 
-    # Add overview to Config 
-    enriched_metrics = add_overview_to_config(enriched_metrics)
-
-    print(enriched_metrics)
-
     try:
         files = prepare_callback_data(enriched_metrics)
         requests.post(callback_url, files=files, data={'session_key': session_key})
@@ -414,9 +409,9 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
 
 @app.route('/get_evaluation_metrics/<string:data_format>', methods=['GET'])
 def get_evaluation_metrics(data_format):
-    print("Get Metrics")
-    
-    file_path_resemblance = os.path.join(app_dir, 'resemblance', 'overview_resemblance_metrics.yaml')
+    file_path_resemblance = os.path.join(os.path.dirname(__file__), 'resemblance', 'overview_resemblance_metrics.yaml')
+    file_path_utility = os.path.join(os.path.dirname(__file__), 'utility', 'overview_utility_metrics.yaml')
+
     with open(file_path_resemblance, 'r') as res_file:
         resemblance_config_yaml = yaml.safe_load(res_file)
 

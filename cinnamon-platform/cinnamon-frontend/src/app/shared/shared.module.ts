@@ -126,6 +126,7 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         NoSpaceValidatorDirective,
         InstanceOfPipe,
         MetricConfigurationComponent,
+        ChartFrequencyComponent,
     ],
 })
 export class SharedModule {}

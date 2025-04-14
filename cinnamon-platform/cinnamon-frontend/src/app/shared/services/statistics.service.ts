@@ -25,6 +25,7 @@ export class StatisticsService {
     public readonly colorDefinitions = [
         {
             name: 'Default',
+            label: 'Dark Green to Dark Red (Default)',
             colors: [
                 '#00aaff', '#007700', '#009900', '#00bb00',
                 '#00dd00', '#00ff00', '#ff0000', '#dd0000',
@@ -33,6 +34,7 @@ export class StatisticsService {
         },
         {
             name: 'Green Red',
+            label: 'Bright Green to Bright Red',
             colors: [
                 '#00aaff', '#00ff00', '#00dd00', '#00bb00',
                 '#009900', '#007700', '#770000', '#990000',
@@ -40,7 +42,26 @@ export class StatisticsService {
             ],
         },
         {
+            name: 'GreenRed2',
+            label: 'Dark Green to Bright Red',
+            colors: [
+                '#00aaff', '#007700', '#008800', '#009900',
+                '#00aa00', '#00bb00', '#bb0000', '#cc0000',
+                '#dd0000', '#dd0000', '#ff0000',
+            ],
+        },
+        {
+            name: 'GreenRed3',
+            label: 'Bright Green to Dark Red',
+            colors: [
+                '#00aaff', '#00ff00', '#00ee00', '#00dd00',
+                '#00cc00', '#00bb00', '#bb0000', '#aa0000',
+                '#990000', '#880000', '#770000',
+            ],
+        },
+        {
             name: 'Blue Green',
+            label: 'Blue to Green',
             colors: [
                 '#00aaff', '#292f56', '#1e4572', '#005c8b',
                 '#007498', '#008ba0', '#00a3a4', '#00bca1',
@@ -49,6 +70,7 @@ export class StatisticsService {
         },
         {
             name: 'Green Blue',
+            label: 'Green to Blue',
             colors: [
                 '#00aaff', '#acfa70', '#69e882', '#00d493',
                 '#00bca1', '#00a3a4', '#008ba0', '#007498',
@@ -57,6 +79,7 @@ export class StatisticsService {
         },
         {
             name: 'Blue Red',
+            label: 'Blue to Red',
             colors: [
                 '#00aaff', '#0c3d67', '#1f74b9', '#43b3e4',
                 '#a7cee2', '#e8f4d9', '#fcf1ad', '#fbaa64',
@@ -65,6 +88,7 @@ export class StatisticsService {
         },
         {
             name: 'Red Blue',
+            label: 'Red to Blue',
             colors: [
                 '#00aaff', '#a8172a', '#dc4230', '#f48146',
                 '#fbaa64', '#fcf1ad', '#e8f4d9', '#a7cee2',
@@ -72,55 +96,44 @@ export class StatisticsService {
             ],
         },
         {
-            name: 'Blue Yellow',
-            colors: [
-                '#00aaff', '#002f61', '#00507b', '#006e8e',
-                '#008b98', '#00a79c', '#00c395', '#18dc82',
-                '#71ee65', '#bbf942', '#ffff00',
-            ]
-        },
-        {
-            name: 'Yellow Blue',
-            colors: [
-                '#00aaff', '#ffff00', '#bbf942', '#71ee65',
-                '#18dc82', '#00c395', '#00a79c', '#008b98',
-                '#006e8e', '#00507b', '#002f61',
-            ]
-        },
-        {
             name: 'Blue Lila Red',
+            label: 'Blue to Orange',
             colors: [
-                '#00aaff', '#3b48f7', '#6a38fb', '#882cf6',
+                '#14a289', '#3b48f7', '#6a38fb', '#882cf6',
                 '#a023e9', '#b41fd6', '#c522bd', '#d329a2',
                 '#de3284', '#e73d67', '#ed4a4a',
             ]
         },
         {
             name: 'Red Lila Blue',
+            label: 'Orange to Blue',
             colors: [
-                '#00aaff', '#ed4a4a', '#e73d67', '#de3284',
+                '#14a289', '#ed4a4a', '#e73d67', '#de3284',
                 '#d329a2', '#c522bd', '#b41fd6', '#a023e9',
                 '#882cf6', '#6a38fb', '#3b48f7',
             ]
         },
         {
             name: 'BlueOrange1',
+            label: 'Dark Blue to Dark Orange',
             colors: [
-                '#00aaff', '#0008ff', '#284af7', '#4d68f8',
+                '#14a289', '#0008ff', '#284af7', '#4d68f8',
                 '#6d7ffb', '#8a95ff', '#ff8800', '#db7409',
                 '#b55f0b', '#8f4806', '#653001',
             ]
         },
         {
             name: 'BlueOrange2',
+            label: 'Bright Blue to Bright Orange',
             colors: [
-                '#00aaff', '#8a95ff', '#6d7ffb', '#4d68f8',
+                '#14a289', '#8a95ff', '#6d7ffb', '#4d68f8',
                 '#284af7', '#0008ff', '#653001', '#8f4806',
                 '#b55f0b', '#db7409', '#ff8800'
             ]
         },
         {
             name: 'GreenOrange1',
+            label: 'Dark Green to Dark Orange',
             colors: [
                 '#00aaff', '#165f53', '#197665', '#1a8c79',
                 '#14a289', '#00b899', '#ff8800', '#db7409',
@@ -129,6 +142,7 @@ export class StatisticsService {
         },
         {
             name: 'GreenOrange2',
+            label: 'Bright Green to Bright Orange',
             colors: [
                 '#00aaff', '#00b899', '#14a289', '#1a8c79',
                 '#197665', '#165f53', '#653001', '#8f4806',
@@ -137,6 +151,7 @@ export class StatisticsService {
         },
         {
             name: 'Green1',
+            label: 'Dark Green to Bright Green',
             colors: [
                 '#00aaff', '#165f53', '#18695b', '#197363',
                 '#1a7e6c', '#1a8874', '#19917c', '#179b84',
@@ -145,6 +160,7 @@ export class StatisticsService {
         },
         {
             name: 'Green2',
+            label: 'Bright Green to Dark Green',
             colors: [
                 '#00aaff', '#00b899', '#0cae92', '#13a58b',
                 '#179b84', '#19917c', '#1a8874', '#1a7e6c',
@@ -153,6 +169,7 @@ export class StatisticsService {
         },
         {
             name: 'Orange1',
+            label: 'Dark Orange to Bright Orange',
             colors: [
                 '#00aaff', '#653001', '#773b03', '#8a4606',
                 '#9c5008', '#ad5a0b', '#bd640b', '#ce6d0a',
@@ -161,6 +178,7 @@ export class StatisticsService {
         },
         {
             name: 'Orange2',
+            label: 'Bright Orange to Dark Orange',
             colors: [
                 '#00aaff', '#ff8800', '#ef7f05', '#df7608',
                 '#ce6d0a', '#bd640b', '#ad5a0b', '#9c5008',

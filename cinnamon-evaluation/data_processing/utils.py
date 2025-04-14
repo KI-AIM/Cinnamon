@@ -1,5 +1,6 @@
 from datetime import datetime
 import pandas as pd
+from typing import Union, Optional
 
 BOOLEAN_MAP = {
     'True': True, 'true': True, '1': True, 1: True, '1.0': True, 1.0: True, 'YES': True, 'yes': True, 'Y': True,
@@ -9,136 +10,165 @@ BOOLEAN_MAP = {
 }
 
 
-def handle_date_column(dataset, column_name, date_format):
+def handle_date_column(dataset: pd.DataFrame, column_name: str, date_format: str) -> None:
     """
     Converts date columns in the dataset to UNIX timestamps based on the provided format.
 
     Args:
         dataset: The dataset containing the column to be processed
-        column_name: The name of the column containing date values.
-        date_format: The format string for parsing dates.
+        column_name: The name of the column containing date values
+        date_format: The format string for parsing dates
     """
-    if '%Y' in date_format:
-        dataset[column_name] = dataset[column_name].apply(adjust_date_within_bounds, args=(date_format,))
-    if '%y' in date_format:
-        dataset[column_name] = dataset[column_name].apply(parse_to_unix, args=(date_format, True,))
-    else:
-        dataset[column_name] = dataset[column_name].apply(parse_to_unix, args=(date_format,))
+    # Create a copy to avoid reference issues
+    original_column = dataset[column_name].copy()
+    
+    try:
+        if '%Y' in date_format:
+            dataset[column_name] = original_column.apply(
+                lambda x: adjust_date_within_bounds(x, date_format))
+            
+        if '%y' in date_format:
+            dataset[column_name] = original_column.apply(
+                lambda x: parse_to_unix(x, date_format, True))
+        else:
+            dataset[column_name] = original_column.apply(
+                lambda x: parse_to_unix(x, date_format))
+    except Exception:
+        # If overall conversion fails, set entire column to NA
+        dataset[column_name] = pd.NA
 
 
-def parse_to_unix(entry, datetime_format, two_digit_year=False):
+def parse_to_unix(entry: Union[str, int, float], 
+                 datetime_format: str, 
+                 two_digit_year: bool = False) -> Union[int, float]:
     """
     Converts a date string to a UNIX timestamp based on the specified format.
 
     Args:
-        entry: The date string to be parsed.
-        datetime_format: The format string used for parsing the date.
-        two_digit_year: Whether to adjust for two-digit years. Defaults to False.
+        entry: The date string to be parsed
+        datetime_format: The format string used for parsing the date
+        two_digit_year: Whether to adjust for two-digit years. Defaults to False
 
     Returns:
-        int or pandas.NA
+        Unix timestamp as int or pd.NA if conversion fails
     """
+    if pd.isna(entry):
+        return pd.NA
+        
     try:
         dt_object = pd.to_datetime(entry, format=datetime_format, errors='raise')
         if two_digit_year:
             dt_object = interpret_two_digit_year(dt_object)
+            if dt_object is None:
+                return pd.NA
+                
         timestamp = int(dt_object.timestamp())
-    except (ValueError, TypeError, OSError):
-        timestamp = pd.NA
+        # Validate timestamp is within acceptable bounds
+        timestamp = adjust_date_within_bounds_post(timestamp)
+        return timestamp
+    except (ValueError, TypeError, OSError, AttributeError):
+        return pd.NA
 
-    return timestamp
 
-
-def adjust_date_within_bounds(entry, datetime_format):
+def adjust_date_within_bounds(entry: Union[str, int, float], datetime_format: str):
     """
     Adjusts dates to fall within the valid range by replacing years outside the acceptable bounds.
 
     Args:
-        entry: The date string to be adjusted.
-        datetime_format: The format string used for parsing the date.
+        entry: The date string to be adjusted
+        datetime_format: The format string used for parsing the date
 
     Returns:
-        The adjusted date string formatted according to `datetime_format`. If adjustment fails,
-        the original date string is returned.
+        The adjusted date string formatted according to `datetime_format` or pd.NA if adjustment fails
     """
+    if pd.isna(entry):
+        return pd.NA
+        
     try:
-        dt = datetime.strptime(entry, datetime_format)
+        dt = datetime.strptime(str(entry), datetime_format)
         if dt.year < 1678:
             dt = dt.replace(year=1678)
         if dt.year > 2261:
             dt = dt.replace(year=2261)
+        return str(dt.strftime(datetime_format))
     except (ValueError, TypeError, OSError):
-        return entry
-    return str(dt.strftime(datetime_format))
+        return pd.NA
 
 
-def adjust_date_within_bounds_post(entry):
+def adjust_date_within_bounds_post(entry: Union[int, float]):
     """
     Adjusts dates to fall within the valid range by replacing years outside the acceptable bounds.
 
     Args:
-        entry: The unix timestamp to be adjusted.
+        entry: The unix timestamp to be adjusted
 
     Returns:
-        The adjusted unix timestamp,
-        the original entry is returned.
+        The adjusted unix timestamp or pd.NA if adjustment fails
     """
+    if pd.isna(entry):
+        return pd.NA
+        
     try:
-        if entry < -9214560000:
+        entry_val = float(entry)
+        if entry_val < -9214560000:
             return float(-9214560000)
-        if entry > 9214560000:
+        if entry_val > 9214560000:
             return float(9214560000)
+        return entry_val
     except (ValueError, TypeError, OSError):
-        return entry
-
-    return entry
+        return pd.NA
 
 
-def interpret_two_digit_year(dt_object, reference_date=pd.Timestamp.now()):
+def interpret_two_digit_year(dt_object: pd.Timestamp, 
+                            reference_date: pd.Timestamp = None) -> Optional[pd.Timestamp]:
     """
-    Adjusts a date with a two-digit year based on the reference date. Default: dates in the future are adjusted to
-    fall to the past.
+    Adjusts a date with a two-digit year based on the reference date.
 
     Args:
-        dt_object: The date to adjust.
-        reference_date: The reference date for interpretation. Defaults to the current date.
+        dt_object: The date to adjust
+        reference_date: The reference date for interpretation. Defaults to the current date
 
-    Returns: adjusted date
+    Returns: 
+        Adjusted date or None if adjustment fails
     """
+    if pd.isna(dt_object):
+        return None
+        
+    if reference_date is None:
+        reference_date = pd.Timestamp.now()
+        
     try:
         if dt_object > reference_date:
             dt_object -= pd.DateOffset(years=100)
-    except (ValueError, TypeError, OSError):
+        return dt_object
+    except (ValueError, TypeError, OSError, AttributeError):
         return None
 
-    return dt_object
 
-
-def iso_to_strftime(iso_format):
+def iso_to_strftime(iso_format: str) -> str:
     """
     Convert an ISO-like format string into strftime-compatible format,
     including week and day-of-year options.
 
-    Parameters:
-    - iso_format (str): An ISO-like format string with placeholders like 'yyyy', 'mm', 'dd', 'Www', 'DDD'.
+    Args:
+        iso_format: An ISO-like format string with placeholders like 'yyyy', 'mm', 'dd', 'Www', 'DDD'
 
     Returns:
-    - str: The strftime-compatible format string.
+        The strftime-compatible format string
     """
-
     format_mapping = {
         "yyyy": "%Y",  # Full year, e.g., 2023
-        "yy": "%y",  # Short year, e.g., 23
-        "MM": "%m",  # Month, e.g., 01
-        "dd": "%d",  # Day, e.g., 01
-        "HH": "%H",  # Hour, e.g., 14 (24-hour format)
-        "mm": "%M",  # Minute, e.g., 05
-        "SS": "%S",  # Second, e.g., 09
-        "sss": "%f",  # Microsecond, e.g., 123456 (only first three digits considered as milliseconds)
-        "Www": "%V",  # ISO week number, e.g., 01-53
-        "DDD": "%j",  # Day of the year, e.g., 001-366
-        "D": "%u",  # ISO weekday, where Monday is 1 and Sunday is 7
-        "GGGG": "%G"  # ISO year, aligned with ISO week number (for use with %V)
+        "yy": "%y",    # Short year, e.g., 23
+        "MM": "%m",    # Month, e.g., 01
+        "dd": "%d",    # Day, e.g., 01
+        "HH": "%H",    # Hour, e.g., 14 (24-hour format)
+        "mm": "%M",    # Minute, e.g., 05
+        "SS": "%S",    # Second, e.g., 09
+        "sss": "%f",   # Microsecond, e.g., 123456 (only first three digits considered as milliseconds)
+        "Www": "%V",   # ISO week number, e.g., 01-53
+        "DDD": "%j",   # Day of the year, e.g., 001-366
+        "D": "%u",     # ISO weekday, where Monday is 1 and Sunday is 7
+        "GGGG": "%G"   # ISO year, aligned with ISO week number (for use with %V)
     }
 
     strftime_format = iso_format
@@ -149,7 +179,7 @@ def iso_to_strftime(iso_format):
     return strftime_format
 
 
-def parse_to_date_format(entry, date_format: str):
+def parse_to_date_format(entry: Union[int, float, str], date_format: str):
     """
     Converts a Unix timestamp to a formatted date string.
 
@@ -158,14 +188,16 @@ def parse_to_date_format(entry, date_format: str):
         date_format: Target date format string
 
     Returns:
-        str: Formatted date string or original entry if conversion fails
+        Formatted date string or pd.NA if conversion fails
     """
+    if pd.isna(entry):
+        return pd.NA
+        
     try:
         dt_object = pd.to_datetime(entry, unit='s')
         return dt_object.strftime(date_format)
     except (ValueError, TypeError, OSError):
-        return entry
-
+        return pd.NA
 
 def validate_and_extract_metrics(config: dict):
     """

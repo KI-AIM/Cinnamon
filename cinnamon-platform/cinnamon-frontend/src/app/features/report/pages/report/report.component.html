@@ -1,1 +1,21 @@
-<p>report works!</p>
+<div class="vertical-boxes">
+    <div class="box">
+        <button mat-button mat-raised-button color="primary" (click)="printReport()">Print</button>
+    </div>
+
+    <ng-content *ngIf="{mc: metricConfig$ | async, statistics: statistics$ | async} as reportData">
+        <ng-container *ngIf="reportData.mc && reportData.statistics">
+
+
+            <div id="report" class="box">
+                Hallo
+                <app-chart-frequency [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                     [data]="reportData.statistics.statistics!.resemblance.attributes[0].plot.histogram!" [limit]="null"
+                                     originalSeriesLabel="Original" [simple]="true"
+                                     syntheticSeriesLabel="Protected"></app-chart-frequency>
+
+            </div>
+
+        </ng-container>
+    </ng-content>
+</div>

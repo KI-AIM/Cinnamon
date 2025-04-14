@@ -126,6 +126,7 @@ import { ProjectExportComponent } from './components/project-export/project-expo
     ],
     exports: [
         // Components
+        ChartFrequencyComponent,
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,

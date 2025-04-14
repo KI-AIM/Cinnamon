@@ -134,6 +134,7 @@ import { TooltipComponent } from './components/tooltip/tooltip.component';
     ],
     exports: [
         // Components
+        ChartFrequencyComponent,
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,

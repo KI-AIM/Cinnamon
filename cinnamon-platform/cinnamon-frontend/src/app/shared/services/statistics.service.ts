@@ -81,7 +81,7 @@ export class StatisticsService {
             name: 'Blue Red',
             label: 'Blue to Red',
             colors: [
-                '#00aaff', '#0c3d67', '#1f74b9', '#43b3e4',
+                '#14a289', '#0c3d67', '#1f74b9', '#43b3e4',
                 '#a7cee2', '#e8f4d9', '#fcf1ad', '#fbaa64',
                 '#f48146', '#dc4230', '#a8172a',
             ]
@@ -90,7 +90,7 @@ export class StatisticsService {
             name: 'Red Blue',
             label: 'Red to Blue',
             colors: [
-                '#00aaff', '#a8172a', '#dc4230', '#f48146',
+                '#14a289', '#a8172a', '#dc4230', '#f48146',
                 '#fbaa64', '#fcf1ad', '#e8f4d9', '#a7cee2',
                 '#43b3e4', '#1f74b9', '#0c3d67',
             ],

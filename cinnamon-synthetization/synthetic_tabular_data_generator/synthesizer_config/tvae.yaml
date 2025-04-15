@@ -12,19 +12,19 @@ configurations:
       - name: embedding_dim
         type: integer
         label: Embedding Dimensions
-        description: embedding_dim controls how much detail the model can capture when learning from the data. Higher values allow the model to represent more differences between data points, while lower values may lead to simpler, more compressed representations.
+        description: Embedding Dimensions controls how much detail the model can capture when learning from the data. Higher values allow the model to represent more differences between data points, while lower values may lead to simpler, more compressed representations.
         default_value: 128
         min_value: 1
         max_value: 1000
       - name: compress_dims
         type: list
         label: Compress Dimensions
-        description: Each value in the tuple represents one processing stage in the network. Fewer stages or smaller values create a simpler network that trains faster but may struggle to capture complex patterns.
+        description: Each value in the tuple represents one processing layer in the network. Fewer or smaller layers make the model faster, but the generated data might miss complex patterns.
         default_value: [128, 128]
       - name: decompress_dims
         type: list
         label: Decompress Dimensions
-        description: Each value in the tuple represents one processing stage in the network. Fewer stages or smaller values create a simpler network that trains faster but may struggle to capture complex patterns. To keep training balanced, Decompress Dimensions should have a similar stages and values as Compress Dimensions
+        description: Each value in the tuple represents one processing layer in the network. Fewer or smaller layers make the model faster, but the generated data might miss complex patterns. To keep training balanced, Decompress Dimensions should have similar dimensions and values as Compress Dimensions
         default_value: [128, 128]
   model_fitting:
     display_name: Training Parameters
@@ -33,14 +33,14 @@ configurations:
       - name: batch_size
         type: integer
         label: Batch Size
-        description: Each column is divided into groups of size batch_size, meaning the model processes batch_size samples per column in each training step. Low batch_size leads to noisier but faster updates, while high batch_size results in more stable training
+        description: Controls how many samples are used per training step. Lower batch sizes can increase diversity but add noise; higher batch sizes make the data more consistent but may miss subtle variations.
         default_value: 100
         min_value: 1
         max_value: 1000
       - name: epochs
         type: integer
         label: Number of Epochs
-        description: Number of training epochs. The process does not stop automatically when the model's performance plateaus.
+        description: Number of training epochs. Fewer epochs may lead the model to learn only basic patterns, while more epochs help capture complex structures. Very high values can cause the model to memorize the training data instead of learning to generalize.
         default_value: 300
   sampling:
     display_name: Sampling

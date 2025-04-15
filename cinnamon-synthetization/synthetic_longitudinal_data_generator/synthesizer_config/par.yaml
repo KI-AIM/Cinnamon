@@ -12,7 +12,7 @@ configurations:
       - name: epochs
         type: integer
         label: Number of Epochs
-        description: Number of training epochs. The process does not stop automatically when the model's performance plateaus.
+        description: Number of training epochs. Fewer epochs may lead the model to learn only basic patterns, while more epochs help capture complex structures. Very high values can cause the model to memorize the training data instead of learning to generalize.
         default_value: 300
         min_value: 1
         max_value: 10000

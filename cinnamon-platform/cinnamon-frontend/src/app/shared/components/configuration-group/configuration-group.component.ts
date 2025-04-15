@@ -89,6 +89,8 @@ export class ConfigurationGroupComponent implements AfterViewInit {
      */
     @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
 
+    private instances: any[] = [];
+
     constructor(
         private readonly cdRef: ChangeDetectorRef,
     ) {
@@ -221,8 +223,24 @@ export class ConfigurationGroupComponent implements AfterViewInit {
             this.additionalConfigs?.configs.forEach(config => {
                 const componentRef: any = this.componentContainer.createComponent(config.component);
                 componentRef.instance.form = this.form;
+                this.instances.push(componentRef.instance);
             });
         }
+    }
+
+    /**
+     * Patches the values of the additional configurations groups.
+     * @param obj The configuration object.
+     */
+    public patchComponents(obj: Object) {
+        if (this.additionalConfigs === null) {
+            return;
+        }
+
+        this.additionalConfigs.configs.forEach((config, i) => {
+            // @ts-ignore
+            this.instances[i].patchValue(obj[config.formGroupName]);
+        });
     }
 
 }

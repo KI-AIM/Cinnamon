@@ -1,8 +1,7 @@
 <form (ngSubmit)="onSubmit()" [formGroup]="form">
 
     <ng-container *ngIf="algorithmDefinition">
-        <app-configuration-group [form]="form" [fromGroupName]="''"
-                                 [group]="algorithmDefinition"
+        <app-configuration-group #rootGroup [form]="form" [fromGroupName]="''" [group]="algorithmDefinition"
                                  [disabled]="disabled" [isOption]="false" [additionalConfigs]="additionalConfigs">
         </app-configuration-group>
     </ng-container>

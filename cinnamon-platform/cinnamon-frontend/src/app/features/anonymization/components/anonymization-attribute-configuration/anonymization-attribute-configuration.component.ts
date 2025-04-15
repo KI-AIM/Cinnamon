@@ -1,41 +1,50 @@
-import { Component, Input, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
-import { AnonymizationAttributeConfigurationDirective } from '../../directives/anonymization-attribute-configuration.directive';
 import { AnonymizationAttributeConfigurationService } from '../../services/anonymization-attribute-configuration.service';
 import { MatSelect } from '@angular/material/select';
-import { AnonymizationAttributeConfiguration, AnonymizationAttributeRowConfiguration } from 'src/app/shared/model/anonymization-attribute-config';
+import { AnonymizationAttributeRowConfiguration, } from 'src/app/shared/model/anonymization-attribute-config';
 import { Subscription } from "rxjs";
-import { FormGroup } from '@angular/forms';
-import { AnonymizationAttributeRowComponent } from '../anonymization-attribute-row/anonymization-attribute-row.component';
+import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+
 @Component({
     selector: 'app-anonymization-attribute-configuration',
     templateUrl: './anonymization-attribute-configuration.component.html',
     styleUrls: ['./anonymization-attribute-configuration.component.less'],
     standalone: false
 })
-export class AnonymizationAttributeConfigurationComponent implements OnInit {
+export class AnonymizationAttributeConfigurationComponent implements OnInit, OnDestroy {
 
     @Input() public form!: FormGroup;
 
     @ViewChild("attributeDropdown") attributeDropdown: MatSelect;
-    @ViewChild(AnonymizationAttributeConfigurationDirective, {
-        static: true,
-    }) target: AnonymizationAttributeConfigurationDirective;
 
-    @ViewChildren('configRow') inputComponents: QueryList<AnonymizationAttributeRowComponent>;
     dataConfiguration: DataConfiguration;
-    error: string | null = null;
 
     private dataConfigurationSubscription: Subscription;
 
     constructor(
         public configuration: DataConfigurationService,
-        public attributeConfigurationService: AnonymizationAttributeConfigurationService
+        public attributeConfigurationService: AnonymizationAttributeConfigurationService,
+        private formBuilder: FormBuilder,
     ) {
     }
 
+    /**
+     * Key for the form group of this configuration component.
+     */
+    static get formGroupName(): string {
+        return 'attributeConfiguration';
+    }
+
+    /**
+     * Initializes the given form to be used by this component.
+     * @param form The form to be initialized.
+     */
+    static initForm(form: FormGroup): void {
+        form.addControl(AnonymizationAttributeConfigurationComponent.formGroupName, new FormArray([], Validators.required));
+    }
 
     ngOnInit() {
         this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
@@ -48,21 +57,10 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
     }
 
     /**
-     * Returns currently stored anonymization attribute configuration
-     * @returns AnonymizationAttributeConfiguration | null
+     * Checks if the form has at least one attribute configuration.
      */
-    getAttributeConfiguration(): AnonymizationAttributeConfiguration | null {
-        return this.attributeConfigurationService.getAttributeConfiguration();
-    }
-
-    hasAttributeConfiguration(): boolean {
-        let config = this.attributeConfigurationService.getAttributeConfiguration();
-        if (config !== null) {
-            if (config.attributeConfiguration.length > 0) {
-                return true
-            }
-        }
-        return false;
+    protected hasAttributeConfiguration(): boolean {
+        return this.getAttributeConfigurationForms(this.form).length > 0;
     }
 
     /**
@@ -71,8 +69,8 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
      * used in the anonymization attribute configuration
      * @returns Array<ColumnConfiguration>
      */
-    getAvailableConfigurations() {
-        const indicesAlreadyUsed = new Set(this.attributeConfigurationService.getAttributeConfiguration()?.attributeConfiguration.map(item => item.index));
+    protected getAvailableConfigurations() {
+        const indicesAlreadyUsed = new Set(this.getAttributeConfigurationForms(this.form).map(item => item.controls['index'].value));
 
         if (this.dataConfiguration !== undefined && this.dataConfiguration !== null) {
             return this.dataConfiguration.configurations.filter(item => !indicesAlreadyUsed.has(item.index))
@@ -86,7 +84,7 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
      * sorted by their index attribute
      * @returns Array<ColumnConfiguration>
      */
-    getAvailableConfigurationsSortedById() {
+    protected getAvailableConfigurationsSortedById() {
         return this.getAvailableConfigurations().sort((a, b) => a.index - b.index);
     }
 
@@ -99,82 +97,83 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit {
      * automatically.
      * @param value
      */
-    onSelectionChange(value: any) {
+    protected onSelectionChange(value: any) {
         const selectedRowIndex = value;
         const selectedRow = this.getAvailableConfigurations().find(
             (row) => row.index === selectedRowIndex
         );
 
         if (selectedRow !== null && selectedRow !== undefined) {
-            let newRowConfiguration =
-                new AnonymizationAttributeRowConfiguration();
-
-            newRowConfiguration.index = selectedRow.index;
-            newRowConfiguration.name = selectedRow.name;
-            newRowConfiguration.dataType = selectedRow.type;
-            newRowConfiguration.scale = selectedRow.scale;
-            newRowConfiguration.intervalSize = 10;
-
-            this.attributeConfigurationService.addRowConfiguration(newRowConfiguration);
-
             this.attributeDropdown.value = null;
+            this.addAttributeConfigurationRow(selectedRow);
         }
     }
 
     addAllAttributes() {
         this.getAvailableConfigurations().forEach(selectedRow => {
             if (selectedRow !== null && selectedRow !== undefined) {
-                let newRowConfiguration =
-                    new AnonymizationAttributeRowConfiguration();
-
-                newRowConfiguration.index = selectedRow.index;
-                newRowConfiguration.name = selectedRow.name;
-                newRowConfiguration.dataType = selectedRow.type;
-                newRowConfiguration.scale = selectedRow.scale;
-                newRowConfiguration.intervalSize = 10;
-
-                this.attributeConfigurationService.addRowConfiguration(newRowConfiguration);
+                this.addAttributeConfigurationRow(selectedRow);
             }
         });
     }
 
-    removeAllAttributes() {
-        this.attributeConfigurationService.getAttributeConfiguration()?.attributeConfiguration.forEach(config => {
-            this.removeAttributeConfigurationRow(config);
+    /**
+     * Sets the value of the form.
+     * Used by {@link ConfigurationGroupComponent#patchComponents}.
+     *
+     * @param configs
+     */
+    public patchValue(configs: AnonymizationAttributeRowConfiguration[]) {
+        this.removeAllAttributes();
+        configs.forEach(config => {
+            const group = this.formBuilder.group({
+                attributeProtection: [config.attributeProtection, [Validators.required]],
+                dataType: [{value: config.dataType, disabled: true}, [Validators.required]],
+                index: [config.index, [Validators.required]],
+                intervalSize: [config.intervalSize, [Validators.required]],
+                name: [{value: config.name, disabled: true}, [Validators.required]],
+                scale: [{value: config.scale, disabled: true}, [Validators.required]],
+            });
+            this.getAttributeConfigurationFormArray(this.form).push(group);
         });
+    }
 
-        this.inputComponents.forEach(component => {
-            component.removeFormControlElements(); 
-        }); 
+    private addAttributeConfigurationRow(selectedRow: ColumnConfiguration) {
+        const defaultAttributeProtection = this.attributeConfigurationService.getDefaultAttributeProtection(selectedRow.scale, selectedRow.type);
+
+        const group = this.formBuilder.group({
+            attributeProtection: [defaultAttributeProtection, [Validators.required]],
+            dataType: [{value: selectedRow.type, disabled: true}, [Validators.required]],
+            index: [selectedRow.index, [Validators.required]],
+            intervalSize: [10, [Validators.required]], // Interval size is set in the row component
+            name: [{value: selectedRow.name, disabled: true}, [Validators.required]],
+            scale: [{value: selectedRow.scale, disabled: true}, [Validators.required]],
+        });
+        this.getAttributeConfigurationFormArray(this.form).push(group);
+    }
+
+    protected getAttributeConfigurationFormArray(form: FormGroup): FormArray {
+        return form.controls[AnonymizationAttributeConfigurationComponent.formGroupName] as FormArray;
+    }
+
+    protected getAttributeConfigurationForms(form: FormGroup): FormGroup[] {
+        return this.getAttributeConfigurationFormArray(form).controls as FormGroup[];
     }
 
     /**
-     * Returns the ColumnConfiguration for a given index
-     * @param index to search for
-     * @returns ColumnConfiguration, null if index is not found
+     * Removes all attribute configurations.
+     * @protected
      */
-    getConfigurationForIndex(index: number): ColumnConfiguration | null {
-        const selectedRow = this.dataConfiguration.configurations.find(
-            (row) => row.index === index
-        );
-
-        if (selectedRow !== null && selectedRow !== undefined) {
-            return selectedRow;
-        } else {
-            return null
-        }
+    protected removeAllAttributes() {
+        this.getAttributeConfigurationFormArray(this.form).clear();
     }
 
     /**
      * Event to remove a given anonymization attribute configuration
-     * @param attributeConfigurationRow to delete
+     * @param index to delete.
      */
-    removeAttributeConfigurationRow(attributeConfigurationRow: AnonymizationAttributeRowConfiguration) {
-        this.attributeConfigurationService.removeRowConfigurationById(attributeConfigurationRow.index);
-    }
-
-    get valid(): boolean {
-        return !this.form.invalid;
+    protected removeAttributeConfigurationRow(index: number) {
+        this.getAttributeConfigurationFormArray(this.form).removeAt(index);
     }
 
 }

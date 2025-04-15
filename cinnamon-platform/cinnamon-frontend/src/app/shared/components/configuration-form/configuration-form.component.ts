@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
@@ -60,6 +60,8 @@ export class ConfigurationFormComponent implements OnInit {
     @Output() public submitConfiguration = new EventEmitter<Object>();
 
     @ViewChildren(ConfigurationGroupComponent) private groups: QueryList<ConfigurationGroupComponent>;
+
+    @ViewChild(ConfigurationGroupComponent) private rootGroup: ConfigurationGroupComponent;
 
     constructor(
         private readonly anonService: AlgorithmService,
@@ -136,6 +138,7 @@ export class ConfigurationFormComponent implements OnInit {
                 group.handleMissingOptions(configuration);
             }
             this.form.patchValue(configuration);
+            this.rootGroup.patchComponents(configuration);
         }, 100);
     }
 
@@ -204,7 +207,15 @@ export class ConfigurationFormComponent implements OnInit {
      * @private
      */
     private createForm(algorithmDefinition: AlgorithmDefinition): FormGroup {
-        return this.createGroup(algorithmDefinition);
+        const form = this.createGroup(algorithmDefinition);
+
+        if (this.additionalConfigs) {
+            for (const additionalConfig of this.additionalConfigs.configs) {
+                additionalConfig.initializeForm(form);
+            }
+        }
+
+        return form;
     }
 
     private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }) {

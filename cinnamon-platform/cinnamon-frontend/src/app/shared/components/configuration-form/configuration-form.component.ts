@@ -1,4 +1,14 @@
-import { Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    QueryList,
+    ViewChild,
+    ViewChildren
+} from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
@@ -65,6 +75,7 @@ export class ConfigurationFormComponent implements OnInit {
 
     constructor(
         private readonly anonService: AlgorithmService,
+        private readonly changeD: ChangeDetectorRef,
         private readonly errorHandlingService: ErrorHandlingService,
     ) {
        this.form = new FormGroup({});
@@ -139,6 +150,7 @@ export class ConfigurationFormComponent implements OnInit {
             }
             this.form.patchValue(configuration);
             this.rootGroup.patchComponents(configuration);
+            this.changeD.detectChanges();
         }, 100);
     }
 

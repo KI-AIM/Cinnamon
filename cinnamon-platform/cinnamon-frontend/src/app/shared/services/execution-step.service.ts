@@ -24,8 +24,6 @@ import { ErrorHandlingService } from "./error-handling.service";
 export abstract class ExecutionStepService {
     private readonly baseUrl = environments.apiUrl + "/api/process";
 
-    private _error: string | null = null;
-
     private _statusSubject: BehaviorSubject<ExecutionStep | null>;
 
     /**
@@ -198,7 +196,6 @@ export abstract class ExecutionStepService {
     }
 
     private update(executionStep: ExecutionStep) {
-        this._error = null;
         this.setState(executionStep.status);
         this._statusSubject.next(executionStep);
     }

@@ -2,7 +2,6 @@ import io
 import os
 import sys
 import time
-import logging
 from multiprocessing import Process
 from threading import Event
 
@@ -12,19 +11,17 @@ import yaml
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 
-import api_utility.logging.logger
 from api_utility.status.status_updater import initialize_status_file
 from api_utility.status.status_updater import update_status
 from api_utility.status.status_updater import InterceptStdOut
 from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
+from data_processing.pre_process import pre_process_dataframe
 
 
 app = Flask(__name__)
-
 tasks = {}
 task_locks = {}
-
 CORS(app)
 
 
@@ -75,35 +72,24 @@ def initialize_input_data(synthesizer_name):
     return session_key, callback_url, file_path_status, attribute_config, algorithm_config, data
 
 
-def prepare_callback_data(samples, train_dataset, test_dataset, synthesizer_model):
+def prepare_callback_data(samples, synthesizer_model):
     """
     Prepare synthetic data and model for callback.
 
     Args:
         samples (pd.DataFrame): Generated synthetic data.
-        train_dataset (pd.DataFrame): Training dataset.
-        test_dataset (pd.DataFrame): Testing dataset.
         synthesizer_model (bytes): Serialized synthesizer model.
 
     Returns:
         dict: A dictionary of file-like objects for callback POST request.
     """
-    # Convert DataFrames to CSV strings
     csv_synthetic_data = samples.to_csv(index=False)
-    csv_train = train_dataset.to_csv(index=False)
-    csv_test = test_dataset.to_csv(index=False)
 
-    # Store CSV data in in-memory file-like objects
     synthetic_data = io.BytesIO(csv_synthetic_data.encode('utf-8'))
-    train = io.BytesIO(csv_train.encode('utf-8'))
-    test = io.BytesIO(csv_test.encode('utf-8'))
     synthesizer_model = io.BytesIO(synthesizer_model)
 
-    # Prepare files for POST request
     files = {
         'synthetic_data': ('synthetic_data.csv', synthetic_data),
-        'train': ('train.csv', train),
-        'test': ('test.csv', test),
         'model': ('model.pkl', synthesizer_model),
     }
 
@@ -113,7 +99,7 @@ def prepare_callback_data(samples, train_dataset, test_dataset, synthesizer_mode
 def synthesize_data(synthesizer_name, file_path_status, attribute_config, algorithm_config, data,
                     callback_url, session_key):
     """
-    Orchestrates the entire data synthesis process.
+    Orchestrates the entire data synthesis process and sends error messages to the callback API.
 
     Args:
         synthesizer_name (str): Name of the synthesizer.
@@ -121,98 +107,201 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         attribute_config (dict): Attribute configuration.
         algorithm_config (dict): Algorithm configuration.
         data (pd.DataFrame): Input dataset.
-        callback_url (str): Callback URL to send results.
+        callback_url (str): Callback URL to send results or errors.
         session_key (str): Unique session identifier.
 
     Returns:
         dict: Result of the synthesis process.
     """
     try:
-        print('Synthesizer selected: ', synthesizer_name)
-        # Synthesize Data
+        print('Synthesizer selected:', synthesizer_name)
+        init_time = time.time()
+
+        # Step 0: Check if the synthesizer exists
         if synthesizer_name not in synthesizer_classes:
+            error_message = f"Error: Synthesizer '{synthesizer_name}' not found"
+            send_callback_error(callback_url, session_key, error_message, 400)
             return {
-                'message': f"Error: Synthesizer '{synthesizer_name}' not found",
+                'message': error_message,
                 'session_key': session_key,
                 'status_code': 400
             }
 
-        print('Synthesizer found: ', synthesizer_name)
-        init_time = time.time()
-        synthesizer_class = synthesizer_classes[synthesizer_name]['class']()
-        print('Synthesizer selected: ', synthesizer_name)
-
-        # Initialize anonymization configuration
-        synthesizer_class.initialize_anonymization_configuration(algorithm_config)
-        print('Anonymization configuration initialized')
-
-        # Initialize Attribute Configuration
-        synthesizer_class.initialize_attribute_configuration(attribute_config)
-        print('Attribute configuration initialized')
-
-        # Initialize Dataset
-        synthesizer_class.initialize_dataset(data)
-        print('Dataset initialized')
-
-        # Initialize Synthesizer
-        synthesizer_class.initialize_synthesizer()
-
-        # Get time duration for init
-        init_time = time.time() - init_time
-        update_status(file_path_status, step='initialization', duration=init_time, completed=True)
-
-        print('Synthesizer initialized')
-
-        # Fit Synthesizer
-        fit_time = time.time()
-        sys.stdout = InterceptStdOut(file_path_status, 'fitting')
-        synthesizer_class.fit()
-
-        # Get time duration for fit
-        fit_time = time.time() - fit_time
-        update_status(file_path_status, 'fitting', duration=fit_time, completed=True, remaining_time="0")
-        print('Synthesizer fitted')
-
-        # Sample data from synthesizer
-        sample_time = time.time()
-        sys.stdout = sys.__stdout__
-        sys.stdout = InterceptStdOut(file_path_status, 'sampling')
-        samples = synthesizer_class.sample()
-
-        # Get time duration for sample
-        sample_time = time.time() - sample_time
-        update_status(file_path_status, 'sampling', duration=sample_time, completed=True, remaining_time="0")
-        print('Data sampled')
-
-        # Postprocessing -> pd.Dataframe
-        samples = post_process_dataframe(samples, attribute_config['configurations'])
-
-        # Get Model
-        synthesizer_model = synthesizer_class.get_model()
-        print('Model retrieved')
-
-        # Prepare Callback
-        files = prepare_callback_data(samples, synthesizer_class.trainDataset,
-                                      synthesizer_class.validateDataset, synthesizer_model)
+        # Step 1: Initialize the synthesizer
         try:
+            synthesizer_class = synthesizer_classes[synthesizer_name]['class']()
+            print('Synthesizer class initialized:', synthesizer_name)
+        except RuntimeError as e:
+            error_message = f"Error during initialization of synthesizer. {str(e)}"
+            send_callback_error(callback_url, session_key, error_message, 400)
+            return {
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 400
+            }
+
+        # Step 2: Initialize anonymization configuration
+        try:
+            synthesizer_class.initialize_anonymization_configuration(algorithm_config)
+            print('Anonymization configuration initialized.')
+        except RuntimeError as e:
+            error_message = f"Error during initialization of anonymization configuration. {str(e)}"
+            send_callback_error(callback_url, session_key, error_message, 400)
+            return {
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 400
+            }
+
+        # Step 3: Initialize attribute configuration
+        try:
+            synthesizer_class.initialize_attribute_configuration(attribute_config)
+            print('Attribute configuration initialized.')
+        except RuntimeError as e:
+            error_message = f"Error during attribute configuration. {str(e)}"
+            send_callback_error(callback_url, session_key, error_message, 400)
+            return {
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 400
+            }
+
+        # Step 4: Pre-process sampled data
+        try:
+            pre_processed_data, all_missing_values_column = pre_process_dataframe(data, attribute_config['configurations'])
+            print("Dataset preprocessed.")
+        except Exception as e:
+            error_message = f"Error during pre-processing. {str(e)}"
+            send_callback_error(callback_url, session_key, error_message, 500)
+            return {
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 500
+            }
+        
+        print(pre_processed_data.head().to_string())
+
+        # Step 5: Initialize dataset
+        try:
+            synthesizer_class.initialize_dataset(pre_processed_data)
+            print('Dataset initialized.')
+        except RuntimeError as e:
+            print("Error in Dataset Initialoization")
+            error_message = f"Error during dataset initialization. {str(e)}"
+            send_callback_error(callback_url, session_key, error_message, 400)
+            return {
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 400
+            }
+
+        # Step 6: Initialize synthesizer
+        try:
+            synthesizer_class.initialize_synthesizer()
+            print('Synthesizer initialized.')
+            init_time = time.time() - init_time
+            update_status(file_path_status, step='initialization', duration=init_time, completed=True)
+        except RuntimeError as e:
+            error_message = f"Error during synthesizer initialization. {str(e)}"
+            send_callback_error(callback_url, session_key, error_message, 500)
+            return {
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 500
+            }
+
+        # Step 7: Fit the synthesizer
+        try:
+            fit_time = time.time()
+            sys.stdout = InterceptStdOut(file_path_status, 'fitting')
+            synthesizer_class.fit()
+            fit_time = time.time() - fit_time
+            update_status(file_path_status, 'fitting', duration=fit_time, completed=True, remaining_time="0")
+            print('Synthesizer fitted.')
+        except RuntimeError as e:
+            error_message = f"Error during synthesizer fitting. {str(e)}"
+            send_callback_error(callback_url, session_key, error_message, 500)
+            return {
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 500
+            }
+
+        # Step 8: Sample data
+        try:
+            sample_time = time.time()
+            sys.stdout = sys.__stdout__
+            sys.stdout = InterceptStdOut(file_path_status, 'sampling')
+            samples = synthesizer_class.sample()
+            sample_time = time.time() - sample_time
+            update_status(file_path_status, 'sampling', duration=sample_time, completed=True, remaining_time="0")
+            print('Data sampled.')
+        except RuntimeError as e:
+            error_message = f"Error during data sampling. {str(e)}"
+            send_callback_error(callback_url, session_key, error_message, 500)
+            return {
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 500
+            }
+        
+        print(samples)
+
+        # Step 9: Post-process sampled data
+        try:
+            print('Starting Post-processing')
+            samples = post_process_dataframe(samples, attribute_config['configurations'], all_missing_values_column)
+            print('Data Post-processed')
+        except Exception as e:
+            error_message = f"Error during post-processing. {str(e)}"
+            print(error_message)
+            send_callback_error(callback_url, session_key, error_message, 500)
+            return {
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 500
+            }
+
+        # Step 10: Retrieve the model
+        try:
+            synthesizer_model = synthesizer_class.get_model()
+            print('Model retrieved.')
+        except RuntimeError as e:
+            error_message = f"Error during model retrieval. {str(e)}"
+            send_callback_error(callback_url, session_key, error_message, 500)
+            return {
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 500
+            }
+
+        # Step 11: Send callback
+        try:
+            files = prepare_callback_data(samples, synthesizer_model)
             requests.post(callback_url, files=files, data={'session_key': session_key})
             update_status(file_path_status, 'callback', completed=True)
             return {
                 'message': 'Synthetization Finished, successfully sent callback notification',
-                'session_key': session_key
+                'session_key': session_key,
+                'status_code': 200
             }
-
         except requests.exceptions.RequestException as e:
+            error_message = f"Synthetization Finished, failed to send callback notification. {str(e)}"
+            send_callback_error(callback_url, session_key, error_message, 500)
             return {
-                'message': 'Synthetization Finished, failed to send callback notification',
-                'error': str(e),
-                'session_key': session_key
+                'message': error_message,
+                'session_key': session_key,
+                'status_code': 500
             }
 
     except Exception as e:
+        # Catch any unexpected errors
+        error_message = f"Unexpected error occurred: {str(e)}"
+        send_callback_error(callback_url, session_key, error_message, 500)
         return {
-            'message': f'Error during synthetization: {str(e)}',
-            'session_key': session_key
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
         }
 
 
@@ -384,33 +473,79 @@ def cancel_synthetization():
                         'session_key': task_id}), 500
 
 
-# Test for correct callback function
 @app.route('/test_callback', methods=['POST'])
 def test_callback():
     """
     Test endpoint for the callback functionality.
 
-    Args:
-        session_key (str): Unique session key for the synthetization process.
-
     Returns:
-        JSON: A success message containing the session key.
+        JSON: A success message containing the session key and details about received files.
     """
-    session_key = request.form['session_key']
-    print('Callback function called with session key:', session_key)
+    try:
+        # Parse JSON data
+        if request.is_json:
+            data = request.get_json()
+            session_key = data.get('session_key', None)
+            message = data.get('message', None)
+            status_code = data.get('status_code', None)
 
-    files = request.files
-    for file_key in files:
-        # Print filename
-        print('File:', file_key)
+        else:
+            raise ValueError("Request must be in JSON format")
 
-    return jsonify({'message': 'Callback function called', 'session_key': session_key}), 200
+        print('Callback function called with session key:', session_key)
+        print('Message:', message)
+        print('Status Code:', status_code)
+
+        # Handle file uploads (if any)
+        files = request.files
+        for file_key in files:
+            file = files[file_key]
+            print(f"File received: {file_key}, filename: {file.filename}")
+
+        return jsonify({
+            'message': 'Callback function called successfully',
+            'session_key': session_key,
+            'received_files': list(files.keys())  # List all received file keys
+        }), 200
+
+    except Exception as e:
+        print(f"Error in test_callback: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+
+
+def send_callback_error(callback_url, session_key, message, status_code):
+    """
+    Sends error messages to the provided callback URL using multipart/form-data.
+
+    Args:
+        callback_url (str): The client's callback URL.
+        session_key (str): Unique session identifier.
+        message (str): The error message to send.
+        status_code (int): The HTTP status code to include in the callback.
+        part_name (str): Name of the part for the error message (as specified in application.properties).
+    """
+    # Prepare the error message as a file-like object
+    error_message = io.BytesIO(message.encode('utf-8'))  # Convert error message to bytes
+
+    # Prepare the data for the multipart/form-data request
+    files = {
+        'error_message': ('error_message.txt', error_message, 'text/plain'),  # Error message as a form part
+    }
+    data = {
+        'session_key': session_key,  # Include session key as form data
+        'status_code': status_code,  # Include status code as form data
+    }
+
+    try:
+        print(f"Sending error callback to {callback_url} with data: {data} and files: {files}")
+        response = requests.post(callback_url, files=files, data=data, timeout=5)
+        print(f"Response status code: {response.status_code}")
+        print(f"Response text: {response.text}")
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send error to callback URL: {str(e)}")
 
 
 if __name__ == '__main__':
-    api_utility.logging.logger.setup_logging()
-    logger = logging.getLogger()
-    logger.info('Starting API server')
-
     app.run(debug=True)
 

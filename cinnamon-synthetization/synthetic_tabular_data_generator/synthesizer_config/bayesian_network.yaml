@@ -6,37 +6,13 @@ description: A Bayesian Network model for generating data, implemented using the
 URL: /start_synthetization_process/bayesian_network
 configurations:
   model_parameter:
-    display_name: Model Parameters
-    description: Define the model parameters for training and generating data using Bayesian networks.
+    display_name: Model Architecture
+    description: DDefine the architecture of the model.
     parameters:
-      - name: struct_learning_n_iter
-        type: integer
-        label: Iterations
-        description: The number of times the model will try to learn the best network structure. More iterations can help improve the structure.
-        default_value: 100
-        min_value: 1
-        max_value: 1000
-      - name: struct_learning_search_method
-        type: string
-        label: Method for Structure Learning
-        description: The algorithm used to search for the best network structure. Options include hillclimb, pc, tree_search, mmhc, and exhaustive.
-        default_value: tree_search
-      - name: struct_learning_score
-        type: string
-        label: Scoring for Structure Learning
-        description: The method used to evaluate the quality of the network structure. Options include k2, bdeu, bic, and bds.
-        default_value: k2
-      - name: struct_max_indegree
-        type: integer
-        label: Maximum Number of Parents
-        description: The maximum number of connections (parents) allowed for each node in the network.
-        default_value: 4
-        min_value: 1
-        max_value: 10
       - name: encoder_max_clusters
         type: integer
         label: Maximum Number of Data Clusters
-        description: The maximum number of clusters for encoding the data. More clusters allow finer granularity in the encoding.
+        description: Fewer clusters produce more general synthetic data that may miss important details. More clusters allow the model to generate data with finer structure, but if too specific, this can lead to data leakage from the training set.
         default_value: 10
         min_value: 1
         max_value: 50
@@ -47,35 +23,20 @@ configurations:
         default_value: 0.01
         min_value: 0.0
         max_value: 1.0
-      - name: compress_dataset
-        type: boolean
-        label: Compress Dataset
-        description: Whether to remove redundant features from the dataset before training to improve efficiency.
-        default_value: False
-      - name: random_state
-        type: integer
-        label: Random Seed
-        description: The seed for random number generation to ensure reproducibility of results.
-        default_value: 0
-      - name: sampling_patience
-        type: integer
-        label: Sampling Patience
-        description: The maximum number of iterations to wait for the generated data to match the expected format before stopping.
-        default_value: 500
   model_fitting:
-    display_name: Model Fitting
-    description: Parameters for training the model with data, including how to split data into training and testing sets.
+    display_name: Training Parameters
+    description: Define the parameters, that are used for training the model.
     parameters:
-      - name: train
-        type: float
-        label: Train Data Fraction
-        description: The fraction of data used for training. The rest will be used for testing the model.
-        default_value: 0.8
-        min_value: 0.0
-        max_value: 1.0
+      - name: struct_learning_n_iter
+        type: integer
+        label: Iterations
+        description: The number of times the model will try to learn the best network structure. More iterations can help improve the structure.
+        default_value: 100
+        min_value: 1
+        max_value: 1000
   sampling:
     display_name: Sampling
-    description: Parameters for generating synthetic data from the trained model.
+    description: Define the sampling parameters, that are used for generating the synthetic data. 
     parameters:
       - name: num_samples
         type: integer

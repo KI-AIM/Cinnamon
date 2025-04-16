@@ -6,71 +6,37 @@ description: An implementation of Adversarial Random Forest for data generation 
 URL: /start_synthetization_process/arf
 configurations:
   model_parameter:
-    display_name: Model Parameters
-    description: Define the model parameters, used to configure the architecture and training of the adversarial model.
+    display_name: Model Architecture
+    description: Define the architecture of the model.
     parameters:
       - name: num_trees
         type: integer
         label: Number of Trees
-        description: The number of trees in the random forest.
+        description: Adding more trees allows the model to capture more patterns from the training data, which can lead to more realistic and diverse synthetic samples, but increases time and memory usage.
         default_value: 30
         min_value: 1
         max_value: 100
-      - name: delta
-        type: float
-        label: Delta
-        description: Delta parameter for the model.
-        default_value: 0
-        min_value: 0
-        max_value: 1.0
-      - name: max_iters
-        type: integer
-        label: Maximum Iterations
-        description: The maximum number of iterations for training.
-        default_value: 10
-        min_value: 1
-        max_value: 1000
       - name: min_node_size
         type: integer
         label: Minimum Node Size
-        description: The minimum size of nodes in the trees.
+        description: Smaller values can make the model focus too much on small data variations, while larger values may cause it to overlook meaningful patterns.
         default_value: 5
         min_value: 1
         max_value: 100
-      - name: random_state
-        type: integer
-        label: Random State
-        description: Random seed for reproducibility.
-        default_value: 0
-      - name: sampling_patience
-        type: integer
-        label: Sampling Patience
-        description: Maximum number of sampling attempts.
-        default_value: 500
-      - name: compress_dataset
-        type: boolean
-        label: Compress Dataset
-        description: Whether to compress the dataset.
-        default_value: False
-      - name: early_stop
-        type: boolean
-        label: Early Stop
-        description: Whether to enable early stopping during training.
-        default_value: True
   model_fitting:
     display_name: Model Fitting
-    description: Parameters for setting up how to train and test the model with your data.
+    description: Define the parameters, that are used for training the model.
     parameters:
-      - name: train
-        type: float
-        label: Train Data Fraction
-        description: The fraction of data used for training.
-        default_value: 0.8
-        min_value: 0.0
-        max_value: 1.0
+      - name: max_iters
+        type: integer
+        label: Maximum Iterations
+        description: The maximum number of iterations for training until accuracy plateaus. More iterations can improve synthetic data quality but may reduce diversity.
+        default_value: 10
+        min_value: 1
+        max_value: 1000
   sampling:
     display_name: Sampling
-    description: Parameters for generating synthetic data from the trained model.
+    description: Define the sampling parameters, that are used for generating the synthetic data. 
     parameters:
       - name: num_samples
         type: integer

@@ -12,14 +12,14 @@ configurations:
       - name: num_trees
         type: integer
         label: Number of Trees
-        description: The number of trees in the random forest.
+        description: Adding more trees allows the model to capture more patterns from the training data, which can lead to more realistic and diverse synthetic samples, but increases time and memory usage.
         default_value: 30
         min_value: 1
         max_value: 100
       - name: min_node_size
         type: integer
         label: Minimum Node Size
-        description: The minimum size of nodes in the trees.
+        description: Minimum number of samples required to split a node. Smaller values can make the model focus too much on small data variations, while larger values may cause it to overlook meaningful patterns.
         default_value: 5
         min_value: 1
         max_value: 100
@@ -30,7 +30,7 @@ configurations:
       - name: max_iters
         type: integer
         label: Maximum Iterations
-        description: The maximum number of iterations for training.
+        description: The maximum number of iterations for training until accuracy plateaus. More iterations can improve synthetic data quality but may reduce diversity.
         default_value: 10
         min_value: 1
         max_value: 1000

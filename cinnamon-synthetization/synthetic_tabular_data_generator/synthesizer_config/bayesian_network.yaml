@@ -12,7 +12,7 @@ configurations:
       - name: encoder_max_clusters
         type: integer
         label: Maximum Number of Data Clusters
-        description: The maximum number of clusters for encoding the data. More clusters allow finer granularity in the encoding.
+        description: Fewer clusters produce more general synthetic data that may miss important details. More clusters allow the model to generate data with finer structure, but if too specific, this can lead to data leakage from the training set.
         default_value: 10
         min_value: 1
         max_value: 50
@@ -24,16 +24,6 @@ configurations:
         min_value: 0.0
         max_value: 1.0
   model_fitting:
-    display_name: Training Parameters
-    description: Define the model fitting parameters, that are used for training the model. The model fitting parameters are used to configure the training process.
-    parameters:
-      - name: struct_learning_n_iter
-        type: integer
-        label: Iterations
-        description: The number of times the model will try to learn the best network structure. More iterations can help improve the structure.
-        default_value: 100
-        min_value: 1
-        max_value: 1000
   sampling:
     display_name: Sampling
     description: Parameters for generating synthetic data from the trained model.

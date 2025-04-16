@@ -12,19 +12,19 @@ configurations:
       - name: embedding_dim
         type: integer
         label: Embedding Dimensions
-        description: The size of the latent space (embedding_dim) controls the capacity of the model. Larger embedding_dim enables the model to capture more intricate patterns and details but at the cost of increased computational complexity and risk of overfitting. Smaller embedding_dim simplifies the model and reduces computational requirements but may result in loss of detail and lower-quality data reconstructions.
+        description: Embedding Dimensions controls how much detail the model can capture when learning from the data. Higher values allow the model to represent more differences between data points, while lower values may lead to simpler, more compressed representations.
         default_value: 128
         min_value: 1
         max_value: 1000
       - name: compress_dims
         type: list
         label: Compress Dimensions
-        description: The size of each hidden layer in the encoder. The size of each layer (defined by compress_dims) affects how well the encoder can learn and represent the underlying structure of the input data. Larger layer sizes allow the model to potentially capture more detailed features but also increase the risk of overfitting (too specific to the training data).
+        description: Each value in the tuple represents one processing layer in the network. Fewer or smaller layers make the model faster, but the generated data might miss complex patterns.
         default_value: [128, 128]
       - name: decompress_dims
         type: list
         label: Decompress Dimensions
-        description: The size of each layer (defined by decompress_dims) affects how well the decoder can reconstruct the original data from the latent representation. Larger layer sizes can capture more detailed aspects of the data, potentially improving reconstruction quality but also increasing the risk of overfitting (too specific to the training data) and computational expense.
+        description: Each value in the tuple represents one processing layer in the network. Fewer or smaller layers make the model faster, but the generated data might miss complex patterns. To keep training balanced, Decompress Dimensions should have similar dimensions and values as Compress Dimensions
         default_value: [128, 128]
   model_fitting:
     display_name: Training Parameters
@@ -33,14 +33,14 @@ configurations:
       - name: batch_size
         type: integer
         label: Batch Size
-        description: Number of samples per batch.
+        description: Controls how many samples are used per training step. Lower batch sizes can increase diversity but add noise; higher batch sizes make the data more consistent but may miss subtle variations.
         default_value: 100
         min_value: 1
         max_value: 1000
       - name: epochs
         type: integer
         label: Number of Epochs
-        description: Number of training epochs.
+        description: Number of training epochs. Fewer epochs may lead the model to learn only basic patterns, while more epochs help capture complex structures. Very high values can cause the model to memorize the training data instead of learning to generalize.
         default_value: 300
   sampling:
     display_name: Sampling

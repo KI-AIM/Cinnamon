@@ -30,7 +30,7 @@ configurations:
       - name: max_iters
         type: integer
         label: Maximum Iterations
-        description: The maximum number of iterations for training until accuracy plateaus. More iterations can improve synthetic data quality but may reduce diversity
+        description: The maximum number of iterations for training until accuracy plateaus. More iterations can improve synthetic data quality but may reduce diversity.
         default_value: 10
         min_value: 1
         max_value: 1000

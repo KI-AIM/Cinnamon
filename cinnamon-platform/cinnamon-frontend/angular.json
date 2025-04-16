@@ -43,7 +43,8 @@
               "node_modules/@fontsource/roboto/400.css",
               "node_modules/@fontsource/material-icons/400.css",
               "src/styles.less",
-              "src/app/styles/angular-material.scss"
+              "src/app/styles/angular-material.scss",
+              "src/app/assets/pdf.css"
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
@@ -118,7 +119,8 @@
               "node_modules/bootstrap-icons/font/bootstrap-icons.css",
               "node_modules/@fontsource/roboto/400.css",
               "src/styles.less",
-              "src/app/styles/angular-material.scss"
+              "src/app/styles/angular-material.scss",
+              "src/app/assets/pdf.css"
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"

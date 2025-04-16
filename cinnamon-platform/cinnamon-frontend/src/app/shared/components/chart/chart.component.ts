@@ -48,6 +48,15 @@ export class ChartComponent implements OnInit, OnChanges {
         return {};
     }
 
+    public get dataUrl(): string | null {
+        return this.chartInstances
+            ? this.chartInstances.getDataURL({
+                type: 'jpeg', pixelRatio: 2,
+                backgroundColor: '#fff',
+            })
+            : null;
+    }
+
     private downloadGraph() {
         const imageUrl = this.chartInstances.getDataURL({
             type: 'jpeg',

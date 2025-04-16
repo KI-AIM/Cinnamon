@@ -24,7 +24,7 @@ configurations:
       - name: discriminator_dim
         type: list
         label: Discriminator Dimensions
-        description: The discriminator learns to strictly evaluate how synthetic or real the data is. To keep training balanced, discriminator_dim should have similar dimenesions and values as generator_dim
+        description: The discriminator learns to strictly evaluate how synthetic or real the data is. To keep training balanced, discriminator_dim should have similar dimenesions and values as generator_dim.
         default_value: [256, 256, 256]
   model_fitting:
     display_name: Training Parameters

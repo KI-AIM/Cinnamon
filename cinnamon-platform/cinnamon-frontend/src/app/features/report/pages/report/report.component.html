@@ -1,6 +1,11 @@
 <div class="vertical-boxes">
     <div class="box">
         <button mat-button mat-raised-button color="primary" (click)="printReport()">Print</button>
+
+        Click on print, a new browser window with a print dialog should open.
+        Select Destination "Save as PDF"
+        Under "More settings", uncheck "Headers and footers" and check "Background graphics"
+
     </div>
 
     <ng-content *ngIf="{mc: metricConfig$ | async, statistics: statistics$ | async} as reportData">
@@ -386,15 +391,21 @@
                         <p>Confidential - For Internal Use Only</p>
                     </div>
 
-                <div style="width: 100%;">
-                    <app-chart-frequency id="chart" #chart
-                                         [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
-                                         [data]="reportData.statistics.statistics!.resemblance.attributes[0].plot.histogram!"
-                                         [limit]="null" originalSeriesLabel="Original" [simple]="true"
-                                         syntheticSeriesLabel="Protected"></app-chart-frequency>
-                </div>
                     <a id="a_chart"></a>
 
+                    <div style="width: 100%;">
+                        <app-chart-frequency id="chart1" #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                             [data]="reportData.statistics.statistics!.resemblance.attributes[0].plot.histogram!"
+                                             [limit]="null" originalSeriesLabel="Original" [simple]="false"
+                                             syntheticSeriesLabel="Protected"></app-chart-frequency>
+                    </div>
+
+                    <div style="width: 100%;">
+                        <app-chart-frequency id="chart2" #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                             [data]="reportData.statistics.statistics!.resemblance.attributes[2].plot.histogram!"
+                                             [limit]="null" originalSeriesLabel="Original" [simple]="false"
+                                             syntheticSeriesLabel="Protected"></app-chart-frequency>
+                    </div>
 
                 </div>
 

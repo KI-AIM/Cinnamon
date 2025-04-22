@@ -19,41 +19,41 @@
 
                     <a href="report#a_chart" title="A Chart" class="report-anchor-link">Go to chart</a>
 
-                    <div class="header">
+                    <div class="report-header">
                         <h1>Privacy Report</h1>
                         <p>Assessment of Resemblance, Utility and Privacy Risks</p>
                         <p>Report Date: 01.01.2025</p>
                     </div>
 
-                    <div class="section">
-                        <h2 class="header2">About this Report</h2>
+                    <div class="report-section">
+                        <h2 class="report-header2">About this Report</h2>
 
-                        <div class="intro-box">
+                        <div class="report-intro-box">
                             <p>This privacy report serves as a crucial safeguard in the era of data-driven decision
                                 making. This report provides a comprehensive assessment of how well synthetic data
                                 maintains the analytical value of the original data while mitigating privacy
                                 risks.</p>
 
-                            <h3 class="header3">Who can use this report:</h3>
-                            <div class="audience-block">
-                                <div class="audience-item">
+                            <h3 class="report-header3">Who can use this report:</h3>
+                            <div class="report-audience-block">
+                                <div class="report-audience-item">
                                     <strong>Data Privacy Officers</strong>
                                     <p>To verify compliance with privacy regulations and validate anonymization
                                         effectiveness before data sharing or publication.</p>
                                 </div>
-                                <div class="audience-item">
+                                <div class="report-audience-item">
                                     <strong>Data Scientists & Analysts</strong>
                                     <p>To understand utility limitations and statistical properties of the synthetic
                                         data for accurate model development and analysis.</p>
                                 </div>
-                                <div class="audience-item">
+                                <div class="report-audience-item">
                                     <strong>Medical Staff</strong>
                                     <p>To make informed decisions about data usage, sharing, and monetization while
                                         managing privacy risks and compliance.</p>
                                 </div>
                             </div>
 
-                            <h3 class="header3">This report enables to:</h3>
+                            <h3 class="report-header3">This report enables to:</h3>
                             <ul>
                                 <li><strong>Verify Privacy Protection:</strong> Evaluate if data meets regulatory
                                     requirements and organizational privacy standards before use.
@@ -71,29 +71,29 @@
                         </div>
                     </div>
 
-                    <div class="section">
-                        <h2 class="header2">Executive Summary</h2>
+                    <div class="report-section">
+                        <h2 class="report-header2">Executive Summary</h2>
                         <p>Here are the three dimensions, resemblance, utility, Privacy Risk displayed these values
                             are aggregated for the whole data set. Detailed analysis can be found in the following
                             chapters.</p>
 
                         <div
                             style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 20px;">
-                            <div class="metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
+                            <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
                                 <div style="font-weight: bold;">Data Resemblance Score</div>
                                 <div style="font-size: 24px; color: #3498db;">87%</div>
                                 <div style="font-size: 14px; color: #7f8c8d;">Statistical similarity to original
                                     data
                                 </div>
                             </div>
-                            <div class="metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
+                            <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
                                 <div style="font-weight: bold;">Utility Preservation</div>
                                 <div style="font-size: 24px; color: #3498db;">92%</div>
                                 <div style="font-size: 14px; color: #7f8c8d;">Analytical accuracy compared to
                                     original
                                 </div>
                             </div>
-                            <div class="metric-card" style="flex: 1; min-width: 200px; margin: 0 0 10px 0;">
+                            <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 0 10px 0;">
                                 <div style="font-weight: bold;">Privacy Risk Score</div>
                                 <div style="font-size: 24px; color: #3498db;">Low</div>
                                 <div style="font-size: 14px; color: #7f8c8d;">Re-identification risk below 0.01%
@@ -102,8 +102,8 @@
                         </div>
                     </div>
 
-                    <div class="section">
-                        <h2 class="header2">1. Overview</h2>
+                    <div class="report-section">
+                        <h2 class="report-header2">1. Overview</h2>
 
                         <p>This anonymized Dataset contains 1000 records. And has 11 Attributes over all. More
                             details about the data set can be found in the table below.</p>
@@ -141,7 +141,7 @@
                             </tr>
                         </table>
 
-                        <h3 class="header3">Anonymization Methods</h3>
+                        <h3 class="report-header3">Anonymization Methods</h3>
                         <p>In this section the applied privacy-preserving transformations are displayed. Therefore,
                             first the used privacy model is shown and then which attribute is transformed.</p>
 
@@ -198,7 +198,7 @@
                             </tr>
                         </table>
 
-                        <h3 class="header3">Synthetization Methods</h3>
+                        <h3 class="report-header3">Synthetization Methods</h3>
                         <p>CTGAN was applied to create synthetic versions of attributes while preserving statistical
                             properties and relationships. The following Parameters are used for the
                             synthetization:</p>
@@ -222,8 +222,8 @@
                         </table>
                     </div>
 
-                    <div class="section">
-                        <h2 class="header2">2. Resemblance Analysis</h2>
+                    <div class="report-section">
+                        <h2 class="report-header2">2. Resemblance Analysis</h2>
 
                         <p>The resemblance analysis evaluates how closely the synthetic/anonymized data preserves
                             the statistical properties of the original data. Overall, the dataset achieves high
@@ -232,7 +232,7 @@
                             require improvement (&lt;75%). All of the used metrics and their individual assessment
                             can be seen in Section 5.</p>
 
-                        <h3 class="header3">Attribute Level Resemblance</h3>
+                        <h3 class="report-header3">Attribute Level Resemblance</h3>
                         <p>The table below presents the aggregated resemblance metrics for each attribute, with
                             lower scores meaning better resemblance:</p>
                         <table class="report-table">
@@ -244,17 +244,17 @@
                             <tr>
                                 <td class="report-td">Age</td>
                                 <td class="report-td">0.05</td>
-                                <td class="risk-low report-td">Excellent</td>
+                                <td class="report-risk-low report-td">Excellent</td>
                             </tr>
                             <tr>
                                 <td class="report-td">Gender</td>
                                 <td class="report-td">0.17</td>
-                                <td class="risk-low report-td">Good</td>
+                                <td class="report-risk-low report-td">Good</td>
                             </tr>
                             <tr>
                                 <td class="report-td">Income</td>
                                 <td class="report-td">0.29</td>
-                                <td class="risk-medium report-td">Medium</td>
+                                <td class="report-risk-medium report-td">Medium</td>
                             </tr>
                             <tr>
                                 <td class="report-td">…</td>
@@ -264,8 +264,8 @@
                         </table>
                     </div>
 
-                    <div class="section">
-                        <h2 class="header2">3. Utility Analysis</h2>
+                    <div class="report-section">
+                        <h2 class="report-header2">3. Utility Analysis</h2>
 
                         <p>Utility analysis evaluates how well the anonymized data performs in actual analytical
                             tasks compared to the original data. We trained identical machine learning models on
@@ -275,7 +275,7 @@
                             and only 2% with significant degradation (&lt;75%). The used models as well as a
                             Detailed overview of the metrics can be seen in Section 5.</p>
 
-                        <h3 class="header3">Discriminator-based Analysis</h3>
+                        <h3 class="report-header3">Discriminator-based Analysis</h3>
                         <p>This analysis tries to train a machine learning model that is able to distinguish between
                             real and anonymized data values in the range of 0.5 are preferable that means the model
                             cannot distinguish between real and anonymized data.</p>
@@ -288,26 +288,26 @@
                             <tr>
                                 <td class="report-td">Accuracy</td>
                                 <td class="report-td">0.5</td>
-                                <td class="risk-low report-td report-td">Excellent</td>
+                                <td class="report-risk-low report-td report-td">Excellent</td>
                             </tr>
                             <tr>
                                 <td class="report-td">F1 Score</td>
                                 <td class="report-td">0.45</td>
-                                <td class="risk-low report-td report-td">Excellent</td>
+                                <td class="report-risk-low report-td report-td">Excellent</td>
                             </tr>
                             <tr>
                                 <td class="report-td">Recall</td>
                                 <td class="report-td">0.5</td>
-                                <td class="risk-low report-td report-td">Excellent</td>
+                                <td class="report-risk-low report-td report-td">Excellent</td>
                             </tr>
                             <tr>
                                 <td class="report-td">Precision</td>
                                 <td class="report-td">0.47</td>
-                                <td class="risk-medium report-td report-td">Medium</td>
+                                <td class="report-risk-medium report-td report-td">Medium</td>
                             </tr>
                         </table>
 
-                        <h3 class="header3">Machine Learning Utility</h3>
+                        <h3 class="report-header3">Machine Learning Utility</h3>
                         <p>This analysis shows how usable is the anonymized data compared to the real data in terms
                             of machine learning tasks. Therefore the anonymized data is used to train models that
                             are tested on the real data.</p>
@@ -324,34 +324,34 @@
                                 <td class="report-td">0.9</td>
                                 <td class="report-td">0.85</td>
                                 <td class="report-td">0.05</td>
-                                <td class="risk-low report-td">Excellent</td>
+                                <td class="report-risk-low report-td">Excellent</td>
                             </tr>
                             <tr>
                                 <td class="report-td">F1 Score</td>
                                 <td class="report-td">0.8</td>
                                 <td class="report-td">0.75</td>
                                 <td class="report-td">0.05</td>
-                                <td class="risk-low report-td">Excellent</td>
+                                <td class="report-risk-low report-td">Excellent</td>
                             </tr>
                             <tr>
                                 <td class="report-td">Recall</td>
                                 <td class="report-td">0.7</td>
                                 <td class="report-td">0.75</td>
                                 <td class="report-td">0.05</td>
-                                <td class="risk-low report-td">Excellent</td>
+                                <td class="report-risk-low report-td">Excellent</td>
                             </tr>
                             <tr>
                                 <td class="report-td">Precision</td>
                                 <td class="report-td">0.7</td>
                                 <td class="report-td">0.5</td>
                                 <td class="report-td">0.25</td>
-                                <td class="risk-medium report-td">Medium</td>
+                                <td class="report-risk-medium report-td">Medium</td>
                             </tr>
                         </table>
                     </div>
 
-                    <div class="section">
-                        <h2 class="header2">4. Risk Analysis</h2>
+                    <div class="report-section">
+                        <h2 class="report-header2">4. Risk Analysis</h2>
 
                         <p>Privacy risk analysis evaluates the likelihood that individuals in the dataset could be
                             re-identified through various attacks. The anonymized dataset demonstrates strong
@@ -368,17 +368,17 @@
                                 <th class="report-th">Risk Score</th>
                             </tr>
                             <tr>
-                                <td class="risk-high report-td">High</td>
+                                <td class="report-risk-high report-td">High</td>
                                 <td class="report-td">5</td>
                                 <td class="report-td">0.05</td>
                             </tr>
                             <tr>
-                                <td class="risk-medium report-td">Medium</td>
+                                <td class="report-risk-medium report-td">Medium</td>
                                 <td class="report-td">3</td>
                                 <td class="report-td">0.75</td>
                             </tr>
                             <tr>
-                                <td class="risk-low report-td">Low</td>
+                                <td class="report-risk-low report-td">Low</td>
                                 <td class="report-td">2</td>
                                 <td class="report-td">0.75</td>
                             </tr>

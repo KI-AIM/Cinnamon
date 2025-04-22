@@ -44,7 +44,7 @@
               "node_modules/@fontsource/material-icons/400.css",
               "src/styles.less",
               "src/app/styles/angular-material.scss",
-              "src/app/assets/pdf.css"
+              "src/app/assets/report.css"
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
@@ -120,7 +120,7 @@
               "node_modules/@fontsource/roboto/400.css",
               "src/styles.less",
               "src/app/styles/angular-material.scss",
-              "src/app/assets/pdf.css"
+              "src/app/assets/report.css"
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"

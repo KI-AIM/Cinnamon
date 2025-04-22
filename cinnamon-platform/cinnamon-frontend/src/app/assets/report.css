@@ -9,7 +9,7 @@
     padding: 20px;
     background-color: white;
 }
-.header {
+.report-header {
     position: relative;
     background: linear-gradient(to right, #2c3e50, #3498db);
     color: white;
@@ -19,7 +19,7 @@
     box-shadow: 0 3px 10px rgba(0,0,0,0.1);
     text-align: center;
 }
-.header::before {
+.report-header::before {
     content: "";
     position: absolute;
     top: 0;
@@ -31,33 +31,33 @@
     border-radius: 5px;
     opacity: 0.3;
 }
-.header h1 {
+.report-header h1 {
     font-size: 2.6em;
     margin: 0 0 10px 0;
     color: white;
     text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     position: relative;
 }
-.header p {
+.report-header p {
     margin: 5px 0;
     font-size: 1.1em;
     opacity: 0.9;
     position: relative;
 }
-.section {
+.report-section {
     margin-bottom: 40px;
     padding-bottom: 20px;
     border-bottom: 1px solid #eee;
 }
-.header2 {
+.report-header2 {
     color: #2c3e50;
     border-left: 4px solid #3498db;
     padding-left: 10px;
 }
-.header3 {
+.report-header3 {
     color: #3498db;
 }
-.metric-card {
+.report-metric-card {
     background-color: #f8f9fa;
     border-radius: 5px;
     padding: 15px;
@@ -77,23 +77,23 @@
 .report-th {
     background-color: #f2f2f2;
 }
-.risk-high {color: #e74c3c;}
-.risk-medium {color: #f39c12;}
-.risk-low {color: #27ae60;}
-.intro-box {
+.report-risk-high {color: #e74c3c;}
+.report-risk-medium {color: #f39c12;}
+.report-risk-low {color: #27ae60;}
+.report-intro-box {
     background-color: #f8f9fa;
     border-left: 4px solid #3498db;
     padding: 20px;
     margin-bottom: 30px;
     border-radius: 0 5px 5px 0;
 }
-.audience-block {
+.report-audience-block {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     margin: 20px 0;
 }
-.audience-item {
+.report-audience-item {
     flex: 1;
     min-width: 250px;
     background-color: white;
@@ -101,10 +101,4 @@
     padding: 15px;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-@media (max-width: 768px) {
-    .container {padding: 10px;}
-    .audience-item {min-width: 100%;}
-    .header {padding: 20px 15px;}
-    .header h1 {font-size: 2em;}
 }

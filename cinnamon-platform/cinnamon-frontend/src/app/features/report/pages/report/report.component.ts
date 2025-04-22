@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatButton } from "@angular/material/button";
 import { SharedModule } from "../../../../shared/shared.module";
 import { AsyncPipe, NgIf } from "@angular/common";
@@ -27,9 +27,8 @@ export class ReportComponent implements OnInit {
     protected metricConfig$: Observable<ProjectSettings>;
     protected statistics$: Observable<StatisticsResponse | null>;
 
-
-    @ViewChild('chart', {read: ElementRef}) protected chartDiv: ElementRef<HTMLElement>;
-    @ViewChild('chart') protected chart: ChartFrequencyComponent;
+    @ViewChildren('chart', {read: ElementRef}) protected chartDivs: QueryList<ElementRef<HTMLElement>>;
+    @ViewChildren('chart') protected charts: QueryList<ChartFrequencyComponent>;
 
     constructor(
         private readonly http: HttpClient,
@@ -45,6 +44,15 @@ export class ReportComponent implements OnInit {
         this.statistics$ = this.statisticsService.fetchResult();
     }
 
+    /**
+     * Prints the report as a PDF.
+     *
+     * Everything that is wider than 670 px will not be visible in the PDF.
+     * Links must have a `href` in the form `report#<anchor-id>` and must have the class `report-anchor-link`.
+     * All charts in the report a converted to image and must have the `#chart` tag and must have a unique ID.
+     *
+     * @author Daniel Preciado-Marquez
+     */
     protected printReport(): void {
         this.http.get("/app/assets/pdf.css", {responseType: 'text'}).subscribe({
             next: value => {
@@ -71,14 +79,24 @@ export class ReportComponent implements OnInit {
             a.getAttributeNode("href")!.value = '#' + a.getAttributeNode("href")!.value.split("#")[1];
         });
 
-        const image = document.createElement("img");
-        image.src = this.chart.dataUrl!;
-        image.width = 670;
+        // Convert charts to images
+        for (let i = 0; i < this.chartDivs.length; i++) {
+            const chart = this.charts.get(i);
+            const chartDiv = this.chartDivs.get(i);
 
-        const id = this.chartDiv.nativeElement.id;
-        const newChart = mywindow.document.getElementById(id);
-        newChart!.style.display = 'none';
-        newChart!.parentElement!.insertBefore(image, newChart);
+            if (chart == null || chartDiv == null) {
+                continue;
+            }
+
+            const image = document.createElement("img");
+            image.src = chart.dataUrl!;
+            image.width = 670;
+
+            const id = chartDiv.nativeElement.id;
+            const newChart = mywindow.document.getElementById(id);
+            newChart!.style.display = 'none';
+            newChart!.parentElement!.insertBefore(image, newChart);
+        }
 
         mywindow.document.close(); // necessary for IE >= 10
         mywindow.focus(); // necessary for IE >= 10*/

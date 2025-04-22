@@ -53,9 +53,15 @@
     color: #2c3e50;
     border-left: 4px solid #3498db;
     padding-left: 10px;
+
+    page-break-after: avoid;
+    break-after: avoid;
 }
 .report-header3 {
     color: #3498db;
+
+    page-break-after: avoid;
+    break-after: avoid;
 }
 .report-metric-card {
     background-color: #f8f9fa;
@@ -101,4 +107,18 @@
     padding: 15px;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.report-keep-together {
+    /* Old syntax */
+    page-break-inside: avoid;
+    /* New syntax */
+    break-inside: avoid;
+}
+.report-page-break-before {
+    page-break-before: always;
+    break-before: page;
+}
+.report-page-break-after {
+    page-break-after: always;
+    break-after: page;
 }

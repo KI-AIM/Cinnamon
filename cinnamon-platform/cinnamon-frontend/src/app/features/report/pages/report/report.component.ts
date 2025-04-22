@@ -66,6 +66,11 @@ export class ReportComponent implements OnInit {
         mywindow.document.write(document.getElementById("report")!.innerHTML);
         mywindow.document.write('</body></html>');
 
+        // Fix links for PDF
+        mywindow.document.querySelectorAll("a.report-anchor-link").forEach(a => {
+            a.getAttributeNode("href")!.value = '#' + a.getAttributeNode("href")!.value.split("#")[1];
+        });
+
         const image = document.createElement("img");
         image.src = this.chart.dataUrl!;
         image.width = 670;

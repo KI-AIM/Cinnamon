@@ -54,7 +54,7 @@ export class ReportComponent implements OnInit {
      * @author Daniel Preciado-Marquez
      */
     protected printReport(): void {
-        this.http.get("/app/assets/pdf.css", {responseType: 'text'}).subscribe({
+        this.http.get("/app/assets/report.css", {responseType: 'text'}).subscribe({
             next: value => {
                 this.doPrintReport(value);
             },

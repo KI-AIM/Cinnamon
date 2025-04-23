@@ -63,7 +63,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         this.algorithmService.setDoGetConfig(() => this.getConfig());
         this.algorithmService.setDoSetConfig((error: string | null) => this.setConfig(error));
 
-        this.statusService.fetchStatus().subscribe({
+        this.statusService.status$.subscribe({
             next: value => {
                 const registryData = this.configurationService.getRegisteredConfigurationByName(this.algorithmService.getConfigurationName());
                 this.disabled = this.statusService.isStepCompleted(registryData?.lockedAfterStep);

@@ -1,14 +1,10 @@
 import { Injectable } from '@angular/core';
-import { Mode } from '../enums/mode';
-import { StepConfiguration, Steps } from '../enums/steps';
-import { List } from '../utils/list';
+import { StepConfiguration } from '../enums/steps';
 import { Status } from "../../shared/model/status";
-import { HttpClient } from "@angular/common/http";
 import { Router } from "@angular/router";
 import { UserService } from "../../shared/services/user.service";
-import { Observable, of, tap } from "rxjs";
+import { Observable, tap } from "rxjs";
 import { ConfigurationService } from "../../shared/services/configuration.service";
-import { environments } from "../../../environments/environment";
 import { StatusService } from "../../shared/services/status.service";
 
 @Injectable({
@@ -40,17 +36,18 @@ export class StateManagementService {
     public fetchAndRouteToCurrentStep() {
         this.doFetchCurrentStep().subscribe({
             next: value => {
-                this.routeToCurrentStep();
+                this.routeToCurrentStep(value);
             }
         });
     }
 
     /**
      * Routes to the page for the current step.
+     * @param status The current status of the application.
      */
-    public routeToCurrentStep() {
+    public routeToCurrentStep(status: Status) {
         for (let [a, b] of Object.entries(StepConfiguration)) {
-            if (a === this.statusService.currentStep.toString()) {
+            if (a === status.currentStep.toString()) {
                 this.router.navigateByUrl(b.path);
                 return;
             }
@@ -64,8 +61,8 @@ export class StateManagementService {
      * @private
      */
     private doFetchCurrentStep(): Observable<Status> {
-        return this.statusService.fetchStatus().pipe(tap(value => {
-            this.configurationService.fetchConfigurations(this.statusService.currentStep);
+        return this.statusService.status$.pipe(tap(value => {
+            this.configurationService.fetchConfigurations(value.currentStep);
         }));
     }
 }

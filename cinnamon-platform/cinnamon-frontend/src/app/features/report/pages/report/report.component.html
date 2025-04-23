@@ -1,10 +1,27 @@
 <div class="vertical-boxes">
     <div class="box">
-        <button mat-button mat-raised-button color="primary" (click)="printReport()">Print</button>
 
-        Click on print, a new browser window with a print dialog should open.
-        Select Destination "Save as PDF"
-        Under "More settings", uncheck "Headers and footers" and check "Background graphics"
+        <div>
+            In order to save the report as a PDF file, please follow these steps:
+            <ol>
+                <li>
+                    Click on the "Save Report" button below. A new browser window with a print dialog should open.
+                </li>
+                <li>
+                    Select the Destination "Save as PDF".
+                </li>
+                <li>
+                    Under "More settings", uncheck "Headers and footers" and check "Background graphics".
+                </li>
+                <li>
+                    Click on "Save" and close the browser window.
+                </li>
+            </ol>
+        </div>
+
+        <div>
+            <button mat-button mat-raised-button color="primary" (click)="printReport()">Save Report</button>
+        </div>
 
     </div>
 

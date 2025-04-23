@@ -22,15 +22,18 @@ public class StatisticsService {
 
 	private final DataSetService dataSetService;
 	private final ProcessService processService;
+	private final ProjectService projectService;
 
 	public StatisticsService(
 			final CinnamonConfiguration cinnamonConfiguration,
 			final DataSetService dataSetService,
-			final ProcessService processService
+			final ProcessService processService,
+			final ProjectService projectService
 	) {
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.dataSetService = dataSetService;
 		this.processService = processService;
+		this.projectService = projectService;
 	}
 
 	/**
@@ -56,8 +59,17 @@ public class StatisticsService {
 			if (statisticsProcess.getExternalProcessStatus() == ProcessStatus.NOT_STARTED ||
 			    statisticsProcess.getExternalProcessStatus() == ProcessStatus.ERROR ||
 			    statisticsProcess.getExternalProcessStatus() == ProcessStatus.CANCELED) {
-				statisticsProcess.setEndpoint(cinnamonConfiguration.getStatisticsEndpoint());
-				processService.startOrScheduleBackendProcess(statisticsProcess);
+
+				try {
+					statisticsProcess.setEndpoint(cinnamonConfiguration.getStatisticsEndpoint());
+					processService.startOrScheduleBackendProcess(statisticsProcess);
+				} catch (Exception e) {
+					processService.setProcessError(statisticsProcess, e.getMessage());
+					throw e;
+				} finally {
+					projectService.saveProject(project);
+				}
+
 			}
 			return new StatisticsResponse(statisticsProcess.getExternalProcessStatus(), null);
 		}

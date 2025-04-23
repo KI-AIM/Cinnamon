@@ -1,3 +1,162 @@
+<ng-container *ngIf="status$ | async as status">
+    <ng-container *ngIf="status.mode === Mode.STANDARD">
+
+        <mat-accordion>
+            <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+
+                        <div style="display: flex;">
+                            <div style="width: 25px; height: 25px; border-radius: 100%; background-color: #007e33; color: white; display: flex; ">
+                                <div style="margin: auto; width: fit-content; height: fit-content; font-weight: bold;z-index: 2;">
+                                <mat-icon fontIcon="check"></mat-icon>
+                                    1
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-left: 1rem;">
+                            Select a file
+                        </div>
+                    </mat-panel-title>
+                    <mat-panel-description>
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <div>
+                    <span>Current File: </span>
+                    <ng-container *ngIf="(fileInfo$ | async) as fileInfo">
+                        <ng-container *ngIf="fileInfo.name !== null; else noFile">
+                            <span>{{ fileInfo.name }}</span>
+                        </ng-container>
+                    </ng-container>
+                    <ng-template #noFile>
+                        <i>No File Selected</i>
+                    </ng-template>
+                </div>
+
+                <div>
+                    <input type="file" accept=".csv,.xlsx" #fileForm (input)="onFileInput($event)"
+                           [disabled]="locked">
+
+                    <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
+                       [hidden]="isDataFileInvalid" class="icon-enabled">
+                        <mat-icon fontIcon="settings"></mat-icon>
+                    </a>
+                    <div class="cinnamon-file-input-error" *ngIf="isDataFileTypeInvalid">
+                        Please select a CSV or XLSX file.
+                    </div>
+
+                </div>
+
+
+            </mat-expansion-panel>
+            <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+
+                        <div style="display: flex;">
+                            <div style="width: 25px; height: 25px; border-radius: 100%; color: white; display: flex; border-color: #007bff; border-width: 2px; border-style: solid;">
+                                <div style="margin: auto; font-weight: bold;z-index: 2; width: 7px; height: 7px; background-color: #007bff; border-radius: 100%;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-left: 1rem;">
+                            Select a file
+                        </div>
+
+                    </mat-panel-title>
+                    <mat-panel-description>
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <div>
+                    <span>Current File: </span>
+                    <ng-container *ngIf="(fileInfo$ | async) as fileInfo">
+                        <ng-container *ngIf="fileInfo.name !== null; else noFile">
+                            <span>{{ fileInfo.name }}</span>
+                        </ng-container>
+                    </ng-container>
+                    <ng-template #noFile>
+                        <i>No File Selected</i>
+                    </ng-template>
+                </div>
+
+                <div>
+                    <input type="file" accept=".csv,.xlsx" #fileForm (input)="onFileInput($event)"
+                           [disabled]="locked">
+
+                    <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
+                       [hidden]="isDataFileInvalid" class="icon-enabled">
+                        <mat-icon fontIcon="settings"></mat-icon>
+                    </a>
+                    <div class="cinnamon-file-input-error" *ngIf="isDataFileTypeInvalid">
+                        Please select a CSV or XLSX file.
+                    </div>
+
+                </div>
+
+
+            </mat-expansion-panel>
+
+            <mat-expansion-panel disabled="true">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+
+                        <div style="display: flex;">
+                            <div style="width: 25px; height: 25px; border-radius: 100%; color: white; display: flex; border-color: #b0b8c1; border-width: 2px; border-style: solid;">
+                                <div style="margin: auto; font-weight: bold;z-index: 2; width: 7px; height: 7px; background-color: #b0b8c1; border-radius: 100%;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-left: 1rem;">
+                            Select a file
+                        </div>
+                    </mat-panel-title>
+                    <mat-panel-description>
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <div>
+                    <span>Current File: </span>
+                    <ng-container *ngIf="(fileInfo$ | async) as fileInfo">
+                        <ng-container *ngIf="fileInfo.name !== null; else noFile">
+                            <span>{{ fileInfo.name }}</span>
+                        </ng-container>
+                    </ng-container>
+                    <ng-template #noFile>
+                        <i>No File Selected</i>
+                    </ng-template>
+                </div>
+
+                <div>
+                    <input type="file" accept=".csv,.xlsx" #fileForm (input)="onFileInput($event)"
+                           [disabled]="locked">
+
+                    <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
+                       [hidden]="isDataFileInvalid" class="icon-enabled">
+                        <mat-icon fontIcon="settings"></mat-icon>
+                    </a>
+                    <div class="cinnamon-file-input-error" *ngIf="isDataFileTypeInvalid">
+                        Please select a CSV or XLSX file.
+                    </div>
+
+                </div>
+
+
+            </mat-expansion-panel>
+
+
+
+
+        </mat-accordion>
+
+
+    </ng-container>
+</ng-container>
+
 <div class="box">
 
     <p>

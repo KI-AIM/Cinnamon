@@ -102,22 +102,30 @@ public class ProcessService {
 	}
 
 	/**
-	 * Updates and returns the status of the execution of the given step in the given project.
+	 * Updates and returns the process status of the given step in the given project.
 	 * If a process is running, the status of that process will be fetched from the external server.
+	 * If fetching the status fails,the process will be set to error and the next process of the same job will be started.
 	 *
 	 * @param project The project.
 	 * @param stage   The stage.
 	 * @return The updated execution.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalRequestException                  If the request to the external server failed.
 	 */
 	@Transactional
-	public ExecutionStepEntity getStatus(final ProjectEntity project, final Stage stage)
-			throws InternalRequestException, InternalApplicationConfigurationException {
+	public ExecutionStepEntity getStatus(final ProjectEntity project, final Stage stage) {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
-			updateProcessStatus(executionStep.getCurrentProcess());
+			final var process = executionStep.getCurrentProcess();
+			try {
+				updateProcessStatus(process);
+			} catch (final InternalRequestException e) {
+				setProcessError(executionStep, e.getMessage());
+
+				// Start the next process of the same step
+				startScheduledProcess(process.getJob().getEndpoint());
+			}
+
+			projectService.saveProject(executionStep.getProject());
 		}
 
 		return executionStep;
@@ -212,9 +220,14 @@ public class ProcessService {
 		executionStep.getProcesses().forEach(ExternalProcessEntity::reset);
 
 		// Start the first step
-		startNext(executionStep);
-
-		projectService.saveProject(project);
+		try {
+			startNext(executionStep);
+		} catch (final Exception e) {
+			setProcessError(executionStep, e.getMessage());
+			throw e;
+		} finally {
+			projectService.saveProject(project);
+		}
 
 		return executionStep;
 	}
@@ -314,10 +327,10 @@ public class ProcessService {
 		} catch (final Exception e) {
 			log.error("Failed to start process!", e);
 			setProcessError(process, e.getMessage());
-
-			final ProjectEntity project = process.getProject();
-			projectService.saveProject(project);
 		}
+
+		final ProjectEntity project = process.getProject();
+		projectService.saveProject(project);
 	}
 
 	/**
@@ -600,7 +613,7 @@ public class ProcessService {
 	 * @throws InternalMissingHandlingException    If no implementation exists for a valid configuration.
 	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
 	 */
-	protected void startNext(final ExecutionStepEntity executionStep)
+	private void startNext(final ExecutionStepEntity executionStep)
 			throws BadStateException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		// Get the next step
 		Integer nextJob = null;
@@ -666,16 +679,13 @@ public class ProcessService {
 		} else {
 			executionStep.setStatus(ProcessStatus.FINISHED);
 		}
-
-		projectService.saveProject(executionStep.getProject());
 	}
 
 	/**
 	 * Fetches the staus of the given process from the external server.
 	 *
 	 * @param externalProcess The process.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalRequestException                  If the request failed.
+	 * @throws InternalRequestException If the request failed.
 	 */
 	private void fetchStatus(final ExternalProcessEntity externalProcess) throws InternalRequestException {
 		// Get configuration
@@ -707,16 +717,11 @@ public class ProcessService {
 			externalProcess.setStatus(response);
 		} catch (final RequestRuntimeException e) {
 			final String message = httpService.buildError(e, "fetch the status");
-			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
 		} catch (WebClientRequestException e) {
 			var message = "Failed to fetch the status! " + e.getMessage();
-			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_STATUS, message);
 		}
-
-		// Update status
-		projectService.saveProject(externalProcess.getProject());
 	}
 
 	/**
@@ -742,24 +747,25 @@ public class ProcessService {
 		                                     .map(ExternalEndpoint::getIndex)
 		                                     .collect(Collectors.toSet());
 		// TODO account for endpoint max processes
-		final var process = backgroundProcessRepository.findFirstByEndpointInAndExternalProcessStatusOrderByScheduledTimeAsc(
+		final List<BackgroundProcessEntity> processes = backgroundProcessRepository.findByEndpointInAndExternalProcessStatusOrderByScheduledTimeAsc(
 				endpoints, ProcessStatus.SCHEDULED);
 
-		if (process.isEmpty()) {
+		if (processes.isEmpty()) {
 			return;
 		}
-		final var externalProcess = process.get();
 
-		try {
-			doStartBackgroundProcess(externalProcess);
-		} catch (final ApiException e) {
-			log.warn("Failed to start scheduled process!", e);
-			setProcessError(externalProcess, e.getMessage());
+		for (final var externalProcess : processes) {
+			try {
+				doStartBackgroundProcess(externalProcess);
+				externalProcess.setScheduledTime(null);
+				projectService.saveProject(externalProcess.getProject());
+				break;
+			} catch (final ApiException e) {
+				log.warn("Failed to start scheduled process!", e);
+				setProcessError(externalProcess, e.getMessage());
+				projectService.saveProject(externalProcess.getProject());
+			}
 		}
-
-		externalProcess.setScheduledTime(null);
-
-		projectService.saveProject(externalProcess.getProject());
 	}
 
 	/**
@@ -838,7 +844,6 @@ public class ProcessService {
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
 		} catch (final RequestRuntimeException e) {
 			final String message = httpService.buildError(e, "start the process");
-			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		} catch (WebClientRequestException e) {
 			var message = "Failed to start the process! ";
@@ -847,10 +852,10 @@ public class ProcessService {
 			} else if (e.getMessage() != null) {
 				message += e.getMessage();
 			}
-			setProcessError(externalProcess, message);
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
 		}
 	}
+
 	private void addConfig(final String configuration, final ExternalEndpoint stepConfiguration,
 	                       final MultipartBodyBuilder bodyBuilder)
 			throws InternalIOException, InternalMissingHandlingException {
@@ -968,8 +973,9 @@ public class ProcessService {
 		}
 	}
 
-	private void setProcessError(final BackgroundProcessEntity process, final String message) {
+	public void setProcessError(final BackgroundProcessEntity process, final String message) {
 		process.setExternalProcessStatus(ProcessStatus.ERROR);
+		process.setScheduledTime(null);
 		process.setUuid(null);
 
 		if (process instanceof ExternalProcessEntity externalProcess) {
@@ -979,6 +985,19 @@ public class ProcessService {
 			executionStep.setStatus(ProcessStatus.ERROR);
 			executionStep.setCurrentProcessIndex(null);
 		}
+	}
+
+	private void setProcessError(final ExecutionStepEntity executionStep, final String message) {
+		final var currentProcess = executionStep.getCurrentProcess();
+		if (currentProcess != null) {
+			currentProcess.setExternalProcessStatus(ProcessStatus.ERROR);
+			currentProcess.setUuid(null);
+			currentProcess.setScheduledTime(null);
+			currentProcess.setStatus(message);
+		}
+
+		executionStep.setStatus(ProcessStatus.ERROR);
+		executionStep.setCurrentProcessIndex(null);
 	}
 
 	private String injectUrlParameter(final String url, final BackgroundProcessEntity externalProcess) {

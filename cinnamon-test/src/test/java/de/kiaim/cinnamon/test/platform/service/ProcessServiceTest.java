@@ -104,12 +104,12 @@ public class ProcessServiceTest extends ContextRequiredTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		final var exception = assertThrows(InternalRequestException.class, () -> {
-			processService.getStatus(project, stage);
-		});
+		var updatedExecutionStep = processService.getStatus(project, stage);
 
-		assertEquals("Failed to fetch the status! Got status of '500 INTERNAL_SERVER_ERROR'. Got error: 'An error occurred!'.",
-		             exception.getMessage());
+		assertEquals(ProcessStatus.ERROR, updatedExecutionStep.getStatus(), "Status should be ERROR");
+		assertEquals(
+				"Failed to fetch the status! Got status of '500 INTERNAL_SERVER_ERROR'. Got error: 'An error occurred!'.",
+				updatedExecutionStep.getProcess(0).getStatus());
 	}
 
 	@Test
@@ -134,14 +134,16 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		response.setError("An error occurred!");
 		mockBackEnd.shutdown();
 
-		final var exception = assertThrows(InternalRequestException.class, () -> {
-			processService.getStatus(project, stage);
-		});
+		final var updatedExecutionStep = processService.getStatus(project, stage);
+
+		assertEquals(ProcessStatus.ERROR, updatedExecutionStep.getStatus(), "Status should be ERROR");
 
 		// Got different error messages on different machines, so only checking a part of it
-		assertTrue(exception.getMessage().startsWith("Failed to fetch the status!"), "Unexpected error message: '" + exception.getMessage() + "'");
-		assertTrue(exception.getMessage().contains("Connection refused:"), "Unexpected error message: '" + exception.getMessage() + "'");
-		assertTrue(exception.getMessage().endsWith("localhost/127.0.0.1:" + mockBackEndPort),"Unexpected error message: " + exception.getMessage() + "'");
+		var message = updatedExecutionStep.getProcess(0).getStatus();
+		assertNotNull(message, "Status message should not be null!");
+		assertTrue(message.startsWith("Failed to fetch the status!"), "Unexpected error message: '" + message + "'");
+		assertTrue(message.contains("Connection refused:"), "Unexpected error message: '" + message + "'");
+		assertTrue(message.endsWith("localhost/127.0.0.1:" + mockBackEndPort),"Unexpected error message: " + message + "'");
 	}
 
 }

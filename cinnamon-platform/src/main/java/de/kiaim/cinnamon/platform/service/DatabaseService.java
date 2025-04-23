@@ -688,6 +688,10 @@ public class DatabaseService {
 	public void delete(final ProjectEntity project)
 			throws BadDataSetIdException, InternalDataSetPersistenceException {
 		project.getOriginalData().setFile(null);
+		project.getOriginalData().setHasHoldOut(false);
+		project.getOriginalData().setHoldOutPercentage(0.0f);
+		project.getOriginalData().setHoldOutSeed(0);
+
 		deleteDataSet(project.getOriginalData().getDataSet());
 
 		for (final var pipeline : project.getPipelines()) {
@@ -707,6 +711,8 @@ public class DatabaseService {
 				stage.setStatus(ProcessStatus.NOT_STARTED);
 			}
 		}
+
+		project.getConfigurations().clear();
 
 		projectRepository.save(project);
 	}

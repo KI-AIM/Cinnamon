@@ -75,7 +75,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
             next: value => {
                 this.algorithms = value;
                 if (!this.hasAlgorithmSelection) {
-                    this.algorithmService.selectCache = this.algorithms[0];
+                    this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.algorithms[0]);
                     this.readFromCache();
                 }
             }, error: error => {
@@ -93,10 +93,9 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * Updates the cached value of the current selected form.
      * @protected
      */
-    protected updateConfigCache(): void
-    {
+    protected updateConfigCache(): void {
         if (this.selection.selectedOption && this.forms)  {
-            this.algorithmService.configCache[this.selection.selectedOption.name] = this.forms.formData;
+            this.configurationService.setConfiguration(this.algorithmService.getConfigurationName(), this.selection.selectedOption, this.forms.formData);
         }
     }
 
@@ -105,7 +104,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * @protected
      */
     protected updateSelectCache(): void {
-        this.algorithmService.selectCache = this.selection.selectedOption;
+        this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.selection.selectedOption);
         this.readFromCache();
     }
 
@@ -113,8 +112,9 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * Reads the values of the configuration page from the cache.
      */
     public readFromCache(): void {
-        if (this.algorithmService.selectCache && this.selection) {
-            this.selection.selectedOption = this.algorithmService.selectCache;
+        const selectedAlgorithm = this.configurationService.getSelectedAlgorithm(this.algorithmService.getConfigurationName());
+        if (selectedAlgorithm && this.selection) {
+            this.selection.selectedOption = selectedAlgorithm;
             if (this.forms) {
                 this.forms.readFromCache();
             }

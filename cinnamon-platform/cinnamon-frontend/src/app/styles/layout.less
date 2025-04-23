@@ -152,6 +152,11 @@ app-navigation{
     flex-grow: 1;
     padding-top: 0.3rem;
     width: 10%;
+    margin-bottom: 0.5rem;
+}
+
+.stage-tree-step:first-child .step-wrapper {
+    margin-top: 0.5rem;
 }
 
 .step-head {
@@ -180,47 +185,10 @@ app-navigation{
 .stage-tree-steps {
     display: flex;
     flex-direction: column;
-    margin-top: 2rem;
     width: 100%;
 }
 
 .stage-tree-step {
     display: flex;
     width: 100%;
-}
-
-@stage-tree-line-width: 2px;
-
-.stage-tree-line {
-    background-color: black;
-}
-
-.stage-tree-line-vertical {
-    .stage-tree-line;
-
-    max-width: @stage-tree-line-width;
-    min-width: @stage-tree-line-width;
-    width: @stage-tree-line-width;
-}
-
-.stage-tree-line-horizontal {
-    padding-top: 0.3rem;
-}
-
-.stage-tree-line-horizontal > div {
-    display: flex;
-    height: 3rem;
-}
-
-.stage-tree-line-horizontal > div > div {
-    .stage-tree-line;
-
-    height: @stage-tree-line-width;
-    max-height: @stage-tree-line-width;
-    min-height: @stage-tree-line-width;
-
-    min-width: 2rem;
-
-    margin-bottom: auto;
-    margin-top: auto;
 }

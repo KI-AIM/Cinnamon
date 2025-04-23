@@ -23,14 +23,13 @@
         the results of completed steps following the modified configuration.
     </p>
 
-    <button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);" [disabled]="locked">
-        Start
-    </button>
+<!--    <button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);" [disabled]="locked">-->
+<!--        Start-->
+<!--    </button>-->
 
-    <!-- TODO Enable selection if both modes are implemented -->
-    <!--
-    <h3 class="mb-5">Please choose your desired mode: </h3>
+    <h3 class="mt-2">Please choose your desired mode: </h3>
 
+    <p>You can change the mode later any time.</p>
 
     <div class="d-flex justify-content-between">
         <mat-card class="me-2">
@@ -45,7 +44,7 @@
                     customizable resulting in worse anonymization results.</p>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-                <button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);" [disabled]="locked">
+                <button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);">
                     Use standard mode
                 </button>
             </mat-card-actions>
@@ -63,11 +62,10 @@
                     anonymization results.</p>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-                <button mat-raised-button color="primary" (click)="selectMode(Mode.EXPERT);" [disabled]="locked">
+                <button mat-raised-button color="primary" (click)="selectMode(Mode.EXPERT);">
                     Use expert mode
                 </button>
             </mat-card-actions>
         </mat-card>
     </div>
-    -->
 </div>

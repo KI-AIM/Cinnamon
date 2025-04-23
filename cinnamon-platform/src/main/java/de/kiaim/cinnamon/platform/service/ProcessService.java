@@ -222,9 +222,6 @@ public class ProcessService {
 		// Start the first step
 		try {
 			startNext(executionStep);
-		} catch (final Exception e) {
-			setProcessError(executionStep, e.getMessage());
-			throw e;
 		} finally {
 			projectService.saveProject(project);
 		}
@@ -326,7 +323,6 @@ public class ProcessService {
 			startNext(process.getExecutionStep());
 		} catch (final Exception e) {
 			log.error("Failed to start process!", e);
-			setProcessError(process, e.getMessage());
 		}
 
 		final ProjectEntity project = process.getProject();
@@ -674,7 +670,13 @@ public class ProcessService {
 		if (nextJob != null) {
 			if (nextProcess.getExternalProcessStatus() != ProcessStatus.SCHEDULED &&
 			    nextProcess.getExternalProcessStatus() != ProcessStatus.RUNNING) {
-				startOrScheduleProcess(nextProcess);
+
+				try {
+					startOrScheduleProcess(nextProcess);
+				} catch (final Exception e) {
+					setProcessError(nextProcess, e.getMessage());
+					throw e;
+				}
 			}
 		} else {
 			executionStep.setStatus(ProcessStatus.FINISHED);

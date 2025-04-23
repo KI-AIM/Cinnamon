@@ -6,20 +6,19 @@ import { plainToClass } from "class-transformer";
 import { DataConfiguration } from "../../../../shared/model/data-configuration";
 import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
 import { Router } from "@angular/router";
-import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { FileService } from "../../services/file.service";
 import { MatDialog } from "@angular/material/dialog";
-import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
 import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
 import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
 import { LoadingService } from "src/app/shared/services/loading.service";
 import { ConfigurationService } from "../../../../shared/services/configuration.service";
-import { ErrorMessageService } from "src/app/shared/services/error-message.service";
 import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
 import { StatusService } from "../../../../shared/services/status.service";
 import { Observable } from "rxjs";
 import { FileInformation } from "../../../../shared/model/file-information";
 import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
+import { Status } from "../../../../shared/model/status";
+import { Mode } from "../../../../core/enums/mode";
 
 @Component({
     selector: "app-upload-file",
@@ -28,17 +27,19 @@ import { ErrorHandlingService } from "../../../../shared/services/error-handling
     standalone: false
 })
 export class UploadFileComponent implements OnInit, OnDestroy {
-	Steps = Steps;
+    protected readonly FileType = FileType;
+    protected readonly Mode = Mode;
+
     private configurationFile: File | null;
 	protected dataFile: File | null;
 	public fileConfiguration: FileConfiguration;
 
     protected fileInfo$: Observable<FileInformation>;
+    protected status$: Observable<Status>;
 
     protected isDataFileTypeInvalid: boolean = false;
     protected isConfigFileTypeInvalid: boolean = false;
 
-	@ViewChild("uploadErrorModal") errorModal: TemplateRef<NgbModal>;
 	@ViewChild("fileForm") fileInput: ElementRef;
 
     public lineEndings = Object.values(LineEnding);
@@ -66,12 +67,10 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 		private dataService: DataService,
 		public dataConfigurationService: DataConfigurationService,
 		private router: Router,
-		private modalService: NgbModal,
 		protected fileService: FileService,
 		public dialog: MatDialog,
 		public loadingService: LoadingService,
         private configurationService: ConfigurationService,
-		private errorMessageService: ErrorMessageService,
         private readonly errorHandlingService: ErrorHandlingService,
 	) {
 		this.titleService.setPageTitle("Upload data");
@@ -84,6 +83,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.fileInfo$ = this.fileService.fileInfo$;
+        this.status$ = this.statusService.status$;
     }
 
     /**
@@ -246,20 +246,4 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         this.errorHandlingService.addError(err, message);
 		// this.showErrorDialog(error);
 	}
-
-	private showErrorDialog(error: string) {
-		this.dialog.open(InformationDialogComponent, {
-			data: {
-				title: "An error occurred",
-				content: error,
-			}
-		});
-	}
-
-	closeErrorModal() {
-		this.modalService.dismissAll();
-		this.fileInput.nativeElement.value = "";
-	}
-
-    protected readonly FileType = FileType;
 }

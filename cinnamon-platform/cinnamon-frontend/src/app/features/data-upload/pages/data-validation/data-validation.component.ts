@@ -2,17 +2,15 @@ import {Component, OnInit, TemplateRef } from "@angular/core";
 import { LoadingService } from "src/app/shared/services/loading.service";
 import { Router } from "@angular/router";
 import { DataService } from "src/app/shared/services/data.service";
-import { HttpErrorResponse } from "@angular/common/http";
 import { Steps } from "src/app/core/enums/steps";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { MatDialog } from "@angular/material/dialog";
-import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
-import { ErrorMessageService } from "src/app/shared/services/error-message.service";
 import {DataSetInfoService} from "../../services/data-set-info.service";
 import { map, Observable, switchMap } from "rxjs";
 import { StatusService } from "../../../../shared/services/status.service";
 import {FileService} from "../../services/file.service";
 import { ConfigurationService } from "../../../../shared/services/configuration.service";
+import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
 
 @Component({
     selector: "app-data-validation",
@@ -34,7 +32,7 @@ export class DataValidationComponent implements OnInit {
 		private dataService: DataService,
 		private titleService: TitleService,
         private dialog: MatDialog,
-		private errorMessageService: ErrorMessageService,
+        private errorHandlingService: ErrorHandlingService,
 	) {
         this.titleService.setPageTitle("Data validation");
     }
@@ -72,7 +70,7 @@ export class DataValidationComponent implements OnInit {
             }),
         ).subscribe({
             next: () => this.handleConfirm(),
-            error: (e) => this.handleError(e),
+            error: (e) => this.errorHandlingService.addError(e),
         });
 	}
 
@@ -94,16 +92,5 @@ export class DataValidationComponent implements OnInit {
 	private handleConfirm() {
 		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/anonymizationConfiguration");
-	}
-
-	private handleError(error: HttpErrorResponse) {
-		this.loadingService.setLoadingStatus(false);
-
-		this.dialog.open(InformationDialogComponent, {
-			data: {
-				title: "An error occurred",
-				content: "We are sorry, something went wrong: " + this.errorMessageService.convertResponseToMessage(error),
-			}
-		});
 	}
 }

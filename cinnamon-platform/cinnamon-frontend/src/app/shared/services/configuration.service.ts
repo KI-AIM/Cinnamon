@@ -8,6 +8,7 @@ import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data"
 import { Steps } from "../../core/enums/steps";
 import { environments } from "../../../environments/environment";
 import { StatusService } from "./status.service";
+import { Algorithm } from "../model/algorithm";
 
 /**
  * Service for managing configurations.
@@ -19,12 +20,74 @@ export class ConfigurationService {
     private baseUrl: string = environments.apiUrl + "/api/config";
     private registeredConfigurations: Array<ConfigurationRegisterData>;
 
+    private configurationCache: Record<string, {
+        selectedAlgorithm: Algorithm | null,
+        configuration: {[algorithmName: string]: Object},
+    }> = {};
+
     constructor(
         private fileUtilityService: FileUtilityService,
         private httpClient: HttpClient,
         private readonly statusService: StatusService,
     ) {
         this.registeredConfigurations = [];
+    }
+
+    /**
+     * Caches the selected algorithm for the given configuration name.
+     * @param configurationName The configuration name.
+     * @param algorithm The algorithm to cache.
+     */
+    public setSelectedAlgorithm(configurationName: string, algorithm: Algorithm): void {
+        this.initCache(configurationName);
+        this.configurationCache[configurationName].selectedAlgorithm = algorithm;
+    }
+
+    /**
+     * Gets the cached selected algorithm for the given configuration name or null if no algorithm is cached.
+     * @param configurationName The configuration name.
+     */
+    public getSelectedAlgorithm(configurationName: string): Algorithm | null {
+        return this.configurationCache[configurationName]?.selectedAlgorithm || null;
+    }
+
+    /**
+     * Gets the cached configuration for the given configuration name and algorithm or null if no configuration is cached.
+     * @param configurationName The configuration name.
+     * @param algorithm The algorithm to get the configuration for.
+     */
+    public getConfiguration(configurationName: string, algorithm: Algorithm): Object | null {
+        return this.configurationCache[configurationName]?.configuration[algorithm.name] || null;
+    }
+
+    /**
+     * Caches the configuration for the given configuration name and algorithm.
+     * @param configurationName The configuration name.
+     * @param algorithm The algorithm to cache the configuration for.
+     * @param configuration The configuration to cache.
+     */
+    public setConfiguration(configurationName: string, algorithm: Algorithm, configuration: Object): void {
+        this.initCache(configurationName);
+        this.configurationCache[configurationName].configuration[algorithm.name] = configuration;
+    }
+
+    /**
+     * Returns the cached configuration for the cached algorithm of the given configuration name.
+     * @param configurationName The configuration name.
+     */
+    public getSelectedConfiguration(configurationName: string): Object | null {
+        const selectedAlgorithm = this.getSelectedAlgorithm(configurationName);
+        if (selectedAlgorithm === null) {
+            return null;
+        }
+        return this.getConfiguration(configurationName, selectedAlgorithm);
+    }
+
+    /**
+     * Invalidates the cached configurations.
+     */
+    public invalidateCache(): void {
+        this.configurationCache = {};
     }
 
     /**
@@ -293,4 +356,19 @@ export class ConfigurationService {
             }
         }
     }
+
+    /**
+     * Initializes the cache for the given configuration name if it does not exist.
+     * @param configurationName The name of the configuration to initialize.
+     * @private
+     */
+    private initCache(configurationName: string): void {
+        if (!this.configurationCache[configurationName]) {
+            this.configurationCache[configurationName] = {
+                selectedAlgorithm: null,
+                configuration: {},
+            };
+        }
+    }
+
 }

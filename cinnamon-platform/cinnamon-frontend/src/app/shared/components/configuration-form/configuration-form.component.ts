@@ -21,6 +21,7 @@ import {ConfigurationGroupComponent} from "../configuration-group/configuration-
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { HttpErrorResponse } from "@angular/common/http";
 import { ErrorHandlingService } from "../../services/error-handling.service";
+import { ConfigurationService } from "../../services/configuration.service";
 
 /**
  * HTML form and submit button for one algorithm.
@@ -76,6 +77,7 @@ export class ConfigurationFormComponent implements OnInit {
     constructor(
         private readonly anonService: AlgorithmService,
         private readonly changeD: ChangeDetectorRef,
+        private readonly configurationService: ConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
     ) {
        this.form = new FormGroup({});
@@ -121,13 +123,13 @@ export class ConfigurationFormComponent implements OnInit {
      * Reads the configuration from the cache.
      */
     public readFromCache(): void {
-        if (this.anonService.configCache[this.algorithm.name]) {
+        if (this.configurationService.getConfiguration(this.anonService.getConfigurationName(), this.algorithm)) {
             //Timeout is 0, so function is called before data is overwritten
             setTimeout(() => {
-                const config = this.anonService.configCache[this.anonService.selectCache!.name];
+                const config = this.configurationService.getSelectedConfiguration(this.anonService.getConfigurationName());
                 // config can be undefined if no changes have been made
                 if (config) {
-                    this.setConfiguration(this.anonService.configCache[this.anonService.selectCache!.name]);
+                    this.setConfiguration(config);
                 }
             }, 0);
         }

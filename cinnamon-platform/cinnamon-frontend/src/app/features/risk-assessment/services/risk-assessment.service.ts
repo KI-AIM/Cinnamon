@@ -64,7 +64,7 @@ export class RiskAssessmentService extends AlgorithmService {
         return {config, selectedAlgorithm};
     }
 
-    protected override fetchAlgorithms(url: string): Observable<string> {
+    protected override fetchAlgorithms(): Observable<string> {
         return of("algorithms:\n" +
             "- URL: /get_evaluation_metrics/cross-sectional\n" +
             "  class: <class 'synthetic_tabular_data_generator.algorithms.ctgan.CtganSynthesizer'>\n" +
@@ -75,7 +75,7 @@ export class RiskAssessmentService extends AlgorithmService {
             "  version: '0.1'");
     }
 
-    protected override fetchAlgorithmDefinition(url: string): Observable<string> {
+    protected override fetchAlgorithmDefinition(definitionPath: string): Observable<string> {
         return of("name: Evaluation\n" +
             "type: cross-sectional\n" +
             "display_name: Evaluation\n" +

@@ -38,6 +38,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@Autowired private SerializationConfig serializationConfig;
 	@Autowired private CinnamonConfiguration cinnamonConfiguration;
 	@Autowired private DataSetService dataSetService;
+	@Autowired private HttpService httpService;
 	@Autowired private StepService stepService = mock(StepService.class);
 
 	private ObjectMapper jsonMapper = null;
@@ -62,7 +63,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
 		                                         backgroundProcessRepository, csvProcessor, databaseService,
-		                                         dataSetService, projectService, stepService);
+		                                         dataSetService, httpService, projectService, stepService);
 
 		mockBackEnd = new MockWebServer();
 		mockBackEnd.start(mockBackEndPort);

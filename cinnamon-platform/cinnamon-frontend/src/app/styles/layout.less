@@ -147,6 +147,83 @@ app-navigation{
     }
 }
 
+.step {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.step-circle {
+    width: 25px;
+    height: 25px;
+    border-radius: 100%;
+    background-color: #007bff;
+    color: white;
+    display: flex;
+    margin-top: 1rem;
+}
+
+.step-circle-wrapper {
+    display: flex;
+    height: 100%;
+}
+
+.step-horizontal-line {
+    height: 5px;
+    background-color: #007bff;
+    margin: auto;
+    width: 100%;
+}
+
+.step-horizontal-line-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    margin-top: calc(1rem + 11px);
+}
+
+.step-lines {
+    position: relative;
+}
+
+.step-number {
+    margin: auto;
+    width: fit-content;
+    height: fit-content;
+    font-weight: bold;
+    z-index: 2;
+}
+
+.step-vertical-alignment {
+    margin-right: 2rem;
+    height: 100%;
+}
+
+.step-vertical-line {
+    width: 5px;
+    background-color: #007bff;
+    margin: auto;
+    height: 100%;
+}
+
+.step-vertical-line-wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.step-vertical-relative {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
 .step-wrapper {
     // I have no idea why width: 10% and flex-grow: 1 is doing what I want to do
     flex-grow: 1;

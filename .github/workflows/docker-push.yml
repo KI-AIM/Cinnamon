@@ -13,6 +13,7 @@ jobs:
   test:
     permissions:
       checks: write
+      pull-requests: write
 
     uses: ./.github/workflows/run-tests.yml
 

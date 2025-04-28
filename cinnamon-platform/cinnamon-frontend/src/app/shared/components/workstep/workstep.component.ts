@@ -1,7 +1,7 @@
-import { AfterViewInit, Component, Host, Input, OnInit, Optional, ViewChild } from '@angular/core';
-import { MatAccordion, MatExpansionPanel } from "@angular/material/expansion";
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { MatExpansionPanel } from "@angular/material/expansion";
 import { WorkstepService } from "../../services/workstep.service";
-import { timeout } from "rxjs";
+import { Subscription } from "rxjs";
 
 @Component({
     selector: 'app-workstep',
@@ -9,29 +9,38 @@ import { timeout } from "rxjs";
     styleUrl: './workstep.component.less',
     standalone: false
 })
-export class WorkstepComponent implements OnInit, AfterViewInit {
-    @Input() public currentStep!: number;
+export class WorkstepComponent implements OnInit, OnDestroy {
     @Input() public stepIndex!: number;
-    @Input() public title!: string;
+    @Input() public locked!: boolean;
+    @Input() public valid!: boolean;
+    @Input() public altConfirm: string | null = null;
 
-    @ViewChild(MatExpansionPanel) expansionPanel!: MatExpansionPanel;
-
+    private stepSubscription: Subscription;
 
     constructor(
         private readonly workstepService: WorkstepService,
-        @Optional() @Host() private readonly accordion: MatAccordion,
-        // private readonly expansionPanel: MatExpansionPanel,
+        private readonly matExpansionPanel: MatExpansionPanel,
     ) {
     }
 
-    ngOnInit(): void {
-        // if (this.accordion) {
-        //     this.expansionPanel.accordion = this.accordion;
-        // }
+    public ngOnInit(): void {
+        this.stepSubscription = this.workstepService.step$.subscribe(step => {
+            if (this.stepIndex === step) {
+                this.matExpansionPanel.open();
+            }
+        });
     }
 
-    ngAfterViewInit(): void {
-        console.log('hi');
-        this.expansionPanel.accordion = this.workstepService.accordion!;
+    public ngOnDestroy(): void {
+        this.stepSubscription.unsubscribe();
+    }
+
+    /**
+     * Confirms the current step, closes the expansion panel, and goes to the next step.
+     * @protected
+     */
+    protected confirmStep(): void {
+        this.matExpansionPanel.close();
+        this.workstepService.confirmStep(this.stepIndex);
     }
 }

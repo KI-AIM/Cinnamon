@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild} from "@angular/core";
+import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from "@angular/core";
 import { Steps } from "src/app/core/enums/steps";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { DataService } from "src/app/shared/services/data.service";
@@ -19,28 +19,30 @@ import { FileInformation } from "../../../../shared/model/file-information";
 import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
 import { Status } from "../../../../shared/model/status";
 import { Mode } from "../../../../core/enums/mode";
+import { WorkstepService } from "../../../../shared/services/workstep.service";
 
 @Component({
     selector: "app-upload-file",
     templateUrl: "./upload-file.component.html",
     styleUrls: ["./upload-file.component.less"],
-    standalone: false
+    standalone: false,
 })
 export class UploadFileComponent implements OnInit, OnDestroy {
     protected readonly FileType = FileType;
     protected readonly Mode = Mode;
 
-    private configurationFile: File | null;
-	protected dataFile: File | null;
-	public fileConfiguration: FileConfiguration;
+    protected configurationFile: File | null = null;
+    protected dataFile: File | null = null;
+    public fileConfiguration: FileConfiguration;
 
     protected fileInfo$: Observable<FileInformation>;
     protected status$: Observable<Status>;
+    protected workstep$: Observable<number>;
 
     protected isDataFileTypeInvalid: boolean = false;
     protected isConfigFileTypeInvalid: boolean = false;
 
-	@ViewChild("fileForm") fileInput: ElementRef;
+    @ViewChild("fileForm") fileInput: ElementRef;
 
     public lineEndings = Object.values(LineEnding);
     public lineEndingLabels: Record<LineEnding, string> = {
@@ -55,29 +57,30 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         [Delimiter.SEMICOLON]: "Semicolon (;)",
     };
 
-	public quoteChars = Object.values(QuoteChar);
-	public quoteCharLabels: Record<QuoteChar, string> = {
-		[QuoteChar.DOUBLE_QUOTE]: "Double Quote (\")",
-		[QuoteChar.SINGLE_QUOTE]: "Single Quote (')",
-	};
+    public quoteChars = Object.values(QuoteChar);
+    public quoteCharLabels: Record<QuoteChar, string> = {
+        [QuoteChar.DOUBLE_QUOTE]: "Double Quote (\")",
+        [QuoteChar.SINGLE_QUOTE]: "Single Quote (')",
+    };
 
-    protected currentStep = 1;
-
-	constructor(
-		private titleService: TitleService,
+    constructor(
+        private titleService: TitleService,
         private statusService: StatusService,
-		private dataService: DataService,
-		public dataConfigurationService: DataConfigurationService,
-		private router: Router,
-		protected fileService: FileService,
-		public dialog: MatDialog,
-		public loadingService: LoadingService,
+        private dataService: DataService,
+        public dataConfigurationService: DataConfigurationService,
+        private router: Router,
+        protected fileService: FileService,
+        public dialog: MatDialog,
+        public loadingService: LoadingService,
         private configurationService: ConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
-	) {
-		this.titleService.setPageTitle("Upload data");
-		this.fileConfiguration = fileService.getFileConfiguration();
-	}
+        protected readonly workstepService: WorkstepService,
+    ) {
+        this.titleService.setPageTitle("Upload data");
+        this.workstepService.init(2, true);
+
+        this.fileConfiguration = fileService.getFileConfiguration();
+    }
 
     ngOnDestroy(): void {
         this.fileService.setFileConfiguration(this.fileConfiguration)
@@ -86,6 +89,23 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.fileInfo$ = this.fileService.fileInfo$;
         this.status$ = this.statusService.status$;
+        this.workstep$ = this.workstepService.step$;
+    }
+
+    /**
+     * Gets the current workstep.
+     * @protected
+     */
+    protected get currentStep(): number {
+        return this.workstepService.currentStep;
+    }
+
+    /**
+     * Checks if all worksteps are completed.
+     * @protected
+     */
+    protected get stepsCompleted(): boolean {
+        return this.workstepService.isCompleted;
     }
 
     /**
@@ -119,10 +139,10 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         return this.statusService.isStepCompleted(Steps.VALIDATION);
     }
 
-	onFileInput(event: Event) {
-		const files = (event.target as HTMLInputElement)?.files;
+    onFileInput(event: Event) {
+        const files = (event.target as HTMLInputElement)?.files;
 
-		if (files) {
+        if (files) {
             const fileExtension = this.getFileExtension(files[0]);
             const validFileExtensions = ["csv", "xlsx"];
 
@@ -133,17 +153,17 @@ export class UploadFileComponent implements OnInit, OnDestroy {
             } else {
                 this.isDataFileTypeInvalid = true;
             }
-		}
-	}
+        }
+    }
 
     private getFileExtension(file: File): string | null {
-		const fileExtension = file.name.split(".").pop();
-		if (fileExtension != undefined) {
-			return fileExtension;
-		} else {
-			return null;
-		}
-	}
+        const fileExtension = file.name.split(".").pop();
+        if (fileExtension != undefined) {
+            return fileExtension;
+        } else {
+            return null;
+        }
+    }
 
     onDataConfigurationFileInput(event: Event) {
         const files = (event.target as HTMLInputElement)?.files;
@@ -161,8 +181,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         }
     }
 
-	uploadFile() {
-		this.loadingService.setLoadingStatus(true);
+    uploadFile() {
+        this.loadingService.setLoadingStatus(true);
 
         if (!this.dataFile) {
             return;
@@ -194,7 +214,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                 this.handleError(err, "Failed to upload file");
             },
         });
-	}
+    }
 
     /**
      * Handles the result of the configuration upload.
@@ -213,16 +233,16 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         }
     }
 
-	setFileType(fileExtension: string) {
-		switch (fileExtension) {
-			case "csv":
-				this.fileConfiguration.fileType = FileType.CSV;
-				break;
-			case "xlsx":
-				this.fileConfiguration.fileType = FileType.XLSX;
-				break;
-		}
-	}
+    setFileType(fileExtension: string) {
+        switch (fileExtension) {
+            case "csv":
+                this.fileConfiguration.fileType = FileType.CSV;
+                break;
+            case "xlsx":
+                this.fileConfiguration.fileType = FileType.XLSX;
+                break;
+        }
+    }
 
     openDialog(templateRef: TemplateRef<any>) {
         this.dialog.open(templateRef, {
@@ -230,22 +250,22 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         });
     }
 
-	private handleUpload(data: Object) {
-		this.dataConfigurationService.setDataConfiguration(
-			plainToClass(DataConfiguration, data)
-		);
-		this.navigateToNextStep();
-	}
+    private handleUpload(data: Object) {
+        this.dataConfigurationService.setDataConfiguration(
+            plainToClass(DataConfiguration, data)
+        );
+        this.navigateToNextStep();
+    }
 
-	private navigateToNextStep() {
-		this.loadingService.setLoadingStatus(false);
-		this.router.navigateByUrl("/dataConfiguration");
+    private navigateToNextStep() {
+        this.loadingService.setLoadingStatus(false);
+        this.router.navigateByUrl("/dataConfiguration");
         this.statusService.updateNextStep(Steps.DATA_CONFIG).subscribe();
-	}
+    }
 
-	private handleError(err: any, message?: string) {
-		this.loadingService.setLoadingStatus(false);
+    private handleError(err: any, message?: string) {
+        this.loadingService.setLoadingStatus(false);
         this.errorHandlingService.addError(err, message);
-		// this.showErrorDialog(error);
-	}
+        // this.showErrorDialog(error);
+    }
 }

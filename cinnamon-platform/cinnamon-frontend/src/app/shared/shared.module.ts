@@ -49,7 +49,7 @@ import { MetricInfoTableComponent } from './components/metric-info-table/metric-
 import { MetricConfigurationComponent } from './components/metric-configuration/metric-configuration.component';
 import { ConfigurationInputAttributeListComponent } from './components/configuration-input-attribute-list/configuration-input-attribute-list.component';
 import { WorkstepComponent } from "./components/workstep/workstep.component";
-import { WorkstepsComponent } from "./components/worksteps/worksteps.component";
+import { WorkstepTitleComponent } from "./components/workstep-title/workstep-title.component";
 
 @NgModule({
     declarations: [
@@ -78,7 +78,7 @@ import { WorkstepsComponent } from "./components/worksteps/worksteps.component";
         LoadingSpinnerComponent,
         MetricInfoTableComponent,
         WorkstepComponent,
-        WorkstepsComponent,
+        WorkstepTitleComponent,
         // Directives
         NoSpaceValidatorDirective,
         // Pipes
@@ -130,8 +130,8 @@ import { WorkstepsComponent } from "./components/worksteps/worksteps.component";
         NoSpaceValidatorDirective,
         InstanceOfPipe,
         MetricConfigurationComponent,
-        WorkstepsComponent,
         WorkstepComponent,
+        WorkstepTitleComponent,
     ],
 })
 export class SharedModule {}

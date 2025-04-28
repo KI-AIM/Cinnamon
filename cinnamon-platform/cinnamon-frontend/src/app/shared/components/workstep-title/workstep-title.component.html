@@ -1,0 +1,48 @@
+<div style="display: flex; flex-direction: row; align-items: center;">
+    <ng-container *ngTemplateOutlet="statusIcon; context: {stepIndex: stepIndex}"></ng-container>
+
+    <div style="margin-left: 1rem;">
+        <ng-content></ng-content>
+    </div>
+</div>
+
+
+<ng-template #statusIcon let-stepIndex="stepIndex">
+
+    <!-- Completed -->
+    <ng-container *ngIf="stepIndex < currentStep">
+        <div style="display: flex;">
+            <div
+                style="width: 25px; height: 25px; border-radius: 100%; background-color: #007e33; color: white; display: flex; ">
+                <div style="margin: auto; width: fit-content; height: fit-content; font-weight: bold;z-index: 2;">
+                    <mat-icon fontIcon="check"></mat-icon>
+                    1
+                </div>
+            </div>
+        </div>
+    </ng-container>
+
+    <!-- Current-->
+    <ng-container *ngIf="stepIndex === currentStep">
+        <div style="display: flex;">
+            <div
+                style="width: 25px; height: 25px; border-radius: 100%; color: white; display: flex; border-color: #007bff; border-width: 2px; border-style: solid;">
+                <div
+                    style="margin: auto; font-weight: bold;z-index: 2; width: 7px; height: 7px; background-color: #007bff; border-radius: 100%;">
+                </div>
+            </div>
+        </div>
+    </ng-container>
+
+    <!-- Locked-->
+    <ng-container *ngIf="stepIndex > currentStep">
+        <div style="display: flex;">
+            <div
+                style="width: 25px; height: 25px; border-radius: 100%; color: white; display: flex; border-color: #b0b8c1; border-width: 2px; border-style: solid;">
+                <div
+                    style="margin: auto; font-weight: bold;z-index: 2; width: 7px; height: 7px; background-color: #b0b8c1; border-radius: 100%;">
+                </div>
+            </div>
+        </div>
+    </ng-container>
+</ng-template>

@@ -1,3 +1,65 @@
+<ng-container *ngIf="status$ | async as status">
+    <ng-container *ngIf="status.mode === Mode.STANDARD">
+
+        <mat-accordion>
+
+            <mat-expansion-panel [disabled]="0 > currentStep">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        <app-workstep-title [stepIndex]="0">
+                            View the data
+                        </app-workstep-title>
+                    </mat-panel-title>
+                    <mat-panel-description>
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <ng-template matExpansionPanelContent>
+
+                    <p class="mt-1">
+                        <span>Rows in the dataset: {{ numberRows$ | async }} rows</span>
+                    </p>
+                    <p class="mt-1">
+                        <span>Rows that will be adjusted: {{ numberInvalidRows$ | async }} rows</span>
+                    </p>
+
+                    <div class="mt-1">
+                        <app-data-table sourceDataset="validation"></app-data-table>
+                    </div>
+
+                    <app-workstep [locked]="locked" [stepIndex]="0" [valid]="true"></app-workstep>
+                </ng-template>
+
+            </mat-expansion-panel>
+
+            <mat-expansion-panel [disabled]="1 > currentStep">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        <app-workstep-title [stepIndex]="1">
+                            View statistics
+                        </app-workstep-title>
+                    </mat-panel-title>
+                    <mat-panel-description>
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <ng-template matExpansionPanelContent>
+                    <div class="mt-1">
+                        <app-data-inspection sourceDataset="VALIDATION"></app-data-inspection>
+                    </div>
+
+                    <app-workstep [locked]="locked" [stepIndex]="1" [valid]="true"></app-workstep>
+                </ng-template>
+            </mat-expansion-panel>
+
+
+        </mat-accordion>
+
+
+    </ng-container>
+</ng-container>
+
+
 <div class="box mb-2">
 
 

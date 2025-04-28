@@ -6,11 +6,14 @@ import { Steps } from "src/app/core/enums/steps";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { MatDialog } from "@angular/material/dialog";
 import {DataSetInfoService} from "../../services/data-set-info.service";
-import { map, Observable, switchMap } from "rxjs";
+import { map, Observable, switchMap, tap } from "rxjs";
 import { StatusService } from "../../../../shared/services/status.service";
 import {FileService} from "../../services/file.service";
 import { ConfigurationService } from "../../../../shared/services/configuration.service";
 import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
+import { Status } from "../../../../shared/model/status";
+import { WorkstepService } from "../../../../shared/services/workstep.service";
+import { Mode } from "../../../../core/enums/mode";
 
 @Component({
     selector: "app-data-validation",
@@ -21,6 +24,7 @@ import { ErrorHandlingService } from "../../../../shared/services/error-handling
 export class DataValidationComponent implements OnInit {
     protected numberRows$: Observable<number>;
     protected numberInvalidRows$: Observable<number>;
+    protected status$: Observable<Status>;
 
 	constructor(
 		private loadingService: LoadingService,
@@ -33,6 +37,7 @@ export class DataValidationComponent implements OnInit {
 		private titleService: TitleService,
         private dialog: MatDialog,
         private errorHandlingService: ErrorHandlingService,
+        private readonly workstepService: WorkstepService,
 	) {
         this.titleService.setPageTitle("Data validation");
     }
@@ -48,6 +53,27 @@ export class DataValidationComponent implements OnInit {
                 return value.numberInvalidRows;
             }),
         );
+        this.status$ = this.statusService.status$.pipe(
+            tap(() => {
+                this.workstepService.init(2, this.statusService.isStepCompleted(Steps.VALIDATION));
+            }),
+        );
+    }
+
+    /**
+     * Gets the current workstep.
+     * @protected
+     */
+    protected get currentStep(): number {
+        return this.workstepService.currentStep;
+    }
+
+    /**
+     * Checks if all worksteps are completed.
+     * @protected
+     */
+    protected get stepsCompleted(): boolean {
+        return this.workstepService.isCompleted;
     }
 
     protected get locked(): boolean {
@@ -93,4 +119,6 @@ export class DataValidationComponent implements OnInit {
 		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/anonymizationConfiguration");
 	}
+
+    protected readonly Mode = Mode;
 }

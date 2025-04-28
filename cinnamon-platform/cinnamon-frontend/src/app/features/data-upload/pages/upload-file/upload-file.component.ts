@@ -14,7 +14,7 @@ import { LoadingService } from "src/app/shared/services/loading.service";
 import { ConfigurationService } from "../../../../shared/services/configuration.service";
 import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
 import { StatusService } from "../../../../shared/services/status.service";
-import { Observable } from "rxjs";
+import { Observable, tap } from "rxjs";
 import { FileInformation } from "../../../../shared/model/file-information";
 import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
 import { Status } from "../../../../shared/model/status";
@@ -77,8 +77,6 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         protected readonly workstepService: WorkstepService,
     ) {
         this.titleService.setPageTitle("Upload data");
-        this.workstepService.init(2, true);
-
         this.fileConfiguration = fileService.getFileConfiguration();
     }
 
@@ -88,7 +86,11 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.fileInfo$ = this.fileService.fileInfo$;
-        this.status$ = this.statusService.status$;
+        this.status$ = this.statusService.status$.pipe(
+            tap(() => {
+                this.workstepService.init(2, this.statusService.isStepCompleted(Steps.UPLOAD));
+            }),
+        );
         this.workstep$ = this.workstepService.step$;
     }
 

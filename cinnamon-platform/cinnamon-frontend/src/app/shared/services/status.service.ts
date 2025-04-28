@@ -40,8 +40,8 @@ export class StatusService {
             this.http.get<Status>(this.baseUrl + "/status").subscribe({
                 next: (value: Status) => {
                     this._status = value;
-                    this.statusSubject?.next(value);
                     this.setNextStep(value.currentStep);
+                    this.statusSubject?.next(value);
                 },
                 error: err => {
                   this.errorHandlingService.addError(err, "Failed to fetch project state.");

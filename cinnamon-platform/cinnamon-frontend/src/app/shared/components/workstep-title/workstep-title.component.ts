@@ -1,5 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { WorkstepService } from "../../services/workstep.service";
+import { Subscription } from "rxjs";
+import { MatExpansionPanel } from "@angular/material/expansion";
 
 @Component({
     selector: 'app-workstep-title',
@@ -7,12 +9,27 @@ import { WorkstepService } from "../../services/workstep.service";
     styleUrl: './workstep-title.component.less',
     standalone: false,
 })
-export class WorkstepTitleComponent {
+export class WorkstepTitleComponent implements OnInit, OnDestroy {
     @Input() public stepIndex!: number;
+
+    private stepSubscription: Subscription;
 
     constructor(
         private readonly workstepService: WorkstepService,
+        private readonly matExpansionPanel: MatExpansionPanel,
     ) {
+    }
+
+    public ngOnInit(): void {
+        this.stepSubscription = this.workstepService.step$.subscribe(step => {
+            if (this.stepIndex === step) {
+                this.matExpansionPanel.open();
+            }
+        });
+    }
+
+    public ngOnDestroy(): void {
+        this.stepSubscription.unsubscribe();
     }
 
     /**

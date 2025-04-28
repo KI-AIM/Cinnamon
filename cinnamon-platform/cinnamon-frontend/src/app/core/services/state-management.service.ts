@@ -3,7 +3,7 @@ import { StepConfiguration } from '../enums/steps';
 import { Status } from "../../shared/model/status";
 import { Router } from "@angular/router";
 import { UserService } from "../../shared/services/user.service";
-import { Observable, tap } from "rxjs";
+import { Observable, take, tap } from "rxjs";
 import { ConfigurationService } from "../../shared/services/configuration.service";
 import { StatusService } from "../../shared/services/status.service";
 
@@ -27,14 +27,18 @@ export class StateManagementService {
      * Fetches the state and configurations from the backend.
      */
     public fetchCurrentStep() {
-        this.doFetchCurrentStep().subscribe();
+        this.doFetchCurrentStep().pipe(
+            take(1),
+        ).subscribe();
     }
 
     /**
      * Fetches the state and configurations from the backend and routes to the current step.
      */
     public fetchAndRouteToCurrentStep() {
-        this.doFetchCurrentStep().subscribe({
+        this.doFetchCurrentStep().pipe(
+            take(1),
+        ).subscribe({
             next: value => {
                 this.routeToCurrentStep(value);
             }

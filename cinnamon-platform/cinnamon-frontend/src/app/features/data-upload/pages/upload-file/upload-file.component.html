@@ -120,7 +120,7 @@
         </mat-accordion>
 
         <div class="py-2">
-            <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="!stepsCompleted">
+            <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="!stepsCompleted || locked || isInvalid">
                 Confirm file and start configuration
             </button>
         </div>

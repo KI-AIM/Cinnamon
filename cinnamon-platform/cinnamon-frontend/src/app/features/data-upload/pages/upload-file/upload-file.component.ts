@@ -61,6 +61,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 		[QuoteChar.SINGLE_QUOTE]: "Single Quote (')",
 	};
 
+    protected currentStep = 1;
+
 	constructor(
 		private titleService: TitleService,
         private statusService: StatusService,

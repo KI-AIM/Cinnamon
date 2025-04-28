@@ -38,6 +38,9 @@ import { StringPatternConfiguration } from "../../../../shared/model/string-patt
 import { DataSetInfoService } from "../../services/data-set-info.service";
 import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
 import { DataSetInfo } from "../../../../shared/model/data-set-info";
+import { Mode } from "../../../../core/enums/mode";
+import { Status } from "../../../../shared/model/status";
+import { WorkstepService } from "../../../../shared/services/workstep.service";
 
 @Component({
     selector: 'app-data-configuration',
@@ -55,6 +58,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     protected dataSetInfo$: Observable<DataSetInfo | null>;
     protected isFileTypeXLSX$: Observable<boolean>;
+    protected status$: Observable<Status>;
 
     @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
@@ -70,6 +74,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         private router: Router,
         private readonly statusService: StatusService,
         public loadingService: LoadingService,
+        protected readonly workstepService: WorkstepService,
     ) {
         this.titleService.setPageTitle("Data configuration");
     }
@@ -107,10 +112,24 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                 return of(null);
             }),
         );
+
+        this.status$ = this.statusService.status$.pipe(
+            tap(() => {
+                this.workstepService.init(2, this.statusService.isStepCompleted(Steps.DATA_CONFIG));
+            }),
+        );
     }
 
     ngOnDestroy() {
         this.dataConfigurationSubscription.unsubscribe();
+    }
+
+    /**
+     * Gets the current workstep.
+     * @protected
+     */
+    protected get currentStep(): number {
+        return this.workstepService.currentStep;
     }
 
     protected get createHoldOutSplit(): boolean {
@@ -342,4 +361,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
             ? {undefined: {value: control.value}}
             : null
     }
+
+    protected readonly Mode = Mode;
 }

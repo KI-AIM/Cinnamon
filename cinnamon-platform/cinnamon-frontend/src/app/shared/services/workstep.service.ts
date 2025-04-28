@@ -6,15 +6,22 @@ import { BehaviorSubject } from "rxjs";
 })
 export class WorkstepService {
 
+    private _isFinished = false;
     private numberSteps = 0;
     private stepSubject = new BehaviorSubject<number>(0);
-
 
     /**
      * The observable that emits the current step of the workstep service.
      */
     public get step$() {
         return this.stepSubject.asObservable();
+    }
+
+    /**
+     * If all worksteps have been completed in the past.
+     */
+    public get isFinished() {
+        return this._isFinished;
     }
 
     /**
@@ -28,7 +35,7 @@ export class WorkstepService {
      * If all steps are completed.
      */
     public get isCompleted(): boolean {
-        return this.currentStep >= this.numberSteps;
+        return this._isFinished || this.currentStep >= this.numberSteps;
     }
 
     /**
@@ -38,6 +45,7 @@ export class WorkstepService {
      */
     public init(numberSteps: number, finished: boolean): void {
         this.numberSteps = numberSteps;
+        this._isFinished = finished;
         this.stepSubject.next(finished ? numberSteps : 0);
     }
 

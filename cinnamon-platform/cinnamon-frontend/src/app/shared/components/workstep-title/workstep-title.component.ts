@@ -22,4 +22,12 @@ export class WorkstepTitleComponent {
     protected get currentStep(): number {
         return this.workstepService.currentStep;
     }
+
+    /**
+     * If all worksteps have been completed in the past.
+     * @protected
+     */
+    protected get finished(): boolean {
+        return this.workstepService.isFinished;
+    }
 }

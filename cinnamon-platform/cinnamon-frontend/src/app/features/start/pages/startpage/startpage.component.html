@@ -28,7 +28,8 @@
     <p>You can change the mode later any time.</p>
 
     <div class="d-flex justify-content-between">
-        <mat-card class="me-2" [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD">
+        <mat-card class="me-2" [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD"
+                  [class.cinnamon-unselected-mode]="status.mode !== Mode.STANDARD">
             <mat-card-header>
                 <mat-card-title>Standard mode</mat-card-title>
             </mat-card-header>
@@ -46,8 +47,9 @@
             </mat-card-actions>
         </mat-card>
 
-        <mat-card class="ms-2" [class.cinnamon-selected-mode]="status.mode === Mode.EXPERT">
-            <mat-card-header>
+        <mat-card class="ms-2" [class.cinnamon-selected-mode]="status.mode === Mode.EXPERT"
+                  [class.cinnamon-unselected-mode]="status.mode !== Mode.EXPERT">
+        <mat-card-header>
                 <mat-card-title>Expert mode</mat-card-title>
             </mat-card-header>
             <mat-divider></mat-divider>

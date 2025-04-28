@@ -49,6 +49,8 @@ import {InstanceOfPipe} from "./pipes/instance-of.pipe";
 import { MetricInfoTableComponent } from './components/metric-info-table/metric-info-table.component';
 import { MetricConfigurationComponent } from './components/metric-configuration/metric-configuration.component';
 import { ConfigurationInputAttributeListComponent } from './components/configuration-input-attribute-list/configuration-input-attribute-list.component';
+import { WorkstepComponent } from "./components/workstep/workstep.component";
+import { WorkstepsComponent } from "./components/worksteps/worksteps.component";
 
 @NgModule({
     declarations: [
@@ -79,6 +81,8 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         MetricConfigurationComponent,
         MetricInfoTableComponent,
         ProjectSettingsComponent,
+        WorkstepComponent,
+        WorkstepsComponent,
         // Directives
         NoSpaceValidatorDirective,
         // Pipes
@@ -128,6 +132,8 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         MetricConfigurationComponent,
         MetricInfoTableComponent,
         ProjectSettingsComponent,
+        WorkstepsComponent,
+        WorkstepComponent,
         // Directives
         NoSpaceValidatorDirective,
         // Pipes

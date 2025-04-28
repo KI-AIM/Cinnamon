@@ -50,7 +50,7 @@ import { MetricInfoTableComponent } from './components/metric-info-table/metric-
 import { MetricConfigurationComponent } from './components/metric-configuration/metric-configuration.component';
 import { ConfigurationInputAttributeListComponent } from './components/configuration-input-attribute-list/configuration-input-attribute-list.component';
 import { WorkstepComponent } from "./components/workstep/workstep.component";
-import { WorkstepsComponent } from "./components/worksteps/worksteps.component";
+import { WorkstepTitleComponent } from "./components/workstep-title/workstep-title.component";
 
 @NgModule({
     declarations: [
@@ -82,7 +82,7 @@ import { WorkstepsComponent } from "./components/worksteps/worksteps.component";
         MetricInfoTableComponent,
         ProjectSettingsComponent,
         WorkstepComponent,
-        WorkstepsComponent,
+        WorkstepTitleComponent,
         // Directives
         NoSpaceValidatorDirective,
         // Pipes
@@ -132,8 +132,8 @@ import { WorkstepsComponent } from "./components/worksteps/worksteps.component";
         MetricConfigurationComponent,
         MetricInfoTableComponent,
         ProjectSettingsComponent,
-        WorkstepsComponent,
         WorkstepComponent,
+        WorkstepTitleComponent,
         // Directives
         NoSpaceValidatorDirective,
         // Pipes

@@ -1,4 +1,4 @@
-<div class="box">
+<div class="box" *ngIf="status$ | async as status;">
 
     <h3>Welcome to Cinnamon. This tool is designed to anonymize your data by providing methods both for direct
         anonymization as well as data generation with synthetic methods. </h3>
@@ -23,16 +23,12 @@
         the results of completed steps following the modified configuration.
     </p>
 
-<!--    <button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);" [disabled]="locked">-->
-<!--        Start-->
-<!--    </button>-->
-
     <h3 class="mt-2">Please choose your desired mode: </h3>
 
     <p>You can change the mode later any time.</p>
 
     <div class="d-flex justify-content-between">
-        <mat-card class="me-2">
+        <mat-card class="me-2" [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD">
             <mat-card-header>
                 <mat-card-title>Standard mode</mat-card-title>
             </mat-card-header>
@@ -44,13 +40,13 @@
                     customizable resulting in worse anonymization results.</p>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-                <button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);">
+                <button type="button" mat-raised-button color="primary" [disabled]="status.mode === Mode.STANDARD" (click)="selectMode(Mode.STANDARD);">
                     Use standard mode
                 </button>
             </mat-card-actions>
         </mat-card>
 
-        <mat-card class="ms-2">
+        <mat-card class="ms-2" [class.cinnamon-selected-mode]="status.mode === Mode.EXPERT">
             <mat-card-header>
                 <mat-card-title>Expert mode</mat-card-title>
             </mat-card-header>
@@ -62,7 +58,7 @@
                     anonymization results.</p>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-                <button mat-raised-button color="primary" (click)="selectMode(Mode.EXPERT);">
+                <button type="button" mat-raised-button color="primary" [disabled]="status.mode === Mode.EXPERT" (click)="selectMode(Mode.EXPERT);">
                     Use expert mode
                 </button>
             </mat-card-actions>

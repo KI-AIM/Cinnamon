@@ -3,7 +3,7 @@ import { TitleService } from 'src/app/core/services/title-service.service';
 import { Mode } from 'src/app/core/enums/mode';
 import { Steps } from 'src/app/core/enums/steps';
 import { StatusService } from "../../../../shared/services/status.service";
-import { switchMap } from "rxjs";
+import { of, switchMap } from "rxjs";
 import { Router } from "@angular/router";
 
 @Component({
@@ -37,7 +37,11 @@ export class StartpageComponent {
     protected selectMode(mode: Mode) {
         this.statusService.setMode(mode).pipe(
             switchMap(() => {
-                return this.statusService.updateNextStep(Steps.UPLOAD);
+                if (!this.statusService.isStepCompleted(Steps.WELCOME)) {
+                    return this.statusService.updateNextStep(Steps.UPLOAD);
+                } else {
+                    return of(null);
+                }
             }),
         ).subscribe({
             next: () => {

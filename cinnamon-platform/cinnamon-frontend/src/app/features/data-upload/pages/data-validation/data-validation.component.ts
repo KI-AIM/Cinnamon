@@ -55,7 +55,7 @@ export class DataValidationComponent implements OnInit {
         );
         this.status$ = this.statusService.status$.pipe(
             tap(() => {
-                this.workstepService.init(2, this.statusService.isStepCompleted(Steps.VALIDATION));
+                this.workstepService.init(3, this.statusService.isStepCompleted(Steps.VALIDATION));
             }),
         );
     }

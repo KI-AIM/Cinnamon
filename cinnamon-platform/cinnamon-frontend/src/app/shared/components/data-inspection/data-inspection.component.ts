@@ -27,6 +27,7 @@ import { ProcessStatus } from "../../../core/enums/process-status";
 export class DataInspectionComponent implements OnInit, OnDestroy {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
+    @Input() public lazy: boolean = false;
     @Input() public mainData: 'real' | 'synthetic' = 'real';
     @Input() public processingSteps: string[] = [];
 
@@ -70,7 +71,9 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
             this.statistics$ = this.statisticsSubject.asObservable();
 
             // Start pipeline
-            this.reload();
+            if (!this.lazy) {
+                this.reload();
+            }
         } else {
             this.statistics$ = timer(0, 2000).pipe(
                 switchMap(() => this.statisticsService.fetchResult()),

@@ -2,8 +2,9 @@
     <ng-container *ngIf="status.mode === Mode.STANDARD">
 
         <mat-accordion>
-            <mat-expansion-panel [disabled]="0 > currentStep">
-                <mat-expansion-panel-header>
+            <mat-expansion-panel [disabled]="0 > currentStep" class="workstep-expansion-panel"
+                                 [class.workstep-complete]="currentStep > 0 || stepsCompleted">
+            <mat-expansion-panel-header>
                     <mat-panel-title>
                         <app-workstep-title [stepIndex]="0">
                             Select your dataset
@@ -12,6 +13,8 @@
                     <mat-panel-description>
                     </mat-panel-description>
                 </mat-expansion-panel-header>
+
+                <div class="cinnamon-workstep-div"></div>
 
                 <div>
                     <span>Current File: </span>
@@ -90,8 +93,9 @@
 
             </mat-expansion-panel>
 
-            <mat-expansion-panel [disabled]="1 > currentStep">
-                <mat-expansion-panel-header>
+            <mat-expansion-panel [disabled]="1 > currentStep" class="workstep-expansion-panel"
+                                 [class.workstep-complete]="currentStep > 1 || stepsCompleted">
+            <mat-expansion-panel-header>
                     <mat-panel-title>
                         <app-workstep-title [stepIndex]="1">
                             Select a configuration if available
@@ -100,6 +104,8 @@
                     <mat-panel-description>
                     </mat-panel-description>
                 </mat-expansion-panel-header>
+
+                <div class="cinnamon-workstep-div"></div>
 
                 <p>
                     If you already have a configuration file, you can upload it here.
@@ -119,7 +125,7 @@
 
         </mat-accordion>
 
-        <div class="py-2">
+        <div>
             <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="!stepsCompleted || locked || isInvalid">
                 Confirm file and start configuration
             </button>

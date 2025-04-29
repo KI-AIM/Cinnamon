@@ -23,45 +23,41 @@
         the results of completed steps following the modified configuration.
     </p>
 
-    <h3 class="mt-2">Please choose your desired mode: </h3>
+    <h3 class="mt-2">Please choose the preferred level of guidance: </h3>
 
-    <p>You can change the mode later any time.</p>
+    <p>You can change your decision at any time during the workflow.</p>
 
     <div class="d-flex justify-content-between">
-        <mat-card class="me-2" [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD"
+        <mat-card class="me-2 w-50" [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD"
                   [class.cinnamon-unselected-mode]="status.mode !== Mode.STANDARD">
             <mat-card-header>
-                <mat-card-title>Standard mode</mat-card-title>
+                <mat-card-title>Extensive Guidance</mat-card-title>
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
-                <p>The standard mode is designed for inexperienced users. It will provide some automatic suggestions for
-                    useful configuration of the platform. It will also provide a guided setup and more detailed description
-                    of every component. This however comes with a tradeoff, that the different methods might not be as
-                    customizable resulting in worse anonymization results.</p>
+                <p>Extensive guidance is designed for inexperienced users. It will provide a guided setup and a more
+                    detailed description of every component.</p>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
                 <button type="button" mat-raised-button color="primary" [disabled]="status.mode === Mode.STANDARD" (click)="selectMode(Mode.STANDARD);">
-                    Use standard mode
+                    Activate extensive guidance
                 </button>
             </mat-card-actions>
         </mat-card>
 
-        <mat-card class="ms-2" [class.cinnamon-selected-mode]="status.mode === Mode.EXPERT"
+        <mat-card class="ms-2 w-50" [class.cinnamon-selected-mode]="status.mode === Mode.EXPERT"
                   [class.cinnamon-unselected-mode]="status.mode !== Mode.EXPERT">
-        <mat-card-header>
-                <mat-card-title>Expert mode</mat-card-title>
+            <mat-card-header>
+                <mat-card-title>Minimal Guidance</mat-card-title>
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
-                <p>The expert mode is designed for experienced users that know much about anonymization and synthetization
-                    methods. This mode offers a more sophisticated interface to configure every component of the platform.
-                    Not much guidance is provided in this mode, but fine tuning ever method will likely result in better
-                    anonymization results.</p>
+                <p>Minimal guidance is designed for experienced users that are experienced in anonymization and
+                    synthetization methods. This mode offers less guidance but allows a faster workflow.</p>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
                 <button type="button" mat-raised-button color="primary" [disabled]="status.mode === Mode.EXPERT" (click)="selectMode(Mode.EXPERT);">
-                    Use expert mode
+                    Activate minimal guidance
                 </button>
             </mat-card-actions>
         </mat-card>

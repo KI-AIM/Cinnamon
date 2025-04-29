@@ -9,8 +9,9 @@
         <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
             <mat-accordion>
-                <mat-expansion-panel [disabled]="0 > currentStep">
-                    <mat-expansion-panel-header>
+                <mat-expansion-panel [disabled]="0 > currentStep" class="workstep-expansion-panel"
+                                     [class.workstep-complete]="currentStep > 0 || workstepService.isCompleted">
+                <mat-expansion-panel-header>
                         <mat-panel-title>
                             <app-workstep-title [stepIndex]="0">
                                 Configure the attributes
@@ -20,11 +21,14 @@
                         </mat-panel-description>
                     </mat-expansion-panel-header>
 
+                    <div class="cinnamon-workstep-div"></div>
+
                     <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
                     <app-workstep [locked]="locked" [stepIndex]="0" [valid]="!attributeConfigurationform.invalid"></app-workstep>
                 </mat-expansion-panel>
 
-                <mat-expansion-panel [disabled]="1 > currentStep">
+                <mat-expansion-panel [disabled]="1 > currentStep" class="workstep-expansion-panel"
+                                     [class.workstep-complete]="currentStep > 1 || workstepService.isCompleted">
                     <mat-expansion-panel-header>
                         <mat-panel-title>
                             <app-workstep-title [stepIndex]="1">
@@ -35,6 +39,8 @@
                         </mat-panel-description>
                     </mat-expansion-panel-header>
 
+                    <div class="cinnamon-workstep-div"></div>
+
                     <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
 
                     <app-workstep [locked]="locked" [stepIndex]="1" [valid]="!isDataSetConfigurationFormInvalid"></app-workstep>
@@ -42,7 +48,7 @@
 
             </mat-accordion>
 
-            <div class="py-2">
+            <div>
                 <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()"
                         [disabled]="attributeConfigurationform.invalid || isDataSetConfigurationFormInvalid || locked || !workstepService.isCompleted">
                     Confirm configuration and start validation
@@ -52,20 +58,22 @@
         </ng-container>
         <ng-container *ngIf="data.status.mode === Mode.EXPERT">
 
-            <mat-accordion>
-                <mat-expansion-panel>
-                    <mat-expansion-panel-header>
+            <mat-accordion multi>
+                <mat-expansion-panel expanded class="workstep-expansion-panel">
+                    <mat-expansion-panel-header class="workstep-expansion-panel-header">
                         <mat-panel-title [class.invalid-group]="attributeConfigurationform.invalid">
                             Attribute Configuration
                         </mat-panel-title>
                         <mat-panel-description></mat-panel-description>
                     </mat-expansion-panel-header>
 
+                    <div class="cinnamon-workstep-div"></div>
+
                     <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
 
                 </mat-expansion-panel>
 
-                <mat-expansion-panel>
+                <mat-expansion-panel expanded class="workstep-expansion-panel">
                     <mat-expansion-panel-header>
                         <mat-panel-title [class.invalid-group]="isDataSetConfigurationFormInvalid">
                             Data Set Configuration
@@ -73,11 +81,13 @@
                         <mat-panel-description></mat-panel-description>
                     </mat-expansion-panel-header>
 
+                    <div class="cinnamon-workstep-div"></div>
+
                     <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
                 </mat-expansion-panel>
             </mat-accordion>
 
-            <div class="box mt-2">
+            <div class="box">
                 <div class="btn-group mt-2">
                     <div class="px-1">
                         <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()"

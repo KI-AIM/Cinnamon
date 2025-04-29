@@ -116,7 +116,7 @@ app-navigation{
 .vertical-boxes {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 1rem;
     width: 100%;
 }
 
@@ -268,4 +268,20 @@ app-navigation{
 .stage-tree-step {
     display: flex;
     width: 100%;
+}
+
+.mat-accordion > .workstep-expansion-panel:not(.workstep-complete) .cinnamon-workstep-div {
+    border-top: 1px solid @color-border;
+    padding-top: 0.5rem;
+}
+
+.mat-accordion > .workstep-expansion-panel {
+    margin-bottom: 1rem;
+}
+
+.mat-accordion > .workstep-expansion-panel.workstep-complete > .mat-expansion-panel-header {
+    background-color: #d4ffd2;
+    :hover {
+        background-color: #d4ffd2;
+    }
 }

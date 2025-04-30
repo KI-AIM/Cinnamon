@@ -8,7 +8,7 @@
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         <app-workstep-title [stepIndex]="0">
-                            View the data
+                            View the imported dataset
                         </app-workstep-title>
                     </mat-panel-title>
                     <mat-panel-description>
@@ -20,26 +20,36 @@
                     <div class="cinnamon-workstep-div"></div>
 
                     <p>
-                        The transformation of the data for your configuration was successful. You can inspect the result below. <br /><br />
+                        The transformation of the data for your configuration was successful. You can inspect the result
+                        below. <br/><br/>
 
-                        Lines that are marked in red will be removed from your dataset, as they could not be transformed with your
-                        configuration. The faulty column is marked in a deeper tone of red. <br />
+                        Lines that are marked in red will be removed from your dataset, as they could not be transformed with your configuration.
+                        The faulty column is marked in a deeper tone of red.
+                        You can filter for valid and invalid rows in the table below.
+                        <br/><br/>
 
-                        This application does not offer any mechanism to fix your data. You can however continue with the number of valid
-                        rows. <br />
-
-                        If you want to change anything, please adjust your data manually and start again. By clicking "Continue" below, you
-                        accept that the data will be stored locally in the processing database of the application. The data will be deleted
-                        after a certain amount of time. You can also delete it manually at any point in time.
+                        This application does not offer any mechanism to fix your data. You can however continue with the valid rows.
+                        If you want to change anything, please adjust your data manually and start again.
                     </p>
 
-                    <table>
+                    <ng-container *ngIf="dataSetInfo$ | async as dataSetInfo">
+                        <ng-container *ngIf="dataSetInfo.hasHoldOutSplit">
+                            <p>
+                                Because of the extended analysis, the dataset was split into two parts.
+                                The first part will be anonymized and used for the synthesis.
+                                The second part will not be contained in the result and instead be used to evaluate the privacy.
+                                You can view the data contained in both splits by selecting the respective split in the table below.
+                            </p>
+                        </ng-container>
+                    </ng-container>
+
+                    <table style="font-weight: bold;">
                         <tr>
                             <td style="padding-right: 1rem;">Rows in the dataset:</td>
                             <td>{{ numberRows$ | async }}</td>
                         </tr>
                         <tr>
-                            <td style="padding-right: 1rem;">Rows that will be adjusted:</td>
+                            <td style="padding-right: 1rem;">Rows that will be adjusted because of conflicts with your configuration:</td>
                             <td>{{ numberInvalidRows$ | async }}</td>
                         </tr>
                     </table>
@@ -67,7 +77,9 @@
 
                 <div class="cinnamon-workstep-div"></div>
 
-                Statistics can hint to some issue
+                The statistics give an overview of the configured metadata as well as basic metrics for each attribute.
+                You can confirm, that the value distribution has not changed significantly after the import, especially if faulty rows were deleted or the holdout split was created.
+                Statistics can also give you hints what attributes needs to be protected during the anonymization.
 
                 <div class="mt-1">
                     <app-data-inspection [lazy]="true" sourceDataset="VALIDATION"></app-data-inspection>
@@ -81,7 +93,7 @@
                 <mat-expansion-panel-header>
                     <mat-panel-title>
                         <app-workstep-title [stepIndex]="2">
-                            Correct potential issues
+                           Confirm the dataset and data configuration
                         </app-workstep-title>
                     </mat-panel-title>
                     <mat-panel-description>
@@ -90,8 +102,10 @@
 
                 <div class="cinnamon-workstep-div"></div>
 
-                If you noticed any issues in the imported data or the statistics, you can go back to previous steps and modify the data or the configuration.
-                Otherwise you can continue with the current data.
+                If you noticed any issues in the imported data or the statistics, you can go back to previous steps and change the dataset or the configuration.
+                Otherwise you can continue with the current data, which will lock the import process.
+                If you want to change anything prior to this point, you will have delete the dataset by clicking the "Delete Data" button on the bottom of this page.
+                Be aware, that this will also delete all data and results of the following steps.
 
                 <app-workstep [locked]="locked" [stepIndex]="2" [valid]="true"></app-workstep>
             </mat-expansion-panel>
@@ -114,26 +128,20 @@
     <ng-container *ngIf="status.mode === Mode.EXPERT">
 
         <div class="box mb-3">
-            <p>
-                The transformation of the data for your configuration was successful. You can inspect the result below. <br /><br />
+            <table style="font-weight: bold;">
+                <tr>
+                    <td style="padding-right: 1rem;">Rows in the dataset:</td>
+                    <td>{{ numberRows$ | async }}</td>
+                </tr>
+                <tr>
+                    <td style="padding-right: 1rem;">Rows that will be adjusted:</td>
+                    <td>{{ numberInvalidRows$ | async }}</td>
+                </tr>
+            </table>
 
-                Lines that are marked in red will be removed from your dataset, as they could not be transformed with your
-                configuration. The faulty column was marked in a deeper tone of red. <br />
-
-                This application does not offer any mechanism to fix your data. You can however continue with the number of valid
-                rows. <br />
-
-                If you want to change anything, please adjust your data manually and start again. By clicking "Continue" below, you
-                accept that the data will be stored locally in the processing database of the application. The data will be deleted
-                after a certain amount of time. You can also delete it manually at any point in time.
-            </p>
-
-            <p class="mt-5">
-                <span class="h2">Rows in the dataset: {{ numberRows$ | async }} rows</span>
-            </p>
-            <p class="mt-1">
-                <span class="h2">Rows that will be adjusted: {{ numberInvalidRows$ | async }} rows</span>
-            </p>
+            <div class="mt-2">
+                By proceeding, you previous steps will be locked and can only be changed by deleting all date, including the results of the following steps.
+            </div>
 
             <div class="d-flex align-items-center justify-content-start my-2">
                 <button mat-raised-button color="primary" class="me-2" (click)="confirmData()" [disabled]="locked">
@@ -148,34 +156,44 @@
 
         </div>
 
-        <mat-accordion>
-            <mat-expansion-panel class="workstep-expansion-panel">
+        <mat-accordion multi>
+            <mat-expansion-panel expanded class="workstep-expansion-panel">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
-                        <h5>Data Upload Result</h5>
+                        <h5 style="margin-bottom: 0;">Data Upload Result</h5>
                     </mat-panel-title>
                     <mat-panel-description>
                     </mat-panel-description>
                 </mat-expansion-panel-header>
 
                 <ng-template matExpansionPanelContent>
+
+                    <div class="cinnamon-workstep-div"></div>
+
+                    Lines that are marked in red will be removed from your dataset, as they could not be transformed with your configuration.
+                    The faulty column is marked in a deeper tone of red.
+                    You can filter for valid and invalid rows in the table below.
+
                     <div class="mt-1">
                         <app-data-table sourceDataset="validation"></app-data-table>
                     </div>
                 </ng-template>
             </mat-expansion-panel>
-            <mat-expansion-panel class="workstep-expansion-panel">
+            <mat-expansion-panel expanded class="workstep-expansion-panel">
                 <mat-expansion-panel-header>
                     <mat-panel-title>
-                        <h5>Data Inspection</h5>
+                        <h5 style="margin-bottom: 0;">Data Inspection</h5>
                     </mat-panel-title>
                     <mat-panel-description>
                     </mat-panel-description>
                 </mat-expansion-panel-header>
 
                 <ng-template matExpansionPanelContent>
+
+                    <div class="cinnamon-workstep-div"></div>
+
                     <div class="mt-1">
-                        <app-data-inspection sourceDataset="VALIDATION"></app-data-inspection>
+                        <app-data-inspection [lazy]="true" sourceDataset="VALIDATION"></app-data-inspection>
                     </div>
                 </ng-template>
 
@@ -184,6 +202,10 @@
 
     </ng-container>
 </ng-container>
+
+<ng-template #info>
+
+</ng-template>
 
 <ng-template #deleteDialog>
     <mat-dialog-content class="mat-typography">

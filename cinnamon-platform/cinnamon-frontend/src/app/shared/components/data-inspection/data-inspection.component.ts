@@ -34,6 +34,7 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
     protected readonly ProcessStatus = ProcessStatus;
 
     protected filterText: string;
+    protected startedCalculation: boolean = false;
     protected statistics$: Observable<StatisticsResponse | null>;
 
     private statisticsSubject = new Subject<StatisticsResponse>();
@@ -114,6 +115,7 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected reload() {
+        this.startedCalculation = true;
         this.reloadSubject.next();
         this.statisticsSubject.next(new StatisticsResponse(ProcessStatus.RUNNING));
     }

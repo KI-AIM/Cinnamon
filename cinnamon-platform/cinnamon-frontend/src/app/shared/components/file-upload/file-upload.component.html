@@ -1,0 +1,12 @@
+<div class="drop-zone flex-grow-1" (dragover)="onDragOver($event)"
+     (dragleave)="onDragLeave($event)"
+     (drop)="onDrop($event)" [class.dragover]="isDragging">
+    <div class="drop-zone-content">
+        <button type="button" mat-raised-button color="primary" (click)="fileInput.click()" [disabled]="disabled">
+            Choose File
+        </button>
+        <input hidden (input)="onFileInput($event)" #fileInput type="file" [accept]="accept" [disabled]="disabled">
+        <span *ngIf="dataFile === null" [class.drop-text-disabled]="disabled">Choose file or drag and drop</span>
+        <span *ngIf="dataFile !== null" [class.drop-text-disabled]="disabled">{{ dataFile.name }}</span>
+    </div>
+</div>

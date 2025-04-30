@@ -1,9 +1,9 @@
 <div style="display: flex; flex-direction: row; align-items: center;">
     <ng-container *ngTemplateOutlet="statusIcon; context: {stepIndex: stepIndex}"></ng-container>
 
-    <div style="margin-left: 1rem;">
+    <h5 style="margin-left: 1rem; margin-bottom: 0;">
         <ng-content></ng-content>
-    </div>
+    </h5>
 </div>
 
 
@@ -11,12 +11,10 @@
 
     <!-- Completed -->
     <ng-container *ngIf="finished || stepIndex < currentStep">
-        <div style="display: flex;">
-            <div
-                style="width: 25px; height: 25px; border-radius: 100%; background-color: #007e33; color: white; display: flex; ">
-                <div style="margin: auto; width: fit-content; height: fit-content; font-weight: bold;z-index: 2;">
+        <div class="workstep-title">
+            <div class="workstep-title-icon workstep-title-completed">
+                <div class="workstep-title-icon-check">
                     <mat-icon fontIcon="check"></mat-icon>
-                    1
                 </div>
             </div>
         </div>
@@ -24,24 +22,18 @@
 
     <!-- Current-->
     <ng-container *ngIf="!finished && stepIndex === currentStep">
-        <div style="display: flex;">
-            <div
-                style="width: 25px; height: 25px; border-radius: 100%; color: white; display: flex; border-color: #007bff; border-width: 2px; border-style: solid;">
-                <div
-                    style="margin: auto; font-weight: bold;z-index: 2; width: 7px; height: 7px; background-color: #007bff; border-radius: 100%;">
-                </div>
+        <div class="workstep-title">
+            <div class="workstep-title-icon workstep-title-current">
+                <div class="workstep-title-icon-dot"></div>
             </div>
         </div>
     </ng-container>
 
     <!-- Locked-->
     <ng-container *ngIf="!finished && stepIndex > currentStep">
-        <div style="display: flex;">
-            <div
-                style="width: 25px; height: 25px; border-radius: 100%; color: white; display: flex; border-color: #b0b8c1; border-width: 2px; border-style: solid;">
-                <div
-                    style="margin: auto; font-weight: bold;z-index: 2; width: 7px; height: 7px; background-color: #b0b8c1; border-radius: 100%;">
-                </div>
+        <div class="workstep-title">
+            <div class="workstep-title-icon workstep-title-locked">
+                <div class="workstep-title-icon-dot"></div>
             </div>
         </div>
     </ng-container>

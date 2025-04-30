@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from "@angular/core";
+import { Component, OnDestroy, OnInit, TemplateRef } from "@angular/core";
 import { Steps } from "src/app/core/enums/steps";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { DataService } from "src/app/shared/services/data.service";
@@ -37,12 +37,9 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
     protected fileInfo$: Observable<FileInformation>;
     protected status$: Observable<Status>;
-    protected workstep$: Observable<number>;
 
     protected isDataFileTypeInvalid: boolean = false;
     protected isConfigFileTypeInvalid: boolean = false;
-
-    @ViewChild("fileForm") fileInput: ElementRef;
 
     public lineEndings = Object.values(LineEnding);
     public lineEndingLabels: Record<LineEnding, string> = {
@@ -80,18 +77,17 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         this.fileConfiguration = fileService.getFileConfiguration();
     }
 
-    ngOnDestroy(): void {
+    public ngOnDestroy(): void {
         this.fileService.setFileConfiguration(this.fileConfiguration)
     }
 
-    ngOnInit(): void {
+    public ngOnInit(): void {
         this.fileInfo$ = this.fileService.fileInfo$;
         this.status$ = this.statusService.status$.pipe(
             tap(() => {
                 this.workstepService.init(2, this.statusService.isStepCompleted(Steps.UPLOAD));
             }),
         );
-        this.workstep$ = this.workstepService.step$;
     }
 
     /**
@@ -125,7 +121,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected get isConfigFileInvalid(): boolean {
-        return this.isConfigFileTypeInvalid;
+        return this.configurationFile == null || this.isConfigFileTypeInvalid;
     }
 
     /**
@@ -134,16 +130,19 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected get isInvalid(): boolean {
-        return this.isDataFileInvalid || this.isConfigFileInvalid;
+        const stepCompleted = this.statusService.isStepCompleted(Steps.UPLOAD);
+        if (stepCompleted) {
+            return (this.dataFile === null && this.configurationFile === null) || this.isDataFileTypeInvalid || this.isConfigFileTypeInvalid;
+        } else {
+            return this.isDataFileInvalid || this.isConfigFileTypeInvalid;
+        }
     }
 
     protected get locked(): boolean {
         return this.statusService.isStepCompleted(Steps.VALIDATION);
     }
 
-    onFileInput(event: Event) {
-        const files = (event.target as HTMLInputElement)?.files;
-
+    protected onFileInput(files: FileList | null) {
         if (files) {
             const fileExtension = this.getFileExtension(files[0]);
             const validFileExtensions = ["csv", "xlsx"];
@@ -167,9 +166,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         }
     }
 
-    onDataConfigurationFileInput(event: Event) {
-        const files = (event.target as HTMLInputElement)?.files;
-
+    protected onDataConfigurationFileInput(files: FileList | null) {
         if (files) {
             const fileExtension = this.getFileExtension(files[0]);
             const validFileExtensions = ["yml", "yaml"];
@@ -183,39 +180,62 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         }
     }
 
-    uploadFile() {
-        this.loadingService.setLoadingStatus(true);
+    protected uploadFile() {
+        const stepCompleted = this.statusService.isStepCompleted(Steps.UPLOAD);
 
-        if (!this.dataFile) {
-            return;
-        }
+        if (!stepCompleted || !this.isDataFileInvalid) {
+            if (!this.dataFile) {
+                return;
+            }
 
-        this.fileService.uploadFile(this.dataFile, this.fileConfiguration).subscribe({
-            next: value => {
-                this.fileService.invalidateCache();
-                if (this.configurationFile == null) {
-                    // Estimate data configuration based on the data set
-                    this.dataService.estimateData().subscribe({
-                        next: (d) => this.handleUpload(d),
-                        error: (e) => this.handleError(e, "Failed to estimate the data configuration"),
-                    });
-                } else {
-                    // Use data configuration from the selected file
-                    this.configurationService.uploadAllConfigurations(this.configurationFile, [this.dataConfigurationService.CONFIGURATION_NAME]).subscribe(
-                        {
-                            next: result => {
-                                this.handleConfigurationUpload(result);
-                            },
-                            error: err => {
-                                this.handleError(err, "Failed to import data configuration");
-                            },
+            this.loadingService.setLoadingStatus(true);
+
+            this.fileService.uploadFile(this.dataFile, this.fileConfiguration).subscribe({
+                next: value => {
+                    this.fileService.invalidateCache();
+                    if (this.configurationFile == null) {
+                        // Estimate data configuration based on the data set
+                        this.dataService.estimateData().subscribe({
+                            next: (d) => this.handleUpload(d),
+                            error: (e) => this.handleError(e, "Failed to estimate the data configuration"),
                         });
-                }
-            },
-            error: err => {
-                this.handleError(err, "Failed to upload file");
-            },
-        });
+                    } else {
+                        // Use data configuration from the selected file
+                        this.configurationService.uploadAllConfigurations(this.configurationFile, [this.dataConfigurationService.CONFIGURATION_NAME]).subscribe(
+                            {
+                                next: result => {
+                                    this.handleConfigurationUpload(result);
+                                },
+                                error: err => {
+                                    this.handleError(err, "Failed to import data configuration");
+                                },
+                            });
+                    }
+                },
+                error: err => {
+                    this.handleError(err, "Failed to upload file");
+                },
+            });
+
+
+        } else if (stepCompleted && !this.isConfigFileInvalid) {
+            // Only upload the configuration file
+            if (!this.configurationFile) {
+                return;
+            }
+
+            this.loadingService.setLoadingStatus(true);
+
+            this.configurationService.uploadAllConfigurations(this.configurationFile, [this.dataConfigurationService.CONFIGURATION_NAME]).subscribe(
+                {
+                    next: result => {
+                        this.handleConfigurationUpload(result);
+                    },
+                    error: err => {
+                        this.handleError(err, "Failed to import data configuration");
+                    },
+                });
+        }
     }
 
     /**
@@ -235,7 +255,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         }
     }
 
-    setFileType(fileExtension: string) {
+    private setFileType(fileExtension: string) {
         switch (fileExtension) {
             case "csv":
                 this.fileConfiguration.fileType = FileType.CSV;
@@ -246,7 +266,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         }
     }
 
-    openDialog(templateRef: TemplateRef<any>) {
+    protected openDialog(templateRef: TemplateRef<any>) {
         this.dialog.open(templateRef, {
             width: '60%'
         });
@@ -268,6 +288,5 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     private handleError(err: any, message?: string) {
         this.loadingService.setLoadingStatus(false);
         this.errorHandlingService.addError(err, message);
-        // this.showErrorDialog(error);
     }
 }

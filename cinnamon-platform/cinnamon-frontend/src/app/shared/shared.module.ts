@@ -50,6 +50,7 @@ import { MetricConfigurationComponent } from './components/metric-configuration/
 import { ConfigurationInputAttributeListComponent } from './components/configuration-input-attribute-list/configuration-input-attribute-list.component';
 import { WorkstepComponent } from "./components/workstep/workstep.component";
 import { WorkstepTitleComponent } from "./components/workstep-title/workstep-title.component";
+import { FileUploadComponent } from "./components/file-upload/file-upload.component";
 
 @NgModule({
     declarations: [
@@ -73,6 +74,7 @@ import { WorkstepTitleComponent } from "./components/workstep-title/workstep-tit
         DataInspectionAttributeComponent,
         DataInspectionAttributeDetailsComponent,
         DataTableComponent,
+        FileUploadComponent,
         InfoCardComponent,
         InformationDialogComponent,
         LoadingSpinnerComponent,
@@ -124,6 +126,7 @@ import { WorkstepTitleComponent } from "./components/workstep-title/workstep-tit
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataTableComponent,
+        FileUploadComponent,
         InfoCardComponent,
         LoadingSpinnerComponent,
         MetricInfoTableComponent,

@@ -14,6 +14,7 @@ import { ErrorHandlingService } from "../../../../shared/services/error-handling
 import { Status } from "../../../../shared/model/status";
 import { WorkstepService } from "../../../../shared/services/workstep.service";
 import { Mode } from "../../../../core/enums/mode";
+import { DataSetInfo } from "../../../../shared/model/data-set-info";
 
 @Component({
     selector: "app-data-validation",
@@ -24,6 +25,7 @@ import { Mode } from "../../../../core/enums/mode";
 export class DataValidationComponent implements OnInit {
     protected numberRows$: Observable<number>;
     protected numberInvalidRows$: Observable<number>;
+    protected dataSetInfo$: Observable<DataSetInfo>;
     protected status$: Observable<Status>;
 
 	constructor(
@@ -43,6 +45,7 @@ export class DataValidationComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfoOriginal$();
         this.numberRows$ = this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
             map(value => {
                 return value.numberRows;

@@ -30,8 +30,7 @@ public class ExternalEndpoint {
 	 * Endpoint for cancelling requests.
 	 */
 	@JsonIgnore
-	@NotBlank
-	private String cancelEndpoint;
+	private String cancelEndpoint = "";
 
 	/**
 	 * HTTP method for the cancel endpoint.

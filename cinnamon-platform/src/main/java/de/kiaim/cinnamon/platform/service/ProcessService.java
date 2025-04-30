@@ -566,7 +566,7 @@ public class ProcessService {
 
 		if (backgroundProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED) {
 			backgroundProcess.setScheduledTime(null);
-		} else {
+		} else if (!ese.getCancelEndpoint().isBlank()) {
 			// Get configuration
 			final ExternalServer es = stepService.getExternalServerConfiguration(ese);
 

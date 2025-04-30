@@ -1,0 +1,26 @@
+@import "../../../styles/colors.less";
+
+.drop-zone {
+    border: 2px dashed @color-border;
+    border-radius: 5px;
+    padding: 20px;
+    text-align: center;
+    background: @color-background;
+    transition: border .3s ease-in-out, background .3s ease-in-out;
+}
+
+.drop-zone.dragover {
+    border-color: @color-highlight;
+    background: @color-info;
+}
+
+.drop-zone-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.drop-text-disabled {
+    color: @color-unimportant;
+}

@@ -33,11 +33,11 @@
     </div>
     <ng-template #loading>
         <div class="d-flex justify-content-center">
-            <div *ngIf="lazy">
+            <div *ngIf="!startedCalculation" class="d-flex flex-column">
                 <button mat-raised-button color="primary" (click)="reload()">Calculate Statistics</button>
             </div>
 
-            <div *ngIf="!lazy">
+            <div *ngIf="startedCalculation">
                 <mat-spinner [diameter]="100"></mat-spinner>
                 <button mat-raised-button color="primary" (click)="cancel()">Cancel</button>
             </div>

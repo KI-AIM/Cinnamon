@@ -4,8 +4,7 @@
         anonymization as well as data generation with synthetic methods. </h3>
 
     <p>The application will guide you through the different steps, that are shown on the left side of the screen.
-        Completed
-        steps will be marked accordingly. The steps can be grouped into three categories: </p>
+        Completed steps will be marked accordingly. The steps can be grouped into three categories: </p>
 
     <ul>
         <li>Upload of the data</li>
@@ -19,13 +18,15 @@
         <mat-icon fontIcon="info" style="vertical-align: bottom;"></mat-icon>
         if they have an explanation attached to them.
         It is possible to always switch back to completed steps, to adjust the configuration. Be aware that this will
-        delete
-        the results of completed steps following the modified configuration.
+        delete the results of completed steps following the modified configuration.
     </p>
 
     <h3 class="mt-2">Please choose the preferred level of guidance: </h3>
 
-    <p>You can change your decision at any time during the workflow.</p>
+    <p>
+        Cinnamon provides to different levels of guidance.
+        You can go back to this page and change your decision at any time during the workflow.
+    </p>
 
     <div class="d-flex justify-content-between">
         <mat-card class="me-2 w-50" [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD"
@@ -35,8 +36,10 @@
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
-                <p>Extensive guidance is designed for inexperienced users. It will provide a guided setup and a more
-                    detailed description of every component.</p>
+                <p>
+                    Extensive guidance is designed for inexperienced users that are new to Cinnamon.
+                    It will provide a guided setup and more detailed descriptions for every step.
+                </p>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
                 <button type="button" mat-raised-button color="primary" [disabled]="status.mode === Mode.STANDARD" (click)="selectMode(Mode.STANDARD);">
@@ -52,8 +55,10 @@
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
-                <p>Minimal guidance is designed for experienced users that are experienced in anonymization and
-                    synthetization methods. This mode offers less guidance but allows a faster workflow.</p>
+                <p>
+                    Minimal guidance is designed for experienced users that are knowledgeable in anonymization and synthetization methods.
+                    This mode offers less guidance but allows a faster workflow.
+                </p>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
                 <button type="button" mat-raised-button color="primary" [disabled]="status.mode === Mode.EXPERT" (click)="selectMode(Mode.EXPERT);">

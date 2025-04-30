@@ -62,7 +62,7 @@
                 <mat-expansion-panel expanded class="workstep-expansion-panel">
                     <mat-expansion-panel-header class="workstep-expansion-panel-header">
                         <mat-panel-title [class.invalid-group]="attributeConfigurationform.invalid">
-                            Attribute Configuration
+                            <h5 style="margin-bottom: 0;">Attribute Configuration</h5>
                         </mat-panel-title>
                         <mat-panel-description></mat-panel-description>
                     </mat-expansion-panel-header>
@@ -76,7 +76,7 @@
                 <mat-expansion-panel expanded class="workstep-expansion-panel">
                     <mat-expansion-panel-header>
                         <mat-panel-title [class.invalid-group]="isDataSetConfigurationFormInvalid">
-                            Data Set Configuration
+                            <h5 style="margin-bottom: 0;">Data Set Configuration</h5>
                         </mat-panel-title>
                         <mat-panel-description></mat-panel-description>
                     </mat-expansion-panel-header>
@@ -103,18 +103,10 @@
 </ng-container>
 
 <ng-template #attributeConfiguration>
-    <!-- Upload -->
-    <div class="py-1">
-        <app-configuration-upload #configurationUpload [configurationName]="configuration.CONFIGURATION_NAME"
-                                  (onUpload)="handleConfigUpload($event);" [disabled]="locked">
-        </app-configuration-upload>
-    </div>
+    In this step you can view the selected/estimated data configuration.<br/>
+    Please check the data configuration carefully, especially if the data configuration has been estimated.
 
-    <div class="mt-2">
-        Configure the attributes of the dataset:
-    </div>
-
-    <div class="d-flex flex-column">
+    <div class="d-flex flex-column mt-2">
         <form *ngIf="attributeConfigurationform" [formGroup]="attributeConfigurationform">
             <div formArrayName="configurations">
                 <div *ngFor="let columnConfig of getColumnConfigurationForms(attributeConfigurationform); let i = index" [formGroupName]="i">

@@ -1,4 +1,7 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { Observable, take } from "rxjs";
 
 @Component({
     selector: 'app-file-upload',
@@ -6,9 +9,14 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     styleUrl: './file-upload.component.less',
     standalone: false,
 })
-export class FileUploadComponent {
+export class FileUploadComponent implements OnInit {
     protected dataFile: File | null = null;
+    protected errors = {
+        large: false,
+    };
     protected isDragging = false;
+
+    protected appConfig$: Observable<AppConfig>;
 
     /**
      * Disables the file input.
@@ -24,6 +32,16 @@ export class FileUploadComponent {
      * Event emitted when a file is selected or dropped.
      */
     @Output() public input: EventEmitter<FileList | null> = new EventEmitter();
+
+    public constructor(
+        private readonly appConfigService: AppConfigService,
+        private readonly errorHandlingService: ErrorHandlingService,
+    ) {
+    }
+
+    public ngOnInit(): void {
+        this.appConfig$ = this.appConfigService.appConfig$;
+    }
 
     /**
      * Handles when a file is dropped on the component.
@@ -89,6 +107,18 @@ export class FileUploadComponent {
         this.handleInput(files);
     }
 
+    protected formatMaxFileSize(maxFileSize: number): string {
+        if (maxFileSize < 1024) {
+            return maxFileSize + " byte";
+        } else if (maxFileSize < 1024 * 1024) {
+            return (maxFileSize / 1024).toFixed(2) + " kilobyte";
+        } else if (maxFileSize < 1024 * 1024 * 1024) {
+            return (maxFileSize / (1024 * 1024)).toFixed(2) + " megabyte";
+        } else {
+            return (maxFileSize / (1024 * 1024 * 1024)).toFixed(2) + " gigabyte";
+        }
+    }
+
     /**
      * Handles the file input.
      * @param files The files selected or dropped.
@@ -96,8 +126,25 @@ export class FileUploadComponent {
      */
     private handleInput(files: FileList | null) {
         if (files && files.length > 0) {
-            this.dataFile = files[0];
-            this.input.emit(files);
+            this.errors.large = false;
+
+            const file = files[0];
+            this.dataFile = file;
+
+            this.appConfigService.appConfig$.pipe(
+                take(1),
+            ).subscribe({
+                next: value => {
+                    if (file.size > value.maxFileSize) {
+                        this.errors.large = true;
+                    } else {
+                        this.input.emit(files);
+                    }
+                },
+                error: error => {
+                    this.errorHandlingService.addError(error, "Could not get app config.");
+                }
+            });
         }
     }
 

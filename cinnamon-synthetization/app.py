@@ -178,8 +178,6 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'session_key': session_key,
                 'status_code': 500
             }
-        
-        print(pre_processed_data.head().to_string())
 
         # Step 5: Initialize dataset
         try:
@@ -245,8 +243,6 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 500
             }
         
-        print(samples)
-
         # Step 9: Post-process sampled data
         try:
             print('Starting Post-processing')

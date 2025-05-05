@@ -7,7 +7,7 @@ URL: /start_synthetization_process/bayesian_network
 configurations:
   model_parameter:
     display_name: Model Architecture
-    description: DDefine the architecture of the model.
+    description: Define the architecture of the model.
     parameters:
       - name: encoder_max_clusters
         type: integer
@@ -30,7 +30,7 @@ configurations:
       - name: struct_learning_n_iter
         type: integer
         label: Iterations
-        description: The number of times the model will try to learn the best network structure. More iterations can help improve the structure.
+        description: The number of times the model will try to learn the best network structure. More iterations can help improve the structure. Higher values lead to longer training times.
         default_value: 100
         min_value: 1
         max_value: 1000
@@ -41,7 +41,7 @@ configurations:
       - name: num_samples
         type: integer
         label: Number of Samples
-        description: The number of synthetic data samples to generate.
+        description: The number of synthetic data samples to generate. A high number of samples will increase the time required for sampling.
         default_value: 1000
         min_value: 1
         max_value: 1000000

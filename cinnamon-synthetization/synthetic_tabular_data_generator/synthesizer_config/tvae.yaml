@@ -12,7 +12,7 @@ configurations:
       - name: embedding_dim
         type: integer
         label: Embedding Dimensions
-        description: Embedding Dimensions controls how much detail the model can capture when learning from the data. Higher values allow the model to represent more differences between data points, while lower values may lead to simpler, more compressed representations.
+        description: Embedding Dimensions controls how much detail the model can capture when learning from the data. Higher values allow the model to represent more differences between data points, while lower values may lead to simpler, more compressed representations. Using low values can reduce training time.
         default_value: 128
         min_value: 1
         max_value: 1000
@@ -24,7 +24,7 @@ configurations:
       - name: decompress_dims
         type: list
         label: Decompress Dimensions
-        description: Fewer or smaller layers make the model faster, but the generated data might miss complex patterns. To keep training balanced, Decompress Dimensions should have similar dimensions and values as Compress Dimensions
+        description: Fewer or smaller layers make the model faster, but the generated data might miss complex patterns. To keep training balanced, Decompress Dimensions should have similar dimensions and values as Compress Dimensions. 
         default_value: [128, 128]
   model_fitting:
     display_name: Training Parameters
@@ -33,14 +33,14 @@ configurations:
       - name: batch_size
         type: integer
         label: Batch Size
-        description: Controls how many samples are used per training step. Lower batch sizes can increase diversity but add noise, higher batch sizes make the data more consistent but may miss subtle variations.
+        description: Controls how many samples are used per training step. Lower batch sizes can increase diversity but add noise, higher batch sizes make the data more consistent but may miss subtle variations. Low values lead to longer training times.
         default_value: 100
         min_value: 1
         max_value: 1000
       - name: epochs
         type: integer
         label: Number of Epochs
-        description: Fewer epochs may lead the model to learn only basic patterns, while more epochs help capture complex structures. Very high values can cause the model to memorize the training data instead of learning to generalize.
+        description: Fewer epochs may lead the model to learn only basic patterns, while more epochs help capture complex structures. Very high values can cause the model to memorize the training data instead of learning to generalize. Higher values lead to longer training times.
         default_value: 300
   sampling:
     display_name: Sampling
@@ -49,7 +49,7 @@ configurations:
       - name: num_samples
         type: integer
         label: Samples
-        description: Configure the Samples.
+        description: The number of synthetic data samples to generate. A high number of samples will increase the time required for sampling.
         default_value: 1000
         min_value: 1
         max_value: 1000000

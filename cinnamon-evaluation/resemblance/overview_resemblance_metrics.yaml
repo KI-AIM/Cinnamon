@@ -1,151 +1,151 @@
 resemblance:
   display_name: Resemblance Metrics
-  description: Measures how closely the anonymized data matches the patterns and characteristics of original data 
+  description: Measures how closely the protected data matches the patterns and characteristics of original data 
   metrics:
     - display_name: "Mode"
       function_name: mode
-      description: "Mode of categorical variables i.e., the most frequent value"
-      interpretation: "Compare if the most frequent categories in the synthetic data match those in the real data, both in terms of the category value and its relative frequency"
+      description: "Identifies the most frequent category in categorical variables."
+      interpretation: "Compare if the most frequent categories in the protected data match those in the real data, both in terms of the category and its relative frequency"
       visualization_type: "important_metrics"
       version: "0.0.1"
 
     - display_name: "Frequency Plot"
       function_name: frequency_plot
-      description: "Percentage of each value in the real and synthetic data"
-      interpretation: "Compare if the frequencies of values in the synthetic data maintain similar proportions to those in the real data, accounting for dataset size differences"
+      description: "Visualizes the percentage distribution of each value across both real and protected data."
+      interpretation: "Compare if the frequencies of values in the protected data maintain similar proportions to those in the real data, accounting for dataset size differences"
       visualization_type: "plot"
       version: "0.0.1"
 
     - display_name: "Mean"
       function_name: mean
-      description: "Average value of numerical variables"
-      interpretation: "Compare if the synthetic data's mean falls within an acceptable deviation range from the real data's mean, typically within one standard deviation"
+      description: "Calculates the arithmetic average of numerical variables for comparison."
+      interpretation: "Compare if the protected data's mean falls within an acceptable deviation range from the real data's mean, typically within one standard deviation"
       visualization_type: "important_metrics"
       version: "0.0.1"
 
     - display_name: "Variance"
       function_name: variance
-      description: "Measure of the amount of variation of a set of values"
-      interpretation: "Verify if the synthetic data preserves similar spread of values as the real data, with variance ratios ideally close to 1"
+      description: "Quantifies the spread of numerical values from their average in both datasets."
+      interpretation: "Verify if the protected data preserves similar spread of values as the real data, with variance ratios ideally close to 1"
       visualization_type: "important_metrics"
       version: "0.0.1"
 
     - display_name: "Standard Deviation"
       function_name: standard_deviation
-      description: "Measure of the amount of variation or dispersion of a set of values"
-      interpretation: "Check if the synthetic data maintains a similar level of dispersion as the real data, with the ratio of standard deviations ideally close to 1"
+      description: "Measures the square root of variance to assess data dispersion in consistent units."
+      interpretation: "Check if the protected data maintains a similar level of dispersion as the real data, with the ratio of standard deviations ideally close to 1"
       visualization_type: "important_metrics"
       version: "0.0.1"
 
     - display_name: "Fifth Percentile"
       function_name: fifth_percentile
-      description: "5th percentile of the data"
-      interpretation: "Compare if the synthetic data maintains similar distribution shapes as the real data, with similar distribution of fifth percentiles"
+      description: "Identifies the value below which 5% of observations fall in the dataset."
+      interpretation: "Compare if the protected data maintains similar distribution shapes as the real data, with similar distribution of fifth percentiles"
       visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "First Quartile"
       function_name: q1
-      description: "25th percentile of the data"
-      interpretation: "Compare if the synthetic data maintains similar distribution shapes as the real data, with similar distribution of first quartiles"
+      description: "Represents the value below which 25% of observations fall in the dataset."
+      interpretation: "Compare if the protected data maintains similar distribution shapes as the real data, with similar distribution of first quartiles"
       visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "Median"
       function_name: median
-      description: "50th percentile of the data"
-      interpretation: "Compare if the synthetic data maintains similar distribution shapes as the real data, with similar distribution of medians"
+      description: "Identifies the middle value that separates the higher half from the lower half of the data."
+      interpretation: "Compare if the protected data maintains similar distribution shapes as the real data, with similar distribution of medians"
       visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "Third Quartile"
       function_name: q3
-      description: "75th percentile of the data"
-      interpretation: "Compare if the synthetic data maintains similar distribution shapes as the real data, with similar distribution of third quartiles"
+      description: "Represents the value below which 75% of observations fall in the dataset."
+      interpretation: "Compare if the protected data maintains similar distribution shapes as the real data, with similar distribution of third quartiles"
       visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "Ninety Fifth Percentile"
       function_name: ninety_fifth_percentile
-      description: "95th percentile of the data"
-      interpretation: "Compare if the synthetic data maintains similar distribution shapes as the real data, with similar distribution of ninety-fifth percentiles"
+      description: "Identifies the value below which 95% of observations fall in the dataset."
+      interpretation: "Compare if the protected data maintains similar distribution shapes as the real data, with similar distribution of ninety-fifth percentiles"
       visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "Skewness"
       function_name: skewness
-      description: "Measure of the asymmetry of the probability distribution of a real-valued random variable about its mean"
-      interpretation: "Verify if the synthetic data preserves similar directional bias (asymmetry) as the real data, with skewness values having the same sign and similar magnitude"
+      description: "Quantifies the asymmetry of the data distribution relative to its mean."
+      interpretation: "Verify if the protected data preserves similar directional bias (asymmetry) as the real data, with skewness values having the same sign and similar magnitude"
       visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "Kurtosis"
       function_name: kurtosis
-      description: "Measure of the 'tailedness' of the probability distribution of a real-valued random variable"
-      interpretation: "Compare if the synthetic data maintains similar tail heaviness and peak characteristics as the real data, with kurtosis values in a similar range"
+      description: "Measures the 'peakedness' and tail extremity of a distribution compared to a normal distribution."
+      interpretation: "Compare if the protected data maintains similar tail heaviness and peak characteristics as the real data, with kurtosis values in a similar range"
       visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "Minimum"
       function_name: minimum
-      description: "Smallest value in a column"
-      interpretation: "Check if the synthetic data covers a similar value as the real data, particularly important for maintaining realistic minimum bounds"
+      description: "Identifies the smallest value present in a column."
+      interpretation: "Check if the protected data covers a similar value as the real data, particularly important for maintaining realistic minimum bounds"
       visualization_type: "important_metrics"
       version: "0.0.1"
 
     - display_name: "Maximum"
       function_name: maximum
-      description: "Largest value in a column"
-      interpretation: "Check if the synthetic data covers a similar value as the real data, particularly important for maintaining realistic maximum bounds"
+      description: "Identifies the largest value present in a column."
+      interpretation: "Check if the protected data covers a similar value as the real data, particularly important for maintaining realistic maximum bounds"
       visualization_type: "important_metrics"
       version: "0.0.1"
 
     - display_name: "Density"
       function_name: density
-      description: "Probability density function of the real and synthetic data"
-      interpretation: "Compare if the shape and characteristics of the probability distribution in synthetic data closely matches the real data's distribution"
+      description: "Visualizes the continuous probability distribution of values in both datasets."
+      interpretation: "Compare if the shape and characteristics of the probability distribution in protected data closely matches the real data's distribution"
       visualization_type: "plot"
       version: "0.0.1"
 
     - display_name: "Histogram"
       function_name: histogram
-      description: "Histogram with at most 25 bins"
+      description: "Displays the frequency distribution of values grouped into bins for visual comparison."
       interpretation: "Shows the difference in each bin of the Histogramm, when te difference is higher the results are worse"
       visualization_type: "plot"
       version: "0.0.1"
 
     - display_name: "Kolmogorov-Smirnov"
       function_name: kolmogorov_smirnov
-      description: "Non-parametric test of the equality of continuous, one-dimensional probability distributions"
-      interpretation: "Assess if the distributions are statistically similar, with lower KS statistic values indicating better similarity between synthetic and real data"
+      description: "Calculates a statistical test to determine if two numerical distributions differ significantly."
+      interpretation: "Assess if the distributions are statistically similar, with lower KS statistic values indicating better similarity between protected and real data"
       visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "Hellinger Distance"
       function_name: hellinger_distance
-      description: "Distance metric for comparing distributions of categorical data"
+      description: "Measures the similarity between probability distributions with a focus on categorical data."
       interpretation: "The higher the value, the more dissimilar the distributions are. The Hellinger Distance is calculated on the complete attribute not on the top categories shown."
       visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "Missing Values Count"
       function_name: missing_values_count
-      description: "Count of missing values in the real and synthetic data"
-      interpretation: "Compare if the absolute number of missing values in synthetic data maintains similar proportions to the real data, accounting for dataset size differences"
+      description: "Counts null or empty values in both real and protected datasets for comparison."
+      interpretation: "Compare if the absolute number of missing values in protected data maintains similar proportions to the real data, accounting for dataset size differences"
       visualization_type: "important_metrics"
       version: "0.0.1"
 
     - display_name: "Distinct Values"
       function_name: distinct_values
-      description: "Count of distinct values in the real and synthetic data"
-      interpretation: "Compare if the synthetic data maintains a similar level of uniqueness/cardinality as the real data, accounting for dataset size differences"
+      description: "Quantifies the number of unique values present in each dataset."
+      interpretation: "Compare if the protected data maintains a similar level of uniqueness/cardinality as the real data, accounting for dataset size differences"
       visualization_type: "important_metrics"
       version: "0.0.1"
 
     - display_name: "Observation Length Distribution"
       function_name: observation_length_distribution
-      description: "Count of each observation length in the real and synthetic data"
-      interpretation: "Verify if the distribution of observation lengths in synthetic data matches the patterns found in real data, maintaining similar proportions of different lengths"
+      description: "Analyzes the distribution of record lengths across both datasets."
+      interpretation: "Verify if the distribution of observation lengths in protected data matches the patterns found in real data, maintaining similar proportions of different lengths"
       visualization_type: "overview"
       version: "0.0.1"
       parameters:
@@ -156,8 +156,8 @@ resemblance:
 
     - display_name: "Event Distribution"
       function_name: event_distribution
-      description: "Count of each event type in the real and synthetic data"
-      interpretation: "Compare if the frequency distribution of different event types in synthetic data maintains similar proportions as in the real data"
+      description: "Compares the frequency of different event categories between datasets."
+      interpretation: "Compare if the frequency distribution of different event types in protected data maintains similar proportions as in the real data"
       visualization_type: "overview"
       version: "0.0.1"
       parameters:
@@ -168,8 +168,8 @@ resemblance:
 
     - display_name: "Trace Length Distribution"
       function_name: trace_length_distribution
-      description: "Count of each trace length in the real and synthetic data"
-      interpretation: "Verify if the distribution of trace lengths in synthetic data reflects similar patterns as the real data, maintaining realistic process flows"
+      description: "Analyzes the distribution of sequential steps in process traces across datasets."
+      interpretation: "Verify if the distribution of trace lengths in protected data reflects similar patterns as the real data, maintaining realistic process flows"
       visualization_type: "overview"
       version: "0.0.1"
       parameters:
@@ -180,15 +180,15 @@ resemblance:
 
     - display_name: "Throughput Time"
       function_name: throughput_time
-      description: "Time between the first and the last event of a trace"
-      interpretation: "Compare if the synthetic data maintains similar process duration patterns as the real data, with similar distribution of throughput times"
+      description: "Measures the total duration between first and last events in each process trace."
+      interpretation: "Compare if the protected data maintains similar process duration patterns as the real data, with similar distribution of throughput times"
       visualization_type: "overview"
       version: "0.0.1"
 
     - display_name: "Start Event Distribution"
       function_name: start_event_distribution
-      description: "Count of each start event type in the real and synthetic data"
-      interpretation: "Verify if the synthetic data preserves similar patterns in process initiation, with comparable distributions of starting events"
+      description: "Analyzes the distribution of events that initiate processes across datasets."
+      interpretation: "Verify if the protected data preserves similar patterns in process initiation, with comparable distributions of starting events"
       visualization_type: "overview"
       version: "0.0.1"
       parameters:
@@ -203,8 +203,8 @@ resemblance:
 
     - display_name: "End Event Distribution"
       function_name: end_event_distribution
-      description: "Count of each end event type in the real and synthetic data"
-      interpretation: "Compare if the synthetic data maintains similar process completion patterns, with comparable distributions of ending events"
+      description: "Analyzes the distribution of events that conclude processes across datasets."
+      interpretation: "Compare if the protected data maintains similar process completion patterns, with comparable distributions of ending events"
       visualization_type: "overview"
       version: "0.0.1"
       parameters:
@@ -219,8 +219,8 @@ resemblance:
 
     - display_name: "Trace Variant Distribution"
       function_name: trace_variant_distribution
-      description: "Count of each trace variant in the real and synthetic data"
-      interpretation: "Verify if the synthetic data preserves similar process path variations as the real data, maintaining realistic process flow patterns"
+      description: "Compares the distribution of unique process paths between real and protected data."
+      interpretation: "Verify if the protected data preserves similar process path variations as the real data, maintaining realistic process flow patterns"
       visualization_type: "overview"
       version: "0.0.1"
       parameters:

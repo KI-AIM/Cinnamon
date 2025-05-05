@@ -422,17 +422,17 @@ def get_evaluation_metrics(data_format):
         'name': 'Evaluation',
         'type': data_format,
         'display_name': 'Evaluation',
-        'description': 'Metrics used to evaluate the resemblance and utility of synthetic data compared to real data.',
+        'description': 'Metrics used to evaluate the resemblance and utility of protected data compared to real data.',
         'URL': '/start_evaluation',
         'configurations': {
             'resemblance': {
                 'display_name': 'Resemblance Metrics',
-                'description': 'Metrics that evaluate the resemblance between real and synthetic data.',
+                'description': 'Metrics that evaluate the statistical similarity between protected and real data.',
                 'options': resemblance_metadata
             },
             'utility': {
                 'display_name': 'Utility Metrics',
-                'description': 'Metrics that evaluate the utility of anonymized data in comparision with the real data.',
+                'description': 'Metrics that evaluate the utility of protedted data in comparision with the real data.',
                 'options': utility_metadata
             }
         }
@@ -519,4 +519,4 @@ def test_callback():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5010, debug=True)

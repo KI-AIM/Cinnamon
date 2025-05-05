@@ -1,20 +1,20 @@
-import {Component, OnInit, TemplateRef } from "@angular/core";
-import { LoadingService } from "src/app/shared/services/loading.service";
-import { Router } from "@angular/router";
-import { DataService } from "src/app/shared/services/data.service";
-import { Steps } from "src/app/core/enums/steps";
-import { TitleService } from "src/app/core/services/title-service.service";
+import { Component, OnInit, TemplateRef } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
-import {DataSetInfoService} from "../../services/data-set-info.service";
-import { map, Observable, switchMap, tap } from "rxjs";
-import { StatusService } from "../../../../shared/services/status.service";
-import {FileService} from "../../services/file.service";
-import { ConfigurationService } from "../../../../shared/services/configuration.service";
-import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
-import { Status } from "../../../../shared/model/status";
-import { WorkstepService } from "../../../../shared/services/workstep.service";
-import { Mode } from "../../../../core/enums/mode";
-import { DataSetInfo } from "../../../../shared/model/data-set-info";
+import { Router } from "@angular/router";
+import { Mode } from "@core/enums/mode";
+import { Steps } from "@core/enums/steps";
+import { TitleService } from "@core/services/title-service.service";
+import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
+import { FileService } from "@features/data-upload/services/file.service";
+import { DataSetInfo } from "@shared/model/data-set-info";
+import { Status } from "@shared/model/status";
+import { ConfigurationService } from "@shared/services/configuration.service";
+import { DataService } from "@shared/services/data.service";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { LoadingService } from "@shared/services/loading.service";
+import { StatusService } from "@shared/services/status.service";
+import { WorkstepService } from "@shared/services/workstep.service";
+import { Observable, switchMap, tap } from "rxjs";
 
 @Component({
     selector: "app-data-validation",
@@ -23,8 +23,8 @@ import { DataSetInfo } from "../../../../shared/model/data-set-info";
     standalone: false
 })
 export class DataValidationComponent implements OnInit {
-    protected numberRows$: Observable<number>;
-    protected numberInvalidRows$: Observable<number>;
+    protected readonly Mode = Mode;
+
     protected dataSetInfo$: Observable<DataSetInfo>;
     protected status$: Observable<Status>;
 
@@ -46,16 +46,6 @@ export class DataValidationComponent implements OnInit {
 
     ngOnInit(): void {
         this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfoOriginal$();
-        this.numberRows$ = this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
-            map(value => {
-                return value.numberRows;
-            }),
-        );
-        this.numberInvalidRows$ = this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
-            map(value => {
-                return value.numberInvalidRows;
-            }),
-        );
         this.status$ = this.statusService.status$.pipe(
             tap(() => {
                 this.workstepService.init(3, this.statusService.isStepCompleted(Steps.VALIDATION));
@@ -122,6 +112,4 @@ export class DataValidationComponent implements OnInit {
 		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/anonymizationConfiguration");
 	}
-
-    protected readonly Mode = Mode;
 }

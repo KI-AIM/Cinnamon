@@ -1,6 +1,7 @@
 import {Injectable} from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import {finalize, Observable, of, share, tap} from "rxjs";
+import { plainToInstance } from "class-transformer";
+import { finalize, map, Observable, of, share, tap } from "rxjs";
 import {DataSetInfo} from "../../../shared/model/data-set-info";
 import {environments} from "../../../../environments/environment";
 
@@ -43,6 +44,9 @@ export class DataSetInfoService {
             jobName: step.toLowerCase(),
         }
         const dataSetInfo$ = this.http.get<DataSetInfo>(environments.apiUrl + "/api/data/info", {params: params}).pipe(
+            map(value => {
+                return plainToInstance(DataSetInfo, value);
+            }),
             tap(value => {
                 this.cache[step] = {dateSetInfo: value, dataSetInfo$: of(value)};
             }),

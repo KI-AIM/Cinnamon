@@ -36,6 +36,7 @@ app = Flask(__name__)
 tasks = {}
 task_locks = {}
 CORS(app)
+app_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def get_metric_metadata(data_format: str, metric_type: str, evaluation_metadata: dict) -> Optional[dict]:
@@ -192,7 +193,8 @@ def initialize_input_statistics() -> Union[Tuple[str, str, dict, dict, pd.DataFr
     session_key = request.form['session_key']
     callback_url = request.form['callback']
 
-    with open('static_configs/evaluation_config_descriptive.yaml', 'r') as file:
+    eval_conig_path = os.path.join(app_dir, 'static_configs', 'evaluation_config_descriptive.yaml')
+    with open(eval_conig_path, 'r') as file:
         evaluation_config = yaml.safe_load(file)
 
     attribute_config = yaml.safe_load(request.files['attribute_config'].read())
@@ -269,10 +271,12 @@ def statistics_data(session_key, callback_url, attribute_config, evaluation_conf
                                                                                  attribute_config['configurations'])
     data_format, metrics = validate_and_extract_metrics(evaluation_config)
 
-    with open('resemblance/overview_resemblance_metrics.yaml', 'r') as file:
+    overview_resemblance_path = os.path.join(app_dir, 'resemblance', 'overview_resemblance_metrics.yaml')
+    with open(overview_resemblance_path, 'r') as file:
         overview_metrics = yaml.safe_load(file)
 
-    with open('static_configs/evaluation_config_time_attributes.yaml', 'r') as file:
+    time_attributes_path = os.path.join(app_dir, 'static_configs', 'evaluation_config_time_attributes.yaml')
+    with open(time_attributes_path, 'r') as file:
         time_attributes_config = yaml.safe_load(file)
 
     print("Data format:", data_format)
@@ -337,15 +341,17 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
     data_format, metrics = validate_and_extract_metrics(evaluation_config)
 
     # Load Resemblance Metrics
-    with open('resemblance/overview_resemblance_metrics.yaml', 'r') as file:
+    overview_resemblance_path = os.path.join(app_dir, 'resemblance', 'overview_resemblance_metrics.yaml')
+    with open(overview_resemblance_path, 'r') as file:
         overview_metrics = yaml.safe_load(file)
 
     # Load Utility Metrics
-    with open('utility/overview_utility_metrics.yaml', 'r') as file:
+    overview_utility_metrics = os.path.join(app_dir, 'utility', 'overview_utility_metrics.yaml')
+    with open(overview_utility_metrics, 'r') as file:
         utility_metrics = yaml.safe_load(file)
 
-    # Loading time attributes
-    with open('static_configs/evaluation_config_time_attributes.yaml', 'r') as file:
+    time_attributes_path = os.path.join(app_dir, 'static_configs', 'evaluation_config_time_attributes.yaml')
+    with open(time_attributes_path, 'r') as file:
         time_attributes_config = yaml.safe_load(file)
 
     print("Data format:", data_format)
@@ -403,12 +409,11 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
 
 @app.route('/get_evaluation_metrics/<string:data_format>', methods=['GET'])
 def get_evaluation_metrics(data_format):
-    file_path_resemblance = os.path.join(os.path.dirname(__file__), 'resemblance', 'overview_resemblance_metrics.yaml')
-    file_path_utility = os.path.join(os.path.dirname(__file__), 'utility', 'overview_utility_metrics.yaml')
-
+    file_path_resemblance = os.path.join(app_dir, 'resemblance', 'overview_resemblance_metrics.yaml')
     with open(file_path_resemblance, 'r') as res_file:
         resemblance_config_yaml = yaml.safe_load(res_file)
 
+    file_path_utility = os.path.join(app_dir, 'utility', 'overview_utility_metrics.yaml')
     with open(file_path_utility, 'r') as uti_file:
         utility_config_yaml = yaml.safe_load(uti_file)
 
@@ -519,4 +524,4 @@ def test_callback():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5010, debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5010)

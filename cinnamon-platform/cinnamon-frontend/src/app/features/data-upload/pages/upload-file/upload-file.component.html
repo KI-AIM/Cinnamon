@@ -125,7 +125,7 @@
 </ng-template>
 
 <ng-template #info>
-    <div class="mt-4">
+    <div *ngIf="appConfig$ | async as appConfig" class="mt-4">
         <p>
             <b>Supported File Types:</b>
             <br/>
@@ -141,7 +141,7 @@
         <p>
             <b>File Size Limit:</b>
             <br/>
-            Please note that there is a limit on the size of each file you can upload.
+            The maximum file size is {{ formatMaxFileSize(appConfig.maxFileSize) }}.
             Most algorithms by this application take a long time to process.
             To ensure that processing times are somewhat reasonable, we have to limit the dataset size.
             <br/><br/>

@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, TemplateRef } from "@angular/core";
+import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
 import { Steps } from "src/app/core/enums/steps";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { DataService } from "src/app/shared/services/data.service";
@@ -35,6 +36,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     protected dataFile: File | null = null;
     public fileConfiguration: FileConfiguration;
 
+    protected appConfig$: Observable<AppConfig>;
     protected fileInfo$: Observable<FileInformation>;
     protected status$: Observable<Status>;
 
@@ -61,6 +63,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     };
 
     constructor(
+        private readonly appConfigService: AppConfigService,
         private titleService: TitleService,
         private statusService: StatusService,
         private dataService: DataService,
@@ -82,6 +85,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     }
 
     public ngOnInit(): void {
+        this.appConfig$ = this.appConfigService.appConfig$;
         this.fileInfo$ = this.fileService.fileInfo$;
         this.status$ = this.statusService.status$.pipe(
             tap(() => {
@@ -263,6 +267,18 @@ export class UploadFileComponent implements OnInit, OnDestroy {
             case "xlsx":
                 this.fileConfiguration.fileType = FileType.XLSX;
                 break;
+        }
+    }
+
+    protected formatMaxFileSize(maxFileSize: number): string {
+        if (maxFileSize < 1024) {
+            return maxFileSize + " byte";
+        } else if (maxFileSize < 1024 * 1024) {
+            return (maxFileSize / 1024).toFixed(2) + " kilobyte";
+        } else if (maxFileSize < 1024 * 1024 * 1024) {
+            return (maxFileSize / (1024 * 1024)).toFixed(2) + " megabyte";
+        } else {
+            return (maxFileSize / (1024 * 1024 * 1024)).toFixed(2) + " gigabyte";
         }
     }
 

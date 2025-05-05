@@ -10,3 +10,8 @@
         <span *ngIf="dataFile !== null" [class.drop-text-disabled]="disabled">{{ dataFile.name }}</span>
     </div>
 </div>
+<div class="cinnamon-file-input-error" *ngIf="errors.large">
+    <ng-container *ngIf="appConfig$ | async as appConfig">
+        File size must be smaller than {{ formatMaxFileSize(appConfig.maxFileSize) }}.
+    </ng-container>
+</div>

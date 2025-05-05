@@ -18,6 +18,9 @@ public class RootController {
     @Value("${cinnamon.is-demo-instance}")
     private boolean isDemoInstance;
 
+    @Value("${cinnamon.max-file-size}")
+    private long maxFileSize;
+
     private final CinnamonConfiguration cinnamonConfiguration;
 
     public RootController(final CinnamonConfiguration cinnamonConfiguration) {
@@ -34,6 +37,7 @@ public class RootController {
     public Map<String, Object> getConfig() {
         Map<String, Object> config = new HashMap<>();
         config.put("isDemoInstance", isDemoInstance);
+        config.put("maxFileSize", maxFileSize);
         config.put("passwordRequirements", cinnamonConfiguration.getPasswordRequirements());
         return config;
     }

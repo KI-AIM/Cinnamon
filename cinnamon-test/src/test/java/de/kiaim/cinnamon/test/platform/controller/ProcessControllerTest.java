@@ -110,7 +110,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/execution/configure")
+		mockMvc.perform(post("/api/process/configure")
 				                .param("jobName", ANON_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -121,7 +121,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/execution/configure")
+		mockMvc.perform(post("/api/process/configure")
 				                .param("jobName", SYNTH_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -129,7 +129,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void configureSkip() throws Exception {
-		mockMvc.perform(post("/api/process/execution/configure")
+		mockMvc.perform(post("/api/process/configure")
 				                .param("jobName", ANON_JOB)
 				                .param("skip", "true")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -138,7 +138,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void configureMissingConfiguration() throws Exception {
-		mockMvc.perform(post("/api/process/execution/configure")
+		mockMvc.perform(post("/api/process/configure")
 				                .param("jobName", ANON_JOB)
 				                .param("url", "/start_synthetization_process/ctgan")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -154,7 +154,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 
-		mockMvc.perform(post("/api/process/execution/configure")
+		mockMvc.perform(post("/api/process/configure")
 				                .param("jobName", ANON_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isBadRequest())
@@ -535,7 +535,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/execution/configure")
+		mockMvc.perform(post("/api/process/configure")
 				                .with(httpBasic("test_user_3", "changeme"))
 				                .param("jobName", ANON_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -548,7 +548,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/execution/configure")
+		mockMvc.perform(post("/api/process/configure")
 				                .with(httpBasic("test_user_3", "changeme"))
 				                .param("jobName", SYNTH_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))

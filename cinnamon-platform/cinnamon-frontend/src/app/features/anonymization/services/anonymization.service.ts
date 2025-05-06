@@ -26,20 +26,8 @@ export class AnonymizationService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName() {
-        return "anonymization";
-    }
-
     public override getConfigurationName(): string {
         return "anonymization";
-    }
-
-    public override getExecStepName(): string {
-        return "execution";
-    }
-
-    public override getJobs(): string[] {
-        return ["anonymization"];
     }
 
     public override createConfiguration(arg: AnonymizationFormConfig, selectedAlgorithm: Algorithm): Object {

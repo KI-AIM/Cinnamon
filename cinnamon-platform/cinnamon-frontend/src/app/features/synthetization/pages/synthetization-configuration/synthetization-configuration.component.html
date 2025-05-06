@@ -1,1 +1,2 @@
-<app-configuration-page></app-configuration-page>
+<app-configuration-page *ngIf="configurationInfo$ | async as configInfo" [configurationInfo]="configInfo">
+</app-configuration-page>

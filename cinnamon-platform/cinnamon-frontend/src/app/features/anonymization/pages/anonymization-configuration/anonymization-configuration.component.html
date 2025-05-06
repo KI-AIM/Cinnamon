@@ -1,5 +1,3 @@
-<app-configuration-page [additionalConfigs]="additionalConfigs">
-    <!--<app-anonymization-attribute-configuration></app-anonymization-attribute-configuration>-->
+<app-configuration-page *ngIf="configurationInfo$ | async as configInfo" [additionalConfigs]="additionalConfigs"
+                        [configurationInfo]="configInfo">
 </app-configuration-page>
-
-

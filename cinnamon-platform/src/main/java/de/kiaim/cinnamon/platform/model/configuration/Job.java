@@ -33,6 +33,9 @@ public class Job {
 
 	private String name;
 
+	/**
+	 * Mapping for {@link ExternalEndpoint#getUsages()}.
+	 */
 	private ExternalEndpoint endpoint;
 
 	public ExternalServer getServer() {

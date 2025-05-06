@@ -45,7 +45,6 @@ public class ExternalEndpoint {
 	/**
 	 * Name of the configuration.
 	 */
-	@NotBlank
 	private String configurationName;
 
 	/**
@@ -106,6 +105,13 @@ public class ExternalEndpoint {
 
 	/**
 	 * Configuration required by this endpoint.
+	 * Mapping for {@link ExternalConfiguration#getUsages()}.
 	 */
 	private ExternalConfiguration configuration;
+
+	/**
+	 * List of jobs that use this endpoint.
+	 * Mapping for {@link Job#getEndpoint()}.
+	 */
+	private List<Job> usages = new ArrayList<>();
 }

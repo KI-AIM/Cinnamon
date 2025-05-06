@@ -1,13 +1,13 @@
 import { AfterViewInit, ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import { Algorithm } from "../../model/algorithm";
-import { AlgorithmService, ConfigData } from "../../services/algorithm.service";
+import { AlgorithmService, ConfigData, ConfigurationInfo } from "../../services/algorithm.service";
 import { stringify } from "yaml";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
 import { Steps } from "@core/enums/steps";
 import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
-import { environments } from "../../../../environments/environment";
+import { environments } from "src/environments/environment";
 import { StatusService } from "../../services/status.service";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { from, mergeMap, Observable, switchMap } from "rxjs";
@@ -27,6 +27,7 @@ import { ErrorHandlingService } from "../../services/error-handling.service";
     standalone: false
 })
 export class ConfigurationPageComponent implements OnInit, AfterViewInit {
+    @Input() public configurationInfo!: ConfigurationInfo;
     @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
     @Input() public hasAlgorithmSelection: boolean = true;
 
@@ -45,6 +46,12 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     protected disabled: boolean = true;
 
     /**
+     * If the corresponding process should be executed.
+     * @protected
+     */
+    protected processEnabled: Record<string, boolean> = {};
+
+    /**
      * If an algorithm is selected and the corresponding form is valid.
      * @protected
      */
@@ -52,6 +59,13 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') protected forms: ConfigurationFormComponent;
+
+    protected readonly jobLabels: Record<string, string> = {
+        anonymization: "Anonymization",
+        synthetization: "Synthetization",
+        technical_evaluation: "Technical Evaluation",
+        risk_evaluation: "Risk Evaluation",
+    };
 
     constructor(
         protected readonly algorithmService: AlgorithmService,
@@ -65,6 +79,10 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     }
 
     ngOnInit() {
+        for (const process of this.configurationInfo.processes) {
+            this.processEnabled[process.job] = !process.skip;
+        }
+
         // Set callback functions
         this.algorithmService.setDoGetConfig(() => this.getConfig());
         this.algorithmService.setDoSetConfig((error: string | null) => this.setConfig(error));
@@ -93,6 +111,19 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     ngAfterViewInit() {
         this.readFromCache();
         this.changeDetectorRef.detectChanges();
+    }
+
+    /**
+     * Checks if at least one process is enabled.
+     * @protected
+     */
+    protected get oneEnabled(): boolean {
+        for (const enabled of Object.values(this.processEnabled)) {
+            if (enabled) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -176,33 +207,8 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         this.updateSelectCache();
         this.updateConfigCache();
 
-        this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).pipe(
-            switchMap(value => {
-                const configuration = this.forms.formData;
-                return this.postConfig(configuration, value.URL);
-            }),
-            switchMap(() => {
-                return this.configureJobs(false);
-            }),
-        ).subscribe({
-            next: () => this.finish(),
-            error: err => {
-                this.errorHandlingService.addError(err, "Failed to save configuration.");
-            }
-        });
-    }
-
-    /**
-     * Sets the step to be skipped and proceeds to the next step.
-     * The step will be skipped during the execution.
-     * @protected
-     */
-    protected skip() {
-        this.updateSelectCache();
-        this.updateConfigCache();
-
         if (!this.selection.selectedOption) {
-            this.configureJobs(true).subscribe({
+            this.configureJobs().subscribe({
                     next: () => this.finish(),
                     error: err => {
                         this.errorHandlingService.addError(err, "Failed to save configuration.");
@@ -210,14 +216,13 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
                 }
             );
         } else {
-
-            const config = this.forms ? this.forms.formData : '';
             this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).pipe(
                 switchMap(value => {
+                    const config = this.forms ? this.forms.formData : '';
                     return this.postConfig(config, value.URL);
                 }),
                 switchMap(() => {
-                    return this.configureJobs(true);
+                    return this.configureJobs();
                 }),
             ).subscribe({
                 next: () => this.finish(),
@@ -242,13 +247,12 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
 
     /**
      * Configures all jobs defined to be configured.
-     * @param skip If the jobs should be skipped.
      * @private
      */
-    private configureJobs(skip: boolean): Observable<void> {
-        return from(this.algorithmService.getJobs()).pipe(
-            mergeMap(job => {
-                return this.postConfigure(skip, job);
+    private configureJobs(): Observable<void> {
+        return from(Object.entries(this.processEnabled)).pipe(
+            mergeMap(process => {
+                return this.postConfigure(!process[1], process[0]);
             }),
         );
     }
@@ -265,7 +269,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
             formData.append("skip", 'true');
         }
         formData.append("jobName", jobName);
-        return this.httpClient.post<void>(this.baseUrl + "/" + this.algorithmService.getExecStepName() + "/configure", formData);
+        return this.httpClient.post<void>(this.baseUrl + "/configure", formData);
     }
 
     /**
@@ -275,29 +279,29 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     private finish() {
         let nextUrl = "";
         let nextStep = Steps.EVALUATION;
-        switch (this.algorithmService.getStepName()) {
+        switch (this.algorithmService.getConfigurationName()) {
             case "anonymization": {
                 nextUrl = '/synthetizationConfiguration';
                 nextStep = Steps.SYNTHETIZATION;
                 break;
             }
-            case "synthetization": {
+            case "synthetization_configuration": {
                 nextUrl = '/execution';
                 nextStep = Steps.EXECUTION;
                 break;
             }
-            case "technical_evaluation": {
+            case "evaluation_configuration": {
                 nextUrl = "/riskEvaluationConfiguration";
                 nextStep = Steps.RISK_EVALUATION;
                 break;
             }
-            case "risk_evaluation": {
+            case "risk_assessment_configuration": {
                 nextUrl = '/evaluation';
                 nextStep = Steps.EVALUATION;
                 break;
             }
             default: {
-                console.error(`Unhandled step: ${this.algorithmService.getStepName()}`);
+                console.error(`Unhandled step: ${this.algorithmService.getConfigurationName()}`);
             }
         }
 

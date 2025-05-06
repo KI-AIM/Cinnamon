@@ -19,20 +19,8 @@ export class RiskAssessmentService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName(): string {
-        return "risk_evaluation";
-    }
-
     public override getConfigurationName(): string {
         return "risk_assessment_configuration";
-    }
-
-    override getExecStepName(): string {
-        return "evaluation";
-    }
-
-    override getJobs(): string[] {
-        return ["risk_evaluation"];
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {

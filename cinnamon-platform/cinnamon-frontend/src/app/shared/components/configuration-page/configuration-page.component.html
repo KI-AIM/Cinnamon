@@ -1,7 +1,15 @@
 <div class="vertical-boxes">
 
+    <div class="box">
+        <h3>Process Activation</h3>
+        <ng-container *ngFor="let process of configurationInfo.processes;">
+            <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]">Run {{ jobLabels[process.job] }}</mat-checkbox>
+        </ng-container>
+    </div>
+
     <!-- Upload -->
     <div class="box">
+        <h3>Configuration Upload</h3>
         <app-configuration-upload [configurationName]="this.algorithmService.getConfigurationName()"
                                   [disabled]="disabled || algorithms.length === 0">
         </app-configuration-upload>
@@ -39,12 +47,9 @@
         </ng-template>
 
         <div class="mt-2">
-            <button type="submit" mat-raised-button color="primary" [disabled]="disabled || !formValid"
+            <button type="submit" mat-raised-button color="primary" [disabled]="disabled || (oneEnabled && !formValid)"
                     (click)="submit()">
                 Continue
-            </button>
-            <button type="submit" mat-raised-button color="primary" [disabled]="disabled" (click)="skip()">
-                Skip
             </button>
         </div>
 

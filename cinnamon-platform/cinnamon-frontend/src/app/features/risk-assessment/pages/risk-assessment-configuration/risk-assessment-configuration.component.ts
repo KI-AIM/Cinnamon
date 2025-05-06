@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
-import { AlgorithmService } from "../../../../shared/services/algorithm.service";
-import { RiskAssessmentService } from "../../services/risk-assessment.service";
-import { TitleService } from "../../../../core/services/title-service.service";
+import { Component, OnInit } from "@angular/core";
+import { TitleService } from "@core/services/title-service.service";
+import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
+import { AlgorithmService, ConfigurationInfo } from "@shared/services/algorithm.service";
+import { Observable } from "rxjs";
 
 @Component({
     selector: 'app-risk-assessment-configuration',
@@ -15,11 +16,18 @@ import { TitleService } from "../../../../core/services/title-service.service";
     ],
     standalone: false
 })
-export class RiskAssessmentConfigurationComponent {
+export class RiskAssessmentConfigurationComponent implements OnInit {
+
+    protected configurationInfo$: Observable<ConfigurationInfo>;
 
     constructor(
+        private readonly riskAssessmentService: RiskAssessmentService,
         titleService: TitleService,
     ) {
         titleService.setPageTitle("Risk Assessment");
+    }
+
+    public ngOnInit(): void {
+        this.configurationInfo$ = this.riskAssessmentService.fetchInfo();
     }
 }

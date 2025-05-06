@@ -18,20 +18,8 @@ export class SynthetizationService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName() {
-        return "synthetization";
-    }
-
     public override getConfigurationName(): string {
         return "synthetization_configuration";
-    }
-
-    public override getExecStepName(): string {
-        return "execution";
-    }
-
-    override getJobs(): string[] {
-        return ["synthetization"];
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {

@@ -1,4 +1,3 @@
-import { StepConfiguration } from "../model/step-configuration";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
@@ -7,12 +6,11 @@ import { parse, stringify } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
 import { ImportPipeData } from "../model/import-pipe-data";
-import { environments } from "../../../environments/environment";
+import { environments } from "src/environments/environment";
 
 export abstract class AlgorithmService {
     private readonly baseURL = environments.apiUrl + "/api/config";
 
-    private _stepConfig: StepConfiguration | null = null;
     private _algorithms: Algorithm[] | null = null;
     private algorithmDefinitions: {[algorithmName: string]: AlgorithmDefinition} = {};
 
@@ -30,20 +28,9 @@ export abstract class AlgorithmService {
     }
 
     /**
-     * Name of the step. Must be equal to the name in Spring's application.properties.
+     * Name of the configuration to be configured.
      */
-    abstract getStepName(): string;
-
-    // TODO fetch
     abstract getConfigurationName(): string;
-
-
-    abstract getExecStepName(): string;
-
-    /**
-     * Name of the jobs to be configured by this configuration page.
-     */
-    abstract getJobs(): string[];
 
     /**
      * Creates the YAML configuration object sent to the backend as well as to the external module.
@@ -58,6 +45,15 @@ export abstract class AlgorithmService {
      * @param configurationName The key of the configuration.
      */
     abstract readConfiguration(arg: Object, configurationName: string): { config: Object, selectedAlgorithm: Algorithm };
+
+    /**
+     * Fetches the configuration information from the backend.
+     */
+    public fetchInfo(): Observable<ConfigurationInfo> {
+        return this.http.get<ConfigurationInfo>(this.baseURL + "/info", {
+            params: {name: this.getConfigurationName()},
+        });
+    }
 
     /**
      * Returns the YAML configuration as a string.
@@ -141,18 +137,6 @@ export abstract class AlgorithmService {
     }
 
     /**
-     * Gets the corresponding step configuration.
-     * @private
-     */
-    public get stepConfig(): Observable<StepConfiguration> {
-        if (this._stepConfig == null) {
-            return this.loadStepConfig(this.getConfigurationName())
-                .pipe(tap(value => this._stepConfig = value));
-        }
-        return of(this._stepConfig);
-    }
-
-    /**
      * Gets all available algorithms for this step.
      */
     public get algorithms(): Observable<Algorithm[]> {
@@ -212,10 +196,30 @@ export abstract class AlgorithmService {
             responseType: 'text' as 'json'
         });
     }
+}
 
-    private loadStepConfig(configName: string): Observable<StepConfiguration> {
-        return this.http.get<StepConfiguration>(environments.apiUrl + `/api/step/${configName}`);
-    }
+/**
+ * Information for the configuration page.
+ */
+export interface ConfigurationInfo {
+    /**
+     * Processes to be configured by this configuration page.
+     */
+    processes: ProcessInfo[]
+}
+
+/**
+ * Information about a process.
+ */
+export interface ProcessInfo {
+    /**
+     * Name of the job to be configured by this configuration page.
+     */
+    job: string
+    /**
+     * If the job should be skipped.
+     */
+    skip: boolean
 }
 
 export interface ConfigData {

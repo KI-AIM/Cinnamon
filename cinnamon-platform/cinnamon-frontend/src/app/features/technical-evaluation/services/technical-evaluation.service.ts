@@ -19,20 +19,8 @@ export class TechnicalEvaluationService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName(): string {
-        return "technical_evaluation";
-    }
-
     public override getConfigurationName(): string {
         return "evaluation_configuration";
-    }
-
-    override getExecStepName(): string {
-        return "evaluation";
-    }
-
-    override getJobs(): string[] {
-        return ["technical_evaluation"];
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {

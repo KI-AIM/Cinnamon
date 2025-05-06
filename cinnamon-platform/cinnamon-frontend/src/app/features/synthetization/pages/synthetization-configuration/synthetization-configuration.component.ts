@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Steps } from "@core/enums/steps";
 import { TitleService } from "../../../../core/services/title-service.service";
 import { AlgorithmService, ConfigurationInfo } from "../../../../shared/services/algorithm.service";
 import { SynthetizationService } from "../../services/synthetization.service";
@@ -18,6 +19,7 @@ import { AnonymizationService } from "@features/anonymization/services/anonymiza
     standalone: false
 })
 export class SynthetizationConfigurationComponent implements OnInit {
+    protected readonly Steps = Steps;
 
     protected configurationInfo$: Observable<ConfigurationInfo>;
 

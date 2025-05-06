@@ -1,8 +1,0 @@
-<div>
-    <div>Upload an existing configuration:</div>
-
-    <app-file-upload accept=".yml,.yaml" [disabled]="disabled" (input)="uploadConfiguration($event)"></app-file-upload>
-    <div class="cinnamon-file-input-error" *ngIf="isFileTypeInvalid">
-        Please select a YAML file.
-    </div>
-</div>

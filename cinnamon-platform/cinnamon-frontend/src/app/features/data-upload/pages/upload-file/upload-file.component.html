@@ -104,10 +104,6 @@
                 <mat-icon fontIcon="settings"></mat-icon>
             </a>
         </div>
-
-        <div class="cinnamon-file-input-error" *ngIf="isDataFileTypeInvalid">
-            Please select a CSV or XLSX file.
-        </div>
     </div>
 </ng-template>
 
@@ -117,10 +113,6 @@
 
     <div class="mt-2">
         <app-file-upload accept=".yml,.yaml" [disabled]="locked" (input)="onDataConfigurationFileInput($event)"></app-file-upload>
-
-        <div class="cinnamon-file-input-error" *ngIf="isConfigFileTypeInvalid">
-            Please select a YAML file.
-        </div>
     </div>
 </ng-template>
 

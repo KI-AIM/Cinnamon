@@ -13,6 +13,7 @@ export class FileUploadComponent implements OnInit {
     protected dataFile: File | null = null;
     protected errors = {
         large: false,
+        type: false,
     };
     protected isDragging = false;
 
@@ -127,9 +128,17 @@ export class FileUploadComponent implements OnInit {
     private handleInput(files: FileList | null) {
         if (files && files.length > 0) {
             this.errors.large = false;
+            this.errors.type = false;
 
             const file = files[0];
             this.dataFile = file;
+
+            const fileExtension = this.getFileExtension(file);
+
+            if (fileExtension == null || !this.accept.includes(fileExtension)) {
+                this.errors.type = true;
+                return;
+            }
 
             this.appConfigService.appConfig$.pipe(
                 take(1),
@@ -146,6 +155,16 @@ export class FileUploadComponent implements OnInit {
                 }
             });
         }
+    }
+
+    /**
+     * Extracts the file extension from the given file.
+     * @param file The File
+     * @return The file extension without `.`.
+     * @private
+     */
+    private getFileExtension(file: File): string | undefined {
+        return file.name.split(".").pop();
     }
 
 }

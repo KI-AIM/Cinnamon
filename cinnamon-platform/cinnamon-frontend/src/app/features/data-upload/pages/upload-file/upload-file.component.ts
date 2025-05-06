@@ -4,7 +4,7 @@ import { Steps } from "src/app/core/enums/steps";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { DataService } from "src/app/shared/services/data.service";
 import { plainToClass } from "class-transformer";
-import { DataConfiguration } from "../../../../shared/model/data-configuration";
+import { DataConfiguration } from "@shared/model/data-configuration";
 import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
 import { Router } from "@angular/router";
 import { FileService } from "../../services/file.service";
@@ -12,15 +12,15 @@ import { MatDialog } from "@angular/material/dialog";
 import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
 import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
 import { LoadingService } from "src/app/shared/services/loading.service";
-import { ConfigurationService } from "../../../../shared/services/configuration.service";
+import { ConfigurationService } from "@shared/services/configuration.service";
 import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
-import { StatusService } from "../../../../shared/services/status.service";
+import { StatusService } from "@shared/services/status.service";
 import { Observable, tap } from "rxjs";
-import { FileInformation } from "../../../../shared/model/file-information";
-import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
-import { Status } from "../../../../shared/model/status";
-import { Mode } from "../../../../core/enums/mode";
-import { WorkstepService } from "../../../../shared/services/workstep.service";
+import { FileInformation } from "@shared/model/file-information";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { Status } from "@shared/model/status";
+import { Mode } from "@core/enums/mode";
+import { WorkstepService } from "@shared/services/workstep.service";
 
 @Component({
     selector: "app-upload-file",
@@ -39,9 +39,6 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     protected appConfig$: Observable<AppConfig>;
     protected fileInfo$: Observable<FileInformation>;
     protected status$: Observable<Status>;
-
-    protected isDataFileTypeInvalid: boolean = false;
-    protected isConfigFileTypeInvalid: boolean = false;
 
     public lineEndings = Object.values(LineEnding);
     public lineEndingLabels: Record<LineEnding, string> = {
@@ -116,7 +113,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected get isDataFileInvalid(): boolean {
-        return this.dataFile == null || this.isDataFileTypeInvalid;
+        return this.dataFile == null;
     }
 
     /**
@@ -125,7 +122,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected get isConfigFileInvalid(): boolean {
-        return this.configurationFile == null || this.isConfigFileTypeInvalid;
+        return this.configurationFile == null;
     }
 
     /**
@@ -136,9 +133,9 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     protected get isInvalid(): boolean {
         const stepCompleted = this.statusService.isStepCompleted(Steps.UPLOAD);
         if (stepCompleted) {
-            return (this.dataFile === null && this.configurationFile === null) || this.isDataFileTypeInvalid || this.isConfigFileTypeInvalid;
+            return this.isDataFileInvalid && this.isConfigFileInvalid;
         } else {
-            return this.isDataFileInvalid || this.isConfigFileTypeInvalid;
+            return this.isDataFileInvalid;
         }
     }
 
@@ -148,16 +145,9 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
     protected onFileInput(files: FileList | null) {
         if (files) {
-            const fileExtension = this.getFileExtension(files[0]);
-            const validFileExtensions = ["csv", "xlsx"];
-
-            if (fileExtension && validFileExtensions.includes(fileExtension)) {
-                this.isDataFileTypeInvalid = false;
-                this.dataFile = files[0];
-                this.setFileType(fileExtension);
-            } else {
-                this.isDataFileTypeInvalid = true;
-            }
+            const fileExtension = this.getFileExtension(files[0])!;
+            this.dataFile = files[0];
+            this.setFileType(fileExtension);
         }
     }
 
@@ -172,15 +162,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
     protected onDataConfigurationFileInput(files: FileList | null) {
         if (files) {
-            const fileExtension = this.getFileExtension(files[0]);
-            const validFileExtensions = ["yml", "yaml"];
-
-            if (fileExtension && validFileExtensions.includes(fileExtension)) {
-                this.isConfigFileTypeInvalid = false;
-                this.configurationFile = files[0];
-            } else {
-                this.isConfigFileTypeInvalid = true;
-            }
+            this.configurationFile = files[0];
         }
     }
 

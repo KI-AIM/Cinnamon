@@ -12,7 +12,8 @@
         <button [disabled]="locked || !valid" (click)="confirmStep()" mat-raised-button color="primary">
             Continue
         </button>
-        <button *ngIf="altConfirm" [disabled]="locked" (click)="confirmStep()" mat-raised-button color="primary">
+        <button *ngIf="altConfirm" [disabled]="locked || !altConfirmValid" (click)="altConfirmStep()" mat-raised-button
+                color="primary">
             {{ altConfirm }}
         </button>
     </div>

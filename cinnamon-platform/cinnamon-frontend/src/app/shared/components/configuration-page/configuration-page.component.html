@@ -2,7 +2,7 @@
 
     <!-- Upload -->
     <div class="box">
-        <app-configuration-upload [configurationNameObservable]="this.algorithmService.stepConfig"
+        <app-configuration-upload [configurationName]="this.algorithmService.getConfigurationName()"
                                   [disabled]="disabled || algorithms.length === 0">
         </app-configuration-upload>
     </div>

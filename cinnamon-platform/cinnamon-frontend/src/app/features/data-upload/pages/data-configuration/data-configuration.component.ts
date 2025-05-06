@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { Component, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { TitleService } from 'src/app/core/services/title-service.service';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
 import { DataService } from 'src/app/shared/services/data.service';
@@ -11,12 +11,8 @@ import { LoadingService } from 'src/app/shared/services/loading.service';
 import {
     AttributeConfigurationComponent
 } from "../../components/attribute-configuration/attribute-configuration.component";
-import {
-    ConfigurationUploadComponent
-} from "../../../../shared/components/configuration-upload/configuration-upload.component";
-import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
 import { FileType } from 'src/app/shared/model/file-configuration';
-import { StatusService } from "../../../../shared/services/status.service";
+import { StatusService } from "@shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import {
     catchError,
@@ -30,17 +26,17 @@ import {
     tap,
 } from "rxjs";
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from "@angular/forms";
-import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
-import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
-import { DateTimeFormatConfiguration } from "../../../../shared/model/date-time-format-configuration";
-import { RangeConfiguration } from "../../../../shared/model/range-configuration";
-import { StringPatternConfiguration } from "../../../../shared/model/string-pattern-configuration";
+import { noSpaceValidator } from "@shared/directives/no-space-validator.directive";
+import { DateFormatConfiguration } from "@shared/model/date-format-configuration";
+import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-configuration";
+import { RangeConfiguration } from "@shared/model/range-configuration";
+import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
 import { DataSetInfoService } from "../../services/data-set-info.service";
-import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
-import { DataSetInfo } from "../../../../shared/model/data-set-info";
-import { Mode } from "../../../../core/enums/mode";
-import { Status } from "../../../../shared/model/status";
-import { WorkstepService } from "../../../../shared/services/workstep.service";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { DataSetInfo } from "@shared/model/data-set-info";
+import { Mode } from "@core/enums/mode";
+import { Status } from "@shared/model/status";
+import { WorkstepService } from "@shared/services/workstep.service";
 
 @Component({
     selector: 'app-data-configuration',
@@ -60,7 +56,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     protected isFileTypeXLSX$: Observable<boolean>;
     protected status$: Observable<Status>;
 
-    @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
 
     constructor(
@@ -223,20 +218,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                 }
             }
         }
-    }
-
-    protected handleConfigUpload(result: ImportPipeData[] | null) {
-        if (result === null) {
-            this.errorHandlingService.addError("Something went wrong! Please try again later.");
-            return;
-        }
-
-        const configImportData = result[0]
-        if (configImportData.hasOwnProperty('error') && configImportData['error'] instanceof HttpErrorResponse) {
-            this.errorHandlingService.addError(configImportData.error);
-        }
-
-        this.configurationUpload.closeDialog();
     }
 
     protected getColumnConfigurationForms(form: FormGroup): FormGroup[] {

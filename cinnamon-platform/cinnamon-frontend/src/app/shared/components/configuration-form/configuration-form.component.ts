@@ -64,12 +64,6 @@ export class ConfigurationFormComponent implements OnInit {
      */
     @Output() public onChange: EventEmitter<void> = new EventEmitter();
 
-    /**
-     * Event for submitting the configurations.
-     * Emits the raw JSON of the form.
-     */
-    @Output() public submitConfiguration = new EventEmitter<Object>();
-
     @ViewChildren(ConfigurationGroupComponent) private groups: QueryList<ConfigurationGroupComponent>;
 
     @ViewChild(ConfigurationGroupComponent) private rootGroup: ConfigurationGroupComponent;
@@ -207,14 +201,6 @@ export class ConfigurationFormComponent implements OnInit {
         } else {
             this.form.enable();
         }
-    }
-
-    /**
-     * Emits the submit-event with the current form.
-     * @protected
-     */
-    protected onSubmit() {
-        this.submitConfiguration.emit(this.formData);
     }
 
     /**

@@ -20,12 +20,12 @@ configurations:
         type: list
         label: Generator Dimensions
         description: Fewer dimensions or smaller values create a simpler network that trains faster but may struggle to capture complex patterns.
-        default_value: [256, 256, 256]
+        default_value: [256, 256]
       - name: discriminator_dim
         type: list
         label: Discriminator Dimensions
         description: The discriminator learns to strictly evaluate how synthetic or real the data is. To keep training balanced, the discriminator should have similar dimenesions and values as the generator. Smaller dimensions tend to reduce the training time.
-        default_value: [256, 256, 256]
+        default_value: [256, 256]
   model_fitting:
     display_name: Training Parameters
     description: Define the parameters, that are used for training the model. 
@@ -41,7 +41,7 @@ configurations:
         type: integer
         label: Number of Epochs
         description: Fewer epochs may lead the model to learn only basic patterns, while more epochs help capture complex structures. Very high values can cause the model to memorize the training data instead of learning to generalize. Higher values lead to longer training times.
-        default_value: 300
+        default_value: 100
         min_value: 1
         max_value: 10000
   sampling:

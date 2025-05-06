@@ -22,7 +22,6 @@ import { ConfigurationPageComponent } from "./components/configuration-page/conf
 import { ConfigurationGroupComponent } from './components/configuration-group/configuration-group.component';
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatExpansionModule } from "@angular/material/expansion";
-import { ConfigurationUploadComponent } from "./components/configuration-upload/configuration-upload.component";
 import { ConfigurationManagementComponent } from "./components/configuration-management/configuration-management.component";
 import {DataTableComponent} from "./components/data-table/data-table.component";
 import {MatTableModule} from "@angular/material/table";
@@ -69,7 +68,6 @@ import { FileUploadComponent } from "./components/file-upload/file-upload.compon
         ConfigurationManagementComponent,
         ConfigurationPageComponent,
         ConfigurationSelectionComponent,
-        ConfigurationUploadComponent,
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataInspectionAttributeDetailsComponent,
@@ -122,7 +120,6 @@ import { FileUploadComponent } from "./components/file-upload/file-upload.compon
         ConfigurationInputComponent,
         ConfigurationManagementComponent,
         ConfigurationPageComponent,
-        ConfigurationUploadComponent,
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataTableComponent,

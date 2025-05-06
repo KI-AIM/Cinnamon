@@ -1,58 +1,187 @@
-<div class="vertical-boxes">
+<ng-container *ngIf="{status: status$ | async } as data">
+    <ng-container *ngIf="data.status !== null">
+        <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
-    <div class="box">
-        <h3>Process Activation</h3>
-        <ng-container *ngFor="let process of configurationInfo.processes;">
-            <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]">Run {{ jobLabels[process.job] }}</mat-checkbox>
+            <mat-accordion>
+                <!-- Activation -->
+                <mat-expansion-panel [disabled]="0 > workstepService.currentStep" class="workstep-expansion-panel"
+                                     [class.workstep-complete]="workstepService.currentStep > 0 || workstepService.isCompleted">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <app-workstep-title [stepIndex]="0">
+                                Select steps to execute
+                            </app-workstep-title>
+                        </mat-panel-title>
+                        <mat-panel-description>
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div class="cinnamon-workstep-div"></div>
+
+                    <ng-container *ngFor="let process of configurationInfo.processes;">
+                        <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]">
+                            Run {{ jobLabels[process.job] }}
+                        </mat-checkbox>
+                    </ng-container>
+
+                    <app-workstep altConfirm="Skip all steps" [locked]="disabled" [stepIndex]="0" [altConfirmAll]="true" [altConfirmValid]="!oneEnabled"></app-workstep>
+
+                </mat-expansion-panel>
+
+                <!-- Upload -->
+                <mat-expansion-panel [disabled]="1 > workstepService.currentStep" class="workstep-expansion-panel"
+                                     [class.workstep-complete]="workstepService.currentStep > 1 || workstepService.isCompleted">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <app-workstep-title [stepIndex]="1">
+                                Upload a configuration if available
+                            </app-workstep-title>
+                        </mat-panel-title>
+                        <mat-panel-description>
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div class="cinnamon-workstep-div"></div>
+
+                    Upload an existing configuration:
+                    <app-file-upload accept=".yml,.yaml" [disabled]="disabled"
+                                     (input)="cacheConfiguration($event)"></app-file-upload>
+
+                    <app-workstep altConfirm="Continue witout a configuraiton" [locked]="disabled" [stepIndex]="1"
+                                  [valid]="configFileCache !== null" (confirm)="uploadCachedConfiguration()"></app-workstep>
+                </mat-expansion-panel>
+
+                <!-- Algorithm Selection -->
+                <mat-expansion-panel [disabled]="2 > workstepService.currentStep" class="workstep-expansion-panel"
+                                     [class.workstep-complete]="workstepService.currentStep > 2 || workstepService.isCompleted">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <app-workstep-title [stepIndex]="2">
+                                Select the applied algorithm
+                            </app-workstep-title>
+                        </mat-panel-title>
+                        <mat-panel-description>
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div class="cinnamon-workstep-div"></div>
+
+                    <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"
+                                                 (change)="updateSelectCache()">
+                    </app-configuration-selection>
+
+                    <app-workstep [locked]="disabled" [stepIndex]="2" [valid]="selection.selectedOption != null"></app-workstep>
+                </mat-expansion-panel>
+
+                <!-- Algorithm Configuration -->
+                <mat-expansion-panel [disabled]="3 > workstepService.currentStep" class="workstep-expansion-panel"
+                                     [class.workstep-complete]="workstepService.currentStep > 3 || workstepService.isCompleted">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <app-workstep-title [stepIndex]="3">
+                                Configure the selected algorithm
+                            </app-workstep-title>
+                        </mat-panel-title>
+                        <mat-panel-description>
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div class="cinnamon-workstep-div"></div>
+
+                    <div *ngIf="!selection.selectedOption; else configurationForms" id="placeholder" class="w-100 mt-4">
+                        <div class="ms-auto me-auto" style="width: fit-content">
+                            Please select an algorithm in the previous step first.
+                        </div>
+                    </div>
+                    <ng-template #configurationForms>
+                        <div *ngFor="let item of algorithms" [id]="item">
+                            <ng-container *ngIf="selection.selectedOption != null && selection.selectedOption.name === item.name">
+                                <p>{{ item.description }}</p>
+
+                                <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
+                                                        (onChange)="onFormChange()"
+                                                        [additionalConfigs]="additionalConfigs">
+                                </app-configuration-form>
+                            </ng-container>
+                        </div>
+                    </ng-template>
+
+                    <app-workstep [locked]="disabled" [stepIndex]="3" [valid]="formValid"></app-workstep>
+                </mat-expansion-panel>
+
+            </mat-accordion>
+
+            <div>
+                <button mat-raised-button type="button" color="primary" (click)="submit()"
+                        [disabled]="disabled || (oneEnabled && !formValid) || !workstepService.isCompleted">
+                    Confirm configuration and start validation
+                </button>
+            </div>
+
+
         </ng-container>
-    </div>
 
-    <!-- Upload -->
-    <div class="box">
-        <h3>Configuration Upload</h3>
-        <app-configuration-upload [configurationName]="this.algorithmService.getConfigurationName()"
-                                  [disabled]="disabled || algorithms.length === 0">
-        </app-configuration-upload>
-    </div>
+        <ng-container *ngIf="data.status.mode === Mode.EXPERT">
+            <div class="vertical-boxes">
 
-    <div [class.d-none]="!hasAlgorithmSelection" class="box">
-        <h3>Algorithm Selection</h3>
+                <!-- Activation -->
+                <div class="box">
+                    <h3>Process Activation</h3>
+                    <ng-container *ngFor="let process of configurationInfo.processes;">
+                        <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]">
+                            Run {{ jobLabels[process.job] }}
+                        </mat-checkbox>
+                    </ng-container>
+                </div>
 
-        <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"
-                                     (change)="updateSelectCache()">
-        </app-configuration-selection>
-    </div>
+                <!-- Upload -->
+                <div class="box">
+                    Upload an existing configuration:
+                    <app-file-upload accept=".yml,.yaml" [disabled]="disabled"
+                                     (input)="uploadConfiguration($event)"></app-file-upload>
+                </div>
 
-    <div class="box">
+                <!-- Algorithm Selection -->
+                <div [class.d-none]="!hasAlgorithmSelection" class="box">
+                    <h3>Algorithm Selection</h3>
 
-    <h3>Algorithm Configuration</h3>
+                    <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"
+                                                 (change)="updateSelectCache()">
+                    </app-configuration-selection>
+                </div>
 
-        <div *ngIf="!selection.selectedOption; else configurationForms" id="placeholder" class="w-100 mt-4">
-            <div class="ms-auto me-auto" style="width: fit-content">
-                Please select an algorithm
+                <!-- Algorithm Configuration -->
+                <div class="box">
+                    <h3>Algorithm Configuration</h3>
+
+                    <div *ngIf="!selection.selectedOption; else configurationForms" id="placeholder" class="w-100 mt-4">
+                        <div class="ms-auto me-auto" style="width: fit-content">
+                            Please select an algorithm
+                        </div>
+                    </div>
+                    <ng-template #configurationForms>
+                        <div *ngFor="let item of algorithms" [id]="item">
+                            <ng-container *ngIf="selection.selectedOption.name === item.name">
+                                <p>{{ item.description }}</p>
+
+                                <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
+                                                        (onChange)="onFormChange()"
+                                                        [additionalConfigs]="additionalConfigs">
+                                </app-configuration-form>
+                            </ng-container>
+                        </div>
+                    </ng-template>
+
+                    <div class="mt-2">
+                        <button type="submit" mat-raised-button color="primary"
+                                [disabled]="disabled || (oneEnabled && !formValid)" (click)="submit()">
+                            Continue
+                        </button>
+                    </div>
+                </div>
+
             </div>
-        </div>
-        <ng-template #configurationForms>
-            <ng-content></ng-content>
 
-            <div *ngFor="let item of algorithms" [id]="item">
-                <ng-container *ngIf="selection.selectedOption.name === item.name">
-                    <p>{{ item.description }}</p>
-
-                    <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
-                                            (onChange)="onFormChange()" [additionalConfigs]="additionalConfigs">
-                    </app-configuration-form>
-                </ng-container>
-            </div>
-        </ng-template>
-
-        <div class="mt-2">
-            <button type="submit" mat-raised-button color="primary" [disabled]="disabled || (oneEnabled && !formValid)"
-                    (click)="submit()">
-                Continue
-            </button>
-        </div>
-
-    </div>
-
-</div>
+        </ng-container>
+    </ng-container>
+</ng-container>

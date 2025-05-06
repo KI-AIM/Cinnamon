@@ -1,18 +1,21 @@
-import { AfterViewInit, ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
-import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
-import { Algorithm } from "../../model/algorithm";
-import { AlgorithmService, ConfigData, ConfigurationInfo } from "../../services/algorithm.service";
-import { stringify } from "yaml";
-import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
-import { Steps } from "@core/enums/steps";
-import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
+import { AfterViewInit, ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Router } from "@angular/router";
+import { Mode } from "@core/enums/mode";
+import { Steps } from "@core/enums/steps";
+import { Status } from "@shared/model/status";
+import { WorkstepService } from "@shared/services/workstep.service";
+import { from, mergeMap, Observable, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
-import { StatusService } from "../../services/status.service";
+import { stringify } from "yaml";
+import { Algorithm } from "../../model/algorithm";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
-import { from, mergeMap, Observable, switchMap } from "rxjs";
+import { AlgorithmService, ConfigData, ConfigurationInfo } from "../../services/algorithm.service";
 import { ConfigurationService } from "../../services/configuration.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
+import { StatusService } from "../../services/status.service";
+import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
+import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 
 /**
  * Component for the entire configuration page including the algorithm selection,
@@ -27,11 +30,21 @@ import { ErrorHandlingService } from "../../services/error-handling.service";
     standalone: false
 })
 export class ConfigurationPageComponent implements OnInit, AfterViewInit {
+    protected readonly Mode = Mode;
+    protected readonly jobLabels: Record<string, string> = {
+        anonymization: "Anonymization",
+        synthetization: "Synthetization",
+        technical_evaluation: "Technical Evaluation",
+        risk_evaluation: "Risk Evaluation",
+    };
+    private readonly baseUrl: string = environments.apiUrl + "/api/process";
+
     @Input() public configurationInfo!: ConfigurationInfo;
-    @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
+    @Input() public step!: Steps;
+    @Input() public additionalConfigs: ConfigurationAdditionalConfigs | null = null
     @Input() public hasAlgorithmSelection: boolean = true;
 
-    private baseUrl: string = environments.apiUrl + "/api/process";
+    protected status$: Observable<Status>;
 
     /**
      * Available algorithms fetched from the external API.
@@ -57,15 +70,14 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      */
     protected formValid: boolean = false;
 
+    /**
+     * Cache for the configuration file in the guided mode.
+     * @protected
+     */
+    protected configFileCache: File | null = null;
+
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') protected forms: ConfigurationFormComponent;
-
-    protected readonly jobLabels: Record<string, string> = {
-        anonymization: "Anonymization",
-        synthetization: "Synthetization",
-        technical_evaluation: "Technical Evaluation",
-        risk_evaluation: "Risk Evaluation",
-    };
 
     constructor(
         protected readonly algorithmService: AlgorithmService,
@@ -75,6 +87,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         private httpClient: HttpClient,
         private readonly router: Router,
         private readonly statusService: StatusService,
+        protected readonly workstepService: WorkstepService,
     ) {
     }
 
@@ -87,12 +100,14 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         this.algorithmService.setDoGetConfig(() => this.getConfig());
         this.algorithmService.setDoSetConfig((error: string | null) => this.setConfig(error));
 
-        this.statusService.status$.subscribe({
-            next: value => {
+        this.status$ = this.statusService.status$.pipe(
+            tap(() => {
                 const registryData = this.configurationService.getRegisteredConfigurationByName(this.algorithmService.getConfigurationName());
                 this.disabled = this.statusService.isStepCompleted(registryData?.lockedAfterStep);
-            }
-        });
+
+                this.workstepService.init(4, this.statusService.isStepCompleted(this.step));
+            }),
+        );
 
         // Get available algorithms
         this.algorithmService.algorithms.subscribe({
@@ -166,6 +181,59 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
                 this.forms.readFromCache();
             }
         }
+    }
+
+    /**
+     * Caches the configuration file.
+     * @param fileList
+     * @protected
+     */
+    protected cacheConfiguration(fileList: FileList | null): void {
+        if (fileList === null || fileList.length === 0) {
+            return;
+        }
+
+        this.configFileCache = fileList[0];
+    }
+
+    /**
+     * Uploads the cached configuration file.
+     * Uses the setConfigCallback function to update the configuration in the application.
+     * @protected
+     */
+    protected uploadCachedConfiguration(): void {
+        if (this.configFileCache === null) {
+            return;
+        }
+
+        const included = [this.algorithmService.getConfigurationName()];
+        this.configurationService.uploadAllConfigurations(this.configFileCache, included).subscribe({
+            next: () => {
+                this.configFileCache = null;
+            },
+            error: error => {
+                this.errorHandlingService.addError(error, "Could not upload configuration.");
+            },
+        });
+    }
+
+    /**
+     * Handles the file upload event and uploads the selected configuration file.
+     * Uses the setConfigCallback function to update the configuration in the application.
+     */
+    protected uploadConfiguration(fileList: FileList | null): void {
+        if (fileList === null || fileList.length === 0) {
+            return;
+        }
+
+        const file = fileList[0];
+        const included = [this.algorithmService.getConfigurationName()];
+
+        this.configurationService.uploadAllConfigurations(file, included).subscribe({
+            error: error => {
+                this.errorHandlingService.addError(error, "Could not upload configuration.");
+            },
+        });
     }
 
     /**

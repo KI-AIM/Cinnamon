@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatExpansionPanel } from "@angular/material/expansion";
 import { WorkstepService } from "../../services/workstep.service";
 
@@ -11,8 +11,14 @@ import { WorkstepService } from "../../services/workstep.service";
 export class WorkstepComponent {
     @Input() public stepIndex!: number;
     @Input() public locked!: boolean;
-    @Input() public valid!: boolean;
+    @Input() public valid: boolean = true;
+
     @Input() public altConfirm: string | null = null;
+    @Input() public altConfirmValid: boolean = true;
+    @Input() public altConfirmAll: boolean = false;
+
+    @Output() public confirm = new EventEmitter<void>();
+    @Output() public confirmAlt = new EventEmitter<void>();
 
     constructor(
         private readonly workstepService: WorkstepService,
@@ -27,5 +33,20 @@ export class WorkstepComponent {
     protected confirmStep(): void {
         this.matExpansionPanel.close();
         this.workstepService.confirmStep(this.stepIndex);
+        this.confirm.emit();
+    }
+
+    /**
+     * Confirms the current step, closes the expansion panel, and goes to the next step or alternatively completes all steps.
+     * @protected
+     */
+    protected altConfirmStep(): void {
+        this.matExpansionPanel.close();
+        if (this.altConfirmAll) {
+            this.workstepService.confirmAllSteps();
+        } else {
+            this.workstepService.confirmStep(this.stepIndex);
+        }
+        this.confirmAlt.emit();
     }
 }

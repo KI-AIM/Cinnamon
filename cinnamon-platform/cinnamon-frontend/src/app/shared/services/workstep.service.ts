@@ -56,4 +56,11 @@ export class WorkstepService {
     public confirmStep(stepIndex: number): void {
         this.stepSubject.next(stepIndex + 1);
     }
+
+    /**
+     * Marks all steps as completed.
+     */
+    public confirmAllSteps(): void {
+        this.stepSubject.next(this.numberSteps);
+    }
 }

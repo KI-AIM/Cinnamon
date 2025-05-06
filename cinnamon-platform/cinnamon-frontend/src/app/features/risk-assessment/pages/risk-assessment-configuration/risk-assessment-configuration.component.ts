@@ -1,4 +1,5 @@
 import { Component, OnInit } from "@angular/core";
+import { Steps } from "@core/enums/steps";
 import { TitleService } from "@core/services/title-service.service";
 import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
 import { AlgorithmService, ConfigurationInfo } from "@shared/services/algorithm.service";
@@ -17,6 +18,7 @@ import { Observable } from "rxjs";
     standalone: false
 })
 export class RiskAssessmentConfigurationComponent implements OnInit {
+    protected readonly Steps = Steps;
 
     protected configurationInfo$: Observable<ConfigurationInfo>;
 

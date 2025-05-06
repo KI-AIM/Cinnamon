@@ -15,3 +15,6 @@
         File size must be smaller than {{ formatMaxFileSize(appConfig.maxFileSize) }}.
     </ng-container>
 </div>
+<div class="cinnamon-file-input-error" *ngIf="errors.type">
+    Please select a file ending with one of the following extensions: {{ accept.replace(',', ', ') }}.
+</div>

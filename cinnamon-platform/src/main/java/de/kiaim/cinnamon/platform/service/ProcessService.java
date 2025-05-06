@@ -423,6 +423,10 @@ public class ProcessService {
 							var errorRequest = jsonMapper.readValue(value.getBytes(), ErrorRequest.class);
 							errorMessage = errorRequest.getErrorMessage();
 						}
+						case ERROR_MESSAGE -> {
+							containsError = true;
+							errorMessage = new String(value.getBytes());
+						}
 						case FILE -> {
 							files.put(value.getOriginalFilename(), new LobWrapperEntity(value.getBytes()));
 						}

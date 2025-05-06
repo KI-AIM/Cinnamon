@@ -4,7 +4,7 @@ import { Algorithm } from "../../model/algorithm";
 import { AlgorithmService, ConfigData } from "../../services/algorithm.service";
 import { stringify } from "yaml";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
-import { Steps } from "../../../core/enums/steps";
+import { Steps } from "@core/enums/steps";
 import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../../environments/environment";
@@ -15,8 +15,8 @@ import { ConfigurationService } from "../../services/configuration.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
 
 /**
- * Entire configuration page including the algorithm selection,
- * the configuration form and the confirmation and skip buttons.
+ * Component for the entire configuration page including the algorithm selection,
+ * the configuration form, and the confirmation and skip buttons.
  *
  * @author Daniel Preciado-Marquez
  */
@@ -44,8 +44,14 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      */
     protected disabled: boolean = true;
 
+    /**
+     * If an algorithm is selected and the corresponding form is valid.
+     * @protected
+     */
+    protected formValid: boolean = false;
+
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
-    @ViewChild('form') private forms: ConfigurationFormComponent;
+    @ViewChild('form') protected forms: ConfigurationFormComponent;
 
     constructor(
         protected readonly algorithmService: AlgorithmService,
@@ -87,6 +93,16 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     ngAfterViewInit() {
         this.readFromCache();
         this.changeDetectorRef.detectChanges();
+    }
+
+    /**
+     * Handles changes on the selected form.
+     * Updates the cached configuration and valid flag.
+     * @protected
+     */
+    protected onFormChange(): void {
+        this.updateConfigCache();
+        this.formValid = this.forms.valid;
     }
 
     /**
@@ -153,16 +169,16 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * Submits the given configuration form and proceeds to the next step.
-     * @param configuration The raw data of the form.
+     * Submits the current form and proceeds to the next step.
      * @protected
      */
-    protected onSubmit(configuration: Object) {
+    protected submit(): void {
         this.updateSelectCache();
         this.updateConfigCache();
 
         this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).pipe(
             switchMap(value => {
+                const configuration = this.forms.formData;
                 return this.postConfig(configuration, value.URL);
             }),
             switchMap(() => {

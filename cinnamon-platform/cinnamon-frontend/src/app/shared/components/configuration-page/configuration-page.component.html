@@ -32,14 +32,17 @@
                     <p>{{ item.description }}</p>
 
                     <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
-                                            (onChange)="updateConfigCache()" (submitConfiguration)="onSubmit($event)"
-                                            [additionalConfigs]="additionalConfigs">
+                                            (onChange)="onFormChange()" [additionalConfigs]="additionalConfigs">
                     </app-configuration-form>
                 </ng-container>
             </div>
         </ng-template>
 
         <div class="mt-2">
+            <button type="submit" mat-raised-button color="primary" [disabled]="disabled || !formValid"
+                    (click)="submit()">
+                Continue
+            </button>
             <button type="submit" mat-raised-button color="primary" [disabled]="disabled" (click)="skip()">
                 Skip
             </button>

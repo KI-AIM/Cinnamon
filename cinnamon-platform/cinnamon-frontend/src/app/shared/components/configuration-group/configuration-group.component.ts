@@ -218,6 +218,7 @@ export class ConfigurationGroupComponent implements AfterViewInit {
         if (this.additionalConfigs !== null) {
             this.additionalConfigs?.configs.forEach(config => {
                 const componentRef: any = this.componentContainer.createComponent(config.component);
+                componentRef.setInput('disabled', this.disabled);
                 componentRef.instance.form = this.form;
                 this.instances.push(componentRef.instance);
             });

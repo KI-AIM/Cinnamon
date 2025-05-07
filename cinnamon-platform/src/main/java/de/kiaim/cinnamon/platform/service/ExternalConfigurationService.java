@@ -57,6 +57,11 @@ public class ExternalConfigurationService {
 		                                      .toList();
 
 		for (final Job job : jobs) {
+			if (job.getStage() == null) {
+				// Job is not used so skip it
+				continue;
+			}
+
 			final var process = project.getPipelines().get(0).getStageByJob(job);
 			if (process.isEmpty()) {
 				throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,

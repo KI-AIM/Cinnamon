@@ -28,6 +28,7 @@ public class Stage {
 
 	/**
 	 * Job objects based on {@link #jobs}.
+	 * Mapping for {@link Job#getStage()}.
 	 */
 	@JsonIgnore
 	private List<Job> jobList = new ArrayList<>();

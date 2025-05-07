@@ -647,10 +647,8 @@ public class ProcessService {
 				processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
 				lastJob = jobCandidate;
 			} else {
-				// Check if hold out split is required and present.
-				final boolean requiresHoldOut = processCandidate.getJob().getEndpoint().getInputs().stream()
-				                                                .anyMatch(input -> input.getSelector().equals(
-						                                                DataSetSelector.HOLD_OUT));
+				// Check if a hold-out split is required and present.
+				final boolean requiresHoldOut = stepService.requiresHoldOutSplit(processCandidate.getJob());
 				final boolean hasHoldOut = processCandidate.getProject().getOriginalData().isHasHoldOut();
 
 				if (requiresHoldOut && !hasHoldOut) {

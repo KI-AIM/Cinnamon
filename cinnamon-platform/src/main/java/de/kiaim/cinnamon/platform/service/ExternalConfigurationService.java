@@ -68,7 +68,13 @@ public class ExternalConfigurationService {
 				                                        "No process entity for job '" + job.getName() + "' available!");
 			}
 
-			configurationInfo.getProcesses().add(new ProcessInfo(job.getName(), process.get().isSkip()));
+			final boolean requiresHoldOut = stepService.requiresHoldOutSplit(job);
+			final boolean holdOutFulfilled = !requiresHoldOut || project.getOriginalData().isHasHoldOut();
+
+			final boolean skip = process.get().isSkip() || !holdOutFulfilled;
+
+			final var processInfo = new ProcessInfo(job.getName(), skip, holdOutFulfilled);
+			configurationInfo.getProcesses().add(processInfo);
 		}
 
 		return configurationInfo;

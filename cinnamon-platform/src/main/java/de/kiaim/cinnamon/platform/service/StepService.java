@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.platform.exception.BadStepNameException;
 import de.kiaim.cinnamon.platform.model.entity.BackgroundProcessEntity;
 import de.kiaim.cinnamon.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
+import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
 import org.springframework.stereotype.Service;
 
 /**
@@ -93,5 +94,17 @@ public class StepService {
 		}
 
 		return process;
+	}
+
+	/**
+	 * Checks if the given job requires a hold-out split to be present.
+	 *
+	 * @param job The job.
+	 * @return If the job requires a hold-out split.
+	 */
+	public boolean requiresHoldOutSplit(final Job job) {
+		return job.getEndpoint().getInputs()
+		          .stream()
+		          .anyMatch(input -> input.getSelector().equals(DataSetSelector.HOLD_OUT));
 	}
 }

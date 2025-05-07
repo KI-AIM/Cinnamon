@@ -1,18 +1,18 @@
 import { Component, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
-import { ProcessStatus } from "../../../../core/enums/process-status";
-import { ExecutionStep } from "../../../../shared/model/execution-step";
-import { TitleService } from "../../../../core/services/title-service.service";
-import { Steps } from "../../../../core/enums/steps";
-import { Router } from "@angular/router";
-import { ExecutionService } from "../../services/execution.service";
-import { StatusService } from "../../../../shared/services/status.service";
-import { Observable, tap } from "rxjs";
-import { StatisticsService } from "../../../../shared/services/statistics.service";
-import { StageDefinition } from "../../../../shared/services/execution-step.service";
-import { SynthetizationProcess } from "../../../../shared/model/synthetization-process";
-import { plainToInstance } from "class-transformer";
 import { MatExpansionPanel } from "@angular/material/expansion";
+import { Router } from "@angular/router";
+import { plainToInstance } from "class-transformer";
+import { Observable, tap } from "rxjs";
+import { ProcessStatus } from "../../../../core/enums/process-status";
+import { Steps } from "../../../../core/enums/steps";
+import { TitleService } from "../../../../core/services/title-service.service";
+import { ExecutionStep } from "../../../../shared/model/execution-step";
+import { SynthetizationProcess } from "../../../../shared/model/synthetization-process";
 import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
+import { StageDefinition } from "../../../../shared/services/execution-step.service";
+import { StatisticsService } from "../../../../shared/services/statistics.service";
+import { StatusService } from "../../../../shared/services/status.service";
+import { ExecutionService } from "../../services/execution.service";
 
 @Component({
     selector: 'app-execution',
@@ -122,5 +122,42 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         };
 
         return jobNames[job];
+    }
+
+    /**
+     * Determines the CSS class for the line based on the process status of a given stage.
+     *
+     * @param {ExecutionStep | null} stage - The current execution step, or null if no stage is present.
+     * @param {number} jobIndex - The index of the job in the process list.
+     * @param {'top' | 'bottom'} part - Specifies whether the class should be determined for the 'top' or 'bottom' part of the line.
+     * @return {string} A string representing the CSS class: "current", "past", "error", or "future".
+     */
+    protected getLineClass(stage: ExecutionStep | null, jobIndex: number, part: 'top'| 'bottom'): string {
+        const index = part === 'top' ? jobIndex : jobIndex + 1;
+
+        let status: ProcessStatus;
+        if (stage === null) {
+            status = ProcessStatus.NOT_STARTED;
+        } else {
+            if (index < stage.processes.length) {
+                status = stage.processes[index].externalProcessStatus;
+            } else {
+                if (stage.status === ProcessStatus.FINISHED) {
+                    status = ProcessStatus.FINISHED;
+                } else {
+                    status = ProcessStatus.NOT_STARTED;
+                }
+            }
+        }
+
+        if (status === ProcessStatus.RUNNING || status === ProcessStatus.SCHEDULED) {
+            return "current";
+        } else if (status === ProcessStatus.FINISHED || status === ProcessStatus.SKIPPED) {
+            return "past";
+        } else if (status === ProcessStatus.CANCELED || status === ProcessStatus.ERROR) {
+            return "error";
+        } else {
+            return "future";
+        }
     }
 }

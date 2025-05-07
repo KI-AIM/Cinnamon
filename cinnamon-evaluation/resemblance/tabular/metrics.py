@@ -576,27 +576,108 @@ def calculate_density(real, synthetic, num_points=50):
         raise Exception(f"Error calculating density functions: {str(e)}")
 
 
-def calculate_histogram(real, synthetic, method='auto', max_bins=25):
+def calculate_histogram(real: pd.DataFrame, synthetic: pd.DataFrame, method: str = 'auto', max_bins: int = 25) -> dict:
     """
     Calculates histogram configurations for numeric columns with error handling, using percentages instead of counts.
+    Uses adaptive bin formatting based on data range and scientific notation for extreme values.
 
     Args:
-        real (pandas.DataFrame): The real dataframe.
-        synthetic (pandas.DataFrame): The synthetic dataframe.
-        method (str, optional): The method to use for calculating the histogram. Defaults to 'auto'.
+        real: The real dataframe
+        synthetic: The synthetic dataframe
+        method: The method to use for calculating the histogram
+        max_bins: Maximum number of bins to use
 
     Returns:
-        dict: A dictionary containing the histogram configurations for each column in the real and synthetic dataframes.
+        A dictionary containing the histogram configurations for each column in the real and synthetic dataframes
     """
 
-    def get_color_index(perc_difference):
+    def get_color_index(perc_difference: float) -> int:
         capped_diff = min(100, max(0, perc_difference))
         return min(10, max(1, int(capped_diff / 10) + 1))
 
-    def calculate_percentage_diff(orig_value, syn_value):
+    def calculate_percentage_diff(orig_value: float, syn_value: float) -> float:
         if orig_value == 0:
             return 100 if syn_value > 0 else 0
         return abs((syn_value - orig_value) / orig_value * 100)
+    
+    def get_optimal_format(min_val: float, max_val: float, num_bins: int) -> callable:
+        """
+        Determine optimal formatting based on data range and bin density.
+        
+        Args:
+            min_val: Minimum value in the dataset
+            max_val: Maximum value in the dataset
+            num_bins: Number of bins in the histogram
+            
+        Returns:
+            A formatting function that accepts a value and returns properly formatted string
+        """
+        range_span = max_val - min_val
+        bin_width = range_span / num_bins if num_bins > 0 else range_span
+        
+        # Calculate appropriate significant digits based on bin width
+        if bin_width == 0 or not np.isfinite(bin_width):  # Handle edge cases
+            sig_digits = 2
+        else:
+            # Use logarithmic scale to determine significant digits
+            sig_digits = max(2, min(6, int(-np.log10(bin_width) + 3)))
+        
+        def format_value(value: float) -> str:
+            # Handle infinity and NaN
+            if not np.isfinite(value):
+                if np.isposinf(value):
+                    return "Infinity"
+                elif np.isneginf(value):
+                    return "-Infinity"
+                else:
+                    return "NaN"
+            
+            abs_val = abs(value)
+            
+            try:
+                # Use scientific notation only for:
+                # 1. Very small numbers (< 0.0001)
+                # 2. Very large numbers (>= 10000)
+                
+                # Only use scientific notation for very small numbers (< 0.0001)
+                very_small = abs_val > 0 and abs_val < 0.0001
+                very_large = abs_val >= 10000
+                
+                if very_small or very_large:
+                    # Use only 2 significant digits for scientific notation
+                    return f"{value:.2e}"
+                
+                # For regular numbers, use appropriate decimal places
+                if abs_val < 1:
+                    # For small numbers, use appropriate decimal places
+                    if abs_val < 0.01:
+                        decimal_places = 4
+                    elif abs_val < 0.1:
+                        decimal_places = 3
+                    else:
+                        decimal_places = 2
+                elif abs_val < 10:
+                    decimal_places = 2
+                elif abs_val < 100:
+                    decimal_places = 1
+                elif abs_val < 1000:
+                    decimal_places = 0
+                else:  # For larger numbers that don't need scientific notation
+                    decimal_places = 0
+                    
+                # Round to multiple of 5 for larger values (100-9999)
+                if abs_val >= 100 and abs_val < 10000:
+                    multiplier = 5 if abs_val < 1000 else 50
+                    value = round(value / multiplier) * multiplier
+                    decimal_places = 0
+                    
+                return f"{value:.{decimal_places}f}"
+            
+            except Exception:
+                # Fallback for any unexpected formatting errors
+                return str(value)
+        
+        return format_value
 
     histogram_results = {'real': {}, 'synthetic': {}}
 
@@ -620,27 +701,56 @@ def calculate_histogram(real, synthetic, method='auto', max_bins=25):
                     continue
 
                 combined_data = np.concatenate([real_data, synthetic_data])
+                
+                # Filter out infinities and NaNs before calculating bin edges
+                finite_data = combined_data[np.isfinite(combined_data)]
+                
+                # If all values are non-finite, create empty result
+                if len(finite_data) == 0:
+                    empty_result = {
+                        'frequencies': [],
+                        'x_axis': column,
+                        'y_axis': "Percentage"
+                    }
+                    histogram_results['real'][column] = empty_result
+                    histogram_results['synthetic'][column] = empty_result
+                    continue
+                
                 try:
-                    initial_bins = np.histogram_bin_edges(combined_data, bins=method)
+                    initial_bins = np.histogram_bin_edges(finite_data, bins=method)
                 except Exception:
                     # Fallback to linear bins if auto method fails
-                    initial_bins = np.linspace(combined_data.min(), combined_data.max(),
-                                               min(max_bins, len(np.unique(combined_data))) + 1)
+                    initial_bins = np.linspace(finite_data.min(), finite_data.max(),
+                                              min(max_bins, len(np.unique(finite_data))) + 1)
 
                 bins = initial_bins if len(initial_bins) - 1 <= max_bins else \
-                    np.linspace(combined_data.min(), combined_data.max(), max_bins + 1)
+                    np.linspace(finite_data.min(), finite_data.max(), max_bins + 1)
+                
+                # Get data range information for adaptive formatting
+                data_min = finite_data.min()
+                data_max = finite_data.max()
+                num_bins = len(bins) - 1
+                
+                # Get the adaptive formatter function
+                format_value = get_optimal_format(data_min, data_max, num_bins)
+                
+                # Create bin labels with adaptive formatting
+                bin_labels = [f"{format_value(bins[i])} | {format_value(bins[i + 1])}"
+                             for i in range(len(bins) - 1)]
 
-                bin_labels = [f"{bins[i]:.2f} | {bins[i + 1]:.2f}"
-                              for i in range(len(bins) - 1)]
+                # Continue using original bins for histogram calculation to maintain accuracy
+                # Handle potential infinity issues by only counting finite values
+                real_finite = real_data[np.isfinite(real_data)]
+                synthetic_finite = synthetic_data[np.isfinite(synthetic_data)]
+                
+                real_hist, _ = np.histogram(real_finite, bins=bins)
+                synthetic_hist, _ = np.histogram(synthetic_finite, bins=bins)
 
-                real_hist, _ = np.histogram(real_data, bins=bins)
-                synthetic_hist, _ = np.histogram(synthetic_data, bins=bins)
-
-                real_total = len(real_data)
-                synthetic_total = len(synthetic_data)
+                real_total = len(real_finite)
+                synthetic_total = len(synthetic_finite)
                 real_percentages = (real_hist / real_total * 100) if real_total > 0 else real_hist * 0
                 synthetic_percentages = (
-                        synthetic_hist / synthetic_total * 100) if synthetic_total > 0 else synthetic_hist * 0
+                    synthetic_hist / synthetic_total * 100) if synthetic_total > 0 else synthetic_hist * 0
 
                 color_indices = {
                     bin_labels[i]: get_color_index(
@@ -680,7 +790,7 @@ def calculate_histogram(real, synthetic, method='auto', max_bins=25):
                 }
 
             except Exception as e:
-                raise Exception(f"Error calculating histograms: {str(e)}")
+                raise Exception(f"Error calculating histograms for column {column}: {str(e)}")
 
         return histogram_results
 

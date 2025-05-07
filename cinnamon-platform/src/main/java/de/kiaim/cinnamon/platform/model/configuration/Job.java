@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.StepType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.lang.Nullable;
 
 /**
  * Configuration for a sigle step.
@@ -37,6 +38,13 @@ public class Job {
 	 * Mapping for {@link ExternalEndpoint#getUsages()}.
 	 */
 	private ExternalEndpoint endpoint;
+
+	/**
+	 * The parent stage.
+	 * Mapping for {@link Stage#getJobList()}
+	 */
+	@Nullable
+	private Stage stage;
 
 	public ExternalServer getServer() {
 		return endpoint.getServer();

@@ -22,6 +22,7 @@ import {
     standalone: false
 })
 export class AnonymizationAttributeRowComponent implements OnInit {
+    @Input() disabled!: boolean;
     @Input() form: FormGroup;
     @Input() parentForm: FormGroup;
 
@@ -230,6 +231,10 @@ export class AnonymizationAttributeRowComponent implements OnInit {
      * @param disable if true disables the element; enables it otherwise
      */
     toggleIntervalField(disable: boolean) {
+        if (this.disabled) {
+            return;
+        }
+
         if (disable) {
             this.disableIntervalField();
         } else {

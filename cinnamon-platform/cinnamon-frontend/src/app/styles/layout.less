@@ -162,10 +162,10 @@ app-navigation{
     width: 25px;
     height: 25px;
     border-radius: 100%;
-    background-color: #007bff;
     color: white;
     display: flex;
     margin-top: 1rem;
+    z-index: 2;
 }
 
 .step-circle-wrapper {
@@ -175,7 +175,6 @@ app-navigation{
 
 .step-horizontal-line {
     height: 5px;
-    background-color: #007bff;
     margin: auto;
     width: 100%;
 }
@@ -199,7 +198,6 @@ app-navigation{
     width: fit-content;
     height: fit-content;
     font-weight: bold;
-    z-index: 2;
 }
 
 .step-vertical-alignment {
@@ -209,7 +207,6 @@ app-navigation{
 
 .step-vertical-line {
     width: 5px;
-    background-color: #007bff;
     margin: auto;
     height: 100%;
 }
@@ -221,6 +218,14 @@ app-navigation{
     left: 0;
     width: 100%;
     height: 100%;
+}
+
+.step-vertical-line-wrapper-bottom {
+    padding-top: 1.5rem;
+}
+
+.step-vertical-line-wrapper-top {
+    height: 1.5rem;
 }
 
 .step-vertical-relative {

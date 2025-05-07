@@ -10,22 +10,17 @@ env:
   REGISTRY: ghcr.io/ki-aim
 
 jobs:
-  test-junit:
+  test:
     permissions:
       checks: write
+      pull-requests: write
 
-    uses: ./.github/workflows/run-tests-junit.yml
-
-  test-unittest:
-    permissions:
-      checks: write
-
-    uses: ./.github/workflows/run-tests-unittest.yml
+    uses: ./.github/workflows/run-tests.yml
 
   build-and-push:
     runs-on: ubuntu-latest
 
-    needs: [test-junit, test-unittest]
+    needs: test
 
     permissions:
       contents: read

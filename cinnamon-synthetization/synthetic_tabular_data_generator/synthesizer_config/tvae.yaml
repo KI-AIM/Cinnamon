@@ -6,60 +6,50 @@ description: Is a VAE for synthesizing cross-sectional data.
 URL: /start_synthetization_process/tvae
 configurations:
   model_parameter:
-    display_name: Model Parameters
-    description: Define the model parameters, that are used for training the model. The model parameters are used to configure the model architecture and training process.
+    display_name: Model Architecture
+    description: Define the architecture of the model.
     parameters:
       - name: embedding_dim
         type: integer
         label: Embedding Dimensions
-        description: The size of the latent space (embedding_dim) controls the capacity of the model. Larger embedding_dim enables the model to capture more intricate patterns and details but at the cost of increased computational complexity and risk of overfitting. Smaller embedding_dim simplifies the model and reduces computational requirements but may result in loss of detail and lower-quality data reconstructions.
+        description: Embedding Dimensions controls how much detail the model can capture when learning from the data. Higher values allow the model to represent more differences between data points, while lower values may lead to simpler, more compressed representations. Using low values can reduce training time.
         default_value: 128
         min_value: 1
         max_value: 1000
       - name: compress_dims
         type: list
         label: Compress Dimensions
-        description: The size of each hidden layer in the encoder. The size of each layer (defined by compress_dims) affects how well the encoder can learn and represent the underlying structure of the input data. Larger layer sizes allow the model to potentially capture more detailed features but also increase the risk of overfitting (too specific to the training data).
+        description: Fewer or smaller layers make the model train faster, but the generated data might miss complex patterns.
         default_value: [128, 128]
       - name: decompress_dims
         type: list
         label: Decompress Dimensions
-        description: The size of each layer (defined by decompress_dims) affects how well the decoder can reconstruct the original data from the latent representation. Larger layer sizes can capture more detailed aspects of the data, potentially improving reconstruction quality but also increasing the risk of overfitting (too specific to the training data) and computational expense.
+        description: Fewer or smaller layers make the model faster, but the generated data might miss complex patterns. To keep training balanced, Decompress Dimensions should have similar dimensions and values as Compress Dimensions. 
         default_value: [128, 128]
-      - name: l2scale
-        type: float
-        label: L2Scale
-        description: Weight of L2 regularization applied during the training of the model. A very small value (like 1e-5) means the regularization effect is minimal, which might be suitable if the model is complex or if there is enough regularization already. Increasing l2scale adds more regularization, which can be useful if the model is overfitting (too specific to the training data) but might also lead to underfitting (too simplistic model, resulting in poor predictions) if set too high.
-        default_value: 0.00001
-        min_value: 0.00001
-        max_value: 1.0
-      - name: loss_factor
+  model_fitting:
+    display_name: Training Parameters
+    description: Define the parameters, that are used for training the model.
+    parameters:
+      - name: batch_size
         type: integer
-        label: Loss Factor
-        description: A multiplier that scales the reconstruction error in the loss function, affecting how much weight the reconstruction error has in the total loss calculation. This tells the model how important it is to accurately recreate the input data. A higher value makes the model focus more on accuracy, which can make the generated data look more realistic but might also make it less varied.
-        default_value: 2
+        label: Batch Size
+        description: Controls how many samples are used per training step. Lower batch sizes can increase diversity but add noise, higher batch sizes make the data more consistent but may miss subtle variations. Low values lead to longer training times.
+        default_value: 100
+        min_value: 1
+        max_value: 1000
       - name: epochs
         type: integer
         label: Number of Epochs
-        description: Number of training epochs.
-        default_value: 300
-  model_fitting:
-    display_name: Model Fitting
-    description: Define the model fitting parameters, that are used for training the model. The model fitting parameters are used to configure the training process.
-    parameters:
-      - name: train
-        type: float
-        label: Train
-        description: Configure the Train dataset. The remaining data is used for the test dataset. If a test dataset is desired the value should be lower then 1.0.
-        default_value: 0.8
+        description: Fewer epochs may lead the model to learn only basic patterns, while more epochs help capture complex structures. Very high values can cause the model to memorize the training data instead of learning to generalize. Higher values lead to longer training times.
+        default_value: 100
   sampling:
     display_name: Sampling
-    description: Define the sampling parameters, that are used for generating synthetic data. The sampling parameters are used to configure the number of samples.
+    description: Define the sampling parameters, that are used for generating the synthetic data. 
     parameters:
       - name: num_samples
         type: integer
         label: Samples
-        description: Configure the Samples.
+        description: The number of synthetic data samples to generate. A high number of samples will increase the time required for sampling.
         default_value: 1000
         min_value: 1
         max_value: 1000000

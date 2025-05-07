@@ -1,6 +1,22 @@
-# Cinnamon
+<h1 align="center">
+  Cinnamon
+</h1>
 
-<img src="./cinnamon-platform/cinnamon-frontend/src/app/assets/cinnamon-logo.png" alt="Cinnamon logo" width="100">
+<div align="center">
+  <img src="./cinnamon-platform/cinnamon-frontend/src/app/assets/cinnamon-logo.png" alt="Cinnamon logo" width="100">
+</div>
+
+<div align="center">
+
+<a href="https://github.com/KI-AIM/Cinnamon/blob/main/LICENSE">
+  <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg">
+</a>
+
+<a href="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml">
+  <img alt="Build and Push Docker Images" src="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml/badge.svg">
+</a>
+
+</div>
 
 Cinnamon is a modular application designed to offer robust functionalities for data anonymization, synthetization, and evaluation.
 
@@ -49,7 +65,7 @@ docker-compose up -d
 The website is available at http://localhost:8080.
 
 ## Documentation
-Detailed documentation will be available soon.
+Detailed information about Cinnamon's features, configuration, and development is available in our [documentation](https://ki-aim.github.io/cinnamon-docs/).
 
 ## License
 Cinnamon is open source published under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0.html).

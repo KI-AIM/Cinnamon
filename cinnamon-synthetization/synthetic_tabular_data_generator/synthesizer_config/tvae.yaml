@@ -41,7 +41,7 @@ configurations:
         type: integer
         label: Number of Epochs
         description: Fewer epochs may lead the model to learn only basic patterns, while more epochs help capture complex structures. Very high values can cause the model to memorize the training data instead of learning to generalize. Higher values lead to longer training times.
-        default_value: 300
+        default_value: 100
   sampling:
     display_name: Sampling
     description: Define the sampling parameters, that are used for generating the synthetic data. 

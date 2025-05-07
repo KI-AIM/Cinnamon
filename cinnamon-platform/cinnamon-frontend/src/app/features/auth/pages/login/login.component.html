@@ -1,4 +1,4 @@
-<app-info-card [hidden]="mode === ''" [typeClass]="['noPermission', 'expired', 'fail'].includes(mode) ? 'card-failure' : 'card-success'">
+<app-info-card [closable]="true" [hidden]="mode === ''" [typeClass]="['noPermission', 'expired', 'fail'].includes(mode) ? 'card-failure' : 'card-success'" (onClose)="mode = ''">
     <div *ngIf="mode === 'logout'">Successfully logged out</div>
     <div *ngIf="mode === 'register'">Successfully registered</div>
     <div *ngIf="mode === 'noPermission'">You must login before accessing this page</div>

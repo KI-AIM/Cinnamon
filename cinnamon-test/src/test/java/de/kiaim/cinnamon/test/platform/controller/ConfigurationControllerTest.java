@@ -32,7 +32,8 @@ class ConfigurationControllerTest extends ControllerTest {
 		mockMvc.perform(get("/api/config/info")
 				                .param("name", CONFIGURATION_NAME))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("{processes: [{job: 'anonymization', skip: false}]}"));
+		       .andExpect(
+				       content().json("{processes: [{job: 'anonymization', skip: false, holdOutFulfilled: true}]}"));
 	}
 
 	@Test

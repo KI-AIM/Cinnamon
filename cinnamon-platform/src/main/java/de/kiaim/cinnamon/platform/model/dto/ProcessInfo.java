@@ -18,4 +18,7 @@ public class ProcessInfo {
 
 	@Schema(description = "If the corresponding job should be skipped.")
 	private final boolean skip;
+
+	@Schema(description = "If the job does not need a hol-out split or the hold-out split is present.")
+	private boolean holdOutFulfilled;
 }

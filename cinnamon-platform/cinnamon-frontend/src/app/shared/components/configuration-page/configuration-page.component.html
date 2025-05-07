@@ -18,11 +18,7 @@
 
                     <div class="cinnamon-workstep-div"></div>
 
-                    <ng-container *ngFor="let process of configurationInfo.processes;">
-                        <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]">
-                            Run {{ jobLabels[process.job] }}
-                        </mat-checkbox>
-                    </ng-container>
+                    <ng-container *ngTemplateOutlet="processActivation"></ng-container>
 
                     <app-workstep altConfirm="Skip all steps" [locked]="disabled" [stepIndex]="0" [altConfirmAll]="true" [altConfirmValid]="!oneEnabled"></app-workstep>
 
@@ -127,11 +123,7 @@
                 <!-- Activation -->
                 <div class="box">
                     <h3>Process Activation</h3>
-                    <ng-container *ngFor="let process of configurationInfo.processes;">
-                        <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]">
-                            Run {{ jobLabels[process.job] }}
-                        </mat-checkbox>
-                    </ng-container>
+                    <ng-container *ngTemplateOutlet="processActivation"></ng-container>
                 </div>
 
                 <!-- Upload -->
@@ -185,3 +177,20 @@
         </ng-container>
     </ng-container>
 </ng-container>
+
+<ng-template #processActivation>
+    <ng-container *ngFor="let process of configurationInfo.processes;">
+        <div class="d-flex">
+            <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]" [disabled]="disabled || !process.holdOutFulfilled">
+                Run {{ jobLabels[process.job] }}
+            </mat-checkbox>
+            <ng-container *ngIf="!process.holdOutFulfilled">
+                <span class="ms-1 my-auto">
+                    <mat-icon fontIcon="warning" class="warn-icon"
+                              matTooltip="This step requires extended analysis to be enabled."
+                              matTooltipPosition="right"></mat-icon>
+                </span>
+            </ng-container>
+        </div>
+    </ng-container>
+</ng-template>

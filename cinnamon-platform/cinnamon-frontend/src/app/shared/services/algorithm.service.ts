@@ -220,6 +220,10 @@ export interface ProcessInfo {
      * If the job should be skipped.
      */
     skip: boolean
+    /**
+     * If the job does not need a hol-out split or the hold-out split is present.
+     */
+    holdOutFulfilled: boolean
 }
 
 export interface ConfigData {

@@ -1,5 +1,6 @@
 import { NgModule } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
+import { MatTooltip } from "@angular/material/tooltip";
 import { InformationDialogComponent } from "./components/information-dialog/information-dialog.component";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatButtonModule } from "@angular/material/button";
@@ -113,6 +114,7 @@ import { FileUploadComponent } from "./components/file-upload/file-upload.compon
         })),
         MatMenuModule,
         MatRadioModule,
+        MatTooltip,
     ],
     exports: [
         ColorLegendComponent,

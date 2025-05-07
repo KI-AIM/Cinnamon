@@ -98,6 +98,14 @@ export class ReportComponent implements OnInit {
             newChart!.parentElement!.insertBefore(image, newChart);
         }
 
+        // Allow page breaks in big elements to prevent bit gaps.
+        mywindow.document.querySelectorAll(".report-keep-together").forEach(e => {
+            // A4 is 1123 px high, and we have a margin of 48 px
+            if (e.clientHeight > (1123 - (2 * 48))) {
+                e.classList.remove("report-keep-together");
+            }
+        });
+
         mywindow.document.close(); // necessary for IE >= 10
         mywindow.focus(); // necessary for IE >= 10*/
 

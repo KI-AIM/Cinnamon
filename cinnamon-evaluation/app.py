@@ -29,7 +29,9 @@ from visualization.vis_converter import (
     add_value_differences,
     remove_synthetic_and_difference,
     convert_attributes_to_date,
-    extract_and_enrich_utility_metrics, add_resembance_description
+    extract_and_enrich_utility_metrics,
+    add_resembance_description, 
+    add_overview_to_config
 )
 
 app = Flask(__name__)
@@ -398,6 +400,9 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
     # Add the description of the resemblance utility metric to the enriched dictionary
     enriched_metrics = add_resembance_description(enriched_metrics, overview_metrics)
 
+    # Add overview to Config 
+    enriched_metrics = add_overview_to_config(enriched_metrics)
+    
     try:
         files = prepare_callback_data(enriched_metrics)
         requests.post(callback_url, files=files, data={'session_key': session_key})

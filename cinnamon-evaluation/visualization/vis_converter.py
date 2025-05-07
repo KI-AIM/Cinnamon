@@ -1,4 +1,5 @@
 from data_processing.post_process import transform_in_iso_datetime, transform_in_time_distance
+from typing import Dict, Any, List, Union, Optional
 
 
 def group_metrics_by_visualization_type(overview_metrics):
@@ -505,3 +506,134 @@ def add_resembance_description(enriched_dict, yaml_config):
     }
 
     return enriched_dict
+
+
+
+def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Processes the config data to add an overview section with resemblance scores
+    and utility scores at the same level as "resemblance" in the dictionary.
+    
+    Args:
+        config_data: The configuration data containing metrics information
+        
+    Returns:
+        dict: The modified config data with added Overview section with aggregated_metrics
+    """
+    def get_color_index(percentage_diff: float) -> int:
+        capped_diff = min(100, max(0, percentage_diff))
+        index = min(10, max(1, int(capped_diff / 10) + 1))
+        return index
+    
+    modified_config = config_data.copy()
+    
+    if "resemblance" not in modified_config or "attributes" not in modified_config["resemblance"]:
+        return modified_config
+        
+    attributes = modified_config["resemblance"]["attributes"]
+    all_attribute_scores: List[float] = []
+    
+    # First process each attribute as before
+    for i, attr in enumerate(attributes):
+        overview = {}
+        all_percentages = []
+        
+        if "important_metrics" in attr:
+            for metric_name, metric_data in attr["important_metrics"].items():
+                if "difference" in metric_data and "percentage" in metric_data["difference"]:
+                    percentage = metric_data["difference"]["percentage"]
+                    all_percentages.append(percentage)
+                    overview[metric_name] = percentage
+        
+        if "details" in attr:
+            for metric_name, metric_data in attr["details"].items():
+                if "difference" in metric_data and "percentage" in metric_data["difference"]:
+                    percentage = metric_data["difference"]["percentage"]
+                    all_percentages.append(percentage)
+                    overview[metric_name] = percentage
+        
+        if all_percentages:
+            avg_difference = sum(all_percentages) / len(all_percentages)
+            color_index = get_color_index(avg_difference)
+            overview["resemblance_score"] = {
+                "value": avg_difference,
+                "color_index": color_index
+            }
+            all_attribute_scores.append(avg_difference)
+        
+        if overview:
+            modified_config["resemblance"]["attributes"][i]["overview"] = overview
+    
+    # Extract utility scores from machine learning method
+    real_utility_score = 0.0
+    synthetic_utility_score = 0.0
+    
+    if "utility" in modified_config and "methods" in modified_config["utility"]:
+        for method in modified_config["utility"]["methods"]:
+            if "machine_learning" in method:
+                ml_method = method["machine_learning"]
+                
+                # Extract real utility score
+                if "real" in ml_method and "predictions" in ml_method["real"]:
+                    predictions = ml_method["real"]["predictions"]
+                    
+                    # First try to get Balanced Accuracy
+                    if "Balanced Accuracy" in predictions:
+                        for classifier in predictions["Balanced Accuracy"]:
+                            if classifier["classifier"] == "Summary":
+                                real_utility_score = classifier["score"]
+                                break
+                    
+                    # If Balanced Accuracy not available, try Adjusted R2
+                    elif "Adjusted R-Squared" in predictions:
+                        for classifier in predictions["Adjusted R-Squared"]:
+                            if classifier["classifier"] == "Summary":
+                                real_utility_score = classifier["score"]
+                                break
+                
+                # Extract synthetic utility score
+                if "synthetic" in ml_method and "predictions" in ml_method["synthetic"]:
+                    predictions = ml_method["synthetic"]["predictions"]
+                    
+                    # First try to get Balanced Accuracy
+                    if "Balanced Accuracy" in predictions:
+                        for classifier in predictions["Balanced Accuracy"]:
+                            if classifier["classifier"] == "Summary":
+                                synthetic_utility_score = classifier["score"]
+                                break
+                    
+                    # If Balanced Accuracy not available, try Adjusted R2
+                    elif "Adjusted R-Squared" in predictions:
+                        for classifier in predictions["Adjusted R-Squared"]:
+                            if classifier["classifier"] == "Summary":
+                                synthetic_utility_score = classifier["score"]
+                                break
+    
+    if all_attribute_scores:
+        overall_resemblance_score = sum(all_attribute_scores) / len(all_attribute_scores)
+        overall_resemblance_score = overall_resemblance_score / 100
+        
+        modified_config["Overview"] = {
+            "display_name": "Summary Overview",
+            "description": "This aggregated overview provides a high-level assessment of the similarity between real and synthetic data across resemblance and utility. The metrics presented here serve as general indicators and should be supplemented with detailed evaluation results for comprehensive analysis.",
+            "aggregated_metrics": [
+                {
+                    "overall_resemblance": {
+                        "description": "This metric quantifies the statistical similarity between synthetic and real data by calculating the normalized differences across all attributes and statistical measures. The aggregated score may not fully capture specific distributional anomalies or outliers in individual metrics. It is strongly recommended to examine the detailed statistical comparisons for a complete understanding of data resemblance.",
+                        "values": {
+                            "real": 1.0,  
+                            "synthetic": overall_resemblance_score
+                        }
+                    },
+                    "overall_utility": {
+                        "description": "This measurement evaluates how effectively synthetic data can substitute real data in machine learning applications using a train-on-synthetic test-on-real approach. For classification tasks this represents the Balanced Accuracy averaged across all classifiers while regression problems use the adjusted R-squared aggregated across all regressors. This consolidated metric provides a general approximation that should be supplemented with individual model performance evaluation.",
+                        "values": {
+                            "real": real_utility_score,
+                            "synthetic": synthetic_utility_score
+                        }
+                    }
+                }
+            ]
+        }
+    
+    return modified_config

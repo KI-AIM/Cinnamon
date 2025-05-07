@@ -179,8 +179,10 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
             X_train_real, X_test_real, y_train_real_scaled, y_test_real_scaled
         )
         
-        machine_learning_dict['real']['predictions'] = predictions_real.to_dict()
-        machine_learning_dict['synthetic']['predictions'] = predictions_synthetic.to_dict()
+        predictions_real = add_summary_classifier(predictions_real)
+        predictions_synthetic = add_summary_classifier(predictions_synthetic)
+        machine_learning_dict['real']['predictions'] = predictions_real
+        machine_learning_dict['synthetic']['predictions'] = predictions_synthetic
         machine_learning_dict['difference'] = calculate_differences_as_dict(machine_learning_dict)
     else:
         print('Classification Activated')
@@ -212,6 +214,8 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
         
         predictions_real = remove_roc_auc(predictions_real.to_dict())
         predictions_synthetic = remove_roc_auc(predictions_synthetic.to_dict())
+        predictions_real = add_summary_classifier(predictions_real)
+        predictions_synthetic = add_summary_classifier(predictions_synthetic)
         machine_learning_dict['real']['predictions'] = predictions_real
         machine_learning_dict['synthetic']['predictions'] = predictions_synthetic
         machine_learning_dict['difference'] = calculate_differences_as_dict(machine_learning_dict)
@@ -228,9 +232,9 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     return machine_learning_dict
 
 
-def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, train_size, random_state):
+def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, train_size: float, random_state: int) -> dict:
     """
-    Evaluate synthetic data quality using discriminator-based approach.
+    Evaluate synthetic data quality using discriminator-based approach with balanced datasets.
 
     Args:
         real (pd.DataFrame): Real dataset
@@ -242,6 +246,13 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
         dict: Dictionary containing evaluation metrics with color coding
     """
     test_size = 1 - train_size
+
+    # Balance datasets by sampling from the larger one
+    min_size = min(len(real), len(synthetic))
+    if len(real) > min_size:
+        real = real.sample(n=min_size, random_state=random_state)
+    elif len(synthetic) > min_size:
+        synthetic = synthetic.sample(n=min_size, random_state=random_state)
 
     # Add synthetic indicator column
     real['Synthetic'] = 0
@@ -280,6 +291,7 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
     lazy = LazyClassifier(verbose=0, ignore_warnings=False, custom_metric=None, classifiers=filtered_classifiers)
     models, predictions = lazy.fit(X_train, X_test, y_train, y_test)
     predictions = remove_roc_auc(predictions.to_dict())
+    predictions = add_summary_classifier(predictions)
 
     return transform_predictions_with_color_coding(predictions, DISCRIMINATOR_RANGES)
 
@@ -447,3 +459,29 @@ def impute_missing_values(df: pd.DataFrame, missing_value_placeholder: str = "MI
         df_imputed[col] = df_imputed[col].fillna(missing_value_placeholder)
     
     return df_imputed
+
+def add_summary_classifier(predictions: dict) -> dict:
+    """
+    Add a Summary classifier to aggregate scores from all classifiers for each metric.
+    
+    Args:
+        predictions (dict): Dictionary containing metrics with classifier scores
+        
+    Returns:
+        dict: Updated dictionary with Summary classifier added to each metric
+    """
+    updated_dict = {}
+    
+    for metric, classifiers in predictions.items():
+        # Create a new dictionary for this metric
+        updated_dict[metric] = classifiers.copy()
+        
+        # Calculate average score for all classifiers except Summary (in case it already exists)
+        classifier_scores = [score for classifier, score in classifiers.items() 
+                            if classifier != 'Summary']
+        
+        if classifier_scores:
+            summary_score = sum(classifier_scores) / len(classifier_scores)
+            updated_dict[metric]['Summary'] = summary_score
+    
+    return updated_dict

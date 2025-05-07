@@ -67,7 +67,7 @@
                     <div class="cinnamon-workstep-div"></div>
 
                     <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"
-                                                 (change)="updateSelectCache()">
+                                                 (change)="onSelectionChange()">
                     </app-configuration-selection>
 
                     <app-workstep [locked]="disabled" [stepIndex]="2" [valid]="selection.selectedOption != null"></app-workstep>
@@ -146,7 +146,7 @@
                     <h3>Algorithm Selection</h3>
 
                     <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"
-                                                 (change)="updateSelectCache()">
+                                                 (change)="onSelectionChange()">
                     </app-configuration-selection>
                 </div>
 

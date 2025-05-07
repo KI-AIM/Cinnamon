@@ -152,6 +152,18 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     }
 
     /**
+     * Handles changes on the selected algorithm.
+     * Updates the cache and the validity of the form.
+     * @protected
+     */
+    protected onSelectionChange(): void {
+        this.updateSelectCache();
+        setTimeout(() => {
+            this.formValid = this.forms.valid;
+        }, 0);
+    }
+
+    /**
      * Updates the cached value of the current selected form.
      * @protected
      */

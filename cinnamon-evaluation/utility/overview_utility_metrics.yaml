@@ -19,13 +19,8 @@ utility:
           description: "The proportion of the dataset to include in the train split."
           type: float
           default_value: 0.8
-          min_value: 0.0
-          max_value: 1.0
-        - name: "random_state"
-          label: "Random State"
-          description: "Random seed used by the random number generator to ensure reproducibility."
-          type: integer
-          default_value: 42
+          min_value: 0.1
+          max_value: 0.9
         - name: "target_variable"
           label: "Target Variable"
           description: "The target variable (column) in the dataset to predict."
@@ -46,11 +41,6 @@ utility:
           description: "The proportion of the dataset to include in the train split."
           type: float
           default_value: 0.8
-          min_value: 0.0
-          max_value: 1.0
-        - name: "random_state"
-          label: "Random State"
-          description: "Random seed used by the random number generator to ensure reproducibility."
-          type: integer
-          default_value: 42
+          min_value: 0.1
+          max_value: 0.9
       version: "0.0.1"

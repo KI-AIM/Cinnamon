@@ -75,8 +75,7 @@ RMSE_RANGES = {
 }
 
 
-def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFrame, train_size, random_state,
-                                       target_variable: str):
+def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFrame, train_size, target_variable: str):
     """
     Calculates the machine learning utility of a synthetic dataset compared to a real dataset.
     Uses synthetic data for training and real data for testing.
@@ -92,6 +91,9 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
         dict: A dictionary containing the machine learning utility of the synthetic dataset compared to the real dataset.
     """
     machine_learning_dict = {'real': {'predictions': {}}, 'synthetic': {'predictions': {}}, 'difference': {}}
+
+    test_size = 1- train_size
+    random_state = 42
 
     # Store original target values before any transformation
     real_target_original = real[target_variable].copy()
@@ -140,7 +142,7 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     # For the real model (train and test on real data)
     # Create a split of real data for comparison
     X_train_real, X_test_real, y_train_real, y_test_real = train_test_split(
-        X_test, y_test, test_size=0.3, random_state=random_state
+        X_test, y_test, test_size=test_size, random_state=random_state
     )
     
     if pd.api.types.is_numeric_dtype(y_test):
@@ -232,7 +234,7 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     return machine_learning_dict
 
 
-def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, train_size: float, random_state: int) -> dict:
+def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, train_size: float) -> dict:
     """
     Evaluate synthetic data quality using discriminator-based approach with balanced datasets.
 
@@ -246,6 +248,7 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
         dict: Dictionary containing evaluation metrics with color coding
     """
     test_size = 1 - train_size
+    random_state = 42
 
     # Balance datasets by sampling from the larger one
     min_size = min(len(real), len(synthetic))
@@ -283,7 +286,7 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
     # Split data
     X = merged_data
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, train_size=train_size, random_state=random_state
+        X, y, test_size=test_size, random_state=random_state
     )
 
     # Train and evaluate classifiers

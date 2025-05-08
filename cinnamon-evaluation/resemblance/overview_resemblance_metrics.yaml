@@ -128,6 +128,20 @@ resemblance:
       visualization_type: "details"
       version: "0.0.1"
 
+    - display_name: "Attribute-wise Correlation"
+      function_name: calculate_columnwise_correlations
+      description: "Measures each attribute's average correlation with all other attributes using Phik correlation, suitable for mixed data types."
+      interpretation: "Values closer to 1 indicate stronger positive correlations with other attributes. Values closer to 0 indicate weaker correlations. The correlation value represents the average Phik correlation of the attribute with all other attributes in the dataset."
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Correlation Heatmap"
+      function_name: visualize_columnwise_correlations
+      description: "Visualizes the correlation between the attributes as heatmap."
+      interpretation: "Values closer to 1 indicate stronger positive correlations with other attributes. Values closer to 0 indicate weaker correlations. The correlation value represents the average Phik correlation of the attribute with all other attributes in the dataset."
+      visualization_type: "plot"
+      version: "0.0.1"
+
     - display_name: "Missing Values Count"
       function_name: missing_values_count
       description: "Counts null or empty values in both real and protected datasets for comparison."

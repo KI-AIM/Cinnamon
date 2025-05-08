@@ -1,8 +1,11 @@
+from typing import Dict, Union, Optional, Any
+
 import numpy as np
 import pandas as pd
 from scipy import stats
 from scipy.spatial import distance
 from scipy.stats import gaussian_kde
+import phik 
 
 
 def validate_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> tuple:
@@ -1004,35 +1007,249 @@ def calculate_distinct_values(real, synthetic):
         raise ValueError(f"Error calculating distinct values: {str(e)}")
 
 
-def pairwise_correlation(real, synthetic):
+def calculate_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFrame) -> Dict[str, Dict[str, float]]:
     """
-    Calculates the pairwise correlation between categorical columns in a dataframe.
+    Calculate a single correlation value for each attribute that represents its
+    correlation with all other attributes combined.
+    
+    Handles columns with constant values by assigning them a correlation of 0.0,
+    properly managing both numerical and categorical data types.
+    
+    Args:
+        real (pd.DataFrame): The real data table.
+        synthetic (pd.DataFrame): The synthetic data table.
+        
+    Returns:
+        Dict: A nested dictionary with 'real' and 'synthetic' as top-level keys,
+              column names as second-level keys, and a single correlation value for each column.
+    """
+    # Initialize result dictionary
+    column_correlations = {'real': {}, 'synthetic': {}}
+    
+    try:
+        # Check for constant columns in both datasets
+        real_constant_cols = [col for col in real.columns if real[col].nunique() <= 1]
+        synthetic_constant_cols = [col for col in synthetic.columns if synthetic[col].nunique() <= 1]
+        
+        # For phik correlation calculation, simply exclude constant columns
+        # rather than trying to add noise
+        real_varying = real.drop(columns=real_constant_cols)
+        synthetic_varying = synthetic.drop(columns=synthetic_constant_cols)
+        
+        # If there are multiple varying columns, calculate phik matrix
+        if len(real_varying.columns) > 1:
+            real_corr = real_varying.phik_matrix()
+        else:
+            real_corr = pd.DataFrame()
+            
+        if len(synthetic_varying.columns) > 1:
+            synthetic_corr = synthetic_varying.phik_matrix()
+        else:
+            synthetic_corr = pd.DataFrame()
+        
+        # Process real data correlations
+        for column in real.columns:
+            if column in real_constant_cols:
+                # Constant columns have no meaningful correlation with other attributes
+                column_correlations['real'][column] = 0.0
+            else:
+                # Only include this column if it's in our correlation matrix
+                if not real_corr.empty and column in real_corr.index:
+                    # Get correlations for non-constant columns
+                    real_column_corrs = [
+                        real_corr.loc[column, other_col] 
+                        for other_col in real_varying.columns 
+                        if column != other_col
+                    ]
+                    
+                    if real_column_corrs:
+                        column_correlations['real'][column] = float(np.mean(real_column_corrs))
+                    else:
+                        column_correlations['real'][column] = 0.0
+                else:
+                    # If this column wasn't in our matrix (e.g., only 1 varying column)
+                    column_correlations['real'][column] = 0.0
+        
+        # Process synthetic data correlations
+        for column in synthetic.columns:
+            if column in synthetic_constant_cols:
+                column_correlations['synthetic'][column] = 0.0
+            else:
+                if not synthetic_corr.empty and column in synthetic_corr.index:
+                    synthetic_column_corrs = [
+                        synthetic_corr.loc[column, other_col] 
+                        for other_col in synthetic_varying.columns 
+                        if column != other_col
+                    ]
+                    
+                    if synthetic_column_corrs:
+                        column_correlations['synthetic'][column] = float(np.mean(synthetic_column_corrs))
+                    else:
+                        column_correlations['synthetic'][column] = 0.0
+                else:
+                    column_correlations['synthetic'][column] = 0.0
+                    
+        return column_correlations
+        
+    except Exception as e:
+        # If phik calculation fails completely, handle gracefully
+        if not column_correlations['real'] or not column_correlations['synthetic']:
+            # Fallback: set all correlations to 0
+            for column in real.columns:
+                column_correlations['real'][column] = 0.0
+                
+            for column in synthetic.columns:
+                column_correlations['synthetic'][column] = 0.0
+                
+            # Log the error
+            print(f"Warning: Using fallback correlation calculation due to error: {str(e)}")
+            
+        return column_correlations
+
+
+def visualize_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFrame) -> dict:
+    """
+    Creates a visualization format for column-wise correlations that can be interpreted
+    as a heat map in the frontend.
 
     Args:
-        real (pandas.DataFrame): The real dataframe.
-        synthetic (pandas.DataFrame): The synthetic dataframe.
+        real (pd.DataFrame): The real data table.
+        synthetic (pd.DataFrame): The synthetic data table.
 
     Returns:
-        dict: A dictionary containing the pairwise correlation between each categorical column in the dataframes.
+        dict: A dictionary containing visualization data for real and synthetic correlations.
+            Each dataset has x_values (column names) and correlation_values.
     """
+    # Initialize result dictionary
+    visualization_data = {'real': {}, 'synthetic': {}}
+
     try:
-        real_categorical, synthetic_categorical = validate_categorical_dataframes(real, synthetic)
+        # Check for constant columns in both datasets
+        real_constant_cols = [col for col in real.columns if real[col].nunique() <= 1]
+        synthetic_constant_cols = [col for col in synthetic.columns if synthetic[col].nunique() <= 1]
 
-        real_encoded = pd.get_dummies(real_categorical)
-        synthetic_encoded = pd.get_dummies(synthetic_categorical)
-        real_encoded, synthetic_encoded = real_encoded.align(synthetic_encoded, join='outer', axis=1, fill_value=0)
+        # For phik correlation calculation, simply exclude constant columns
+        # rather than trying to add noise
+        real_varying = real.drop(columns=real_constant_cols)
+        synthetic_varying = synthetic.drop(columns=synthetic_constant_cols)
 
-        correlation_real = real_encoded.corr()
-        correlation_synthetic = synthetic_encoded.corr()
-        correlation_diff = correlation_real - correlation_synthetic
+        # If there are multiple varying columns, calculate phik matrix
+        if len(real_varying.columns) > 1:
+            real_corr = real_varying.phik_matrix()
+        else:
+            real_corr = pd.DataFrame()  # Changed to empty DataFrame
+            
+        if len(synthetic_varying.columns) > 1:
+            synthetic_corr = synthetic_varying.phik_matrix()
+        else:
+            synthetic_corr = pd.DataFrame() # Changed to empty DataFrame
 
-        return {
-            'correlation_real': correlation_real,
-            'correlation_synthetic': correlation_synthetic,
-            'correlation_difference': correlation_diff
-        }
+        # Process real data correlations
+        for column in real.columns:
+            if column in real_constant_cols:
+                # Constant columns have no meaningful correlation with other attributes
+                visualization_data['real'][column] = {
+                    'x_values': [oc for oc in real_varying.columns if oc != column],
+                    'correlation_values': [0.0] * (len(real_varying.columns) -1) if len(real_varying.columns) > 1 else [],
+                    'x_axis': 'Attributes',
+                    'y_axis': 'Correlation Strength',
+                }
+            else:
+                # Only include this column if it's in our correlation matrix
+                if not real_corr.empty and column in real_corr.index:
+                    # Get correlations for non-constant columns
+                    real_column_corrs = [
+                        float(real_corr.loc[column, other_col])  # Ensure float
+                        for other_col in real_varying.columns
+                        if column != other_col
+                    ]
+
+                    if real_column_corrs:
+                        visualization_data['real'][column] = {
+                            'x_values': [oc for oc in real_varying.columns if oc != column],
+                            'correlation_values': real_column_corrs,
+                            'x_axis': 'Attributes',
+                            'y_axis': 'Correlation Strength',
+                        }
+                    else:
+                         visualization_data['real'][column] = {
+                            'x_values': [oc for oc in real_varying.columns if oc != column],
+                            'correlation_values': [0.0] * (len(real_varying.columns) -1) if len(real_varying.columns) > 1 else [],
+                            'x_axis': 'Attributes',
+                            'y_axis': 'Correlation Strength',
+                        }
+                else:
+                    # If this column wasn't in our matrix (e.g., only 1 varying column)
+                    visualization_data['real'][column] = {
+                        'x_values': [oc for oc in real_varying.columns if oc != column],
+                        'correlation_values': [0.0] * (len(real_varying.columns) -1) if len(real_varying.columns) > 1 else [],
+                        'x_axis': 'Attributes',
+                        'y_axis': 'Correlation Strength',
+                    }
+
+        # Process synthetic data correlations
+        for column in synthetic.columns:
+            if column in synthetic_constant_cols:
+                visualization_data['synthetic'][column] = {
+                    'x_values': [oc for oc in synthetic_varying.columns if oc != column],
+                    'correlation_values': [0.0] * (len(synthetic_varying.columns) -1) if len(synthetic_varying.columns) > 1 else [],
+                    'x_axis': 'Attributes',
+                    'y_axis': 'Correlation Strength',
+                }
+            else:
+                if not synthetic_corr.empty and column in synthetic_corr.index:
+                    synthetic_column_corrs = [
+                        float(synthetic_corr.loc[column, other_col]) # Ensure float
+                        for other_col in synthetic_varying.columns
+                        if column != other_col
+                    ]
+
+                    if synthetic_column_corrs:
+                        visualization_data['synthetic'][column] = {
+                            'x_values': [oc for oc in synthetic_varying.columns if oc != column],
+                            'correlation_values': synthetic_column_corrs,
+                            'x_axis': 'Attributes',
+                            'y_axis': 'Correlation Strength',
+                        }
+                    else:
+                        visualization_data['synthetic'][column] = {
+                            'x_values': [oc for oc in synthetic_varying.columns if oc != column],
+                            'correlation_values': [0.0] * (len(synthetic_varying.columns) -1) if len(synthetic_varying.columns) > 1 else [],
+                            'x_axis': 'Attributes',
+                            'y_axis': 'Correlation Strength',
+                        }
+                else:
+                    visualization_data['synthetic'][column] = {
+                        'x_values': [oc for oc in synthetic_varying.columns if oc != column],
+                        'correlation_values': [0.0] * (len(synthetic_varying.columns) -1) if len(synthetic_varying.columns) > 1 else [],
+                        'x_axis': 'Attributes',
+                        'y_axis': 'Correlation Strength',
+                    }
+        return visualization_data
+        
     except Exception as e:
-        raise ValueError(f"Error calculating correlations: {str(e)}")
+        if not visualization_data['real'] or not visualization_data['synthetic']:
+            # Fallback: set all correlations to 0
+            for column in real.columns:
+                visualization_data['real'][column] = {
+                        'x_values': [oc for oc in synthetic_varying.columns if oc != column],
+                        'correlation_values': [0.0] * (len(synthetic_varying.columns) -1) if len(synthetic_varying.columns) > 1 else [],
+                        'x_axis': 'Attributes',
+                        'y_axis': 'Correlation Strength',
+                    }
+                
+            for column in synthetic.columns:
+                visualization_data['synthetic'][column] = {
+                        'x_values': [oc for oc in synthetic_varying.columns if oc != column],
+                        'correlation_values': [0.0] * (len(synthetic_varying.columns) -1) if len(synthetic_varying.columns) > 1 else [],
+                        'x_axis': 'Attributes',
+                        'y_axis': 'Correlation Strength',
+                    }
+                
+            print(f"Warning: Using fallback correlation calculation due to error: {str(e)}")
+            
+        return visualization_data
+
 
 
 def missing_values_count(real, synthetic):

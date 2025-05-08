@@ -7,7 +7,8 @@ from resemblance.tabular.metrics import (mean, standard_deviation, calculate_var
                                          calculate_kolmogorov_smirnov, calculate_distinct_values,
                                          calculate_frequencies_plot,
                                          calculate_hellinger_distance,
-                                         pairwise_correlation,
+                                         calculate_columnwise_correlations,
+                                         visualize_columnwise_correlations,
                                          missing_values_count)
 
 from resemblance.longitudinal.metrics import calculate_observation_length_distribution
@@ -65,8 +66,9 @@ metric_functions_cross_sectional = {
         'kolmogorov_smirnov': calculate_kolmogorov_smirnov,
         'hellinger_distance': calculate_hellinger_distance,
         'frequency_plot': calculate_frequencies_plot,
-        'correlation': pairwise_correlation,
-        'missing_values_count': missing_values_count
+        'calculate_columnwise_correlations': calculate_columnwise_correlations,
+        'missing_values_count': missing_values_count,
+        'visualize_columnwise_correlations': visualize_columnwise_correlations
     },
     "utility": {
         'machine_learning': calculate_machine_learning_utility,
@@ -92,7 +94,6 @@ metric_functions_longitudinal = {
         'kolmogorov_smirnov': calculate_kolmogorov_smirnov,
         'hellinger_distance': calculate_hellinger_distance,
         'frequency_plot': calculate_frequencies_plot,
-        'correlation': pairwise_correlation,
         'observation_length_distribution': calculate_observation_length_distribution,
         'missing_values_count': missing_values_count
     },

@@ -4,41 +4,29 @@ utility:
   metrics:
     - display_name: "Machine Learning Utility"
       function_name: machine_learning
-      description: "Quantifies the performance similarity of machine learning models trained on protected data compared to those trained on real data."
-      interpretation: "Score ranges from 0 to 1, where:
-        - 1.0: Perfect utility - protected data performs identically to real data
-        - >0.8: Excellent utility
-        - 0.6-0.8: Good utility
-        - 0.4-0.6: Moderate utility
-        - <0.4: Poor utility - significant difference in model performance
-        Values closer to 1 indicate that models trained on protected data achieve similar performance to those trained on real data."
+      description: "Quantifies the performance similarity of machine learning models trained on protected data compared to those trained on real data, for both classification and regression tasks."
+      interpretation: "This evaluation compares machine learning model performance when trained separately on the protected data and the original data. It supports both classification (e.g., using metrics like Accuracy, F1-score) and regression tasks (e.g., using metrics like R-Squared, RMSE). To assess utility, observe how closely the performance metrics from the model trained on protected data match the metrics from the model trained on original data. The smaller the difference between these corresponding metrics, the higher the utility can be. This indicates the protected data effectively preserves the original data's characteristics for the chosen machine learning task. Larger differences suggest the protected data may not be as useful for this specific predictive task."
       version: "0.0.1"
       parameters:
         - name: "train_size"
           label: "Train Size"
-          description: "The proportion of the dataset to include in the train split."
+          description: "The proportion of the dataset to include in the train set."
           type: float
           default_value: 0.8
           min_value: 0.1
           max_value: 0.9
         - name: "target_variable"
           label: "Target Variable"
-          description: "The target variable (column) in the dataset to predict."
+          description: "The target feature (column) in the dataset to predict."
           type: attribute
     - display_name: "Discriminator-based Evaluation"
       function_name: discriminator_based_evaluation
       description: "Measures how easily a machine learning classifier can distinguish between real and protected data."
-      interpretation: "Score ranges from 0 to 1, where:
-        - 0.5: Ideal score - classifier cannot distinguish between real and protected data
-        - 0.5-0.6: Very good protected data quality
-        - 0.6-0.7: Good protected data quality
-        - 0.7-0.8: Moderate protected data quality
-        - >0.8: Poor protected data quality - classifier can easily distinguish protected from real data
-        Values closer to 0.5 indicate better quality protected data, as the discriminator struggles to differentiate between real and protected samples."
+      interpretation: "This score ranges from 0 to 1. An ideal score is 0.5, meaning a classifier cannot distinguish between real and protected data. Scores between 0.5 and 0.6 indicate very good protected data quality, while 0.6-0.7 suggests good quality. A score in the 0.7-0.8 range reflects moderate quality, and scores above 0.8 point to poor protected data quality, as the classifier can easily distinguish protected from real data. Values closer to 0.5 signify better quality protected data, as the discriminator struggles to differentiate between real and protected samples."
       parameters:
         - name: "train_size"
           label: "Train Size"
-          description: "The proportion of the dataset to include in the train split."
+          description: "The proportion of the dataset to include in the train set."
           type: float
           default_value: 0.8
           min_value: 0.1

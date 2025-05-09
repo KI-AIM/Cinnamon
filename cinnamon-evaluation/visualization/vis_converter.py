@@ -330,12 +330,19 @@ def convert_important_metrics_to_date(metric, transformation_map, attr_type):
             if isinstance(metric_data, dict):
                 if 'values' in metric_data:
                     if 'real' in metric_data['values']:
-                        metric_data['values']['real'] = transform_func(metric_data['values']['real'], attr_type)
+                        current_value = metric_data['values']['real']
+                        if isinstance(current_value, list):
+                            metric_data['values']['real'] = [transform_func(v, attr_type) if v is not None else None for v in current_value]
+                        elif current_value is not None:
+                            metric_data['values']['real'] = transform_func(current_value, attr_type)
                     if 'synthetic' in metric_data['values']:
-                        metric_data['values']['synthetic'] = transform_func(
-                            metric_data['values']['synthetic'], attr_type)
+                        current_value = metric_data['values']['synthetic']
+                        if isinstance(current_value, list):
+                            metric_data['values']['synthetic'] = [transform_func(v, attr_type) if v is not None else None for v in current_value]
+                        elif current_value is not None:
+                            metric_data['values']['synthetic'] = transform_func(current_value, attr_type)
                 if 'difference' in metric_data and isinstance(metric_data['difference'], dict):
-                    if 'absolute' in metric_data['difference']:
+                    if 'absolute' in metric_data['difference'] and metric_data['difference']['absolute'] is not None:
                         metric_data['difference']['absolute'] = transform_in_time_distance(
                             metric_data['difference']['absolute'])
     return metric
@@ -360,12 +367,19 @@ def convert_details_to_date(metric, transformation_map, attr_type):
                 if isinstance(detail_data, dict):
                     if 'values' in detail_data:
                         if 'real' in detail_data['values']:
-                            detail_data['values']['real'] = transform_func(detail_data['values']['real'], attr_type)
+                            current_value = detail_data['values']['real']
+                            if isinstance(current_value, list):
+                                detail_data['values']['real'] = [transform_func(v, attr_type) if v is not None else None for v in current_value]
+                            elif current_value is not None:
+                                detail_data['values']['real'] = transform_func(current_value, attr_type)
                         if 'synthetic' in detail_data['values']:
-                            detail_data['values']['synthetic'] = transform_func(
-                                detail_data['values']['synthetic'], attr_type)
+                            current_value = detail_data['values']['synthetic']
+                            if isinstance(current_value, list):
+                                detail_data['values']['synthetic'] = [transform_func(v, attr_type) if v is not None else None for v in current_value]
+                            elif current_value is not None:
+                                detail_data['values']['synthetic'] = transform_func(current_value, attr_type)
                     if 'difference' in detail_data and isinstance(detail_data['difference'], dict):
-                        if 'absolute' in detail_data['difference']:
+                        if 'absolute' in detail_data['difference'] and detail_data['difference']['absolute'] is not None:
                             detail_data['difference']['absolute'] = transform_in_time_distance(
                                 detail_data['difference']['absolute'])
     return metric

@@ -27,7 +27,7 @@ resemblance:
       function_name: variance
       description: "Measures how much individual numerical values deviate from the average value."
       interpretation: "Check if the dispersion of values in the protected data is similar to that in the original data. Similar variance values are a good sign."
-      visualization_type: "important_metrics"
+      visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "Standard Deviation"
@@ -130,14 +130,14 @@ resemblance:
 
     - display_name: "Phi-K Correlation"
       function_name: calculate_columnwise_correlations
-      description: "Measures the average correlation of a feature with all other features. Suitable for mixed data types."
-      interpretation: "Values near 1 indicate a strong relationships with other features. Values near 0 suggest weak relationships. Compare whether these patterns are similar in the protected data."
+      description: "Measures the average correlation of a feature with all other features. Suitable for mixed data types. This calculation can take a long time."
+      interpretation: "Values near 1 indicate a strong relationships with other features. Values near 0 suggest weak relationships. Compare whether these patterns are similar in the protected data. "
       visualization_type: "details"
       version: "0.0.1"
 
     - display_name: "Phi-K Correlation Heatmap"
       function_name: visualize_columnwise_correlations
-      description: "Displays the correlations between all feature pairs as a color-coded matrix."
+      description: "Displays the correlations between all feature pairs as a color-coded matrix. This calculation can take a long time."
       interpretation: "Look for similar color patterns in the heatmap of the original and protected data. This shows whether the relationships between features are preserved. Values near 1 indicate a strong relationships with other features. Values near 0 suggest weak relationships."
       visualization_type: "plot"
       version: "0.0.1"

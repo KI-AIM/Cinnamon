@@ -38,7 +38,7 @@
                 <table>
                     <tr *ngFor="let metricData of projectConfigService.filterMetrics(mc.metricConfiguration, MetricImportance.IMPORTANT, attributeStatistics)">
                         <th>{{ metricData[1].display_name }}:</th>
-                        <td>{{ statisticsService.formatNumber(statisticsService.getValue(metricData[1].values, mainData), {max: 3, min: 3}) }}</td>
+                        <td>{{ statisticsService.formatNumber(statisticsService.getValue(metricData[1].values, mainData), {max: 3, min: 3, dataType: attributeStatistics.attribute_information.type}) }}</td>
                     </tr>
                 </table>
             </div>

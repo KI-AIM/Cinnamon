@@ -171,7 +171,7 @@
 <ng-template #metric let-data='data'>
     <tr>
         <td>{{ data[1].display_name }}</td>
-        <td>{{ statisticsService.formatNumber(getValue(data[1].values, mainData)) }}</td>
+        <td>{{ statisticsService.formatNumber(getValue(data[1].values, mainData), {max: 3, min: 3, dataType: attributeStatistics.attribute_information.type}) }}</td>
         <td class="information-column">
             <a title="Show information" style="vertical-align: middle;" (click)="metricInfoTableComponent.open(data[1])">
                 <mat-icon fontIcon="info"></mat-icon>
@@ -215,10 +215,10 @@
         <td>
             {{ data[1].display_name }}
         </td>
-        <td>{{ statisticsService.formatNumber(getValue(data[1].values, 'real')) }}</td>
-        <td>{{ statisticsService.formatNumber(getValue(data[1].values, 'synthetic')) }}</td>
-        <td>{{ statisticsService.formatNumber(getDifference(data[1], 'absolute')) }}</td>
-        <td>{{ statisticsService.formatNumber(getDifference(data[1], 'percentage')) }}</td>
+        <td>{{ statisticsService.formatNumber(getValue(data[1].values, 'real'), {max: 3, min: 3, dataType: attributeStatistics.attribute_information.type}) }}</td>
+        <td>{{ statisticsService.formatNumber(getValue(data[1].values, 'synthetic'), {max: 3, min: 3, dataType: attributeStatistics.attribute_information.type}) }}</td>
+        <td>{{ statisticsService.formatNumber(getDifference(data[1], 'absolute'), {dataType: attributeStatistics.attribute_information.type}) }}</td> 
+        <td>{{ statisticsService.formatNumber(getDifference(data[1], 'percentage'), {max: 3, min: 3}) }}</td>
         <td class="information-column">
             <a title="Show information" (click)="metricInfoTableComponent.open(data[1])" class="icon-enabled">
                 <mat-icon fontIcon="info"></mat-icon>

@@ -18,7 +18,7 @@ from evaluation_metrics import (
     metric_functions_descriptive
 )
 
-from data_processing.pre_process import pre_process_dataframe
+from data_processing.pre_process import preprocess_datasets
 from data_processing.utils import validate_and_extract_metrics
 from dispatcher import dispatch_metrics
 from visualization.vis_converter import (
@@ -268,9 +268,8 @@ def statistics_data(session_key, callback_url, attribute_config, evaluation_conf
     print("Evaluating Data")
 
     print("Initializing Input Data")
-    processed_real_data, discrete_values_real = pre_process_dataframe(real_data, attribute_config['configurations'])
-    processed_synthetic_data, discreate_values_synthetic = pre_process_dataframe(synthetic_data,
-                                                                                 attribute_config['configurations'])
+    processed_real_data, processed_synthetic_data = preprocess_datasets(real_data, synthetic_data, attribute_config['configurations'])
+
     data_format, metrics = validate_and_extract_metrics(evaluation_config)
 
     overview_resemblance_path = os.path.join(app_dir, 'resemblance', 'overview_resemblance_metrics.yaml')
@@ -337,9 +336,7 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
     print("Evaluating Data")
 
     print("Initializing Input Data")
-    processed_real_data, discrete_values_real = pre_process_dataframe(real_data, attribute_config['configurations'])
-    processed_synthetic_data, discrete_values_synthetic = pre_process_dataframe(synthetic_data,
-                                                                                attribute_config['configurations'])
+    processed_real_data, processed_synthetic_data = preprocess_datasets(real_data, synthetic_data, attribute_config['configurations'])
     data_format, metrics = validate_and_extract_metrics(evaluation_config)
 
     # Load Resemblance Metrics

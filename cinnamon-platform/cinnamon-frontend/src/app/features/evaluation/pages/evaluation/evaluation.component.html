@@ -30,17 +30,21 @@
             <div class="step">
                 <div class="step-lines">
                     <div class="step-horizontal-line-wrapper">
-                        <div class="step-horizontal-line">
+                        <div class="step-horizontal-line" [ngClass]="evaluationService.getLineClass(data.stage, i,  'top')">
                         </div>
                     </div>
                     <div class="step-vertical-alignment">
                         <div class="step-vertical-relative">
-                            <div class="step-vertical-line-wrapper">
-                                <div class="step-vertical-line">
+                            <div class="step-vertical-line-wrapper step-vertical-line-wrapper-top">
+                                <div class="step-vertical-line" [ngClass]="evaluationService.getLineClass(data.stage, i,  'top')">
+                                </div>
+                            </div>
+                            <div class="step-vertical-line-wrapper step-vertical-line-wrapper-bottom">
+                                <div class="step-vertical-line" [ngClass]="evaluationService.getLineClass(data.stage, i,  'bottom')">
                                 </div>
                             </div>
                             <div class="step-circle-wrapper">
-                                <div class="step-circle">
+                                <div class="step-circle" [ngClass]="evaluationService.getLineClass(data.stage, i,  'top')">
                                     <div class="step-number">
                                         {{ i + 1 }}
                                     </div>
@@ -63,7 +67,7 @@
                     <div class="step-body">
                         <mat-accordion>
                             <!-- Status -->
-                            <mat-expansion-panel>
+                            <mat-expansion-panel #statusPanel>
                                 <mat-expansion-panel-header>
                                     <mat-panel-title>Status</mat-panel-title>
                                     <mat-panel-description></mat-panel-description>

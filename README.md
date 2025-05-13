@@ -71,4 +71,4 @@ Detailed information about Cinnamon's features, configuration, and development i
 Cinnamon is open source published under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0.html).
 
 ## Acknowledgement
-Supported by BMBF grant No. 16KISA115K
+Supported by BMFTR grant No. 16KISA115K

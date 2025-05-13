@@ -4,6 +4,7 @@ import { ConfigurationService } from 'src/app/shared/services/configuration.serv
 import { ImportPipeData } from "../../model/import-pipe-data";
 import { Observable } from "rxjs";
 import { StepConfiguration } from "../../model/step-configuration";
+import { ErrorHandlingService } from "../../services/error-handling.service";
 
 @Component({
     selector: 'app-configuration-upload',
@@ -12,8 +13,6 @@ import { StepConfiguration } from "../../model/step-configuration";
     standalone: false
 })
 export class ConfigurationUploadComponent implements OnInit{
-  protected error: string;
-
   /**
    * Registered name of the configuration to upload.
    * If null, all configurations in the selected will be uploaded
@@ -23,13 +22,15 @@ export class ConfigurationUploadComponent implements OnInit{
   @Input() public disabled: boolean = false;
   @Output() onUpload: EventEmitter<ImportPipeData[] | null> = new EventEmitter();
 
+    protected configFile: File | null = null;
+    protected isFileTypeInvalid: boolean = false;
 
-  constructor(
-    private configurationService: ConfigurationService,
-    private dialog: MatDialog,
-  ) {
-    this.error = "";
-  }
+    constructor(
+        private readonly errorHandlingService: ErrorHandlingService,
+        private configurationService: ConfigurationService,
+        private dialog: MatDialog,
+    ) {
+    }
 
   ngOnInit() {
       if (this.configurationNameObservable !== null) {
@@ -41,10 +42,6 @@ export class ConfigurationUploadComponent implements OnInit{
       }
   }
 
-  public setError(error: string): void {
-      this.error = error;
-  }
-
   /**
    * Opens the import dialog.
    * @param templateRef Reference to the dialog.
@@ -52,6 +49,10 @@ export class ConfigurationUploadComponent implements OnInit{
   openDialog(templateRef: TemplateRef<any>) {
     this.dialog.open(templateRef, {
       width: '60%'
+    }).afterClosed().subscribe({
+        next: () => {
+            this.configFile = null;
+        }
     });
   }
 
@@ -62,6 +63,30 @@ export class ConfigurationUploadComponent implements OnInit{
     this.dialog.closeAll();
   }
 
+    /**
+     * Activates/deactivates the upload button if an input is made.
+     * @param event Input event of the file input.
+     * @protected
+     */
+  protected updateUploadButton(event: Event) {
+      const input = event.target as HTMLInputElement;
+      const hasFile = input.files != null && input.files.length > 0;
+
+      this.configFile = null;
+      this.isFileTypeInvalid = false;
+
+      if (hasFile) {
+          const file = input.files![0];
+          const fileExtension = this.getFileExtension(file);
+
+          if (fileExtension == null || !["yaml", "yml"].includes(fileExtension)) {
+              this.isFileTypeInvalid = true;
+          } else {
+              this.configFile =  file;
+          }
+      }
+  }
+
   /**
    * Uploads the selected configuration file.
    * If the configuration name of this component is set, only this configuration will be uploaded.
@@ -69,9 +94,8 @@ export class ConfigurationUploadComponent implements OnInit{
    * If configured, stores the configuration under the configured name into the database.
    */
   uploadConfiguration() {
-    const files = (document.getElementById("configInput") as HTMLInputElement).files;
-    if (!files || files.length === 0) {
-      this.error = "Please select a file!";
+    if (!this.configFile) {
+      console.error("No file selected. This should be prevented by disabling the upload button.");
       return;
     }
 
@@ -86,10 +110,25 @@ export class ConfigurationUploadComponent implements OnInit{
       }
     }
 
-    this.configurationService.uploadAllConfigurations(files[0], included).subscribe(result => {
-        this.onUpload.emit(result);
-    });
+      this.configurationService.uploadAllConfigurations(this.configFile, included).subscribe({
+          next: result => {
+              this.onUpload.emit(result);
+          },
+          error: error => {
+              this.errorHandlingService.addError(error, "Could not upload configuration.");
+          },
+      });
     this.closeDialog();
   }
+
+    /**
+     * Extracts the file extension from the given file.
+     * @param file The File
+     * @return The file extension without `.`.
+     * @private
+     */
+    private getFileExtension(file: File): string | undefined {
+        return file.name.split(".").pop();
+    }
 
 }

@@ -1,27 +1,42 @@
-
 <div>
     <div *ngIf="(statistics$ | async) as statistics else loading">
-        <mat-form-field class="w-100">
-            <mat-label>Search</mat-label>
-            <input type="text" matInput [(ngModel)]="filterText"/>
-        </mat-form-field>
+        <div *ngIf="statistics.status === ProcessStatus.RUNNING || statistics.status === ProcessStatus.SCHEDULED">
+            <ng-container *ngTemplateOutlet="loading"></ng-container>
+        </div>
 
-        <div *ngIf="(statistics.resemblance.attributes | statisticsFilter:filterText) as filteredAttributes">
-            <div class="mb-2">Showing {{ filteredAttributes.filteredCount }}/ {{ filteredAttributes.originalCount }}
+        <div *ngIf="statistics.status === ProcessStatus.ERROR || statistics.status === ProcessStatus.CANCELED">
+            <div class="d-flex justify-content-center">
+                <button mat-raised-button color="primary" (click)="reload()">Retry</button>
             </div>
+        </div>
 
-            <div *ngFor="let attribute of filteredAttributes.filteredList" class="mb-2 border-top border-1">
-                <div class="mt-2">
-                    <app-data-inspection-attribute [attributeStatistics]="attribute" [sourceDataset]="sourceDataset"
-                                                   [sourceProcess]="sourceProcess" [mainData]="mainData" [processingSteps]="processingSteps">
-                    </app-data-inspection-attribute>
+        <div *ngIf="statistics.status === ProcessStatus.FINISHED">
+            <mat-form-field class="w-100">
+                <mat-label>Search</mat-label>
+                <input type="text" matInput [(ngModel)]="filterText"/>
+            </mat-form-field>
+
+            <div *ngIf="(statistics.statistics!.resemblance.attributes | statisticsFilter:filterText) as filteredAttributes">
+                <div class="mb-2">Showing {{ filteredAttributes.filteredCount }} / {{ filteredAttributes.originalCount }}
+                </div>
+
+                <div *ngFor="let attribute of filteredAttributes.filteredList" class="mb-2 border-top border-1">
+                    <div class="mt-2">
+                        <app-data-inspection-attribute [attributeStatistics]="attribute" [sourceDataset]="sourceDataset"
+                                                       [sourceProcess]="sourceProcess" [mainData]="mainData"
+                                                       [processingSteps]="processingSteps">
+                        </app-data-inspection-attribute>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     <ng-template #loading>
         <div class="d-flex justify-content-center">
-            <mat-spinner [diameter]="100"></mat-spinner>
+            <div>
+                <mat-spinner [diameter]="100"></mat-spinner>
+                <button mat-raised-button color="primary" (click)="cancel()">Cancel</button>
+            </div>
         </div>
     </ng-template>
 </div>

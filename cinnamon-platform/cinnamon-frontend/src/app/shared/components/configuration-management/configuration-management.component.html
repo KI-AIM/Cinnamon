@@ -1,11 +1,6 @@
 <ng-template #configurationManagement>
     <mat-dialog-content class="mat-typography">
 
-        <!-- Error -->
-        <app-info-card [hidden]="error === ''" typeClass="card-failure">
-            <div>{{error}}</div>
-        </app-info-card>
-
         <!-- Configuration selection -->
         <div>Select configurations to download</div>
         <div *ngFor="let config of configurationService.getRegisteredConfigurations()">

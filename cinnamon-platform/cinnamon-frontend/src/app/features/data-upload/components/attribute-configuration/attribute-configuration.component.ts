@@ -1,7 +1,6 @@
-import { AfterViewInit, Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { FormGroup, NgModel } from '@angular/forms';
+import { AfterViewInit, Component, EventEmitter, Input, Output } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { List } from 'src/app/core/utils/list';
-import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataScale } from 'src/app/shared/model/data-scale';
 import { DataType } from 'src/app/shared/model/data-type';
 
@@ -34,9 +33,7 @@ export class AttributeConfigurationComponent implements AfterViewInit {
     }
 
     getDataTypes(): List<String> {
-        const types = Object.keys(DataType).filter(x => !(parseInt(x) >= 0));
-
-        return new List<String>(types);
+        return new List<String>(Object.keys(DataType));
     }
 
     getDataScales(): List<String> {

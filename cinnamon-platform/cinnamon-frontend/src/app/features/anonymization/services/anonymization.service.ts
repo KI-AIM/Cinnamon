@@ -5,7 +5,9 @@ import { ConfigurationRegisterData } from "../../../shared/model/configuration-r
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
 import { Algorithm } from "../../../shared/model/algorithm";
-import { AnonymizationAttributeConfigurationService } from './anonymization-attribute-configuration.service';
+import {
+    AnonymizationAttributeConfigurationComponent
+} from "../components/anonymization-attribute-configuration/anonymization-attribute-configuration.component";
 
 interface AnonymizationFormConfig {
     modelConfiguration: any; // Specify the type of `modelConfiguration` as needed.
@@ -17,14 +19,11 @@ interface AnonymizationFormConfig {
 })
 export class AnonymizationService extends AlgorithmService {
 
-    private attributeService: AnonymizationAttributeConfigurationService;
     constructor(
         http: HttpClient,
         configurationService: ConfigurationService,
-        attributeService: AnonymizationAttributeConfigurationService,
     ) {
         super(http, configurationService);
-        this.attributeService = attributeService;
     }
 
     public override getStepName() {
@@ -44,7 +43,6 @@ export class AnonymizationService extends AlgorithmService {
     }
 
     public override createConfiguration(arg: AnonymizationFormConfig, selectedAlgorithm: Algorithm): Object {
-
         return {
             anonymization: {
                 privacyModels: [
@@ -55,16 +53,19 @@ export class AnonymizationService extends AlgorithmService {
                         modelConfiguration: arg["modelConfiguration"]
                     },
                 ],
-                ...this.attributeService.createConfiguration()
+                attributeConfiguration: arg[AnonymizationAttributeConfigurationComponent.formGroupName],
             }
          };
     }
+
     public override readConfiguration(arg: any, configurationName: string): {config: Object, selectedAlgorithm: Algorithm} {
-        this.attributeService.setAttributeConfiguration(arg);
         const selectedAlgorithm = this.getAlgorithmByName(arg["anonymization"]["privacyModels"][0]["name"])
         const config = arg["anonymization"]["privacyModels"][0];
         delete config["name"];
         delete config["type"];
+
+        config[AnonymizationAttributeConfigurationComponent.formGroupName] = arg["anonymization"][AnonymizationAttributeConfigurationComponent.formGroupName];
+
         return {config, selectedAlgorithm};
     }
 

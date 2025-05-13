@@ -2,16 +2,11 @@
 <div class="d-flex flex-column w-100">
     <mat-form-field>
         <mat-label>Select an attribute to configure</mat-label>
-        <mat-select
-            #attributeDropdown
-            (valueChange)="onSelectionChange($event)"
-        >
+        <mat-select #attributeDropdown (valueChange)="onSelectionChange($event)">
             <mat-option disabled [value]="undefined">Select an attribute to configure</mat-option>
-            <mat-option
-                *ngFor="let row of this.getAvailableConfigurationsSortedById()"
-                [value]="row.index"
-                >{{ row.name }}</mat-option
-            >
+            <mat-option *ngFor="let row of this.getAvailableConfigurationsSortedById()" [value]="row.index">
+                {{ row.name }}
+            </mat-option>
         </mat-select>
     </mat-form-field>
     <div class="d-flex w-100 justify-content-start align-content-center">
@@ -26,15 +21,21 @@
     </div>
 </div>
 
+<div [formGroup]="form">
 
-<div class="mt-4" >
-    <app-anonymization-attribute-row
-        *ngFor="let attrConfig of this.getAttributeConfiguration()?.attributeConfiguration"
-        #configRow
-        [anonymizationRowConfiguration]="attrConfig"
-        [configurationRow]="getConfigurationForIndex(attrConfig.index)"
-        [form]="form"
-        (removeEvent)="removeAttributeConfigurationRow(attrConfig)"
-    >
-    </app-anonymization-attribute-row>
+    <div class="mt-4" formArrayName="attributeConfiguration">
+
+        <div *ngFor="let attrConfig of getAttributeConfigurationForms(form); let i = index" [formGroupName]="i">
+            <app-anonymization-attribute-row #configRow [form]="attrConfig"
+                                             (removeEvent)="removeAttributeConfigurationRow(i)">
+            </app-anonymization-attribute-row>
+        </div>
+
+        <mat-error *ngIf="form.controls['attributeConfiguration'].hasError('required')">
+            At least one attribute must be configured
+        </mat-error>
+        <mat-error *ngIf="form.controls['attributeConfiguration'].hasError('noGeneralization')">
+            At least one attribute must be protected by MASKING, GENERALIZATION, MICRO_AGGREGATION, RECORD_DELETION or DATE_GENERALIZATION
+        </mat-error>
+    </div>
 </div>

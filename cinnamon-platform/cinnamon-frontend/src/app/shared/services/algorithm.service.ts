@@ -23,9 +23,6 @@ export abstract class AlgorithmService {
     };
     private doSetConfig: (error: string | null) => void = () => { };
 
-    public selectCache: Algorithm | null = null;
-    public configCache: {[algorithmName: string]: Object} = {};
-
     protected constructor(
         private readonly http: HttpClient,
         protected readonly configurationService: ConfigurationService,
@@ -79,8 +76,8 @@ export abstract class AlgorithmService {
         if (data.success) {
             if (data.yamlConfigString) {
                 const result = this.readConfiguration(parse(data.yamlConfigString), data.configData.name);
-                this.selectCache = result.selectedAlgorithm;
-                this.configCache[result.selectedAlgorithm.name] = result.config;
+                this.configurationService.setSelectedAlgorithm(this.getConfigurationName(), result.selectedAlgorithm);
+                this.configurationService.setConfiguration(this.getConfigurationName(), result.selectedAlgorithm, result.config);
             }
         } else {
             error = "Failed to load configuration";

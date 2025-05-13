@@ -18,10 +18,15 @@
 
     <div>
         <input type="file" accept=".csv,.xlsx" #fileForm (input)="onFileInput($event)" [disabled]="locked">
+
         <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
-           [hidden]="!this.dataFile" class="icon-enabled">
+           [hidden]="isDataFileInvalid" class="icon-enabled">
             <mat-icon fontIcon="settings"></mat-icon>
         </a>
+        <div class="cinnamon-file-input-error" *ngIf="isDataFileTypeInvalid">
+            Please select a CSV or XLSX file.
+        </div>
+
     </div>
 
     <p>
@@ -31,10 +36,14 @@
     <div class="mb-2">
         <input id="configInput" type="file" accept=".yml,.yaml" (input)="onDataConfigurationFileInput($event)"
                [disabled]="locked">
+
+        <div class="cinnamon-file-input-error" *ngIf="isConfigFileTypeInvalid">
+            Please select a YAML file.
+        </div>
     </div>
 
     <div class="py-2">
-        <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="!this.dataFile">Confirm file and
+        <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="isInvalid">Confirm file and
             start configuration
         </button>
     </div>
@@ -56,8 +65,9 @@
     <ul>
         <li>CSV Files</li>
         <li>XLSX Files</li>
-        <li>FHIR Bundles</li>
     </ul>
+    FHIR support is under development and will be available soon.<br/><br/>
+
     <p>
         <b>File Size Limit:</b>
         <br/>

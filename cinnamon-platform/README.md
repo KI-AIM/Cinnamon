@@ -10,7 +10,19 @@ It is responsible for:
 ## Build & Run
 
 ### Docker
-It is recommended to use the [docker-compose.yml](../docker-compose.yml) in the root directory of this repository for building and running the platform with Docker.
+
+It is recommended to use the [docker-compose-build.yml](../docker-compose-build.yml) for building [docker-compose.yml](../docker-compose.yml) for running the platform with Docker.
+
+Run the following command in the root directory to build Cinnamon Platform:
+```sh
+docker compose -f docker-compose-build.yml build cinnamon-platform 
+```
+
+To start Cinnamon Platform, create a `.env`, paste the content of `.env.example` into the new `.env` file and set the `PG_PASSWORD` variable.
+Then start Cinnamon Platform by executing this command:
+```sh
+docker compose up -d cinnamon-platform
+```
 
 ### WAR
 

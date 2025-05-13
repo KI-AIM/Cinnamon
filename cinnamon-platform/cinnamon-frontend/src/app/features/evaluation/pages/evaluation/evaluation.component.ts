@@ -5,7 +5,7 @@ import { ProcessStatus } from "../../../../core/enums/process-status";
 import { Observable, tap } from "rxjs";
 import { StatisticsService } from "../../../../shared/services/statistics.service";
 import {
-    Statistics, UtilityData,
+    StatisticsResponse, UtilityData,
     UtilityMetricData2,
     UtilityMetricData3,
     UtilityStatisticsData
@@ -31,7 +31,7 @@ export class EvaluationComponent implements OnInit {
     protected stage$: Observable<ExecutionStep | null>;
     protected stageDefinition$: Observable<StageDefinition>;
 
-    protected statistics$: Observable<Statistics | null>;
+    protected statistics$: Observable<StatisticsResponse>;
 
     protected risks$: Observable<RiskEvaluation>;
     protected risks2$: Observable<any>;

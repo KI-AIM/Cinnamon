@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.controller;
 
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.service.ResponseService;
 import org.slf4j.Logger;
@@ -83,7 +84,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		}
 
 		final String errorCode = ApiException.assembleErrorCode(ApiException.VALIDATION, VALIDATION_ERROR, "1");
-		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode, "Request validation failed", errors);
+		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode,
+		                                                  "Request validation failed",
+		                                                  new ErrorDetails().withValidationErrors(errors));
 	}
 
 	@Override

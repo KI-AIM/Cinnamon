@@ -112,19 +112,19 @@
                                     <mat-panel-description></mat-panel-description>
                                 </mat-expansion-panel-header>
 
-                                <div>
-                                    <div
-                                        *ngIf="data.stage && data.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED; else anonNoData">
-                                        <!--                                    <app-data-table [sourceDataset]="getJobName(i)"></app-data-table>-->
-                                        <app-data-table [sourceProcess]="getJobName(process)"></app-data-table>
-                                    </div>
-                                    <ng-template #anonNoData>
-                                        <div>
-                                            No Data Available
+                                <ng-template matExpansionPanelContent>
+                                    <div>
+                                        <div
+                                            *ngIf="data.stage && data.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED; else anonNoData">
+                                            <app-data-table [sourceProcess]="getJobName(process)"></app-data-table>
                                         </div>
-                                    </ng-template>
-                                </div>
-
+                                        <ng-template #anonNoData>
+                                            <div>
+                                                No Data Available
+                                            </div>
+                                        </ng-template>
+                                    </div>
+                                </ng-template>
                             </mat-expansion-panel>
 
                             <!-- Inspection -->

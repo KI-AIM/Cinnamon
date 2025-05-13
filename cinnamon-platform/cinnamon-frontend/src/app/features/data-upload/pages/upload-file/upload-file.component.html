@@ -59,8 +59,7 @@
 
     <ng-container *ngIf="status.mode === Mode.EXPERT">
 
-        <div class="box">
-
+        <app-workstep-box title="Upload your dataset and data configuration">
             <div>
                 <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
             </div>
@@ -76,8 +75,8 @@
             </div>
 
             <ng-container *ngTemplateOutlet="info"></ng-container>
+        </app-workstep-box>
 
-        </div>
     </ng-container>
 </ng-container>
 

@@ -280,13 +280,21 @@ app-navigation{
     width: 100%;
 }
 
-.mat-accordion > .workstep-expansion-panel:not(.workstep-complete) .cinnamon-workstep-div {
+.workstep-expansion-panel-static > .mat-expansion-panel-header {
+    pointer-events: none;
+}
+
+.workstep-expansion-panel:not(.workstep-complete) .cinnamon-workstep-div {
     border-top: 1px solid @color-border;
     padding-top: 0.5rem;
 }
 
-.mat-accordion > .workstep-expansion-panel .cinnamon-workstep-div {
+.workstep-expansion-panel .cinnamon-workstep-div {
     margin-bottom: 0.5rem;
+}
+
+.workstep-expansion-panel {
+    box-shadow: rgba(100, 100, 111, 0.2) 0 1px 5px 0 !important;
 }
 
 .mat-accordion > .workstep-expansion-panel {
@@ -297,7 +305,7 @@ app-navigation{
     font-size: 1rem;
 }
 
-.mat-accordion > .workstep-expansion-panel > .mat-expansion-panel-header > .mat-content > .mat-expansion-panel-header-title {
+.workstep-expansion-panel > .mat-expansion-panel-header > .mat-content > .mat-expansion-panel-header-title {
     flex-basis: 100%;
 }
 

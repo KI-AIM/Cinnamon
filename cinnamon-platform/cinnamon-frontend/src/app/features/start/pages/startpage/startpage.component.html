@@ -1,7 +1,7 @@
-<div class="box" *ngIf="status$ | async as status;">
+<app-workstep-box *ngIf="status$ | async as status;" title="Welcome to Cinnamon">
 
-    <h3>Welcome to Cinnamon. This tool is designed to anonymize your data by providing methods both for direct
-        anonymization as well as data generation with synthetic methods. </h3>
+    <p>This tool is designed to anonymize your data by providing methods both for direct
+        anonymization as well as data generation with synthetic methods.</p>
 
     <p>The application will guide you through the different steps, that are shown on the left side of the screen.
         Completed steps will be marked accordingly. The steps can be grouped into three categories: </p>
@@ -67,4 +67,4 @@
             </mat-card-actions>
         </mat-card>
     </div>
-</div>
+</app-workstep-box>

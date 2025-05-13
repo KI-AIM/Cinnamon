@@ -155,7 +155,7 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
         assertTrue(recordedRequest.getHeader("Content-Type").startsWith("multipart/form-data"));
 
         String body = recordedRequest.getBody().readUtf8();
-        assertTrue(body.contains("Content-Disposition: form-data; name=\"error_message\""));
+        assertTrue(body.contains("Content-Disposition: form-data; name=\"error\""));
 
 //        System.out.println("Received error response in callback: " + body);
     }

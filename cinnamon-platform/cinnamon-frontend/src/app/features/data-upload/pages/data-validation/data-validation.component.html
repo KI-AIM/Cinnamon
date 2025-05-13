@@ -2,7 +2,7 @@
     <ng-container *ngIf="status.mode === Mode.STANDARD">
 
         <app-workstep-list confirmLabel="Continue with the current dataset and data configuration" [locked]="locked"
-                           [numberSteps]="2" [step]="Steps.VALIDATION"
+                           [numberSteps]="3" [step]="Steps.VALIDATION"
                            (confirm)="confirmData()">
             <app-workstep-item title="View the imported dataset" [locked]="locked" [stepIndex]="0">
                 <p>

@@ -34,5 +34,8 @@
         <mat-error *ngIf="form.controls['attributeConfiguration'].hasError('required')">
             At least one attribute must be configured
         </mat-error>
+        <mat-error *ngIf="form.controls['attributeConfiguration'].hasError('noGeneralization')">
+            At least one attribute must be protected by MASKING, GENERALIZATION, MICRO_AGGREGATION, RECORD_DELETION or DATE_GENERALIZATION
+        </mat-error>
     </div>
 </div>

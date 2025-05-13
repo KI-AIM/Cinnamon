@@ -4,9 +4,9 @@ import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
 import { AnonymizationAttributeConfigurationService } from '../../services/anonymization-attribute-configuration.service';
 import { MatSelect } from '@angular/material/select';
-import { AnonymizationAttributeRowConfiguration, } from 'src/app/shared/model/anonymization-attribute-config';
+import { AnonymizationAttributeRowConfiguration, AttributeProtection, } from 'src/app/shared/model/anonymization-attribute-config';
 import { Subscription } from "rxjs";
-import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 
 @Component({
     selector: 'app-anonymization-attribute-configuration',
@@ -43,7 +43,7 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
      * @param form The form to be initialized.
      */
     static initForm(form: FormGroup): void {
-        form.addControl(AnonymizationAttributeConfigurationComponent.formGroupName, new FormArray([], Validators.required));
+        form.addControl(AnonymizationAttributeConfigurationComponent.formGroupName, new FormArray([], [Validators.required, AnonymizationAttributeConfigurationComponent.hasGeneralization]));
     }
 
     ngOnInit() {
@@ -174,6 +174,38 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
      */
     protected removeAttributeConfigurationRow(index: number) {
         this.getAttributeConfigurationFormArray(this.form).removeAt(index);
+    }
+
+
+    /**
+     * Custom validator to check if at least one attribute is protected by a generalization method.
+     * An empty array is considered valid.
+     * @param control The form array to validate.
+     * @return Validation errors if no generalization protection is available, null otherwise.
+     * @private
+     */
+    private static hasGeneralization(control: FormArray): ValidationErrors | null {
+        if (control.controls.length === 0) {
+            return null;
+        }
+
+        for (const row of control.controls) {
+            console.log(row);
+            const protection = (row as FormGroup).controls['attributeProtection'].value;
+            if (AnonymizationAttributeConfigurationComponent.isGeneralization(protection)) {
+                return null;
+            }
+        }
+
+        return {noGeneralization: {}};
+    }
+
+    private static isGeneralization(protection: string) {
+        return protection === AttributeProtection.MASKING ||
+            protection === AttributeProtection.GENERALIZATION ||
+            protection === AttributeProtection.MICRO_AGGREGATION ||
+            protection === AttributeProtection.RECORD_DELETION ||
+            protection === AttributeProtection.DATE_GENERALIZATION;
     }
 
 }

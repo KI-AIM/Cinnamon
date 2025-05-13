@@ -56,7 +56,9 @@ The following video provides an overview of the Cinnamon Platform:
 
 ## Quick Start
 Cinnamon with all its modules can be installed with Docker Compose.
-Clone the repository and run the following command in the root directory:
+First clone the repository and create a `.env` file in the root directory.
+Then copy the content of `.env.example` into the new file and set the `PG_PASSWORD`.
+Finally, run the following command in the root directory:
 
 ```bash
 docker-compose up -d

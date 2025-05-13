@@ -8,52 +8,21 @@
 
         <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
-            <mat-accordion>
-                <mat-expansion-panel [disabled]="0 > currentStep" class="workstep-expansion-panel"
-                                     [class.workstep-complete]="currentStep > 0 || workstepService.isCompleted">
-                    <mat-expansion-panel-header>
-                        <mat-panel-title>
-                            <app-workstep-title [stepIndex]="0">
-                                Configure the attributes
-                            </app-workstep-title>
-                        </mat-panel-title>
-                        <mat-panel-description>
-                        </mat-panel-description>
-                    </mat-expansion-panel-header>
+            <app-workstep-list confirmLabel="Confirm configuration and start validation" [locked]="locked"
+                               [invalid]="isInvalid" [numberSteps]="2" [step]="Steps.DATA_CONFIG"
+                               (confirm)="confirmConfiguration()">
 
-                    <div class="cinnamon-workstep-div"></div>
-
+                <app-workstep-item title="Select your dataset" [locked]="locked"
+                                   [invalid]="attributeConfigurationform.invalid" [stepIndex]="0">
                     <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
-                    <app-workstep [locked]="locked" [stepIndex]="0" [valid]="!attributeConfigurationform.invalid"></app-workstep>
-                </mat-expansion-panel>
+                </app-workstep-item>
 
-                <mat-expansion-panel [disabled]="1 > currentStep" class="workstep-expansion-panel"
-                                     [class.workstep-complete]="currentStep > 1 || workstepService.isCompleted">
-                    <mat-expansion-panel-header>
-                        <mat-panel-title>
-                            <app-workstep-title [stepIndex]="1">
-                                Configure general aspects
-                            </app-workstep-title>
-                        </mat-panel-title>
-                        <mat-panel-description>
-                        </mat-panel-description>
-                    </mat-expansion-panel-header>
-
-                    <div class="cinnamon-workstep-div"></div>
-
+                <app-workstep-item title="Configure general aspects" [locked]="locked"
+                                   [invalid]="isDataSetConfigurationFormInvalid" [stepIndex]="1">
                     <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
+                </app-workstep-item>
 
-                    <app-workstep [locked]="locked" [stepIndex]="1" [valid]="!isDataSetConfigurationFormInvalid"></app-workstep>
-                </mat-expansion-panel>
-
-            </mat-accordion>
-
-            <div>
-                <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()"
-                        [disabled]="attributeConfigurationform.invalid || isDataSetConfigurationFormInvalid || locked || !workstepService.isCompleted">
-                    Confirm configuration and start validation
-                </button>
-            </div>
+            </app-workstep-list>
 
         </ng-container>
         <ng-container *ngIf="data.status.mode === Mode.EXPERT">

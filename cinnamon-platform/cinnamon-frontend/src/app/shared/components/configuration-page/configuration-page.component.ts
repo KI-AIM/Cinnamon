@@ -4,7 +4,6 @@ import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
 import { Status } from "@shared/model/status";
-import { WorkstepService } from "@shared/services/workstep.service";
 import { from, mergeMap, Observable, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
@@ -87,7 +86,6 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         private httpClient: HttpClient,
         private readonly router: Router,
         private readonly statusService: StatusService,
-        protected readonly workstepService: WorkstepService,
     ) {
     }
 
@@ -104,8 +102,6 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
             tap(() => {
                 const registryData = this.configurationService.getRegisteredConfigurationByName(this.algorithmService.getConfigurationName());
                 this.disabled = this.statusService.isStepCompleted(registryData?.lockedAfterStep);
-
-                this.workstepService.init(4, this.statusService.isStepCompleted(this.step));
             }),
         );
 

@@ -13,8 +13,7 @@ import { DataService } from "@shared/services/data.service";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { LoadingService } from "@shared/services/loading.service";
 import { StatusService } from "@shared/services/status.service";
-import { WorkstepService } from "@shared/services/workstep.service";
-import { Observable, switchMap, tap } from "rxjs";
+import { Observable, switchMap } from "rxjs";
 
 @Component({
     selector: "app-data-validation",
@@ -39,34 +38,13 @@ export class DataValidationComponent implements OnInit {
 		private titleService: TitleService,
         private dialog: MatDialog,
         private errorHandlingService: ErrorHandlingService,
-        private readonly workstepService: WorkstepService,
 	) {
         this.titleService.setPageTitle("Data validation");
     }
 
     ngOnInit(): void {
         this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfoOriginal$();
-        this.status$ = this.statusService.status$.pipe(
-            tap(() => {
-                this.workstepService.init(3, this.statusService.isStepCompleted(Steps.VALIDATION));
-            }),
-        );
-    }
-
-    /**
-     * Gets the current workstep.
-     * @protected
-     */
-    protected get currentStep(): number {
-        return this.workstepService.currentStep;
-    }
-
-    /**
-     * Checks if all worksteps are completed.
-     * @protected
-     */
-    protected get stepsCompleted(): boolean {
-        return this.workstepService.isCompleted;
+        this.status$ = this.statusService.status$;
     }
 
     protected get locked(): boolean {
@@ -112,4 +90,6 @@ export class DataValidationComponent implements OnInit {
 		this.loadingService.setLoadingStatus(false);
 		this.router.navigateByUrl("/anonymizationConfiguration");
 	}
+
+    protected readonly Steps = Steps;
 }

@@ -1,59 +1,20 @@
 <ng-container *ngIf="status$ | async as status">
     <ng-container *ngIf="status.mode === Mode.STANDARD">
 
-        <mat-accordion>
-            <mat-expansion-panel [disabled]="0 > currentStep" class="workstep-expansion-panel"
-                                 [class.workstep-complete]="currentStep > 0 || stepsCompleted">
-                <mat-expansion-panel-header>
-                    <mat-panel-title>
-                        <app-workstep-title [stepIndex]="0">
-                            Select your dataset
-                        </app-workstep-title>
-                    </mat-panel-title>
-                    <mat-panel-description>
-                    </mat-panel-description>
-                </mat-expansion-panel-header>
+        <app-workstep-list confirmLabel="Confirm file and start configuration" [locked]="locked" [invalid]="isInvalid"
+                           [numberSteps]="2" [step]="Steps.UPLOAD" (confirm)="uploadFile()">
 
-                <div class="cinnamon-workstep-div"></div>
-
+            <app-workstep-item title="Select your dataset" [locked]="locked" [invalid]="isDataFileInvalid" [stepIndex]="0">
                 <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
-
                 <ng-container *ngTemplateOutlet="info"></ng-container>
+            </app-workstep-item>
 
-                <app-workstep [locked]="locked" [stepIndex]="0" [valid]="!isDataFileInvalid"></app-workstep>
-
-            </mat-expansion-panel>
-
-            <mat-expansion-panel [disabled]="1 > currentStep" class="workstep-expansion-panel"
-                                 [class.workstep-complete]="currentStep > 1 || stepsCompleted">
-                <mat-expansion-panel-header>
-                    <mat-panel-title>
-                        <app-workstep-title [stepIndex]="1">
-                            Select a configuration if available
-                        </app-workstep-title>
-                    </mat-panel-title>
-                    <mat-panel-description>
-                    </mat-panel-description>
-                </mat-expansion-panel-header>
-
-                <div class="cinnamon-workstep-div"></div>
-
+            <app-workstep-item title="Select your dataset" [locked]="locked" [invalid]="isConfigFileInvalid"
+                               [stepIndex]="1" altConfirm="Continue without a configuration">
                 <ng-container *ngTemplateOutlet="configFileUpload"></ng-container>
+            </app-workstep-item>
 
-                <app-workstep [locked]="locked" [stepIndex]="1"
-                              [valid]="!isConfigFileInvalid"
-                              altConfirm="Continue without a configuration"></app-workstep>
-
-            </mat-expansion-panel>
-
-        </mat-accordion>
-
-        <div>
-            <button mat-raised-button color="primary" (click)="uploadFile()"
-                    [disabled]="!stepsCompleted || locked || isInvalid">
-                Confirm file and start configuration
-            </button>
-        </div>
+        </app-workstep-list>
 
     </ng-container>
 

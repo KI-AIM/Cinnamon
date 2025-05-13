@@ -159,7 +159,11 @@ export class ConfigurationFormComponent implements OnInit {
     private fixAttributeLists(cde: ConfigurationGroupDefinition, obj: Object, form: FormGroup) {
         if (cde.options) {
             for (const [key, value] of Object.entries(cde.options)) {
-                this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup);
+                const groupConfiguration = (obj as Record<string, any>)[key];
+                // The configuration is not available if the option is not checked
+                if (groupConfiguration) {
+                    this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup);
+                }
             }
         }
         if (cde.configurations) {

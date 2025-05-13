@@ -117,9 +117,7 @@
 
     </ng-container>
     <ng-container *ngIf="status.mode === Mode.EXPERT">
-
-        <div class="box mb-3">
-
+        <app-workstep-box title="Import Summary">
             <ng-container *ngTemplateOutlet="statisticsTable"></ng-container>
 
             <div class="mt-2">
@@ -136,53 +134,22 @@
                     Delete Data
                 </button>
             </div>
+        </app-workstep-box>
 
-        </div>
+        <app-workstep-box title="Data Upload Result" toggleable>
+            Lines that are marked in red contain at least one value that could not be transformed with your configuration.
+            The faulty column is marked in a deeper tone of red.
+            These values will be removed from the dataset and not be available for the anonymization.
+            You can filter for valid and invalid rows in the table below.
 
-        <mat-accordion multi>
-            <mat-expansion-panel expanded class="workstep-expansion-panel">
-                <mat-expansion-panel-header>
-                    <mat-panel-title>
-                        <h5 style="margin-bottom: 0;">Data Upload Result</h5>
-                    </mat-panel-title>
-                    <mat-panel-description>
-                    </mat-panel-description>
-                </mat-expansion-panel-header>
+            <div class="mt-1">
+                <app-data-table sourceDataset="validation"></app-data-table>
+            </div>
+        </app-workstep-box>
 
-                <ng-template matExpansionPanelContent>
-
-                    <div class="cinnamon-workstep-div"></div>
-
-                    Lines that are marked in red contain at least one value that could not be transformed with your configuration.
-                    The faulty column is marked in a deeper tone of red.
-                    These values will be removed from the dataset and not be available for the anonymization.
-                    You can filter for valid and invalid rows in the table below.
-
-                    <div class="mt-1">
-                        <app-data-table sourceDataset="validation"></app-data-table>
-                    </div>
-                </ng-template>
-            </mat-expansion-panel>
-            <mat-expansion-panel expanded class="workstep-expansion-panel">
-                <mat-expansion-panel-header>
-                    <mat-panel-title>
-                        <h5 style="margin-bottom: 0;">Data Inspection</h5>
-                    </mat-panel-title>
-                    <mat-panel-description>
-                    </mat-panel-description>
-                </mat-expansion-panel-header>
-
-                <ng-template matExpansionPanelContent>
-
-                    <div class="cinnamon-workstep-div"></div>
-
-                    <div class="mt-1">
-                        <app-data-inspection [lazy]="true" sourceDataset="VALIDATION"></app-data-inspection>
-                    </div>
-                </ng-template>
-
-            </mat-expansion-panel>
-        </mat-accordion>
+        <app-workstep-box title="Data Inspection" toggleable>
+            <app-data-inspection [lazy]="true" sourceDataset="VALIDATION"></app-data-inspection>
+        </app-workstep-box>
 
     </ng-container>
 </ng-container>

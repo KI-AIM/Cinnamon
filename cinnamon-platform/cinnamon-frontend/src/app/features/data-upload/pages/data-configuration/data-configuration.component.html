@@ -11,7 +11,7 @@
             <mat-accordion>
                 <mat-expansion-panel [disabled]="0 > currentStep" class="workstep-expansion-panel"
                                      [class.workstep-complete]="currentStep > 0 || workstepService.isCompleted">
-                <mat-expansion-panel-header>
+                    <mat-expansion-panel-header>
                         <mat-panel-title>
                             <app-workstep-title [stepIndex]="0">
                                 Configure the attributes
@@ -58,37 +58,16 @@
         </ng-container>
         <ng-container *ngIf="data.status.mode === Mode.EXPERT">
 
-            <mat-accordion multi>
-                <mat-expansion-panel expanded class="workstep-expansion-panel">
-                    <mat-expansion-panel-header class="workstep-expansion-panel-header">
-                        <mat-panel-title [class.invalid-group]="attributeConfigurationform.invalid">
-                            <h5 style="margin-bottom: 0;">Attribute Configuration</h5>
-                        </mat-panel-title>
-                        <mat-panel-description></mat-panel-description>
-                    </mat-expansion-panel-header>
+            <app-workstep-box title="Attribute Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
+                <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
+            </app-workstep-box>
 
-                    <div class="cinnamon-workstep-div"></div>
+            <app-workstep-box title="Attribute Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
+                <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
+            </app-workstep-box>
 
-                    <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
-
-                </mat-expansion-panel>
-
-                <mat-expansion-panel expanded class="workstep-expansion-panel">
-                    <mat-expansion-panel-header>
-                        <mat-panel-title [class.invalid-group]="isDataSetConfigurationFormInvalid">
-                            <h5 style="margin-bottom: 0;">Data Set Configuration</h5>
-                        </mat-panel-title>
-                        <mat-panel-description></mat-panel-description>
-                    </mat-expansion-panel-header>
-
-                    <div class="cinnamon-workstep-div"></div>
-
-                    <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
-                </mat-expansion-panel>
-            </mat-accordion>
-
-            <div class="box">
-                <div class="btn-group mt-2">
+            <app-workstep-box title="Confirm your configuration">
+                <div class="btn-group">
                     <div class="px-1">
                         <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()"
                                 [disabled]="attributeConfigurationform.invalid || isDataSetConfigurationFormInvalid || locked">
@@ -96,7 +75,7 @@
                         </button>
                     </div>
                 </div>
-            </div>
+            </app-workstep-box>
 
         </ng-container>
     </ng-container>

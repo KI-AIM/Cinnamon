@@ -118,61 +118,49 @@
         </ng-container>
 
         <ng-container *ngIf="data.status.mode === Mode.EXPERT">
-            <div class="vertical-boxes">
 
-                <!-- Activation -->
-                <div class="box">
-                    <h3>Process Activation</h3>
-                    <ng-container *ngTemplateOutlet="processActivation"></ng-container>
-                </div>
+            <app-workstep-box title="Process Activation">
+                <ng-container *ngTemplateOutlet="processActivation"></ng-container>
+            </app-workstep-box>
 
-                <!-- Upload -->
-                <div class="box">
-                    Upload an existing configuration:
-                    <app-file-upload accept=".yml,.yaml" [disabled]="disabled"
-                                     (input)="uploadConfiguration($event)"></app-file-upload>
-                </div>
+            <app-workstep-box title="Configuration Upload">
+                Upload an existing configuration:
+                <app-file-upload accept=".yml,.yaml" [disabled]="disabled"
+                                 (input)="uploadConfiguration($event)"></app-file-upload>
+            </app-workstep-box>
 
-                <!-- Algorithm Selection -->
-                <div [class.d-none]="!hasAlgorithmSelection" class="box">
-                    <h3>Algorithm Selection</h3>
+            <app-workstep-box title="Algorithm Selection" [class.d-none]="!hasAlgorithmSelection">
+                <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"
+                                             (change)="onSelectionChange()">
+                </app-configuration-selection>
+            </app-workstep-box>
 
-                    <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"
-                                                 (change)="onSelectionChange()">
-                    </app-configuration-selection>
-                </div>
-
-                <!-- Algorithm Configuration -->
-                <div class="box">
-                    <h3>Algorithm Configuration</h3>
-
-                    <div *ngIf="!selection.selectedOption; else configurationForms" id="placeholder" class="w-100 mt-4">
-                        <div class="ms-auto me-auto" style="width: fit-content">
-                            Please select an algorithm
-                        </div>
-                    </div>
-                    <ng-template #configurationForms>
-                        <div *ngFor="let item of algorithms" [id]="item">
-                            <ng-container *ngIf="selection.selectedOption.name === item.name">
-                                <p>{{ item.description }}</p>
-
-                                <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
-                                                        (onChange)="onFormChange()"
-                                                        [additionalConfigs]="additionalConfigs">
-                                </app-configuration-form>
-                            </ng-container>
-                        </div>
-                    </ng-template>
-
-                    <div class="mt-2">
-                        <button type="submit" mat-raised-button color="primary"
-                                [disabled]="disabled || (oneEnabled && !formValid)" (click)="submit()">
-                            Continue
-                        </button>
+            <app-workstep-box title="Algorithm Configuration" [invalid]="selection.selectedOption && !formValid">
+                <div *ngIf="!selection.selectedOption; else configurationForms" id="placeholder" class="w-100 mt-4">
+                    <div class="ms-auto me-auto" style="width: fit-content">
+                        Please select an algorithm
                     </div>
                 </div>
+                <ng-template #configurationForms>
+                    <div *ngFor="let item of algorithms" [id]="item">
+                        <ng-container *ngIf="selection.selectedOption.name === item.name">
+                            <p>{{ item.description }}</p>
 
-            </div>
+                            <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
+                                                    (onChange)="onFormChange()"
+                                                    [additionalConfigs]="additionalConfigs">
+                            </app-configuration-form>
+                        </ng-container>
+                    </div>
+                </ng-template>
+            </app-workstep-box>
+
+            <app-workstep-box title="Confirm your configuration">
+                <button type="submit" mat-raised-button color="primary"
+                        [disabled]="disabled || (oneEnabled && !formValid)" (click)="submit()">
+                    Continue
+                </button>
+            </app-workstep-box>
 
         </ng-container>
     </ng-container>

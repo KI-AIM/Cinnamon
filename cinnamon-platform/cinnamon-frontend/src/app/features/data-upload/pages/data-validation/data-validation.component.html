@@ -1,73 +1,42 @@
 <ng-container *ngIf="status$ | async as status">
     <ng-container *ngIf="status.mode === Mode.STANDARD">
 
-        <mat-accordion>
+        <app-workstep-list confirmLabel="Continue with the current dataset and data configuration" [locked]="locked"
+                           [numberSteps]="2" [step]="Steps.VALIDATION"
+                           (confirm)="confirmData()">
+            <app-workstep-item title="View the imported dataset" [locked]="locked" [stepIndex]="0">
+                <p>
+                    The transformation of the data for your configuration was successful. You can inspect the result
+                    below. <br/><br/>
 
-            <mat-expansion-panel [disabled]="0 > currentStep" class="workstep-expansion-panel"
-                                 [class.workstep-complete]="currentStep > 0 || stepsCompleted">
-                <mat-expansion-panel-header>
-                    <mat-panel-title>
-                        <app-workstep-title [stepIndex]="0">
-                            View the imported dataset
-                        </app-workstep-title>
-                    </mat-panel-title>
-                    <mat-panel-description>
-                    </mat-panel-description>
-                </mat-expansion-panel-header>
+                    Lines that are marked in red contain at least one value that could not be transformed with your configuration.
+                    The faulty column is marked in a deeper tone of red.
+                    These values will be removed from the dataset and not be available for the anonymization.
+                    You can filter for valid and invalid rows in the table below.
+                    <br/><br/>
 
-                <ng-template matExpansionPanelContent>
+                    This application does not offer any mechanism to fix your data. You can however continue with the valid values.
+                    If you want to change anything, please adjust your data manually and start again.
+                </p>
 
-                    <div class="cinnamon-workstep-div"></div>
-
-                    <p>
-                        The transformation of the data for your configuration was successful. You can inspect the result
-                        below. <br/><br/>
-
-                        Lines that are marked in red contain at least one value that could not be transformed with your configuration.
-                        The faulty column is marked in a deeper tone of red.
-                        These values will be removed from the dataset and not be available for the anonymization.
-                        You can filter for valid and invalid rows in the table below.
-                        <br/><br/>
-
-                        This application does not offer any mechanism to fix your data. You can however continue with the valid values.
-                        If you want to change anything, please adjust your data manually and start again.
-                    </p>
-
-                    <ng-container *ngIf="dataSetInfo$ | async as dataSetInfo">
-                        <ng-container *ngIf="dataSetInfo.hasHoldOutSplit">
-                            <p>
-                                Because of the extended analysis, the dataset was split into two parts.
-                                The first part will be anonymized and used for the synthesis.
-                                The second part will not be contained in the result and instead be used to evaluate the privacy.
-                                You can view the data contained in both splits by selecting the respective split in the table below.
-                            </p>
-                        </ng-container>
+                <ng-container *ngIf="dataSetInfo$ | async as dataSetInfo">
+                    <ng-container *ngIf="dataSetInfo.hasHoldOutSplit">
+                        <p>
+                            Because of the extended analysis, the dataset was split into two parts.
+                            The first part will be anonymized and used for the synthesis.
+                            The second part will not be contained in the result and instead be used to evaluate the privacy.
+                            You can view the data contained in both splits by selecting the respective split in the table below.
+                        </p>
                     </ng-container>
-                    <ng-container *ngTemplateOutlet="statisticsTable"></ng-container>
+                </ng-container>
+                <ng-container *ngTemplateOutlet="statisticsTable"></ng-container>
 
-                    <div class="mt-3">
-                        <app-data-table sourceDataset="validation"></app-data-table>
-                    </div>
+                <div class="mt-3">
+                    <app-data-table sourceDataset="validation"></app-data-table>
+                </div>
+            </app-workstep-item>
 
-                    <app-workstep [locked]="locked" [stepIndex]="0" [valid]="true"></app-workstep>
-                </ng-template>
-
-            </mat-expansion-panel>
-
-            <mat-expansion-panel [disabled]="1 > currentStep" class="workstep-expansion-panel"
-                                 [class.workstep-complete]="currentStep > 1 || stepsCompleted">
-                <mat-expansion-panel-header>
-                    <mat-panel-title>
-                        <app-workstep-title [stepIndex]="1">
-                            View statistics
-                        </app-workstep-title>
-                    </mat-panel-title>
-                    <mat-panel-description>
-                    </mat-panel-description>
-                </mat-expansion-panel-header>
-
-                <div class="cinnamon-workstep-div"></div>
-
+            <app-workstep-item title="View statistics" [locked]="locked" [stepIndex]="1">
                 The statistics give an overview of the configured metadata as well as basic metrics for each attribute.
                 You can confirm, that the value distribution has not changed significantly after the import, especially if faulty rows were deleted or the holdout split was created.
                 Statistics can also give you hints what attributes needs to be protected during the anonymization.
@@ -75,45 +44,21 @@
                 <div class="mt-1">
                     <app-data-inspection [lazy]="true" sourceDataset="VALIDATION"></app-data-inspection>
                 </div>
+            </app-workstep-item>
 
-                <app-workstep [locked]="locked" [stepIndex]="1" [valid]="true"></app-workstep>
-            </mat-expansion-panel>
-
-            <mat-expansion-panel [disabled]="2 > currentStep" class="workstep-expansion-panel"
-                                 [class.workstep-complete]="currentStep > 2 || stepsCompleted">
-                <mat-expansion-panel-header>
-                    <mat-panel-title>
-                        <app-workstep-title [stepIndex]="2">
-                           Confirm the dataset and data configuration
-                        </app-workstep-title>
-                    </mat-panel-title>
-                    <mat-panel-description>
-                    </mat-panel-description>
-                </mat-expansion-panel-header>
-
-                <div class="cinnamon-workstep-div"></div>
-
+            <app-workstep-item title="Confirm the dataset and data configuration" [locked]="locked" [stepIndex]="2">
                 If you noticed any issues in the imported data or the statistics, you can go back to previous steps and change the dataset or the configuration.
                 Otherwise you can continue with the current data, which will lock the import process.
                 If you want to change anything prior to this point, you will have delete the dataset by clicking the "Delete Data" button on the bottom of this page.
                 Be aware, that this will also delete all data and results of the following steps.
+            </app-workstep-item>
 
-                <app-workstep [locked]="locked" [stepIndex]="2" [valid]="true"></app-workstep>
-            </mat-expansion-panel>
+        </app-workstep-list>
 
-        </mat-accordion>
-
-
-        <div class="d-flex align-items-center justify-content-start mt-3 gap-3">
-            <button mat-raised-button color="primary" (click)="confirmData()" [disabled]="locked || !stepsCompleted">
-                Continue with the current dataset and data configuration
-                <mat-icon>arrow_forward</mat-icon>
-            </button>
-            <button mat-raised-button color="warn" (click)="openDeleteDialog(deleteDialog)" [disabled]="!locked">
-                <mat-icon>delete</mat-icon>
-                Delete Data
-            </button>
-        </div>
+        <button mat-raised-button color="warn" class="ms-3" (click)="openDeleteDialog(deleteDialog)" [disabled]="!locked">
+            <mat-icon>delete</mat-icon>
+            Delete Data
+        </button>
 
     </ng-container>
     <ng-container *ngIf="status.mode === Mode.EXPERT">

@@ -15,12 +15,11 @@ import { LoadingService } from "src/app/shared/services/loading.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
 import { StatusService } from "@shared/services/status.service";
-import { Observable, tap } from "rxjs";
+import { Observable } from "rxjs";
 import { FileInformation } from "@shared/model/file-information";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { Status } from "@shared/model/status";
 import { Mode } from "@core/enums/mode";
-import { WorkstepService } from "@shared/services/workstep.service";
 
 @Component({
     selector: "app-upload-file",
@@ -31,6 +30,7 @@ import { WorkstepService } from "@shared/services/workstep.service";
 export class UploadFileComponent implements OnInit, OnDestroy {
     protected readonly FileType = FileType;
     protected readonly Mode = Mode;
+    protected readonly Steps = Steps;
 
     protected configurationFile: File | null = null;
     protected dataFile: File | null = null;
@@ -71,7 +71,6 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         public loadingService: LoadingService,
         private configurationService: ConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
-        protected readonly workstepService: WorkstepService,
     ) {
         this.titleService.setPageTitle("Upload data");
         this.fileConfiguration = fileService.getFileConfiguration();
@@ -84,27 +83,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     public ngOnInit(): void {
         this.appConfig$ = this.appConfigService.appConfig$;
         this.fileInfo$ = this.fileService.fileInfo$;
-        this.status$ = this.statusService.status$.pipe(
-            tap(() => {
-                this.workstepService.init(2, this.statusService.isStepCompleted(Steps.UPLOAD));
-            }),
-        );
-    }
-
-    /**
-     * Gets the current workstep.
-     * @protected
-     */
-    protected get currentStep(): number {
-        return this.workstepService.currentStep;
-    }
-
-    /**
-     * Checks if all worksteps are completed.
-     * @protected
-     */
-    protected get stepsCompleted(): boolean {
-        return this.workstepService.isCompleted;
+        this.status$ = this.statusService.status$;
     }
 
     /**

@@ -12,6 +12,8 @@ import { MatExpansionPanel } from "@angular/material/expansion";
 export class WorkstepTitleComponent implements OnInit, OnDestroy {
     @Input() public stepIndex!: number;
 
+    private openedExpansionPanelSubscription: Subscription;
+    private openedStepSubscription: Subscription;
     private stepSubscription: Subscription;
 
     constructor(
@@ -21,6 +23,22 @@ export class WorkstepTitleComponent implements OnInit, OnDestroy {
     }
 
     public ngOnInit(): void {
+        this.openedStepSubscription = this.workstepService.openedStep$.subscribe({
+            next: step => {
+                if (step !== this.stepIndex) {
+                    this.matExpansionPanel.close();
+                } else {
+                    this.matExpansionPanel.open();
+                }
+            } ,
+        });
+
+        this.openedExpansionPanelSubscription = this.matExpansionPanel.opened.subscribe({
+            next: () => {
+                this.workstepService.openStep(this.stepIndex);
+            }
+        });
+
         this.stepSubscription = this.workstepService.step$.subscribe(step => {
             if (this.stepIndex === step) {
                 this.matExpansionPanel.open();
@@ -29,6 +47,8 @@ export class WorkstepTitleComponent implements OnInit, OnDestroy {
     }
 
     public ngOnDestroy(): void {
+        this.openedExpansionPanelSubscription.unsubscribe();
+        this.openedStepSubscription.unsubscribe();
         this.stepSubscription.unsubscribe();
     }
 

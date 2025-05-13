@@ -2,6 +2,7 @@ import { NgModule } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { MatTooltip } from "@angular/material/tooltip";
 import { WorkstepBoxComponent } from "@shared/components/workstep-box/workstep-box.component";
+import { WorkstepListComponent } from "@shared/components/workstep-list/workstep-list.component";
 import { InformationDialogComponent } from "./components/information-dialog/information-dialog.component";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatButtonModule } from "@angular/material/button";
@@ -52,6 +53,7 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
 import { WorkstepComponent } from "./components/workstep/workstep.component";
 import { WorkstepTitleComponent } from "./components/workstep-title/workstep-title.component";
 import { FileUploadComponent } from "./components/file-upload/file-upload.component";
+import { WorkstepItemComponent } from './components/workstep-item/workstep-item.component';
 
 @NgModule({
     declarations: [
@@ -81,6 +83,8 @@ import { FileUploadComponent } from "./components/file-upload/file-upload.compon
         MetricInfoTableComponent,
         WorkstepComponent,
         WorkstepBoxComponent,
+        WorkstepItemComponent,
+        WorkstepListComponent,
         WorkstepTitleComponent,
         // Directives
         NoSpaceValidatorDirective,
@@ -136,6 +140,8 @@ import { FileUploadComponent } from "./components/file-upload/file-upload.compon
         MetricConfigurationComponent,
         WorkstepComponent,
         WorkstepBoxComponent,
+        WorkstepItemComponent,
+        WorkstepListComponent,
         WorkstepTitleComponent,
     ],
 })

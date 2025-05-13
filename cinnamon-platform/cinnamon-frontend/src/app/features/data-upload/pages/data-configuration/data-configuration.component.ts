@@ -36,7 +36,6 @@ import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { DataSetInfo } from "@shared/model/data-set-info";
 import { Mode } from "@core/enums/mode";
 import { Status } from "@shared/model/status";
-import { WorkstepService } from "@shared/services/workstep.service";
 
 @Component({
     selector: 'app-data-configuration',
@@ -69,7 +68,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         private router: Router,
         private readonly statusService: StatusService,
         public loadingService: LoadingService,
-        protected readonly workstepService: WorkstepService,
     ) {
         this.titleService.setPageTitle("Data configuration");
     }
@@ -108,23 +106,11 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
             }),
         );
 
-        this.status$ = this.statusService.status$.pipe(
-            tap(() => {
-                this.workstepService.init(2, this.statusService.isStepCompleted(Steps.DATA_CONFIG));
-            }),
-        );
+        this.status$ = this.statusService.status$;
     }
 
     ngOnDestroy() {
         this.dataConfigurationSubscription.unsubscribe();
-    }
-
-    /**
-     * Gets the current workstep.
-     * @protected
-     */
-    protected get currentStep(): number {
-        return this.workstepService.currentStep;
     }
 
     protected get createHoldOutSplit(): boolean {
@@ -137,6 +123,10 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     protected get isDataSetConfigurationFormInvalid(): boolean {
         return this.dataSetConfigurationForm ? this.dataSetConfigurationForm.invalid : true;
+    }
+
+    protected get isInvalid(): boolean {
+        return this.attributeConfigurationform.invalid || this.isDataSetConfigurationFormInvalid;
     }
 
     confirmConfiguration() {
@@ -344,4 +334,5 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     }
 
     protected readonly Mode = Mode;
+    protected readonly Steps = Steps;
 }

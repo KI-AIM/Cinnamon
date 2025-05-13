@@ -9,12 +9,17 @@ export class WorkstepService {
     private _isFinished = false;
     private numberSteps = 0;
     private stepSubject = new BehaviorSubject<number>(0);
+    private openStepSubject = new BehaviorSubject<number>(0);
 
     /**
      * The observable that emits the current step of the workstep service.
      */
     public get step$() {
         return this.stepSubject.asObservable();
+    }
+
+    public get openedStep$() {
+        return this.openStepSubject.asObservable();
     }
 
     /**
@@ -47,6 +52,7 @@ export class WorkstepService {
         this.numberSteps = numberSteps;
         this._isFinished = finished;
         this.stepSubject.next(finished ? numberSteps : 0);
+        this.openStepSubject.next(finished ? numberSteps : 0);
     }
 
     /**
@@ -62,5 +68,9 @@ export class WorkstepService {
      */
     public confirmAllSteps(): void {
         this.stepSubject.next(this.numberSteps);
+    }
+
+    public openStep(stepIndex: number): void {
+        this.openStepSubject.next(stepIndex);
     }
 }

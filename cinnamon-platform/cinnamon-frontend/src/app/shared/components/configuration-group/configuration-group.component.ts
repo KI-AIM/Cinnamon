@@ -152,10 +152,6 @@ export class ConfigurationGroupComponent implements AfterViewInit {
             configGroup = configuration;
         }
 
-        for (const group of this.options) {
-            group.handleMissingOptions(configGroup);
-        }
-
         if (this.group.options) {
             for (const def of this.options) {
                 if (!Object.hasOwn(configGroup, def.fromGroupName)) {

@@ -12,10 +12,10 @@
 
     <ng-template matExpansionPanelContent>
         <ng-content></ng-content>
-    </ng-template>
 
-    <app-workstep [locked]="locked" [stepIndex]="stepIndex" [valid]="!invalid" [altConfirm]="altConfirm"
-                  [altConfirmValid]="altConfirmValid" [altConfirmAll]="altConfirmAll" (confirm)="confirm.emit($event)"
-                  (confirmAlt)="confirmAlt.emit($event)"></app-workstep>
+        <app-workstep [locked]="locked" [stepIndex]="stepIndex" [valid]="!invalid" [altConfirm]="altConfirm"
+                      [altConfirmValid]="altConfirmValid" [altConfirmAll]="altConfirmAll"
+                      (confirm)="confirm.emit($event)" (confirmAlt)="confirmAlt.emit($event)"></app-workstep>
+    </ng-template>
 
 </mat-expansion-panel>

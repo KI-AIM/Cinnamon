@@ -1,6 +1,4 @@
-import { booleanAttribute, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Steps } from "@core/enums/steps";
-import { StatusService } from "@shared/services/status.service";
+import { booleanAttribute, Component, EventEmitter, Input, Output } from '@angular/core';
 import { WorkstepService } from "@shared/services/workstep.service";
 
 @Component({
@@ -9,7 +7,7 @@ import { WorkstepService } from "@shared/services/workstep.service";
   templateUrl: './workstep-item.component.html',
   styleUrl: './workstep-item.component.less'
 })
-export class WorkstepItemComponent implements OnInit {
+export class WorkstepItemComponent {
 
     @Input() public stepIndex!: number;
     @Input({transform: booleanAttribute}) public invalid: boolean = false;
@@ -24,13 +22,8 @@ export class WorkstepItemComponent implements OnInit {
     @Output() public confirmAlt = new EventEmitter<void>();
 
     public constructor(
-        private readonly statusService: StatusService,
         private readonly workstepService: WorkstepService,
     ) {
-    }
-
-    public ngOnInit(): void {
-        this.locked = this.statusService.isStepCompleted(Steps.VALIDATION);
     }
 
     /**

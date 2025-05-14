@@ -68,7 +68,11 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
                         }),
                     );
                 }),
-            ).subscribe();
+            ).subscribe({
+                next: () => {
+                    this.startedCalculation = false;
+                }
+            });
             this.statistics$ = this.statisticsSubject.asObservable();
 
             // Start pipeline
@@ -97,13 +101,15 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected cancel() {
-        if (this.sourceDataset !== null) {
+        if (this.sourceDataset !== null && this.startedCalculation) {
             this.statisticsService.cancelStatistics(this.sourceDataset).subscribe({
                 next: () => {
                     this.cancelSubject.next();
+                    this.startedCalculation = false;
                     this.statisticsSubject.next(new StatisticsResponse(ProcessStatus.CANCELED));
                 },
                 error: () => {
+                    this.startedCalculation = false;
                     this.errorHandlingService.addError("Failed to cancel statistics calculation!");
                 }
             });

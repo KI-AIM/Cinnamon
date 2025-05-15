@@ -30,7 +30,9 @@
 
     <div class="d-flex justify-content-between">
         <mat-card class="me-2 w-50" [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD"
-                  [class.cinnamon-unselected-mode]="status.mode !== Mode.STANDARD">
+                  [class.cinnamon-unselected-mode]="status.mode !== Mode.STANDARD"
+                  (click)="selectMode(Mode.STANDARD);"          
+        >
             <mat-card-header>
                 <mat-card-title>Extensive Guidance</mat-card-title>
             </mat-card-header>
@@ -40,16 +42,18 @@
                     Extensive guidance is designed for inexperienced users that are new to Cinnamon.
                     It will provide a guided setup and more detailed descriptions for every step.
                 </p>
+                <div class="d-flex justify-content-center align-items-center">
+                    <img src="./app/assets/guided.png" width="500px"/>
+                </div>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-                <button type="button" mat-raised-button color="primary" [disabled]="status.mode === Mode.STANDARD" (click)="selectMode(Mode.STANDARD);">
-                    Activate extensive guidance
-                </button>
             </mat-card-actions>
         </mat-card>
 
         <mat-card class="ms-2 w-50" [class.cinnamon-selected-mode]="status.mode === Mode.EXPERT"
-                  [class.cinnamon-unselected-mode]="status.mode !== Mode.EXPERT">
+                  [class.cinnamon-unselected-mode]="status.mode !== Mode.EXPERT"
+                  (click)="selectMode(Mode.EXPERT);"
+        >
             <mat-card-header>
                 <mat-card-title>Minimal Guidance</mat-card-title>
             </mat-card-header>
@@ -59,11 +63,11 @@
                     Minimal guidance is designed for experienced users that are knowledgeable in anonymization and synthetization methods.
                     This mode offers less guidance but allows a faster workflow.
                 </p>
+                <div class="d-flex justify-content-center align-items-center">
+                    <img src="./app/assets/normal.png" width="500px"/>
+                </div>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-                <button type="button" mat-raised-button color="primary" [disabled]="status.mode === Mode.EXPERT" (click)="selectMode(Mode.EXPERT);">
-                    Activate minimal guidance
-                </button>
             </mat-card-actions>
         </mat-card>
     </div>

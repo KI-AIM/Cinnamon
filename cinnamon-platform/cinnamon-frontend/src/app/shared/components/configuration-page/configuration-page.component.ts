@@ -75,12 +75,18 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      */
     protected configFileCache: File | null = null;
 
+    /**
+     * If at least one process is enabled.
+     * @protected
+     */
+    protected oneEnabled = true;
+
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') protected forms: ConfigurationFormComponent;
 
     constructor(
         protected readonly algorithmService: AlgorithmService,
-        private readonly changeDetectorRef: ChangeDetectorRef,
+        protected readonly changeDetectorRef: ChangeDetectorRef,
         private readonly configurationService: ConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
         private httpClient: HttpClient,
@@ -122,19 +128,29 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     ngAfterViewInit() {
         this.readFromCache();
         this.changeDetectorRef.detectChanges();
+
+        setTimeout(()=> {
+            this.updateOneEnabled();
+        });
     }
 
     /**
      * Checks if at least one process is enabled.
      * @protected
      */
-    protected get oneEnabled(): boolean {
+    protected updateOneEnabled() {
+        let _oneEnabled = false;
         for (const enabled of Object.values(this.processEnabled)) {
             if (enabled) {
-                return true;
+                _oneEnabled = true;
+                break;
             }
         }
-        return false;
+
+        if (_oneEnabled !== this.oneEnabled) {
+            this.oneEnabled = _oneEnabled;
+            this.changeDetectorRef.detectChanges();
+        }
     }
 
     /**

@@ -17,7 +17,7 @@ import { Algorithm } from "../../model/algorithm";
 import {
     ConfigurationGroupDefinition,
 } from "../../model/configuration-group-definition";
-import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
+import { ConfigurationGroupComponent } from "../configuration-group/configuration-group.component";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { HttpErrorResponse } from "@angular/common/http";
 import { ErrorHandlingService } from "../../services/error-handling.service";
@@ -74,7 +74,7 @@ export class ConfigurationFormComponent implements OnInit {
         private readonly configurationService: ConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
     ) {
-       this.form = new FormGroup({});
+        this.form = new FormGroup({});
     }
 
     ngOnInit() {
@@ -88,14 +88,22 @@ export class ConfigurationFormComponent implements OnInit {
                         this.updateForm();
                         this.readFromCache();
 
-                        this.form.valueChanges.subscribe(() => {
-                            this.onChange.emit();
-                        });
+                        // this.form.valueChanges.subscribe(a => {
+                        //     console.log("Form value changed", a);
+                        //     this.onChange.emit();
+                        // });
                     },
                 error: (err: HttpErrorResponse) => {
                     this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
                 },
             });
+    }
+
+    ngAfterViewInit() {
+        this.form.valueChanges.subscribe(a => {
+            console.log("Form value changed", a);
+            this.onChange.emit();
+        });
     }
 
     /**

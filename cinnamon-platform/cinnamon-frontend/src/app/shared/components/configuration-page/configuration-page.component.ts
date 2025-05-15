@@ -1,15 +1,20 @@
 import { HttpClient } from "@angular/common/http";
-import { AfterViewInit, ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
 import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
 import { Status } from "@shared/model/status";
-import { from, mergeMap, Observable, switchMap, tap } from "rxjs";
+import { catchError, from, mergeMap, Observable, of, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
 import { Algorithm } from "../../model/algorithm";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
-import { AlgorithmService, ConfigData, ConfigurationInfo } from "../../services/algorithm.service";
+import {
+    AlgorithmService,
+    ConfigData,
+    ConfigurationInfo,
+    ReadConfigResult2
+} from "../../services/algorithm.service";
 import { ConfigurationService } from "../../services/configuration.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
 import { StatusService } from "../../services/status.service";
@@ -28,7 +33,7 @@ import { ConfigurationSelectionComponent } from "../configuration-selection/conf
     styleUrls: ['./configuration-page.component.less'],
     standalone: false
 })
-export class ConfigurationPageComponent implements OnInit, AfterViewInit {
+export class ConfigurationPageComponent implements OnInit {
     protected readonly Mode = Mode;
     protected readonly jobLabels: Record<string, string> = {
         anonymization: "Anonymization",
@@ -43,6 +48,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     @Input() public additionalConfigs: ConfigurationAdditionalConfigs | null = null
     @Input() public hasAlgorithmSelection: boolean = true;
 
+    protected configurationData$: Observable<ReadConfigResult2 | null>;
     protected status$: Observable<Status>;
 
     /**
@@ -67,7 +73,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * If an algorithm is selected and the corresponding form is valid.
      * @protected
      */
-    protected formValid: boolean = false;
+    protected formValid: boolean = true;
 
     /**
      * Cache for the configuration file in the guided mode.
@@ -79,7 +85,9 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * If at least one process is enabled.
      * @protected
      */
-    protected oneEnabled = true;
+    protected oneEnabled = false;
+
+    protected selectedAlgorithm: Algorithm | null = null;
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') protected forms: ConfigurationFormComponent;
@@ -98,7 +106,32 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
     ngOnInit() {
         for (const process of this.configurationInfo.processes) {
             this.processEnabled[process.job] = !process.skip;
+            if (!process.skip) {
+                this.oneEnabled = true;
+            }
         }
+
+        this.configurationData$ = this.algorithmService.algorithms.pipe(
+            tap(value => {
+                this.algorithms = value;
+                if (!this.hasAlgorithmSelection) {
+                    this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.algorithms[0]);
+                }
+            }),
+            switchMap(_ => {
+                return this.algorithmService.fetchConfiguration();
+            }),
+            tap(value => {
+                this.selectedAlgorithm = value.selectedAlgorithm
+                if (value.selectedAlgorithm != null) {
+                    this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
+                }
+            }),
+            catchError(err => {
+                this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
+                return of(null);
+            }),
+        );
 
         // Set callback functions
         this.algorithmService.setDoGetConfig(() => this.getConfig());
@@ -110,28 +143,6 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
                 this.disabled = this.statusService.isStepCompleted(registryData?.lockedAfterStep);
             }),
         );
-
-        // Get available algorithms
-        this.algorithmService.algorithms.subscribe({
-            next: value => {
-                this.algorithms = value;
-                if (!this.hasAlgorithmSelection) {
-                    this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.algorithms[0]);
-                    this.readFromCache();
-                }
-            }, error: error => {
-                this.errorHandlingService.addError(error);
-            }
-        });
-    }
-
-    ngAfterViewInit() {
-        this.readFromCache();
-        this.changeDetectorRef.detectChanges();
-
-        setTimeout(()=> {
-            this.updateOneEnabled();
-        });
     }
 
     /**
@@ -158,21 +169,21 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * Updates the cached configuration and valid flag.
      * @protected
      */
-    protected onFormChange(): void {
+    protected onFormChange(valid: boolean): void {
         this.updateConfigCache();
-        this.formValid = this.forms.valid;
+        this.formValid = valid;
+        this.changeDetectorRef.detectChanges();
     }
 
     /**
      * Handles changes on the selected algorithm.
      * Updates the cache and the validity of the form.
+     * @param a The selected algorithm.
      * @protected
      */
-    protected onSelectionChange(): void {
+    protected onSelectionChange(a: Algorithm): void {
+        this.selectedAlgorithm = a;
         this.updateSelectCache();
-        setTimeout(() => {
-            this.formValid = this.forms.valid;
-        }, 0);
     }
 
     /**
@@ -180,8 +191,8 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * @protected
      */
     protected updateConfigCache(): void {
-        if (this.selection.selectedOption && this.forms)  {
-            this.configurationService.setConfiguration(this.algorithmService.getConfigurationName(), this.selection.selectedOption, this.forms.formData);
+        if (this.selectedAlgorithm && this.forms)  {
+            this.configurationService.setConfiguration(this.algorithmService.getConfigurationName(), this.selectedAlgorithm, this.forms.formData);
         }
     }
 
@@ -191,7 +202,6 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      */
     protected updateSelectCache(): void {
         this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.selection.selectedOption);
-        this.readFromCache();
     }
 
     /**
@@ -199,6 +209,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      */
     public readFromCache(): void {
         const selectedAlgorithm = this.configurationService.getSelectedAlgorithm(this.algorithmService.getConfigurationName());
+        this.selectedAlgorithm = selectedAlgorithm;
         if (selectedAlgorithm && this.selection) {
             this.selection.selectedOption = selectedAlgorithm;
             if (this.forms) {

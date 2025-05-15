@@ -1,5 +1,5 @@
 import {
-    AfterViewInit, ChangeDetectorRef,
+    AfterViewInit,
     Component, ComponentRef,
     Input, OnChanges,
     QueryList, SimpleChanges,
@@ -96,14 +96,8 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
      */
     private instances: ComponentRef<AdditionalConfigurationGroup>[] = [];
 
-    constructor(
-        private readonly cdRef: ChangeDetectorRef,
-    ) {
-    }
-
     public ngAfterViewInit() {
         this.loadComponents();
-        this.cdRef.detectChanges();
     }
 
     /**
@@ -114,7 +108,9 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
         if (changes['disabled'] != null && !changes['disabled'].firstChange) {
             const disabled = changes['disabled'].currentValue;
 
-            this.setActive(!disabled);
+            for (const input of this.inputs) {
+                input.setDisabled(disabled);
+            }
 
             this.instances.forEach((instance) => {
                 instance.setInput('disabled', disabled);

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AlgorithmService } from "../../../shared/services/algorithm.service";
+import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
@@ -46,7 +46,7 @@ export class AnonymizationService extends AlgorithmService {
          };
     }
 
-    public override readConfiguration(arg: any, configurationName: string): {config: Object, selectedAlgorithm: Algorithm} {
+    public override readConfiguration(arg: any, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName(arg["anonymization"]["privacyModels"][0]["name"])
         const config = arg["anonymization"]["privacyModels"][0];
         delete config["name"];

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
-import { AlgorithmService } from "../../../shared/services/algorithm.service";
+import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
 import { Algorithm } from "../../../shared/model/algorithm";
 import { Observable, of } from "rxjs";
@@ -44,7 +44,7 @@ export class RiskAssessmentService extends AlgorithmService {
         };
     }
 
-    public override readConfiguration(arg: Object, configurationName: string): { config: Object; selectedAlgorithm: Algorithm; } {
+    public override readConfiguration(arg: Object, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName("evaluation");
         // @ts-ignore
         const config = arg[configurationName];

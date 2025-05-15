@@ -69,9 +69,7 @@ export class EvaluationComponent implements OnInit {
     ngOnInit() {
         this.projectConfig$ = this.projectConfigService.projectSettings$;
 
-        this.risks$ = this.statisticsService.fetchRisks().pipe(
-            tap(risks => console.log("Risks data:", risks)) // Debug
-        );
+        this.risks$ = this.statisticsService.fetchRisks();
         this.risks2$ = this.statisticsService.fetchRisks2();
         this.stage$ = this.evaluationService.status$;
 

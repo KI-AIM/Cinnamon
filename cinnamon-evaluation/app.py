@@ -3,6 +3,7 @@ import json
 import os
 from threading import Event
 import multiprocessing
+import sys
 from typing import Optional, Tuple, Union, Any, Dict, List, BinaryIO
 
 import pandas as pd
@@ -336,77 +337,300 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
     print("Evaluating Data")
 
     print("Initializing Input Data")
-    processed_real_data, processed_synthetic_data = preprocess_datasets(real_data, synthetic_data, attribute_config['configurations'])
-    data_format, metrics = validate_and_extract_metrics(evaluation_config)
+    try:
+        processed_real_data, processed_synthetic_data = preprocess_datasets(real_data, synthetic_data, attribute_config['configurations'])
+    except Exception as e:
+        error_message = f"Error during data preprocessing: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+
+    try:
+        data_format, metrics = validate_and_extract_metrics(evaluation_config)
+    except Exception as e:
+        error_message = f"Error during validation and metric extraction: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     # Load Resemblance Metrics
     overview_resemblance_path = os.path.join(app_dir, 'resemblance', 'overview_resemblance_metrics.yaml')
-    with open(overview_resemblance_path, 'r') as file:
-        overview_metrics = yaml.safe_load(file)
+    try:
+        with open(overview_resemblance_path, 'r') as file:
+            overview_metrics = yaml.safe_load(file)
+    except FileNotFoundError as e:
+        error_message = f"Resemblance metrics file not found: {overview_resemblance_path}"
+        send_callback_error(callback_url, session_key, error_message, 404) # 404 Not Found
+        return {
+             'message': error_message,
+             'session_key': session_key,
+             'status_code': 404
+        }
+    except yaml.YAMLError as e:
+        error_message = f"Error loading resemblance metrics YAML from {overview_resemblance_path}: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+    except Exception as e:
+        error_message = f"Unexpected error loading resemblance metrics from {overview_resemblance_path}: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+
 
     # Load Utility Metrics
-    overview_utility_metrics = os.path.join(app_dir, 'utility', 'overview_utility_metrics.yaml')
-    with open(overview_utility_metrics, 'r') as file:
-        utility_metrics = yaml.safe_load(file)
+    overview_utility_metrics_path = os.path.join(app_dir, 'utility', 'overview_utility_metrics.yaml')
+    try:
+        with open(overview_utility_metrics_path, 'r') as file:
+            utility_metrics = yaml.safe_load(file)
+    except FileNotFoundError as e:
+        error_message = f"Utility metrics file not found: {overview_utility_metrics_path}"
+        send_callback_error(callback_url, session_key, error_message, 404) # 404 Not Found
+        return {
+             'message': error_message,
+             'session_key': session_key,
+             'status_code': 404
+        }
+    except yaml.YAMLError as e:
+        error_message = f"Error loading utility metrics YAML from {overview_utility_metrics_path}: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+    except Exception as e:
+        error_message = f"Unexpected error loading utility metrics from {overview_utility_metrics_path}: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     time_attributes_path = os.path.join(app_dir, 'static_configs', 'evaluation_config_time_attributes.yaml')
-    with open(time_attributes_path, 'r') as file:
-        time_attributes_config = yaml.safe_load(file)
+    try:
+        with open(time_attributes_path, 'r') as file:
+            time_attributes_config = yaml.safe_load(file)
+    except FileNotFoundError as e:
+        error_message = f"Time attributes config file not found: {time_attributes_path}"
+        send_callback_error(callback_url, session_key, error_message, 404) # 404 Not Found
+        return {
+             'message': error_message,
+             'session_key': session_key,
+             'status_code': 404
+        }
+    except yaml.YAMLError as e:
+        error_message = f"Error loading time attributes config YAML from {time_attributes_path}: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+    except Exception as e:
+        error_message = f"Unexpected error loading time attributes config from {time_attributes_path}: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+
 
     print("Data format:", data_format)
 
     print("Calculating Metrics")
-    if data_format == 'cross-sectional':
-        metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
-                                          metric_functions_cross_sectional)
-    elif data_format == 'longitudinal':
-        metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
-                                          metric_functions_longitudinal)
-    elif data_format == 'process-oriented':
-        metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
-                                          metric_functions_process_oriented)
-    else:
-        print("Data format not supported")
-        return json.dumps({'error': 'Data format not supported'}), 400
+    metrics_result = None 
+    try:
+        if data_format == 'cross-sectional':
+            metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
+                                             metric_functions_cross_sectional)
+        elif data_format == 'longitudinal':
+            metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
+                                             metric_functions_longitudinal)
+        elif data_format == 'process-oriented':
+            metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
+                                             metric_functions_process_oriented)
+        else:
+            error_message = f"Data format not supported: {data_format}"
+            send_callback_error(callback_url, session_key, error_message, 400) # 400 Bad Request
+            return {'message': error_message, 'session_key': session_key, 'status_code': 400}
+
+    except Exception as e:
+        error_message = f"Error during metric calculation ({data_format}): {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+
+    if metrics_result is None:
+         error_message = "Metric calculation failed to produce a result (metrics_result is None)."
+         send_callback_error(callback_url, session_key, error_message, 500)
+         return {
+             'message': error_message,
+             'session_key': session_key,
+             'status_code': 500
+         }
 
     # Manage Utility Metrics
-    utility_metrics_result = metrics_result['utility']
-    enriched_utility_metrics = extract_and_enrich_utility_metrics(utility_metrics, utility_metrics_result)
+    try:
+        utility_metrics_result = metrics_result.get('utility', {}) # Use .get() for safety
+        enriched_utility_metrics = extract_and_enrich_utility_metrics(utility_metrics, utility_metrics_result)
+    except Exception as e:
+        error_message = f"Error managing utility metrics: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+
 
     # Manage Resemblance Metrics
-    empty_config = create_empty_config(attribute_config)
+    try:
+        empty_config = create_empty_config(attribute_config)
+    except Exception as e:
+        error_message = f"Error creating empty config: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     # organize the metrics by visualization type and group them by visualization type
-    grouped_metrics = group_metrics_by_visualization_type(overview_metrics)
+    try:
+        grouped_metrics = group_metrics_by_visualization_type(overview_metrics)
+    except Exception as e:
+        error_message = f"Error grouping metrics by visualization type: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     # Add metrics to config
-    metrics_dict = add_metrics_to_config(empty_config, metrics_result, grouped_metrics)
+    try:
+        metrics_dict = add_metrics_to_config(empty_config, metrics_result, grouped_metrics)
+    except Exception as e:
+        error_message = f"Error adding metrics to config: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     # Enrich Metrics
-    enriched_metrics = enrich_metrics_with_descriptions(metrics_dict, overview_metrics, add_interpretation=True)
+    try:
+        enriched_metrics = enrich_metrics_with_descriptions(metrics_dict, overview_metrics, add_interpretation=True)
+    except Exception as e:
+        error_message = f"Error enriching metrics with descriptions: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     # Add value differences
-    enriched_metrics = add_value_differences(enriched_metrics)
+    try:
+        enriched_metrics = add_value_differences(enriched_metrics)
+    except Exception as e:
+        error_message = f"Error adding value differences: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     # transform time attributes to date
-    enriched_metrics = convert_attributes_to_date(enriched_metrics, time_attributes_config)
+    try:
+        enriched_metrics = convert_attributes_to_date(enriched_metrics, time_attributes_config)
+    except Exception as e:
+        error_message = f"Error converting time attributes to date: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     # Combine Utility and resemblance in one dictionary
-    enriched_metrics.update(enriched_utility_metrics)
+    try:
+       if enriched_metrics is None:
+           error_message = "Processing error before combining utility metrics (enriched_metrics is None)."
+           send_callback_error(callback_url, session_key, error_message, 500)
+           return {
+               'message': error_message,
+               'session_key': session_key,
+               'status_code': 500
+           }
+       enriched_metrics.update(enriched_utility_metrics)
+    except Exception as e:
+        error_message = f"Error combining utility and resemblance metrics: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     # Add the description of the resemblance utility metric to the enriched dictionary
-    enriched_metrics = add_resembance_description(enriched_metrics, overview_metrics)
+    try:
+        enriched_metrics = add_resembance_description(enriched_metrics, overview_metrics)
+    except Exception as e:
+        error_message = f"Error adding resemblance description: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
-    # Add overview to Config 
-    enriched_metrics = add_overview_to_config(enriched_metrics)
-    
+    # Add overview to Config
+    try:
+        enriched_metrics = add_overview_to_config(enriched_metrics)
+    except Exception as e:
+        error_message = f"Error adding overview to config: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+
     try:
         files = prepare_callback_data(enriched_metrics)
         requests.post(callback_url, files=files, data={'session_key': session_key})
         print("Callback made successfully")
 
     except requests.exceptions.RequestException as e:
-        print(f"Error while making callback: {e}")
+        print(f"Failed to send final results callback to URL {callback_url}: {e}", file=sys.stderr)
+        pass 
+
+    except Exception as e:
+         print(f"Unexpected error preparing or sending final results callback to URL {callback_url}: {e}", file=sys.stderr)
+         pass
+
+    return enriched_metrics
 
 
 @app.route('/get_evaluation_metrics/<string:data_format>', methods=['GET'])
@@ -523,6 +747,40 @@ def test_callback():
         return jsonify({'message': 'session_key not provided in JSON'}), 400
 
     return jsonify({'message': 'Callback function called', 'session_key': session_key}), 200
+
+
+def send_callback_error(callback_url, session_key, message, status_code):
+    """
+    Sends error messages to the provided callback URL using multipart/form-data.
+
+    Args:
+        callback_url (str): The client's callback URL.
+        session_key (str): Unique session identifier.
+        message (str): The error message to send.
+        status_code (int): The HTTP status code to include in the callback.
+        part_name (str): Name of the part for the error message (as specified in application.properties).
+    """
+    # Prepare the error message as a file-like object
+    error_message = io.BytesIO(message.encode('utf-8'))  
+
+    # Prepare the data for the multipart/form-data request
+    files = {
+        'error_message': ('error_message.txt', error_message, 'text/plain'),  # Error message as a form part
+    }
+    data = {
+        'session_key': session_key,  # Include session key as form data
+        'status_code': status_code,  # Include status code as form data
+    }
+
+    try:
+        print(f"Sending error callback to {callback_url} with data: {data} and files: {files}")
+        response = requests.post(callback_url, files=files, data=data, timeout=5)
+        print(f"Response status code: {response.status_code}")
+        print(f"Response text: {response.text}")
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send error to callback URL: {str(e)}")
+
 
 
 if __name__ == '__main__':

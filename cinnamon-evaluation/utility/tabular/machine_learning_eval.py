@@ -454,8 +454,9 @@ def impute_missing_values(df: pd.DataFrame, missing_value_placeholder: str = "MI
     numeric_cols = df_imputed.select_dtypes(include=['number']).columns
     for col in numeric_cols:
         mean_val = df_imputed[col].mean()
-        df_imputed[col] = df_imputed[col].fillna(mean_val)
-    
+        impute_val = 0 if pd.isna(mean_val) else mean_val
+        df_imputed[col] = df_imputed[col].fillna(impute_val)
+
     categorical_cols = df_imputed.select_dtypes(exclude=['number']).columns
     for col in categorical_cols:
         df_imputed[col] = df_imputed[col].astype(str)  

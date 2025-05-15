@@ -1,4 +1,5 @@
 import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AdditionalConfigurationGroup } from "@shared/interfaces/AdditionalConfigurationGroup";
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
@@ -14,7 +15,7 @@ import { FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from 
     styleUrls: ['./anonymization-attribute-configuration.component.less'],
     standalone: false
 })
-export class AnonymizationAttributeConfigurationComponent implements OnInit, OnDestroy {
+export class AnonymizationAttributeConfigurationComponent implements OnInit, OnDestroy, AdditionalConfigurationGroup {
     @Input() public disabled!: boolean;
     @Input() public form!: FormGroup;
 

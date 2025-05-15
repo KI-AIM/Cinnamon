@@ -5,32 +5,32 @@
             <app-workstep-list confirmLabel="Confirm configuration" [locked]="disabled" [numberSteps]="4" [step]="step"
                                [invalid]="oneEnabled && !formValid" (confirm)="submit()">
                 <!-- Activation -->
-                <app-workstep-item title="Select steps to execute" [locked]="disabled"
-                                   [stepIndex]="0" altConfirm="Skip all steps" [altConfirmAll]="true"
+                <app-workstep-item title="Select steps to execute" [locked]="disabled" [stepIndex]="0"
+                                   [invalid]="!oneEnabled" altConfirm="Skip all steps" [altConfirmAll]="true"
                                    [altConfirmValid]="!oneEnabled">
-                    <ng-container *ngTemplateOutlet="processActivation"></ng-container>
+                <ng-container *ngTemplateOutlet="processActivation"></ng-container>
                 </app-workstep-item>
 
                 <!-- Upload -->
-                <app-workstep-item title="Upload a configuration if available" [locked]="disabled"
-                                   [stepIndex]="1" altConfirm="Continue witout a configuraiton"
-                                   [invalid]="configFileCache === null" (confirm)="uploadCachedConfiguration()">
+                <app-workstep-item title="Upload a configuration if available" [locked]="disabled" [stepIndex]="1"
+                                   altConfirm="Continue witout a configuraiton" [invalid]="configFileCache === null"
+                                   (confirm)="uploadCachedConfiguration()">
                     Upload an existing configuration:
-                    <app-file-upload accept=".yml,.yaml" [disabled]="disabled"
+                    <app-file-upload accept=".yml,.yaml" [disabled]="disabled || !oneEnabled"
                                      (input)="cacheConfiguration($event)"></app-file-upload>
                 </app-workstep-item>
 
                 <!-- Algorithm Selection -->
-                <app-workstep-item title="Select the algorithm to be executed" [locked]="disabled" [stepIndex]="2"
-                                   [invalid]="selection.selectedOption == null">
-                    <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"
+                <app-workstep-item title="Select the algorithm to be executed" [locked]="disabled"
+                                   [stepIndex]="2" [invalid]="selection.selectedOption == null">
+                    <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled || !oneEnabled"
                                                  (change)="onSelectionChange()">
                     </app-configuration-selection>
                 </app-workstep-item>
 
                 <!-- Algorithm Configuration -->
-                <app-workstep-item title="Configure the selected algorithm" [locked]="disabled" [stepIndex]="3"
-                                   [invalid]="!formValid">
+                <app-workstep-item title="Configure the selected algorithm" [locked]="disabled"
+                                   [stepIndex]="3" [invalid]="!formValid">
                     <div *ngIf="!selection.selectedOption; else configurationForms" id="placeholder" class="w-100 mt-4">
                         <div class="ms-auto me-auto" style="width: fit-content">
                             Please select an algorithm in the previous step first.
@@ -41,7 +41,7 @@
                             <ng-container *ngIf="selection.selectedOption != null && selection.selectedOption.name === item.name">
                                 <p>{{ item.description }}</p>
 
-                                <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
+                                <app-configuration-form #form [algorithm]="item" [disabled]="disabled || !oneEnabled"
                                                         (onChange)="onFormChange()"
                                                         [additionalConfigs]="additionalConfigs">
                                 </app-configuration-form>
@@ -62,12 +62,12 @@
 
             <app-workstep-box title="Configuration Upload">
                 Upload an existing configuration:
-                <app-file-upload accept=".yml,.yaml" [disabled]="disabled"
+                <app-file-upload accept=".yml,.yaml" [disabled]="disabled || !oneEnabled"
                                  (input)="uploadConfiguration($event)"></app-file-upload>
             </app-workstep-box>
 
             <app-workstep-box title="Algorithm Selection" [class.d-none]="!hasAlgorithmSelection">
-                <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled"
+                <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled || !oneEnabled"
                                              (change)="onSelectionChange()">
                 </app-configuration-selection>
             </app-workstep-box>
@@ -83,9 +83,8 @@
                         <ng-container *ngIf="selection.selectedOption.name === item.name">
                             <p>{{ item.description }}</p>
 
-                            <app-configuration-form #form [algorithm]="item" [disabled]="disabled"
-                                                    (onChange)="onFormChange()"
-                                                    [additionalConfigs]="additionalConfigs">
+                            <app-configuration-form #form [algorithm]="item" [disabled]="disabled || !oneEnabled"
+                                                    (onChange)="onFormChange()" [additionalConfigs]="additionalConfigs">
                             </app-configuration-form>
                         </ng-container>
                     </div>
@@ -106,7 +105,7 @@
 <ng-template #processActivation>
     <ng-container *ngFor="let process of configurationInfo.processes;">
         <div class="d-flex">
-            <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]" [disabled]="disabled || !process.holdOutFulfilled">
+            <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]" [disabled]="disabled || !process.holdOutFulfilled" (input)="updateOneEnabled()">
                 Run {{ jobLabels[process.job] }}
             </mat-checkbox>
             <ng-container *ngIf="!process.holdOutFulfilled">

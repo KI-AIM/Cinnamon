@@ -63,6 +63,14 @@ export abstract class AlgorithmService {
         return stringify(this.createConfiguration(config.formData, config.selectedAlgorithm));
     }
 
+    public fetchConfiguration(): Observable<{ config: Object, selectedAlgorithm: Algorithm }> {
+        return this.configurationService.loadConfig(this.getConfigurationName()).pipe(
+            map(value => {
+                return this.readConfiguration(parse(value), this.getConfigurationName());
+            }),
+        );
+    }
+
     /**
      * Sets the configuration form the given data to the UI.
      * @param data Data containing the result of the import.

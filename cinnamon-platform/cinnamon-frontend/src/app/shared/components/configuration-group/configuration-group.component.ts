@@ -1,12 +1,13 @@
 import {
     AfterViewInit, ChangeDetectorRef,
-    Component,
-    Input,
-    QueryList,
+    Component, ComponentRef,
+    Input, OnChanges,
+    QueryList, SimpleChanges,
     ViewChild,
     ViewChildren,
     ViewContainerRef
 } from '@angular/core';
+import { AdditionalConfigurationGroup } from "@shared/interfaces/AdditionalConfigurationGroup";
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
 import { FormGroup } from "@angular/forms";
 import {ConfigurationInputComponent} from "../configuration-input/configuration-input.component";
@@ -22,7 +23,7 @@ import { ConfigurationAdditionalConfigs } from "../../model/configuration-additi
     styleUrls: ['./configuration-group.component.less'],
     standalone: false
 })
-export class ConfigurationGroupComponent implements AfterViewInit {
+export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
 
     /**
      * Configurations displayed additionally to the given definition.
@@ -89,7 +90,11 @@ export class ConfigurationGroupComponent implements AfterViewInit {
      */
     @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
 
-    private instances: any[] = [];
+    /**
+     * Component refs for additional configurations.
+     * @private
+     */
+    private instances: ComponentRef<AdditionalConfigurationGroup>[] = [];
 
     constructor(
         private readonly cdRef: ChangeDetectorRef,
@@ -99,6 +104,22 @@ export class ConfigurationGroupComponent implements AfterViewInit {
     public ngAfterViewInit() {
         this.loadComponents();
         this.cdRef.detectChanges();
+    }
+
+    /**
+     * Listens to changes on the disabled input and forwards the new value to all additional configuration components
+     * @param changes The changes.
+     */
+    public ngOnChanges(changes: SimpleChanges): void {
+        if (changes['disabled'] != null && !changes['disabled'].firstChange) {
+            const disabled = changes['disabled'].currentValue;
+
+            this.setActive(!disabled);
+
+            this.instances.forEach((instance) => {
+                instance.setInput('disabled', disabled);
+            });
+        }
     }
 
     /**
@@ -217,10 +238,10 @@ export class ConfigurationGroupComponent implements AfterViewInit {
     private loadComponents() {
         if (this.additionalConfigs !== null) {
             this.additionalConfigs?.configs.forEach(config => {
-                const componentRef: any = this.componentContainer.createComponent(config.component);
+                const componentRef: ComponentRef<AdditionalConfigurationGroup> = this.componentContainer.createComponent(config.component);
                 componentRef.setInput('disabled', this.disabled);
                 componentRef.instance.form = this.form;
-                this.instances.push(componentRef.instance);
+                this.instances.push(componentRef);
             });
         }
     }
@@ -229,14 +250,13 @@ export class ConfigurationGroupComponent implements AfterViewInit {
      * Patches the values of the additional configurations groups.
      * @param obj The configuration object.
      */
-    public patchComponents(obj: Object) {
+    public patchComponents(obj: any) {
         if (this.additionalConfigs === null) {
             return;
         }
 
         this.additionalConfigs.configs.forEach((config, i) => {
-            // @ts-ignore
-            this.instances[i].patchValue(obj[config.formGroupName]);
+            this.instances[i].instance.patchValue(obj[config.formGroupName]);
         });
     }
 

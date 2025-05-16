@@ -1,10 +1,10 @@
 import { Component, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
+import { Steps } from "@core/enums/steps";
+import { ConfigurationService } from '@shared/services/configuration.service';
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
-import { debounceTime, filter, from, map, reduce, scan, Subject, switchMap, toArray } from "rxjs";
-import { Steps } from "../../../core/enums/steps";
-import { ConfigurationService } from 'src/app/shared/services/configuration.service';
-import { StatusService } from "../../services/status.service";
+import { StatusService } from "@shared/services/status.service";
+import { debounceTime, filter, from, Observable, scan, Subject, switchMap, takeUntil } from "rxjs";
 
 @Component({
     selector: 'app-configuration-management',
@@ -27,16 +27,9 @@ export class ConfigurationManagementComponent implements OnDestroy {
         protected readonly statusService: StatusService,
     ) {
         this.clickSubject.pipe(
+            takeUntil(this.destroy$),
             switchMap(_ => {
-                return from(this.configurationService.getRegisteredConfigurations());
-            }),
-            filter(value => {
-                return (document.getElementById(value.name + "-input") as HTMLInputElement).checked;
-            }),
-            scan((acc, value) => acc.concat(value.name), [] as string[]),
-            debounceTime(0),
-            switchMap(value => {
-                return this.configurationService.downloadAllConfigurations(value)
+                return this.downloadAllConfigurations();
             }),
         ).subscribe({
            error: error => {
@@ -58,5 +51,22 @@ export class ConfigurationManagementComponent implements OnDestroy {
         this.dialog.open(this.dialogWrap, {
             width: '60%'
         });
+    }
+
+    /**
+     * Downloads all configurations that corresponding checkboxes are checked.
+     * @private
+     */
+    private downloadAllConfigurations(): Observable<string> {
+        return from(this.configurationService.getRegisteredConfigurations()).pipe(
+            filter(value => {
+                return (document.getElementById(value.name + "-input") as HTMLInputElement).checked;
+            }),
+            scan((acc, value) => acc.concat(value.name), [] as string[]),
+            debounceTime(0),
+            switchMap(value => {
+                return this.configurationService.downloadAllConfigurations(value)
+            }),
+        );
     }
 }

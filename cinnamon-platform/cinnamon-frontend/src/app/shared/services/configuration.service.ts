@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import {
     catchError,
-    concatMap,
+    concatMap, debounceTime,
     filter,
     from,
     map,
@@ -213,7 +213,6 @@ export class ConfigurationService {
      * @param includedConfigurations Names of the configurations to download.
      */
     public downloadAllConfigurations(includedConfigurations: Array<string>): Observable<string> {
-        console.log("hi");
         return from(includedConfigurations).pipe(
             map(configName => {
                 // Get the registered data about the configuration
@@ -224,28 +223,29 @@ export class ConfigurationService {
                 return value !== null;
             }),
             switchMap(value => {
-                console.log(value);
                 // Get the configuration string
                 return value.getConfigCallback().pipe(
                     map(config => {
-                        const configString = stringify(config);
+                        const configString = typeof config === 'string' ? config : stringify(config);
                         return {config: configString, metadata: value};
                     }),
                 );
             }),
-            switchMap(value => {
-                // Upload the configuration
-                if (!this.statusService.isStepCompleted(value.metadata.lockedAfterStep)) {
-                    return value.metadata.storeConfig!(value.metadata.name, value.config).pipe(
-                        map(() => value),
-                    );
-                } else {
-                    return of(value);
-                }
-            }),
+            // TODO Should we upload the configuration implicitly?
+            // switchMap(value => {
+            //     // Upload the configuration
+            //     if (!this.statusService.isStepCompleted(value.metadata.lockedAfterStep)) {
+            //         return value.metadata.storeConfig!(value.metadata.name, value.config).pipe(
+            //             map(() => value),
+            //         );
+            //     } else {
+            //         return of(value);
+            //     }
+            // }),
             scan((acc, value) => {
                 return acc + value.config;
             }, ""),
+            debounceTime(0),
             tap(value => {
                 // TODO use project name
                 const fileName = "configuration.yaml"
@@ -366,27 +366,27 @@ export class ConfigurationService {
      * Calls the setConfigCallback function if a configuration is available.
      * @param step The step up to which the configurations should be fetched.
      */
-    public fetchConfigurations(step: Steps) {
-        const stepIndex = Number.parseInt(Steps[step]);
-        for (const config of this.getRegisteredConfigurations()) {
-            if (config.availableAfterStep < stepIndex) {
-                config.fetchConfig!(config.name).subscribe({
-                    next: value => {
-                        const data = new ImportPipeData();
-                        data.success = true;
-                        data.name = config.name;
-                        data.configData = config;
-                        data.yamlConfigString = value;
-
-                        config.setConfigCallback(data);
-                    },
-                    error: err => {
-                        console.log(err);
-                    }
-                });
-            }
-        }
-    }
+    // public fetchConfigurations(step: Steps) {
+    //     const stepIndex = Number.parseInt(Steps[step]);
+    //     for (const config of this.getRegisteredConfigurations()) {
+    //         if (config.availableAfterStep < stepIndex) {
+    //             config.fetchConfig!(config.name).subscribe({
+    //                 next: value => {
+    //                     const data = new ImportPipeData();
+    //                     data.success = true;
+    //                     data.name = config.name;
+    //                     data.configData = config;
+    //                     data.yamlConfigString = value;
+    //
+    //                     config.setConfigCallback(data);
+    //                 },
+    //                 error: err => {
+    //                     console.log(err);
+    //                 }
+    //             });
+    //         }
+    //     }
+    // }
 
     /**
      * Initializes the cache for the given configuration name if it does not exist.

@@ -1,7 +1,7 @@
 import { Component, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
-import { filter, from, scan, Subject, switchMap } from "rxjs";
+import { debounceTime, filter, from, map, reduce, scan, Subject, switchMap, toArray } from "rxjs";
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from 'src/app/shared/services/configuration.service';
 import { StatusService } from "../../services/status.service";
@@ -34,6 +34,7 @@ export class ConfigurationManagementComponent implements OnDestroy {
                 return (document.getElementById(value.name + "-input") as HTMLInputElement).checked;
             }),
             scan((acc, value) => acc.concat(value.name), [] as string[]),
+            debounceTime(0),
             switchMap(value => {
                 return this.configurationService.downloadAllConfigurations(value)
             }),

@@ -1,3 +1,4 @@
+import { Steps } from "@core/enums/steps";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
@@ -64,7 +65,7 @@ export abstract class AlgorithmService {
         );
     }
 
-    public fetchConfiguration(): Observable<ReadConfigResult2> {
+    public fetchConfiguration(): Observable<ConfigData> {
         const cachedAlgorithm = this.configurationService.getSelectedAlgorithm(this.getConfigurationName());
         const cachedConfig = this.configurationService.getSelectedConfiguration(this.getConfigurationName());
         if (cachedConfig != null) {
@@ -237,16 +238,11 @@ export interface ProcessInfo {
 }
 
 export interface ConfigData {
-    formData: Object,
-    selectedAlgorithm: Algorithm
+    config: Object,
+    selectedAlgorithm: Algorithm | null
 }
 
 export interface ReadConfigResult {
     config: Object,
     selectedAlgorithm: Algorithm
-}
-
-export interface ReadConfigResult2 {
-    config: Object,
-    selectedAlgorithm: Algorithm | null
 }

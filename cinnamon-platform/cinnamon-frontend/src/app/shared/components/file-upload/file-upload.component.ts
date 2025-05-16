@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { Observable, take } from "rxjs";
@@ -34,6 +34,8 @@ export class FileUploadComponent implements OnInit {
      */
     @Output() public input: EventEmitter<FileList | null> = new EventEmitter();
 
+    @ViewChild("fileInput") private fileInput: ElementRef<HTMLInputElement>;
+
     public constructor(
         private readonly appConfigService: AppConfigService,
         private readonly errorHandlingService: ErrorHandlingService,
@@ -42,6 +44,15 @@ export class FileUploadComponent implements OnInit {
 
     public ngOnInit(): void {
         this.appConfig$ = this.appConfigService.appConfig$;
+    }
+
+    /**
+     * Clears the previous value and opens the file select dialog.
+     * @protected
+     */
+    protected openFileDialog() {
+        this.fileInput.nativeElement.value = "";
+        this.fileInput.nativeElement.click();
     }
 
     /**

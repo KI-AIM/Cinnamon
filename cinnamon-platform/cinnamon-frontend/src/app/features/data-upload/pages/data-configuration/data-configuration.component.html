@@ -79,11 +79,10 @@
                 <mat-expansion-panel-header>
                     <mat-panel-title>Advanced Configuration</mat-panel-title>
                 </mat-expansion-panel-header>
-                <mat-form-field style="width: 100%;">
-                    <mat-label>Percentage of Hold-Out split</mat-label>
-                    <input matInput type="number" formControlName="holdOutSplitPercentage"/>
-                    <mat-error>Percentage must be between 0 and 1</mat-error>
-                </mat-form-field>
+
+                <app-configuration-input [disabled]="locked" [form]="dataSetConfigurationForm!"
+                                         [configurationInputDefinition]="holdOutPercentageDefinition">
+                </app-configuration-input>
             </mat-expansion-panel>
         </div>
     </div>

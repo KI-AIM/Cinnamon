@@ -216,7 +216,8 @@ export class ConfigurationFormComponent implements OnInit {
 
         if (this.additionalConfigs) {
             for (const additionalConfig of this.additionalConfigs.configs) {
-                additionalConfig.initializeForm(form, initialValues[additionalConfig.formGroupName], this.disabled);
+                const config = initialValues[additionalConfig.formGroupName] ? initialValues[additionalConfig.formGroupName] : null;
+                additionalConfig.initializeForm(form, config, this.disabled);
             }
         }
 

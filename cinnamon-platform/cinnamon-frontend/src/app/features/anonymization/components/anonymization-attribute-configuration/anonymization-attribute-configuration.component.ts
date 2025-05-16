@@ -45,7 +45,7 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
      * @param configs The initial configuration.
      * @param disabled If the form is disabled initially.
      */
-    static initForm(form: FormGroup, configs: AnonymizationAttributeRowConfiguration[], disabled: boolean): void {
+    static initForm(form: FormGroup, configs: AnonymizationAttributeRowConfiguration[] | null, disabled: boolean): void {
         form.addControl(AnonymizationAttributeConfigurationComponent.formGroupName, new FormArray([], [Validators.required, AnonymizationAttributeConfigurationComponent.hasGeneralization]));
         AnonymizationAttributeConfigurationComponent.doSetValue(configs, new FormBuilder(), AnonymizationAttributeConfigurationComponent.getAttributeConfigurationFormArray(form), disabled);
     }
@@ -132,7 +132,10 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
         AnonymizationAttributeConfigurationComponent.doSetValue(configs, this.formBuilder, this.getAttributeConfigurationFormArray(this.form), this.disabled);
     }
 
-    public static doSetValue(configs: AnonymizationAttributeRowConfiguration[], formBuilder: FormBuilder, form: FormArray, disabled: boolean) {
+    public static doSetValue(configs: AnonymizationAttributeRowConfiguration[] | null, formBuilder: FormBuilder, form: FormArray, disabled: boolean) {
+        if (configs == null) {
+            return;
+        }
         configs.forEach(config => {
             const group = formBuilder.group({
                 attributeProtection: [{value: config.attributeProtection, disabled: disabled}, [Validators.required]],

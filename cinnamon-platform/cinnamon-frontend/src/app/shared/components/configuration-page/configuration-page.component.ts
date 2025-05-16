@@ -109,9 +109,6 @@ export class ConfigurationPageComponent implements OnInit {
         this.configurationData$ = this.algorithmService.algorithms.pipe(
             tap(value => {
                 this.algorithms = value;
-                if (!this.hasAlgorithmSelection) {
-                    this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.algorithms[0]);
-                }
             }),
             switchMap(_ => {
                 return this.algorithmService.fetchConfiguration();
@@ -120,6 +117,10 @@ export class ConfigurationPageComponent implements OnInit {
                 this.selectedAlgorithm = value.selectedAlgorithm
                 if (value.selectedAlgorithm != null) {
                     this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
+                } else if (!this.hasAlgorithmSelection) {
+                    this.selectedAlgorithm = this.algorithms[0];
+                    this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.algorithms[0]);
+                    value.selectedAlgorithm = this.selectedAlgorithm;
                 }
             }),
             catchError(err => {

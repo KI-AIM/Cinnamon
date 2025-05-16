@@ -181,25 +181,46 @@ def add_value_differences(metrics_dict):
         return index
 
     def calculate_differences(real, synthetic):
-        """Calculate absolute and percentage differences between real and synthetic values."""
-        if isinstance(real, (int, float)) and isinstance(synthetic, (int, float)):
+        MISSING_REPRESENTATION_STRINGS = ["NA", "NaN", "N/A", "<NA>", "", "None"]
+
+        if isinstance(real, str) and isinstance(synthetic, str):
+            is_real_missing_str = real in MISSING_REPRESENTATION_STRINGS
+            is_synthetic_missing_str = synthetic in MISSING_REPRESENTATION_STRINGS
+
+            if not is_real_missing_str and not is_synthetic_missing_str:
+                if real == synthetic:
+                    return {
+                        'absolute': 0,
+                        'percentage': 0,
+                        'color_index': 1
+                    }
+                else:
+                    return {
+                        'absolute': 1,
+                        'percentage': 100,
+                        'color_index': 10
+                    }
+
+        elif isinstance(real, (int, float)) and isinstance(synthetic, (int, float)):
             abs_diff = abs(real - synthetic)
-            
-            is_distance_metric = abs(real) == 0 and 0 <= synthetic <= 1
+            is_distance_metric = (real == 0 or real == 0.0) and (0 <= synthetic <= 1)
             
             if is_distance_metric:
                 normalized_diff = synthetic
             else:
-                if real == 0 and synthetic == 0:
-                    normalized_diff = 0
+                if (real == 0 or real == 0.0) and (synthetic == 0 or synthetic == 0.0):
+                    normalized_diff = 0.0
                 elif (real > 0 and synthetic < 0) or (real < 0 and synthetic > 0):
-                    normalized_diff = abs_diff / (abs(real) + abs(synthetic))
+                    denominator = abs(real) + abs(synthetic)
+                    normalized_diff = abs_diff / denominator if denominator != 0 else 0.0
                 elif real < 0 and synthetic < 0:
                     abs_real = abs(real)
                     abs_synthetic = abs(synthetic)
-                    normalized_diff = abs(abs_real - abs_synthetic) / (abs_real + abs_synthetic)
+                    denominator = abs_real + abs_synthetic
+                    normalized_diff = abs(abs_real - abs_synthetic) / denominator if denominator != 0 else 0.0
                 else:
-                    normalized_diff = abs_diff / (abs(real) + abs(synthetic))
+                    denominator = abs(real) + abs(synthetic)
+                    normalized_diff = abs_diff / denominator if denominator != 0 else 0.0
             
             pct_diff = normalized_diff * 100
                 

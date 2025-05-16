@@ -9,7 +9,8 @@ from resemblance.tabular.metrics import (mean, standard_deviation, calculate_var
                                          calculate_hellinger_distance,
                                          calculate_columnwise_correlations,
                                          visualize_columnwise_correlations,
-                                         missing_values_count)
+                                         missing_values_count, 
+                                         calculate_mode)
 
 from resemblance.longitudinal.metrics import calculate_observation_length_distribution
 
@@ -28,6 +29,7 @@ metric_functions_descriptive = {
         'standard_deviation': standard_deviation,
         'variance': calculate_variance,
         #'skewness': skewness,
+        'mode': calculate_mode,
         'distinct_values': calculate_distinct_values,
         'fifth_percentile': calculate_fifth_percentile,
         'median': calculate_median,
@@ -53,6 +55,7 @@ metric_functions_cross_sectional = {
         'variance': calculate_variance,
         #'skewness': skewness,
         'distinct_values': calculate_distinct_values,
+        'mode': calculate_mode,
         'fifth_percentile': calculate_fifth_percentile,
         'median': calculate_median,
         'q1': calculate_q1,
@@ -95,7 +98,8 @@ metric_functions_longitudinal = {
         'hellinger_distance': calculate_hellinger_distance,
         'frequency_plot': calculate_frequencies_plot,
         'observation_length_distribution': calculate_observation_length_distribution,
-        'missing_values_count': missing_values_count
+        'missing_values_count': missing_values_count, 
+        'mode': calculate_mode,
     },
     'utility': {}
 }
@@ -123,7 +127,8 @@ metric_functions_process_oriented = {
         'start_event_distribution': calculate_start_event_distribution,
         'end_event_distribution': calculate_end_event_distribution,
         'trace_variant_distribution': calculate_trace_variant_distribution,
-        'missing_values_count': missing_values_count
+        'missing_values_count': missing_values_count, 
+        'mode': calculate_mode,
     },
     'utility': {}
 }

@@ -1,31 +1,33 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from "@angular/forms";
+import { Router } from '@angular/router';
+import { Mode } from "@core/enums/mode";
+import { noSpaceValidator } from "@shared/directives/no-space-validator.directive";
+import { ConfigurationInputDefinition } from "@shared/model/configuration-input-definition";
+import { ConfigurationInputType } from "@shared/model/configuration-input-type";
+import { DataSetInfo } from "@shared/model/data-set-info";
+import { DateFormatConfiguration } from "@shared/model/date-format-configuration";
+import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-configuration";
+import { RangeConfiguration } from "@shared/model/range-configuration";
+import { Status } from "@shared/model/status";
+import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { StatusService } from "@shared/services/status.service";
+import { plainToInstance } from 'class-transformer';
+import { catchError, debounceTime, distinctUntilChanged, map, Observable, of, switchMap, tap } from "rxjs";
+import { Steps } from 'src/app/core/enums/steps';
 import { TitleService } from 'src/app/core/services/title-service.service';
+import { DataConfiguration } from 'src/app/shared/model/data-configuration';
+import { FileType } from 'src/app/shared/model/file-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
 import { DataService } from 'src/app/shared/services/data.service';
-import { FileService } from '../../services/file.service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
-import { Steps } from 'src/app/core/enums/steps';
-import { plainToInstance } from 'class-transformer';
 import { LoadingService } from 'src/app/shared/services/loading.service';
 import {
     AttributeConfigurationComponent
 } from "../../components/attribute-configuration/attribute-configuration.component";
-import { FileType } from 'src/app/shared/model/file-configuration';
-import { StatusService } from "@shared/services/status.service";
-import { DataConfiguration } from 'src/app/shared/model/data-configuration';
-import { catchError, debounceTime, distinctUntilChanged, map, Observable, of, switchMap, tap } from "rxjs";
-import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from "@angular/forms";
-import { noSpaceValidator } from "@shared/directives/no-space-validator.directive";
-import { DateFormatConfiguration } from "@shared/model/date-format-configuration";
-import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-configuration";
-import { RangeConfiguration } from "@shared/model/range-configuration";
-import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
 import { DataSetInfoService } from "../../services/data-set-info.service";
-import { ErrorHandlingService } from "@shared/services/error-handling.service";
-import { DataSetInfo } from "@shared/model/data-set-info";
-import { Mode } from "@core/enums/mode";
-import { Status } from "@shared/model/status";
+import { FileService } from '../../services/file.service';
 
 @Component({
     selector: 'app-data-configuration',
@@ -326,6 +328,18 @@ export class DataConfigurationComponent implements OnInit {
         return (typeof control.value === 'string') && control.value === 'UNDEFINED'
             ? {undefined: {value: control.value}}
             : null
+    }
+
+    protected get holdOutPercentageDefinition(): ConfigurationInputDefinition {
+        const def = new ConfigurationInputDefinition();
+        def.name = "holdOutSplitPercentage";
+        def.type = ConfigurationInputType.FLOAT;
+        def.label = "Percentage of rows to hold out"
+        def.description = "Percentage of rows to hold out for the hold-out split. These rows will not be available in the protected dataset.";
+        def.min_value = 0;
+        def.max_value = 1;
+        def.default_value = 0.2;
+        return def;
     }
 
     protected readonly Mode = Mode;

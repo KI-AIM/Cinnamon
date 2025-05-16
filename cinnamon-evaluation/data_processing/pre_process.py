@@ -20,21 +20,6 @@ def preprocess_datasets(real_df: pd.DataFrame,
     """
     config_columns = [col_config['name'] for col_config in config]
 
-    # Map column names to their types from config for easy lookup
-    col_type_map = {col_config['name']: col_config['type'] for col_config in config}
-
-    synthetic_df_processed_missing = synthetic_df.copy() 
-    
-    for col in synthetic_df_processed_missing.columns:
-        column_type = col_type_map.get(col)
-
-        if column_type in ['DECIMAL', 'INTEGER', 'DATE']:
-            if synthetic_df_processed_missing[col].isnull().all():
-                synthetic_df_processed_missing[col] = np.zeros(len(synthetic_df_processed_missing))
-                print(f"Info: Replaced entire synthetic column '{col}' (type: {column_type}) filled with missing values to zeros.")
-
-    synthetic_df = synthetic_df_processed_missing 
-
     split_point = len(real_df)
     combined_df = pd.concat([real_df, synthetic_df], axis=0, ignore_index=True)
     

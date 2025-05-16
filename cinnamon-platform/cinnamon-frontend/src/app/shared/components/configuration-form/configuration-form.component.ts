@@ -138,6 +138,10 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     private doSetConfiguration(algorithmDefinition: AlgorithmDefinition, form: FormGroup, configuration: Object) {
+        if (Object.keys(configuration).length === 0) {
+            return;
+        }
+
         this.fixAttributeLists(algorithmDefinition, configuration, form);
         this.form.patchValue(configuration);
         setTimeout(() => {

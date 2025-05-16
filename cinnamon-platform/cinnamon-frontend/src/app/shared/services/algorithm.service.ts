@@ -1,8 +1,7 @@
-import { Steps } from "@core/enums/steps";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { catchError, filter, map, Observable, of, tap } from "rxjs";
+import { catchError, map, Observable, of, tap } from "rxjs";
 import { parse, stringify } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
@@ -54,21 +53,22 @@ export abstract class AlgorithmService {
     }
 
     /**
-     * Returns the YAML configuration as a string.
+     * Return the local configuration if available, otherwise fetches the configuration from the backend.
+     * The configuration is in the form of a YAML string.
      */
     public getConfig(): Observable<string> {
-        return this.fetchConfiguration().pipe(
-            filter(value => value.selectedAlgorithm !== null),
-            map(value => {
-                return stringify(this.createConfiguration(value.config, value.selectedAlgorithm!));
-            }),
-        );
+        const cachedAlgorithm = this.configurationService.getSelectedAlgorithm(this.getConfigurationName());
+        const cachedConfig = this.configurationService.getSelectedConfiguration(this.getConfigurationName());
+        if (cachedConfig != null && cachedAlgorithm != null) {
+            return of(stringify(this.createConfiguration(cachedConfig, cachedAlgorithm)));
+        }
+        return this.configurationService.loadConfig(this.getConfigurationName());
     }
 
     public fetchConfiguration(): Observable<ConfigData> {
         const cachedAlgorithm = this.configurationService.getSelectedAlgorithm(this.getConfigurationName());
         const cachedConfig = this.configurationService.getSelectedConfiguration(this.getConfigurationName());
-        if (cachedConfig != null) {
+        if (cachedConfig != null && cachedAlgorithm != null) {
             return of({config: cachedConfig, selectedAlgorithm: cachedAlgorithm});
         }
 

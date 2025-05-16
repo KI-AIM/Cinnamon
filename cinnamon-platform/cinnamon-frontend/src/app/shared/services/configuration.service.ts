@@ -1,6 +1,19 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, throwError, toArray } from "rxjs";
+import {
+    catchError,
+    concatMap,
+    filter,
+    from,
+    map,
+    mergeMap,
+    Observable,
+    of, scan,
+    switchMap,
+    tap,
+    throwError,
+    toArray
+} from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { FileUtilityService } from './file-utility.service';
 import { parse, stringify } from 'yaml';
@@ -199,28 +212,46 @@ export class ConfigurationService {
      * If configured, stores the configuration under the configured name into the database.
      * @param includedConfigurations Names of the configurations to download.
      */
-    downloadAllConfigurations(includedConfigurations: Array<string>) {
-        let configString = "";
-        for (const config of this.getRegisteredConfigurations()) {
-            if (!includedConfigurations.includes(config.name)) {
-                continue;
-            }
-
-            const configData = config.getConfigCallback();
-            if (typeof configData === "string") {
-                configString += configData;
-            } else {
-                configString += stringify(configData)
-            }
-
-            if (!this.statusService.isStepCompleted(config.lockedAfterStep)) {
-                config.storeConfig!(config.name, configString).subscribe();
-            }
-        }
-
-        // TODO use project name
-        const fileName = "configuration.yaml"
-        this.fileUtilityService.saveYamlFile(configString, fileName);
+    public downloadAllConfigurations(includedConfigurations: Array<string>): Observable<string> {
+        console.log("hi");
+        return from(includedConfigurations).pipe(
+            map(configName => {
+                // Get the registered data about the configuration
+               return this.getRegisteredConfigurationByName(configName);
+            }),
+            filter(value => {
+                // Filter unknown configurations
+                return value !== null;
+            }),
+            switchMap(value => {
+                console.log(value);
+                // Get the configuration string
+                return value.getConfigCallback().pipe(
+                    map(config => {
+                        const configString = stringify(config);
+                        return {config: configString, metadata: value};
+                    }),
+                );
+            }),
+            switchMap(value => {
+                // Upload the configuration
+                if (!this.statusService.isStepCompleted(value.metadata.lockedAfterStep)) {
+                    return value.metadata.storeConfig!(value.metadata.name, value.config).pipe(
+                        map(() => value),
+                    );
+                } else {
+                    return of(value);
+                }
+            }),
+            scan((acc, value) => {
+                return acc + value.config;
+            }, ""),
+            tap(value => {
+                // TODO use project name
+                const fileName = "configuration.yaml"
+                this.fileUtilityService.saveYamlFile(value, fileName);
+            }),
+        )
     }
 
     /**

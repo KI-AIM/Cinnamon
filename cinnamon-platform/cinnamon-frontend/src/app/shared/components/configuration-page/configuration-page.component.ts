@@ -9,12 +9,7 @@ import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
 import { Algorithm } from "../../model/algorithm";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
-import {
-    AlgorithmService,
-    ConfigData,
-    ConfigurationInfo,
-    ReadConfigResult2
-} from "../../services/algorithm.service";
+import { AlgorithmService, ConfigurationInfo, ReadConfigResult2 } from "../../services/algorithm.service";
 import { ConfigurationService } from "../../services/configuration.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
 import { StatusService } from "../../services/status.service";
@@ -134,7 +129,6 @@ export class ConfigurationPageComponent implements OnInit {
         );
 
         // Set callback functions
-        this.algorithmService.setDoGetConfig(() => this.getConfig());
         this.algorithmService.setDoSetConfig((error: string | null) => this.setConfig(error));
 
         this.status$ = this.statusService.status$.pipe(
@@ -269,24 +263,6 @@ export class ConfigurationPageComponent implements OnInit {
                 this.errorHandlingService.addError(error, "Could not upload configuration.");
             },
         });
-    }
-
-    /**
-     * Retrieves the configuration from the form.
-     * @private
-     */
-    private getConfig(): ConfigData {
-        if (!this.forms) {
-            return {
-                formData: {},
-                selectedAlgorithm: this.selection.selectedOption
-            };
-        } else {
-            return {
-                formData: this.forms.formData,
-                selectedAlgorithm: this.selection.selectedOption
-            };
-        }
     }
 
     /**

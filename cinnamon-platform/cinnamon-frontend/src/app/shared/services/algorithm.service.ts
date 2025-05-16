@@ -1,7 +1,7 @@
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { catchError, map, Observable, of, tap } from "rxjs";
+import { catchError, filter, map, Observable, of, tap } from "rxjs";
 import { parse, stringify } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
@@ -16,9 +16,6 @@ export abstract class AlgorithmService {
 
     private _cachedImportPipeData: ImportPipeData | null = null;
 
-    private doGetConfig: () => ConfigData = () => {
-        return {formData: {}, selectedAlgorithm: new Algorithm()}
-    };
     private doSetConfig: (error: string | null) => void = () => { };
 
     protected constructor(
@@ -58,9 +55,13 @@ export abstract class AlgorithmService {
     /**
      * Returns the YAML configuration as a string.
      */
-    public getConfig(): string {
-        const config = this.doGetConfig();
-        return stringify(this.createConfiguration(config.formData, config.selectedAlgorithm));
+    public getConfig(): Observable<string> {
+        return this.fetchConfiguration().pipe(
+            filter(value => value.selectedAlgorithm !== null),
+            map(value => {
+                return stringify(this.createConfiguration(value.config, value.selectedAlgorithm!));
+            }),
+        );
     }
 
     public fetchConfiguration(): Observable<ReadConfigResult2> {
@@ -97,14 +98,6 @@ export abstract class AlgorithmService {
         }
 
         this.doSetConfig(error);
-    }
-
-    /**
-     * Sets the callback function for retrieving the configuration from the UI.
-     * @param func The function that is getting called.
-     */
-    public setDoGetConfig(func: () => ConfigData) {
-        this.doGetConfig = func;
     }
 
     /**

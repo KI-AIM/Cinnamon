@@ -211,8 +211,8 @@ def add_value_differences(metrics_dict):
         else:
             return {
                 'absolute': 'NA',
-                'percentage': 'NA',
-                'color_index': 'NA'
+                'percentage': 100,
+                'color_index': 10
             }
         
     def process_metric(metric_data):

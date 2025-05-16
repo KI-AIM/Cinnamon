@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { DataConfiguration } from '../model/data-configuration';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { BehaviorSubject, map, Observable, of } from 'rxjs';
 import { plainToInstance } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
@@ -67,7 +67,7 @@ export class DataConfigurationService {
         return this.httpClient.post<void>(this.baseUrl, formData);
     }
 
-    private getConfigurationCallback(): Object {
+    private getConfigurationCallback(): Observable<Object> {
         let config;
         if (this.localDataConfiguration !== null) {
             config = this.localDataConfiguration;
@@ -75,7 +75,7 @@ export class DataConfigurationService {
         } else {
             config = this.dataConfigurationSubject.getValue();
         }
-        return config;
+        return of(config);
     }
 
     private setConfigCallback(importData: ImportPipeData): void {

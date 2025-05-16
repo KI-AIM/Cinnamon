@@ -1,5 +1,7 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { filter, from, scan, Subject, switchMap } from "rxjs";
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from 'src/app/shared/services/configuration.service';
 import { StatusService } from "../../services/status.service";
@@ -10,41 +12,50 @@ import { StatusService } from "../../services/status.service";
     styleUrls: ['./configuration-management.component.less'],
     standalone: false
 })
-export class ConfigurationManagementComponent {
+export class ConfigurationManagementComponent implements OnDestroy {
     protected readonly Steps = Steps;
 
     @ViewChild('configurationManagement') dialogWrap: TemplateRef<any>;
 
+    protected clickSubject = new Subject<void>();
+    private destroy$ = new Subject<void>();
+
     constructor(
         public configurationService: ConfigurationService,
         public dialog: MatDialog,
+        private errorHandlingService: ErrorHandlingService,
         protected readonly statusService: StatusService,
     ) {
+        this.clickSubject.pipe(
+            switchMap(_ => {
+                return from(this.configurationService.getRegisteredConfigurations());
+            }),
+            filter(value => {
+                return (document.getElementById(value.name + "-input") as HTMLInputElement).checked;
+            }),
+            scan((acc, value) => acc.concat(value.name), [] as string[]),
+            switchMap(value => {
+                return this.configurationService.downloadAllConfigurations(value)
+            }),
+        ).subscribe({
+           error: error => {
+               this.errorHandlingService.addError(error);
+           }
+        });
+    }
+
+    public ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+        this.clickSubject.complete();
     }
 
     /**
      * Opens the dialog.
-     * @param templateRef Reference of the dialog.
      */
     openDialog() {
         this.dialog.open(this.dialogWrap, {
             width: '60%'
         });
     }
-
-    /**
-     * Downloads all registered configurations.
-     * Uses the getConfigCallback function to retrieve the configuration.
-     * If configured, stores the configuration under the configured name into the database.
-     */
-    downloadAllConfigurations() {
-        const included = [];
-        for (const config of this.configurationService.getRegisteredConfigurations()) {
-            if ((document.getElementById(config.name + "-input") as HTMLInputElement).checked) {
-                included.push(config.name);
-            }
-        }
-        this.configurationService.downloadAllConfigurations(included);
-    }
-
 }

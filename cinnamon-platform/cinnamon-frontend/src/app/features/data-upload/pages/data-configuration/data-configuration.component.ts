@@ -89,7 +89,11 @@ export class DataConfigurationComponent implements OnInit {
 
         this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
             tap(value => {
-                this.createDataSetConfigurationForm(value);
+                if (this.configuration.localDataSetConfiguration !== null) {
+                    this.createDataSetConfigurationForm(this.configuration.localDataSetConfiguration.createHoldOutSplit, this.configuration.localDataSetConfiguration.holdOutSplitPercentage);
+                } else {
+                    this.createDataSetConfigurationForm(value.hasHoldOutSplit, value.holdOutPercentage);
+                }
             }),
             catchError(error => {
                 this.handleError(error);
@@ -282,17 +286,17 @@ export class DataConfigurationComponent implements OnInit {
 
     /**
      * Creates the form for the data set configuration.
-     * Initializes the form based on the given data set info.
-     *
-     * @param dataSetInfo The data set info to initialize the form with.
+     * Initializes the form based on the given parameters.
+     * @param createHoldOutSplit If a hold-out split should be created.
+     * @param holdOutSplitPercentage The percentage of rows to hold out.
      * @private
      */
-    private createDataSetConfigurationForm(dataSetInfo: DataSetInfo): void {
+    private createDataSetConfigurationForm(createHoldOutSplit: boolean, holdOutSplitPercentage: number): void {
         this.dataSetConfigurationForm = this.formBuilder.group({
-            createHoldOutSplit: [{value: dataSetInfo.hasHoldOutSplit, disabled: this.locked}],
+            createHoldOutSplit: [{value: createHoldOutSplit, disabled: this.locked}],
             holdOutSplitPercentage: [{
-                value: dataSetInfo.holdOutPercentage !== 0 ? dataSetInfo.holdOutPercentage : 0.2,
-                disabled: !dataSetInfo.hasHoldOutSplit || this.locked
+                value: holdOutSplitPercentage !== 0 ? holdOutSplitPercentage : 0.2,
+                disabled: !createHoldOutSplit || this.locked
             }, {
                 validators: [Validators.required, Validators.min(0), Validators.max(1)],
             }],
@@ -305,6 +309,10 @@ export class DataConfigurationComponent implements OnInit {
             } else {
                 this.dataSetConfigurationForm!.controls['holdOutSplitPercentage'].enable();
             }
+        });
+
+        this.dataSetConfigurationForm.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(_ => {
+            this.configuration.localDataSetConfiguration = this.dataSetConfigurationForm!.getRawValue();
         });
     }
 

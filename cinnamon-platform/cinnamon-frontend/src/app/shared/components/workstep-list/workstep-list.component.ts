@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { booleanAttribute, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { Steps } from "@core/enums/steps";
 import { StatusService } from "@shared/services/status.service";
 import { WorkstepService } from "@shared/services/workstep.service";
@@ -9,12 +9,13 @@ import { WorkstepService } from "@shared/services/workstep.service";
     templateUrl: './workstep-list.component.html',
     styleUrl: './workstep-list.component.less',
 })
-export class WorkstepListComponent implements OnInit {
+export class WorkstepListComponent implements OnInit, OnDestroy {
 
     @Input() public confirmLabel!: string;
     @Input({transform: booleanAttribute}) public invalid: boolean = false;
     @Input({transform: booleanAttribute}) public locked: boolean = false;
     @Input() public numberSteps!: number;
+    @Input({transform: booleanAttribute}) public resetSteps: boolean = false
     @Input() public step!: Steps;
 
     @Output() public confirm = new EventEmitter<void>();
@@ -26,7 +27,11 @@ export class WorkstepListComponent implements OnInit {
     }
 
     public ngOnInit() {
-        this.workstepService.init(this.numberSteps, this.statusService.isStepCompleted(this.step));
+        this.workstepService.init(this.step, this.numberSteps, this.statusService.isStepCompleted(this.step), this.resetSteps);
+    }
+
+    public ngOnDestroy() {
+        this.workstepService.shutdown();
     }
 
     /**

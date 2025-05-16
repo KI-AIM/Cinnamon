@@ -2,7 +2,7 @@
     <ng-container *ngIf="status.mode === Mode.STANDARD">
 
         <app-workstep-list confirmLabel="Confirm file and start configuration" [locked]="locked" [invalid]="isInvalid"
-                           [numberSteps]="2" [step]="Steps.UPLOAD" (confirm)="uploadFile()">
+                           [numberSteps]="2" resetSteps [step]="Steps.UPLOAD" (confirm)="uploadFile()">
 
             <app-workstep-item title="Select your dataset" [locked]="locked" [invalid]="isDataFileInvalid" [stepIndex]="0">
                 <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>

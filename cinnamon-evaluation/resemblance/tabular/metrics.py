@@ -177,28 +177,38 @@ def calculate_variance(real, synthetic):
         raise Exception(f"Error calculating variances: {str(e)}")
 
 
-def calculate_fifth_percentile(real, synthetic):
+def calculate_fifth_percentile(real: pd.DataFrame, synthetic: pd.DataFrame) -> Dict[str, Dict[str, float]]:
     """
-    Calculate 5th percentile for each numeric attribute of the two tables. Returns a dictionary with the 5th percentile
-    values for each attribute.
+    Calculate 5th percentile for each numeric attribute of the two tables.
+    Marks columns that are entirely missing with 'NA'.
 
     Args:
         real (pandas.DataFrame): The real data.
         synthetic (pandas.DataFrame): The synthetic data.
 
     Returns:
-        dict: A dictionary with the 5th percentile values for each attribute.
+        dict: A dictionary with the 5th percentile values for each attribute,
+              which can be a float or the string 'NA'.
     """
     fifth_percentile_dict = {'real': {}, 'synthetic': {}}
     try:
         real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
-            fifth_percentile_dict['real'][column] = float(real_numeric[column].quantile(0.05))
-            fifth_percentile_dict['synthetic'][column] = float(synthetic_numeric[column].quantile(0.05))
-            return fifth_percentile_dict
-    except Exception as e:
-        raise Exception(f"Error calculating variances: {str(e)}")
+            real_col_data = real_numeric[column]
+            if real_col_data.isna().all():
+                fifth_percentile_dict['real'][column] = 'NA'
+            else:
+                fifth_percentile_dict['real'][column] = float(real_col_data.quantile(0.05))
 
+            synthetic_col_data = synthetic_numeric[column]
+            if synthetic_col_data.isna().all():
+                fifth_percentile_dict['synthetic'][column] = 'NA'
+            else:
+                fifth_percentile_dict['synthetic'][column] = float(synthetic_col_data.quantile(0.05))
+
+        return fifth_percentile_dict
+    except Exception as e:
+        raise Exception(f"Error calculating 5th percentile: {str(e)}")
 
 def calculate_q1(real, synthetic):
     """
@@ -1027,16 +1037,12 @@ def calculate_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFram
     column_correlations = {'real': {}, 'synthetic': {}}
     
     try:
-        # Check for constant columns in both datasets
-        real_constant_cols = [col for col in real.columns if real[col].nunique() <= 1]
-        synthetic_constant_cols = [col for col in synthetic.columns if synthetic[col].nunique() <= 1]
-        
-        # For phik correlation calculation, simply exclude constant columns
-        # rather than trying to add noise
-        real_varying = real.drop(columns=real_constant_cols)
-        synthetic_varying = synthetic.drop(columns=synthetic_constant_cols)
-        
-        # If there are multiple varying columns, calculate phik matrix
+        real_constant_cols = [col for col in real.columns if real[col].nunique(dropna=False) <= 1]
+        synthetic_constant_cols = [col for col in synthetic.columns if synthetic[col].nunique(dropna=False) <= 1]
+
+        real_varying = real.drop(columns=real_constant_cols, errors='ignore')
+        synthetic_varying = synthetic.drop(columns=synthetic_constant_cols, errors='ignore')
+
         if len(real_varying.columns) > 1:
             real_corr = real_varying.phik_matrix()
         else:
@@ -1046,64 +1052,53 @@ def calculate_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFram
             synthetic_corr = synthetic_varying.phik_matrix()
         else:
             synthetic_corr = pd.DataFrame()
-        
-        # Process real data correlations
+
         for column in real.columns:
             if column in real_constant_cols:
-                # Constant columns have no meaningful correlation with other attributes
-                column_correlations['real'][column] = 0.0
+                column_correlations['real'][column] = 'NA'
             else:
-                # Only include this column if it's in our correlation matrix
                 if not real_corr.empty and column in real_corr.index:
-                    # Get correlations for non-constant columns
                     real_column_corrs = [
-                        real_corr.loc[column, other_col] 
-                        for other_col in real_varying.columns 
+                        real_corr.loc[column, other_col]
+                        for other_col in real_varying.columns
                         if column != other_col
                     ]
-                    
+
                     if real_column_corrs:
                         column_correlations['real'][column] = float(np.mean(real_column_corrs))
                     else:
-                        column_correlations['real'][column] = 0.0
+                         column_correlations['real'][column] = 'NA'
                 else:
-                    # If this column wasn't in our matrix (e.g., only 1 varying column)
-                    column_correlations['real'][column] = 0.0
-        
-        # Process synthetic data correlations
+                    column_correlations['real'][column] = 'NA'
+
         for column in synthetic.columns:
             if column in synthetic_constant_cols:
-                column_correlations['synthetic'][column] = 0.0
+                 column_correlations['synthetic'][column] = 'NA'
             else:
                 if not synthetic_corr.empty and column in synthetic_corr.index:
                     synthetic_column_corrs = [
-                        synthetic_corr.loc[column, other_col] 
-                        for other_col in synthetic_varying.columns 
+                        synthetic_corr.loc[column, other_col]
+                        for other_col in synthetic_varying.columns
                         if column != other_col
                     ]
-                    
+
                     if synthetic_column_corrs:
                         column_correlations['synthetic'][column] = float(np.mean(synthetic_column_corrs))
                     else:
-                        column_correlations['synthetic'][column] = 0.0
+                         column_correlations['synthetic'][column] = 'NA'
                 else:
-                    column_correlations['synthetic'][column] = 0.0
-                    
+                    column_correlations['synthetic'][column] = 'NA'
+
         return column_correlations
-        
+
     except Exception as e:
-        # If phik calculation fails completely, handle gracefully
-        if not column_correlations['real'] or not column_correlations['synthetic']:
-            # Fallback: set all correlations to 0
-            for column in real.columns:
-                column_correlations['real'][column] = 0.0
-                
-            for column in synthetic.columns:
-                column_correlations['synthetic'][column] = 0.0
-                
-            # Log the error
-            print(f"Warning: Using fallback correlation calculation due to error: {str(e)}")
-            
+        print(f"Warning: Error during correlation calculation: {str(e)}. Setting all non-constant correlations to 'NA'.")
+        for column in real.columns:
+            column_correlations['real'][column] = 'NA'
+
+        for column in synthetic.columns:
+            column_correlations['synthetic'][column] = 'NA'
+
         return column_correlations
 
 

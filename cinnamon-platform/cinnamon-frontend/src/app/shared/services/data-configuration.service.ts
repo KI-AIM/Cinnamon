@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { DataConfiguration } from '../model/data-configuration';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, map, Observable, of, ReplaySubject, take } from 'rxjs';
+import { map, Observable, of, ReplaySubject, take } from 'rxjs';
 import { plainToInstance } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
@@ -23,6 +23,7 @@ export class DataConfigurationService {
     private fetched: boolean = false;
 
     public localDataConfiguration: DataConfiguration | null = null;
+    public localDataSetConfiguration: DataSetConfiguration | null = null;
 
     constructor(
         private httpClient: HttpClient,
@@ -99,4 +100,9 @@ export class DataConfigurationService {
         const dataConfig = plainToInstance(DataConfiguration, config);
         this.setDataConfiguration(dataConfig);
     }
+}
+
+export interface DataSetConfiguration {
+    holdOutSplitPercentage: number;
+    createHoldOutSplit: boolean;
 }

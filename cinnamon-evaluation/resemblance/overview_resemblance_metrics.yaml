@@ -5,7 +5,7 @@ resemblance:
     - display_name: "Mode"
       function_name: mode
       description: "Identifies the most frequent category in categorical features."
-      interpretation: "Compare if the most frequent categories in the protected data match those in the original data. High agreement is desirable."
+      interpretation: "Compare if the most frequent categories in the protected data match those in the original data. This metric is always calcualted."
       visualization_type: "important_metrics"
       version: "0.0.1"
 
@@ -19,7 +19,7 @@ resemblance:
     - display_name: "Mean"
       function_name: mean
       description: "Calculates the average value for numerical features."
-      interpretation: "Small deviations indicate that the protected data accurately represent the central tendency of the original data."
+      interpretation: "Small deviations indicate that the protected data accurately represent the central tendency of the original data. This metric is always calcualted."
       visualization_type: "important_metrics"
       version: "0.0.1"
 
@@ -33,7 +33,7 @@ resemblance:
     - display_name: "Standard Deviation"
       function_name: standard_deviation
       description: "A measure of the average deviation of values from the mean."
-      interpretation: "Similar values mean that the data are similarly dispersed around the mean."
+      interpretation: "Similar values mean that the data are similarly dispersed around the mean. This metric is always calcualted."
       visualization_type: "important_metrics"
       version: "0.0.1"
 
@@ -89,14 +89,14 @@ resemblance:
     - display_name: "Minimum"
       function_name: minimum
       description: "The smallest value present in a feature."
-      interpretation: "Check if the protected data maintain realistic minimum values compared to the original data. Important for plausible data ranges."
+      interpretation: "Check if the protected data maintain realistic minimum values compared to the original data. Important for plausible data ranges. This metric is always calcualted."
       visualization_type: "important_metrics"
       version: "0.0.1"
 
     - display_name: "Maximum"
       function_name: maximum
       description: "The largest value present in a feature."
-      interpretation: "Check if the protected data maintain realistic maximum values compared to the original data. Important for plausible data ranges."
+      interpretation: "Check if the protected data maintain realistic maximum values compared to the original data. Important for plausible data ranges. This metric is always calcualted."
       visualization_type: "important_metrics"
       version: "0.0.1"
 
@@ -145,13 +145,13 @@ resemblance:
     - display_name: "Missing Values Count"
       function_name: missing_values_count
       description: "Counts the number of missing or empty values per feature."
-      interpretation: "A similar count in original and protected data is usually desirable."
+      interpretation: "A similar count in original and protected data is usually desirable. This metric is always calcualted."
       visualization_type: "important_metrics"
       version: "0.0.1"
 
     - display_name: "Distinct Values"
       function_name: distinct_values
-      description: "Counts how many different, unique values a categorical feature has."
+      description: "Counts how many different, unique values a categorical feature has. This metric is always calcualted."
       interpretation: "A similar count indicates that the diversity of values in the protected data corresponds to that of the original data."
       visualization_type: "important_metrics"
       version: "0.0.1"

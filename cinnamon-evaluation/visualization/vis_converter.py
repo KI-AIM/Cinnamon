@@ -656,8 +656,8 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
                     "overall_resemblance": {
                         "description": "This metric quantifies the statistical similarity between synthetic and real data by calculating the normalized differences across all attributes and statistical measures. The aggregated score may not fully capture specific distributional anomalies or outliers in individual metrics. It is strongly recommended to examine the detailed statistical comparisons for a complete understanding of data resemblance.",
                         "values": {
-                            "real": 0.0,  
-                            "synthetic": overall_resemblance_score
+                            "real": 1.0,  
+                            "synthetic": (1 - overall_resemblance_score)
                         }
                     },
                     "overall_utility": {

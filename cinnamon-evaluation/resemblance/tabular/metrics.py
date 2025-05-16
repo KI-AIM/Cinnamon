@@ -1,4 +1,4 @@
-from typing import Dict, Union, Optional, Any
+from typing import Dict, Union, Optional, Any, List
 
 import numpy as np
 import pandas as pd
@@ -6,6 +6,7 @@ from scipy import stats
 from scipy.spatial import distance
 from scipy.stats import gaussian_kde
 import phik 
+import math
 
 
 def validate_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> tuple:
@@ -492,7 +493,7 @@ def calculate_kolmogorov_smirnov(real, synthetic):
         raise Exception(f"Error calculating Kolmogorov-Smirnov test: {str(e)}")
 
 
-def calculate_density(real, synthetic, num_points=50):
+def calculate_density(real: pd.DataFrame, synthetic: pd.DataFrame, num_points: int = 50) -> Dict[str, Dict[str, Union[str, List[float]]]]:
     """
     Calculates the density function for each numeric attribute with error handling and validation.
 
@@ -513,75 +514,75 @@ def calculate_density(real, synthetic, num_points=50):
             real_col_data = real_numeric[column].dropna()
             synthetic_col_data = synthetic_numeric[column].dropna()
 
-            if len(real_col_data) < 2 or len(synthetic_col_data) < 2:
-                density_results['real'][column] = {
-                    'x_values': 'NA',
-                    'density': 'NA',
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 0
-                }
-                density_results['synthetic'][column] = {
-                    'x_values': 'NA',
-                    'density': 'NA',
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 1
-                }
-                continue
+            len_real = len(real_col_data)
+            len_synthetic = len(synthetic_col_data)
 
-            try:
+            # Determine the range for x_values based on available data
+            min_val = None
+            max_val = None
+            use_real_range = len_real >= 2
+            use_synthetic_range = len_synthetic >= 2
+
+            if use_real_range and use_synthetic_range:
                 min_val = min(real_col_data.min(), synthetic_col_data.min())
                 max_val = max(real_col_data.max(), synthetic_col_data.max())
+            elif use_real_range:
+                min_val = real_col_data.min()
+                max_val = real_col_data.max()
+            elif use_synthetic_range:
+                min_val = synthetic_col_data.min()
+                max_val = synthetic_col_data.max()
+            else:
+                # Neither has sufficient data, use a default range
+                min_val = 0.0
+                max_val = 1.0
 
-                if min_val == max_val:
-                    min_val -= 0.5
-                    max_val += 0.5
+            # Add a buffer if min and max are identical to avoid issues with linspace/KDE
+            if min_val == max_val:
+                buffer = 0.5 if min_val == 0 else abs(min_val) * 0.1 + 0.5 # Small buffer relative to value or default
+                min_val -= buffer
+                max_val += buffer
 
-                x_values = np.linspace(min_val, max_val, num_points)
 
+            x_values = np.linspace(min_val, max_val, num_points).tolist()
+
+            # Calculate real density or assign zeros
+            if len_real < 2:
+                density_real = np.zeros(num_points).tolist()
+            else:
                 try:
                     kde_real = gaussian_kde(real_col_data)
-                    density_real = kde_real(x_values)
+                    density_real = kde_real(x_values).tolist()
                 except Exception:
-                    density_real = np.zeros(num_points)
+                    # KDE calculation failed even with >= 2 points (e.g., all same value)
+                    density_real = np.zeros(num_points).tolist()
 
+            # Calculate synthetic density or assign zeros
+            if len_synthetic < 2:
+                density_synthetic = np.zeros(num_points).tolist()
+            else:
                 try:
                     kde_synthetic = gaussian_kde(synthetic_col_data)
-                    density_synthetic = kde_synthetic(x_values)
+                    density_synthetic = kde_synthetic(x_values).tolist()
                 except Exception:
-                    density_synthetic = np.zeros(num_points)
+                    # KDE calculation failed even with >= 2 points
+                    density_synthetic = np.zeros(num_points).tolist()
 
-                density_results['real'][column] = {
-                    'x_values': x_values.tolist(),
-                    'density': density_real.tolist(),
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 0
-                }
-                density_results['synthetic'][column] = {
-                    'x_values': x_values.tolist(),
-                    'density': density_synthetic.tolist(),
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 1
-                }
-
-            except Exception as e:
-                density_results['real'][column] = {
-                    'x_values': 'Error',
-                    'density': f'Error calculating density: {str(e)}',
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 0
-                }
-                density_results['synthetic'][column] = {
-                    'x_values': 'Error',
-                    'density': f'Error calculating density: {str(e)}',
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 1
-                }
+            # Assign results for the column
+            density_results['real'][column] = {
+                'x_values': x_values,
+                'density': density_real,
+                'x_axis': column,
+                'y_axis': "Frequency",
+                'color_index': 0
+            }
+            density_results['synthetic'][column] = {
+                'x_values': x_values,
+                'density': density_synthetic,
+                'x_axis': column,
+                'y_axis': "Frequency",
+                'color_index': 1
+            }
 
         return density_results
 
@@ -589,7 +590,7 @@ def calculate_density(real, synthetic, num_points=50):
         raise Exception(f"Error calculating density functions: {str(e)}")
 
 
-def calculate_histogram(real: pd.DataFrame, synthetic: pd.DataFrame, method: str = 'auto', max_bins: int = 25) -> dict:
+def calculate_histogram(real: pd.DataFrame, synthetic: pd.DataFrame, method: str = 'auto', max_bins: int = 15) -> dict:
     """
     Calculates histogram configurations for numeric columns with error handling, using percentages instead of counts.
     Uses adaptive bin formatting based on data range and scientific notation for extreme values.
@@ -627,16 +628,17 @@ def calculate_histogram(real: pd.DataFrame, synthetic: pd.DataFrame, method: str
         """
         range_span = max_val - min_val
         bin_width = range_span / num_bins if num_bins > 0 else range_span
-        
-        # Calculate appropriate significant digits based on bin width
-        if bin_width == 0 or not np.isfinite(bin_width):  # Handle edge cases
+
+        if bin_width == 0 or not np.isfinite(bin_width):
             sig_digits = 2
         else:
-            # Use logarithmic scale to determine significant digits
-            sig_digits = max(2, min(6, int(-np.log10(bin_width) + 3)))
-        
+            try:
+                sig_digits = max(2, min(6, int(-math.log10(bin_width) + 3)))
+            except (ValueError, OverflowError):
+                 sig_digits = 2
+
+
         def format_value(value: float) -> str:
-            # Handle infinity and NaN
             if not np.isfinite(value):
                 if np.isposinf(value):
                     return "Infinity"
@@ -644,25 +646,17 @@ def calculate_histogram(real: pd.DataFrame, synthetic: pd.DataFrame, method: str
                     return "-Infinity"
                 else:
                     return "NaN"
-            
+
             abs_val = abs(value)
-            
+
             try:
-                # Use scientific notation only for:
-                # 1. Very small numbers (< 0.0001)
-                # 2. Very large numbers (>= 10000)
-                
-                # Only use scientific notation for very small numbers (< 0.0001)
                 very_small = abs_val > 0 and abs_val < 0.0001
                 very_large = abs_val >= 10000
-                
+
                 if very_small or very_large:
-                    # Use only 2 significant digits for scientific notation
                     return f"{value:.2e}"
-                
-                # For regular numbers, use appropriate decimal places
+
                 if abs_val < 1:
-                    # For small numbers, use appropriate decimal places
                     if abs_val < 0.01:
                         decimal_places = 4
                     elif abs_val < 0.1:
@@ -675,21 +669,21 @@ def calculate_histogram(real: pd.DataFrame, synthetic: pd.DataFrame, method: str
                     decimal_places = 1
                 elif abs_val < 1000:
                     decimal_places = 0
-                else:  # For larger numbers that don't need scientific notation
+                else:
                     decimal_places = 0
-                    
-                # Round to multiple of 5 for larger values (100-9999)
+
                 if abs_val >= 100 and abs_val < 10000:
                     multiplier = 5 if abs_val < 1000 else 50
-                    value = round(value / multiplier) * multiplier
+                    value_rounded = round(value / multiplier) * multiplier
                     decimal_places = 0
-                    
+                    return f"{value_rounded:.{decimal_places}f}"
+
+
                 return f"{value:.{decimal_places}f}"
-            
+
             except Exception:
-                # Fallback for any unexpected formatting errors
                 return str(value)
-        
+
         return format_value
 
     histogram_results = {'real': {}, 'synthetic': {}}
@@ -702,113 +696,153 @@ def calculate_histogram(real: pd.DataFrame, synthetic: pd.DataFrame, method: str
                 real_data = real_numeric[column].dropna()
                 synthetic_data = synthetic_numeric[column].dropna()
 
-                # Skip if not enough data points
-                if len(real_data) == 0 or len(synthetic_data) == 0:
-                    empty_result = {
-                        'frequencies': [],
-                        'x_axis': column,
-                        'y_axis': "Percentage"
-                    }
-                    histogram_results['real'][column] = empty_result
-                    histogram_results['synthetic'][column] = empty_result
-                    continue
-
-                combined_data = np.concatenate([real_data, synthetic_data])
-                
-                # Filter out infinities and NaNs before calculating bin edges
-                finite_data = combined_data[np.isfinite(combined_data)]
-                
-                # If all values are non-finite, create empty result
-                if len(finite_data) == 0:
-                    empty_result = {
-                        'frequencies': [],
-                        'x_axis': column,
-                        'y_axis': "Percentage"
-                    }
-                    histogram_results['real'][column] = empty_result
-                    histogram_results['synthetic'][column] = empty_result
-                    continue
-                
-                try:
-                    initial_bins = np.histogram_bin_edges(finite_data, bins=method)
-                except Exception:
-                    # Fallback to linear bins if auto method fails
-                    initial_bins = np.linspace(finite_data.min(), finite_data.max(),
-                                              min(max_bins, len(np.unique(finite_data))) + 1)
-
-                bins = initial_bins if len(initial_bins) - 1 <= max_bins else \
-                    np.linspace(finite_data.min(), finite_data.max(), max_bins + 1)
-                
-                # Get data range information for adaptive formatting
-                data_min = finite_data.min()
-                data_max = finite_data.max()
-                num_bins = len(bins) - 1
-                
-                # Get the adaptive formatter function
-                format_value = get_optimal_format(data_min, data_max, num_bins)
-                
-                # Create bin labels with adaptive formatting
-                bin_labels = [f"{format_value(bins[i])} | {format_value(bins[i + 1])}"
-                             for i in range(len(bins) - 1)]
-
-                # Continue using original bins for histogram calculation to maintain accuracy
-                # Handle potential infinity issues by only counting finite values
                 real_finite = real_data[np.isfinite(real_data)]
                 synthetic_finite = synthetic_data[np.isfinite(synthetic_data)]
-                
-                real_hist, _ = np.histogram(real_finite, bins=bins)
-                synthetic_hist, _ = np.histogram(synthetic_finite, bins=bins)
 
-                real_total = len(real_finite)
-                synthetic_total = len(synthetic_finite)
-                real_percentages = (real_hist / real_total * 100) if real_total > 0 else real_hist * 0
-                synthetic_percentages = (
-                    synthetic_hist / synthetic_total * 100) if synthetic_total > 0 else synthetic_hist * 0
+                len_real_finite = len(real_finite)
+                len_synthetic_finite = len(synthetic_finite)
 
-                color_indices = {
-                    bin_labels[i]: get_color_index(
-                        calculate_percentage_diff(real_perc, syn_perc)
-                    )
-                    for i, (real_perc, syn_perc) in enumerate(zip(real_percentages, synthetic_percentages))
-                }
+                bins = None
+                data_min = None
+                data_max = None
 
-                real_frequencies = [
-                    {
-                        'label': str(bin_label),
-                        'value': float(percentage),
-                        'color_index': 0
+                if len_real_finite == 0:
+                    # Real data is missing or all non-finite, cannot determine bins from real.
+                    # Assign empty result for both.
+                    empty_result = {
+                        'frequencies': [],
+                        'x_axis': column,
+                        'y_axis': "Percentage"
                     }
-                    for bin_label, percentage in zip(bin_labels, real_percentages)
-                ]
+                    histogram_results['real'][column] = empty_result
+                    histogram_results['synthetic'][column] = empty_result
+                    continue # Move to the next column
 
-                synthetic_frequencies = [
-                    {
-                        'label': str(bin_label),
-                        'value': float(percentage),
-                        'color_index': color_indices[bin_label]
+                elif len_synthetic_finite == 0:
+                    # Real data is available and finite, synthetic is missing or all non-finite.
+                    # Calculate bins from real data only.
+                    data_min = real_finite.min()
+                    data_max = real_finite.max()
+
+                    try:
+                        initial_bins = np.histogram_bin_edges(real_finite, bins=method)
+                    except Exception:
+                         initial_bins = np.linspace(data_min, data_max, min(max_bins, len(np.unique(real_finite))) + 1)
+
+                    bins = initial_bins if len(initial_bins) - 1 <= max_bins else \
+                         np.linspace(data_min, data_max, max_bins + 1)
+
+                    # Calculate real histogram
+                    real_hist, _ = np.histogram(real_finite, bins=bins)
+                    real_percentages = (real_hist / len_real_finite * 100) if len_real_finite > 0 else real_hist * 0
+
+                    # Synthetic histogram is all zeros using the same bins
+                    synthetic_hist = np.zeros_like(real_hist)
+                    synthetic_percentages = np.zeros_like(real_percentages) # Will be zeros
+
+
+                else:
+                    # Both real and synthetic have finite data.
+                    # Calculate bins from combined finite data.
+                    combined_finite = np.concatenate([real_finite, synthetic_finite])
+
+                    if len(combined_finite) == 0:
+                         empty_result = {
+                            'frequencies': [],
+                            'x_axis': column,
+                            'y_axis': "Percentage"
+                        }
+                         histogram_results['real'][column] = empty_result
+                         histogram_results['synthetic'][column] = empty_result
+                         continue # Move to the next column
+
+
+                    data_min = combined_finite.min()
+                    data_max = combined_finite.max()
+
+                    try:
+                        initial_bins = np.histogram_bin_edges(combined_finite, bins=method)
+                    except Exception:
+                        initial_bins = np.linspace(data_min, data_max, min(max_bins, len(np.unique(combined_finite))) + 1)
+
+
+                    bins = initial_bins if len(initial_bins) - 1 <= max_bins else \
+                        np.linspace(data_min, data_max, max_bins + 1)
+
+                    # Calculate both real and synthetic histograms using combined bins
+                    real_hist, _ = np.histogram(real_finite, bins=bins)
+                    synthetic_hist, _ = np.histogram(synthetic_finite, bins=bins)
+
+                    real_percentages = (real_hist / len_real_finite * 100) if len_real_finite > 0 else real_hist * 0
+                    synthetic_percentages = (
+                        synthetic_hist / len_synthetic_finite * 100) if len_synthetic_finite > 0 else synthetic_hist * 0
+
+                # If bins were calculated (i.e., not the len_real_finite == 0 case)
+                if bins is not None:
+                    num_bins = len(bins) - 1
+
+                    # Get the adaptive formatter function based on the data range used for bins
+                    format_value = get_optimal_format(data_min, data_max, num_bins)
+
+                    # Create bin labels with adaptive formatting
+                    bin_labels = [f"{format_value(bins[i])} | {format_value(bins[i + 1])}"
+                                  for i in range(len(bins) - 1)]
+
+                    color_indices = {
+                        bin_labels[i]: get_color_index(
+                            calculate_percentage_diff(real_perc, syn_perc)
+                        )
+                        for i, (real_perc, syn_perc) in enumerate(zip(real_percentages, synthetic_percentages))
                     }
-                    for bin_label, percentage in zip(bin_labels, synthetic_percentages)
-                ]
 
-                histogram_results['real'][column] = {
-                    'frequencies': real_frequencies,
-                    'x_axis': column,
-                    'y_axis': "Percentage"
-                }
+                    real_frequencies = [
+                        {
+                            'label': str(bin_label),
+                            'value': float(percentage),
+                            'color_index': 0
+                        }
+                        for bin_label, percentage in zip(bin_labels, real_percentages)
+                    ]
 
-                histogram_results['synthetic'][column] = {
-                    'frequencies': synthetic_frequencies,
-                    'x_axis': column,
-                    'y_axis': "Percentage"
-                }
+                    synthetic_frequencies = [
+                        {
+                            'label': str(bin_label),
+                            'value': float(percentage),
+                            'color_index': color_indices[bin_label]
+                        }
+                        for bin_label, percentage in zip(bin_labels, synthetic_percentages)
+                    ]
+
+                    histogram_results['real'][column] = {
+                        'frequencies': real_frequencies,
+                        'x_axis': column,
+                        'y_axis': "Percentage"
+                    }
+
+                    histogram_results['synthetic'][column] = {
+                        'frequencies': synthetic_frequencies,
+                        'x_axis': column,
+                        'y_axis': "Percentage"
+                    }
 
             except Exception as e:
-                raise Exception(f"Error calculating histograms for column {column}: {str(e)}")
+                 # Assign empty result for both on per-column error
+                 print(f"Warning: Error calculating histograms for column {column}: {str(e)}. Skipping column.")
+                 empty_result = {
+                    'frequencies': [],
+                    'x_axis': column,
+                    'y_axis': "Percentage"
+                }
+                 histogram_results['real'][column] = empty_result
+                 histogram_results['synthetic'][column] = empty_result
+
 
         return histogram_results
 
     except Exception as e:
-        raise Exception(f"Error calculating histograms: {str(e)}")
+        # Handle errors that occur outside the per-column calculation loop (e.g. in validate_numeric_dataframes)
+        print(f"Error calculating histograms: {str(e)}. Returning empty results.")
+        return {'real': {}, 'synthetic': {}}
 
 
 def calculate_frequencies(real, synthetic):

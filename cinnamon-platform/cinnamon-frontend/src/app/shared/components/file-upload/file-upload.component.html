@@ -2,7 +2,7 @@
      (dragleave)="onDragLeave($event)"
      (drop)="onDrop($event)" [class.dragover]="isDragging">
     <div class="drop-zone-content">
-        <button type="button" mat-raised-button color="primary" (click)="fileInput.click()" [disabled]="disabled">
+        <button type="button" mat-raised-button color="primary" (click)="openFileDialog()" [disabled]="disabled">
             Choose File
         </button>
         <input hidden (input)="onFileInput($event)" #fileInput type="file" [accept]="accept" [disabled]="disabled">

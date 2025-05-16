@@ -9,7 +9,7 @@ import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
 import { Algorithm } from "../../model/algorithm";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
-import { AlgorithmService, ConfigurationInfo, ReadConfigResult2 } from "../../services/algorithm.service";
+import { AlgorithmService, ConfigData, ConfigurationInfo } from "../../services/algorithm.service";
 import { ConfigurationService } from "../../services/configuration.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
 import { StatusService } from "../../services/status.service";
@@ -43,7 +43,7 @@ export class ConfigurationPageComponent implements OnInit {
     @Input() public additionalConfigs: ConfigurationAdditionalConfigs | null = null
     @Input() public hasAlgorithmSelection: boolean = true;
 
-    protected configurationData$: Observable<ReadConfigResult2 | null>;
+    protected configurationData$: Observable<ConfigData | null>;
     protected status$: Observable<Status>;
 
     /**

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { TitleService } from 'src/app/core/services/title-service.service';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
 import { DataService } from 'src/app/shared/services/data.service';
@@ -14,17 +14,7 @@ import {
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { StatusService } from "@shared/services/status.service";
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
-import {
-    catchError,
-    debounceTime,
-    distinctUntilChanged,
-    map,
-    Observable,
-    of,
-    Subscription,
-    switchMap,
-    tap,
-} from "rxjs";
+import { catchError, debounceTime, distinctUntilChanged, map, Observable, of, switchMap, tap } from "rxjs";
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from "@angular/forms";
 import { noSpaceValidator } from "@shared/directives/no-space-validator.directive";
 import { DateFormatConfiguration } from "@shared/model/date-format-configuration";
@@ -43,9 +33,7 @@ import { Status } from "@shared/model/status";
     styleUrls: ['./data-configuration.component.less'],
     standalone: false
 })
-export class DataConfigurationComponent implements OnInit, OnDestroy {
-    private dataConfigurationSubscription: Subscription;
-
+export class DataConfigurationComponent implements OnInit {
     protected attributeConfigurationform: FormGroup;
     protected dataSetConfigurationForm: FormGroup | null;
 
@@ -54,6 +42,7 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
     protected dataSetInfo$: Observable<DataSetInfo | null>;
     protected isFileTypeXLSX$: Observable<boolean>;
     protected status$: Observable<Status>;
+    protected dataConfiguration$: Observable<DataConfiguration>;
 
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
 
@@ -83,18 +72,20 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
             })
         );
 
-        this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
-            if (this.configuration.localDataConfiguration !== null) {
-                this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration);
-            } else {
-                this.setEmptyColumnNames(value);
-                this.attributeConfigurationform = this.createAttributeConfigurationForm(value);
-            }
+        this.dataConfiguration$ = this.configuration.dataConfiguration$.pipe(
+            tap(value => {
+                if (this.configuration.localDataConfiguration !== null) {
+                    this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration);
+                } else {
+                    this.setEmptyColumnNames(value);
+                    this.attributeConfigurationform = this.createAttributeConfigurationForm(value);
+                }
 
-            this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
-                this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
-            });
-        });
+                this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
+                    this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
+                });
+            }),
+        );
 
         this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
             tap(value => {
@@ -107,10 +98,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         );
 
         this.status$ = this.statusService.status$;
-    }
-
-    ngOnDestroy() {
-        this.dataConfigurationSubscription.unsubscribe();
     }
 
     protected get createHoldOutSplit(): boolean {

@@ -23,6 +23,7 @@ import { HttpClient } from "@angular/common/http";
     styleUrl: './report.component.less'
 })
 export class ReportComponent implements OnInit {
+    private readonly PAGE_HEIGHT = 1122;
 
     protected metricConfig$: Observable<ProjectSettings>;
     protected statistics$: Observable<StatisticsResponse | null>;
@@ -98,11 +99,14 @@ export class ReportComponent implements OnInit {
             newChart!.parentElement!.insertBefore(image, newChart);
         }
 
-        // Allow page breaks in big elements to prevent bit gaps.
+        // Handle elements that do not fit on one page
         mywindow.document.querySelectorAll(".report-keep-together").forEach(e => {
-            // A4 is 1123 px high, and we have a margin of 48 px
-            if (e.clientHeight > (1123 - (2 * 48))) {
-                e.classList.remove("report-keep-together");
+            if (e.clientHeight > this.PAGE_HEIGHT) {
+                // Allow page breaks in big elements to prevent bit gaps.
+                // e.classList.remove("report-keep-together");
+
+                // Split table into multiple tables
+                this.breakTable(e as HTMLElement);
             }
         });
 
@@ -110,6 +114,59 @@ export class ReportComponent implements OnInit {
         mywindow.focus(); // necessary for IE >= 10*/
 
         mywindow.print();
+    }
+
+    /**
+     * Splits the given table into multiple tables so that each new table fits on one page.
+     * @param table The table to split.
+     * @private
+     */
+    private breakTable(table : HTMLElement) {
+        let tableStart = table.getBoundingClientRect().top;
+        let newTable: HTMLElement | null = null;
+
+        const oho = table.querySelectorAll(".report-table-row");
+
+        for (let rowIndex = 0; rowIndex < oho.length; rowIndex++) {
+            const row = oho[rowIndex];
+
+            const rect = row.getBoundingClientRect();
+            const pos = rect.top - tableStart;
+
+            if (newTable != null) {
+                // The row is in the new table, so remove it from the original table
+                row.remove();
+            } else if (pos > (this.PAGE_HEIGHT)) {
+                row.id ="breakBefore";
+
+                // Create a new table
+                newTable = table.cloneNode(true) as HTMLElement;
+
+                // Remove previous rows from the new table
+                const newRows = newTable.querySelectorAll(".report-table-row");
+                for (let i = 0; i < newRows.length; i++) {
+                    const newRow = newRows[i];
+                    if (newRow.id === "breakBefore") {
+                        // Reset id for next split
+                        newRow.id = "";
+                        break;
+                    }
+                    newRow.remove();
+                }
+
+                // Insert table
+                table.parentElement!.insertBefore(newTable, table.nextSibling);
+                tableStart = newTable.getBoundingClientRect().top;
+
+                // Remove row form original table
+                row.remove();
+            }
+        }
+
+        // Split the new table if it is still bigger than one page
+        if (newTable != null && newTable.clientHeight > this.PAGE_HEIGHT) {
+            this.breakTable(newTable);
+        }
     }
 
 }

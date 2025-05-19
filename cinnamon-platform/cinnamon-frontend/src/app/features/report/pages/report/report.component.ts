@@ -63,13 +63,13 @@ export class ReportComponent implements OnInit {
     }
 
     private doPrintReport(styleString: string) {
-        const mywindow = window.open('', 'PRINT', 'height=650,width=900,top=100,left=150');
+        const mywindow = window.open('_', 'PRINT', 'height=650,width=900,top=100,left=150');
 
         if (!mywindow) {
             return;
         }
 
-        mywindow.document.write(`<html><head><title>Report</title>`);
+        mywindow.document.write(`<html><head><title>Cinnamon Privacy-Report</title>`);
         mywindow.document.write(`<style>${styleString}</style>`);
         mywindow.document.write('</head><body >');
         mywindow.document.write(document.getElementById("report")!.innerHTML);

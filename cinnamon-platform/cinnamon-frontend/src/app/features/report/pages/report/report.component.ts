@@ -141,6 +141,11 @@ export class ReportComponent implements OnInit {
 
                 // Create a new table
                 newTable = table.cloneNode(true) as HTMLElement;
+                const description = newTable.querySelector(".report-table-description");
+                if (description != null) {
+                    description.classList.add("report-table-description-continued");
+                    description.innerHTML = " Continued";
+                }
 
                 // Remove previous rows from the new table
                 const newRows = newTable.querySelectorAll(".report-table-row");

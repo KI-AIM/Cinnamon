@@ -80,6 +80,15 @@
     border-collapse: collapse;
     margin: 15px 0;
 }
+
+.report-table-title {
+    font-weight: bold;
+}
+
+.report-table-description-continued {
+    font-style: italic;
+}
+
 .report-th, .report-td {
     border: 1px solid #ddd;
     padding: 8px 12px;

@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatButton } from "@angular/material/button";
 import { SharedModule } from "../../../../shared/shared.module";
-import { AsyncPipe, NgIf } from "@angular/common";
+import { AsyncPipe, NgForOf, NgIf } from "@angular/common";
 import { Observable } from "rxjs";
 import { ProjectSettings } from "../../../../shared/model/project-settings";
 import { TitleService } from "../../../../core/services/title-service.service";
@@ -17,7 +17,8 @@ import { HttpClient } from "@angular/common/http";
         MatButton,
         SharedModule,
         AsyncPipe,
-        NgIf
+        NgIf,
+        NgForOf
     ],
     templateUrl: './report.component.html',
     styleUrl: './report.component.less'
@@ -30,6 +31,13 @@ export class ReportComponent implements OnInit {
 
     @ViewChildren('chart', {read: ElementRef}) protected chartDivs: QueryList<ElementRef<HTMLElement>>;
     @ViewChildren('chart') protected charts: QueryList<ChartFrequencyComponent>;
+
+
+    // TODO take form statistics
+    protected utilityScoreO = 1.0;
+    protected utilityScoreP = 0.7;
+    protected riskScoreO = 0.1;
+    protected riskScoreP = 0.7;
 
     constructor(
         private readonly http: HttpClient,
@@ -174,4 +182,37 @@ export class ReportComponent implements OnInit {
         }
     }
 
+    protected get utilityScoreOX(): number {
+        return this.calculatePos(this.utilityScoreO);
+    }
+
+    protected get utilityScorePX(): number {
+        return this.calculatePos(this.utilityScoreP);
+    }
+
+    protected get riskScoreOX(): number {
+        return this.calculatePos(this.riskScoreO);
+    }
+
+    protected get riskScorePX(): number {
+        return this.calculatePos(this.riskScoreP);
+    }
+
+    protected offsetText(value: number): number {
+        return this.clamp(this.calculatePos(value) - 60, 10, 640);
+    }
+
+    private calculatePos(percentage: number) {
+        return (percentage * 740) + 20;
+    }
+
+    private clamp(value: number, min: number, max: number): number {
+        return Math.min(Math.max(value, min), max);
+    }
+
+    protected getColor(value: string, v: number): string {
+        return this.statisticsService.getColorScheme(value)[v];
+    }
+
+    protected readonly StatisticsService = StatisticsService;
 }

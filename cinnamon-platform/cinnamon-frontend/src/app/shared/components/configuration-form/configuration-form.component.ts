@@ -1,4 +1,14 @@
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    QueryList,
+    ViewChild,
+    ViewChildren
+} from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
@@ -10,6 +20,8 @@ import {
 import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { HttpErrorResponse } from "@angular/common/http";
+import { ErrorHandlingService } from "../../services/error-handling.service";
+import { ConfigurationService } from "../../services/configuration.service";
 
 /**
  * HTML form and submit button for one algorithm.
@@ -40,7 +52,7 @@ export class ConfigurationFormComponent implements OnInit {
      * The definition of the configuration fetched from the external API.
      * @protected
      */
-    protected algorithmDefinition: AlgorithmDefinition;
+    protected algorithmDefinition: AlgorithmDefinition | null = null;
     /**
      * Dynamically created form for the configuration.
      * @protected
@@ -58,15 +70,15 @@ export class ConfigurationFormComponent implements OnInit {
      */
     @Output() public submitConfiguration = new EventEmitter<Object>();
 
-    /**
-     * Event that gets triggered when an error occurs in the form.
-     */
-    @Output() public onError: EventEmitter<string> = new EventEmitter();
-
     @ViewChildren(ConfigurationGroupComponent) private groups: QueryList<ConfigurationGroupComponent>;
+
+    @ViewChild(ConfigurationGroupComponent) private rootGroup: ConfigurationGroupComponent;
 
     constructor(
         private readonly anonService: AlgorithmService,
+        private readonly changeD: ChangeDetectorRef,
+        private readonly configurationService: ConfigurationService,
+        private readonly errorHandlingService: ErrorHandlingService,
     ) {
        this.form = new FormGroup({});
     }
@@ -87,11 +99,9 @@ export class ConfigurationFormComponent implements OnInit {
                         });
                     },
                 error: (err: HttpErrorResponse) => {
-                    this.onError.emit(`Failed to load algorithm definition! Status: ${err.status} (${err.statusText})`);
+                    this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
                 },
             });
-
-
     }
 
     /**
@@ -113,13 +123,13 @@ export class ConfigurationFormComponent implements OnInit {
      * Reads the configuration from the cache.
      */
     public readFromCache(): void {
-        if (this.anonService.configCache[this.algorithm.name]) {
+        if (this.configurationService.getConfiguration(this.anonService.getConfigurationName(), this.algorithm)) {
             //Timeout is 0, so function is called before data is overwritten
             setTimeout(() => {
-                const config = this.anonService.configCache[this.anonService.selectCache!.name];
+                const config = this.configurationService.getSelectedConfiguration(this.anonService.getConfigurationName());
                 // config can be undefined if no changes have been made
                 if (config) {
-                    this.setConfiguration(this.anonService.configCache[this.anonService.selectCache!.name]);
+                    this.setConfiguration(config);
                 }
             }, 0);
         }
@@ -132,7 +142,7 @@ export class ConfigurationFormComponent implements OnInit {
     public setConfiguration(configuration: Object) {
         //Wait here so that form is loaded before updating it
         setTimeout(() => {
-            if (Object.keys(this.form.controls).length === 0) {
+            if (this.algorithmDefinition === null || Object.keys(this.form.controls).length === 0) {
                 return;
             }
 
@@ -141,13 +151,19 @@ export class ConfigurationFormComponent implements OnInit {
                 group.handleMissingOptions(configuration);
             }
             this.form.patchValue(configuration);
+            this.rootGroup.patchComponents(configuration);
+            this.changeD.detectChanges();
         }, 100);
     }
 
     private fixAttributeLists(cde: ConfigurationGroupDefinition, obj: Object, form: FormGroup) {
         if (cde.options) {
             for (const [key, value] of Object.entries(cde.options)) {
-                this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup);
+                const groupConfiguration = (obj as Record<string, any>)[key];
+                // The configuration is not available if the option is not checked
+                if (groupConfiguration) {
+                    this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup);
+                }
             }
         }
         if (cde.configurations) {
@@ -209,7 +225,15 @@ export class ConfigurationFormComponent implements OnInit {
      * @private
      */
     private createForm(algorithmDefinition: AlgorithmDefinition): FormGroup {
-        return this.createGroup(algorithmDefinition);
+        const form = this.createGroup(algorithmDefinition);
+
+        if (this.additionalConfigs) {
+            for (const additionalConfig of this.additionalConfigs.configs) {
+                additionalConfig.initializeForm(form);
+            }
+        }
+
+        return form;
     }
 
     private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }) {

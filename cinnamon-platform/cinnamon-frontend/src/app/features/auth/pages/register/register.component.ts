@@ -4,6 +4,7 @@ import {UserService} from "../../../../shared/services/user.service";
 import { HttpErrorResponse } from "@angular/common/http";
 import {Router} from "@angular/router";
 import {TitleService} from "../../../../core/services/title-service.service";
+import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
 
 interface RegisterForm {
     email: FormControl<string>;
@@ -18,15 +19,14 @@ interface RegisterForm {
     standalone: false
 })
 export class RegisterComponent {
-    registerError: string[];
     registerForm: FormGroup<RegisterForm>;
 
     constructor(
+        private readonly errorHandlingService: ErrorHandlingService,
         private readonly router: Router,
         private readonly titleService: TitleService,
         private readonly userService: UserService,
     ) {
-        this.registerError = [];
         this.registerForm = new FormGroup<RegisterForm>({
             email: new FormControl<string>("", {
                 nonNullable: true,
@@ -63,11 +63,6 @@ export class RegisterComponent {
     }
 
     handleRegisterFailed(error: HttpErrorResponse) {
-        this.registerError = [];
-        for (const field in error.error.errorDetails) {
-            for (const fieldError of error.error.errorDetails[field]) {
-                this.registerError.push(fieldError);
-            }
-        }
+        this.errorHandlingService.addError(error);
     }
 }

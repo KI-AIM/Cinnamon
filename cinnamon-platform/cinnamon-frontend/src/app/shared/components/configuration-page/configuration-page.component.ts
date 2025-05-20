@@ -12,6 +12,7 @@ import { StatusService } from "../../services/status.service";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { from, mergeMap, Observable, switchMap } from "rxjs";
 import { ConfigurationService } from "../../services/configuration.service";
+import { ErrorHandlingService } from "../../services/error-handling.service";
 
 /**
  * Entire configuration page including the algorithm selection,
@@ -43,13 +44,6 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      */
     protected disabled: boolean = true;
 
-    /**
-     * Error displayed on the top of the page.
-     * Not visible if null.
-     * @protected
-     */
-    protected error: string | null = null;
-
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') private forms: ConfigurationFormComponent;
 
@@ -57,6 +51,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         protected readonly algorithmService: AlgorithmService,
         private readonly changeDetectorRef: ChangeDetectorRef,
         private readonly configurationService: ConfigurationService,
+        private readonly errorHandlingService: ErrorHandlingService,
         private httpClient: HttpClient,
         private readonly router: Router,
         private readonly statusService: StatusService,
@@ -78,15 +73,13 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         // Get available algorithms
         this.algorithmService.algorithms.subscribe({
             next: value => {
-                this.error = null;
                 this.algorithms = value;
                 if (!this.hasAlgorithmSelection) {
-                    this.algorithmService.selectCache = this.algorithms[0];
+                    this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.algorithms[0]);
                     this.readFromCache();
                 }
             }, error: error => {
-                console.log(error);
-                this.error = `Failed to load available algorithms. Status: ${error.status} (${error.statusText})`;
+                this.errorHandlingService.addError(error);
             }
         });
     }
@@ -100,10 +93,9 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * Updates the cached value of the current selected form.
      * @protected
      */
-    protected updateConfigCache(): void
-    {
+    protected updateConfigCache(): void {
         if (this.selection.selectedOption && this.forms)  {
-            this.algorithmService.configCache[this.selection.selectedOption.name] = this.forms.formData;
+            this.configurationService.setConfiguration(this.algorithmService.getConfigurationName(), this.selection.selectedOption, this.forms.formData);
         }
     }
 
@@ -112,7 +104,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * @protected
      */
     protected updateSelectCache(): void {
-        this.algorithmService.selectCache = this.selection.selectedOption;
+        this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.selection.selectedOption);
         this.readFromCache();
     }
 
@@ -120,21 +112,13 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * Reads the values of the configuration page from the cache.
      */
     public readFromCache(): void {
-        if (this.algorithmService.selectCache && this.selection) {
-            this.selection.selectedOption = this.algorithmService.selectCache;
+        const selectedAlgorithm = this.configurationService.getSelectedAlgorithm(this.algorithmService.getConfigurationName());
+        if (selectedAlgorithm && this.selection) {
+            this.selection.selectedOption = selectedAlgorithm;
             if (this.forms) {
                 this.forms.readFromCache();
             }
         }
-    }
-
-    /**
-     * Handles the given error by displaying the error on top of the page.
-     * @param err The error message.
-     * @protected
-     */
-    protected handleError(err: string) {
-        this.error = err;
     }
 
     /**
@@ -161,9 +145,10 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
      * @private
      */
     private setConfig(error: string | null) {
-        this.error = error;
         if (error === null) {
             this.readFromCache();
+        } else {
+            this.errorHandlingService.addError(error);
         }
     }
 
@@ -186,7 +171,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
         ).subscribe({
             next: () => this.finish(),
             error: err => {
-                this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
+                this.errorHandlingService.addError(err, "Failed to save configuration.");
             }
         });
     }
@@ -204,7 +189,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
             this.configureJobs(true).subscribe({
                     next: () => this.finish(),
                     error: err => {
-                        this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
+                        this.errorHandlingService.addError(err, "Failed to save configuration.");
                     }
                 }
             );
@@ -221,7 +206,7 @@ export class ConfigurationPageComponent implements OnInit, AfterViewInit {
             ).subscribe({
                 next: () => this.finish(),
                 error: err => {
-                    this.error = `Failed to save configuration. Status: ${err.status} (${err.statusText})`;
+                    this.errorHandlingService.addError(err, "Failed to save configuration.");
                 }
             });
         }

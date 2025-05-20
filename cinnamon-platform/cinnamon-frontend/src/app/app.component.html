@@ -10,17 +10,23 @@
             {{getTitle()}}
         </div>
         <div class="page-content">
-            <ng-container *ngIf="appConfig$ | async as appConfig">
-                <app-info-card [hidden]="!appConfig.isCinnamonUnavailable" typeClass="card-failure">
-                    Cinnamon is currently unavailable. Please try again later.
-                </app-info-card>
 
+            <!-- Error -->
+            <ng-container *ngIf="errorList$ | async as errorList">
+                <ng-container *ngFor="let error of errorList; let i = index">
+                    <app-info-card typeClass="card-failure" [closable]="true" (onClose)="errorHandlingService.clearError(i)">
+                        <div style="white-space: pre-line;">{{ error }}</div>
+                    </app-info-card>
+                </ng-container>
+            </ng-container>
+
+            <!-- Demo disclaimer -->
+            <ng-container *ngIf="appConfig$ | async as appConfig">
                 <app-info-card [hidden]="!appConfig.isDemoInstance" typeClass="card-warn">
                     This is a demo instance.
                     Please do not upload any real data!
                     Accounts will be deleted every day at 02:00 am.
                 </app-info-card>
-
             </ng-container>
 
             <router-outlet></router-outlet>

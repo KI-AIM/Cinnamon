@@ -8,7 +8,7 @@ import de.kiaim.cinnamon.platform.service.StepService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
-import de.kiaim.cinnamon.platform.model.dto.ErrorResponse;
+import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.dto.ConfigureProcessRequest;
 import de.kiaim.cinnamon.platform.model.dto.ExecutionStepInformation;
 import de.kiaim.cinnamon.platform.model.entity.ExecutionStepEntity;

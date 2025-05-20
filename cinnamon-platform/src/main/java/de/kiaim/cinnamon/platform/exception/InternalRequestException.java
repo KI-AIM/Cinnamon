@@ -1,5 +1,7 @@
 package de.kiaim.cinnamon.platform.exception;
 
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
+
 /**
  * Exception for failed HTTP requests with other modules.
  */
@@ -25,8 +27,17 @@ public class InternalRequestException extends InternalException {
 	 */
 	public static final String ALGORITHMS = "4";
 
+	/**
+	 * Exception code for failed fetching of configuration definition.
+	 */
+	public static final String CONFIGURATION_DEFINITION = "5";
+
 	public InternalRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
+	}
+
+	public InternalRequestException(final String exceptionCode, final String message, final ErrorDetails errorDetails) {
+		super(exceptionCode, message, errorDetails);
 	}
 
 	@Override

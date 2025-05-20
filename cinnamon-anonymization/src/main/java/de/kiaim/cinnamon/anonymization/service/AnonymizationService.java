@@ -10,6 +10,8 @@ import de.kiaim.cinnamon.anonymization.processor.AnonymizedDatasetProcessor;
 import de.kiaim.cinnamon.anonymization.processor.DataSetProcessor;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.dto.ErrorRequest;
+import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
@@ -203,22 +205,13 @@ public class AnonymizationService {
                 errorMessage = anonymizationException.getMessage();
             }
 
+            ErrorRequest errorResponse = new ErrorRequest("about:blank", errorCode, errorMessage, exceptionMessage);
+
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("error_code", new ByteArrayResource(errorCode.getBytes(StandardCharsets.UTF_8)) {
+            var errorJson = JsonMapper.jsonMapper().writeValueAsString(errorResponse);
+            body.add("error", new ByteArrayResource(errorJson.getBytes(StandardCharsets.UTF_8)) {
                 @Override
-                public String getFilename() { return "error_code.txt"; }
-            });
-            body.add("error_message", new ByteArrayResource(errorMessage.getBytes(StandardCharsets.UTF_8)) {
-                @Override
-                public String getFilename() {
-                    return "error_message.txt";
-                }
-            });
-            body.add("exception_message", new ByteArrayResource(exceptionMessage.getBytes(StandardCharsets.UTF_8)) {
-                @Override
-                public String getFilename() {
-                    return "exception_message.txt";
-                }
+                public String getFilename() { return "error.json"; }
             });
 
             webClient.post()

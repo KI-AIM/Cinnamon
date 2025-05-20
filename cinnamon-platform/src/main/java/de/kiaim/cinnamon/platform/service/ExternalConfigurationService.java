@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.service;
 
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
 import de.kiaim.cinnamon.platform.exception.InternalRequestException;
 import de.kiaim.cinnamon.platform.exception.RequestRuntimeException;
@@ -54,11 +55,13 @@ public class ExternalConfigurationService {
 			                .block();
 		} catch (final RequestRuntimeException e) {
 			final String message = httpService.buildError(e, "fetch the status");
-			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message);
+			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
+			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message, errorDetails);
 		} catch (WebClientRequestException e) {
-			var message = "Failed to fetch available algorithms for configuration '" + configurationName + "'!" +
+			var message = "Failed to fetch available algorithms for configuration '" + configurationName + "'! " +
 			              e.getMessage();
-			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message);
+			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
+			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message, errorDetails);
 		}
 	}
 
@@ -89,11 +92,14 @@ public class ExternalConfigurationService {
 			                .block();
 		} catch (final RequestRuntimeException e) {
 			final String message = httpService.buildError(e, "fetch the status");
-			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message);
+			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
+			throw new InternalRequestException(InternalRequestException.CONFIGURATION_DEFINITION, message, errorDetails);
 		} catch (WebClientRequestException e) {
 			var message = "Failed to fetch algorithms definition for configuration '" + configurationName +
 			              "' and algorithm '" + definitionPath + "'! " + e.getMessage();
-			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message);
+
+			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
+			throw new InternalRequestException(InternalRequestException.CONFIGURATION_DEFINITION, message, errorDetails);
 		}
 	}
 

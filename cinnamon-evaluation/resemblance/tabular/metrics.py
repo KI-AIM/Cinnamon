@@ -1051,88 +1051,126 @@ def calculate_distinct_values(real, synthetic):
         raise ValueError(f"Error calculating distinct values: {str(e)}")
 
 
-def calculate_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFrame) -> Dict[str, Dict[str, float]]:
+def calculate_columnwise_correlations(
+    real: pd.DataFrame, synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, float]]:
     """
     Calculate a single correlation value for each attribute that represents its
     correlation with all other attributes combined.
-    
+
     Handles columns with constant values by assigning them a correlation of 0.0,
     properly managing both numerical and categorical data types.
-    
+
     Args:
         real (pd.DataFrame): The real data table.
         synthetic (pd.DataFrame): The synthetic data table.
-        
+
     Returns:
         Dict: A nested dictionary with 'real' and 'synthetic' as top-level keys,
               column names as second-level keys, and a single correlation value for each column.
     """
-    # Initialize result dictionary
-    column_correlations = {'real': {}, 'synthetic': {}}
-    
+    column_correlations = {"real": {}, "synthetic": {}}
+
     try:
-        real_constant_cols = [col for col in real.columns if real[col].nunique(dropna=False) <= 1]
-        synthetic_constant_cols = [col for col in synthetic.columns if synthetic[col].nunique(dropna=False) <= 1]
+        for df, df_name in [(real, "real"), (synthetic, "synthetic")]:
+            constant_cols = [
+                col for col in df.columns if df[col].nunique(dropna=False) <= 1
+            ]
+            # Identify columns that are NOT constant
+            varying_cols = [col for col in df.columns if col not in constant_cols]
 
-        real_varying = real.drop(columns=real_constant_cols, errors='ignore')
-        synthetic_varying = synthetic.drop(columns=synthetic_constant_cols, errors='ignore')
+            # Calculate the full phik matrix once for all varying columns
+            # This is the primary optimization for speed
+            full_phik_matrix = pd.DataFrame()
+            if len(varying_cols) > 1:
+                try:
+                    full_phik_matrix = df[varying_cols].phik_matrix()
+                except Exception as e:
+                    print(
+                        f"Warning: Error calculating full phik_matrix for {df_name} data: {e}. "
+                        "Falling back to pairwise calculation where possible."
+                    )
+                    full_phik_matrix = pd.DataFrame() # Reset to empty if full matrix calculation fails
 
-        if len(real_varying.columns) > 1:
-            real_corr = real_varying.phik_matrix()
-        else:
-            real_corr = pd.DataFrame()
-            
-        if len(synthetic_varying.columns) > 1:
-            synthetic_corr = synthetic_varying.phik_matrix()
-        else:
-            synthetic_corr = pd.DataFrame()
-
-        for column in real.columns:
-            if column in real_constant_cols:
-                column_correlations['real'][column] = 'NA'
-            else:
-                if not real_corr.empty and column in real_corr.index:
-                    real_column_corrs = [
-                        real_corr.loc[column, other_col]
-                        for other_col in real_varying.columns
-                        if column != other_col
-                    ]
-
-                    if real_column_corrs:
-                        column_correlations['real'][column] = float(np.mean(real_column_corrs))
-                    else:
-                         column_correlations['real'][column] = 'NA'
+            for current_col in df.columns:
+                if current_col in constant_cols:
+                    column_correlations[df_name][current_col] = 0.0
                 else:
-                    column_correlations['real'][column] = 'NA'
+                    correlation_values = []
+                    for other_col in df.columns:
+                        if current_col == other_col:
+                            continue # Skip self-correlation
 
-        for column in synthetic.columns:
-            if column in synthetic_constant_cols:
-                 column_correlations['synthetic'][column] = 'NA'
-            else:
-                if not synthetic_corr.empty and column in synthetic_corr.index:
-                    synthetic_column_corrs = [
-                        synthetic_corr.loc[column, other_col]
-                        for other_col in synthetic_varying.columns
-                        if column != other_col
-                    ]
+                        if other_col in constant_cols:
+                            correlation_values.append(0.0)
+                            continue
 
-                    if synthetic_column_corrs:
-                        column_correlations['synthetic'][column] = float(np.mean(synthetic_column_corrs))
+                        # Prioritize fetching from the pre-calculated full matrix
+                        if (
+                            not full_phik_matrix.empty
+                            and current_col in full_phik_matrix.index
+                            and other_col in full_phik_matrix.columns
+                        ):
+                            try:
+                                corr_val = float(
+                                    full_phik_matrix.loc[current_col, other_col]
+                                )
+                                correlation_values.append(corr_val)
+                            except Exception as inner_e:
+                                # This block handles cases where value might be missing from matrix,
+                                # even if index/columns are present (e.g., NaN internal to matrix)
+                                print(
+                                    f"Warning: Could not get correlation for {current_col}-{other_col} "
+                                    f"from pre-calculated matrix in {df_name}: {inner_e}. Falling back."
+                                )
+                                # Fallback to direct pairwise calculation
+                                try:
+                                    temp_df = df[[current_col, other_col]]
+                                    pair_corr_matrix = temp_df.phik_matrix()
+                                    pair_corr_val = float(
+                                        pair_corr_matrix.loc[current_col, other_col]
+                                    )
+                                    correlation_values.append(pair_corr_val)
+                                except Exception as fallback_e:
+                                    print(
+                                        f"Warning: Fallback pairwise calculation failed for {current_col}-{other_col} "
+                                        f"in {df_name}: {fallback_e}. Setting to NaN."
+                                    )
+                                    correlation_values.append('NA')
+                        else:
+                            try:
+                                temp_df = df[[current_col, other_col]]
+                                pair_corr_matrix = temp_df.phik_matrix()
+                                pair_corr_val = float(
+                                    pair_corr_matrix.loc[current_col, other_col]
+                                )
+                                correlation_values.append(pair_corr_val)
+                            except Exception as fallback_e:
+                                print(
+                                    f"Warning: Direct pairwise calculation failed for {current_col}-{other_col} "
+                                    f"in {df_name}: {fallback_e}. Setting to NaN."
+                                )
+                                correlation_values.append('NA')
+
+                    # Calculate the mean, ignoring NaNs introduced by problematic correlations
+                    if correlation_values:
+                        mean_val = float(np.mean(correlation_values))
+                        if np.isnan(mean_val):
+                            column_correlations[df_name][current_col] = 0.0
+                        else:
+                            column_correlations[df_name][current_col] = mean_val
                     else:
-                         column_correlations['synthetic'][column] = 'NA'
-                else:
-                    column_correlations['synthetic'][column] = 'NA'
+                        column_correlations[df_name][current_col] = 0.0
 
         return column_correlations
 
     except Exception as e:
-        print(f"Warning: Error during correlation calculation: {str(e)}. Setting all non-constant correlations to 'NA'.")
-        for column in real.columns:
-            column_correlations['real'][column] = 'NA'
-
-        for column in synthetic.columns:
-            column_correlations['synthetic'][column] = 'NA'
-
+        print(
+            f"Warning: Critical error during correlation calculation: {str(e)}. Setting all correlations to 'NA'."
+        )
+        for df_name, df_data in [("real", real), ("synthetic", synthetic)]:
+            for column in df_data.columns:
+                column_correlations[df_name][column] = "NA"
         return column_correlations
 
 
@@ -1153,132 +1191,92 @@ def visualize_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFram
     visualization_data = {'real': {}, 'synthetic': {}}
 
     try:
-        # Check for constant columns in both datasets
-        real_constant_cols = [col for col in real.columns if real[col].nunique() <= 1]
-        synthetic_constant_cols = [col for col in synthetic.columns if synthetic[col].nunique() <= 1]
+        for df, df_name in [(real, "real"), (synthetic, "synthetic")]:
+            # Identify constant columns for the current DataFrame
+            constant_cols = [
+                col for col in df.columns if df[col].nunique(dropna=False) <= 1
+            ]
+            varying_cols = [col for col in df.columns if col not in constant_cols]
 
-        # For phik correlation calculation, simply exclude constant columns
-        # rather than trying to add noise
-        real_varying = real.drop(columns=real_constant_cols)
-        synthetic_varying = synthetic.drop(columns=synthetic_constant_cols)
+            full_phik_matrix = pd.DataFrame()
+            if len(varying_cols) > 1:
+                try:
+                    full_phik_matrix = df[varying_cols].phik_matrix()
+                except Exception as e:
+                    print(
+                        f"Warning: Error calculating phik_matrix for all varying columns in {df_name} data: {e}. "
+                        "Individual column correlations will be calculated or set to 0.0/NaN."
+                    )
+                    full_phik_matrix = pd.DataFrame() # Reset to empty if calculation fails
 
-        # If there are multiple varying columns, calculate phik matrix
-        if len(real_varying.columns) > 1:
-            real_corr = real_varying.phik_matrix()
-        else:
-            real_corr = pd.DataFrame()  # Changed to empty DataFrame
-            
-        if len(synthetic_varying.columns) > 1:
-            synthetic_corr = synthetic_varying.phik_matrix()
-        else:
-            synthetic_corr = pd.DataFrame() # Changed to empty DataFrame
+            for current_col in df.columns:
+                x_values: List[str] = []
+                correlation_values: List[float] = []
 
-        # Process real data correlations
-        for column in real.columns:
-            if column in real_constant_cols:
-                # Constant columns have no meaningful correlation with other attributes
-                visualization_data['real'][column] = {
-                    'x_values': [oc for oc in real_varying.columns if oc != column],
-                    'correlation_values': [0.0] * (len(real_varying.columns) -1) if len(real_varying.columns) > 1 else [],
-                    'x_axis': 'Attributes',
-                    'y_axis': 'Correlation Strength',
-                }
-            else:
-                # Only include this column if it's in our correlation matrix
-                if not real_corr.empty and column in real_corr.index:
-                    # Get correlations for non-constant columns
-                    real_column_corrs = [
-                        float(real_corr.loc[column, other_col])  # Ensure float
-                        for other_col in real_varying.columns
-                        if column != other_col
-                    ]
+                for other_col in df.columns:
+                    x_values.append(other_col)
 
-                    if real_column_corrs:
-                        visualization_data['real'][column] = {
-                            'x_values': [oc for oc in real_varying.columns if oc != column],
-                            'correlation_values': real_column_corrs,
-                            'x_axis': 'Attributes',
-                            'y_axis': 'Correlation Strength',
-                        }
+                    if current_col == other_col:
+                        # Self-correlation: phik typically gives 1.0
+                        correlation_values.append(1.0)
+                    elif current_col in constant_cols or other_col in constant_cols:
+                        # Correlation with a constant column is often considered 0
+                        correlation_values.append(0.0)
+                    elif not full_phik_matrix.empty and current_col in full_phik_matrix.index and other_col in full_phik_matrix.columns:
+                        try:
+                            corr_val = float(full_phik_matrix.loc[current_col, other_col])
+                            correlation_values.append(corr_val)
+                        except Exception as inner_e:
+                            print(
+                                f"Warning: Could not get correlation for {current_col}-{other_col} in {df_name} "
+                                f"from pre-calculated matrix: {inner_e}. Attempting pairwise calculation."
+                            )
+                            try:
+                                temp_df_pair = df[[current_col, other_col]]
+                                pair_corr_matrix = temp_df_pair.phik_matrix()
+                                pair_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
+                                correlation_values.append(pair_corr_val)
+                            except Exception as fallback_e:
+                                print(
+                                    f"Warning: Fallback pairwise correlation calculation failed for {current_col}-{other_col} in {df_name}: {fallback_e}. Setting to NaN."
+                                )
+                                correlation_values.append('NA')
                     else:
-                         visualization_data['real'][column] = {
-                            'x_values': [oc for oc in real_varying.columns if oc != column],
-                            'correlation_values': [0.0] * (len(real_varying.columns) -1) if len(real_varying.columns) > 1 else [],
-                            'x_axis': 'Attributes',
-                            'y_axis': 'Correlation Strength',
-                        }
-                else:
-                    # If this column wasn't in our matrix (e.g., only 1 varying column)
-                    visualization_data['real'][column] = {
-                        'x_values': [oc for oc in real_varying.columns if oc != column],
-                        'correlation_values': [0.0] * (len(real_varying.columns) -1) if len(real_varying.columns) > 1 else [],
-                        'x_axis': 'Attributes',
-                        'y_axis': 'Correlation Strength',
-                    }
+                        try:
+                            temp_df_pair = df[[current_col, other_col]]
+                            pair_corr_matrix = temp_df_pair.phik_matrix()
+                            pair_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
+                            correlation_values.append(pair_corr_val)
+                        except Exception as fallback_e:
+                            print(
+                                f"Warning: Direct pairwise correlation calculation failed for {current_col}-{other_col} in {df_name}: {fallback_e}. Setting to NaN."
+                            )
+                            correlation_values.append('NA')
 
-        # Process synthetic data correlations
-        for column in synthetic.columns:
-            if column in synthetic_constant_cols:
-                visualization_data['synthetic'][column] = {
-                    'x_values': [oc for oc in synthetic_varying.columns if oc != column],
-                    'correlation_values': [0.0] * (len(synthetic_varying.columns) -1) if len(synthetic_varying.columns) > 1 else [],
-                    'x_axis': 'Attributes',
-                    'y_axis': 'Correlation Strength',
+                final_correlation_values = [0.0 if np.isnan(val) else val for val in correlation_values]
+
+                visualization_data[df_name][current_col] = {
+                    "x_values": x_values,
+                    "correlation_values": final_correlation_values,
+                    "x_axis": "Attributes",
+                    "y_axis": "Correlation Strength",
                 }
-            else:
-                if not synthetic_corr.empty and column in synthetic_corr.index:
-                    synthetic_column_corrs = [
-                        float(synthetic_corr.loc[column, other_col]) # Ensure float
-                        for other_col in synthetic_varying.columns
-                        if column != other_col
-                    ]
 
-                    if synthetic_column_corrs:
-                        visualization_data['synthetic'][column] = {
-                            'x_values': [oc for oc in synthetic_varying.columns if oc != column],
-                            'correlation_values': synthetic_column_corrs,
-                            'x_axis': 'Attributes',
-                            'y_axis': 'Correlation Strength',
-                        }
-                    else:
-                        visualization_data['synthetic'][column] = {
-                            'x_values': [oc for oc in synthetic_varying.columns if oc != column],
-                            'correlation_values': [0.0] * (len(synthetic_varying.columns) -1) if len(synthetic_varying.columns) > 1 else [],
-                            'x_axis': 'Attributes',
-                            'y_axis': 'Correlation Strength',
-                        }
-                else:
-                    visualization_data['synthetic'][column] = {
-                        'x_values': [oc for oc in synthetic_varying.columns if oc != column],
-                        'correlation_values': [0.0] * (len(synthetic_varying.columns) -1) if len(synthetic_varying.columns) > 1 else [],
-                        'x_axis': 'Attributes',
-                        'y_axis': 'Correlation Strength',
-                    }
         return visualization_data
-        
+
     except Exception as e:
-        if not visualization_data['real'] or not visualization_data['synthetic']:
-            # Fallback: set all correlations to 0
-            for column in real.columns:
-                visualization_data['real'][column] = {
-                        'x_values': [oc for oc in synthetic_varying.columns if oc != column],
-                        'correlation_values': [0.0] * (len(synthetic_varying.columns) -1) if len(synthetic_varying.columns) > 1 else [],
-                        'x_axis': 'Attributes',
-                        'y_axis': 'Correlation Strength',
-                    }
-                
-            for column in synthetic.columns:
-                visualization_data['synthetic'][column] = {
-                        'x_values': [oc for oc in synthetic_varying.columns if oc != column],
-                        'correlation_values': [0.0] * (len(synthetic_varying.columns) -1) if len(synthetic_varying.columns) > 1 else [],
-                        'x_axis': 'Attributes',
-                        'y_axis': 'Correlation Strength',
-                    }
-                
-            print(f"Warning: Using fallback correlation calculation due to error: {str(e)}")
-            
+        print(f"Warning: Critical error during visualization data generation: {str(e)}. "
+              "Returning fallback empty data structure with all correlations as 0.0.")
+        for df_data, df_name_key in [(real, 'real'), (synthetic, 'synthetic')]:
+            for column in df_data.columns:
+                all_columns = list(df_data.columns)
+                visualization_data[df_name_key][column] = {
+                    'x_values': all_columns,
+                    'correlation_values': [0.0] * len(all_columns), # Set all to 0.0 on error
+                    'x_axis': 'Attributes',
+                    'y_axis': 'Correlation Strength',
+                }
         return visualization_data
-
 
 
 def missing_values_count(real, synthetic):

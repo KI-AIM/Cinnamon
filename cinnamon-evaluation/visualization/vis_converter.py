@@ -591,7 +591,7 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
             avg_difference = sum(all_percentages) / len(all_percentages)
             color_index = get_color_index(avg_difference)
             overview["resemblance_score"] = {
-                "value": avg_difference,
+                "value": 1 - (avg_difference / 100),
                 "color_index": color_index
             }
             all_attribute_scores.append(avg_difference)
@@ -646,7 +646,7 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
     
     if all_attribute_scores:
         overall_resemblance_score = sum(all_attribute_scores) / len(all_attribute_scores)
-        overall_resemblance_score = overall_resemblance_score / 100
+        overall_resemblance_score = overall_resemblance_score
         
         modified_config["Overview"] = {
             "display_name": "Summary Overview",

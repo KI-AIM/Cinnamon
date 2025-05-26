@@ -180,7 +180,14 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
         models_real, predictions_real = lazy.fit(
             X_train_real, X_test_real, y_train_real_scaled, y_test_real_scaled
         )
-        
+
+        # Apply the R-squared floor for both real and synthetic models
+        predictions_real['R-Squared'] = predictions_real['R-Squared'].apply(lambda x: max(0.0, x))
+        predictions_synthetic['R-Squared'] = predictions_synthetic['R-Squared'].apply(lambda x: max(0.0, x))
+        predictions_real['Adjusted R-Squared'] = predictions_real['Adjusted R-Squared'].apply(lambda x: max(0.0, x))
+        predictions_synthetic['Adjusted R-Squared'] = predictions_synthetic['Adjusted R-Squared'].apply(lambda x: max(0.0, x))
+
+
         predictions_real = add_summary_classifier(predictions_real)
         predictions_synthetic = add_summary_classifier(predictions_synthetic)
         machine_learning_dict['real']['predictions'] = predictions_real
@@ -249,6 +256,37 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
     """
     test_size = 1 - train_size
     random_state = 42
+    cols_to_drop = []
+
+    # Identify columns with 100% NA in the real dataset
+    na_cols = real.columns[real.isna().all()].tolist()
+    cols_to_drop.extend(na_cols)
+
+    # Identify categorical columns with 100% unique values in the real dataset
+    categorical_cols_real = real.select_dtypes(include=['object', 'category']).columns
+    for col in categorical_cols_real:
+        if col not in cols_to_drop: # Avoid re-checking already marked columns
+            if real[col].nunique(dropna=False) == len(real): # dropna=False to consider NAs as a unique value if present
+                cols_to_drop.append(col)
+
+    # Identify columns with 100% NA in the real dataset
+    na_cols_synthetic = synthetic.columns[synthetic.isna().all()].tolist()
+    for col_synth in na_cols_synthetic:
+         cols_to_drop.append(col_synth)
+
+    categorical_cols_synthetic = synthetic.select_dtypes(include=['object', 'category']).columns
+    for col_synth in categorical_cols_synthetic:
+        if col_synth not in cols_to_drop:
+            if synthetic[col].nunique(dropna=False) == len(real): # dropna=False to consider NAs as a unique value if present
+                cols_to_drop.append(col)
+
+    # Ensure unique columns to drop
+    cols_to_drop = list(set(cols_to_drop))
+
+    if cols_to_drop:
+        print(f"Dropping columns from real and synthetic datasets: {cols_to_drop}")
+        real = real.drop(columns=cols_to_drop)
+        synthetic = synthetic.drop(columns=[col for col in cols_to_drop if col in synthetic.columns])
 
     # Balance datasets by sampling from the larger one
     min_size = min(len(real), len(synthetic))
@@ -339,14 +377,14 @@ def calculate_differences_as_dict(result_dict):
 
 def get_color_index(value, interpretation_ranges):
     """
-    Determine color index (1-5) based on provided value and interpretation ranges.
+    Determine color index (1-10) based on provided value and interpretation ranges.
 
     Args:
         value (float): Value to be evaluated
         interpretation_ranges (dict): Dictionary defining the ranges and their corresponding indices
 
     Returns:
-        int: Color index between 1 and 5 (1=best, 5=worst)
+        int: Color index between 1 and 10 (1=best, 10=worst)
     """
     # Check for negative values first
     if value < 0:

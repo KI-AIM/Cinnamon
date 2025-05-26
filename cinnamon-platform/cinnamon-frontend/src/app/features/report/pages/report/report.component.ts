@@ -118,10 +118,13 @@ export class ReportComponent implements OnInit {
             }
         });
 
-        mywindow.document.close(); // necessary for IE >= 10
-        mywindow.focus(); // necessary for IE >= 10*/
+        // Required to load the images
+        setTimeout(() => {
+            mywindow.document.close(); // necessary for IE >= 10
+            mywindow.focus(); // necessary for IE >= 10*/
 
-        mywindow.print();
+            mywindow.print();
+        }, 0);
     }
 
     /**

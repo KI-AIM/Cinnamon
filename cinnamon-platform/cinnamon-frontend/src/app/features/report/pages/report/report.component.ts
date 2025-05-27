@@ -7,7 +7,7 @@ import { ProjectSettings } from "../../../../shared/model/project-settings";
 import { TitleService } from "../../../../core/services/title-service.service";
 import { ProjectConfigurationService } from "../../../../shared/services/project-configuration.service";
 import { StatisticsResponse } from "../../../../shared/model/statistics";
-import { StatisticsService } from "../../../../shared/services/statistics.service";
+import { Color, StatisticsService } from "../../../../shared/services/statistics.service";
 import { ChartFrequencyComponent } from "../../../../shared/components/chart-frequency/chart-frequency.component";
 import { HttpClient } from "@angular/common/http";
 
@@ -213,8 +213,8 @@ export class ReportComponent implements OnInit {
         return Math.min(Math.max(value, min), max);
     }
 
-    protected getColor(value: string, v: number): string {
-        return this.statisticsService.getColorScheme(value)[v];
+    protected getColors(value: string): Color[] {
+        return this.statisticsService.getColorSchemeGradient(value);
     }
 
     protected readonly StatisticsService = StatisticsService;

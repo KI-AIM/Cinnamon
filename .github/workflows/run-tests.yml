@@ -1,0 +1,145 @@
+name: Run Tests
+
+on:
+  pull_request:
+  workflow_call:
+
+jobs:
+  test-junit:
+    permissions:
+      checks: write
+      pull-requests: write
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - cinnamon-test
+          - cinnamon-anonymization
+
+    services:
+      postgres:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: cinnamon_user
+          POSTGRES_DB: cinnamon_test_db
+        options: >-
+          --health-cmd "pg_isready -U cinnamon_user -d cinnamon_test_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SPRING_DATASOURCE_PASSWORD: postgres
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Cache Maven Repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install External JAR into Maven Repository
+        run: |
+          mvn install:install-file \
+            -Dfile=cinnamon-anonymization/src/main/resources/lib/libarx-3.9.1.jar \
+            -DgroupId=org.deidentifier \
+            -DartifactId=arx \
+            -Dversion=3.9.1 \
+            -Dpackaging=jar
+
+      - name: Install with Maven
+        run: mvn -B clean install -DskipTests=true
+
+      - name: Run tests for modules
+        run: mvn -B clean test --file ${{ matrix.module }}/
+        continue-on-error: true
+
+      - name: Upload Surefire test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-${{ matrix.module }}
+          path: ${{ matrix.module }}/target/surefire-reports
+
+  test-unittest:
+    permissions:
+      checks: write
+      pull-requests: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        working-directory: cinnamon-risk-assessment
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install unittest-xml-reporting
+
+      - name: Run Unittest and Generate Report
+        working-directory: cinnamon-risk-assessment
+        run: |
+          mkdir -p test-results
+          python -m xmlrunner discover -s Tests -p "*.py" -o test-results
+        continue-on-error: true
+
+      - name: Upload Test Results Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unittest-results-cinnamon-risk-assessment
+          path: cinnamon-risk-assessment/test-results/
+
+  report:
+    permissions:
+      checks: write
+      pull-requests: write
+
+    needs: [test-junit, test-unittest]
+    runs-on: ubuntu-latest
+
+    name: Generate JUnit Report
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        with:
+          check_name: |-
+            Cinnamon Test - Test Report
+            Cinnamon Anonymization - Test Report
+            Cinnamon Risk-Assessment - Test Report
+          comment: true
+          fail_on_failure: true
+          include_time_in_summary: true
+          report_paths: |-
+            ./artifacts/surefire-reports-cinnamon-test/TEST-*.xml
+            ./artifacts/surefire-reports-cinnamon-anonymization/TEST-*.xml
+            ./artifacts/unittest-results-cinnamon-risk-assessment/TEST-*.xml
+          verbose_summary: false

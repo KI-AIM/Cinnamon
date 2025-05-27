@@ -28,11 +28,11 @@ public class ExternalServerHealthIndicatorTest extends ContextRequiredTest {
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("cinnamon.external-server.2.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.1.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.1.healthEndpoint", () -> "");
-		registry.add("cinnamon.external-server.0.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.0.healthEndpoint", () -> "/health");
+		registry.add("cinnamon.external-server.technical-evaluation-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.synthetization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.synthetization-server.healthEndpoint", () -> "");
+		registry.add("cinnamon.external-server.anonymization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.anonymization-server.healthEndpoint", () -> "/health");
 	}
 
 	@BeforeEach
@@ -54,7 +54,7 @@ public class ExternalServerHealthIndicatorTest extends ContextRequiredTest {
 				                    .body("{\"status\": \"UP\"}")
 				                    .build());
 
-		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get(0));
+		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get("anonymization-server"));
 		var health = indicator.health();
 		assertEquals("UP", health.getStatus().getCode());
 	}
@@ -67,7 +67,7 @@ public class ExternalServerHealthIndicatorTest extends ContextRequiredTest {
 				                    .body("{\"status\": \"DOWN\"}")
 				                    .build());
 
-		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get(0));
+		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get("anonymization-server"));
 		var health = indicator.health();
 		assertEquals("DOWN", health.getStatus().getCode());
 	}
@@ -80,7 +80,7 @@ public class ExternalServerHealthIndicatorTest extends ContextRequiredTest {
 				                    .body("NOT FOUND")
 				                    .build());
 
-		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get(0));
+		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get("anonymization-server"));
 		var health = indicator.health();
 		assertEquals("DOWN", health.getStatus().getCode());
 	}
@@ -93,7 +93,7 @@ public class ExternalServerHealthIndicatorTest extends ContextRequiredTest {
 				                    .body("NOT FOUND")
 				                    .build());
 
-		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get(1));
+		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get("synthetization-server"));
 		var health = indicator.health();
 		assertEquals("UNKNOWN", health.getStatus().getCode());
 	}
@@ -102,7 +102,7 @@ public class ExternalServerHealthIndicatorTest extends ContextRequiredTest {
 	public void testHealthDownNoConnection() throws IOException {
 		mockBackEnd.shutdown();
 
-		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get(0));
+		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get("anonymization-server"));
 		var health = indicator.health();
 		assertEquals("DOWN", health.getStatus().getCode());
 	}

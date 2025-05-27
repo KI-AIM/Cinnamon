@@ -40,9 +40,9 @@ public class ExternalServer {
 	//=========================
 
 	/**
-	 * Index of the server. Is automatically set at {@link KiAimConfigurationPostProcessor#assignIndices()}.
+	 * Name of the server. Is automatically set at {@link KiAimConfigurationPostProcessor#assignIndices()}.
 	 */
-	private int index;
+	private String name;
 
 	/**
 	 * Endpoints of the server.

@@ -64,7 +64,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private static final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 
-	@Value("${cinnamon.external-server.1.callback-host}")
+	@Value("${cinnamon.external-server.synthetization-server.callback-host}")
 	private String callbackHost;
 
 	private MockWebServer mockBackEnd;
@@ -77,10 +77,9 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		// All properties must be redefined
-		registry.add("cinnamon.external-server.2.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.1.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.0.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.technical-evaluation-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.synthetization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.anonymization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
 	}
 
 	@BeforeEach

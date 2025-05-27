@@ -30,6 +30,11 @@ public class ExternalServer {
 	@NotBlank
 	private String urlServer;
 
+	/**
+	 * Endpoint used for health checks.
+	 */
+	private String healthEndpoint = "";
+
 	//=========================
 	//--- Automatically set ---
 	//=========================

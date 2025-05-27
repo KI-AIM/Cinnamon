@@ -38,6 +38,7 @@ public class SecurityConfig {
 				                             // TODO Implement proper security
 				                             antMatcher("/api/process/**/callback"),
 				                             antMatcher("/api/swagger-ui/**"),
+				                             antMatcher("/actuator/**"),
 				                             antMatcher("/api/user/register")).permitAll()
 				            .requestMatchers(antMatcher("/api/**")).hasRole("USER")
 				            .requestMatchers(antMatcher("/**")).permitAll()

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { environments } from "../../../environments/environment";
+import { environments } from "src/environments/environment";
 import { finalize, map, Observable, of, share, tap } from "rxjs";
 import { HttpClient } from "@angular/common/http";
 import { Statistics, StatisticsData, StatisticsResponse } from "../model/statistics";
@@ -22,7 +22,7 @@ export class StatisticsService {
         "synthetization": "Synthesized",
     }
 
-    public readonly colorDefinitions = [
+    public readonly colorDefinitions: ColorSchemeDefinition[] = [
         {
             name: 'Default',
             label: 'Dark Green to Dark Red (Default)',
@@ -31,6 +31,7 @@ export class StatisticsService {
                 '#00dd00', '#00ff00', '#ff0000', '#dd0000',
                 '#bb0000', '#990000', '#770000',
             ],
+            diverging: true,
         },
         {
             name: 'Green Red',
@@ -40,6 +41,7 @@ export class StatisticsService {
                 '#009900', '#007700', '#770000', '#990000',
                 '#bb0000', '#dd0000', '#ff0000',
             ],
+            diverging: false,
         },
         {
             name: 'GreenRed2',
@@ -49,6 +51,7 @@ export class StatisticsService {
                 '#00aa00', '#00bb00', '#bb0000', '#cc0000',
                 '#dd0000', '#dd0000', '#ff0000',
             ],
+            diverging: true,
         },
         {
             name: 'GreenRed3',
@@ -58,6 +61,7 @@ export class StatisticsService {
                 '#00cc00', '#00bb00', '#bb0000', '#aa0000',
                 '#990000', '#880000', '#770000',
             ],
+            diverging: true,
         },
         {
             name: 'Blue Green',
@@ -66,7 +70,8 @@ export class StatisticsService {
                 '#00aaff', '#292f56', '#1e4572', '#005c8b',
                 '#007498', '#008ba0', '#00a3a4', '#00bca1',
                 '#00d493', '#69e882', '#acfa70',
-            ]
+            ],
+            diverging: false,
         },
         {
             name: 'Green Blue',
@@ -76,6 +81,7 @@ export class StatisticsService {
                 '#00bca1', '#00a3a4', '#008ba0', '#007498',
                 '#005c8b', '#1e4572', '#292f56',
             ],
+            diverging: false,
         },
         {
             name: 'Blue Red',
@@ -84,7 +90,8 @@ export class StatisticsService {
                 '#14a289', '#0c3d67', '#1f74b9', '#43b3e4',
                 '#a7cee2', '#e8f4d9', '#fcf1ad', '#fbaa64',
                 '#f48146', '#dc4230', '#a8172a',
-            ]
+            ],
+            diverging: false,
         },
         {
             name: 'Red Blue',
@@ -94,6 +101,27 @@ export class StatisticsService {
                 '#fbaa64', '#fcf1ad', '#e8f4d9', '#a7cee2',
                 '#43b3e4', '#1f74b9', '#0c3d67',
             ],
+            diverging: false,
+        },
+        {
+            name: 'Blue Yellow',
+            label: 'Blue to Yellow',
+            colors: [
+                '#00aaff', '#002f61', '#00507b', '#006e8e',
+                '#008b98', '#00a79c', '#00c395', '#18dc82',
+                '#71ee65', '#bbf942', '#ffff00',
+            ],
+            diverging: false,
+        },
+        {
+            name: 'Yellow Blue',
+            label: 'Yellow to Blue',
+            colors: [
+                '#00aaff', '#ffff00', '#bbf942', '#71ee65',
+                '#18dc82', '#00c395', '#00a79c', '#008b98',
+                '#006e8e', '#00507b', '#002f61',
+            ],
+            diverging: false,
         },
         {
             name: 'Blue Lila Red',
@@ -102,7 +130,8 @@ export class StatisticsService {
                 '#14a289', '#3b48f7', '#6a38fb', '#882cf6',
                 '#a023e9', '#b41fd6', '#c522bd', '#d329a2',
                 '#de3284', '#e73d67', '#ed4a4a',
-            ]
+            ],
+            diverging: false,
         },
         {
             name: 'Red Lila Blue',
@@ -111,7 +140,8 @@ export class StatisticsService {
                 '#14a289', '#ed4a4a', '#e73d67', '#de3284',
                 '#d329a2', '#c522bd', '#b41fd6', '#a023e9',
                 '#882cf6', '#6a38fb', '#3b48f7',
-            ]
+            ],
+            diverging: false,
         },
         {
             name: 'BlueOrange1',
@@ -120,7 +150,8 @@ export class StatisticsService {
                 '#14a289', '#0008ff', '#284af7', '#4d68f8',
                 '#6d7ffb', '#8a95ff', '#ff8800', '#db7409',
                 '#b55f0b', '#8f4806', '#653001',
-            ]
+            ],
+            diverging: true,
         },
         {
             name: 'BlueOrange2',
@@ -129,7 +160,8 @@ export class StatisticsService {
                 '#14a289', '#8a95ff', '#6d7ffb', '#4d68f8',
                 '#284af7', '#0008ff', '#653001', '#8f4806',
                 '#b55f0b', '#db7409', '#ff8800'
-            ]
+            ],
+            diverging: false,
         },
         {
             name: 'GreenOrange1',
@@ -138,7 +170,8 @@ export class StatisticsService {
                 '#00aaff', '#165f53', '#197665', '#1a8c79',
                 '#14a289', '#00b899', '#ff8800', '#db7409',
                 '#b55f0b', '#8f4806', '#653001',
-            ]
+            ],
+            diverging: true,
         },
         {
             name: 'GreenOrange2',
@@ -147,7 +180,8 @@ export class StatisticsService {
                 '#00aaff', '#00b899', '#14a289', '#1a8c79',
                 '#197665', '#165f53', '#653001', '#8f4806',
                 '#b55f0b', '#db7409', '#ff8800',
-            ]
+            ],
+            diverging: false,
         },
         {
             name: 'Green1',
@@ -156,7 +190,8 @@ export class StatisticsService {
                 '#00aaff', '#165f53', '#18695b', '#197363',
                 '#1a7e6c', '#1a8874', '#19917c', '#179b84',
                 '#13a58b', '#0cae92', '#00b899'
-            ]
+            ],
+            diverging: false,
         },
         {
             name: 'Green2',
@@ -165,7 +200,8 @@ export class StatisticsService {
                 '#00aaff', '#00b899', '#0cae92', '#13a58b',
                 '#179b84', '#19917c', '#1a8874', '#1a7e6c',
                 '#197363', '#18695b', '#165f53'
-            ]
+            ],
+            diverging: false,
         },
         {
             name: 'Orange1',
@@ -174,7 +210,8 @@ export class StatisticsService {
                 '#00aaff', '#653001', '#773b03', '#8a4606',
                 '#9c5008', '#ad5a0b', '#bd640b', '#ce6d0a',
                 '#df7608', '#ef7f05', '#ff8800'
-            ]
+            ],
+            diverging: false,
         },
         {
             name: 'Orange2',
@@ -183,7 +220,8 @@ export class StatisticsService {
                 '#00aaff', '#ff8800', '#ef7f05', '#df7608',
                 '#ce6d0a', '#bd640b', '#ad5a0b', '#9c5008',
                 '#8a4606', '#773b03', '#653001'
-            ]
+            ],
+            diverging: false,
         },
     ];
 
@@ -192,8 +230,43 @@ export class StatisticsService {
     ) {
     }
 
-    public getColorScheme(name: string) {
-        return this.colorDefinitions.find(value => value.name === name)?.colors ?? [];
+    /**
+     * Returns the color definition for the color scheme with the given name.
+     * @param name The name of the color scheme.
+     */
+    public getColorDefinition(name: string): ColorSchemeDefinition | undefined {
+        return this.colorDefinitions.find(value => value.name === name);
+    }
+
+    /**
+     * Returns the colors of a color scheme.
+     * @param name The name of the color scheme.
+     */
+    public getColorScheme(name: string): Color[] {
+        return this.getColorDefinition(name)?.colors ?? [];
+    }
+
+    /**
+     * Returns an array of colors from the color scheme with the given name optimized for color gradients.
+     * @param name The name of the color scheme.
+     */
+    public getColorSchemeGradient(name: string): Color[] {
+        const def = this.getColorDefinition(name);
+        const diverging = def?.diverging ?? false;
+
+        let colors: Color[] = [];
+        def?.colors.forEach(color => colors.push(color));
+
+        if (diverging) {
+            for (let i = 0; i < 5; i++) {
+                colors[i] = colors[i + 1];
+            }
+            colors[5] = '#dddddd';
+        } else {
+            colors = colors.slice(1);
+        }
+
+        return colors;
     }
 
     public get statistics$(): Observable<StatisticsResponse> {
@@ -400,6 +473,15 @@ export class StatisticsService {
         return "N/A";
     }
 
+}
+
+export type Color = `#${string}`;
+
+export interface ColorSchemeDefinition {
+    name: string;
+    label: string;
+    colors: Color[];
+    diverging: boolean;
 }
 
 export interface FormatNumberOptions {

@@ -280,6 +280,11 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
             if synthetic[col].nunique(dropna=False) == len(real): # dropna=False to consider NAs as a unique value if present
                 cols_to_drop.append(col)
 
+    for col_synth in synthetic.columns:
+        if col_synth not in cols_to_drop:
+            if synthetic[col_synth].nunique(dropna=False) == 1:
+                cols_to_drop.append(col_synth)
+
     # Ensure unique columns to drop
     cols_to_drop = list(set(cols_to_drop))
 

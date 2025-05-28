@@ -50,7 +50,10 @@
         <ng-container *ngFor="let additionalConfig of additionalConfigs.configs">
             <mat-expansion-panel>
                 <mat-expansion-panel-header>
-                    <mat-panel-title>{{additionalConfig.title}}</mat-panel-title>
+                    <mat-panel-title
+                        [class.invalid-group]="formGroup.controls[additionalConfig.formGroupName].invalid">
+                        {{ additionalConfig.title }}
+                    </mat-panel-title>
                     <mat-panel-description>{{additionalConfig.description}}</mat-panel-description>
                 </mat-expansion-panel-header>
 

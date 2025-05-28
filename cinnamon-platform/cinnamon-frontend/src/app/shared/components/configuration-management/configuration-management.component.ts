@@ -12,7 +12,6 @@ import { StatusService } from "../../services/status.service";
 })
 export class ConfigurationManagementComponent {
     protected readonly Steps = Steps;
-    protected error: string;
 
     @ViewChild('configurationManagement') dialogWrap: TemplateRef<any>;
 
@@ -21,7 +20,6 @@ export class ConfigurationManagementComponent {
         public dialog: MatDialog,
         protected readonly statusService: StatusService,
     ) {
-        this.error = "";
     }
 
     /**

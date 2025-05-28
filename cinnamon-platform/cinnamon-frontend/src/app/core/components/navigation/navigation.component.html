@@ -44,10 +44,10 @@
 
     <div class="nav-bottom">
 
-        <div [hidden]="!userService.isAuthenticated()" class="logout" (click)="onLogout()">
+        <a [hidden]="!userService.isAuthenticated()" class="logout" (click)="onLogout()">
             <mat-icon>logout</mat-icon>
             <span>Logout</span>
-        </div>
+        </a>
 
         <div class="nav-bottom-right">
             <div class="site-link">

@@ -606,7 +606,6 @@ public class DatabaseService {
 		var calcRowNumbers = rowSelector != RowSelector.ALL;
 
 		final var startRow = (pageNumber - 1) * pageSize;
-		final var endRow = startRow + pageSize;
 
 		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
 		final DataSet dataSet = exportDataSet(dataSetEntity, rowSelector, columnNames,
@@ -618,6 +617,7 @@ public class DatabaseService {
 			rowNumbers = dataSet.getData().stream().map(a -> (Integer) a.get(a.size() - 1)).toList();
 			errors = errorRepository.findByDataSetIdAndRowIndexIn(dataSetEntity.getId(), rowNumbers);
 		} else {
+			var endRow = startRow + dataSet.getDataRows().size();
 			errors = errorRepository.findByDataSetIdAndRowIndexBetween(dataSetEntity.getId(), startRow, endRow - 1);
 		}
 
@@ -688,6 +688,10 @@ public class DatabaseService {
 	public void delete(final ProjectEntity project)
 			throws BadDataSetIdException, InternalDataSetPersistenceException {
 		project.getOriginalData().setFile(null);
+		project.getOriginalData().setHasHoldOut(false);
+		project.getOriginalData().setHoldOutPercentage(0.0f);
+		project.getOriginalData().setHoldOutSeed(0);
+
 		deleteDataSet(project.getOriginalData().getDataSet());
 
 		for (final var pipeline : project.getPipelines()) {
@@ -707,6 +711,8 @@ public class DatabaseService {
 				stage.setStatus(ProcessStatus.NOT_STARTED);
 			}
 		}
+
+		project.getConfigurations().clear();
 
 		projectRepository.save(project);
 	}

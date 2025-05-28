@@ -10,7 +10,8 @@
 
                 <mat-form-field style="width: 100%;">
                     <mat-select formControlName="colorScheme">
-                        <mat-option *ngFor="let colorD of statisticsService.colorDefinitions" [value]="colorD.name">{{ colorD.name }}
+                        <mat-option *ngFor="let colorD of statisticsService.colorDefinitions" [value]="colorD.name">
+                            <div> {{ colorD.label }} </div>
                             <div style="display: flex; flex-direction: row;">
                                 <div *ngFor="let color of colorD.colors" [style.background-color]="color"
                                      style="width: 22px; height: 22px;">

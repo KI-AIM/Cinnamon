@@ -20,12 +20,14 @@ import { AdditionalConfig, ConfigurationAdditionalConfigs } from 'src/app/shared
 export class AnonymizationConfigurationComponent {
     configs = new Array(
         new AdditionalConfig(
-            AnonymizationAttributeConfigurationComponent, 
-            "Attribute Anonymization Configuration", 
-            "Define anonymization settings for each attribute. Each attribute requires a protection strategy and an interval size if applicable."
+            AnonymizationAttributeConfigurationComponent,
+            "Attribute Anonymization Configuration",
+            "Define anonymization settings for each attribute. Each attribute requires a protection strategy and an interval size if applicable.",
+            AnonymizationAttributeConfigurationComponent.formGroupName,
+            AnonymizationAttributeConfigurationComponent.initForm,
         )
     )
-    additionalConfigs = new ConfigurationAdditionalConfigs(this.configs); 
+    additionalConfigs = new ConfigurationAdditionalConfigs(this.configs);
 
     constructor(
         private titleService: TitleService,

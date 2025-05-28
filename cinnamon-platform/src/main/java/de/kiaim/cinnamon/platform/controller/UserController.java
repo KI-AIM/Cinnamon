@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
-import de.kiaim.cinnamon.platform.model.dto.ErrorResponse;
+import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;

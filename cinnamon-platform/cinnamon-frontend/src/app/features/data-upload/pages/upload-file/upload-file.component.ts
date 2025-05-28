@@ -19,6 +19,7 @@ import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
 import { StatusService } from "../../../../shared/services/status.service";
 import { Observable } from "rxjs";
 import { FileInformation } from "../../../../shared/model/file-information";
+import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
 
 @Component({
     selector: "app-upload-file",
@@ -33,6 +34,9 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 	public fileConfiguration: FileConfiguration;
 
     protected fileInfo$: Observable<FileInformation>;
+
+    protected isDataFileTypeInvalid: boolean = false;
+    protected isConfigFileTypeInvalid: boolean = false;
 
 	@ViewChild("uploadErrorModal") errorModal: TemplateRef<NgbModal>;
 	@ViewChild("fileForm") fileInput: ElementRef;
@@ -68,6 +72,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 		public loadingService: LoadingService,
         private configurationService: ConfigurationService,
 		private errorMessageService: ErrorMessageService,
+        private readonly errorHandlingService: ErrorHandlingService,
 	) {
 		this.titleService.setPageTitle("Upload data");
 		this.fileConfiguration = fileService.getFileConfiguration();
@@ -81,6 +86,33 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         this.fileInfo$ = this.fileService.fileInfo$;
     }
 
+    /**
+     * Checks if the data file input is invalid.
+     * @return If the data file input is invalid.
+     * @protected
+     */
+    protected get isDataFileInvalid(): boolean {
+        return this.dataFile == null || this.isDataFileTypeInvalid;
+    }
+
+    /**
+     * Checks if the configuration file input is invalid.
+     * @return If the configuration file input is invalid.
+     * @protected
+     */
+    protected get isConfigFileInvalid(): boolean {
+        return this.isConfigFileTypeInvalid;
+    }
+
+    /**
+     * Checks if any file input is invalid.
+     * @return If any file input is invalid.
+     * @protected
+     */
+    protected get isInvalid(): boolean {
+        return this.isDataFileInvalid || this.isConfigFileInvalid;
+    }
+
     protected get locked(): boolean {
         return this.statusService.isStepCompleted(Steps.VALIDATION);
     }
@@ -89,17 +121,25 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 		const files = (event.target as HTMLInputElement)?.files;
 
 		if (files) {
-			this.dataFile = files[0];
-            this.setFileType(this.dataFile);
+            const fileExtension = this.getFileExtension(files[0]);
+            const validFileExtensions = ["csv", "xlsx"];
+
+            if (fileExtension && validFileExtensions.includes(fileExtension)) {
+                this.isDataFileTypeInvalid = false;
+                this.dataFile = files[0];
+                this.setFileType(fileExtension);
+            } else {
+                this.isDataFileTypeInvalid = true;
+            }
 		}
 	}
 
-    private getFileExtension(file: File): string {
-		var fileExtension = file.name.split(".").pop();
+    private getFileExtension(file: File): string | null {
+		const fileExtension = file.name.split(".").pop();
 		if (fileExtension != undefined) {
 			return fileExtension;
 		} else {
-			return "csv";
+			return null;
 		}
 	}
 
@@ -107,7 +147,15 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         const files = (event.target as HTMLInputElement)?.files;
 
         if (files) {
-            this.configurationFile = files[0];
+            const fileExtension = this.getFileExtension(files[0]);
+            const validFileExtensions = ["yml", "yaml"];
+
+            if (fileExtension && validFileExtensions.includes(fileExtension)) {
+                this.isConfigFileTypeInvalid = false;
+                this.configurationFile = files[0];
+            } else {
+                this.isConfigFileTypeInvalid = true;
+            }
         }
     }
 
@@ -125,17 +173,23 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                     // Estimate data configuration based on the data set
                     this.dataService.estimateData().subscribe({
                         next: (d) => this.handleUpload(d),
-                        error: (e) => this.handleError("Failed to estimate the data types" + this.errorMessageService.convertResponseToMessage(e)),
+                        error: (e) => this.handleError(e, "Failed to estimate the data configuration"),
                     });
                 } else {
                     // Use data configuration from the selected file
-                    this.configurationService.uploadAllConfigurations(this.configurationFile, null).subscribe(result => {
-                        this.handleConfigurationUpload(result);
-                    });
+                    this.configurationService.uploadAllConfigurations(this.configurationFile, [this.dataConfigurationService.CONFIGURATION_NAME]).subscribe(
+                        {
+                            next: result => {
+                                this.handleConfigurationUpload(result);
+                            },
+                            error: err => {
+                                this.handleError(err, "Failed to import data configuration");
+                            },
+                        });
                 }
             },
             error: err => {
-                this.handleError("Failed to upload file" + this.errorMessageService.convertResponseToMessage(err));
+                this.handleError(err, "Failed to upload file");
             },
         });
 	}
@@ -146,30 +200,19 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      * @param result The result.
      */
     private handleConfigurationUpload(result: ImportPipeData[] | null) {
-        let hasError = false;
-        let errorMessage = "";
-
-        if (result === null) {
-            errorMessage = "An unexpected error occurred!";
-            hasError = true;
+        if (result === null || result.length === 0) {
+            this.handleError("An unexpected error occurred!");
+        } else if (result[0].error !== null) {
+            // Only one configuration is imported as defined when calling the upload
+            this.handleError(result[0].error);
         } else {
-            for (const importData of result) {
-                if (importData.error !== null) {
-                    hasError = true;
-                    errorMessage += "Errors for '" + importData.name + "':" + this.errorMessageService.convertResponseToMessage(importData.error);
-                }
-            }
-        }
-
-        if (hasError) {
-            this.handleError("Failed to import the configurations<br>" + errorMessage);
-        } else {
+            // No error occurred
             this.navigateToNextStep();
         }
     }
 
-	setFileType(file: File) {
-		switch (this.getFileExtension(file)) {
+	setFileType(fileExtension: string) {
+		switch (fileExtension) {
 			case "csv":
 				this.fileConfiguration.fileType = FileType.CSV;
 				break;
@@ -198,9 +241,10 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         this.statusService.updateNextStep(Steps.DATA_CONFIG).subscribe();
 	}
 
-	private handleError(error: string) {
+	private handleError(err: any, message?: string) {
 		this.loadingService.setLoadingStatus(false);
-		this.showErrorDialog(error);
+        this.errorHandlingService.addError(err, message);
+		// this.showErrorDialog(error);
 	}
 
 	private showErrorDialog(error: string) {

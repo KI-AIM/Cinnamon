@@ -20,9 +20,6 @@ services:
 #            - ./volumes/cinnamon-db/data:/var/lib/postgresql/data
     cinnamon-platform:
         image: ghcr.io/ki-aim/cinnamon-platform:latest
-        build:
-            context: ./
-            dockerfile: ./cinnamon-platform/Dockerfile
         container_name: cinnamon-platform
         restart: unless-stopped
         ports:
@@ -61,9 +58,6 @@ services:
             - cinnamon-db
     cinnamon-synthetization:
         image: ghcr.io/ki-aim/cinnamon-synthetization:latest
-        build:
-            context: ./cinnamon-synthetization
-            dockerfile: Dockerfile
         container_name: cinnamon-synthetization
         restart: unless-stopped
         ports:
@@ -72,9 +66,6 @@ services:
             - synthetization-network
     cinnamon-evaluation:
         image: ghcr.io/ki-aim/cinnamon-evaluation:latest
-        build:
-            context: ./cinnamon-evaluation
-            dockerfile: Dockerfile
         container_name: cinnamon-evaluation
         restart: unless-stopped
         ports:
@@ -83,9 +74,6 @@ services:
             - evaluation-network
     cinnamon-risk-assessment:
         image: ghcr.io/ki-aim/cinnamon-risk-assessment:latest
-        build:
-            context: ./cinnamon-risk-assessment
-            dockerfile: Dockerfile
         container_name: cinnamon-risk-assessment
         restart: unless-stopped
         ports:
@@ -95,9 +83,6 @@ services:
             - evaluation-network
     cinnamon-anonymization:
         image:  ghcr.io/ki-aim/cinnamon-anonymization:latest
-        build:
-            context: ./
-            dockerfile: ./cinnamon-anonymization/Dockerfile
         container_name: cinnamon-anonymization
         restart: unless-stopped
         ports:

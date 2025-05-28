@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { environments } from "../../../environments/environment";
 import { HttpClient } from "@angular/common/http";
 import { catchError, finalize, Observable, of, share, tap } from "rxjs";
+import { ErrorHandlingService } from "./error-handling.service";
 
 @Injectable({
     providedIn: 'root'
@@ -14,6 +15,7 @@ export class AppConfigService {
 
     constructor(
         private readonly http: HttpClient,
+        private readonly errorHandlingService: ErrorHandlingService,
     ) {
     }
 
@@ -30,8 +32,9 @@ export class AppConfigService {
                 this._appConfig = value;
             }),
             share(),
-            catchError(() => {
-                return of({isCinnamonUnavailable: true, isDemoInstance: false});
+            catchError((e) => {
+                this.errorHandlingService.addError(e, "Cinnamon is currently unavailable. Please try again later.");
+                return of({isDemoInstance: false});
             }),
             finalize(() => {
                 this._appConfig$ = null;
@@ -45,6 +48,5 @@ export class AppConfigService {
 }
 
 export interface AppConfig {
-    isCinnamonUnavailable?: boolean;
     isDemoInstance: boolean;
 }

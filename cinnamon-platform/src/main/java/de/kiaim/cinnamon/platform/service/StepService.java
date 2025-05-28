@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.service;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
 import de.kiaim.cinnamon.platform.model.configuration.*;
 import de.kiaim.cinnamon.platform.exception.BadStepNameException;
+import de.kiaim.cinnamon.platform.model.entity.BackgroundProcessEntity;
 import de.kiaim.cinnamon.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,10 @@ public class StepService {
 
 	public ExternalEndpoint getExternalServerEndpointConfiguration(final Job stepConfiguration) {
 		return cinnamonConfiguration.getExternalServerEndpoints().get(stepConfiguration.getExternalServerEndpointIndex());
+	}
+
+	public ExternalEndpoint getExternalServerEndpointConfiguration(final BackgroundProcessEntity process) {
+		return cinnamonConfiguration.getExternalServerEndpoints().get(process.getEndpoint());
 	}
 
 	public ExternalServer getExternalServerConfiguration(final ExternalEndpoint externalServerEndpoint) {

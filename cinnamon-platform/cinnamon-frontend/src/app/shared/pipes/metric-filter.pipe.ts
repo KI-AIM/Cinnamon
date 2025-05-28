@@ -15,7 +15,7 @@ export class MetricFilterPipe implements PipeTransform {
         }
         else if (!importance) {
             return value.filter(val => {
-                return val[1].display_name.toLowerCase().includes(filterText.toLowerCase());
+                return val[1].display_name.toLowerCase().includes(filterText.trim().toLowerCase());
             });
         }
         else if (!filterText) {
@@ -24,7 +24,7 @@ export class MetricFilterPipe implements PipeTransform {
             });
         } else {
             return value.filter(val => {
-                return val[1].display_name.toLowerCase().includes(filterText.toLowerCase()) && val[2] == MetricImportanceData[importance].value;
+                return val[1].display_name.toLowerCase().includes(filterText.trim().toLowerCase()) && val[2] == MetricImportanceData[importance].value;
             });
         }
     }

@@ -1,0 +1,26 @@
+services:
+    cinnamon-platform:
+        image: ghcr.io/ki-aim/cinnamon-platform:latest
+        build:
+            context: ./
+            dockerfile: ./cinnamon-platform/Dockerfile
+    cinnamon-synthetization:
+        image: ghcr.io/ki-aim/cinnamon-synthetization:latest
+        build:
+            context: ./cinnamon-synthetization
+            dockerfile: Dockerfile
+    cinnamon-evaluation:
+        image: ghcr.io/ki-aim/cinnamon-evaluation:latest
+        build:
+            context: ./cinnamon-evaluation
+            dockerfile: Dockerfile
+    cinnamon-risk-assessment:
+        image: ghcr.io/ki-aim/cinnamon-risk-assessment:latest
+        build:
+            context: ./cinnamon-risk-assessment
+            dockerfile: Dockerfile
+    cinnamon-anonymization:
+        image:  ghcr.io/ki-aim/cinnamon-anonymization:latest
+        build:
+            context: ./
+            dockerfile: ./cinnamon-anonymization/Dockerfile

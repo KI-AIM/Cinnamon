@@ -1,6 +1,8 @@
 package de.kiaim.cinnamon.platform.exception;
 
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.controller.ApiExceptionHandler;
+import lombok.Getter;
 import org.springframework.http.HttpStatusCode;
 
 /**
@@ -29,9 +31,21 @@ public abstract class ApiException extends Exception {
 
 	private final String exceptionCode;
 
+	/**
+	 * Additional information about the error.
+	 */
+	@Getter
+	private ErrorDetails errorDetails = new ErrorDetails();
+
 	public ApiException(final String exceptionCode, final String message) {
 		super(message);
 		this.exceptionCode = exceptionCode;
+	}
+
+	public ApiException(final String exceptionCode, final String message, final ErrorDetails errorDetails) {
+		super(message);
+		this.exceptionCode = exceptionCode;
+		this.errorDetails = errorDetails;
 	}
 
 	public ApiException(final String exceptionCode, final String message, final Exception cause) {

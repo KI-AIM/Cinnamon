@@ -56,8 +56,6 @@ public class StatisticsControllerTest extends ControllerTest {
 
 	@Test
 	public void getStatistics() throws Exception {
-		final String statisticsContent = "statistics";
-
 		// Preparation
 		postData(false);
 
@@ -73,7 +71,7 @@ public class StatisticsControllerTest extends ControllerTest {
 		mockMvc.perform(get("/api/statistics")
 				                .param("selector", "original"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(""));
+		       .andExpect(content().json("{status: 'RUNNING', statistics: null}"));
 
 		assertEquals(1, mockBackEnd.getRequestCount());
 		var recordedRequest = mockBackEnd.takeRequest();
@@ -87,7 +85,7 @@ public class StatisticsControllerTest extends ControllerTest {
 
 		final MockMultipartFile resultAdditional = new MockMultipartFile("metrics.json", "metrics.json",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
-		                                                                 statisticsContent.getBytes());
+		                                                                 "statistics".getBytes());
 
 		mockMvc.perform(multipart("/api/process/" + id + "/callback")
 				                .file(resultAdditional))
@@ -103,7 +101,7 @@ public class StatisticsControllerTest extends ControllerTest {
 		mockMvc.perform(get("/api/statistics")
 				                .param("selector", "original"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string("\"" + statisticsContent + "\"\n"));
+		       .andExpect(content().json("{status: 'FINISHED', statistics: 'statistics'}"));
 
 		assertEquals(1, mockBackEnd.getRequestCount(), "No request should have been made!");
 	}

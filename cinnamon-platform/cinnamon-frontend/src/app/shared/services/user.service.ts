@@ -77,4 +77,14 @@ export class UserService {
 	}): Observable<any> {
 		return this.http.post(this.baseURL + "/register", request);
 	}
+
+    /**
+     * Invalidates the current session and redirects to the login page.
+     */
+    public invalidate(): void {
+        sessionStorage.removeItem(this.USER_KEY);
+        this.router.navigate(['login', { mode: 'expired' }]).then(
+            () => window.location.reload()
+        );
+    }
 }

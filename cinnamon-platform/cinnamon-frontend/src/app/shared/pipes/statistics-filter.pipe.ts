@@ -21,7 +21,9 @@ export class StatisticsFilterPipe implements PipeTransform {
           result.filteredCount = value.length;
       } else {
           const filtered = value.filter(attributeStatistic => {
-              return attributeStatistic.attribute_information.name.includes(filterText);
+              const normalizedName = attributeStatistic.attribute_information.name.trim().toLowerCase();
+              const normalizedFilterText = filterText.trim().toLowerCase();
+              return normalizedName.includes(normalizedFilterText);
           });
 
           result.filteredList = filtered;

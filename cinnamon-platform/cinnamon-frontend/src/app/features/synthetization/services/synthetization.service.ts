@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AlgorithmService } from "../../../shared/services/algorithm.service";
+import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
@@ -35,7 +35,7 @@ export class SynthetizationService extends AlgorithmService {
         };
     }
 
-    public override readConfiguration(arg: any, configurationName: string): {config: Object, selectedAlgorithm: Algorithm} {
+    public override readConfiguration(arg: any, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName(arg[configurationName]["algorithm"]["synthesizer"]);
         const config = arg[configurationName]["algorithm"];
         delete config["synthesizer"];

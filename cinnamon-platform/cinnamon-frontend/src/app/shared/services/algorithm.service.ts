@@ -1,7 +1,7 @@
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { map, Observable, of, tap } from "rxjs";
+import { catchError, map, Observable, of, tap } from "rxjs";
 import { parse, stringify } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
@@ -44,7 +44,7 @@ export abstract class AlgorithmService {
      * @param arg The configuration object.
      * @param configurationName The key of the configuration.
      */
-    abstract readConfiguration(arg: Object, configurationName: string): { config: Object, selectedAlgorithm: Algorithm };
+    abstract readConfiguration(arg: Object, configurationName: string): ReadConfigResult;
 
     /**
      * Fetches the configuration information from the backend.
@@ -63,11 +63,20 @@ export abstract class AlgorithmService {
         return stringify(this.createConfiguration(config.formData, config.selectedAlgorithm));
     }
 
-    public fetchConfiguration(): Observable<{ config: Object, selectedAlgorithm: Algorithm }> {
+    public fetchConfiguration(): Observable<ReadConfigResult2> {
+        const cachedAlgorithm = this.configurationService.getSelectedAlgorithm(this.getConfigurationName());
+        const cachedConfig = this.configurationService.getSelectedConfiguration(this.getConfigurationName());
+        if (cachedConfig != null) {
+            return of({config: cachedConfig, selectedAlgorithm: cachedAlgorithm});
+        }
+
         return this.configurationService.loadConfig(this.getConfigurationName()).pipe(
             map(value => {
                 return this.readConfiguration(parse(value), this.getConfigurationName());
             }),
+            catchError(() => {
+                return of({config: {}, selectedAlgorithm: null});
+            })
         );
     }
 
@@ -237,4 +246,14 @@ export interface ProcessInfo {
 export interface ConfigData {
     formData: Object,
     selectedAlgorithm: Algorithm
+}
+
+export interface ReadConfigResult {
+    config: Object,
+    selectedAlgorithm: Algorithm
+}
+
+export interface ReadConfigResult2 {
+    config: Object,
+    selectedAlgorithm: Algorithm | null
 }

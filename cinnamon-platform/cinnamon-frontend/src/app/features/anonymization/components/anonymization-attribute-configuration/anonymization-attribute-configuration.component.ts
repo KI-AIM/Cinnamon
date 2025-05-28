@@ -42,9 +42,12 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
     /**
      * Initializes the given form to be used by this component.
      * @param form The form to be initialized.
+     * @param configs The initial configuration.
+     * @param disabled If the form is disabled initially.
      */
-    static initForm(form: FormGroup): void {
+    static initForm(form: FormGroup, configs: AnonymizationAttributeRowConfiguration[], disabled: boolean): void {
         form.addControl(AnonymizationAttributeConfigurationComponent.formGroupName, new FormArray([], [Validators.required, AnonymizationAttributeConfigurationComponent.hasGeneralization]));
+        AnonymizationAttributeConfigurationComponent.doSetValue(configs, new FormBuilder(), AnonymizationAttributeConfigurationComponent.getAttributeConfigurationFormArray(form), disabled);
     }
 
     ngOnInit() {
@@ -126,16 +129,21 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
      */
     public patchValue(configs: AnonymizationAttributeRowConfiguration[]) {
         this.removeAllAttributes();
+        AnonymizationAttributeConfigurationComponent.doSetValue(configs, this.formBuilder, this.getAttributeConfigurationFormArray(this.form), this.disabled);
+    }
+
+    public static doSetValue(configs: AnonymizationAttributeRowConfiguration[], formBuilder: FormBuilder, form: FormArray, disabled: boolean) {
         configs.forEach(config => {
-            const group = this.formBuilder.group({
-                attributeProtection: [{value: config.attributeProtection, disabled: this.disabled}, [Validators.required]],
+            const group = formBuilder.group({
+                attributeProtection: [{value: config.attributeProtection, disabled: disabled}, [Validators.required]],
                 dataType: [{value: config.dataType, disabled: true}, [Validators.required]],
                 index: [config.index, [Validators.required]],
-                intervalSize: [{value: config.intervalSize, disabled: this.disabled}, [Validators.required]],
+                intervalSize: [{value: config.intervalSize, disabled: disabled}, [Validators.required]],
                 name: [{value: config.name, disabled: true}, [Validators.required]],
                 scale: [{value: config.scale, disabled: true}, [Validators.required]],
             });
-            this.getAttributeConfigurationFormArray(this.form).push(group);
+
+            form.push(group);
         });
     }
 
@@ -154,6 +162,10 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
     }
 
     protected getAttributeConfigurationFormArray(form: FormGroup): FormArray {
+        return form.controls[AnonymizationAttributeConfigurationComponent.formGroupName] as FormArray;
+    }
+
+    private static getAttributeConfigurationFormArray(form: FormGroup): FormArray {
         return form.controls[AnonymizationAttributeConfigurationComponent.formGroupName] as FormArray;
     }
 

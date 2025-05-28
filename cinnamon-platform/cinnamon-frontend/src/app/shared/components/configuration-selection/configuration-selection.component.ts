@@ -10,6 +10,7 @@ import { Algorithm } from "../../model/algorithm";
 })
 export class ConfigurationSelectionComponent {
     @Input() public algorithms!: Algorithm[]
+    @Input() public initialValue!: Algorithm | null;
     @Input() public disabled!: boolean;
     @Output() public change = new EventEmitter<Algorithm>();
 

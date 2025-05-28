@@ -1,5 +1,5 @@
-<ng-container *ngIf="{status: status$ | async } as data">
-    <ng-container *ngIf="data.status !== null">
+<ng-container *ngIf="{status: status$ | async, configurationData: configurationData$ | async} as data">
+    <ng-container *ngIf="data.status !== null && data.configurationData !== null">
         <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
             <app-workstep-list confirmLabel="Confirm configuration" [locked]="disabled" [numberSteps]="4" [step]="step"
@@ -8,7 +8,7 @@
                 <app-workstep-item title="Select steps to execute" [locked]="disabled" [stepIndex]="0"
                                    [invalid]="!oneEnabled" altConfirm="Skip all steps" [altConfirmAll]="true"
                                    [altConfirmValid]="!oneEnabled">
-                <ng-container *ngTemplateOutlet="processActivation"></ng-container>
+                    <ng-container *ngTemplateOutlet="processActivation"></ng-container>
                 </app-workstep-item>
 
                 <!-- Upload -->
@@ -22,27 +22,28 @@
 
                 <!-- Algorithm Selection -->
                 <app-workstep-item title="Select the algorithm to be executed" [locked]="disabled"
-                                   [stepIndex]="2" [invalid]="selection.selectedOption == null">
+                                   [stepIndex]="2" [invalid]="selectedAlgorithm == null">
                     <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled || !oneEnabled"
-                                                 (change)="onSelectionChange()">
+                                                 [initialValue]="data.configurationData.selectedAlgorithm"
+                                                 (change)="onSelectionChange($event)">
                     </app-configuration-selection>
                 </app-workstep-item>
 
                 <!-- Algorithm Configuration -->
                 <app-workstep-item title="Configure the selected algorithm" [locked]="disabled"
                                    [stepIndex]="3" [invalid]="!formValid">
-                    <div *ngIf="!selection.selectedOption; else configurationForms" id="placeholder" class="w-100 mt-4">
+                    <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                         <div class="ms-auto me-auto" style="width: fit-content">
                             Please select an algorithm in the previous step first.
                         </div>
                     </div>
                     <ng-template #configurationForms>
                         <div *ngFor="let item of algorithms" [id]="item">
-                            <ng-container *ngIf="selection.selectedOption != null && selection.selectedOption.name === item.name">
+                            <ng-container *ngIf="selectedAlgorithm != null && selectedAlgorithm.name === item.name">
                                 <p>{{ item.description }}</p>
 
                                 <app-configuration-form #form [algorithm]="item" [disabled]="disabled || !oneEnabled"
-                                                        (onChange)="onFormChange()"
+                                                        (onChange)="onFormChange($event)"
                                                         [additionalConfigs]="additionalConfigs">
                                 </app-configuration-form>
                             </ng-container>
@@ -67,24 +68,25 @@
             </app-workstep-box>
 
             <app-workstep-box title="Algorithm Selection" [class.d-none]="!hasAlgorithmSelection">
-                <app-configuration-selection #selection [algorithms]="algorithms" [disabled]="disabled || !oneEnabled"
-                                             (change)="onSelectionChange()">
+                <app-configuration-selection #selection [algorithms]="algorithms"
+                                             [initialValue]="data.configurationData.selectedAlgorithm"
+                                             [disabled]="disabled || !oneEnabled" (change)="onSelectionChange($event)">
                 </app-configuration-selection>
             </app-workstep-box>
 
-            <app-workstep-box title="Algorithm Configuration" [invalid]="selection.selectedOption && !formValid">
-                <div *ngIf="!selection.selectedOption; else configurationForms" id="placeholder" class="w-100 mt-4">
+            <app-workstep-box title="Algorithm Configuration" [invalid]="selectedAlgorithm !== null && !formValid">
+                <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                     <div class="ms-auto me-auto" style="width: fit-content">
                         Please select an algorithm
                     </div>
                 </div>
                 <ng-template #configurationForms>
                     <div *ngFor="let item of algorithms" [id]="item">
-                        <ng-container *ngIf="selection.selectedOption.name === item.name">
+                        <ng-container *ngIf="selectedAlgorithm!.name === item.name">
                             <p>{{ item.description }}</p>
 
                             <app-configuration-form #form [algorithm]="item" [disabled]="disabled || !oneEnabled"
-                                                    (onChange)="onFormChange()" [additionalConfigs]="additionalConfigs">
+                                                    (onChange)="onFormChange($event)" [additionalConfigs]="additionalConfigs">
                             </app-configuration-form>
                         </ng-container>
                     </div>

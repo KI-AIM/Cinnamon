@@ -518,5 +518,17 @@ def test_callback():
     return jsonify({'message': 'Callback function called', 'session_key': session_key}), 200
 
 
+@app.route('/actuator/health', methods=['GET'])
+def health_check():
+    """
+    Provides a health status for the application.
+
+    Returns:
+        A JSON object indicating the application's health status.
+    """
+    status = {"status": "UP"}
+    return jsonify(status), 200
+
+
 if __name__ == '__main__':
     app.run(debug=True)

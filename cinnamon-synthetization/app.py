@@ -4,6 +4,8 @@ import sys
 import time
 from multiprocessing import Process
 from threading import Event
+from datetime import datetime
+import json
 
 import pandas as pd
 import requests
@@ -509,37 +511,44 @@ def test_callback():
         return jsonify({'error': str(e)}), 400
 
 
-def send_callback_error(callback_url, session_key, message, status_code):
+def send_callback_error(callback_url, session_key, error_message, error_code, error_details=None):
     """
-    Sends error messages to the provided callback URL using multipart/form-data.
+    Sends error messages to the provided callback URL as a JSON payload.
 
     Args:
         callback_url (str): The client's callback URL.
-        session_key (str): Unique session identifier.
-        message (str): The error message to send.
-        status_code (int): The HTTP status code to include in the callback.
-        part_name (str): Name of the part for the error message (as specified in application.properties).
+        session_key (str): Unique session identifier. This will be part of errorDetails.
+        error_message (str): The human-readable error message.
+        error_code (str): The error code in the format [SOURCE]_[ExceptionTypeCode]_[ExceptionClassCode]_[ExceptionCode].
+        error_details (dict, optional): Additional information for the error as JSON.
+                                        Defaults to None.
     """
-    # Prepare the error message as a file-like object
-    error_message = io.BytesIO(message.encode('utf-8'))  # Convert error message to bytes
+    if error_details is None:
+        error_details = {}
 
-    # Prepare the data for the multipart/form-data request
-    files = {
-        'error_message': ('error_message.txt', error_message, 'text/plain'),  # Error message as a form part
+    error_details['sessionKey'] = session_key
+
+    payload = {
+        "type": "about:blank",
+        "timestamp": datetime.now().isoformat(timespec='milliseconds') + 'Z',
+        "errorCode": error_code,
+        "errorMessage": error_message,
+        "errorDetails": error_details
     }
-    data = {
-        'session_key': session_key,  # Include session key as form data
-        'status_code': status_code,  # Include status code as form data
+
+    headers = {
+        'Content-Type': 'application/json'
     }
 
     try:
-        print(f"Sending error callback to {callback_url} with data: {data} and files: {files}")
-        response = requests.post(callback_url, files=files, data=data, timeout=5)
+        print(f"Sending error callback to {callback_url} with JSON payload: {json.dumps(payload, indent=2)}")
+        response = requests.post(callback_url, headers=headers, json=payload, timeout=5)
         print(f"Response status code: {response.status_code}")
         print(f"Response text: {response.text}")
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        print(f"Failed to send error to callback URL: {str(e)}")
+        print(f"Failed to send error to callback URL: {e}")
+
 
 
 if __name__ == '__main__':

@@ -86,9 +86,12 @@ public class ExternalServerHealthIndicator implements HealthIndicator {
 		             ? Status.UNKNOWN.getCode()
 		             : Status.DOWN.getCode();
 		try {
-			var b = objectMapper.readValue(response.getBody(), Map.class);
-			if (b != null && b.containsKey("status")) {
-				status = (String) b.get("status");
+			var body = objectMapper.readValue(response.getBody(), Map.class);
+			if (body != null && body.containsKey("status")) {
+				// Status can also be the HTTP Status of an error response
+				if (body.get("status") instanceof String bodyStatus) {
+					status = bodyStatus;
+				}
 			}
 		} catch (JsonProcessingException ignored) {
 		}

@@ -16,7 +16,6 @@ from flask_cors import CORS
 from evaluation_metrics import (
     metric_functions_cross_sectional,
     metric_functions_longitudinal,
-    metric_functions_process_oriented,
     metric_functions_descriptive
 )
 
@@ -48,7 +47,7 @@ def get_metric_metadata(data_format: str, metric_type: str, evaluation_metadata:
     Retrieves and matches metadata for metrics based on data format and metric type.
 
     Args:
-        data_format (str): Format of the data ("cross-sectional", "longitudinal", or "process-oriented")
+        data_format (str): Format of the data ("cross-sectional" or "longitudinal")
         metric_type (str): Type of metric to retrieve metadata for
         evaluation_metadata (dict): Dictionary containing metadata for all metrics
 
@@ -62,8 +61,7 @@ def get_metric_metadata(data_format: str, metric_type: str, evaluation_metadata:
     """
     format_to_metrics = {
         "cross-sectional": metric_functions_cross_sectional,
-        "longitudinal": metric_functions_longitudinal,
-        "process-oriented": metric_functions_process_oriented
+        "longitudinal": metric_functions_longitudinal
     }
 
     metrics_dict = format_to_metrics.get(data_format, {}).get(metric_type, {})
@@ -635,9 +633,6 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
         elif data_format == 'longitudinal':
             metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
                                              metric_functions_longitudinal)
-        elif data_format == 'process-oriented':
-            metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
-                                             metric_functions_process_oriented)
         else:
             error_message = f"Data format not supported: {data_format}"
             send_callback_error(callback_url, session_key, error_message, 400) # 400 Bad Request

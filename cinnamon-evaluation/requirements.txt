@@ -4,7 +4,6 @@ PyYAML==6.0.1
 scikit-learn>=0.24,<2
 numpy~=2.0.2
 scipy~=1.13.1
-pm4py~=2.7.11.11
 requests==2.32.3
 Flask-Cors==4.0.1
 gunicorn>=22.0.0

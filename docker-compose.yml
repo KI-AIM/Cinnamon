@@ -56,6 +56,12 @@ services:
             CINNAMON.EXTERNAL-SERVER.risk-assessment-server.URL-SERVER: http://cinnamon-risk-assessment:8000
         depends_on:
             - cinnamon-db
+        healthcheck:
+            test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+            interval: 10m
+            timeout: 3s
+            retries: 3
+            start_period: 30s
     cinnamon-synthetization:
         image: ghcr.io/ki-aim/cinnamon-synthetization:latest
         container_name: cinnamon-synthetization

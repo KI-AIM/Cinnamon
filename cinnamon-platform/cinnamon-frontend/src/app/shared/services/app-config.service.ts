@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
+import { Injectable } from '@angular/core';
+import { catchError, finalize, Observable, of, shareReplay, tap } from "rxjs";
 import { ErrorHandlingService } from "src/app/shared/services/error-handling.service";
 import { environments } from "src/environments/environment";
-import { catchError, finalize, Observable, of, shareReplay, tap } from "rxjs";
 
 @Injectable({
     providedIn: 'root'
@@ -41,6 +41,7 @@ export class AppConfigService {
                         minLength: 0,
                         constraints: [],
                     },
+                    version: 'unknown',
                 });
             }),
             finalize(() => {
@@ -58,6 +59,7 @@ export interface AppConfig {
     isDemoInstance: boolean;
     maxFileSize: number;
     passwordRequirements: PasswordRequirements;
+    version: string;
 }
 
 export interface PasswordRequirements {

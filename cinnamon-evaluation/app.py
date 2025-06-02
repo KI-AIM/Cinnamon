@@ -270,46 +270,213 @@ def statistics_data(session_key, callback_url, attribute_config, evaluation_conf
     print("Evaluating Data")
 
     print("Initializing Input Data")
-    processed_real_data, processed_synthetic_data = preprocess_datasets(real_data, synthetic_data, attribute_config['configurations'])
+    try:
+        processed_real_data, processed_synthetic_data = preprocess_datasets(real_data, synthetic_data, attribute_config['configurations'])
+    except Exception as e:
+        error_message = f"Error during data preprocessing: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
-    data_format, metrics = validate_and_extract_metrics(evaluation_config)
+    try:
+        data_format, metrics = validate_and_extract_metrics(evaluation_config)
+    except Exception as e:
+        error_message = f"Error during validation and metric extraction: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     overview_resemblance_path = os.path.join(app_dir, 'resemblance', 'overview_resemblance_metrics.yaml')
-    with open(overview_resemblance_path, 'r') as file:
-        overview_metrics = yaml.safe_load(file)
+    try:
+        with open(overview_resemblance_path, 'r') as file:
+            overview_metrics = yaml.safe_load(file)
+    except FileNotFoundError as e:
+        error_message = f"Resemblance metrics file not found: {overview_resemblance_path}"
+        send_callback_error(callback_url, session_key, error_message, 404)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 404
+        }
+    except yaml.YAMLError as e:
+        error_message = f"Error loading resemblance metrics YAML from {overview_resemblance_path}: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+    except Exception as e:
+        error_message = f"Unexpected error loading resemblance metrics from {overview_resemblance_path}: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     time_attributes_path = os.path.join(app_dir, 'static_configs', 'evaluation_config_time_attributes.yaml')
-    with open(time_attributes_path, 'r') as file:
-        time_attributes_config = yaml.safe_load(file)
+    try:
+        with open(time_attributes_path, 'r') as file:
+            time_attributes_config = yaml.safe_load(file)
+    except FileNotFoundError as e:
+        error_message = f"Time attributes config file not found: {time_attributes_path}"
+        send_callback_error(callback_url, session_key, error_message, 404)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 404
+        }
+    except yaml.YAMLError as e:
+        error_message = f"Error loading time attributes config YAML from {time_attributes_path}: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+    except Exception as e:
+        error_message = f"Unexpected error loading time attributes config from {time_attributes_path}: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+
 
     print("Data format:", data_format)
 
     print("Calculating Metrics")
-    metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
-                                      metric_functions_descriptive)
+    metrics_result = None
+    try:
+        # Assuming dispatch_metrics in statistics_data always uses metric_functions_descriptive
+        metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
+                                          metric_functions_descriptive)
+    except Exception as e:
+        error_message = f"Error during metric calculation: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
-    empty_config = create_empty_config(attribute_config)
+    if metrics_result is None:
+        error_message = "Metric calculation failed to produce a result (metrics_result is None)."
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
-    # organize the metrics by visualization type and group them by visualization type
-    grouped_metrics = group_metrics_by_visualization_type(overview_metrics)
+    try:
+        empty_config = create_empty_config(attribute_config)
+    except Exception as e:
+        error_message = f"Error creating empty config: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
-    # Add metrics to config
-    metrics_dict = add_metrics_to_config(empty_config, metrics_result, grouped_metrics)
+    try:
+        grouped_metrics = group_metrics_by_visualization_type(overview_metrics)
+    except Exception as e:
+        error_message = f"Error grouping metrics by visualization type: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
-    # Enrich Metrics
-    enriched_metrics = enrich_metrics_with_descriptions(metrics_dict, overview_metrics, add_interpretation=True)
+    try:
+        metrics_dict = add_metrics_to_config(empty_config, metrics_result, grouped_metrics)
+    except Exception as e:
+        error_message = f"Error adding metrics to config: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
-    # Add value differences
-    enriched_metrics = add_value_differences(enriched_metrics)
+    try:
+        enriched_metrics = enrich_metrics_with_descriptions(metrics_dict, overview_metrics, add_interpretation=True)
+    except Exception as e:
+        error_message = f"Error enriching metrics with descriptions: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
-    # Remove synthetic and difference
-    enriched_metrics = remove_synthetic_and_difference(enriched_metrics)
+    try:
+        enriched_metrics = add_value_differences(enriched_metrics)
+    except Exception as e:
+        error_message = f"Error adding value differences: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
-    # transform time attributes to date
-    enriched_metrics = convert_attributes_to_date(enriched_metrics, time_attributes_config)
+    # MISSING FUNCTION CALL 1: remove_synthetic_and_difference
+    try:
+        enriched_metrics = remove_synthetic_and_difference(enriched_metrics)
+    except Exception as e:
+        error_message = f"Error removing synthetic and difference metrics: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
-    # Add the description of the resemblance utility metric to the enriched dictionary
-    enriched_metrics = add_resembance_description(enriched_metrics, overview_metrics)
+    try:
+        enriched_metrics = convert_attributes_to_date(enriched_metrics, time_attributes_config)
+    except Exception as e:
+        error_message = f"Error converting time attributes to date: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+
+    try:
+        enriched_metrics = add_resembance_description(enriched_metrics, overview_metrics)
+    except Exception as e:
+        error_message = f"Error adding resemblance description: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
+
+    # MISSING FUNCTION CALL 2: add_overview_to_config
+    try:
+        enriched_metrics = add_overview_to_config(enriched_metrics)
+    except Exception as e:
+        error_message = f"Error adding overview to config: {e}"
+        send_callback_error(callback_url, session_key, error_message, 500)
+        return {
+            'message': error_message,
+            'session_key': session_key,
+            'status_code': 500
+        }
 
     try:
         files = prepare_callback_data(enriched_metrics)
@@ -317,7 +484,13 @@ def statistics_data(session_key, callback_url, attribute_config, evaluation_conf
         print("Callback made successfully")
 
     except requests.exceptions.RequestException as e:
-        print(f"Error while making callback: {e}")
+        print(f"Failed to send final results callback to URL {callback_url}: {e}", file=sys.stderr)
+        pass # As per evaluate_data, it doesn't return an error here
+    except Exception as e:
+        print(f"Unexpected error preparing or sending final results callback to URL {callback_url}: {e}", file=sys.stderr)
+        pass
+
+    return enriched_metrics
 
 
 def evaluate_data(session_key, callback_url, attribute_config, evaluation_config, real_data, synthetic_data):
@@ -339,7 +512,7 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
 
     print("Initializing Input Data")
     try:
-        processed_real_data, processed_synthetic_data = preprocess_datasets("real_data", synthetic_data, attribute_config['configurations'])
+        processed_real_data, processed_synthetic_data = preprocess_datasets(real_data, synthetic_data, attribute_config['configurations'])
     except Exception as e:
         error_message = f"Error during data preprocessing: {e}"
         send_callback_error(callback_url, session_key, error_message, 500)

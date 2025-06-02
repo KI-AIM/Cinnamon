@@ -8,6 +8,7 @@ from resemblance.tabular.metrics import (mean, standard_deviation, calculate_var
                                          calculate_frequencies_plot,
                                          calculate_hellinger_distance,
                                          calculate_columnwise_correlations,
+                                         calculate_columnwise_correlations_distance,
                                          visualize_columnwise_correlations,
                                          missing_values_count, 
                                          calculate_mode)
@@ -70,6 +71,7 @@ metric_functions_cross_sectional = {
         'hellinger_distance': calculate_hellinger_distance,
         'frequency_plot': calculate_frequencies_plot,
         'calculate_columnwise_correlations': calculate_columnwise_correlations,
+        'calculate_columnwise_correlations_distance': calculate_columnwise_correlations_distance,
         'missing_values_count': missing_values_count,
         'visualize_columnwise_correlations': visualize_columnwise_correlations
     },

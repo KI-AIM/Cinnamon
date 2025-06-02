@@ -128,10 +128,17 @@ resemblance:
       visualization_type: "details"
       version: "0.0.1"
 
-    - display_name: "Phi-K Correlation"
+    - display_name: "Phi-K Correlation (Mean)"
       function_name: calculate_columnwise_correlations
       description: "Measures the average correlation of a feature with all other features. Suitable for mixed data types. This calculation can take a long time."
       interpretation: "Values near 1 indicate a strong relationships with other features. Values near 0 suggest weak relationships. Compare whether these patterns are similar in the protected data. "
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Phi-K Correlation (Distance)"
+      function_name: calculate_columnwise_correlations_distance
+      description: "Measures the average distance of the correlation of a feature with all other features. Suitable for mixed data types. This calculation can take a long time."
+      interpretation: "Values near 0 indicate similar relationships with other features. Values near 1 suggest weak relationships. Compare whether these patterns are similar in the protected data. "
       visualization_type: "details"
       version: "0.0.1"
 

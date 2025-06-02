@@ -1173,6 +1173,114 @@ def calculate_columnwise_correlations(
                 column_correlations[df_name][column] = "NA"
         return column_correlations
 
+def calculate_columnwise_correlations_distance(
+    real: pd.DataFrame, synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, float]]:
+    """
+    Calculate the mean absolute difference in pairwise correlations for each attribute
+    between the real and synthetic datasets, structured for frontend consumption.
+
+    For each attribute (column), the value under the 'synthetic' key represents
+    the average of the absolute differences between its pairwise correlations
+    (with all other attributes) in the real dataset versus in the synthetic dataset.
+    The 'real' key will contain 0.0 for all attributes.
+
+    Handles columns with constant values by assigning them a correlation of 0.0.
+    If a pairwise correlation cannot be calculated (e.g., due to constant columns
+    or other Phik issues), its difference is treated as 0 for averaging purposes.
+
+    Args:
+        real (pd.DataFrame): The real data table.
+        synthetic (pd.DataFrame): The synthetic data table.
+
+    Returns:
+        Dict[str, Dict[str, float]]: A nested dictionary with 'real' (all 0.0)
+                                     and 'synthetic' (mean absolute differences)
+                                     as top-level keys, and column names as
+                                     second-level keys.
+    """
+    real_phik_matrix = pd.DataFrame()
+    synthetic_phik_matrix = pd.DataFrame()
+
+    real_varying_cols = [col for col in real.columns if real[col].nunique(dropna=False) > 1]
+    synthetic_varying_cols = [col for col in synthetic.columns if synthetic[col].nunique(dropna=False) > 1]
+
+    if len(real_varying_cols) > 1:
+        try:
+            real_phik_matrix = real[real_varying_cols].phik_matrix()
+        except Exception as e:
+            print(f"Warning: Error calculating full phik_matrix for real data: {e}.")
+            real_phik_matrix = pd.DataFrame()
+
+    if len(synthetic_varying_cols) > 1:
+        try:
+            synthetic_phik_matrix = synthetic[synthetic_varying_cols].phik_matrix()
+        except Exception as e:
+            print(f"Warning: Error calculating full phik_matrix for synthetic data: {e}.")
+            synthetic_phik_matrix = pd.DataFrame()
+
+    final_correlations = {"real": {}, "synthetic": {}}
+    all_columns = sorted(list(set(real.columns) | set(synthetic.columns)))
+
+    for current_col in all_columns:
+        final_correlations["real"][current_col] = 0.0
+
+        pairwise_differences = []
+
+        for other_col in all_columns:
+            if current_col == other_col:
+                continue # Skip self-correlation
+
+            real_corr_val = 0.0 # Default if column is constant or not present in real
+            synthetic_corr_val = 0.0 # Default if column is constant or not present in synthetic
+
+            if current_col in real.columns and other_col in real.columns:
+                if real[current_col].nunique(dropna=False) <= 1 or real[other_col].nunique(dropna=False) <= 1:
+                    real_corr_val = 0.0
+                elif not real_phik_matrix.empty and current_col in real_phik_matrix.index and other_col in real_phik_matrix.columns:
+                    try:
+                        real_corr_val = float(real_phik_matrix.loc[current_col, other_col])
+                    except ValueError: # phik might return NaN or non-numeric if calculation failed
+                        real_corr_val = 0.0 # Treat failed correlation as 0 for difference
+                else: # Fallback if full matrix not used or failed
+                    try:
+                        temp_df = real[[current_col, other_col]]
+                        pair_corr_matrix = temp_df.phik_matrix()
+                        real_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
+                    except Exception:
+                        real_corr_val = 0.0 # Treat failed correlation as 0 for difference
+
+            if current_col in synthetic.columns and other_col in synthetic.columns:
+                if synthetic[current_col].nunique(dropna=False) <= 1 or synthetic[other_col].nunique(dropna=False) <= 1:
+                    synthetic_corr_val = 0.0
+                elif not synthetic_phik_matrix.empty and current_col in synthetic_phik_matrix.index and other_col in synthetic_phik_matrix.columns:
+                    try:
+                        synthetic_corr_val = float(synthetic_phik_matrix.loc[current_col, other_col])
+                    except ValueError:
+                        synthetic_corr_val = 0.0 
+                else: 
+                    try:
+                        temp_df = synthetic[[current_col, other_col]]
+                        pair_corr_matrix = temp_df.phik_matrix()
+                        synthetic_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
+                    except Exception:
+                        synthetic_corr_val = 0.0 
+
+            pairwise_differences.append(abs(real_corr_val - synthetic_corr_val))
+
+        if pairwise_differences:
+            valid_diffs = [d for d in pairwise_differences if not np.isnan(d)]
+            if valid_diffs:
+                mean_abs_difference = float(np.mean(valid_diffs))
+            else:
+                mean_abs_difference = 0.0 
+        else:
+            mean_abs_difference = 0.0 
+
+        final_correlations["synthetic"][current_col] = mean_abs_difference
+
+    return final_correlations
+
 
 def visualize_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFrame) -> dict:
     """

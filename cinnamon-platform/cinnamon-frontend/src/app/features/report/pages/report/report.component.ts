@@ -1,8 +1,9 @@
 import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatButton } from "@angular/material/button";
+import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 import { SharedModule } from "../../../../shared/shared.module";
 import { AsyncPipe, NgForOf, NgIf } from "@angular/common";
-import { Observable } from "rxjs";
+import { map, Observable, switchMap } from "rxjs";
 import { ProjectSettings } from "../../../../shared/model/project-settings";
 import { TitleService } from "../../../../core/services/title-service.service";
 import { ProjectConfigurationService } from "../../../../shared/services/project-configuration.service";
@@ -40,6 +41,7 @@ export class ReportComponent implements OnInit {
     protected riskScoreP = 0.7;
 
     constructor(
+        private readonly appConfigService: AppConfigService,
         private readonly http: HttpClient,
         private projectConfigService: ProjectConfigurationService,
         private statisticsService: StatisticsService,
@@ -63,21 +65,30 @@ export class ReportComponent implements OnInit {
      * @author Daniel Preciado-Marquez
      */
     protected printReport(): void {
-        this.http.get("/app/assets/report.css", {responseType: 'text'}).subscribe({
+
+        this.http.get("/app/assets/report.css", {responseType: 'text'}).pipe(
+            switchMap(value => {
+               return this.appConfigService.appConfig$.pipe(
+                   map((config: AppConfig) => {
+                      return {style: value, config: config};
+                   }),
+               );
+            }),
+        ).subscribe({
             next: value => {
-                this.doPrintReport(value);
-            },
+                this.doPrintReport(value.style, value.config);
+            }
         });
     }
 
-    private doPrintReport(styleString: string) {
+    private doPrintReport(styleString: string, appConfig: AppConfig): void {
         const mywindow = window.open('_', 'PRINT', 'height=650,width=900,top=100,left=150');
 
         if (!mywindow) {
             return;
         }
 
-        mywindow.document.write(`<html><head><title>Cinnamon Privacy-Report</title>`);
+        mywindow.document.write(`<html><head><title>Privacy-Report by Cinnamon ${appConfig.version}</title>`);
         mywindow.document.write(`<style>${styleString}</style>`);
         mywindow.document.write('</head><body >');
         mywindow.document.write(document.getElementById("report")!.innerHTML);

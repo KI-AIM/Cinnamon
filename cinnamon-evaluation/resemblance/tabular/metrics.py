@@ -614,29 +614,27 @@ def calculate_histogram(real: pd.DataFrame, synthetic: pd.DataFrame, method: str
             return 100 if syn_value > 0 else 0
         return abs((syn_value - orig_value) / orig_value * 100)
     
-    def get_optimal_format(min_val: float, max_val: float, num_bins: int) -> callable:
-        """
-        Determine optimal formatting based on data range and bin density.
-        
-        Args:
-            min_val: Minimum value in the dataset
-            max_val: Maximum value in the dataset
-            num_bins: Number of bins in the histogram
-            
-        Returns:
-            A formatting function that accepts a value and returns properly formatted string
-        """
+    def get_optimal_format(min_val: float, max_val: int, num_bins: int) -> callable:
         range_span = max_val - min_val
         bin_width = range_span / num_bins if num_bins > 0 else range_span
 
         if bin_width == 0 or not np.isfinite(bin_width):
-            sig_digits = 2
+            decimal_places_for_all = 2
         else:
-            try:
-                sig_digits = max(2, min(6, int(-math.log10(bin_width) + 3)))
-            except (ValueError, OverflowError):
-                 sig_digits = 2
+            if abs(bin_width) < 0.0001 and abs(bin_width) > 0:
+                decimal_places_for_all = max(0, int(-math.log10(bin_width) + 2))
+                if decimal_places_for_all > 6:
+                    decimal_places_for_all = 6
+            elif range_span < 10:
+                decimal_places_for_all = 2
+            elif range_span < 50:
+                decimal_places_for_all = 1
+            elif range_span < 1000:
+                decimal_places_for_all = 0
+            else:
+                decimal_places_for_all = 0
 
+        use_scientific_notation = range_span > 10000 or abs(min_val) > 100000 or abs(max_val) > 100000
 
         def format_value(value: float) -> str:
             if not np.isfinite(value):
@@ -647,42 +645,10 @@ def calculate_histogram(real: pd.DataFrame, synthetic: pd.DataFrame, method: str
                 else:
                     return "NaN"
 
-            abs_val = abs(value)
+            if use_scientific_notation or (abs(value) > 0 and abs(value) < 0.0001) or abs(value) >= 1000000:
+                return f"{value:.2e}"
 
-            try:
-                very_small = abs_val > 0 and abs_val < 0.0001
-                very_large = abs_val >= 10000
-
-                if very_small or very_large:
-                    return f"{value:.2e}"
-
-                if abs_val < 1:
-                    if abs_val < 0.01:
-                        decimal_places = 4
-                    elif abs_val < 0.1:
-                        decimal_places = 3
-                    else:
-                        decimal_places = 2
-                elif abs_val < 10:
-                    decimal_places = 2
-                elif abs_val < 100:
-                    decimal_places = 1
-                elif abs_val < 1000:
-                    decimal_places = 0
-                else:
-                    decimal_places = 0
-
-                if abs_val >= 100 and abs_val < 10000:
-                    multiplier = 5 if abs_val < 1000 else 50
-                    value_rounded = round(value / multiplier) * multiplier
-                    decimal_places = 0
-                    return f"{value_rounded:.{decimal_places}f}"
-
-
-                return f"{value:.{decimal_places}f}"
-
-            except Exception:
-                return str(value)
+            return f"{value:.{decimal_places_for_all}f}"
 
         return format_value
 

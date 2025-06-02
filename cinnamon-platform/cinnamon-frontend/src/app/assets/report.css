@@ -1,7 +1,7 @@
 @media print {
     @page {
         size: A4;
-        margin: 0.5in; /* 48px */
+        margin: 0.33in 0 0.34in 0; /* Minimum margins for headers and footers */
     }
 }
 

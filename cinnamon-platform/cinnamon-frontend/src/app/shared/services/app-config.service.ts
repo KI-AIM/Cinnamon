@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { environments } from "../../../environments/environment";
 import { HttpClient } from "@angular/common/http";
 import { catchError, finalize, Observable, of, share, tap } from "rxjs";
-import { ErrorHandlingService } from "./error-handling.service";
+import { ErrorHandlingService } from "src/app/shared/services/error-handling.service";
+import { environments } from "src/environments/environment";
 
 @Injectable({
     providedIn: 'root'
@@ -34,7 +34,7 @@ export class AppConfigService {
             share(),
             catchError((e) => {
                 this.errorHandlingService.addError(e, "Cinnamon is currently unavailable. Please try again later.");
-                return of({isDemoInstance: false});
+                return of({isDemoInstance: false, version: 'unknown'});
             }),
             finalize(() => {
                 this._appConfig$ = null;
@@ -49,4 +49,5 @@ export class AppConfigService {
 
 export interface AppConfig {
     isDemoInstance: boolean;
+    version: string;
 }

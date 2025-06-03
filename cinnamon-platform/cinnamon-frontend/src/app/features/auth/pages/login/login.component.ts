@@ -37,7 +37,7 @@ export class LoginComponent implements OnInit {
 				validators: [Validators.required],
 			}),
 		});
-		this.titleService.setPageTitle("Login");
+		this.titleService.setPageTitle("Open project");
 	}
 
 	ngOnInit() {
@@ -61,7 +61,7 @@ export class LoginComponent implements OnInit {
 				if (error === "") {
                     this.stateManagementService.fetchAndRouteToCurrentStep();
 				} else {
-					this.router.navigate(["/login", { mode: "fail" }]);
+					this.router.navigate(["/open", { mode: "fail" }]);
 				}
 			}
 		);

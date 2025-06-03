@@ -21,9 +21,9 @@ import {
 } from "./features/risk-assessment/pages/risk-assessment-configuration/risk-assessment-configuration.component";
 
 const routes: Routes = [
-    {path: '', redirectTo: 'login', pathMatch: 'full'},
-    {path: 'login' , component: LoginComponent},
-    {path: 'register', component: RegisterComponent},
+    {path: '', redirectTo: 'open', pathMatch: 'full'},
+    {path: 'open' , component: LoginComponent},
+    {path: 'create', component: RegisterComponent},
     {path: 'start', component: StartpageComponent, canActivate: [AuthGuard]},
     {path: 'upload', component: UploadFileComponent, canActivate: [AuthGuard]},
     {path: 'dataConfiguration', component: DataConfigurationComponent, canActivate: [AuthGuard]},

@@ -63,7 +63,7 @@ public class UserControllerTest extends ControllerTest {
 				                .content(
 						                jsonMapper.writeValueAsString(new RegisterRequest(mail, password, password))))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(validationError("email", "Email is not available!"));
+		       .andExpect(validationError("email", "Project name is not available!"));
 	}
 
 	@Test

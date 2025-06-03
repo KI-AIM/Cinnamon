@@ -65,7 +65,7 @@ export class UserService {
 
 	logout() {
 		sessionStorage.removeItem(this.USER_KEY)
-		this.router.navigate(['login', { mode: 'logout' }]).then(
+		this.router.navigate(['open', { mode: 'close' }]).then(
 			() => window.location.reload()
 		);
 	}
@@ -83,7 +83,7 @@ export class UserService {
      */
     public invalidate(): void {
         sessionStorage.removeItem(this.USER_KEY);
-        this.router.navigate(['login', { mode: 'expired' }]).then(
+        this.router.navigate(['open', { mode: 'expired' }]).then(
             () => window.location.reload()
         );
     }

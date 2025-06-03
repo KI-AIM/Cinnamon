@@ -38,15 +38,19 @@ jobs:
         run: docker compose -f docker-compose-build.yml build
 
       # Create an .env file with required parameters
-      - name: Create .env file
-        run: |
-          touch .env
-          echo PG_DATABASE="cinnamon_db"
-          echo PG_PASSWORD="etugahjfre"
-          echo PG_USERNAME="cinnamon_user"
+#      - name: Create .env file
+#        run: |
+#          touch .env
+#          echo PG_DATABASE="cinnamon_db"
+#          echo PG_PASSWORD="etugahjfre"
+#          echo PG_USERNAME="cinnamon_user"
 
       # Start all containers
       - name: Start all containers
+        env:
+          PG_DATABASE: "cinnamon_db"
+          PG_PASSWORD: "etugahjfre"
+          PG_USERNAME: "cinnamon_user"
         run: docker compose up -d --wait --wait-timeout=120
 
       # Check the health of the platform

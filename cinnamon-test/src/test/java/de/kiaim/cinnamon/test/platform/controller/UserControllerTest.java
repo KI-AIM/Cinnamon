@@ -6,12 +6,13 @@ import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -77,5 +78,28 @@ public class UserControllerTest extends ControllerTest {
 						                new RegisterRequest(mail, password, "wrong_" + password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("passwordRepeated", "Passwords do not match!"));
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void deleteForbidden() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/delete")
+		                                      .param("email", getTestUser().getUsername())
+		                                      .param("password", "wrong_password"))
+		       .andExpect(status().isForbidden());
+
+		assertTrue(userService.doesUserWithEmailExist(getTestUser().getUsername()),
+		           "User should have not been deleted!");
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void delete() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/delete")
+		                                      .param("email", getTestUser().getUsername())
+		                                      .param("password", "changeme"))
+		       .andExpect(status().isOk());
+
+		assertFalse(userService.doesUserWithEmailExist("test_user"), "User has not been deleted!");
 	}
 }

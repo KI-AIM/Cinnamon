@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @PasswordMatches
 public class RegisterRequest {
 
-	@Schema(description = "Email address of the user.", example = "example@mail.de")
+	@Schema(description = "Email address of the user.", example = "mail@example.de")
 	@NotBlank
 	@EmailAvailable
 	private String email;

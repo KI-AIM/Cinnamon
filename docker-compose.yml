@@ -58,10 +58,10 @@ services:
             - cinnamon-db
         healthcheck:
             test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
-            interval: 10m
+            interval: 30s
             timeout: 3s
             retries: 3
-            start_period: 30s
+            start_period: 20s
     cinnamon-synthetization:
         image: ghcr.io/ki-aim/cinnamon-synthetization:latest
         container_name: cinnamon-synthetization

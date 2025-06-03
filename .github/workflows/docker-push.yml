@@ -1,6 +1,8 @@
 name: Build and Push Docker Images
 
 on:
+  # TODO remove before merging
+  pull_request:
   push:
     branches:
       - main
@@ -31,40 +33,39 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
+      # Build all images
+      - name: Build Docker images
+        run: docker compose -f docker-compose-build.yml build
+
+      # Create an .env file with required parameters
+      - name: Create .env file
+        run: |
+          touch .env
+          echo PG_DATABASE="cinnamon_db"
+          echo PG_PASSWORD="etugahjfre"
+          echo PG_USERNAME="cinnamon_user"
+
+      # Start all containers
+      - name: Start all containers
+        run: docker compose up -d --wait --wait-timeout=60
+
+      # Check the health of the platform
+      - name: Health check
+        run: if [[ $(docker inspect --format='{{.State.Health.Status}}' cinnamon-platform) == "healthy"  ]]; then exit 0; else exit 1; fi
+
+      # Stop all containers
+      - name: Stop all containers
+        run: docker compose down
+
+# TODO activate before merging
       # Login to Docker registry
-      - name: Log in to Docker registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Build and Push cinnamon-anonymization
-      - name: Build and Push cinnamon-anonymization
-        run: |
-          docker build -t $REGISTRY/cinnamon-anonymization:latest -f ./cinnamon-anonymization/Dockerfile ./
-          docker push $REGISTRY/cinnamon-anonymization:latest
-
-      # Build and Push cinnamon-evaluation
-      - name: Build and Push cinnamon-evaluation
-        run: |
-          docker build -t $REGISTRY/cinnamon-evaluation:latest ./cinnamon-evaluation
-          docker push $REGISTRY/cinnamon-evaluation:latest
-
-      # Build and Push cinnamon-platform
-      - name: Build and Push cinnamon-platform
-        run: |
-          docker build -t $REGISTRY/cinnamon-platform:latest -f ./cinnamon-platform/Dockerfile ./
-          docker push $REGISTRY/cinnamon-platform:latest
-
-      # Build and Push cinnamon-risk-assessment
-      - name: Build and Push cinnamon-anonymization
-        run: |
-          docker build -t $REGISTRY/cinnamon-risk-assessment:latest ./cinnamon-risk-assessment
-          docker push $REGISTRY/cinnamon-risk-assessment:latest
-
-      # Build and Push cinnamon-synthetization
-      - name: Build and Push cinnamon-synthetization
-        run: |
-          docker build -t $REGISTRY/cinnamon-synthetization:latest ./cinnamon-synthetization
-          docker push $REGISTRY/cinnamon-synthetization:latest
+#      - name: Log in to Docker registry
+#        uses: docker/login-action@v2
+#        with:
+#          registry: ghcr.io
+#          username: ${{ github.actor }}
+#          password: ${{ secrets.GITHUB_TOKEN }}
+#
+      # Push the images
+#      - name: Push Docker images
+#        run: docker compose -f docker-compose-build.yml push

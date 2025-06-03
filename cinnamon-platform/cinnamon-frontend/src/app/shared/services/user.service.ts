@@ -63,12 +63,6 @@ export class UserService {
 			});
 	}
 
-	logout() {
-		sessionStorage.removeItem(this.USER_KEY)
-		this.router.navigate(['open', { mode: 'close' }]).then(
-			() => window.location.reload()
-		);
-	}
 
 	register(request: {
 		email: string;
@@ -79,12 +73,16 @@ export class UserService {
 	}
 
     /**
-     * Invalidates the current session and redirects to the login page.
+    /**
+     * Logs out the user, redirects to the login page and displays a message based on the given mode.
+     * @param mode The mode defining the displayed message.
      */
-    public invalidate(): void {
-        sessionStorage.removeItem(this.USER_KEY);
-        this.router.navigate(['open', { mode: 'expired' }]).then(
+    public logout(mode: LogoutMode) {
+        sessionStorage.removeItem(this.USER_KEY)
+        this.router.navigate(['open', { mode: mode }]).then(
             () => window.location.reload()
         );
     }
 }
+
+export type LogoutMode = "close" | "create" | "delete" | "expired" | "fail" | "noPermission";

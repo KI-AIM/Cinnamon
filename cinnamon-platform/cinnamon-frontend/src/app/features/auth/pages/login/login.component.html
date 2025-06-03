@@ -1,4 +1,6 @@
-<app-info-card [closable]="true" [hidden]="mode === ''" [typeClass]="['noPermission', 'expired', 'fail'].includes(mode) ? 'card-failure' : 'card-success'" (onClose)="mode = ''">
+<app-info-card [closable]="true" *ngIf="mode != null"
+               [typeClass]="['noPermission', 'expired', 'fail'].includes(mode) ? 'card-failure' : 'card-success'"
+               (onClose)="mode = null">
     <div *ngIf="mode === 'close'">Successfully closed project</div>
     <div *ngIf="mode === 'create'">Successfully created project</div>
     <div *ngIf="mode === 'noPermission'">You must authenticate before accessing this page</div>

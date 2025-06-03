@@ -42,7 +42,7 @@ export class NavigationComponent {
     };
 
     onLogout() {
-        this.userService.logout();
+        this.userService.logout("close");
     }
 
     openConfigurations() {

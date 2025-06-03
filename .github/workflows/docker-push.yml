@@ -47,7 +47,7 @@ jobs:
 
       # Start all containers
       - name: Start all containers
-        run: docker compose up -d --wait --wait-timeout=60
+        run: docker compose up -d --wait --wait-timeout=120
 
       # Check the health of the platform
       - name: Health check

@@ -73,6 +73,18 @@ export class UserService {
 	}
 
     /**
+     * Deletes the currently authenticated user.
+     * @param email The email of the user.
+     * @param password The password of the user.
+     */
+    public delete(email: string, password: string): Observable<void> {
+        const formData = new FormData();
+        formData.append("email", email);
+        formData.append("password", password);
+
+        return this.http.delete<void>(this.baseURL + "/delete", {body: formData});
+    }
+
     /**
      * Logs out the user, redirects to the login page and displays a message based on the given mode.
      * @param mode The mode defining the displayed message.

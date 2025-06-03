@@ -6,6 +6,7 @@
     <div *ngIf="mode === 'noPermission'">You must authenticate before accessing this page</div>
     <div *ngIf="mode === 'expired'">Session expired</div>
     <div *ngIf="mode === 'fail'">Project name or Password wrong</div>
+    <div *ngIf="mode === 'delete'">Successfully deleted project</div>
 </app-info-card>
 
 <div class="bg-white p-5 rounded border">

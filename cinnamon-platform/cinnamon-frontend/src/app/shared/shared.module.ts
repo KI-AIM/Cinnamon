@@ -1,5 +1,6 @@
 import { NgModule } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
+import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
 import { InformationDialogComponent } from "./components/information-dialog/information-dialog.component";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatButtonModule } from "@angular/material/button";
@@ -61,6 +62,7 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         ConfigurationFormComponent,
         ConfigurationGroupComponent,
         ConfigurationInputArrayComponent,
+        ConfigurationInputAttributeListComponent,
         ConfigurationInputComponent,
         ConfigurationInputInfoComponent,
         ConfigurationManagementComponent,
@@ -74,7 +76,9 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         InfoCardComponent,
         InformationDialogComponent,
         LoadingSpinnerComponent,
+        MetricConfigurationComponent,
         MetricInfoTableComponent,
+        ProjectSettingsComponent,
         // Directives
         NoSpaceValidatorDirective,
         // Pipes
@@ -83,8 +87,6 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         MetricFilterPipe,
         MetricSorterPipe,
         StatisticsFilterPipe,
-        MetricConfigurationComponent,
-        ConfigurationInputAttributeListComponent,
     ],
     imports: [
         CommonModule,
@@ -111,6 +113,7 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         MatRadioModule,
     ],
     exports: [
+        // Components
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,
@@ -122,10 +125,13 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         DataTableComponent,
         InfoCardComponent,
         LoadingSpinnerComponent,
-        MetricInfoTableComponent,
-        NoSpaceValidatorDirective,
-        InstanceOfPipe,
         MetricConfigurationComponent,
+        MetricInfoTableComponent,
+        ProjectSettingsComponent,
+        // Directives
+        NoSpaceValidatorDirective,
+        // Pipes
+        InstanceOfPipe,
     ],
 })
 export class SharedModule {}

@@ -1,4 +1,5 @@
 import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
 import { Mode } from '../../enums/mode';
 import { StepConfiguration, Steps } from '../../enums/steps';
 import { KeyValue } from '@angular/common';
@@ -22,6 +23,7 @@ export class NavigationComponent {
     StepConfiguration = StepConfiguration;
 
     @ViewChild(ConfigurationManagementComponent) configManagement: ConfigurationManagementComponent;
+    @ViewChild(ProjectSettingsComponent) private projectSettings: ProjectSettingsComponent;
 
     constructor(
         private readonly dialog: MatDialog,
@@ -43,6 +45,14 @@ export class NavigationComponent {
 
     onLogout() {
         this.userService.logout("close");
+    }
+
+    /**
+     * Opens the project settings.
+     * @protected
+     */
+    protected openProjectSettings() {
+        this.projectSettings.open();
     }
 
     openConfigurations() {

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
     catchError,
     debounceTime,
@@ -13,12 +13,11 @@ import {
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import {
     TechnicalEvaluationService
-} from "../../../features/technical-evaluation/services/technical-evaluation.service";
+} from "src/app/features/technical-evaluation/services/technical-evaluation.service";
 import { ProjectConfigurationService } from "../../services/project-configuration.service";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
 import { MetricImportance, MetricImportanceData } from "../../model/project-settings";
-import { MatDialog } from "@angular/material/dialog";
 import { StatisticsService } from "../../services/statistics.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
 
@@ -37,11 +36,9 @@ export class MetricConfigurationComponent implements OnInit, OnDestroy {
     protected importanceForm: FormGroup;
 
     private updateSubscription: Subscription | null = null;
-    @ViewChild('metricSelectionDialog') private dialogWrap: TemplateRef<any>;
 
     constructor(
         private readonly errorHandlingService: ErrorHandlingService,
-        private readonly matDialog: MatDialog,
         private readonly projectConfigurationService: ProjectConfigurationService,
         protected readonly statisticsService: StatisticsService,
         private readonly technicalEvaluationService: TechnicalEvaluationService,
@@ -81,12 +78,6 @@ export class MetricConfigurationComponent implements OnInit, OnDestroy {
         if (this.updateSubscription !== null) {
             this.updateSubscription.unsubscribe();
         }
-    }
-
-    public open(): void {
-        this.matDialog.open(this.dialogWrap, {
-            width: '60%'
-        });
     }
 
     private createForm(algorithmDefinition: AlgorithmDefinition): void {

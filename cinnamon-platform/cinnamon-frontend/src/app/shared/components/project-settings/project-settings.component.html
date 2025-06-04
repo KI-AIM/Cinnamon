@@ -1,11 +1,10 @@
 <ng-template #projectSettingsDialog>
     <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Project Settings</h2>
-    <mat-dialog-content class="mat-typography dialog-content">
-
 
         <div class="slides">
 
             <div #main>
+                <mat-dialog-content class="mat-typography dialog-content">
                 <div class="vertical-boxes">
 
                     <div class="box">
@@ -13,9 +12,9 @@
                             General
                         </div>
 
-                        <div class="mb-4">
-                            <div>
-                                Project Name:
+                        <div class="mb-3">
+                            <div class="settings-label">
+                                Project Name
                             </div>
                             <mat-form-field class="w-100 hide-mat-error-gap">
                                 <input matInput [disabled]="true" [value]="projectName">
@@ -23,19 +22,27 @@
                         </div>
 
                         <div>
-                            <div>Delete project:</div>
-                            <button mat-raised-button color="warn" type="button" (click)="openDeletionConfirmation()">
+                            <div class="settings-label">
                                 Delete Project
-                                <mat-icon>chevron_right</mat-icon>
-                            </button>
+                            </div>
+                            <div>
+                                <button mat-raised-button color="warn" type="button" (click)="openDeletionConfirmation()">
+                                    Delete Project
+                                    <mat-icon>chevron_right</mat-icon>
+                                </button>
 
+                            </div>
                         </div>
 
                     </div>
+
+                    <app-metric-configuration class="box"></app-metric-configuration>
                 </div>
+                </mat-dialog-content>
             </div>
 
             <div #deletionConfirmation>
+                <mat-dialog-content class="h-100 mat-typography dialog-content">
                 <div class="box">
                     <div class="box-name">
                         Delete Project
@@ -70,11 +77,11 @@
                         </button>
                     </div>
                 </div>
+                </mat-dialog-content>
             </div>
 
         </div>
 
-    </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button *ngIf="!isMainOpen" mat-raised-button color="primary" type="button" (click)="openMain()">
             <mat-icon>chevron_left</mat-icon>

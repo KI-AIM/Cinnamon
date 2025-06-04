@@ -4,10 +4,20 @@
             <mat-label>Project Name</mat-label>
             <input type="text" formControlName="email" matInput>
         </mat-form-field>
-        <mat-form-field>
-            <mat-label>Password</mat-label>
-            <input type="password" formControlName="password" matInput>
-        </mat-form-field>
+
+        <div class="w-100 d-flex" style="gap: 16px;">
+            <mat-form-field class="flex-grow-1">
+                <mat-label>Password</mat-label>
+                <input type="password" formControlName="password" matInput>
+            </mat-form-field>
+            <div class="d-flex flex-column justify-content-center input-height">
+                <a title="Show password requirements" (click)="openDialog(passwordRequirementsDialog)"
+                   class="icon-enabled">
+                    <mat-icon fontIcon="info"></mat-icon>
+                </a>
+            </div>
+        </div>
+
         <mat-form-field>
             <mat-label>Repeat Password</mat-label>
             <input type="password" formControlName="passwordRepeated" matInput>
@@ -19,3 +29,28 @@
         <button mat-raised-button color="primary" routerLink="/open">Open existing project</button>
     </div>
 </div>
+
+<ng-template #passwordRequirementsDialog>
+    <h2 mat-dialog-title class="dialog-title">Password Requirements</h2>
+    <mat-dialog-content class="pt-2">
+        Your password has to met the following requirements:
+        <ul *ngIf="appConfig$ | async as appConfig">
+            <li>It must be at least {{ appConfig.passwordRequirements.minLength }} characters long</li>
+            <li *ngIf="appConfig.passwordRequirements.constraints.includes('LOWERCASE')">
+                It must contain at least one lowercase character
+            </li>
+            <li *ngIf="appConfig.passwordRequirements.constraints.includes('UPPERCASE')">
+                It must contain at least one uppercase character
+            </li>
+            <li *ngIf="appConfig.passwordRequirements.constraints.includes('DIGIT')">
+                It must contain at least one digit
+            </li>
+            <li *ngIf="appConfig.passwordRequirements.constraints.includes('SPECIAL_CHAR')">
+                It must contain at least one special character
+            </li>
+        </ul>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
+    </mat-dialog-actions>
+</ng-template>

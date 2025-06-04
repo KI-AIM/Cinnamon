@@ -1,10 +1,13 @@
-import {Component} from '@angular/core';
-import {FormControl, FormGroup, Validators} from "@angular/forms";
-import {UserService} from "../../../../shared/services/user.service";
 import { HttpErrorResponse } from "@angular/common/http";
-import {Router} from "@angular/router";
-import {TitleService} from "../../../../core/services/title-service.service";
-import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
+import { Component, OnInit, TemplateRef } from "@angular/core";
+import { FormControl, FormGroup, Validators } from "@angular/forms";
+import { MatDialog } from "@angular/material/dialog";
+import { Router } from "@angular/router";
+import { Observable } from "rxjs";
+import { TitleService } from "src/app/core/services/title-service.service";
+import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
+import { ErrorHandlingService } from "src/app/shared/services/error-handling.service";
+import { UserService } from "src/app/shared/services/user.service";
 
 interface RegisterForm {
     email: FormControl<string>;
@@ -18,11 +21,15 @@ interface RegisterForm {
     styleUrls: ['./register.component.less'],
     standalone: false
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
     registerForm: FormGroup<RegisterForm>;
 
+    protected appConfig$: Observable<AppConfig>;
+
     constructor(
+        private readonly appConfigService: AppConfigService,
         private readonly errorHandlingService: ErrorHandlingService,
+        private readonly matDialog: MatDialog,
         private readonly router: Router,
         private readonly titleService: TitleService,
         private readonly userService: UserService,
@@ -45,6 +52,20 @@ export class RegisterComponent {
         this.titleService.setPageTitle("Create new project");
     }
 
+
+    public ngOnInit(): void {
+        this.appConfig$ = this.appConfigService.appConfig$;
+    }
+
+    /**
+     * Opens the dialog contained in the given template.
+     * @param ref Reference to the template element.
+     * @protected
+     */
+    protected openDialog(ref: TemplateRef<any>) {
+        this.matDialog.open(ref);
+    }
+
     onSubmit(): void {
         const result = this.userService.register(
             this.registerForm.value as {
@@ -52,13 +73,13 @@ export class RegisterComponent {
             }
         );
         result.subscribe({
-            next: (d) => this.handleRegisterSuccess(d),
+            next: () => this.handleRegisterSuccess(),
             error: (e) => this.handleRegisterFailed(e),
         });
     }
 
-    handleRegisterSuccess(data: any) {
-        this.router.navigate(['/open', { mode: 'create' }]).then(r => {
+    handleRegisterSuccess() {
+        this.router.navigate(['/open', { mode: 'create' }]).then(_ => {
         });
     }
 

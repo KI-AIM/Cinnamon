@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -101,5 +103,23 @@ public class UserControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		assertFalse(userService.doesUserWithEmailExist("test_user"), "User has not been deleted!");
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext
+	public void deleteWithData() throws Exception {
+		var datasetId = postData();
+
+		assertTrue(existsTable(datasetId));
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/delete")
+		                                      .param("email", getTestUser().getUsername())
+		                                      .param("password", "changeme"))
+		       .andExpect(status().isOk());
+
+		assertFalse(userService.doesUserWithEmailExist("test_user"), "User has not been deleted!");
+		assertFalse(existsTable(datasetId));
 	}
 }

@@ -200,4 +200,18 @@ public class UserControllerTest extends ControllerTest {
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must contain at least one special character!"));
 	}
+
+	@Test
+	public void registerPasswordTooShortNoUppercase() throws Exception {
+		String mail = "new_" + getTestUser().getUsername();
+		String password = "pa$$w0rd";
+
+		mockMvc.perform(post("/api/user/register")
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(
+						                new RegisterRequest(mail, password, password))))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("password", "Password must be at least 12 characters long!",
+		                                  "Password must contain at least one uppercase character!"));
+	}
 }

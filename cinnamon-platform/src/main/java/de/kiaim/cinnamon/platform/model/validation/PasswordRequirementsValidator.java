@@ -26,10 +26,7 @@ public class PasswordRequirementsValidator implements ConstraintValidator<Passwo
 		value = value.trim();
 
 		final var minLength = cinnamonConfiguration.getPasswordRequirements().getMinLength();
-		if (value.length() < cinnamonConfiguration.getPasswordRequirements().getMinLength()) {
-			customMessageForValidation(context, "Password must be at least " + minLength + " characters long!");
-			return false;
-		}
+		boolean hasLength = value.length() >= minLength;
 
 		var constraints = cinnamonConfiguration.getPasswordRequirements().getConstraints();
 		boolean hasLowercase = !constraints.contains(PasswordConstraints.LOWERCASE);
@@ -51,6 +48,9 @@ public class PasswordRequirementsValidator implements ConstraintValidator<Passwo
 			}
 		}
 
+		if (!hasLength) {
+			customMessageForValidation(context, "Password must be at least " + minLength + " characters long!");
+		}
 		if (!hasLowercase) {
 			customMessageForValidation(context, "Password must contain at least one lowercase character!");
 		}
@@ -64,7 +64,7 @@ public class PasswordRequirementsValidator implements ConstraintValidator<Passwo
 			customMessageForValidation(context, "Password must contain at least one special character!");
 		}
 
-		return hasLowercase && hasNumber && hasSpecialChar && hasUppercase;
+		return hasLength && hasLowercase && hasNumber && hasSpecialChar && hasUppercase;
 	}
 
 	private void customMessageForValidation(final ConstraintValidatorContext context, final  String message) {

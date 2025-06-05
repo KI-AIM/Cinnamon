@@ -1,5 +1,5 @@
 <div class="bg-white p-5 rounded border">
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
+    <form *ngIf="appConfig$ | async" [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
         <mat-form-field>
             <mat-label>Project Name</mat-label>
             <input type="text" formControlName="email" matInput>
@@ -9,6 +9,9 @@
             <mat-form-field class="flex-grow-1">
                 <mat-label>Password</mat-label>
                 <input type="password" formControlName="password" matInput>
+                <mat-error>
+                    {{ createPasswordErrorMessage() }}
+                </mat-error>
             </mat-form-field>
             <div class="d-flex flex-column justify-content-center input-height">
                 <a title="Show password requirements" (click)="openDialog(passwordRequirementsDialog)"

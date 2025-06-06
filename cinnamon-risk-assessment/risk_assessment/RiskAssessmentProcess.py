@@ -96,7 +96,7 @@ def risk_assessment(process_id: int,
         "inference_risk": risk_inf,
         "inference_results": result_inf,
         "inference_average_risk": risk_inf_avg,
-        "linkage_health_risk": risk_link,
+        "linkage_risk": risk_link,
         "univariate_singling_out_risk": risk_sout_uni,
         "multivariate_singling_out_risk": risk_sout_multi
     }

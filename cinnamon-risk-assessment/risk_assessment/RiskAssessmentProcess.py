@@ -92,7 +92,10 @@ def risk_assessment(process_id: int,
                                                                             holdout_data,
                                                                             mode="multivariate")
 
+    total_risk_score = round((risk_inf_avg["priv_risk"] + risk_link["risk_value"] + risk_sout_uni["risk_value"] + risk_sout_multi["risk_value"]) / 4 , 3)
+
     results = {
+        "total_risk_score": total_risk_score,
         "inference_risk": risk_inf,
         "inference_results": result_inf,
         "inference_average_risk": risk_inf_avg,

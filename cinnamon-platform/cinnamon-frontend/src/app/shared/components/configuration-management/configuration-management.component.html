@@ -1,0 +1,25 @@
+<ng-template #configurationManagement>
+    <mat-dialog-content class="mat-typography">
+
+        <!-- Configuration selection -->
+        <div>Select configurations to download</div>
+        <div *ngFor="let config of configurationService.getRegisteredConfigurations()">
+            <span>
+                <mat-checkbox [id]="config.name" color="primary">
+                    {{config.displayName}}
+                </mat-checkbox>
+            </span>
+        </div>
+
+        <div>Download selected configurations</div>
+        <button mat-raised-button color="primary" (click)="downloadAllConfigurations()"
+                [disabled]="!statusService.isStepCompleted(Steps.UPLOAD)">
+            <mat-icon>file_download</mat-icon>
+            Download
+        </button>
+
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

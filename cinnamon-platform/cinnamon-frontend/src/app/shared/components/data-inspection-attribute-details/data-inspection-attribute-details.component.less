@@ -1,0 +1,61 @@
+@import "../../../styles/colors";
+@import "../../../styles/layout";
+@import "../../../styles/styling";
+
+th, td {
+    padding-right: 1.5rem;
+}
+
+.color-legend-button {
+    margin-bottom: -32px;
+    margin-left: 70px;
+}
+
+.metric-similarity {
+    border-radius: 100%;
+    width: 20px;
+    height: 20px;
+}
+
+.metric-table {
+    width: 100%;
+}
+
+.metric-table > tr > th,
+.metric-table > tr > td {
+	height: 2rem;
+	padding: 0.3rem !important;
+}
+
+.metric-table > tr:not(.no-select):hover {
+    background-color: @color-gray-lighter;
+}
+
+.metric-table > tr {
+    width: 100%;
+}
+
+.metric-table-single > tr > th:first-child,
+.metric-table-comparison > tr > th:nth-child(2) {
+    min-width: 8rem;
+}
+
+.metric-table-comparison > tr > th:first-child {
+    min-width: 6.8rem !important;
+    width: 6.8rem !important;
+}
+
+.information-column {
+    width: 0;
+}
+
+.no-select {
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently
+                                     supported by Chrome, Edge, Opera and Firefox */
+}

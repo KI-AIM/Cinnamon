@@ -1,0 +1,57 @@
+name: ctgan
+version: "0.1"
+type: cross-sectional
+display_name: Conditional Tabular GAN
+description: Is a GAN for synthesizing cross-sectional data.
+URL: /start_synthetization_process/ctgan
+configurations:
+  model_parameter:
+    display_name: Model Architecture
+    description: Define the model architecture and training process.
+    parameters:
+      - name: embedding_dim
+        type: integer
+        label: Embedding Dimensions
+        description: Embedding Dimensions controls how much detail the model can capture when learning from the data. Higher values allow the model to represent more differences between data points, while lower values may lead to simpler, more compressed representations. Using low values can reduce training time.
+        default_value: 128
+        min_value: 1
+        max_value: 1000
+      - name: generator_dim
+        type: list
+        label: Generator Dimensions
+        description: Fewer dimensions or smaller values create a simpler network that trains faster but may struggle to capture complex patterns.
+        default_value: [256, 256]
+      - name: discriminator_dim
+        type: list
+        label: Discriminator Dimensions
+        description: The discriminator learns to strictly evaluate how synthetic or real the data is. To keep training balanced, the discriminator should have similar dimenesions and values as the generator. Smaller dimensions tend to reduce the training time.
+        default_value: [256, 256]
+  model_fitting:
+    display_name: Training Parameters
+    description: Define the parameters, that are used for training the model. 
+    parameters:
+      - name: batch_size
+        type: integer
+        label: Batch Size
+        description: Controls how many samples are used per training step. Lower batch sizes can increase diversity but add noise, higher batch sizes make the data more consistent but may miss subtle variations. Low values lead to longer training times.
+        default_value: 128
+        min_value: 1
+        max_value: 1024
+      - name: epochs
+        type: integer
+        label: Number of Epochs
+        description: Fewer epochs may lead the model to learn only basic patterns, while more epochs help capture complex structures. Very high values can cause the model to memorize the training data instead of learning to generalize. Higher values lead to longer training times.
+        default_value: 100
+        min_value: 1
+        max_value: 10000
+  sampling:
+    display_name: Sampling
+    description: Define the sampling parameters, that are used for generating the synthetic data. 
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Samples
+        description: The number of synthetic data samples to generate. A high number of samples will increase the time required for sampling.
+        default_value: 1000
+        min_value: 1
+        max_value: 1000000

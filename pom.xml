@@ -6,30 +6,31 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.5</version>
+        <version>3.4.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
     <groupId>de.ki-aim</groupId>
-    <artifactId>ki-aim-parent</artifactId>
+    <artifactId>cinnamon-parent</artifactId>
     <version>0.0.1</version>
     <packaging>pom</packaging>
-    <name>ki-aim-parent</name>
-    <description>The root for the KI-AIM project.</description>
+    <name>cinnamon-parent</name>
+    <description>The root for the Cinnamon project.</description>
 
     <properties>
         <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <okhttp.version>5.0.0-alpha.14</okhttp.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <modules>
-        <module>ki-aim-model</module>
-        <module>ki-aim-platform</module>
-        <module>ki-aim-anon</module>
-        <module>ki-aim-test</module>
+        <module>cinnamon-model</module>
+        <module>cinnamon-platform</module>
+        <module>cinnamon-anonymization</module>
+        <module>cinnamon-test</module>
     </modules>
 
     <dependencyManagement>
@@ -37,13 +38,13 @@
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
-                <version>5.0.0-alpha.12</version>
+                <version>${okhttp.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>mockwebserver</artifactId>
-                <version>5.0.0-alpha.12</version>
+                <version>${okhttp.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -55,7 +56,7 @@
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>2.2.0</version>
+                <version>2.8.5</version>
                 <scope>compile</scope>
             </dependency>
         </dependencies>

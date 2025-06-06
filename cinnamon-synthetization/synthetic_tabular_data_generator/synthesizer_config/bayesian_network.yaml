@@ -1,0 +1,47 @@
+name: bayesian_network
+version: "0.1"
+type: generative
+display_name: Bayesian Network for Generative Modeling
+description: A Bayesian Network model for generating data, implemented using the pgmpy backend.
+URL: /start_synthetization_process/bayesian_network
+configurations:
+  model_parameter:
+    display_name: Model Architecture
+    description: Define the architecture of the model.
+    parameters:
+      - name: encoder_max_clusters
+        type: integer
+        label: Maximum Number of Data Clusters
+        description: Fewer clusters produce more general synthetic data that may miss important details. More clusters allow the model to generate data with finer structure, but if too specific, this can lead to data leakage from the training set.
+        default_value: 10
+        min_value: 1
+        max_value: 50
+      - name: encoder_noise_scale
+        type: float
+        label: Encoder Noise Scale
+        description: Small random noise added to the data to prevent leakage of information from the training set into the generated data.
+        default_value: 0.01
+        min_value: 0.0
+        max_value: 1.0
+  model_fitting:
+    display_name: Training Parameters
+    description: Define the parameters, that are used for training the model.
+    parameters:
+      - name: struct_learning_n_iter
+        type: integer
+        label: Iterations
+        description: The number of times the model will try to learn the best network structure. More iterations can help improve the structure. Higher values lead to longer training times.
+        default_value: 100
+        min_value: 1
+        max_value: 1000
+  sampling:
+    display_name: Sampling
+    description: Define the sampling parameters, that are used for generating the synthetic data. 
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Number of Samples
+        description: The number of synthetic data samples to generate. A high number of samples will increase the time required for sampling.
+        default_value: 1000
+        min_value: 1
+        max_value: 1000000

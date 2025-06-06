@@ -1,0 +1,267 @@
+<div class="mt-2">
+    <!-- Flex in rows -->
+    <div class="vertical-boxes">
+        <!-- First row -->
+        <div style="width: 100%; display: flex; flex-direction: row; gap: 0.5rem;">
+
+            <div class="box">
+                <div class="box-name">
+                    Attribute Information
+                </div>
+                <div>
+                    <table>
+                        <tr>
+                            <th>Index:</th>
+                            <td>{{ attributeStatistics.attribute_information.index }}</td>
+                        </tr>
+                        <tr>
+                            <th>Name:</th>
+                            <td>{{ attributeStatistics.attribute_information.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Type:</th>
+                            <td>{{ attributeStatistics.attribute_information.type }}</td>
+                        </tr>
+                        <tr>
+                            <th>Scale:</th>
+                            <td>{{ attributeStatistics.attribute_information.scale }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="box" style="flex-grow: 1;">
+                <div class="box-name">
+                    Important Statistical Metrics
+                </div>
+
+                <ng-container *ngIf="hasSynthetic">
+                    <ng-container *ngTemplateOutlet="metricComparisonTable; context: {tableData: importantMetricsTableData}"></ng-container>
+                </ng-container>
+                <ng-container *ngIf="!hasSynthetic">
+                    <ng-container *ngTemplateOutlet="metricTable; context: {tableData: importantMetricsTableData}"></ng-container>
+                </ng-container>
+
+            </div>
+        </div>
+
+
+        <div class="box">
+
+            <div class="box-name">
+                <ng-container *ngIf="attributeStatistics.plot.density">
+                    Density/Histogram
+                </ng-container>
+                <ng-container *ngIf="attributeStatistics.plot.frequency_plot">
+                    Frequency
+                </ng-container>
+            </div>
+            <div class="w-100 h-100" *ngIf="metricConfig$ | async as mc">
+                <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
+                    <div style="margin-top: .5rem;">
+                        <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="color-legend-button flat-mat-form-button" style="margin-bottom: -32px; margin-left: 70px;">Legend</button>
+                        <app-chart-select [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType"></app-chart-select>
+
+                        <ng-container *ngIf="graphType === 'density'">
+                            <app-chart-density [colorScheme]="mc.colorScheme"
+                                               [columnConfiguration]="attributeStatistics.attribute_information"
+                                               [data]="attributeStatistics.plot.density"
+                                               [originalSeriesLabel]="originalDisplayName"
+                                               [syntheticSeriesLabel]="datasetDisplayName">
+                            </app-chart-density>
+                        </ng-container>
+                        <ng-container *ngIf="graphType === 'histogram'">
+                            <app-chart-frequency [colorScheme]="mc.colorScheme"
+                                                 [data]="attributeStatistics.plot.histogram!" [limit]="null"
+                                                 [originalSeriesLabel]="originalDisplayName"
+                                                 [syntheticSeriesLabel]="datasetDisplayName">
+                            ></app-chart-frequency>
+                        </ng-container>
+
+                        <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
+                            <app-chart-calendar [data]="attributeStatistics.plot.density"
+                                                [syntheticSeriesLabel]="datasetDisplayName">
+                            </app-chart-calendar>
+                        </ng-container>
+                    </div>
+
+                </ng-container>
+                <ng-template #frequency>
+                    <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="color-legend-button flat-mat-form-button">Legend</button>
+                    <ng-container *ngIf="attributeStatistics.plot.frequency_plot; else noChart">
+                        <app-chart-frequency [colorScheme]="mc.colorScheme"
+                                             [data]="attributeStatistics.plot.frequency_plot" [limit]="null"
+                                             [originalSeriesLabel]="originalDisplayName"
+                                             [syntheticSeriesLabel]="datasetDisplayName"></app-chart-frequency>
+                    </ng-container>
+                </ng-template>
+                <ng-template #noChart>
+                </ng-template>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: row; gap: 0.5rem;">
+
+            <div *ngIf="!hasSynthetic" class="box" style="flex-grow: 1; flex-basis: 50%;">
+
+                <div class="box-name">
+                    Additional Metrics
+                </div>
+
+                <ng-container *ngTemplateOutlet="metricTable; context: {tableData: additionalMetricsTableData}"></ng-container>
+
+            </div>
+
+            <div *ngIf="hasSynthetic" class="box" style="height: 100%; flex-shrink: 1; flex-basis: 50%;">
+                <div class="box-name">
+                    Original Values
+                </div>
+
+                <app-data-table sourceDataset="VALIDATION" [hideHoldOutSplit]="true"
+                                [columnIndex]="attributeStatistics.attribute_information.index"></app-data-table>
+            </div>
+
+            <div class="box" style="height: 100%; flex-shrink: 1; flex-basis: 50%;">
+
+                <div class="box-name">
+                    {{ hasSynthetic ? datasetDisplayName : originalDisplayName }} Values
+                </div>
+
+                <app-data-table [sourceDataset]="sourceDataset" [sourceProcess]="sourceProcess"
+                                [columnIndex]="attributeStatistics.attribute_information.index"></app-data-table>
+            </div>
+
+        </div>
+
+        <ng-container *ngIf="hasSynthetic">
+
+            <div class="box">
+                <div class="box-name">
+                    Additional Metrics
+                </div>
+
+                <ng-container *ngTemplateOutlet="metricComparisonTable; context: {tableData: additionalMetricsTableData}"></ng-container>
+            </div>
+
+        </ng-container>
+
+    </div>
+</div>
+
+<ng-template #metricTable let-data='tableData'>
+    <div *ngIf="data | instanceOf:MetricTableData as tableData">
+        <ng-container *ngTemplateOutlet="metricSearch; context: {filterData: tableData.filter}"></ng-container>
+
+        <table class="metric-table metric-table-single">
+            <tr class="no-select">
+                <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', sortData: tableData.sort, type: 'metric'}"></ng-container>
+                <th>Value</th>
+                <th></th>
+            </tr>
+            <ng-container *ngIf="(metricConfig$ | async) as mc">
+                <ng-container *ngFor="let metricData of  injectImportance(projectConfigService.filterMetrics(mc, tableData.filter.importance, attributeStatistics), mc) | metricFilter:tableData.filter.filterText:null | metricSorter:tableData.sort.direction:tableData.sort.column">
+                    <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
+                    </ng-container>
+                </ng-container>
+            </ng-container>
+        </table>
+    </div>
+</ng-template>
+
+<ng-template #metric let-data='data'>
+    <tr>
+        <td>{{ data[1].display_name }}</td>
+        <td>{{ statisticsService.formatNumber(getValue(data[1].values, mainData)) }}</td>
+        <td class="information-column">
+            <a title="Show information" style="vertical-align: middle;" (click)="metricInfoTableComponent.open(data[1])">
+                <mat-icon fontIcon="info"></mat-icon>
+            </a>
+        </td>
+    </tr>
+</ng-template>
+
+<ng-template #metricComparisonTable let-data='tableData'>
+    <div *ngIf="data | instanceOf:MetricTableData as tableData">
+        <ng-container *ngTemplateOutlet="metricSearch; context: {filterData: tableData.filter}"></ng-container>
+
+        <table class="metric-table metric-table-comparison">
+            <tr class="no-select">
+                <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', sortData: tableData.sort, type: 'colorIndex', item: statusLegend}"></ng-container>
+                <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', sortData: tableData.sort, type: 'metric'}"></ng-container>
+                <th>Original</th>
+                <th>{{ datasetDisplayName }}</th>
+                <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (#)', sortData: tableData.sort, type: 'absolute'}"></ng-container>
+                <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (%)', sortData: tableData.sort, type: 'percentage'}"></ng-container>
+                <th></th>
+            </tr>
+
+            <ng-container *ngIf="(metricConfig$ | async) as mc">
+                <ng-container *ngFor="let metricData of  injectImportance(projectConfigService.filterMetrics(mc, tableData.filter.importance, attributeStatistics), mc) | metricFilter:tableData.filter.filterText:null | metricSorter:tableData.sort.direction:tableData.sort.column">
+                    <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData, mc: mc}">
+                    </ng-container>
+                </ng-container>
+            </ng-container>
+        </table>
+    </div>
+</ng-template>
+
+<ng-template #metricComparison let-data='data' let-mc='mc'>
+    <tr>
+        <td>
+            <div *ngIf="data && data[1].difference" class="metric-similarity"
+                 [style.background-color]="statisticsService.getColorScheme(mc.colorScheme)[getColorIndex(data[1])]">
+            </div>
+        </td>
+        <td>
+            {{ data[1].display_name }}
+        </td>
+        <td>{{ statisticsService.formatNumber(getValue(data[1].values, 'real')) }}</td>
+        <td>{{ statisticsService.formatNumber(getValue(data[1].values, 'synthetic')) }}</td>
+        <td>{{ statisticsService.formatNumber(getDifference(data[1], 'absolute')) }}</td>
+        <td>{{ statisticsService.formatNumber(getDifference(data[1], 'percentage')) }}</td>
+        <td class="information-column">
+            <a title="Show information" (click)="metricInfoTableComponent.open(data[1])" class="icon-enabled">
+                <mat-icon fontIcon="info"></mat-icon>
+            </a>
+        </td>
+    </tr>
+</ng-template>
+
+<ng-template #metricSearch let-data='filterData'>
+    <mat-form-field *ngIf="data | instanceOf:MetricTableFilterData as filterData" class="w-100">
+        <mat-label>Search</mat-label>
+        <input type="text" matInput [(ngModel)]="filterData.filterText"/>
+        <button mat-icon-button matSuffix *ngIf="filterData.filterText" (click)="filterData.filterText=''">
+            <mat-icon>clear</mat-icon>
+        </button>
+    </mat-form-field>
+</ng-template>
+
+<ng-template #sortColumn let-name="name" let-data="sortData" let-type="type" let-item="item">
+    <ng-container *ngIf="data | instanceOf:MetricTableSortData as sortData">
+        <th (click)="sort(sortData, type)" style="min-width: 6rem;">
+            <div style="display: flex">
+                <span>{{ name }}</span>
+                <span *ngIf="item">
+                <ng-container *ngTemplateOutlet="item"></ng-container>
+            </span>
+                <span *ngIf="sortData.column === type" style="margin-left: auto; margin-bottom: -7px;">
+                <mat-icon *ngIf="sortData.direction === 'asc'">arrow_drop_up</mat-icon>
+                <mat-icon *ngIf="sortData.direction === 'desc'">arrow_drop_down</mat-icon>
+            </span>
+            </div>
+        </th>
+    </ng-container>
+</ng-template>
+
+<app-metric-info-table #metricInfoTableComponent></app-metric-info-table>
+
+<mat-menu #colorLegend xPosition="after" yPosition="above">
+    <app-color-legend></app-color-legend>
+</mat-menu>
+
+<ng-template #statusLegend>
+    <span title="Show information" [matMenuTriggerFor]="colorLegend" (click)="$event.stopPropagation();" class="icon-enabled">
+        <mat-icon fontIcon="info"></mat-icon>
+    </span>
+</ng-template>

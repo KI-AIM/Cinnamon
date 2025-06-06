@@ -1,82 +1,76 @@
-# KI-AIM
+<h1 align="center">
+  Cinnamon
+</h1>
 
-This is the main repository for the [KI-AIM](https://www.forschung-it-sicherheit-kommunikationssysteme.de/projekte/ki-aim) project.
-A platform for providing anonymized data by combining anonymization and synthetization methods.
+<div align="center">
+  <img src="./cinnamon-platform/cinnamon-frontend/src/app/assets/cinnamon-logo.png" alt="Cinnamon logo" width="100">
+</div>
 
-## Submodules
+<div align="center">
 
-This project contains the following submodules.
-For more information, read the README.md of the submodules.
+<a href="https://github.com/KI-AIM/Cinnamon/blob/main/LICENSE">
+  <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg">
+</a>
 
-### KI-AIM-Model
+<a href="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml">
+  <img alt="Build and Push Docker Images" src="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml/badge.svg">
+</a>
 
-The [KI-AIM-Model](./ki-aim-model/README.md) submodule contains commonly used model classes like configurations.
+</div>
 
-### KI-AIM-Anon
-Submodule providing an API for anonymizing a dataset.
+Cinnamon is a modular application designed to offer robust functionalities for data anonymization, synthetization, and evaluation.
 
-Running the anonymization modules requires to install arx:
+The platform has been developed as part of the [KI-AIM](https://www.forschung-it-sicherheit-kommunikationssysteme.de/projekte/ki-aim) project.
+
+## Key-Features
+
+- **Modular Framework**: Cinnamon's design makes it simple to add new features and functionalities. This modular
+  approach ensures the platform can be customized to fit specific requirements.
+
+
+- **Data Anonymization and Synthetization**: By incorporating methods for anonymizing and synthetizing data, Cinnamon
+  helps protect sensitive information while still allowing for data use.
+
+
+- **Comprehensive Evaluation Module**: The evaluation module provides clear, concise results, converting complex data
+  protection processes into understandable insights.
+
+
+- **Support for Various Data Formats**: Cinnamon handles multiple data formats, including CSV and Excel, and we're
+  working to include support for medical formats like FHIR, enabling versatility across industries.
+
+
+- **Guided Workflow**: Cinnamon offers guidance through complex data protection functions, making it accessible to users
+  regardless of their experience level.
+
+## Demonstration
+
+A demonstration server is available at the following address: [http://cinnamon-demo.uni-muenster.de](http://cinnamon-demo.uni-muenster.de).
+You can use the sample dataset and configurations provided in the [/sample](./sample/Heart_Disease_Dataset) directory of this repository.
+
+## Getting Started with Cinnamon
+
+The following video provides an overview of the Cinnamon Platform:
+
+[![Getting Started with Cinnamon](https://img.youtube.com/vi/KQ0WHKMXXA8/0.jpg)](https://www.youtube.com/watch?v=KQ0WHKMXXA8)
+
+## Quick Start
+Cinnamon with all its modules can be installed with Docker Compose.
+First clone the repository and create a `.env` file in the root directory.
+Then copy the content of `.env.example` into the new file and set the `PG_PASSWORD`.
+Finally, run the following command in the root directory:
+
 ```bash
-mvn install:install-file -Dfile=ki-aim-anon/src/main/resources/lib/libarx-3.9.1.jar -DgroupId=org.deidentifier -DartifactId=arx -Dversion=3.9.1 -Dpackaging=jar
+docker-compose up -d
 ```
 
-### KI-AIM-Platform
+The website is available at http://localhost:8080.
 
-The [KI-AIM-Platform](./ki-aim-platform/README.md) provides data management as well as the front end of the project.
+## Documentation
+Detailed information about Cinnamon's features, configuration, and development is available in our [documentation](https://ki-aim.github.io/cinnamon-docs/).
 
-### KI-AIM-Test
+## License
+Cinnamon is open source published under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0.html).
 
-Submodule containing all tests for the other modules as well as test utilities.
-
-## Build & Run
-To build the entire project with all submodules, run
-
-```bash
-mvn clean install
-```
-
-You can also build only specific submodules by executing the command in the directory of the submodule.
-The README.md of the submodules will also provide additional instructions.
-
-## Deployment
-
-For deploying the entire project, a docker compose file is provided.
-
-To build all images, run
-
-```bash
-docker-compose build
-```
-
-### Configuration
-
-When changing the configuration of the database (e.g. the password) make sure to also change the configuration of the platform accordingly.
-
-```yaml
-services:
-  ki-aim-db:
-    environment:
-      # Has to match the datasource settings of the ki-aim-platform container
-      - POSTGRES_DB=ki_aim_db
-      - POSTGRES_USER=ki_aim_user
-      - POSTGRES_PASSWORD=changeme
-    ki-aim-platform:
-      environment:
-        # Datasource has to match with the configuration of the ki-aim-db container
-        - SPRING_DATASOURCE_URL=jdbc:postgresql://ki-aim-db:5432/ki_aim_db
-        - SPRING_DATASOURCE_USERNAME=ki_aim_user
-        - SPRING_DATASOURCE_PASSWORD=changeme
-```
-
-> [!WARNING]
-> Please change the password of the PostgreSQL user before deploying.
-
-When changing container names or ports, the configurations for the steps have to be changed as well.
-
-```yaml
-services:
-  ki-aim-platform:
-    environment:
-      - KI-AIM.STEPS.ANONYMIZATION.URL=http://ki-aim-anon:8080
-      - KI-AIM.STEPS.ANONYMIZATION.CALLBACKHOST=ki-aim-platform
-```
+## Acknowledgement
+Supported by BMFTR grant No. 16KISA115K

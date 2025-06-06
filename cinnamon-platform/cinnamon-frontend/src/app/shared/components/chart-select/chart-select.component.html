@@ -1,0 +1,12 @@
+<div class="chart-select-outer" [style.margin-bottom]="simple ? '-20px' : '-40px'">
+    <div class="chart-select-inner">
+        <mat-form-field class="flat-mat-form-field">
+            <mat-select [(value)]="graph" (selectionChange)="update($event)">
+                <mat-option value="density">Density</mat-option>
+                <!-- TODO Disabled because issues with a wide range of values -->
+<!--                <mat-option *ngIf="dataType === DataType.DATE" value="heatmap">Heatmap</mat-option>-->
+                <mat-option value="histogram">Histogram</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+</div>

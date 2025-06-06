@@ -1,0 +1,19 @@
+evaluation_configuration:
+  data_format: cross-sectional
+  resemblance:
+    mean: {}
+    standard_deviation: {}
+    variance: {}
+    distinct_values: {}
+    mode: {}
+    fifth_percentile: {}
+    q1: {}
+    median: {}
+    q3: {}
+    ninety_fifth_percentile: {}
+    minimum: {}
+    maximum: {}
+    missing_values_count: {} 
+    frequency_plot: {}
+    density: {}
+    histogram: {}

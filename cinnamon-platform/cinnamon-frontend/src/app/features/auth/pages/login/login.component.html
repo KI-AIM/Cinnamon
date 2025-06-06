@@ -1,0 +1,25 @@
+<app-info-card [closable]="true" [hidden]="mode === ''" [typeClass]="['noPermission', 'expired', 'fail'].includes(mode) ? 'card-failure' : 'card-success'" (onClose)="mode = ''">
+    <div *ngIf="mode === 'logout'">Successfully logged out</div>
+    <div *ngIf="mode === 'register'">Successfully registered</div>
+    <div *ngIf="mode === 'noPermission'">You must login before accessing this page</div>
+    <div *ngIf="mode === 'expired'">Session expired</div>
+    <div *ngIf="mode === 'fail'">Email or Password wrong</div>
+</app-info-card>
+
+<div class="bg-white p-5 rounded border">
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
+        <mat-form-field>
+            <mat-label>Email</mat-label>
+            <input type="text" formControlName="email" matInput>
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Password</mat-label>
+            <input type="password" formControlName="password" matInput>
+        </mat-form-field>
+        <button mat-raised-button color="primary" [disabled]="!loginForm.valid" >Login</button>
+    </form>
+    <div style="display: flex; flex-direction: column;">
+        <div style="margin: auto;">No Account?</div>
+        <button mat-raised-button color="primary" routerLink="/register">Register</button>
+    </div>
+</div>

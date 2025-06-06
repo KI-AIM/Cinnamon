@@ -1,0 +1,48 @@
+<div class="d-flex flex-row mb-2 justify-content-between" [formGroup]="columnConfigurationForm">
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Column name</mat-label>
+
+            <input type="text" matInput [id]="'name_' + attrNumber" (blur)="trimValue('name');"
+                   formControlName="name"/>
+
+            <mat-error *ngIf="columnConfigurationForm.controls['name'].hasError('noSpace')">
+                Name must not contain spaces
+            </mat-error>
+            <mat-error *ngIf="columnConfigurationForm.controls['name'].hasError('required')">
+                Name must not be blank
+            </mat-error>
+            <mat-error *ngIf="columnConfigurationForm.controls['name'].hasError('unique')">
+                Name must be unique
+            </mat-error>
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Column type</mat-label>
+            <mat-select [id]="'type_' + attrNumber" formControlName="type">
+                <mat-option *ngFor="let type of getDataTypes().getAll()" [value]="type">{{type}}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="columnConfigurationForm.controls['type'].hasError('undefined')">
+                Type must not be 'UNDEFINED'
+            </mat-error>
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2 w-100">
+        <mat-form-field>
+            <mat-label>Column scale</mat-label>
+            <mat-select [id]="'scale' + attrNumber" formControlName="scale">
+                <mat-option *ngFor="let scale of getDataScales().getAll()" [value]="scale">{{scale}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <div class="d-flex flex-column px-2">
+        <div class="h-100 d-flex justify-content-center align-items-center">
+            <app-additional-configuration [attrNumber]="parseInt(attrNumber)" [disabled]="disabled" [form]="columnConfigurationForm">
+            </app-additional-configuration>
+        </div>
+    </div>
+</div>

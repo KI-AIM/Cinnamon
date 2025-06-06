@@ -1,0 +1,47 @@
+name: arf
+version: "0.1"
+type: cross-sectional
+display_name: Adversarial Random Forest
+description: An implementation of Adversarial Random Forest for data generation using adversarial learning.
+URL: /start_synthetization_process/arf
+configurations:
+  model_parameter:
+    display_name: Model Architecture
+    description: Define the architecture of the model.
+    parameters:
+      - name: num_trees
+        type: integer
+        label: Number of Trees
+        description: Adding more trees allows the model to capture more patterns from the training data, which can lead to more realistic and diverse synthetic samples, but increases time and memory usage. A high number of tress leads to longer training times.
+        default_value: 30
+        min_value: 1
+        max_value: 100
+      - name: min_node_size
+        type: integer
+        label: Minimum Node Size
+        description: Smaller values can make the model focus too much on small data variations, while larger values may cause it to overlook meaningful patterns.
+        default_value: 5
+        min_value: 1
+        max_value: 100
+  model_fitting:
+    display_name: Model Fitting
+    description: Define the parameters, that are used for training the model.
+    parameters:
+      - name: max_iters
+        type: integer
+        label: Maximum Iterations
+        description: The maximum number of iterations for training until accuracy plateaus. More iterations can improve synthetic data quality but may reduce diversity. Higher values lead to longer training times.
+        default_value: 10
+        min_value: 1
+        max_value: 1000
+  sampling:
+    display_name: Sampling
+    description: Define the sampling parameters, that are used for generating the synthetic data. 
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Number of Samples
+        description: The number of synthetic data samples to generate. A high number of samples will increase the time required for sampling.
+        default_value: 1000
+        min_value: 1
+        max_value: 1000000

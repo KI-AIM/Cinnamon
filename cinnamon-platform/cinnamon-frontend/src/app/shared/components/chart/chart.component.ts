@@ -68,7 +68,7 @@ export class ChartComponent implements OnInit, OnChanges {
         return {
             grid: {
                 left: simple ? 25 : 70,
-                top: simple ? 0 : 20,
+                top: 33,
                 right: 30,
                 bottom: simple ? 20 : 50,
                 borderWidth: 1,

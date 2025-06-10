@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import {
     AttributeStatistics,
+    GraphType,
     StatisticsData,
     StatisticsValues,
     StatisticsValueTypes
@@ -30,7 +31,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     @Input() public mainData: 'real' | 'synthetic' = 'real';
     @Input() public processingSteps: string[] = [];
 
-    protected graphType: string = 'histogram';
+    protected graphType: GraphType = 'histogram';
     protected hasSynthetic: boolean = false;
 
     protected importantMetricsTableData = new MetricTableData();

@@ -134,6 +134,8 @@ export class UtilityStatistics {
 
 export type UtilityMetricDataObject = { [key: string]: UtilityMetricData2 | UtilityMetricData3 };
 
+export type GraphType = 'density' | 'histogram' | 'heatmap';
+
 function transformStatisticsValuesRecord(params: TransformFnParams): Record<string, StatisticsValueTypes> {
     if (!params.value) {
         return {};

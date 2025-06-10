@@ -40,6 +40,9 @@ export class PlotData {
 
     @Type(() => StatisticsData<HistogramPlotData>)
     frequency_plot?: StatisticsData<HistogramPlotData>;
+
+    @Type(() => StatisticsData<CorrelationPlotData>)
+    visualize_columnwise_correlations?: StatisticsData<CorrelationPlotData>;
 }
 
 export class StatisticsMetaData {
@@ -94,6 +97,13 @@ export class HistogramData {
     value: number;
     color_index: number;
     label: string;
+}
+
+export class CorrelationPlotData {
+    correlation_values: number[];
+    x_axis: string;
+    x_values: string[];
+    y_axis: string;
 }
 
 export class UtilityMetricData2 extends StatisticsMetaData {

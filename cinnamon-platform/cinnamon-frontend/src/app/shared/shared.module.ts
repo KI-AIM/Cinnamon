@@ -1,5 +1,6 @@
 import { NgModule } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
+import { ChartCorrelationComponent } from "src/app/shared/components/chart-correlation/chart-correlation.component";
 import { InformationDialogComponent } from "./components/information-dialog/information-dialog.component";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatButtonModule } from "@angular/material/button";
@@ -57,6 +58,7 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         ChartComponent,
         ChartSelectComponent,
         ChartCalendarComponent,
+        ChartCorrelationComponent,
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationGroupComponent,

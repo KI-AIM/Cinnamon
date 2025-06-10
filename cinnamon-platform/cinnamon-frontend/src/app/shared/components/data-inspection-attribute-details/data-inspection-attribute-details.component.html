@@ -64,11 +64,19 @@
                                 [matMenuTriggerFor]="colorLegend" class="flat-mat-form-button">
                             Legend
                         </button>
-                        <app-chart-select [continuous]="isContinuous()"
+                        <app-chart-select [comparison]="hasSynthetic" [continuous]="isContinuous()"
                                           [dataType]="attributeStatistics.attribute_information.type"
                                           [(graph)]="graphType" style="margin-left: auto;"></app-chart-select>
                     </div>
 
+                    <ng-container *ngIf="graphType === 'correlation' && hasSynthetic">
+                        <app-chart-correlation [colorScheme]="mc.colorScheme"
+                                               [columnConfiguration]="attributeStatistics.attribute_information"
+                                               [data]="attributeStatistics.plot.visualize_columnwise_correlations!"
+                                               [originalSeriesLabel]="originalDisplayName"
+                                               [syntheticSeriesLabel]="datasetDisplayName">
+                        </app-chart-correlation>
+                    </ng-container>
                     <ng-container *ngIf="graphType === 'density' && isContinuous()">
                         <app-chart-density [colorScheme]="mc.colorScheme"
                                            [columnConfiguration]="attributeStatistics.attribute_information"

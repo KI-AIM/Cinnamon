@@ -1,6 +1,6 @@
 <mat-form-field class="flat-mat-form-field">
     <mat-select [(value)]="graph" (selectionChange)="update($event)">
-        <mat-option value="correlation">Correlation</mat-option>
+        <mat-option *ngIf="comparison" value="correlation">Correlation</mat-option>
         <mat-option *ngIf="continuous" value="density">Density</mat-option>
         <mat-option *ngIf="!continuous" value="frequency">Frequency</mat-option>
         <!-- TODO Disabled because issues with a wide range of values -->

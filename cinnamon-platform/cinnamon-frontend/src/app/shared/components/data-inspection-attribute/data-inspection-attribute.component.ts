@@ -4,7 +4,7 @@ import {
     TemplateRef,
 } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
-import { AttributeStatistics } from "../../model/statistics";
+import { AttributeStatistics, GraphType } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
 import { Observable } from "rxjs";
@@ -28,7 +28,7 @@ export class DataInspectionAttributeComponent implements OnInit {
     protected syntheticDisplayName: string;
     protected hasSynthetic: boolean = false;
 
-    protected graphType = 'histogram';
+    protected graphType: GraphType = 'histogram';
 
     protected metricConfig$: Observable<ProjectSettings>;
 

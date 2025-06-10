@@ -29,6 +29,20 @@
             </div>
         </div>
 
+        <!-- Resemblance score in the middle -->
+        <div *ngIf="hasSynthetic" class="mt-2">
+            <div *ngIf="(metricConfig$ | async) as mc" class="fw-bold">
+                <table>
+                    <tr>
+                        <th>Resemblance Score:</th>
+                        <td [ngStyle]="{'color': statisticsService.getColorScheme(mc.metricConfiguration.colorScheme)[attributeStatistics.overview.resemblance_score.color_index]}">
+                            {{ statisticsService.formatNumber(attributeStatistics.overview.resemblance_score.value) }}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
         <!-- Important metrics on the bottom -->
         <div class="mt-2">
             <div class="fw-bold">

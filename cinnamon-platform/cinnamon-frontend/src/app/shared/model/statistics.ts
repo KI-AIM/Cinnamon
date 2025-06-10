@@ -24,6 +24,9 @@ export class AttributeStatistics {
     @Transform(transformStatisticsValuesRecord, { toClassOnly: true })
     details: Record<string, StatisticsValueTypes>;
 
+    @Type(() => StatisticsDataOverview)
+    overview: StatisticsDataOverview;
+
     @Type(() => PlotData)
     plot: PlotData;
 
@@ -62,6 +65,24 @@ export class StatisticsValues extends StatisticsMetaData {
 export class StatisticsValuesNominal<T> extends StatisticsMetaData {
     @Type(() => StatisticsData<T>)
     values: StatisticsData<T>;
+}
+
+export class StatisticsDataOverview {
+    calculate_columnwise_correlations: number;
+    calculate_columnwise_correlations_distance: number;
+    fifth_percentile: number;
+    kolmogorov_smirnov: number;
+    maximum: number;
+    mean: number;
+    median: number;
+    minimum: number;
+    missing_values_count: number;
+    ninety_fifth_percentile: number;
+    q1: number;
+    q3: number;
+    resemblance_score: { value: number, color_index: number };
+    standard_deviation: number;
+    variance: number;
 }
 
 export type StatisticsValueTypes = StatisticsValues | StatisticsValuesNominal<any>;

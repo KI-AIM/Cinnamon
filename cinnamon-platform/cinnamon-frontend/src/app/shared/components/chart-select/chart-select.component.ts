@@ -10,6 +10,7 @@ import { DataType } from "../../model/data-type";
     standalone: false
 })
 export class ChartSelectComponent {
+    @Input() public continuous!: boolean;
     @Input() dataType!: DataType;
     @Input() simple: boolean = false;
     @Input() graph!: GraphType;

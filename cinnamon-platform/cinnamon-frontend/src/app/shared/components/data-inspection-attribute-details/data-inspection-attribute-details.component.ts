@@ -51,6 +51,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        this.graphType = this.isContinuous() ? 'histogram' : 'frequency';
         this.hasSynthetic = this.mainData == 'synthetic';
 
         if (this.hasSynthetic) {
@@ -106,5 +107,9 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         return input.map(value => {
             return [value[0], value[1], MetricImportanceData[config.userDefinedImportance[value[0]]].value];
         });
+    }
+
+    protected isContinuous(): boolean {
+        return this.attributeStatistics.plot.density != null;
     }
 }

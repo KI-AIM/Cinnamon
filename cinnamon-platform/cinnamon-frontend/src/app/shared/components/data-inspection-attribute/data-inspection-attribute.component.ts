@@ -40,11 +40,16 @@ export class DataInspectionAttributeComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.graphType = this.isContinuous() ? 'histogram' : 'frequency';
         this.hasSynthetic = this.mainData == 'synthetic';
         this.originalDisplayName = this.statisticsService.getOriginalName(this.sourceDataset);
         this.syntheticDisplayName = this.statisticsService.getSyntheticName(this.processingSteps);
 
         this.metricConfig$ = this.projectConfigService.projectSettings$;
+    }
+
+    protected isContinuous(): boolean {
+        return this.attributeStatistics.plot.density != null;
     }
 
     protected openDetailsDialog(templateRef: TemplateRef<any>) {

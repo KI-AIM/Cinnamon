@@ -17,6 +17,10 @@ import java.util.TreeMap;
 @ConfigurationProperties(prefix = "cinnamon")
 @Getter @Setter
 public class CinnamonConfiguration {
+
+	@NestedConfigurationProperty
+	private PasswordRequirementsConfiguration passwordRequirements = new PasswordRequirementsConfiguration();
+
 	/**
 	 * Map containing all steps.
 	 */

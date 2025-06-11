@@ -19,10 +19,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ControllerAdvice
@@ -65,12 +62,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
 	                                                              HttpHeaders headers, HttpStatusCode status,
 	                                                              WebRequest request) {
-		Map<String, List<String>> errors = new HashMap<>();
+		Map<String, Set<String>> errors = new HashMap<>();
+		// The order of field errors is not deterministic
 		for (final FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
 			if (errors.containsKey(fieldError.getField())) {
 				errors.get(fieldError.getField()).add(fieldError.getDefaultMessage());
 			} else {
-				List<String> fieldErrors = new ArrayList<>();
+				Set<String> fieldErrors = new HashSet<>();
 				String message = fieldError.getDefaultMessage();
 
 				// TODO hacked in message for failed conversion

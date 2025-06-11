@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.controller;
 
+import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -17,6 +18,12 @@ public class RootController {
     @Value("${cinnamon.is-demo-instance}")
     private boolean isDemoInstance;
 
+    private final CinnamonConfiguration cinnamonConfiguration;
+
+    public RootController(final CinnamonConfiguration cinnamonConfiguration) {
+	    this.cinnamonConfiguration = cinnamonConfiguration;
+    }
+
     @RequestMapping(method = RequestMethod.GET, path = "/")
     public String index() {
         return "index.html";
@@ -27,6 +34,7 @@ public class RootController {
     public Map<String, Object> getConfig() {
         Map<String, Object> config = new HashMap<>();
         config.put("isDemoInstance", isDemoInstance);
+        config.put("passwordRequirements", cinnamonConfiguration.getPasswordRequirements());
         return config;
     }
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Algorithm } from 'src/app/shared/model/algorithm';
-import { AlgorithmService } from "../../../shared/services/algorithm.service";
+import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
@@ -19,20 +19,8 @@ export class TechnicalEvaluationService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName(): string {
-        return "technical_evaluation";
-    }
-
     public override getConfigurationName(): string {
         return "evaluation_configuration";
-    }
-
-    override getExecStepName(): string {
-        return "evaluation";
-    }
-
-    override getJobs(): string[] {
-        return ["technical_evaluation"];
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
@@ -44,7 +32,7 @@ export class TechnicalEvaluationService extends AlgorithmService {
         };
     }
 
-    public override readConfiguration(arg: Object, configurationName: string): { config: Object; selectedAlgorithm: Algorithm; } {
+    public override readConfiguration(arg: Object, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName("evaluation");
         // @ts-ignore
         const config = arg[configurationName];

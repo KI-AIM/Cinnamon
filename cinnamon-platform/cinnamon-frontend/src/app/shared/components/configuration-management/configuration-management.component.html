@@ -5,14 +5,14 @@
         <div>Select configurations to download</div>
         <div *ngFor="let config of configurationService.getRegisteredConfigurations()">
             <span>
-                <mat-checkbox [id]="config.name" color="primary">
+                <mat-checkbox [id]="config.name" color="primary" [disabled]="!statusService.isStepCompleted(config.availableAfterStep)">
                     {{config.displayName}}
                 </mat-checkbox>
             </span>
         </div>
 
         <div>Download selected configurations</div>
-        <button mat-raised-button color="primary" (click)="downloadAllConfigurations()"
+        <button mat-raised-button color="primary" (click)="clickSubject.next();"
                 [disabled]="!statusService.isStepCompleted(Steps.UPLOAD)">
             <mat-icon>file_download</mat-icon>
             Download

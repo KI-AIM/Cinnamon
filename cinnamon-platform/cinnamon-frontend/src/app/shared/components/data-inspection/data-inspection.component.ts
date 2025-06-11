@@ -27,12 +27,14 @@ import { ProcessStatus } from "../../../core/enums/process-status";
 export class DataInspectionComponent implements OnInit, OnDestroy {
     @Input() public sourceDataset: string | null = null;
     @Input() public sourceProcess: string | null = null;
+    @Input() public lazy: boolean = false;
     @Input() public mainData: 'real' | 'synthetic' = 'real';
     @Input() public processingSteps: string[] = [];
 
     protected readonly ProcessStatus = ProcessStatus;
 
     protected filterText: string;
+    protected startedCalculation: boolean = false;
     protected statistics$: Observable<StatisticsResponse | null>;
 
     private statisticsSubject = new Subject<StatisticsResponse>();
@@ -66,11 +68,17 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
                         }),
                     );
                 }),
-            ).subscribe();
+            ).subscribe({
+                next: () => {
+                    this.startedCalculation = false;
+                }
+            });
             this.statistics$ = this.statisticsSubject.asObservable();
 
             // Start pipeline
-            this.reload();
+            if (!this.lazy) {
+                this.reload();
+            }
         } else {
             this.statistics$ = timer(0, 2000).pipe(
                 switchMap(() => this.statisticsService.fetchResult()),
@@ -93,13 +101,15 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected cancel() {
-        if (this.sourceDataset !== null) {
+        if (this.sourceDataset !== null && this.startedCalculation) {
             this.statisticsService.cancelStatistics(this.sourceDataset).subscribe({
                 next: () => {
                     this.cancelSubject.next();
+                    this.startedCalculation = false;
                     this.statisticsSubject.next(new StatisticsResponse(ProcessStatus.CANCELED));
                 },
                 error: () => {
+                    this.startedCalculation = false;
                     this.errorHandlingService.addError("Failed to cancel statistics calculation!");
                 }
             });
@@ -111,6 +121,7 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected reload() {
+        this.startedCalculation = true;
         this.reloadSubject.next();
         this.statisticsSubject.next(new StatisticsResponse(ProcessStatus.RUNNING));
     }

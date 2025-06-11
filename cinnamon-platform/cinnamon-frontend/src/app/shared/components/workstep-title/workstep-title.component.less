@@ -1,0 +1,54 @@
+@import "../../../styles/colors.less";
+
+.workstep-title {
+    display: flex;
+}
+
+.workstep-title-icon {
+    width: 25px;
+    height: 25px;
+    border-radius: 100%;
+    color: white;
+    display: flex;
+}
+
+.workstep-title-completed {
+    background-color: @color-success;
+}
+
+.workstep-title-current {
+    border-color: @color-primary;
+    border-width: 2px;
+    border-style: solid;
+
+    .workstep-title-icon-dot {
+        background-color: @color-primary;
+    }
+}
+
+.workstep-title-locked {
+    border-color: @color-unimportant;
+    border-width: 2px;
+    border-style: solid;
+
+    .workstep-title-icon-dot {
+        background-color: @color-unimportant;
+    }
+}
+
+.workstep-title-icon-dot {
+    margin: auto;
+    font-weight: bold;
+    z-index: 2;
+    width: 7px;
+    height: 7px;
+    border-radius: 100%;
+}
+
+.workstep-title-icon-check {
+    margin: auto;
+    width: fit-content;
+    height: fit-content;
+    font-weight: bold;
+    z-index: 2;
+}

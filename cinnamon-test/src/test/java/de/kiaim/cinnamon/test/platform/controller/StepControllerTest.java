@@ -1,7 +1,6 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
-import de.kiaim.cinnamon.platform.model.dto.StepConfigurationResponse;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithUserDetails;
@@ -12,23 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WithUserDetails("test_user")
 public class StepControllerTest extends ControllerTest {
-
-	@Test
-	public void getStepConfiguration() throws Exception {
-		final var config = mockMvc.perform(get("/api/step/anonymization"))
-		                          .andExpect(status().isOk())
-		                          .andReturn().getResponse().getContentAsString();
-		final var stepConfig = objectMapper.readValue(config, StepConfigurationResponse.class);
-		assertEquals(stepConfig.getAlgorithmEndpoint(), "/api/anonymization/algorithms", "Unexpected algorithm endpoint!");
-		assertEquals(stepConfig.getConfigurationName(), "anonymization", "Unexpected configuration name!");
-	}
-
-	@Test
-	public void getInvalidName() throws Exception {
-		mockMvc.perform(get("/api/step/invalidStepName"))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("No configuration with name 'invalidStepName' registered!"));
-	}
 
 	@Test
 	public void getStageStage() throws Exception {

@@ -1,0 +1,6 @@
+<ng-content></ng-content>
+
+<button mat-raised-button color="primary" (click)="confirm.emit()"
+        [disabled]="!stepsCompleted || locked || invalid">
+    {{ confirmLabel }}
+</button>

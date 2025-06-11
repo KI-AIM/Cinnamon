@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.helper;
 
+import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,12 @@ public class KiAimConfigurationPostProcessor {
 	}
 
 	@PostConstruct
-	public void assignIndices() {
+	public void init() throws InternalApplicationConfigurationException {
+		assignIndices();
+		link();
+	}
+
+	private void assignIndices() {
 		// Set indices of external stuff
 		for (final var externalServer : config.getExternalServer().entrySet()) {
 			externalServer.getValue().setName(externalServer.getKey());
@@ -40,8 +46,7 @@ public class KiAimConfigurationPostProcessor {
 		}
 	}
 
-	@PostConstruct
-	public void link() {
+	private void link() throws InternalApplicationConfigurationException {
 		// Link server and endpoints
 		for (final var endpoint : config.getExternalServerEndpoints().values()) {
 			final var serverIndex = endpoint.getExternalServerName();
@@ -50,7 +55,12 @@ public class KiAimConfigurationPostProcessor {
 			endpoint.setServer(server);
 
 			final var configurationIndex = endpoint.getConfigurationName();
+			if (configurationIndex == null || configurationIndex.isBlank()) {
+				continue;
+			}
+
 			final var configuration = config.getExternalConfiguration().get(configurationIndex);
+			configuration.getUsages().add(endpoint);
 			endpoint.setConfiguration(configuration);
 		}
 
@@ -64,6 +74,7 @@ public class KiAimConfigurationPostProcessor {
 		for (final var step: config.getSteps().values()) {
 			final var endpointIndex = step.getExternalServerEndpointIndex();
 			final var endpoint = config.getExternalServerEndpoints().get(endpointIndex);
+			endpoint.getUsages().add(step);
 			step.setEndpoint(endpoint);
 		}
 
@@ -75,7 +86,16 @@ public class KiAimConfigurationPostProcessor {
 		// Link stages and jobs
 		for (final var stage : config.getStages().values()) {
 			for (final var jobName : stage.getJobs()) {
-				stage.getJobList().add(config.getSteps().get(jobName));
+				final var job = config.getSteps().get(jobName);
+				stage.getJobList().add(job);
+
+				if (job.getStage() != null) {
+					throw new InternalApplicationConfigurationException(
+							InternalApplicationConfigurationException.MULTIPLE_JOB_USAGE,
+							"The job '" + job.getName() + "' is used multiple times!");
+				}
+
+				job.setStage(stage);
 			}
 		}
 

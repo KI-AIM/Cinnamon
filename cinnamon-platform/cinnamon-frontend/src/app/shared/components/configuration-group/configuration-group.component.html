@@ -29,7 +29,8 @@
             <mat-expansion-panel-header>
 
                 <mat-panel-title [class.invalid-group]="formGroup.controls[groupDefinition.key].invalid">
-                    <mat-checkbox #optionCheckboxes [id]="'isActive' + groupDefinition.key" [value]="groupDefinition.key" (change)="toggleActive($event);" [checked]="true"
+                    <mat-checkbox #optionCheckboxes [id]="'isActive' + groupDefinition.key" [disabled]="disabled"
+                                  [value]="groupDefinition.key" (change)="toggleActive($event);" [checked]="true"
                                   (click)="$event.stopPropagation();" class="allow-click" color="primary">
                     </mat-checkbox>
                     {{ groupDefinition.value.display_name }}

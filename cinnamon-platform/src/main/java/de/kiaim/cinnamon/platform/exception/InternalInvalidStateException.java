@@ -27,6 +27,12 @@ public class InternalInvalidStateException extends InternalException {
 	 */
 	public static final String MISSING_DATA_STET = "4";
 
+	/**
+	 * Exception code for a missing {@link de.kiaim.cinnamon.platform.model.entity.ExecutionStepEntity} that should be
+	 * present in the pipeline based on the status of the project.
+	 */
+	public static final String MISSING_STAGE = "5";
+
 	public InternalInvalidStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

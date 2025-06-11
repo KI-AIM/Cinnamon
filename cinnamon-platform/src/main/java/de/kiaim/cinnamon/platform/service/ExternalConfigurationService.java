@@ -2,14 +2,22 @@ package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
+import de.kiaim.cinnamon.platform.exception.InternalInvalidStateException;
 import de.kiaim.cinnamon.platform.exception.InternalRequestException;
 import de.kiaim.cinnamon.platform.exception.RequestRuntimeException;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalConfiguration;
+import de.kiaim.cinnamon.platform.model.configuration.ExternalEndpoint;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServer;
+import de.kiaim.cinnamon.platform.model.configuration.Job;
+import de.kiaim.cinnamon.platform.model.dto.ConfigurationInfo;
+import de.kiaim.cinnamon.platform.model.dto.ProcessInfo;
+import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
+
+import java.util.Collection;
 
 /**
  * Service for forwarding request regarding configurations to the external server.
@@ -25,6 +33,51 @@ public class ExternalConfigurationService {
 	public ExternalConfigurationService(final HttpService httpService, final StepService stepService) {
 		this.httpService = httpService;
 		this.stepService = stepService;
+	}
+
+	/**
+	 * Creates information about the given configuration.
+	 *
+	 * @param configurationName The name of the configuration.
+	 * @param project           The project.
+	 * @return The configuration page information.
+	 * @throws BadConfigurationNameException If no configuration with the given name exists.
+	 * @throws InternalInvalidStateException If the internal state is invalid.
+	 */
+	public ConfigurationInfo getInfo(final String configurationName, final ProjectEntity project)
+			throws BadConfigurationNameException, InternalInvalidStateException {
+		final ConfigurationInfo configurationInfo = new ConfigurationInfo();
+
+		final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(configurationName);
+
+		final var jobs = externalConfiguration.getUsages()
+		                                      .stream()
+		                                      .map(ExternalEndpoint::getUsages)
+		                                      .flatMap(Collection::stream)
+		                                      .toList();
+
+		for (final Job job : jobs) {
+			if (job.getStage() == null) {
+				// Job is not used so skip it
+				continue;
+			}
+
+			final var process = project.getPipelines().get(0).getStageByJob(job);
+			if (process.isEmpty()) {
+				throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
+				                                        "No process entity for job '" + job.getName() + "' available!");
+			}
+
+			final boolean requiresHoldOut = stepService.requiresHoldOutSplit(job);
+			final boolean holdOutFulfilled = !requiresHoldOut || project.getOriginalData().isHasHoldOut();
+
+			final boolean skip = process.get().isSkip() || !holdOutFulfilled;
+
+			final var processInfo = new ProcessInfo(job.getName(), skip, holdOutFulfilled);
+			configurationInfo.getProcesses().add(processInfo);
+		}
+
+		return configurationInfo;
 	}
 
 	/**

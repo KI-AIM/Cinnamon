@@ -1,11 +1,10 @@
-<div class="box">
+<app-workstep-box *ngIf="status$ | async as status;" title="Welcome to Cinnamon">
 
-    <h3>Welcome to Cinnamon. This tool is designed to anonymize your data by providing methods both for direct
-        anonymization as well as data generation with synthetic methods. </h3>
+    <p>This tool is designed to anonymize your data by providing methods both for direct
+        anonymization as well as data generation with synthetic methods.</p>
 
     <p>The application will guide you through the different steps, that are shown on the left side of the screen.
-        Completed
-        steps will be marked accordingly. The steps can be grouped into three categories: </p>
+        Completed steps will be marked accordingly. The steps can be grouped into three categories: </p>
 
     <ul>
         <li>Upload of the data</li>
@@ -19,55 +18,57 @@
         <mat-icon fontIcon="info" style="vertical-align: bottom;"></mat-icon>
         if they have an explanation attached to them.
         It is possible to always switch back to completed steps, to adjust the configuration. Be aware that this will
-        delete
-        the results of completed steps following the modified configuration.
+        delete the results of completed steps following the modified configuration.
     </p>
 
-    <button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);" [disabled]="locked">
-        Start
-    </button>
+    <h3 class="mt-2">Please choose the preferred level of guidance: </h3>
 
-    <!-- TODO Enable selection if both modes are implemented -->
-    <!--
-    <h3 class="mb-5">Please choose your desired mode: </h3>
-
+    <p>
+        Cinnamon provides to different levels of guidance.
+        You can go back to this page and change your decision at any time during the workflow.
+    </p>
 
     <div class="d-flex justify-content-between">
-        <mat-card class="me-2">
+        <mat-card class="me-2 w-50" [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD"
+                  [class.cinnamon-unselected-mode]="status.mode !== Mode.STANDARD"
+                  (click)="selectMode(Mode.STANDARD);"          
+        >
             <mat-card-header>
-                <mat-card-title>Standard mode</mat-card-title>
+                <mat-card-title>Extensive Guidance</mat-card-title>
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
-                <p>The standard mode is designed for inexperienced users. It will provide some automatic suggestions for
-                    useful configuration of the platform. It will also provide a guided setup and more detailed description
-                    of every component. This however comes with a tradeoff, that the different methods might not be as
-                    customizable resulting in worse anonymization results.</p>
+                <p>
+                    Extensive guidance is designed for inexperienced users that are new to Cinnamon.
+                    It will provide a guided setup and more detailed descriptions for every step.
+                </p>
+                <div class="d-flex justify-content-center align-items-center">
+                    <img src="./app/assets/guided.png" width="500px"/>
+                </div>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-                <button mat-raised-button color="primary" (click)="selectMode(Mode.STANDARD);" [disabled]="locked">
-                    Use standard mode
-                </button>
             </mat-card-actions>
         </mat-card>
 
-        <mat-card class="ms-2">
+        <mat-card class="ms-2 w-50" [class.cinnamon-selected-mode]="status.mode === Mode.EXPERT"
+                  [class.cinnamon-unselected-mode]="status.mode !== Mode.EXPERT"
+                  (click)="selectMode(Mode.EXPERT);"
+        >
             <mat-card-header>
-                <mat-card-title>Expert mode</mat-card-title>
+                <mat-card-title>Minimal Guidance</mat-card-title>
             </mat-card-header>
             <mat-divider></mat-divider>
             <mat-card-content>
-                <p>The expert mode is designed for experienced users that know much about anonymization and synthetization
-                    methods. This mode offers a more sophisticated interface to configure every component of the platform.
-                    Not much guidance is provided in this mode, but fine tuning ever method will likely result in better
-                    anonymization results.</p>
+                <p>
+                    Minimal guidance is designed for experienced users that are knowledgeable in anonymization and synthetization methods.
+                    This mode offers less guidance but allows a faster workflow.
+                </p>
+                <div class="d-flex justify-content-center align-items-center">
+                    <img src="./app/assets/normal.png" width="500px"/>
+                </div>
             </mat-card-content>
             <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-                <button mat-raised-button color="primary" (click)="selectMode(Mode.EXPERT);" [disabled]="locked">
-                    Use expert mode
-                </button>
             </mat-card-actions>
         </mat-card>
     </div>
-    -->
-</div>
+</app-workstep-box>

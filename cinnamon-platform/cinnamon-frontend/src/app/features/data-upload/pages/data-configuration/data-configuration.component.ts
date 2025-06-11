@@ -1,43 +1,33 @@
-import { Component, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from "@angular/forms";
+import { Router } from '@angular/router';
+import { Mode } from "@core/enums/mode";
+import { noSpaceValidator } from "@shared/directives/no-space-validator.directive";
+import { ConfigurationInputDefinition } from "@shared/model/configuration-input-definition";
+import { ConfigurationInputType } from "@shared/model/configuration-input-type";
+import { DataSetInfo } from "@shared/model/data-set-info";
+import { DateFormatConfiguration } from "@shared/model/date-format-configuration";
+import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-configuration";
+import { RangeConfiguration } from "@shared/model/range-configuration";
+import { Status } from "@shared/model/status";
+import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { StatusService } from "@shared/services/status.service";
+import { plainToInstance } from 'class-transformer';
+import { catchError, debounceTime, distinctUntilChanged, map, Observable, of, switchMap, tap } from "rxjs";
+import { Steps } from 'src/app/core/enums/steps';
 import { TitleService } from 'src/app/core/services/title-service.service';
+import { DataConfiguration } from 'src/app/shared/model/data-configuration';
+import { FileType } from 'src/app/shared/model/file-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
 import { DataService } from 'src/app/shared/services/data.service';
-import { FileService } from '../../services/file.service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
-import { Steps } from 'src/app/core/enums/steps';
-import { plainToInstance } from 'class-transformer';
 import { LoadingService } from 'src/app/shared/services/loading.service';
 import {
     AttributeConfigurationComponent
 } from "../../components/attribute-configuration/attribute-configuration.component";
-import {
-    ConfigurationUploadComponent
-} from "../../../../shared/components/configuration-upload/configuration-upload.component";
-import { ImportPipeData } from "../../../../shared/model/import-pipe-data";
-import { FileType } from 'src/app/shared/model/file-configuration';
-import { StatusService } from "../../../../shared/services/status.service";
-import { DataConfiguration } from 'src/app/shared/model/data-configuration';
-import {
-    catchError,
-    debounceTime,
-    distinctUntilChanged,
-    map,
-    Observable,
-    of,
-    Subscription,
-    switchMap,
-    tap,
-} from "rxjs";
-import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from "@angular/forms";
-import { noSpaceValidator } from "../../../../shared/directives/no-space-validator.directive";
-import { DateFormatConfiguration } from "../../../../shared/model/date-format-configuration";
-import { DateTimeFormatConfiguration } from "../../../../shared/model/date-time-format-configuration";
-import { RangeConfiguration } from "../../../../shared/model/range-configuration";
-import { StringPatternConfiguration } from "../../../../shared/model/string-pattern-configuration";
 import { DataSetInfoService } from "../../services/data-set-info.service";
-import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
-import { DataSetInfo } from "../../../../shared/model/data-set-info";
+import { FileService } from '../../services/file.service';
 
 @Component({
     selector: 'app-data-configuration',
@@ -45,9 +35,7 @@ import { DataSetInfo } from "../../../../shared/model/data-set-info";
     styleUrls: ['./data-configuration.component.less'],
     standalone: false
 })
-export class DataConfigurationComponent implements OnInit, OnDestroy {
-    private dataConfigurationSubscription: Subscription;
-
+export class DataConfigurationComponent implements OnInit {
     protected attributeConfigurationform: FormGroup;
     protected dataSetConfigurationForm: FormGroup | null;
 
@@ -55,8 +43,9 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     protected dataSetInfo$: Observable<DataSetInfo | null>;
     protected isFileTypeXLSX$: Observable<boolean>;
+    protected status$: Observable<Status>;
+    protected dataConfiguration$: Observable<DataConfiguration>;
 
-    @ViewChild('configurationUpload') configurationUpload: ConfigurationUploadComponent;
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
 
     constructor(
@@ -85,32 +74,36 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
             })
         );
 
-        this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
-            if (this.configuration.localDataConfiguration !== null) {
-                this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration);
-            } else {
-                this.setEmptyColumnNames(value);
-                this.attributeConfigurationform = this.createAttributeConfigurationForm(value);
-            }
+        this.dataConfiguration$ = this.configuration.dataConfiguration$.pipe(
+            tap(value => {
+                if (this.configuration.localDataConfiguration !== null) {
+                    this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration);
+                } else {
+                    this.setEmptyColumnNames(value);
+                    this.attributeConfigurationform = this.createAttributeConfigurationForm(value);
+                }
 
-            this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
-                this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
-            });
-        });
+                this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
+                    this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
+                });
+            }),
+        );
 
         this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
             tap(value => {
-                this.createDataSetConfigurationForm(value);
+                if (this.configuration.localDataSetConfiguration !== null) {
+                    this.createDataSetConfigurationForm(this.configuration.localDataSetConfiguration.createHoldOutSplit, this.configuration.localDataSetConfiguration.holdOutSplitPercentage);
+                } else {
+                    this.createDataSetConfigurationForm(value.hasHoldOutSplit, value.holdOutPercentage);
+                }
             }),
             catchError(error => {
                 this.handleError(error);
                 return of(null);
             }),
         );
-    }
 
-    ngOnDestroy() {
-        this.dataConfigurationSubscription.unsubscribe();
+        this.status$ = this.statusService.status$;
     }
 
     protected get createHoldOutSplit(): boolean {
@@ -123,6 +116,10 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     protected get isDataSetConfigurationFormInvalid(): boolean {
         return this.dataSetConfigurationForm ? this.dataSetConfigurationForm.invalid : true;
+    }
+
+    protected get isInvalid(): boolean {
+        return this.attributeConfigurationform.invalid || this.isDataSetConfigurationFormInvalid;
     }
 
     confirmConfiguration() {
@@ -204,20 +201,6 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
                 }
             }
         }
-    }
-
-    protected handleConfigUpload(result: ImportPipeData[] | null) {
-        if (result === null) {
-            this.errorHandlingService.addError("Something went wrong! Please try again later.");
-            return;
-        }
-
-        const configImportData = result[0]
-        if (configImportData.hasOwnProperty('error') && configImportData['error'] instanceof HttpErrorResponse) {
-            this.errorHandlingService.addError(configImportData.error);
-        }
-
-        this.configurationUpload.closeDialog();
     }
 
     protected getColumnConfigurationForms(form: FormGroup): FormGroup[] {
@@ -305,17 +288,17 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
 
     /**
      * Creates the form for the data set configuration.
-     * Initializes the form based on the given data set info.
-     *
-     * @param dataSetInfo The data set info to initialize the form with.
+     * Initializes the form based on the given parameters.
+     * @param createHoldOutSplit If a hold-out split should be created.
+     * @param holdOutSplitPercentage The percentage of rows to hold out.
      * @private
      */
-    private createDataSetConfigurationForm(dataSetInfo: DataSetInfo): void {
+    private createDataSetConfigurationForm(createHoldOutSplit: boolean, holdOutSplitPercentage: number): void {
         this.dataSetConfigurationForm = this.formBuilder.group({
-            createHoldOutSplit: [{value: dataSetInfo.hasHoldOutSplit, disabled: this.locked}],
+            createHoldOutSplit: [{value: createHoldOutSplit, disabled: this.locked}],
             holdOutSplitPercentage: [{
-                value: dataSetInfo.holdOutPercentage !== 0 ? dataSetInfo.holdOutPercentage : 0.2,
-                disabled: !dataSetInfo.hasHoldOutSplit || this.locked
+                value: holdOutSplitPercentage !== 0 ? holdOutSplitPercentage : 0.2,
+                disabled: !createHoldOutSplit || this.locked
             }, {
                 validators: [Validators.required, Validators.min(0), Validators.max(1)],
             }],
@@ -328,6 +311,10 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
             } else {
                 this.dataSetConfigurationForm!.controls['holdOutSplitPercentage'].enable();
             }
+        });
+
+        this.dataSetConfigurationForm.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(_ => {
+            this.configuration.localDataSetConfiguration = this.dataSetConfigurationForm!.getRawValue();
         });
     }
 
@@ -342,4 +329,19 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
             ? {undefined: {value: control.value}}
             : null
     }
+
+    protected get holdOutPercentageDefinition(): ConfigurationInputDefinition {
+        const def = new ConfigurationInputDefinition();
+        def.name = "holdOutSplitPercentage";
+        def.type = ConfigurationInputType.FLOAT;
+        def.label = "Percentage of rows to hold out"
+        def.description = "Percentage of rows to hold out for the hold-out split. These rows will not be available in the protected dataset.";
+        def.min_value = 0;
+        def.max_value = 1;
+        def.default_value = 0.2;
+        return def;
+    }
+
+    protected readonly Mode = Mode;
+    protected readonly Steps = Steps;
 }

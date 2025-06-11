@@ -1,7 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { Steps } from "@core/enums/steps";
 import { TitleService } from "../../../../core/services/title-service.service";
-import { AlgorithmService } from "../../../../shared/services/algorithm.service";
+import { AlgorithmService, ConfigurationInfo } from "../../../../shared/services/algorithm.service";
 import { SynthetizationService } from "../../services/synthetization.service";
+import { Observable } from "rxjs";
+import { AnonymizationService } from "@features/anonymization/services/anonymization.service";
 
 @Component({
     selector: 'app-synthetization-configuration',
@@ -15,11 +18,19 @@ import { SynthetizationService } from "../../services/synthetization.service";
     ],
     standalone: false
 })
-export class SynthetizationConfigurationComponent {
+export class SynthetizationConfigurationComponent implements OnInit {
+    protected readonly Steps = Steps;
+
+    protected configurationInfo$: Observable<ConfigurationInfo>;
 
     constructor(
+        private readonly synthService: SynthetizationService,
         private titleService: TitleService,
     ) {
         this.titleService.setPageTitle("Synthetization");
+    }
+
+    public ngOnInit(): void {
+        this.configurationInfo$ = this.synthService.fetchInfo();
     }
 }

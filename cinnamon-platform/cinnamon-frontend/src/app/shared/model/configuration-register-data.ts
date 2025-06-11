@@ -49,7 +49,7 @@ export class ConfigurationRegisterData {
      * The object will be converted into a YAML string before downloading.
      * @returns The configuration as a javascript object or a YAML string.
      */
-    getConfigCallback: () => Object | string;
+    getConfigCallback: () => Observable<Object | string>;
 
     /**
      * Function that should set the configuration in the front end.

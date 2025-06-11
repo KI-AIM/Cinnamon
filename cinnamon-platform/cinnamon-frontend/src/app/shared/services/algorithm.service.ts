@@ -1,26 +1,21 @@
-import { StepConfiguration } from "../model/step-configuration";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { map, Observable, of, tap } from "rxjs";
+import { catchError, map, Observable, of, tap } from "rxjs";
 import { parse, stringify } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
 import { ImportPipeData } from "../model/import-pipe-data";
-import { environments } from "../../../environments/environment";
+import { environments } from "src/environments/environment";
 
 export abstract class AlgorithmService {
     private readonly baseURL = environments.apiUrl + "/api/config";
 
-    private _stepConfig: StepConfiguration | null = null;
     private _algorithms: Algorithm[] | null = null;
     private algorithmDefinitions: {[algorithmName: string]: AlgorithmDefinition} = {};
 
     private _cachedImportPipeData: ImportPipeData | null = null;
 
-    private doGetConfig: () => ConfigData = () => {
-        return {formData: {}, selectedAlgorithm: new Algorithm()}
-    };
     private doSetConfig: (error: string | null) => void = () => { };
 
     protected constructor(
@@ -30,20 +25,9 @@ export abstract class AlgorithmService {
     }
 
     /**
-     * Name of the step. Must be equal to the name in Spring's application.properties.
+     * Name of the configuration to be configured.
      */
-    abstract getStepName(): string;
-
-    // TODO fetch
     abstract getConfigurationName(): string;
-
-
-    abstract getExecStepName(): string;
-
-    /**
-     * Name of the jobs to be configured by this configuration page.
-     */
-    abstract getJobs(): string[];
 
     /**
      * Creates the YAML configuration object sent to the backend as well as to the external module.
@@ -57,14 +41,45 @@ export abstract class AlgorithmService {
      * @param arg The configuration object.
      * @param configurationName The key of the configuration.
      */
-    abstract readConfiguration(arg: Object, configurationName: string): { config: Object, selectedAlgorithm: Algorithm };
+    abstract readConfiguration(arg: Object, configurationName: string): ReadConfigResult;
 
     /**
-     * Returns the YAML configuration as a string.
+     * Fetches the configuration information from the backend.
      */
-    public getConfig(): string {
-        const config = this.doGetConfig();
-        return stringify(this.createConfiguration(config.formData, config.selectedAlgorithm));
+    public fetchInfo(): Observable<ConfigurationInfo> {
+        return this.http.get<ConfigurationInfo>(this.baseURL + "/info", {
+            params: {name: this.getConfigurationName()},
+        });
+    }
+
+    /**
+     * Return the local configuration if available, otherwise fetches the configuration from the backend.
+     * The configuration is in the form of a YAML string.
+     */
+    public getConfig(): Observable<string> {
+        const cachedAlgorithm = this.configurationService.getSelectedAlgorithm(this.getConfigurationName());
+        const cachedConfig = this.configurationService.getSelectedConfiguration(this.getConfigurationName());
+        if (cachedConfig != null && cachedAlgorithm != null) {
+            return of(stringify(this.createConfiguration(cachedConfig, cachedAlgorithm)));
+        }
+        return this.configurationService.loadConfig(this.getConfigurationName());
+    }
+
+    public fetchConfiguration(): Observable<ConfigData> {
+        const cachedAlgorithm = this.configurationService.getSelectedAlgorithm(this.getConfigurationName());
+        const cachedConfig = this.configurationService.getSelectedConfiguration(this.getConfigurationName());
+        if (cachedConfig != null && cachedAlgorithm != null) {
+            return of({config: cachedConfig, selectedAlgorithm: cachedAlgorithm});
+        }
+
+        return this.configurationService.loadConfig(this.getConfigurationName()).pipe(
+            map(value => {
+                return this.readConfiguration(parse(value), this.getConfigurationName());
+            }),
+            catchError(() => {
+                return of({config: {}, selectedAlgorithm: null});
+            })
+        );
     }
 
     /**
@@ -84,14 +99,6 @@ export abstract class AlgorithmService {
         }
 
         this.doSetConfig(error);
-    }
-
-    /**
-     * Sets the callback function for retrieving the configuration from the UI.
-     * @param func The function that is getting called.
-     */
-    public setDoGetConfig(func: () => ConfigData) {
-        this.doGetConfig = func;
     }
 
     /**
@@ -138,18 +145,6 @@ export abstract class AlgorithmService {
         }
 
         return of(this.algorithmDefinitions[algorithm.name]);
-    }
-
-    /**
-     * Gets the corresponding step configuration.
-     * @private
-     */
-    public get stepConfig(): Observable<StepConfiguration> {
-        if (this._stepConfig == null) {
-            return this.loadStepConfig(this.getConfigurationName())
-                .pipe(tap(value => this._stepConfig = value));
-        }
-        return of(this._stepConfig);
     }
 
     /**
@@ -212,13 +207,42 @@ export abstract class AlgorithmService {
             responseType: 'text' as 'json'
         });
     }
+}
 
-    private loadStepConfig(configName: string): Observable<StepConfiguration> {
-        return this.http.get<StepConfiguration>(environments.apiUrl + `/api/step/${configName}`);
-    }
+/**
+ * Information for the configuration page.
+ */
+export interface ConfigurationInfo {
+    /**
+     * Processes to be configured by this configuration page.
+     */
+    processes: ProcessInfo[]
+}
+
+/**
+ * Information about a process.
+ */
+export interface ProcessInfo {
+    /**
+     * Name of the job to be configured by this configuration page.
+     */
+    job: string
+    /**
+     * If the job should be skipped.
+     */
+    skip: boolean
+    /**
+     * If the job does not need a hol-out split or the hold-out split is present.
+     */
+    holdOutFulfilled: boolean
 }
 
 export interface ConfigData {
-    formData: Object,
+    config: Object,
+    selectedAlgorithm: Algorithm | null
+}
+
+export interface ReadConfigResult {
+    config: Object,
     selectedAlgorithm: Algorithm
 }

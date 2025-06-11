@@ -4,6 +4,8 @@ import {
     TemplateRef,
 } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
+import { areEnumValuesEqual } from "src/app/shared/helper/enum-helper";
+import { DataScale } from "src/app/shared/model/data-scale";
 import { AttributeStatistics, GraphType } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
@@ -58,6 +60,8 @@ export class DataInspectionAttributeComponent implements OnInit {
         });
     }
 
+    protected readonly areEnumValuesEqual = areEnumValuesEqual;
+    protected readonly DataScale = DataScale;
     protected readonly DataType = DataType;
     protected readonly MetricImportance = MetricImportance;
 }

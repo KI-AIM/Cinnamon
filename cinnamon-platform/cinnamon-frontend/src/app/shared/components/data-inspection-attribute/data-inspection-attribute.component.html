@@ -29,22 +29,8 @@
             </div>
         </div>
 
-        <!-- Resemblance score in the middle -->
-        <div *ngIf="hasSynthetic" class="mt-2">
-            <div *ngIf="(metricConfig$ | async) as mc" class="fw-bold">
-                <table>
-                    <tr>
-                        <th>Resemblance Score:</th>
-                        <td [ngStyle]="{'color': statisticsService.getColorScheme(mc.metricConfiguration.colorScheme)[attributeStatistics.overview!.resemblance_score.color_index]}">
-                            {{ statisticsService.formatNumber(attributeStatistics.overview!.resemblance_score.value) }}
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-
         <!-- Important metrics on the bottom -->
-        <div class="mt-2">
+        <div *ngIf="!hasSynthetic" class="mt-2">
             <div class="fw-bold">
                 Important Statistical Metrics
             </div>
@@ -54,6 +40,60 @@
                         <th>{{ metricData[1].display_name }}:</th>
                         <td>{{ statisticsService.formatNumber(statisticsService.getValue(metricData[1].values, mainData), {max: 3, min: 3, dataType: attributeStatistics.attribute_information.type}) }}</td>
                     </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Resemblance overview on the bottom  -->
+        <div *ngIf="hasSynthetic && (metricConfig$ | async) as mc" class="mt-2">
+            <div class="fw-bold">
+               Resemblance Overview
+            </div>
+            <div>
+                <table>
+                    <tr>
+                        <th>Resemblance Score:</th>
+                        <td [ngStyle]="{'color': statisticsService.getColorScheme(mc.metricConfiguration.colorScheme)[attributeStatistics.overview!.resemblance_score.color_index]}">
+                            {{ statisticsService.formatNumber(attributeStatistics.overview!.resemblance_score.value) }}
+                        </td>
+                    </tr>
+
+                    <ng-container *ngIf="!areEnumValuesEqual(DataScale, attributeStatistics.attribute_information.scale, DataScale.NOMINAL)">
+                        <tr>
+                            <th>Mean:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.mean, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Standard Deviation:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.standard_deviation, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Minimum:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.minimum, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Maximum:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.maximum, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Missing Values Count:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.missing_values_count, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                    </ng-container>
+                    <ng-container *ngIf="areEnumValuesEqual(DataScale, attributeStatistics.attribute_information.scale, DataScale.NOMINAL)">
+                        <tr>
+                            <th>Mode:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.mode, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Missing Values Count:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.missing_values_count, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Distinct Values:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.distinct_values, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                    </ng-container>
                 </table>
             </div>
         </div>

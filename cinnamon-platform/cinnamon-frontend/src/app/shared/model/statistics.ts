@@ -25,7 +25,7 @@ export class AttributeStatistics {
     details: Record<string, StatisticsValueTypes>;
 
     @Type(() => StatisticsDataOverview)
-    overview: StatisticsDataOverview;
+    overview?: StatisticsDataOverview;
 
     @Type(() => PlotData)
     plot: PlotData;

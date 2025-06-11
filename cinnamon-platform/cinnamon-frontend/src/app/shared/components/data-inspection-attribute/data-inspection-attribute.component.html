@@ -35,8 +35,8 @@
                 <table>
                     <tr>
                         <th>Resemblance Score:</th>
-                        <td [ngStyle]="{'color': statisticsService.getColorScheme(mc.metricConfiguration.colorScheme)[attributeStatistics.overview.resemblance_score.color_index]}">
-                            {{ statisticsService.formatNumber(attributeStatistics.overview.resemblance_score.value) }}
+                        <td [ngStyle]="{'color': statisticsService.getColorScheme(mc.metricConfiguration.colorScheme)[attributeStatistics.overview!.resemblance_score.color_index]}">
+                            {{ statisticsService.formatNumber(attributeStatistics.overview!.resemblance_score.value) }}
                         </td>
                     </tr>
                 </table>

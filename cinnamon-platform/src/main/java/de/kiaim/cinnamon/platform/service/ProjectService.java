@@ -182,7 +182,7 @@ public class ProjectService {
 		if (hasProject(user)) {
 			final ProjectEntity p = getProject(user);
 			databaseService.delete(p);
-			projectRepository.deleteById(user.getProject().getId());
+			projectRepository.deleteById(p.getId());
 		}
 	}
 

@@ -11,7 +11,7 @@ import java.lang.annotation.*;
 @Documented
 public @interface EmailAvailable {
 
-	String message() default "Email is not available!";
+	String message() default "Project name is not available!";
 
 	Class<?>[] groups() default {};
 

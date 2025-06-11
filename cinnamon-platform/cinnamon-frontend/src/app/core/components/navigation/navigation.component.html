@@ -22,6 +22,12 @@
     <hr class="hr">
     <ul class="nav flex-column justify-content-start">
         <li class="nav-item">
+            <a class="nav-link" title="Project Settings" (click)="openProjectSettings()"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                Project Settings
+            </a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link" title="Configuration" (click)="openConfigurations()"
                [ngClass]="{'disabled': !userService.isAuthenticated()}">
                     Configuration Download
@@ -33,12 +39,6 @@
                 Project Download
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" title="Configuration" (click)="metricConfigurationComponent.open();"
-               [ngClass]="{'disabled': !userService.isAuthenticated()}">
-                Metrics
-            </a>
-        </li>
     </ul>
 
 
@@ -46,7 +46,7 @@
 
         <a [hidden]="!userService.isAuthenticated()" class="logout" (click)="onLogout()">
             <mat-icon>logout</mat-icon>
-            <span>Logout</span>
+            <span>Close Project</span>
         </a>
 
         <div class="nav-bottom-right">
@@ -62,7 +62,7 @@
     </div>
 
     <app-configuration-management></app-configuration-management>
-    <app-metric-configuration #metricConfigurationComponent></app-metric-configuration>
+    <app-project-settings></app-project-settings>
 </div>
 
 

@@ -42,7 +42,7 @@ export class RegisterComponent {
             }),
         });
 
-        this.titleService.setPageTitle("Register");
+        this.titleService.setPageTitle("Create new project");
     }
 
     onSubmit(): void {
@@ -58,7 +58,7 @@ export class RegisterComponent {
     }
 
     handleRegisterSuccess(data: any) {
-        this.router.navigate(['/login', { mode: 'register' }]).then(r => {
+        this.router.navigate(['/open', { mode: 'create' }]).then(r => {
         });
     }
 

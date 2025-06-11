@@ -1,7 +1,9 @@
 package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.platform.exception.BadDataSetIdException;
+import de.kiaim.cinnamon.platform.exception.BadUserConfirmationException;
 import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -54,6 +57,23 @@ public class UserService implements UserDetailsService {
 		userRepository.save(userEntity);
 
 		return userEntity;
+	}
+
+	/**
+	 * Confirms if the given user credentials match the given user.
+	 * Meant for confirmation after the user is already authenticated.
+	 *
+	 * @param confirmUserRequest The request.
+	 * @param user               The authenticated user.
+	 * @throws BadUserConfirmationException If the username or password doesn't match.
+	 */
+	public void confirmUser(final ConfirmUserRequest confirmUserRequest, final UserEntity user) throws BadUserConfirmationException {
+		if (!Objects.equals(confirmUserRequest.getEmail(), user.getEmail())) {
+			throw new BadUserConfirmationException(BadUserConfirmationException.INVALID_EMAIL, "Username incorrect!");
+		}
+		if (!passwordEncoder.matches(confirmUserRequest.getPassword(), user.getPassword())) {
+			throw new BadUserConfirmationException(BadUserConfirmationException.INVALID_PASSWORD, "Password incorrect!");
+		}
 	}
 
 	@Transactional

@@ -84,8 +84,8 @@ public class ControllerTest extends DatabaseTest {
 		};
 	}
 
-	protected void postData() throws Exception {
-		postData(true);
+	protected Long postData() throws Exception {
+		return postData(true);
 	}
 
 	protected Long postData(final boolean withErrors) throws Exception {

@@ -1,5 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { filter, Observable, switchMap, take, timer } from "rxjs";
+import { SortDirection } from "src/app/shared/model/metric-table-data";
+import { StatisticsSortType } from "src/app/shared/pipes/statistics-sorter.pipe";
 import { Statistics } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 
@@ -18,6 +20,8 @@ export class DataInspectionComponent implements OnInit {
     protected readonly Object = Object;
 
     protected filterText: string;
+    protected statisticsSortDirection: SortDirection = 'asc';
+    protected statisticsSortType: StatisticsSortType = 'index';
     protected statistics$: Observable<Statistics | null>;
 
     constructor(

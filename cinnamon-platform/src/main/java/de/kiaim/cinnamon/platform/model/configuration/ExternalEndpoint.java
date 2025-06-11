@@ -16,10 +16,10 @@ import java.util.List;
 public class ExternalEndpoint {
 
 	/**
-	 * Index of the server.
+	 * Name of the server.
 	 */
 	@NotBlank
-	private Integer externalServerIndex;
+	private String externalServerName;
 
 	/**
 	 * Name of the callback url part in the request.

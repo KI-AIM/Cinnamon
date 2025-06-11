@@ -22,7 +22,7 @@ public class KiAimConfigurationPostProcessor {
 	public void assignIndices() {
 		// Set indices of external stuff
 		for (final var externalServer : config.getExternalServer().entrySet()) {
-			externalServer.getValue().setIndex(externalServer.getKey());
+			externalServer.getValue().setName(externalServer.getKey());
 		}
 		for (final var externalConfiguration : config.getExternalConfiguration().entrySet()) {
 			externalConfiguration.getValue().setConfigurationName(externalConfiguration.getKey());
@@ -44,7 +44,7 @@ public class KiAimConfigurationPostProcessor {
 	public void link() {
 		// Link server and endpoints
 		for (final var endpoint : config.getExternalServerEndpoints().values()) {
-			final var serverIndex = endpoint.getExternalServerIndex();
+			final var serverIndex = endpoint.getExternalServerName();
 			final var server = config.getExternalServer().get(serverIndex);
 			server.getEndpoints().add(endpoint);
 			endpoint.setServer(server);
@@ -56,7 +56,7 @@ public class KiAimConfigurationPostProcessor {
 
 		// Link server and configurations
 		for (final var externalConfig : config.getExternalConfiguration().values()) {
-			final var server = config.getExternalServer().get(externalConfig.getExternalServerIndex());
+			final var server = config.getExternalServer().get(externalConfig.getExternalServerName());
 			externalConfig.setExternalServer(server);
 		}
 

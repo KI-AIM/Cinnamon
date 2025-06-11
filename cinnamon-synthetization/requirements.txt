@@ -5,6 +5,7 @@ cloudpickle==2.2.1
 Flask-SocketIO==5.3.6
 packaging>=20,<22
 numpy==1.26.4
+opacus<1.5.4
 pandas>=2.1
 scikit-learn>=0.24,<2
 torch>=2.2

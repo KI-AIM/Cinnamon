@@ -31,7 +31,7 @@ public class StepService {
 	}
 
 	public ExternalServer getExternalServerConfiguration(final ExternalEndpoint externalServerEndpoint) {
-		return cinnamonConfiguration.getExternalServer().get(externalServerEndpoint.getExternalServerIndex());
+		return cinnamonConfiguration.getExternalServer().get(externalServerEndpoint.getExternalServerName());
 	}
 
 	/**

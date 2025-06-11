@@ -23,7 +23,7 @@ public class ExternalConfiguration {
 	 * Index of the server.
 	 */
 	@NotBlank
-	private Integer externalServerIndex;
+	private String externalServerName;
 
 	//=========================
 	//--- Automatically set ---

@@ -43,19 +43,25 @@ services:
             CINNAMON_IS-DEMO-INSTANCE: ${IS_DEMO_INSTANCE:-false}
 
             # Anonymization
-            CINNAMON.EXTERNAL-SERVER.0.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.0.URL-SERVER: http://cinnamon-anonymization:8080
+            CINNAMON.EXTERNAL-SERVER.anonymization-server.CALLBACK-HOST: cinnamon-platform
+            CINNAMON.EXTERNAL-SERVER.anonymization-server.URL-SERVER: http://cinnamon-anonymization:8080
             # Synthetization
-            CINNAMON.EXTERNAL-SERVER.1.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.1.URL-SERVER: http://cinnamon-synthetization:5000
+            CINNAMON.EXTERNAL-SERVER.synthetization-server.CALLBACK-HOST: cinnamon-platform
+            CINNAMON.EXTERNAL-SERVER.synthetization-server.URL-SERVER: http://cinnamon-synthetization:5000
             # Evaluation
-            CINNAMON.EXTERNAL-SERVER.2.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.2.URL-SERVER: http://cinnamon-evaluation:5010
+            CINNAMON.EXTERNAL-SERVER.technical-evaluation-server.CALLBACK-HOST: cinnamon-platform
+            CINNAMON.EXTERNAL-SERVER.technical-evaluation-server.URL-SERVER: http://cinnamon-evaluation:5010
 
-            CINNAMON.EXTERNAL-SERVER.3.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.3.URL-SERVER: http://cinnamon-risk-assessment:8000
+            CINNAMON.EXTERNAL-SERVER.risk-assessment-server.CALLBACK-HOST: cinnamon-platform
+            CINNAMON.EXTERNAL-SERVER.risk-assessment-server.URL-SERVER: http://cinnamon-risk-assessment:8000
         depends_on:
             - cinnamon-db
+        healthcheck:
+            test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+            interval: 30s
+            timeout: 3s
+            retries: 3
+            start_period: 20s
     cinnamon-synthetization:
         image: ghcr.io/ki-aim/cinnamon-synthetization:latest
         container_name: cinnamon-synthetization

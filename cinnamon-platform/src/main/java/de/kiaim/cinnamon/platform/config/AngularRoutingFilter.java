@@ -33,7 +33,7 @@ public class AngularRoutingFilter implements Filter {
   private boolean shouldDispatch(String requestURI) {
     // Exclude/Include URLs here
     // Do not forward api calls, root requests, and requested resources
-    return !(requestURI.startsWith("/api") || requestURI.equals("/") || requestURI.contains("."));
+    return !(requestURI.startsWith("/api") || requestURI.startsWith("/actuator") || requestURI.equals("/") || requestURI.contains("."));
   }
 
 }

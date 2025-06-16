@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.Nullable;
@@ -259,17 +258,23 @@ public class ProcessService {
 
 	/**
 	 * Finishes the process with the given process ID.
-	 * Checks if the result files contain an error message with key 'error_message'.
+	 * Either resultFiles or errorRequest has to be not null.
+	 * <p>
+	 * If resultFiles is not null, checks if they contain an error output as defined in the configuration.
 	 * If no error message is present, sets the status to 'finished'
 	 * and starts the next process of the stage as well as the next scheduled process of the same job.
 	 * If an error is present, aborts the current execution step and stets the status to 'error'.
+	 * <p>
+	 * If errorRequest is not null, treats the process as failed.
 	 *
 	 * @param processId   The ID of the process to finish.
 	 * @param resultFiles All files send in the callback request.
 	 * @throws BadProcessIdException If the given process ID is not valid.
 	 */
 	@Transactional
-	public void finishProcess(final UUID processId, final Set<Map.Entry<String, MultipartFile>> resultFiles)
+	public void finishProcess(final UUID processId,
+	                          @Nullable final Set<Map.Entry<String, MultipartFile>> resultFiles,
+	                          @Nullable final ErrorRequest errorRequest)
 			throws BadProcessIdException {
 		final Optional<BackgroundProcessEntity> backgroundProcessOptional = backgroundProcessRepository.findByUuid(
 				processId);
@@ -282,7 +287,7 @@ public class ProcessService {
 		final var process = backgroundProcessOptional.get();
 
 		// Finish the current process
-		final boolean containsError = tryFinishProcess(process, resultFiles);
+		final boolean containsError = tryFinishProcess(process, resultFiles, errorRequest);
 
 		if (process instanceof ExternalProcessEntity externalProcess) {
 			// Start the next step of this process
@@ -298,11 +303,13 @@ public class ProcessService {
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	protected boolean tryFinishProcess(final BackgroundProcessEntity process,
-	                                   final Set<Map.Entry<String, MultipartFile>> resultFiles) {
+	                                   @Nullable final Set<Map.Entry<String, MultipartFile>> resultFiles,
+	                                   @Nullable final ErrorRequest errorRequest
+	) {
 		boolean containsError;
 
 		try {
-			containsError = doFinishProcess(process, resultFiles);
+			containsError = doFinishProcess(process, resultFiles, errorRequest);
 		} catch (final Exception e) {
 			log.error("Failed to finish process!", e);
 			setProcessError(process, e.getMessage());
@@ -333,8 +340,9 @@ public class ProcessService {
 	/**
 	 * Finishes the given process.
 	 *
-	 * @param process     The process to finish.
-	 * @param resultFiles All files send in the callback request.
+	 * @param process      The process to finish.
+	 * @param resultFiles  All files sent in the callback request.
+	 * @param errorRequest Error sent back in case the process failed.
 	 * @return If the process has been finished.
 	 * @throws BadDataConfigurationException             If the data configuration is not valid.
 	 * @throws BadDataSetIdException                     If the data set could not be exported.
@@ -347,7 +355,8 @@ public class ProcessService {
 	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 */
 	protected boolean doFinishProcess(final BackgroundProcessEntity process,
-	                                  final Set<Map.Entry<String, MultipartFile>> resultFiles
+	                                  @Nullable final Set<Map.Entry<String, MultipartFile>> resultFiles,
+	                                  @Nullable final ErrorRequest errorRequest
 	) throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 
 		final var endpoint = cinnamonConfiguration.getExternalServerEndpoints().get(process.getEndpoint());
@@ -377,65 +386,75 @@ public class ProcessService {
 			processed = new ArrayList<>();
 		}
 
-		for (final var entry : resultFiles) {
-			try {
-				final var value = entry.getValue();
+		if (errorRequest != null) {
+			containsError = true;
+			errorMessage = errorRequest.getErrorMessage();
+		} else if (resultFiles != null) {
 
-				final var output = getStepOutputConfiguration(endpoint, entry.getKey());
+			for (final var entry : resultFiles) {
+				try {
+					final var value = entry.getValue();
 
-				if (output == null) {
-					// If nothing is specified, save as LOB
-					files.put(value.getOriginalFilename(), new LobWrapperEntity(value.getBytes()));
-				} else {
-					switch (output.getEncoding()) {
-						case DATA -> {
-							final FileConfigurationEntity fileConfigurationEntity = new CsvFileConfigurationEntity(
-									new CsvFileConfiguration());
+					final var output = getStepOutputConfiguration(endpoint, entry.getKey());
 
-							final DataConfiguration resultDataConfiguration = process.getProject().getOriginalData()
-							                                                         .getDataSet().getDataConfiguration();
-							// TODO estimate config if we enable data type changes
-//							final DataConfiguration resultDataConfiguration = csvProcessor.estimateDataConfiguration(
-//									value.getInputStream(), fileConfigurationEntity,
-//									DatatypeEstimationAlgorithm.MOST_GENERAL);
-							final TransformationResult transformationResult = csvProcessor.read(value.getInputStream(),
-							                                                                    fileConfigurationEntity,
-							                                                                    resultDataConfiguration);
-							try {
-								databaseService.storeTransformationResult(transformationResult, dataProcessing, processed);
-							} catch (final BadDataConfigurationException e) {
-								throw new InternalInvalidResultException(
-										InternalInvalidResultException.INVALID_ESTIMATION,
-										"Estimation created an invalid configuration!", e);
+					if (output == null) {
+						// If nothing is specified, save as LOB
+						files.put(value.getOriginalFilename(), new LobWrapperEntity(value.getBytes()));
+					} else {
+						switch (output.getEncoding()) {
+							case DATA -> {
+								final FileConfigurationEntity fileConfigurationEntity = new CsvFileConfigurationEntity(
+										new CsvFileConfiguration());
+
+								final DataConfiguration resultDataConfiguration = process.getProject().getOriginalData()
+								                                                         .getDataSet()
+								                                                         .getDataConfiguration();
+								// TODO estimate config if we enable data type changes
+//								final DataConfiguration resultDataConfiguration = csvProcessor.estimateDataConfiguration(
+//										value.getInputStream(), fileConfigurationEntity,
+//										DatatypeEstimationAlgorithm.MOST_GENERAL);
+								final TransformationResult transformationResult = csvProcessor.read(
+										value.getInputStream(),
+										fileConfigurationEntity,
+										resultDataConfiguration);
+								try {
+									databaseService.storeTransformationResult(transformationResult, dataProcessing,
+									                                          processed);
+								} catch (final BadDataConfigurationException e) {
+									throw new InternalInvalidResultException(
+											InternalInvalidResultException.INVALID_ESTIMATION,
+											"Estimation created an invalid configuration!", e);
+								}
+
 							}
+							case DATA_SET -> {
+								String jsonString = IOUtils.toString(value.getInputStream(), StandardCharsets.UTF_8);
+								DataSet dataSet = jsonMapper.readValue(jsonString, DataSet.class);
 
-						}
-						case DATA_SET -> {
-							String jsonString = IOUtils.toString(value.getInputStream(), StandardCharsets.UTF_8);
-							DataSet dataSet = jsonMapper.readValue(jsonString, DataSet.class);
-
-							TransformationResult transformationResult = new TransformationResult(dataSet,
-							                                                                     new ArrayList<>());
-							databaseService.storeTransformationResult(transformationResult, dataProcessing, processed);
-						}
-						case ERROR -> {
-							containsError = true;
-							var errorRequest = jsonMapper.readValue(value.getBytes(), ErrorRequest.class);
-							errorMessage = errorRequest.getErrorMessage();
-						}
-						case ERROR_MESSAGE -> {
-							containsError = true;
-							errorMessage = new String(value.getBytes());
-						}
-						case FILE -> {
-							files.put(value.getOriginalFilename(), new LobWrapperEntity(value.getBytes()));
+								TransformationResult transformationResult = new TransformationResult(dataSet,
+								                                                                     new ArrayList<>());
+								databaseService.storeTransformationResult(transformationResult, dataProcessing,
+								                                          processed);
+							}
+							case ERROR -> {
+								containsError = true;
+								var errorRequestPart = jsonMapper.readValue(value.getBytes(), ErrorRequest.class);
+								errorMessage = errorRequestPart.getErrorMessage();
+							}
+							case ERROR_MESSAGE -> {
+								containsError = true;
+								errorMessage = new String(value.getBytes());
+							}
+							case FILE -> {
+								files.put(value.getOriginalFilename(), new LobWrapperEntity(value.getBytes()));
+							}
 						}
 					}
-				}
 
-			} catch (final IOException | InternalInvalidResultException e) {
-				throw new InternalIOException(InternalIOException.MULTIPART_READING,
-				                              "Failed to read result file '" + entry.getKey() + "'!", e);
+				} catch (final IOException | InternalInvalidResultException e) {
+					throw new InternalIOException(InternalIOException.MULTIPART_READING,
+					                              "Failed to read result file '" + entry.getKey() + "'!", e);
+				}
 			}
 		}
 

@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
@@ -585,29 +586,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void startAndError() throws Exception {
-		// Setup
-		postData(false);
-		configure();
-
-		// Start
-		final ExternalProcessResponse response = new ExternalProcessResponse();
-		response.setPid("1");
-		mockBackEnd.enqueue(new MockResponse.Builder()
-				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-				                    .code(200)
-				                    .body(jsonMapper.writeValueAsString(response))
-				                    .build());
-
-		mockMvc.perform(post("/api/process/execution/start")
-				                .with(httpBasic("test_user", "password")))
-		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()));
-
-
-		var updateTestProject = getTestProject();
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
-		String id = process.getUuid().toString();
-
+		String id = setupAndStartProcess();
 
 		// Send callback request with error
 		ErrorRequest errorResponse = new ErrorRequest("about:blank", "SYNTH_1_2_3", "An error occurred!", "An error occurred!");
@@ -623,13 +602,28 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
 
 		// Test state changes
-		process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
 		assertEquals(ProcessStatus.ERROR, process.getExecutionStep().getStatus());
 		assertEquals(ProcessStatus.ERROR, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 		assertEquals("An error occurred!", process.getStatus());
 		assertFalse(process.getResultFiles().containsKey("exception_message.txt"),
 		           "Exception message should not have been set!");
+	}
+
+	@Test
+	public void startAndErrorJson() throws Exception {
+		String id = setupAndStartProcess();
+
+		// Send callback request with error JSON
+		ErrorDetails errorDetails = new ErrorDetails("config", null);
+		ErrorRequest errorRequest = new ErrorRequest("about:blank", "TEST_123", "Process failed", errorDetails);
+
+		mockMvc.perform(post("/api/process/" + id + "/callback")
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(jsonMapper.writeValueAsString(errorRequest)))
+		       .andExpect(status().isOk());
 	}
 
 	@Test
@@ -686,6 +680,32 @@ public class ProcessControllerTest extends ControllerTest {
 				                .file(result))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("No process with the given ID '" + id + "' exists!"));
+	}
+
+	private String setupAndStartProcess() throws Exception {
+		// Setup
+		postData(false);
+		configure();
+
+		// Start
+		final ExternalProcessResponse response = new ExternalProcessResponse();
+		response.setPid("1");
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(response))
+				                    .build());
+
+		mockMvc.perform(post("/api/process/execution/start")
+				                .with(httpBasic("test_user", "password")))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()));
+
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		assertNotNull(process.getUuid(), "Process UUID is null!");
+
+		return process.getUuid().toString();
 	}
 
 }

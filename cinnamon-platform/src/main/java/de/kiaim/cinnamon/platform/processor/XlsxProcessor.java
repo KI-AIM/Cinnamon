@@ -213,18 +213,20 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
             return new DataConfiguration();
         }
 
-        int numberColumns = 0;
+        final int numberColumns;
         final List<String> columnNames;
+        final Iterator<List<String>> rowIterator = rows.iterator();
 
         if (xlsxFileConfiguration.getHasHeader()) {
             columnNames = normalizeColumnNames(rows.get(0).toArray(new String[0]));
             numberColumns = columnNames.size();
+            rowIterator.next();
         } else {
             numberColumns = rows.get(0).size();
             columnNames = Collections.nCopies(numberColumns, "");
         }
 
-        List<List<String>> samples = getAttributeSamples(rows.iterator(), numberColumns);
+        List<List<String>> samples = getAttributeSamples(rowIterator, numberColumns);
         return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
     }
 

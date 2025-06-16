@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.processor;
 
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
@@ -42,8 +43,9 @@ public interface DataProcessor {
      * the datatypes and datatype dependent configurations of each column.
      * @param data the raw data InputStream
      * @param fileConfiguration Configuration describing the format of the data.
-     * @return DataConfiguration, only DataConfiguration populated
+     * @return DataConfigurationEstimation, only DataConfiguration populated
      */
-    DataConfiguration estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration, DatatypeEstimationAlgorithm algorithm);
+    DataConfigurationEstimation estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration,
+                                                          DatatypeEstimationAlgorithm algorithm);
 
 }

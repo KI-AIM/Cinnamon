@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
@@ -83,8 +84,9 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public DataConfiguration estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration,
-	                                                   final DatatypeEstimationAlgorithm algorithm) {
+	public DataConfigurationEstimation estimateDataConfiguration(InputStream data,
+	                                                             FileConfigurationEntity fileConfiguration,
+	                                                             final DatatypeEstimationAlgorithm algorithm) {
 		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
@@ -98,7 +100,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 
 		final Iterator<CSVRecord> recordIterator = records.iterator();
 		if (!recordIterator.hasNext()) {
-			return new DataConfiguration();
+			return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
 		}
 
 		final int numberColumns;

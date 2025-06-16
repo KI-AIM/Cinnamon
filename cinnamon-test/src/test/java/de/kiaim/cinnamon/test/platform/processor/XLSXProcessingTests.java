@@ -9,6 +9,7 @@ import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.PlatformApplication;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.file.FileType;
@@ -133,8 +134,9 @@ public class XLSXProcessingTests {
 
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfigurationEstimation estimation = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                         DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -142,6 +144,9 @@ public class XLSXProcessingTests {
         List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
 
         assertEquals(expectedDatatypes, actualDatatypes);
+
+        float[] expectedConfidences = {0.8f, 1.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
     @Test
@@ -152,8 +157,9 @@ public class XLSXProcessingTests {
 
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                        DatatypeEstimationAlgorithm.MOST_GENERAL);
+        DataConfigurationEstimation estimation = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                         DatatypeEstimationAlgorithm.MOST_GENERAL);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -162,6 +168,10 @@ public class XLSXProcessingTests {
         List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
 
         assertEquals(expectedDatatypes, actualDatatypes);
+
+
+        float[] expectedConfidences = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
     @Test
@@ -172,8 +182,9 @@ public class XLSXProcessingTests {
 
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, true);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfigurationEstimation estimation = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                         DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -182,6 +193,9 @@ public class XLSXProcessingTests {
 
         assertEquals(expectedDatatypes, actualDatatypes);
         assertEquals(expectedConfiguration, actualConfiguration);
+
+        float[] expectedConfidences = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
 

@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.PlatformApplication;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.file.FileType;
@@ -47,7 +48,7 @@ public class CSVProcessingTests {
                452159,Bill Hintz,1987-05-17,no,38.41 €
                730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
-                """.trim();
+               """.trim();
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, false);
 
         DataConfiguration config = getDataConfiguration();
@@ -70,7 +71,7 @@ public class CSVProcessingTests {
                452159,Bill Hintz,1987-05-17,no,38.41 €
                730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
-                """.trim();
+               """.trim();
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 
         DataConfiguration config = getDataConfiguration();
@@ -141,16 +142,20 @@ public class CSVProcessingTests {
                string,Bill Hintz,1987-05-17,no,38.41 €
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
-                """.trim();
+               """.trim();
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, false);
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                       DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = removeNames(getDataConfiguration());
         assertEquals(expectedConfiguration, actualConfiguration);
+
+        float[] expectedConfidences = {0.8f, 1.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
     @Test
@@ -162,18 +167,22 @@ public class CSVProcessingTests {
                string,Bill Hintz,1987-05-17,no,38.41 €
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
-                """.trim();
+               """.trim();
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, false);
 
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                       DatatypeEstimationAlgorithm.MOST_GENERAL);
+        DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_GENERAL);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = removeNames(getDataConfiguration());
         expectedConfiguration.getConfigurations().get(0).setType(DataType.STRING);
         expectedConfiguration.getConfigurations().get(0).setScale(DataScale.NOMINAL);
         assertEquals(expectedConfiguration, actualConfiguration);
+
+        float[] expectedConfidences = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
     @Test
@@ -186,16 +195,20 @@ public class CSVProcessingTests {
                452159,Bill Hintz,1987-05-17,no,38.41 €
                730160,Nelia Heathcote,1959-02-03,yes,21.01 €
                614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
-                """.trim();
+               """.trim();
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                       DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
 
         assertEquals(expectedConfiguration, actualConfiguration);
+
+        float[] expectedConfidences = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
     @Test
@@ -216,13 +229,17 @@ public class CSVProcessingTests {
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                       DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
         expectedConfiguration.getConfigurations().get(1).setType(DataType.UNDEFINED);
 
         assertEquals(expectedConfiguration, actualConfiguration);
+
+        float[] expectedConfidences = {1.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
     @Test
@@ -237,11 +254,15 @@ public class CSVProcessingTests {
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 
         InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-        DataConfiguration actualConfiguration = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                       DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
         assertEquals(expectedConfiguration, actualConfiguration);
+
+        float[] expectedConfidences = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
     private static DataConfiguration getDataConfiguration() {

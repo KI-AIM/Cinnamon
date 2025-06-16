@@ -101,20 +101,32 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 			return new DataConfiguration();
 		}
 
-		int numberColumns = 0;
+		final int numberColumns;
 		final List<String> columnNames;
+		final List<List<String>> samples;
+
 		if (csvFileConfiguration.getHasHeader()) {
-			columnNames = normalizeColumnNames(records.iterator().next().values());
+			columnNames = normalizeColumnNames(recordIterator.next().values());
 			numberColumns = columnNames.size();
+
+			samples = getAttributeSamples(recordIterator, numberColumns);
 		} else {
-			for (final CSVRecord record : records) {
-				numberColumns = record.values().length;
-				break;
-			}
+			CSVRecord firstRecord = recordIterator.next();
+			List<String> firstRow = Arrays.asList(firstRecord.values());
+			numberColumns = firstRow.size();
 			columnNames = Collections.nCopies(numberColumns, "");
+
+			samples = getAttributeSamples(recordIterator, numberColumns);
+			for (int i = 0; i < numberColumns; i++) {
+				List<String> attributeSamples = samples.get(i);
+				if (attributeSamples.size() < NUMBER_OF_SAMPLES) {
+					attributeSamples.add(firstRow.get(i));
+				} else {
+					attributeSamples.set(NUMBER_OF_SAMPLES - 1, firstRow.get(i));
+				}
+			}
 		}
 
-		List<List<String>> samples = getAttributeSamples(recordIterator, numberColumns);
 		return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
 	}
 

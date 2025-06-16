@@ -9,10 +9,12 @@ import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
+import de.kiaim.cinnamon.platform.model.configuration.StepOutputConfiguration;
 import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.platform.model.enumeration.StepOutputEncoding;
 import de.kiaim.cinnamon.platform.service.DataSetService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.UserService;
@@ -586,6 +588,12 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void startAndError() throws Exception {
+		// Add output for the error part
+		StepOutputConfiguration stepOutputConfiguration = new StepOutputConfiguration();
+		stepOutputConfiguration.setEncoding(StepOutputEncoding.ERROR);
+		stepOutputConfiguration.setPartName("error");
+		cinnamonConfiguration.getExternalServerEndpoints().get(0).getOutputs().add(stepOutputConfiguration);
+
 		String id = setupAndStartProcess();
 
 		// Send callback request with error

@@ -1,9 +1,11 @@
 package de.kiaim.cinnamon.anonymization.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.anonymization.AbstractAnonymizationTests;
 import de.kiaim.cinnamon.anonymization.model.AnonymizationRequest;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -13,8 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -25,6 +25,9 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
 
     @Autowired
     private AnonymizationService anonymizationService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private FrontendAnonConfigWrapper heartFrontendAnonConfigMissingAttr;
 
@@ -152,12 +155,12 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
 
         assertEquals("/callback/failure", recordedRequest.getPath());
 
-        assertTrue(recordedRequest.getHeader("Content-Type").startsWith("multipart/form-data"));
+        assertEquals("application/json", recordedRequest.getHeader("Content-Type"));
 
         String body = recordedRequest.getBody().readUtf8();
-        assertTrue(body.contains("Content-Disposition: form-data; name=\"error\""));
+        var errorRequest =  assertDoesNotThrow(() -> objectMapper.readValue(body, ErrorRequest.class));
 
-//        System.out.println("Received error response in callback: " + body);
+        assertEquals("ANON_2_2_2", errorRequest.getErrorCode());
     }
 
 

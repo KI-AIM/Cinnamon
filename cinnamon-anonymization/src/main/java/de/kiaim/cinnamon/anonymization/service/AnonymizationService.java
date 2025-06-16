@@ -11,7 +11,6 @@ import de.kiaim.cinnamon.anonymization.processor.DataSetProcessor;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
-import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
@@ -27,7 +26,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import reactor.util.retry.Retry;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
@@ -207,17 +205,10 @@ public class AnonymizationService {
 
             ErrorRequest errorResponse = new ErrorRequest("about:blank", errorCode, errorMessage, exceptionMessage);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            var errorJson = JsonMapper.jsonMapper().writeValueAsString(errorResponse);
-            body.add("error", new ByteArrayResource(errorJson.getBytes(StandardCharsets.UTF_8)) {
-                @Override
-                public String getFilename() { return "error.json"; }
-            });
-
             webClient.post()
                     .uri(callbackUrl)
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
-                    .body(BodyInserters.fromMultipartData(body))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(errorResponse)
                     .retrieve()
                     .bodyToMono(Void.class)
                     .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(2)))

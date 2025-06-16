@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
@@ -196,8 +197,9 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      * {@inheritDoc}
      */
     @Override
-    public DataConfiguration estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration,
-                                                       final DatatypeEstimationAlgorithm algorithm) {
+    public DataConfigurationEstimation estimateDataConfiguration(InputStream data,
+                                                                 FileConfigurationEntity fileConfiguration,
+                                                                 final DatatypeEstimationAlgorithm algorithm) {
         final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
         List<List<String>> rows;
 
@@ -210,7 +212,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         }
 
         if (rows.isEmpty()) {
-            return new DataConfiguration();
+            return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
         }
 
         final int numberColumns;

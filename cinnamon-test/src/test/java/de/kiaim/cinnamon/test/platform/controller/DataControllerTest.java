@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.model.configuration.data.StringPatternConfiguration;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -127,11 +128,13 @@ class DataControllerTest extends ControllerTest {
 		                             .andExpect(status().isOk())
 		                             .andReturn().getResponse().getContentAsString();
 
-		final DataConfiguration dataConfiguration = objectMapper.readValue(result, DataConfiguration.class);
+		final DataConfigurationEstimation estimation = objectMapper.readValue(result, DataConfigurationEstimation.class);
 
 		final DataConfiguration expectedConfiguration = DataConfigurationTestHelper.generateEstimatedConfiguration();
+		assertEquals(expectedConfiguration, estimation.getDataConfiguration(), "Returned configuration is wrong!");
 
-		assertEquals(expectedConfiguration, dataConfiguration, "Returned configuration is wrong!");
+		float[] expectedConfidences = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+		assertArrayEquals(expectedConfidences, estimation.getConfidences());
 	}
 
 	@Test

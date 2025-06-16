@@ -589,12 +589,13 @@ public class DataController {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
 						file.getFileConfiguration().getFileType());
 				final InputStream inputStream = new ByteArrayInputStream(file.getFile());
-				result = dataProcessor.estimateDataConfiguration(inputStream,
-				                                                 file.getFileConfiguration(),
-				                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+				DataConfigurationEstimation estimation = dataProcessor.estimateDataConfiguration(inputStream,
+				                                                                                 file.getFileConfiguration(),
+				                                                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+				result = estimation;
 
 				try {
-					databaseService.storeOriginalDataConfiguration((DataConfiguration) result, projectEntity);
+					databaseService.storeOriginalDataConfiguration(estimation.getDataConfiguration(), projectEntity);
 				} catch (final BadDataConfigurationException e) {
 					throw new InternalInvalidResultException(InternalInvalidResultException.INVALID_ESTIMATION,
 					                                         "Estimation created an invalid configuration!", e);

@@ -10,6 +10,7 @@ import de.kiaim.cinnamon.model.helper.DataTransformationHelper;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.DataTransformationError;
 import de.kiaim.cinnamon.platform.model.Pair;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -117,22 +118,29 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * @param columnNames The names of the columns.
      * @return The estimated DataConfiguration.
      */
-    public DataConfiguration estimateDataConfiguration(
+    public DataConfigurationEstimation estimateDataConfiguration(
             final List<List<String>> samples,
             final DatatypeEstimationAlgorithm algorithm,
             final int numberColumns,
             final List<String> columnNames
     ) {
         final List<ColumnConfiguration> estimatedColumnConfigurations = new ArrayList<>(numberColumns);
-        for (final List<String> attributeSample : samples) {
+        final float[] confidence = new float[numberColumns];
+
+        for (int sampleIndex = 0; sampleIndex < samples.size(); sampleIndex++) {
+            final var attributeSample = samples.get(sampleIndex);
+
             if (attributeSample.isEmpty()) {
                 estimatedColumnConfigurations.add(new ColumnConfiguration());
             } else {
-                estimatedColumnConfigurations.add(estimateColumnConfiguration(attributeSample, algorithm));
+                final var estimation = estimateColumnConfiguration(attributeSample, algorithm);
+                estimatedColumnConfigurations.add(estimation.element0());
+                confidence[sampleIndex] = estimation.element1();
             }
         }
 
-        return buildDataConfiguration(estimatedColumnConfigurations, columnNames);
+        final DataConfiguration dataConfiguration = buildDataConfiguration(estimatedColumnConfigurations, columnNames);
+        return new DataConfigurationEstimation(dataConfiguration, confidence);
     }
 
     /**
@@ -211,7 +219,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * @param algorithm Algorithm how to select the datatype of a column.
      * @return List of estimated ColumnConfigurations.
      */
-    private ColumnConfiguration estimateColumnConfiguration(
+    private Pair<ColumnConfiguration, Float> estimateColumnConfiguration(
             final List<String> attributeSamples,
             final DatatypeEstimationAlgorithm algorithm
     ) {
@@ -234,7 +242,10 @@ public abstract class CommonDataProcessor implements DataProcessor {
         columnConfiguration.setType(estimatedDataType);
         columnConfiguration.setConfigurations(configs);
 
-        return columnConfiguration;
+        // Calculate the number of samples that match the estimated configuration
+        final float confidence = calculateConfidence(attributeSamples, columnConfiguration);
+
+        return new Pair<>(columnConfiguration, confidence);
     }
 
     /**
@@ -453,4 +464,26 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
         return resultingConfiguration;
     }
+
+    /**
+     * Calculates the percentage of samples that matches the given column configuration.
+     *
+     * @param attributeSamples             List of samples.
+     * @param estimatedColumnConfiguration The column configuration.
+     * @return Confidence between 0 and 1.
+     */
+    private float calculateConfidence(final List<String> attributeSamples,
+                                      final ColumnConfiguration estimatedColumnConfiguration) {
+        float correct = 0;
+        for (final String attributeSample : attributeSamples) {
+            try {
+                this.dataTransformationHelper.transformData(attributeSample, estimatedColumnConfiguration);
+                correct += 1;
+            } catch (final DataBuildingException ignored) {
+            }
+        }
+
+        return correct / attributeSamples.size();
+    }
+
 }

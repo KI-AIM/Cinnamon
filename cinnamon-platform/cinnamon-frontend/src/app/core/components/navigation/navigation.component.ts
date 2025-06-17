@@ -1,4 +1,5 @@
 import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { ProjectExportComponent } from "@shared/components/project-export/project-export.component";
 import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
 import { Mode } from '../../enums/mode';
 import { StepConfiguration, Steps } from '../../enums/steps';
@@ -23,6 +24,7 @@ export class NavigationComponent {
     StepConfiguration = StepConfiguration;
 
     @ViewChild(ConfigurationManagementComponent) configManagement: ConfigurationManagementComponent;
+    @ViewChild(ProjectExportComponent) private projectExport: ProjectExportComponent;
     @ViewChild(ProjectSettingsComponent) private projectSettings: ProjectSettingsComponent;
 
     constructor(
@@ -53,6 +55,14 @@ export class NavigationComponent {
      */
     protected openProjectSettings() {
         this.projectSettings.open();
+    }
+
+    /**
+     * Opens the project export.
+     * @protected
+     */
+    protected openProjectExport(): void {
+        this.projectExport.open();
     }
 
     openConfigurations() {

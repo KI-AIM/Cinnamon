@@ -1,14 +1,12 @@
 package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
-import de.kiaim.cinnamon.platform.exception.BadQueryException;
-import de.kiaim.cinnamon.platform.exception.BadStepNameException;
-import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
-import de.kiaim.cinnamon.platform.exception.InternalIOException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.dto.ProjectConfigurationDTO;
+import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.StatusEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -27,6 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -156,9 +155,11 @@ public class ProjectController {
 	})
 	@GetMapping(value = "/zip",
 	            produces = {CustomMediaType.APPLICATION_ZIP_VALUE})
-	public ResponseEntity<StreamingResponseBody> getZip(@AuthenticationPrincipal final UserEntity requestUser,
-	                                                    final HttpServletResponse response)
-			throws IOException, InternalDataSetPersistenceException, InternalIOException {
+	public ResponseEntity<StreamingResponseBody> getZip(
+			@AuthenticationPrincipal final UserEntity requestUser,
+			@ParameterObject final ProjectExportParameter projectExportParameter,
+			final HttpServletResponse response
+	) throws IOException, BadConfigurationNameException, InternalDataSetPersistenceException, InternalIOException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
@@ -166,7 +167,7 @@ public class ProjectController {
 		response.setContentType("application/zip");
 		response.setHeader("Content-Disposition", "attachment; filename=process.zip");
 
-		projectService.createZipFile(project, response.getOutputStream());
+		projectService.createZipFile(project, response.getOutputStream(), projectExportParameter);
 
 		return ResponseEntity.ok().build();
 	}

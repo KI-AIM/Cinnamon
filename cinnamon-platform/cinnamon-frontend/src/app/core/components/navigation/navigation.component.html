@@ -28,6 +28,12 @@
             </a>
         </li>
         <li class="nav-item">
+            <a class="nav-link" title="Project Export" (click)="openProjectExport()"
+               [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                Project Export
+            </a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link" title="Configuration" (click)="openConfigurations()"
                [ngClass]="{'disabled': !userService.isAuthenticated()}">
                     Configuration Download
@@ -63,6 +69,7 @@
 
     <app-configuration-management></app-configuration-management>
     <app-project-settings></app-project-settings>
+    <app-project-export></app-project-export>
 </div>
 
 

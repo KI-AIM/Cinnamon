@@ -55,6 +55,7 @@ import { WorkstepComponent } from "./components/workstep/workstep.component";
 import { WorkstepTitleComponent } from "./components/workstep-title/workstep-title.component";
 import { FileUploadComponent } from "./components/file-upload/file-upload.component";
 import { WorkstepItemComponent } from './components/workstep-item/workstep-item.component';
+import { ProjectExportComponent } from './components/project-export/project-export.component';
 
 @NgModule({
     declarations: [
@@ -98,6 +99,7 @@ import { WorkstepItemComponent } from './components/workstep-item/workstep-item.
         MetricFilterPipe,
         MetricSorterPipe,
         StatisticsFilterPipe,
+        ProjectExportComponent,
     ],
     imports: [
         CommonModule,
@@ -149,6 +151,7 @@ import { WorkstepItemComponent } from './components/workstep-item/workstep-item.
         NoSpaceValidatorDirective,
         // Pipes
         InstanceOfPipe,
+        ProjectExportComponent,
     ],
 })
 export class SharedModule {}

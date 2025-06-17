@@ -4,13 +4,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
-import de.kiaim.cinnamon.platform.exception.BadDataSetIdException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
+import de.kiaim.cinnamon.platform.model.configuration.ExternalConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
-import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
-import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
-import de.kiaim.cinnamon.platform.exception.InternalIOException;
+import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
@@ -209,84 +208,121 @@ public class ProjectService {
 	 *
 	 * @param project      The project of the data set.
 	 * @param outputStream The OutputStream to write to.
+	 * @param projectExportParameter Parameter specifying what should be exported.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 * @throws InternalIOException                 If the request body could not be created.
 	 */
 	@Transactional
-	public void createZipFile(final ProjectEntity project, final OutputStream outputStream)
-			throws InternalDataSetPersistenceException, InternalIOException {
+	public void createZipFile(final ProjectEntity project, final OutputStream outputStream,
+	                          final ProjectExportParameter projectExportParameter)
+			throws InternalDataSetPersistenceException, InternalIOException, BadConfigurationNameException {
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
 
-			// Add original data set
-			final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
-			if (dataSetEntity != null) {
-				// Add data configuration
-				final ZipEntry attributeConfigZipEntry = new ZipEntry("attribute_config.yaml");
-				zipOut.putNextEntry(attributeConfigZipEntry);
-				yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
-				          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
-				zipOut.closeEntry();
+			// Add configurations
+			for (final String configName : projectExportParameter.getConfigurationNames()) {
+				// Special case for data configuration
+				if (configName.equals("configurations")) {
 
-				// Add data set
-				if (dataSetEntity.isStoredData()) {
-					final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, HoldOutSelector.ALL);
-					addCsvToZip(zipOut, dataSet, "original");
-				}
+					final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
+					if (dataSetEntity != null) {
+						final ZipEntry attributeConfigZipEntry = new ZipEntry("attribute_config.yaml");
+						zipOut.putNextEntry(attributeConfigZipEntry);
+						yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
+						          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
+						zipOut.closeEntry();
+					}
 
-				// Add statistics
-				final LobWrapperEntity statistics = project.getOriginalData().getDataSet().getStatistics();
-				if (statistics != null) {
-					final ZipEntry statisticsEntry = new ZipEntry("statistics.yaml");
-					zipOut.putNextEntry(statisticsEntry);
-					zipOut.write(statistics.getLob());
+				} else {
+					final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(configName);
+					final ConfigurationListEntity configList = project.getConfigurationList(externalConfiguration);
+
+					if (configList == null) {
+						continue;
+					}
+
+					final String config = configList.getConfigurations().get(0).getConfiguration();
+
+					if (config == null) {
+						continue;
+					}
+
+					final ZipEntry configZipEntry = new ZipEntry(configName + ".yaml");
+					zipOut.putNextEntry(configZipEntry);
+					zipOut.write(config.getBytes());
 					zipOut.closeEntry();
 				}
 			}
 
-			// Add results
-			Map<String, Integer> zipEntryCounter = new HashMap<>();
-			for (final PipelineEntity pipeline : project.getPipelines()) {
-				for (final ExecutionStepEntity executionStep : pipeline.getStages()) {
-					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {
-						// Add configuration
-						if (externalProcess.getConfigurationString() != null) {
-							final String configurationName = stepService.getExternalServerEndpointConfiguration(externalProcess.getJob())
-							                                            .getConfigurationName();
-							final ZipEntry configZipEntry = new ZipEntry(configurationName + ".yaml");
-							zipOut.putNextEntry(configZipEntry);
-							zipOut.write(externalProcess.getConfigurationString().getBytes());
-							zipOut.closeEntry();
-						}
-
-						// Add data set
-						if (externalProcess instanceof DataProcessingEntity dataProcessing ) {
-							if (dataProcessing.getDataSet() != null && dataProcessing.getDataSet().isStoredData()) {
-								addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet(), HoldOutSelector.ALL),
-								            dataProcessing.getDataSet().getProcessed().stream().map(Job::getName)
-								                          .collect(Collectors.joining("-")));
-							}
-						}
-
-						// Add additional files
-						for (final var entry : externalProcess.getResultFiles().entrySet()) {
-							String entryKey = entry.getKey();
-							if (zipEntryCounter.containsKey(entryKey)) {
-								var count = zipEntryCounter.get(entryKey);
-								entryKey = entryKey.substring(0, entryKey.lastIndexOf('.')) + "_" + count +
-								           entryKey.substring(entryKey.lastIndexOf('.'));
-								zipEntryCounter.put(entryKey, count + 1);
-							} else {
-								zipEntryCounter.put(entryKey, 1);
-							}
-
-							final ZipEntry additionalFileEntry = new ZipEntry(entryKey);
-							zipOut.putNextEntry(additionalFileEntry);
-							zipOut.write(entry.getValue().getLob());
-							zipOut.closeEntry();
-						}
-					}
-				}
-			}
+//			// Add original data set
+//			final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
+//			if (dataSetEntity != null) {
+//				// Add data configuration
+//				final ZipEntry attributeConfigZipEntry = new ZipEntry("attribute_config.yaml");
+//				zipOut.putNextEntry(attributeConfigZipEntry);
+//				yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
+//				          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
+//				zipOut.closeEntry();
+//
+//				// Add data set
+//				if (dataSetEntity.isStoredData()) {
+//					final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, HoldOutSelector.ALL);
+//					addCsvToZip(zipOut, dataSet, "original");
+//				}
+//
+//				// Add statistics
+//				final LobWrapperEntity statistics = project.getOriginalData().getDataSet().getStatistics();
+//				if (statistics != null) {
+//					final ZipEntry statisticsEntry = new ZipEntry("statistics.yaml");
+//					zipOut.putNextEntry(statisticsEntry);
+//					zipOut.write(statistics.getLob());
+//					zipOut.closeEntry();
+//				}
+//			}
+//
+//			// Add results
+//			Map<String, Integer> zipEntryCounter = new HashMap<>();
+//			for (final PipelineEntity pipeline : project.getPipelines()) {
+//				for (final ExecutionStepEntity executionStep : pipeline.getStages()) {
+//					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {
+//						// Add configuration
+//						if (externalProcess.getConfigurationString() != null) {
+//							final String configurationName = stepService.getExternalServerEndpointConfiguration(externalProcess.getJob())
+//							                                            .getConfigurationName();
+//							final ZipEntry configZipEntry = new ZipEntry(configurationName + ".yaml");
+//							zipOut.putNextEntry(configZipEntry);
+//							zipOut.write(externalProcess.getConfigurationString().getBytes());
+//							zipOut.closeEntry();
+//						}
+//
+//						// Add data set
+//						if (externalProcess instanceof DataProcessingEntity dataProcessing ) {
+//							if (dataProcessing.getDataSet() != null && dataProcessing.getDataSet().isStoredData()) {
+//								addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet(), HoldOutSelector.ALL),
+//								            dataProcessing.getDataSet().getProcessed().stream().map(Job::getName)
+//								                          .collect(Collectors.joining("-")));
+//							}
+//						}
+//
+//						// Add additional files
+//						for (final var entry : externalProcess.getResultFiles().entrySet()) {
+//							String entryKey = entry.getKey();
+//							if (zipEntryCounter.containsKey(entryKey)) {
+//								var count = zipEntryCounter.get(entryKey);
+//								entryKey = entryKey.substring(0, entryKey.lastIndexOf('.')) + "_" + count +
+//								           entryKey.substring(entryKey.lastIndexOf('.'));
+//								zipEntryCounter.put(entryKey, count + 1);
+//							} else {
+//								zipEntryCounter.put(entryKey, 1);
+//							}
+//
+//							final ZipEntry additionalFileEntry = new ZipEntry(entryKey);
+//							zipOut.putNextEntry(additionalFileEntry);
+//							zipOut.write(entry.getValue().getLob());
+//							zipOut.closeEntry();
+//						}
+//					}
+//				}
+//			}
 
 			zipOut.finish();
 		} catch (final IOException e) {

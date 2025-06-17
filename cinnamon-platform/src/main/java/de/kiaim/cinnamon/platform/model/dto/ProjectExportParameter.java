@@ -20,4 +20,10 @@ public class ProjectExportParameter {
 	 * Names of the configurations to export.
 	 */
 	private final List<String> configurationNames;
+
+	/**
+	 * Results to export.
+	 * Each entry must be in the form: [pipeline].[stage].[job].[dataset | statistics] or [original].[dataset | statistics]
+	 */
+	private final List<String> results;
 }

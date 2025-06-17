@@ -1,5 +1,6 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
-import { Component, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnDestroy, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
+import { MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { StatusService } from "@shared/services/status.service";
@@ -14,13 +15,14 @@ import { environments } from "src/environments/environment";
 })
 export class ProjectExportComponent implements OnDestroy {
 
-    protected bundleConfigurations: boolean = false;
+    protected bundleConfigurations: boolean = true;
 
     protected numberChecked = 0;
 
     protected clickSubject = new Subject<void>();
 
     @ViewChild('projectExportDialog') dialogWrap: TemplateRef<any>;
+    @ViewChildren('result') resultSelectors: QueryList<MatCheckbox>;
 
     public constructor(
         protected readonly configurationService: ConfigurationService,
@@ -65,10 +67,18 @@ export class ProjectExportComponent implements OnDestroy {
             return (document.getElementById(value.name + "-input") as HTMLInputElement).checked;
         }).map(value => value.name);
 
+        const results = [];
+        for (const resultSelector of this.resultSelectors.toArray()) {
+            if (resultSelector.checked) {
+                results.push(resultSelector.value);
+            }
+        }
+
         this.http.get(environments.apiUrl + "/api/project/zip", {
             params: {
                 bundleConfigurations: this.bundleConfigurations,
                 configurationNames: configNames,
+                results: results,
             },
             responseType: 'arraybuffer'
         }).subscribe({

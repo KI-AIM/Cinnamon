@@ -1,4 +1,29 @@
 <div class="d-flex flex-row mb-2 justify-content-between" [formGroup]="columnConfigurationForm">
+
+    <div *ngIf="confidence != null" class="confidence" [class.confidence-high]="confidence > 0.8"
+         [class.confidence-medium]="confidence <= 0.8 && confidence > 0.5" [class.confidence-low]="confidence <= 0.5"
+         (mouseenter)="openTooltip()" (mouseleave)="closeTooltip()">
+
+        <div #tooltip class="confidence-tooltip" id="confidenceTooltip">
+            <div #tooltipArrow class="confidence-tooltip-arrow"></div>
+
+            <div class="mb-2">
+                Confidence of the estimation: {{ confidence }}
+            </div>
+            <div>
+                The confidence of the estimation is showing the percentage of values used in the estimation that matches the estimated configuration.
+                The following color encoding is used:
+            </div>
+            <div>
+                <ul>
+                    <li>1.0 - 0.8: Green</li>
+                    <li>0.8 - 0.5: Yellow</li>
+                    <li>0.5 - 0.0: Red</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>Column name</mat-label>

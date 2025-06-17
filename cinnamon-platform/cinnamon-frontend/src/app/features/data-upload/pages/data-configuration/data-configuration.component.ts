@@ -125,6 +125,16 @@ export class DataConfigurationComponent implements OnInit, OnDestroy {
         return this.dataSetConfigurationForm ? this.dataSetConfigurationForm.invalid : true;
     }
 
+    /**
+     * Returns the confidence of the estimation for the attribute with the given index.
+     * @param attributeIndex The index of the attribute.
+     * @return The confidence.
+     * @protected
+     */
+    protected getConfidence(attributeIndex: number): number | null {
+        return this.configuration.confidence ? this.configuration.confidence[attributeIndex] : null;
+    }
+
     confirmConfiguration() {
         const config = plainToInstance(DataConfiguration, this.attributeConfigurationform.value);
         this.loadingService.setLoadingStatus(true);

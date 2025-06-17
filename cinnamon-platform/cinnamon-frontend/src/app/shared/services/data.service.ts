@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
-import { DataConfiguration } from '../model/data-configuration';
-import { instanceToPlain } from 'class-transformer';
-import { environments } from "../../../environments/environment";
-import { FileInformation } from "../model/file-information";
+import { map, Observable } from 'rxjs';
+import { DataConfiguration, DataConfigurationEstimation } from '../model/data-configuration';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { environments } from "src/environments/environment";
 
 @Injectable({
     providedIn: 'root',
@@ -15,8 +14,12 @@ export class DataService {
     constructor(private httpClient: HttpClient) {
     }
 
-    estimateData(): Observable<Object> {
-        return this.httpClient.get(this.baseUrl + "/estimation");
+    public estimateData(): Observable<DataConfigurationEstimation> {
+        return this.httpClient.get<DataConfigurationEstimation>(this.baseUrl + "/estimation").pipe(
+            map(value => {
+                return plainToInstance(DataConfigurationEstimation, value);
+            })
+        );
     }
 
     storeData(config: DataConfiguration): Observable<number> {

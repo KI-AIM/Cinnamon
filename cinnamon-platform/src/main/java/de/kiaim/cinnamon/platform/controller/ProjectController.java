@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 @RestController
 @RequestMapping("/api/project")
@@ -159,7 +160,7 @@ public class ProjectController {
 			@AuthenticationPrincipal final UserEntity requestUser,
 			@ParameterObject final ProjectExportParameter projectExportParameter,
 			final HttpServletResponse response
-	) throws IOException, BadConfigurationNameException, InternalDataSetPersistenceException, InternalIOException {
+	) throws BadConfigurationNameException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
@@ -167,7 +168,14 @@ public class ProjectController {
 		response.setContentType("application/zip");
 		response.setHeader("Content-Disposition", "attachment; filename=process.zip");
 
-		projectService.createZipFile(project, response.getOutputStream(), projectExportParameter);
+		final OutputStream outputStream;
+		try {
+			outputStream = response.getOutputStream();
+		} catch (final IOException e) {
+			throw new InternalIOException(InternalIOException.ZIP_CREATION, "Could not get Outputstream", e);
+		}
+
+		projectService.createZipFile(project, outputStream, projectExportParameter);
 
 		return ResponseEntity.ok().build();
 	}

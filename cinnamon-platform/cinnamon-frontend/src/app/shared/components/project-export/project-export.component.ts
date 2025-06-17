@@ -1,7 +1,6 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Component, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
-import { MatInput } from "@angular/material/input";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { StatusService } from "@shared/services/status.service";
 import { debounceTime, filter, from, scan, Subject, switchMap } from "rxjs";
@@ -14,6 +13,8 @@ import { environments } from "src/environments/environment";
   styleUrl: './project-export.component.less'
 })
 export class ProjectExportComponent implements OnDestroy {
+
+    protected bundleConfigurations: boolean = false;
 
     protected numberChecked = 0;
 
@@ -66,6 +67,7 @@ export class ProjectExportComponent implements OnDestroy {
 
         this.http.get(environments.apiUrl + "/api/project/zip", {
             params: {
+                bundleConfigurations: this.bundleConfigurations,
                 configurationNames: configNames,
             },
             responseType: 'arraybuffer'

@@ -12,6 +12,11 @@ import java.util.List;
 @Data
 public class ProjectExportParameter {
 	/**
+	 * If all configurations should be bundled into one file.
+	 */
+	private final boolean bundleConfigurations;
+
+	/**
 	 * Names of the configurations to export.
 	 */
 	private final List<String> configurationNames;

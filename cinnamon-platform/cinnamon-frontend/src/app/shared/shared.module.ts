@@ -26,7 +26,6 @@ import { ConfigurationPageComponent } from "./components/configuration-page/conf
 import { ConfigurationGroupComponent } from './components/configuration-group/configuration-group.component';
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatExpansionModule } from "@angular/material/expansion";
-import { ConfigurationManagementComponent } from "./components/configuration-management/configuration-management.component";
 import {DataTableComponent} from "./components/data-table/data-table.component";
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
@@ -72,7 +71,6 @@ import { ProjectExportComponent } from './components/project-export/project-expo
         ConfigurationInputAttributeListComponent,
         ConfigurationInputComponent,
         ConfigurationInputInfoComponent,
-        ConfigurationManagementComponent,
         ConfigurationPageComponent,
         ConfigurationSelectionComponent,
         DataInspectionComponent,
@@ -131,7 +129,6 @@ import { ProjectExportComponent } from './components/project-export/project-expo
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,
-        ConfigurationManagementComponent,
         ConfigurationPageComponent,
         DataInspectionComponent,
         DataInspectionAttributeComponent,

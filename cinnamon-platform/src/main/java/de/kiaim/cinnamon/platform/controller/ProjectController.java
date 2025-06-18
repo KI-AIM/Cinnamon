@@ -35,6 +35,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/project")
@@ -166,7 +167,7 @@ public class ProjectController {
 		final ProjectEntity project = projectService.getProject(user);
 
 		response.setContentType("application/zip");
-		response.setHeader("Content-Disposition", "attachment; filename=process.zip");
+		response.setHeader("Content-Disposition", "attachment; filename=\"" + user.getEmail() + "_Cinnamon-export_" + LocalDate.now() + ".zip\"");
 
 		final OutputStream outputStream;
 		try {

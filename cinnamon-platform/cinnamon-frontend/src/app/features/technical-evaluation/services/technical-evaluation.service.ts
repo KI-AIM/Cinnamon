@@ -61,7 +61,6 @@ export class TechnicalEvaluationService extends AlgorithmService {
         configReg.name = "evaluation_configuration";
         configReg.orderNumber = 3;
         configReg.storeConfig = null;
-        configReg.getConfigCallback = () => this.getConfig();
         configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);

@@ -233,7 +233,7 @@ public class ProjectService {
 					}
 				}
 
-				final ZipEntry configZipEntry = new ZipEntry("configurations.yaml");
+				final ZipEntry configZipEntry = new ZipEntry("all-configurations.yaml");
 				zipOut.putNextEntry(configZipEntry);
 				zipOut.write(bundledConfigurations.toString().getBytes());
 				zipOut.closeEntry();
@@ -246,7 +246,7 @@ public class ProjectService {
 
 						final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
 						if (dataSetEntity != null) {
-							final ZipEntry attributeConfigZipEntry = new ZipEntry("attribute_config.yaml");
+							final ZipEntry attributeConfigZipEntry = new ZipEntry("original-attribute_config.yaml");
 							zipOut.putNextEntry(attributeConfigZipEntry);
 							yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
 							          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
@@ -291,14 +291,14 @@ public class ProjectService {
 							if (dataSetEntity.isStoredData()) {
 								final DataSet dataSet = databaseService.exportDataSet(dataSetEntity,
 								                                                      HoldOutSelector.ALL);
-								addCsvToZip(zipOut, dataSet, "original");
+								addCsvToZip(zipOut, dataSet, "original-dataset");
 							}
 
 						} else if (parts[1].equals("statistics")) {
 
 							final LobWrapperEntity statistics = project.getOriginalData().getDataSet().getStatistics();
 							if (statistics != null) {
-								final ZipEntry statisticsEntry = new ZipEntry("statistics.yaml");
+								final ZipEntry statisticsEntry = new ZipEntry("original-statistics.yaml");
 								zipOut.putNextEntry(statisticsEntry);
 								zipOut.write(statistics.getLob());
 								zipOut.closeEntry();
@@ -323,7 +323,7 @@ public class ProjectService {
 
 								if (dataProcessing.getDataSet().isStoredData()) {
 									addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet(),
-									                                                  HoldOutSelector.ALL), name);
+									                                                  HoldOutSelector.ALL), name + "-dataset");
 								}
 
 							} else if (parts[3].equals("statistics")) {
@@ -354,7 +354,7 @@ public class ProjectService {
 								zipEntryCounter.put(entryKey, 1);
 							}
 
-							final ZipEntry additionalFileEntry = new ZipEntry(entryKey);
+							final ZipEntry additionalFileEntry = new ZipEntry(job.getName() + "-" + entryKey);
 							zipOut.putNextEntry(additionalFileEntry);
 							zipOut.write(entry.getValue().getLob());
 							zipOut.closeEntry();

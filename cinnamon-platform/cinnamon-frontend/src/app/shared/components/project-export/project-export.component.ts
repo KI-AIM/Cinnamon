@@ -4,6 +4,7 @@ import { MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { StatusService } from "@shared/services/status.service";
+import { UserService } from "@shared/services/user.service";
 import { debounceTime, filter, from, scan, Subject, switchMap } from "rxjs";
 import { environments } from "src/environments/environment";
 
@@ -29,6 +30,7 @@ export class ProjectExportComponent implements OnDestroy {
         private readonly dialog: MatDialog,
         private readonly  http: HttpClient,
         protected readonly statusService: StatusService,
+        private readonly userService: UserService,
     ) {
     }
 
@@ -75,6 +77,7 @@ export class ProjectExportComponent implements OnDestroy {
         }
 
         this.http.get(environments.apiUrl + "/api/project/zip", {
+            observe: 'response',
             params: {
                 bundleConfigurations: this.bundleConfigurations,
                 configurationNames: configNames,
@@ -82,12 +85,25 @@ export class ProjectExportComponent implements OnDestroy {
             },
             responseType: 'arraybuffer'
         }).subscribe({
-            next: data => {
-                const blob = new Blob([data], {
-                    type: 'application/zip'
+            next: response => {
+                const contentType = response.headers.get("Content-Type");
+                let fileName = response.headers.get("Content-Disposition");
+
+                const blob = new Blob([response.body!], {
+                    type: contentType!,
                 });
-                const url = window.URL.createObjectURL(blob);
-                window.open(url);
+
+                if (fileName != null) {
+                    fileName = fileName.split("\"")[1];
+                } else {
+                    fileName = this.userService.getUser().email + "_Cinnamon-export_" + new Date().toISOString().slice(0, 10) + ".zip";
+                }
+
+                const element = document.createElement('a');
+                element.href = URL.createObjectURL(blob);
+                element.download = fileName;
+                document.body.appendChild(element);
+                element.click();
             }
         });
     }

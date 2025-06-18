@@ -17,7 +17,7 @@ export class ProjectExportComponent implements OnDestroy {
 
     protected bundleConfigurations: boolean = true;
 
-    protected numberChecked = 0;
+    protected numberChecked = 14;
 
     protected clickSubject = new Subject<void>();
 

@@ -106,10 +106,14 @@
 
                 <!-- Evaluation results -->
                 <div class="box-name">Evaluation</div>
-                <mat-checkbox color="primary">
+                <div class="settings-label">Evaluation results to export</div>
+
+                <mat-checkbox #result color="primary" value="pipeline.evaluation.technical_evaluation.other"
+                              (input)="updateNumberChecked($event)">
                     Technical Evaluation
                 </mat-checkbox>
-                <mat-checkbox color="primary">
+                <mat-checkbox #result color="primary" value="pipeline.evaluation.risk_evaluation.other"
+                              (input)="updateNumberChecked($event)">
                     Risk Evaluation
                 </mat-checkbox>
             </div>

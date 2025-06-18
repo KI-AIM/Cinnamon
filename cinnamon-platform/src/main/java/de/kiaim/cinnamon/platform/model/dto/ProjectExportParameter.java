@@ -23,7 +23,7 @@ public class ProjectExportParameter {
 
 	/**
 	 * Results to export.
-	 * Each entry must be in the form: [pipeline].[stage].[job].[dataset | statistics] or [original].[dataset | statistics]
+	 * Each entry must be in the form: [pipeline].[stage].[job].[dataset | statistics | other] or [original].[dataset | statistics]
 	 */
 	private final List<String> results;
 }

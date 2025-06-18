@@ -338,28 +338,29 @@ public class ProjectService {
 									zipOut.write(statisticsLob.getLob());
 									zipOut.closeEntry();
 								}
-
-							} else if (parts[3].equals("other")) {
-
-								for (final var entry : externalProcess.getResultFiles().entrySet()) {
-									String entryKey = entry.getKey();
-									if (zipEntryCounter.containsKey(entryKey)) {
-										var count = zipEntryCounter.get(entryKey);
-										entryKey = entryKey.substring(0, entryKey.lastIndexOf('.')) + "_" + count +
-										           entryKey.substring(entryKey.lastIndexOf('.'));
-										zipEntryCounter.put(entryKey, count + 1);
-									} else {
-										zipEntryCounter.put(entryKey, 1);
-									}
-
-									final ZipEntry additionalFileEntry = new ZipEntry(entryKey);
-									zipOut.putNextEntry(additionalFileEntry);
-									zipOut.write(entry.getValue().getLob());
-									zipOut.closeEntry();
-								}
 							}
 						}
 					}
+
+					if (parts[3].equals("other")) {
+						for (final var entry : externalProcess.getResultFiles().entrySet()) {
+							String entryKey = entry.getKey();
+							if (zipEntryCounter.containsKey(entryKey)) {
+								var count = zipEntryCounter.get(entryKey);
+								entryKey = entryKey.substring(0, entryKey.lastIndexOf('.')) + "_" + count +
+								           entryKey.substring(entryKey.lastIndexOf('.'));
+								zipEntryCounter.put(entryKey, count + 1);
+							} else {
+								zipEntryCounter.put(entryKey, 1);
+							}
+
+							final ZipEntry additionalFileEntry = new ZipEntry(entryKey);
+							zipOut.putNextEntry(additionalFileEntry);
+							zipOut.write(entry.getValue().getLob());
+							zipOut.closeEntry();
+						}
+					}
+
 				}
 			}
 

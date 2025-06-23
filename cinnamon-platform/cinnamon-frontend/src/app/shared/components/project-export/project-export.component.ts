@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { Component, OnDestroy, OnInit, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewInit, Component, OnInit, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
 import { MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
 import { HoldOutSelector } from "@core/enums/hold-out-selector";
@@ -8,7 +8,7 @@ import { DataSetInfo } from "@shared/model/data-set-info";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { StatusService } from "@shared/services/status.service";
 import { UserService } from "@shared/services/user.service";
-import { Observable, Subject } from "rxjs";
+import { Observable } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Component({
@@ -17,20 +17,19 @@ import { environments } from "src/environments/environment";
   templateUrl: './project-export.component.html',
   styleUrl: './project-export.component.less'
 })
-export class ProjectExportComponent implements OnInit, OnDestroy {
+export class ProjectExportComponent implements OnInit, AfterViewInit {
 
     protected readonly HoldOutSelector = HoldOutSelector;
 
     protected bundleConfigurations: boolean = true;
     protected holdOutSelector: HoldOutSelector = HoldOutSelector.ALL;
 
-    protected numberChecked = 14;
+    protected numberChecked = 0;
 
-    protected clickSubject = new Subject<void>();
     protected dataSetInfo$: Observable<DataSetInfo>;
 
     @ViewChild('projectExportDialog') dialogWrap: TemplateRef<any>;
-    @ViewChildren('result') resultSelectors: QueryList<MatCheckbox>;
+    @ViewChildren('resource') resources: QueryList<MatCheckbox>;
 
     public constructor(
         protected readonly configurationService: ConfigurationService,
@@ -46,8 +45,8 @@ export class ProjectExportComponent implements OnInit, OnDestroy {
         this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfo("VALIDATION");
     }
 
-    public ngOnDestroy(): void {
-        this.clickSubject.complete();
+    public ngAfterViewInit(): void {
+        this.updateNumberChecked();
     }
 
     /**
@@ -61,15 +60,10 @@ export class ProjectExportComponent implements OnInit, OnDestroy {
 
     /**
      * Updates the number of checked checkboxes.
-     * @param event The input event.
      * @protected
      */
-    protected updateNumberChecked(event: Event): void {
-        if ((event.target as HTMLInputElement).checked) {
-            this.numberChecked++;
-        } else {
-            this.numberChecked--;
-        }
+    protected updateNumberChecked(): void {
+        this.numberChecked = this.resources.filter(value => value.checked).length;
     }
 
     /**
@@ -77,12 +71,8 @@ export class ProjectExportComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected exportProject(): void {
-        const configNames = this.configurationService.getRegisteredConfigurations().filter(value => {
-            return (document.getElementById(value.name + "-input") as HTMLInputElement).checked;
-        }).map(value => value.name);
-
         const results = [];
-        for (const resultSelector of this.resultSelectors.toArray()) {
+        for (const resultSelector of this.resources.toArray()) {
             if (resultSelector.checked) {
                 results.push(resultSelector.value);
             }
@@ -92,9 +82,8 @@ export class ProjectExportComponent implements OnInit, OnDestroy {
             observe: 'response',
             params: {
                 bundleConfigurations: this.bundleConfigurations,
-                configurationNames: configNames,
                 holdOutSelector: this.holdOutSelector,
-                results: results,
+                resources: results,
             },
             responseType: 'arraybuffer'
         }).subscribe({

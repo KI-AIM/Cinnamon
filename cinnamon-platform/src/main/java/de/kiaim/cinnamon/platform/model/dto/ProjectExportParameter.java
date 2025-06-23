@@ -1,8 +1,10 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
-import lombok.Data;
+import lombok.*;
+import org.springframework.lang.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -10,26 +12,29 @@ import java.util.List;
  *
  * @author Daniel Preciado-Marquez
  */
-@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter @Setter
 public class ProjectExportParameter {
 	/**
 	 * If all configurations should be bundled into one file.
 	 */
-	private final boolean bundleConfigurations;
+	private boolean bundleConfigurations = true;
 
 	/**
 	 * Names of the configurations to export.
 	 */
-	private final List<String> configurationNames;
+	@Nullable
+	private List<String> configurationNames = new ArrayList<>();
 
 	/**
 	 * Hold-out selector of the original dataset.
 	 */
-	private final HoldOutSelector holdOutSelector;
+	private HoldOutSelector holdOutSelector = HoldOutSelector.ALL;
 
 	/**
 	 * Results to export.
 	 * Each entry must be in the form: [pipeline].[stage].[job].[dataset | statistics | other] or [original].[dataset | statistics]
 	 */
-	private final List<String> results;
+	private List<String> results = new ArrayList<>();
 }

@@ -25,4 +25,17 @@ export class ExecutionService extends ExecutionStepService {
     protected override getStep(): Steps {
         return Steps.EXECUTION;
     }
+
+    /**
+     * Returns the display name for the given job.
+     * @param job Key of the job.
+     */
+    public getJobName(job: string): string {
+        const jobNames: Record<string, string> = {
+            'anonymization': 'Anonymization',
+            'synthetization': 'Synthetization',
+        };
+
+        return jobNames[job];
+    }
 }

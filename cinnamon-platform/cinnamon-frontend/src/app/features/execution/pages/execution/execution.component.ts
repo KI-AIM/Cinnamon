@@ -116,11 +116,6 @@ export class ExecutionComponent implements OnInit, OnDestroy {
     }
 
     protected getJobName(job: string): string {
-        const jobNames: Record<string, string> = {
-            'anonymization': 'Anonymization',
-            'synthetization': 'Synthetization',
-        };
-
-        return jobNames[job];
+        return this.executionService.getJobName(job);
     }
 }

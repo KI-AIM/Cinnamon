@@ -290,7 +290,7 @@ public class ProjectService {
 
 							if (dataSetEntity.isStoredData()) {
 								final DataSet dataSet = databaseService.exportDataSet(dataSetEntity,
-								                                                      HoldOutSelector.ALL);
+								                                                      projectExportParameter.getHoldOutSelector());
 								addCsvToZip(zipOut, dataSet, "original-dataset");
 							}
 

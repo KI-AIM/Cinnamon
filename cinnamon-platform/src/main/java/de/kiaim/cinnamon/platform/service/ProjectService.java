@@ -3,7 +3,6 @@ package de.kiaim.cinnamon.platform.service;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
@@ -15,18 +14,16 @@ import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
+import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,17 +43,19 @@ public class ProjectService {
 	private final ProjectRepository projectRepository;
 	private final UserRepository userRepository;
 	private final DatabaseService databaseService;
+	private final DataProcessorService dataProcessorService;
 	private final StepService stepService;
 
 	public ProjectService(final ObjectMapper yamlMapper, final CinnamonConfiguration cinnamonConfiguration,
 	                      final ProjectRepository projectRepository, final UserRepository userRepository,
-	                      final DatabaseService databaseService,
+	                      final DatabaseService databaseService, final DataProcessorService dataProcessorService,
 	                      final StepService stepService) {
 		this.yamlMapper = yamlMapper;
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.projectRepository = projectRepository;
 		this.userRepository = userRepository;
 		this.databaseService = databaseService;
+		this.dataProcessorService = dataProcessorService;
 		this.stepService = stepService;
 	}
 
@@ -216,13 +215,16 @@ public class ProjectService {
 	 * @param project                The project of the data set.
 	 * @param outputStream           The OutputStream to write to.
 	 * @param projectExportParameter Parameter specifying what should be exported.
+	 * @throws BadConfigurationNameException       If the requested configuration name is unknown.
+	 * @throws BadStepNameException                If a resource from an unknown step is requested.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 * @throws InternalIOException                 If the request body could not be created.
+	 * @throws InternalMissingHandlingException    If no data processor for the target file type could be found.
 	 */
 	@Transactional
 	public void createZipFile(final ProjectEntity project, final OutputStream outputStream,
 	                          final ProjectExportParameter projectExportParameter)
-			throws InternalDataSetPersistenceException, InternalIOException, BadConfigurationNameException, BadStepNameException {
+			throws BadConfigurationNameException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
 
 			Map<String, Integer> zipEntryCounter = new HashMap<>();
@@ -245,7 +247,7 @@ public class ProjectService {
 							if (dataSetEntity.isStoredData()) {
 								final DataSet dataSet = databaseService.exportDataSet(dataSetEntity,
 								                                                      projectExportParameter.getHoldOutSelector());
-								addCsvToZip(zipOut, dataSet, "original-dataset");
+								addDatasetToZip(zipOut, dataSet, projectExportParameter.getDatasetFileType(), "original-dataset");
 							}
 
 						} else if (parts[1].equals("statistics")) {
@@ -276,8 +278,9 @@ public class ProjectService {
 							if (parts[3].equals("dataset")) {
 
 								if (dataProcessing.getDataSet().isStoredData()) {
-									addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet(),
-									                                                  HoldOutSelector.ALL), name + "-dataset");
+									final DataSet dataSet = databaseService.exportDataSet(dataProcessing.getDataSet(),
+									                                                      HoldOutSelector.ALL);
+									addDatasetToZip(zipOut, dataSet, projectExportParameter.getDatasetFileType(), name + "-dataset");
 								}
 
 							} else if (parts[3].equals("statistics")) {
@@ -381,20 +384,16 @@ public class ProjectService {
 		}
 	}
 
-	private void addCsvToZip(final ZipOutputStream zipOut, final DataSet dataSet,
-	                         final String name) throws IOException {
-		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(zipOut, StandardCharsets.UTF_8);
-		final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
-				dataSet.getDataConfiguration().getColumnNames().toArray(new String[0])).build();
+	private void addDatasetToZip(final ZipOutputStream zipOut, final DataSet dataSet, final FileType fileType,
+	                             final String name)
+			throws IOException, InternalIOException, InternalMissingHandlingException {
 
-		final ZipEntry dataZipEntry = new ZipEntry(name + ".csv");
+		final String fileExtension = fileType.getFileExtensions().iterator().next();
+		final ZipEntry dataZipEntry = new ZipEntry(name + fileExtension);
 		zipOut.putNextEntry(dataZipEntry);
 
-		final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
-		for (final DataRow dataRow : dataSet.getDataRows()) {
-			csvPrinter.printRecord(dataRow.getRow());
-		}
-		csvPrinter.flush();
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileType);
+		dataProcessor.write(zipOut, dataSet);
 
 		zipOut.closeEntry();
 	}

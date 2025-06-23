@@ -3,7 +3,6 @@ package de.kiaim.cinnamon.test.platform.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
-import de.kiaim.cinnamon.platform.exception.InternalRequestException;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.entity.*;
@@ -37,6 +36,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@Value("${server.port}") private int port;
 	@Autowired private SerializationConfig serializationConfig;
 	@Autowired private CinnamonConfiguration cinnamonConfiguration;
+	@Autowired private DataProcessorService dataProcessorService;
 	@Autowired private DataSetService dataSetService;
 	@Autowired private HttpService httpService;
 	@Autowired private StepService stepService = mock(StepService.class);
@@ -63,7 +63,8 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
 		                                         backgroundProcessRepository, csvProcessor, databaseService,
-		                                         dataSetService, httpService, projectService, stepService);
+		                                         dataProcessorService, dataSetService, httpService, projectService,
+		                                         stepService);
 
 		mockBackEnd = new MockWebServer();
 		mockBackEnd.start(mockBackEndPort);

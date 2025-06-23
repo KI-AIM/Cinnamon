@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
+import de.kiaim.cinnamon.platform.model.file.FileType;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -19,6 +20,11 @@ public class ProjectExportParameter {
 	 * If all configurations should be bundled into one file.
 	 */
 	private boolean bundleConfigurations = true;
+
+	/**
+	 * The target type for the exported dataset.
+	 */
+	private FileType datasetFileType = FileType.CSV;
 
 	/**
 	 * Hold-out selector of the original dataset.

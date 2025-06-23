@@ -4,7 +4,10 @@ import { MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
 import { HoldOutSelector } from "@core/enums/hold-out-selector";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
+import { FileService } from "@features/data-upload/services/file.service";
 import { DataSetInfo } from "@shared/model/data-set-info";
+import { FileType } from "@shared/model/file-configuration";
+import { FileInformation } from "@shared/model/file-information";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { StatusService } from "@shared/services/status.service";
 import { UserService } from "@shared/services/user.service";
@@ -19,9 +22,11 @@ import { environments } from "src/environments/environment";
 })
 export class ProjectExportComponent implements OnInit, AfterViewInit {
 
+    protected readonly FileType = FileType;
     protected readonly HoldOutSelector = HoldOutSelector;
 
     protected bundleConfigurations: boolean = true;
+    protected datasetFileType: FileType = FileType.CSV;
     protected holdOutSelector: HoldOutSelector = HoldOutSelector.ALL;
 
     protected numberChecked = 0;
@@ -35,6 +40,7 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
         protected readonly configurationService: ConfigurationService,
         private readonly dataSetInfoService: DataSetInfoService,
         private readonly dialog: MatDialog,
+        private readonly fileService: FileService,
         private readonly  http: HttpClient,
         protected readonly statusService: StatusService,
         private readonly userService: UserService,
@@ -43,6 +49,13 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
 
     ngOnInit() {
         this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfo("VALIDATION");
+        this.fileService.fileInfo$.subscribe({
+            next: (fileInformation: FileInformation) => {
+                if (fileInformation.type != null) {
+                    this.datasetFileType = fileInformation.type;
+                }
+            }
+        });
     }
 
     public ngAfterViewInit(): void {
@@ -92,6 +105,7 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
             observe: 'response',
             params: {
                 bundleConfigurations: this.bundleConfigurations,
+                datasetFileType: this.datasetFileType,
                 holdOutSelector: this.holdOutSelector,
                 resources: results,
             },

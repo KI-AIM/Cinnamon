@@ -3,8 +3,10 @@ package de.kiaim.cinnamon.test.platform.service;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
+import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.platform.model.file.FileType;
@@ -24,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -122,7 +125,13 @@ public class ProjectServiceTest extends DatabaseTest {
 
 		// The test
 		var out = new ByteArrayOutputStream();
-		assertDoesNotThrow(() -> projectService.createZipFile(project, out));
+		var parameter = new ProjectExportParameter(false, HoldOutSelector.ALL,
+		                                           List.of("pipeline.execution.anonymization.dataset",
+		                                                   "configuration.configurations", "original.dataset",
+		                                                   "configuration.anonymization"));
+		assertDoesNotThrow(() -> projectService.createZipFile(project, out, parameter));
+
+		List<String> expectedFiles = new ArrayList<>(List.of("anonymization-dataset.csv", "original-attribute_config.yaml", "original-dataset.csv", "anonymization.yaml"));
 
 		try (final var zipInputStream = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
 
@@ -136,24 +145,29 @@ public class ProjectServiceTest extends DatabaseTest {
 					stringBuilder.append(new String(buffer, 0 , read));
 				}
 
-				if (zipEntry.getName().equals("anonymization.csv")) {
+				if (zipEntry.getName().equals("anonymization-dataset.csv")) {
 					var result = ResourceHelper.loadCsvFileWithErrorsAsString();
 					var resultBuilder = new StringBuilder(result);
 					resultBuilder.delete(result.length() - 24, result.length() - 15);
 
 					assertEquals(resultBuilder.toString(), stringBuilder.toString(), "Unexpected anonymized data!");
-				} else if (zipEntry.getName().equals("attribute_config.yaml")) {
+				} else if (zipEntry.getName().equals("original-attribute_config.yaml")) {
 					assertEquals(DataConfigurationTestHelper.generateDataConfigurationAsYaml(), stringBuilder.toString(), "Unexpected data configuration!");
-				} else if(zipEntry.getName().equals("original.csv")) {
+				} else if(zipEntry.getName().equals("original-dataset.csv")) {
 					assertEquals(ResourceHelper.loadCsvFileAsString(), stringBuilder.toString(), "Unexpected original data!");
 				} else if(zipEntry.getName().equals("anonymization.yaml")) {
 					assertEquals("key = value", stringBuilder.toString(), "Unexpected anonymization configuration!");
 				} else {
 					fail("Unexpected ZIP entry: " + zipEntry.getName());
 				}
+
+				expectedFiles.remove(zipEntry.getName());
 			}
 		}
 
+		if (!expectedFiles.isEmpty()) {
+			fail("The following files have not been found in the ZIP file: " + String.join(", ", expectedFiles));
+		}
 	}
 
 }

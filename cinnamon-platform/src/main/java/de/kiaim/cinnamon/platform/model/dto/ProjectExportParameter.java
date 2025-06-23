@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
+import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import lombok.Data;
 
 import java.util.List;
@@ -20,6 +21,11 @@ public class ProjectExportParameter {
 	 * Names of the configurations to export.
 	 */
 	private final List<String> configurationNames;
+
+	/**
+	 * Hold-out selector of the original dataset.
+	 */
+	private final HoldOutSelector holdOutSelector;
 
 	/**
 	 * Results to export.

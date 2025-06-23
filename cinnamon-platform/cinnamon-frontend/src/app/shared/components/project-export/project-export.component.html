@@ -101,6 +101,20 @@
                         </tr>
                     </table>
 
+                    <ng-container *ngIf="(dataSetInfo$ | async) as dataSetInfo">
+                        <ng-container *ngIf="dataSetInfo.hasHoldOutSplit" >
+                        <div class="settings-label">Split</div>
+                        <mat-form-field class="hide-mat-error-gap">
+                            <mat-label>Hold out</mat-label>
+                            <mat-select [(ngModel)]="holdOutSelector">
+                                <mat-option [value]="HoldOutSelector.ALL">All</mat-option>
+                                <mat-option [value]="HoldOutSelector.HOLD_OUT">Hold-Out</mat-option>
+                                <mat-option [value]="HoldOutSelector.NOT_HOLD_OUT">Not Hold-Out</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        </ng-container>
+                    </ng-container>
+
                 </div>
 
 

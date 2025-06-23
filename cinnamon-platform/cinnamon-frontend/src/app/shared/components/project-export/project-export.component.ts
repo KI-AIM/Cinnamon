@@ -1,11 +1,14 @@
-import { HttpClient, HttpParams } from "@angular/common/http";
-import { Component, OnDestroy, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
+import { HttpClient } from "@angular/common/http";
+import { Component, OnDestroy, OnInit, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
 import { MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
+import { HoldOutSelector } from "@core/enums/hold-out-selector";
+import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
+import { DataSetInfo } from "@shared/model/data-set-info";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { StatusService } from "@shared/services/status.service";
 import { UserService } from "@shared/services/user.service";
-import { debounceTime, filter, from, scan, Subject, switchMap } from "rxjs";
+import { Observable, Subject } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Component({
@@ -14,24 +17,33 @@ import { environments } from "src/environments/environment";
   templateUrl: './project-export.component.html',
   styleUrl: './project-export.component.less'
 })
-export class ProjectExportComponent implements OnDestroy {
+export class ProjectExportComponent implements OnInit, OnDestroy {
+
+    protected readonly HoldOutSelector = HoldOutSelector;
 
     protected bundleConfigurations: boolean = true;
+    protected holdOutSelector: HoldOutSelector = HoldOutSelector.ALL;
 
     protected numberChecked = 14;
 
     protected clickSubject = new Subject<void>();
+    protected dataSetInfo$: Observable<DataSetInfo>;
 
     @ViewChild('projectExportDialog') dialogWrap: TemplateRef<any>;
     @ViewChildren('result') resultSelectors: QueryList<MatCheckbox>;
 
     public constructor(
         protected readonly configurationService: ConfigurationService,
+        private readonly dataSetInfoService: DataSetInfoService,
         private readonly dialog: MatDialog,
         private readonly  http: HttpClient,
         protected readonly statusService: StatusService,
         private readonly userService: UserService,
     ) {
+    }
+
+    ngOnInit() {
+        this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfo("VALIDATION");
     }
 
     public ngOnDestroy(): void {
@@ -81,6 +93,7 @@ export class ProjectExportComponent implements OnDestroy {
             params: {
                 bundleConfigurations: this.bundleConfigurations,
                 configurationNames: configNames,
+                holdOutSelector: this.holdOutSelector,
                 results: results,
             },
             responseType: 'arraybuffer'

@@ -298,7 +298,7 @@ public class ProjectService {
 
 					if (parts[3].equals("other")) {
 						for (final var entry : externalProcess.getResultFiles().entrySet()) {
-							String entryKey = entry.getKey();
+							String entryKey = job.getName() + "-" + entry.getKey();
 							if (zipEntryCounter.containsKey(entryKey)) {
 								var count = zipEntryCounter.get(entryKey);
 								entryKey = entryKey.substring(0, entryKey.lastIndexOf('.')) + "_" + count +
@@ -308,7 +308,7 @@ public class ProjectService {
 								zipEntryCounter.put(entryKey, 1);
 							}
 
-							final ZipEntry additionalFileEntry = new ZipEntry(job.getName() + "-" + entryKey);
+							final ZipEntry additionalFileEntry = new ZipEntry(entryKey);
 							zipOut.putNextEntry(additionalFileEntry);
 							zipOut.write(entry.getValue().getLob());
 							zipOut.closeEntry();

@@ -223,56 +223,61 @@ public class ProjectService {
 			throws InternalDataSetPersistenceException, InternalIOException, BadConfigurationNameException, BadStepNameException {
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
 
-			if (projectExportParameter.isBundleConfigurations()) {
-				StringBuilder bundledConfigurations = new StringBuilder();
+			if (projectExportParameter.getConfigurationNames() != null && !projectExportParameter.getConfigurationNames().isEmpty()) {
 
-				for (final String configName : projectExportParameter.getConfigurationNames()) {
-					final String configurationString = getConfigurationString(project, configName);
-					if (configurationString != null) {
-						bundledConfigurations.append(configurationString);
+				if (projectExportParameter.isBundleConfigurations()) {
+					StringBuilder bundledConfigurations = new StringBuilder();
+
+					for (final String configName : projectExportParameter.getConfigurationNames()) {
+						final String configurationString = getConfigurationString(project, configName);
+						if (configurationString != null) {
+							bundledConfigurations.append(configurationString);
+						}
 					}
-				}
 
-				final ZipEntry configZipEntry = new ZipEntry("all-configurations.yaml");
-				zipOut.putNextEntry(configZipEntry);
-				zipOut.write(bundledConfigurations.toString().getBytes());
-				zipOut.closeEntry();
+					final ZipEntry configZipEntry = new ZipEntry("all-configurations.yaml");
+					zipOut.putNextEntry(configZipEntry);
+					zipOut.write(bundledConfigurations.toString().getBytes());
+					zipOut.closeEntry();
 
-			} else {
-				// Add configurations
-				for (final String configName : projectExportParameter.getConfigurationNames()) {
-					// Special case for data configuration
-					if (configName.equals("configurations")) {
+				} else {
+					// Add configurations
+					for (final String configName : projectExportParameter.getConfigurationNames()) {
+						// Special case for data configuration
+						if (configName.equals("configurations")) {
 
-						final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
-						if (dataSetEntity != null) {
-							final ZipEntry attributeConfigZipEntry = new ZipEntry("original-attribute_config.yaml");
-							zipOut.putNextEntry(attributeConfigZipEntry);
-							yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
-							          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
+							final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
+							if (dataSetEntity != null) {
+								final ZipEntry attributeConfigZipEntry = new ZipEntry("original-attribute_config.yaml");
+								zipOut.putNextEntry(attributeConfigZipEntry);
+								yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
+								          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
+								zipOut.closeEntry();
+							}
+						} else {
+							final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(
+									configName);
+							final ConfigurationListEntity configList = project.getConfigurationList(
+									externalConfiguration);
+
+							if (configList == null) {
+								continue;
+							}
+
+							final String config = configList.getConfigurations().get(0).getConfiguration();
+
+							if (config == null) {
+								continue;
+							}
+
+							final ZipEntry configZipEntry = new ZipEntry(configName + ".yaml");
+							zipOut.putNextEntry(configZipEntry);
+							zipOut.write(config.getBytes());
 							zipOut.closeEntry();
 						}
-					} else {
-						final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(
-								configName);
-						final ConfigurationListEntity configList = project.getConfigurationList(externalConfiguration);
-
-						if (configList == null) {
-							continue;
-						}
-
-						final String config = configList.getConfigurations().get(0).getConfiguration();
-
-						if (config == null) {
-							continue;
-						}
-
-						final ZipEntry configZipEntry = new ZipEntry(configName + ".yaml");
-						zipOut.putNextEntry(configZipEntry);
-						zipOut.write(config.getBytes());
-						zipOut.closeEntry();
 					}
 				}
+
 			}
 
 			Map<String, Integer> zipEntryCounter = new HashMap<>();

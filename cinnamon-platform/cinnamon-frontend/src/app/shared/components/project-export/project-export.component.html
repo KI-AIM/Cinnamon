@@ -135,11 +135,23 @@
 
 
     </mat-dialog-content>
-    <mat-dialog-actions align="end">
-        <button mat-raised-button color="primary" [disabled]="numberChecked <= 0" (click)="exportProject()">
-            <mat-icon>file_download</mat-icon>
-            Download
-        </button>
-        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    <mat-dialog-actions>
+        <div class="me-auto">
+            <button mat-raised-button color="primary" (click)="toggleAll(true)">
+                <mat-icon>check_box</mat-icon>
+                Select All
+            </button>
+            <button mat-raised-button color="primary" (click)="toggleAll(false)">
+                <mat-icon>check_box_outline_blank</mat-icon>
+                Unselect All
+            </button>
+        </div>
+        <div class="ms-auto">
+            <button mat-raised-button color="primary" [disabled]="numberChecked <= 0" (click)="exportProject()">
+                <mat-icon>file_download</mat-icon>
+                Download
+            </button>
+            <button mat-raised-button mat-dialog-close color="primary">Close</button>
+        </div>
     </mat-dialog-actions>
 </ng-template>

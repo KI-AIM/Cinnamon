@@ -59,6 +59,16 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
     }
 
     /**
+     * Toggles all resources.
+     * @param select The new value.
+     * @protected
+     */
+    protected toggleAll(select: boolean): void {
+        this.resources.filter(resource => !resource.disabled).forEach(resource => resource.checked = select);
+        this.updateNumberChecked();
+    }
+
+    /**
      * Updates the number of checked checkboxes.
      * @protected
      */

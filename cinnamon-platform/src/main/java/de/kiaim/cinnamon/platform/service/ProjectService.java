@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -223,70 +225,17 @@ public class ProjectService {
 			throws InternalDataSetPersistenceException, InternalIOException, BadConfigurationNameException, BadStepNameException {
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
 
-			if (projectExportParameter.getConfigurationNames() != null && !projectExportParameter.getConfigurationNames().isEmpty()) {
-
-				if (projectExportParameter.isBundleConfigurations()) {
-					StringBuilder bundledConfigurations = new StringBuilder();
-
-					for (final String configName : projectExportParameter.getConfigurationNames()) {
-						final String configurationString = getConfigurationString(project, configName);
-						if (configurationString != null) {
-							bundledConfigurations.append(configurationString);
-						}
-					}
-
-					final ZipEntry configZipEntry = new ZipEntry("all-configurations.yaml");
-					zipOut.putNextEntry(configZipEntry);
-					zipOut.write(bundledConfigurations.toString().getBytes());
-					zipOut.closeEntry();
-
-				} else {
-					// Add configurations
-					for (final String configName : projectExportParameter.getConfigurationNames()) {
-						// Special case for data configuration
-						if (configName.equals("configurations")) {
-
-							final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
-							if (dataSetEntity != null) {
-								final ZipEntry attributeConfigZipEntry = new ZipEntry("original-attribute_config.yaml");
-								zipOut.putNextEntry(attributeConfigZipEntry);
-								yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
-								          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
-								zipOut.closeEntry();
-							}
-						} else {
-							final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(
-									configName);
-							final ConfigurationListEntity configList = project.getConfigurationList(
-									externalConfiguration);
-
-							if (configList == null) {
-								continue;
-							}
-
-							final String config = configList.getConfigurations().get(0).getConfiguration();
-
-							if (config == null) {
-								continue;
-							}
-
-							final ZipEntry configZipEntry = new ZipEntry(configName + ".yaml");
-							zipOut.putNextEntry(configZipEntry);
-							zipOut.write(config.getBytes());
-							zipOut.closeEntry();
-						}
-					}
-				}
-
-			}
-
 			Map<String, Integer> zipEntryCounter = new HashMap<>();
 
+			final List<String> configurationNames = new ArrayList<>();
 			final PipelineEntity pipeline = project.getPipelines().get(0);
-			for (final String resultSelector : projectExportParameter.getResults()) {
-				final String[] parts = resultSelector.split("\\.");
+			for (final String resources : projectExportParameter.getResources()) {
+				final String[] parts = resources.split("\\.");
 
-				if (parts[0].equals("original")) {
+				if (parts[0].equals("configuration")) {
+					configurationNames.add(parts[1]);
+
+				} else if (parts[0].equals("original")) {
 
 					final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
 					if (dataSetEntity != null) {
@@ -367,6 +316,63 @@ public class ProjectService {
 					}
 
 				}
+			}
+
+			if (!configurationNames.isEmpty()) {
+
+				if (projectExportParameter.isBundleConfigurations()) {
+					StringBuilder bundledConfigurations = new StringBuilder();
+
+					for (final String configName : configurationNames) {
+						final String configurationString = getConfigurationString(project, configName);
+						if (configurationString != null) {
+							bundledConfigurations.append(configurationString);
+						}
+					}
+
+					final ZipEntry configZipEntry = new ZipEntry("all-configurations.yaml");
+					zipOut.putNextEntry(configZipEntry);
+					zipOut.write(bundledConfigurations.toString().getBytes());
+					zipOut.closeEntry();
+
+				} else {
+					// Add configurations
+					for (final String configName : configurationNames) {
+						// Special case for data configuration
+						if (configName.equals("configurations")) {
+
+							final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
+							if (dataSetEntity != null) {
+								final ZipEntry attributeConfigZipEntry = new ZipEntry("original-attribute_config.yaml");
+								zipOut.putNextEntry(attributeConfigZipEntry);
+								yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
+								          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
+								zipOut.closeEntry();
+							}
+						} else {
+							final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(
+									configName);
+							final ConfigurationListEntity configList = project.getConfigurationList(
+									externalConfiguration);
+
+							if (configList == null) {
+								continue;
+							}
+
+							final String config = configList.getConfigurations().get(0).getConfiguration();
+
+							if (config == null) {
+								continue;
+							}
+
+							final ZipEntry configZipEntry = new ZipEntry(configName + ".yaml");
+							zipOut.putNextEntry(configZipEntry);
+							zipOut.write(config.getBytes());
+							zipOut.closeEntry();
+						}
+					}
+				}
+
 			}
 
 			zipOut.finish();

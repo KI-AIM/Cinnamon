@@ -13,10 +13,10 @@
                     </div>
                     <div *ngFor="let config of configurationService.getRegisteredConfigurations()">
                         <span>
-                            <mat-checkbox [id]="config.name" color="primary"
-                                          [checked]="statusService.isStepCompleted(config.availableAfterStep)"
+                            <mat-checkbox #resource color="primary"
                                           [disabled]="!statusService.isStepCompleted(config.availableAfterStep)"
-                                          (input)="updateNumberChecked($event)">
+                                          [value]="'configuration.' + config.name"
+                                          (input)="updateNumberChecked()">
                                 {{ config.displayName }}
                             </mat-checkbox>
                         </span>
@@ -43,14 +43,14 @@
                                 Original Dataset
                             </td>
                             <td>
-                                <mat-checkbox #result color="primary" value="original.dataset" [checked]="true"
-                                              (input)="updateNumberChecked($event)">
+                                <mat-checkbox #resource color="primary" value="original.dataset"
+                                              (input)="updateNumberChecked()">
                                     Dataset
                                 </mat-checkbox>
                             </td>
                             <td>
-                                <mat-checkbox #result color="primary" value="original.statistics" [checked]="true"
-                                              (input)="updateNumberChecked($event)">
+                                <mat-checkbox #resource color="primary" value="original.statistics"
+                                              (input)="updateNumberChecked()">
                                     Statistics
                                 </mat-checkbox>
                             </td>
@@ -61,15 +61,15 @@
                                 Anonymization Result
                             </td>
                             <td>
-                                <mat-checkbox #result color="primary" value="pipeline.execution.anonymization.dataset"
-                                              [checked]="true" (input)="updateNumberChecked($event)">
+                                <mat-checkbox #resource color="primary" value="pipeline.execution.anonymization.dataset"
+                                              (input)="updateNumberChecked()">
                                     Dataset
                                 </mat-checkbox>
                             </td>
                             <td>
-                                <mat-checkbox #result color="primary"
-                                              value="pipeline.execution.anonymization.statistics" [checked]="true"
-                                              (input)="updateNumberChecked($event)">
+                                <mat-checkbox #resource color="primary"
+                                              value="pipeline.execution.anonymization.statistics"
+                                              (input)="updateNumberChecked()">
                                     Statistics
                                 </mat-checkbox>
                             </td>
@@ -80,21 +80,21 @@
                                 Synthetization Result
                             </td>
                             <td>
-                                <mat-checkbox #result color="primary" value="pipeline.execution.synthetization.dataset"
-                                              [checked]="true" (input)="updateNumberChecked($event)">
+                                <mat-checkbox #resource color="primary" value="pipeline.execution.synthetization.dataset"
+                                              (input)="updateNumberChecked()">
                                     Dataset
                                 </mat-checkbox>
                             </td>
                             <td>
-                                <mat-checkbox #result color="primary"
-                                              value="pipeline.execution.synthetization.statistics" [checked]="true"
-                                              (input)="updateNumberChecked($event)">
+                                <mat-checkbox #resource color="primary"
+                                              value="pipeline.execution.synthetization.statistics"
+                                              (input)="updateNumberChecked()">
                                     Statistics
                                 </mat-checkbox>
                             </td>
                             <td>
-                                <mat-checkbox #result color="primary" value="pipeline.execution.synthetization.other"
-                                              [checked]="true" (input)="updateNumberChecked($event)">
+                                <mat-checkbox #resource color="primary" value="pipeline.execution.synthetization.other"
+                                              (input)="updateNumberChecked()">
                                     Model
                                 </mat-checkbox>
                             </td>
@@ -122,12 +122,12 @@
                 <div class="box-name">Evaluation</div>
                 <div class="settings-label">Evaluation results to export</div>
 
-                <mat-checkbox #result color="primary" value="pipeline.evaluation.technical_evaluation.other"
-                              [checked]="true" (input)="updateNumberChecked($event)">
+                <mat-checkbox #resource color="primary" value="pipeline.evaluation.technical_evaluation.other"
+                              (input)="updateNumberChecked()">
                     Technical Evaluation
                 </mat-checkbox>
-                <mat-checkbox #result color="primary" value="pipeline.evaluation.risk_evaluation.other" [checked]="true"
-                              (input)="updateNumberChecked($event)">
+                <mat-checkbox #resource color="primary" value="pipeline.evaluation.risk_evaluation.other"
+                              (input)="updateNumberChecked()">
                     Risk Evaluation
                 </mat-checkbox>
             </div>

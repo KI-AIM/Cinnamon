@@ -3,9 +3,13 @@ import { AfterViewInit, Component, OnInit, QueryList, TemplateRef, ViewChild, Vi
 import { MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
 import { HoldOutSelector } from "@core/enums/hold-out-selector";
+import { ProcessStatus } from "@core/enums/process-status";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
 import { FileService } from "@features/data-upload/services/file.service";
+import { EvaluationService } from "@features/evaluation/services/evaluation.service";
+import { ExecutionService } from "@features/execution/services/execution.service";
 import { DataSetInfo } from "@shared/model/data-set-info";
+import { ExecutionStep } from "@shared/model/execution-step";
 import { FileType } from "@shared/model/file-configuration";
 import { FileInformation } from "@shared/model/file-information";
 import { ConfigurationService } from "@shared/services/configuration.service";
@@ -24,6 +28,7 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
 
     protected readonly FileType = FileType;
     protected readonly HoldOutSelector = HoldOutSelector;
+    protected readonly ProcessStatus = ProcessStatus;
 
     protected bundleConfigurations: boolean = true;
     protected datasetFileType: FileType = FileType.CSV;
@@ -32,6 +37,8 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
     protected numberChecked = 0;
 
     protected dataSetInfo$: Observable<DataSetInfo>;
+    protected evaluationInfo$: Observable<ExecutionStep | null>;
+    protected executionInfo$: Observable<ExecutionStep | null>;
 
     @ViewChild('projectExportDialog') dialogWrap: TemplateRef<any>;
     @ViewChildren('resource') resources: QueryList<MatCheckbox>;
@@ -40,6 +47,8 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
         protected readonly configurationService: ConfigurationService,
         private readonly dataSetInfoService: DataSetInfoService,
         private readonly dialog: MatDialog,
+        protected readonly evaluationService: EvaluationService,
+        protected readonly executionService: ExecutionService,
         private readonly fileService: FileService,
         private readonly  http: HttpClient,
         protected readonly statusService: StatusService,
@@ -56,6 +65,9 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
                 }
             }
         });
+
+        this.evaluationInfo$ = this.evaluationService.status$;
+        this.executionInfo$ = this.executionService.status$;
     }
 
     public ngAfterViewInit(): void {

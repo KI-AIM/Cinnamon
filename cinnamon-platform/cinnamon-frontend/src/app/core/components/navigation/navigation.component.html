@@ -56,7 +56,7 @@
     </div>
 
     <app-project-settings></app-project-settings>
-    <app-project-export></app-project-export>
+    <app-project-export *ngIf="userService.isAuthenticated()"></app-project-export>
 </div>
 
 

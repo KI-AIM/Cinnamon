@@ -161,7 +161,7 @@ public class ProjectController {
 			@AuthenticationPrincipal final UserEntity requestUser,
 			@ParameterObject final ProjectExportParameter projectExportParameter,
 			final HttpServletResponse response
-	) throws BadConfigurationNameException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException {
+	) throws BadConfigurationNameException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);

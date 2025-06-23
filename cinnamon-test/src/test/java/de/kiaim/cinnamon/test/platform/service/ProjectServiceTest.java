@@ -125,7 +125,7 @@ public class ProjectServiceTest extends DatabaseTest {
 
 		// The test
 		var out = new ByteArrayOutputStream();
-		var parameter = new ProjectExportParameter(false, HoldOutSelector.ALL,
+		var parameter = new ProjectExportParameter(false, FileType.CSV, HoldOutSelector.ALL,
 		                                           List.of("pipeline.execution.anonymization.dataset",
 		                                                   "configuration.configurations", "original.dataset",
 		                                                   "configuration.anonymization"));

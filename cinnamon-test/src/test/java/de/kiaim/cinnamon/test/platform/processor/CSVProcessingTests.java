@@ -12,7 +12,10 @@ import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.file.FileType;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
+import de.kiaim.cinnamon.test.util.DataSetTestHelper;
 import de.kiaim.cinnamon.test.util.FileConfigurationTestHelper;
+import de.kiaim.cinnamon.test.util.ResourceHelper;
+import org.apache.tomcat.util.digester.DocumentProperties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +23,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -242,6 +245,17 @@ public class CSVProcessingTests {
 
         DataConfiguration expectedConfiguration = getDataConfiguration();
         assertEquals(expectedConfiguration, actualConfiguration);
+    }
+
+    @Test
+    void testWrite() throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        DataSet dataset = DataSetTestHelper.generateDataSet();
+
+        assertDoesNotThrow(() -> csvProcessor.write(stream, dataset));
+
+        String content =  stream.toString(StandardCharsets.UTF_8);
+        assertEquals(ResourceHelper.loadCsvFileAsString(), content);
     }
 
     private static DataConfiguration getDataConfiguration() {

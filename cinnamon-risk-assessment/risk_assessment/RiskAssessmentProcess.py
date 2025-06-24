@@ -75,31 +75,29 @@ def risk_assessment(process_id: int,
     synthetic_data = data_frames[1]
     holdout_data = data_frames[2]
 
-    risk_link = linkage_attack(data_origin, synthetic_data, risk_assessment_config.linkage,
-                                            holdout_data)
-    risk_inf, result_inf = inference_attack(data_origin, synthetic_data,
-                                            risk_assessment_config.attribute_inference,
-                                            holdout_data)
+    results = {}
 
-    risk_inf_avg = average_attribute_inf(risk_inf, result_inf)
+    if risk_assessment_config.linkage is not None:
+        risk_link = linkage_attack(data_origin, synthetic_data, risk_assessment_config.linkage, holdout_data)
+        results["linkage_health_risk"] = risk_link
 
-    risk_sout_uni = singling_out_attack(data_origin, synthetic_data,
-                                                                      risk_assessment_config.singlingout_uni,
-                                                                      holdout_data,
-                                                                      mode="univariate")
-    risk_sout_multi = singling_out_attack(data_origin, synthetic_data,
-                                                                            risk_assessment_config.singlingout_multi,
-                                                                            holdout_data,
-                                                                            mode="multivariate")
+    if risk_assessment_config.attribute_inference is not None:
+        risk_inf, result_inf = inference_attack(data_origin, synthetic_data, risk_assessment_config.attribute_inference,
+                                                holdout_data)
+        risk_inf_avg = average_attribute_inf(risk_inf, result_inf)
+        results["inference_risk"] = risk_inf
+        results["inference_results"] = result_inf
+        results["inference_average_risk"] = risk_inf_avg
 
-    results = {
-        "inference_risk": risk_inf,
-        "inference_results": result_inf,
-        "inference_average_risk": risk_inf_avg,
-        "linkage_health_risk": risk_link,
-        "univariate_singling_out_risk": risk_sout_uni,
-        "multivariate_singling_out_risk": risk_sout_multi
-    }
+    if risk_assessment_config.singlingout_uni is not None:
+        risk_sout_uni = singling_out_attack(data_origin, synthetic_data, risk_assessment_config.singlingout_uni,
+                                            holdout_data, mode="univariate")
+        results["univariate_singling_out_risk"] = risk_sout_uni
+
+    if risk_assessment_config.singlingout_multi is not None:
+        risk_sout_multi = singling_out_attack(data_origin, synthetic_data, risk_assessment_config.singlingout_multi,
+                                              holdout_data, mode="multivariate")
+        results["multivariate_singling_out_risk"] = risk_sout_multi
 
     if callback_url:
         try:

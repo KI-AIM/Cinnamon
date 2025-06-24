@@ -2,6 +2,7 @@ import time
 
 from anonymeter.evaluators import SinglingOutEvaluator, InferenceEvaluator, LinkabilityEvaluator
 
+from models.AttributeConfig import AttributeConfigList
 from models.RiskAssessmentConfig import LinkageConfig, AttributeInferenceConfig, SinglingOutConfig
 from risk_assessment.anonymeter_eval.anonymeter_util import risk_to_dict, results_to_dict
 
@@ -27,13 +28,20 @@ def linkage_attack(original, synthetic, config: LinkageConfig, data_control=None
     return retVal
 
 
-def inference_attack(data_origin, data_processed, config: AttributeInferenceConfig,
+def inference_attack(data_origin, data_processed, attribute_config: AttributeConfigList, config: AttributeInferenceConfig,
                      data_control=None):
     columns = list(set(data_origin.columns).intersection(data_processed.columns))
     results = []
     risks = []
 
     for secret in columns:
+        regression = True
+        for attribute in attribute_config.configurations:
+            if attribute.name == secret:
+                if attribute.scale == "NOMINAL" or attribute.scale == "DATE":
+                    regression = False
+                break
+
         aux_cols = [col for col in columns if col != secret]
         start = time.time()
         evaluator = InferenceEvaluator(ori=data_origin,
@@ -41,6 +49,7 @@ def inference_attack(data_origin, data_processed, config: AttributeInferenceConf
                                        control=data_control,
                                        aux_cols=aux_cols,
                                        secret=secret,
+                                       regression=regression,
                                        n_attacks=config.n_attacks)
         evaluator.evaluate(n_jobs=-2)
         end = time.time()

@@ -82,8 +82,8 @@ def risk_assessment(process_id: int,
         results["linkage_health_risk"] = risk_link
 
     if risk_assessment_config.attribute_inference is not None:
-        risk_inf, result_inf = inference_attack(data_origin, synthetic_data, risk_assessment_config.attribute_inference,
-                                                holdout_data)
+        risk_inf, result_inf = inference_attack(data_origin, synthetic_data, attribute_config,
+                                                risk_assessment_config.attribute_inference, holdout_data)
         risk_inf_avg = average_attribute_inf(risk_inf, result_inf)
         results["inference_risk"] = risk_inf
         results["inference_results"] = result_inf

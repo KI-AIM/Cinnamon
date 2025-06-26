@@ -34,6 +34,7 @@ const routes: Routes = [
     {path: 'technicalEvaluationConfiguration', component: TechnicalEvaluationConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'riskEvaluationConfiguration', component: RiskAssessmentConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'evaluation', component: EvaluationComponent, canActivate: [AuthGuard]},
+    {path: '**', redirectTo: 'open', pathMatch: 'full'},
 ];
 
 @NgModule({

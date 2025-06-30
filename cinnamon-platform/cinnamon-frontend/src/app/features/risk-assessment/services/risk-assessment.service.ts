@@ -54,58 +54,13 @@ export class RiskAssessmentService extends AlgorithmService {
 
     protected override fetchAlgorithms(): Observable<string> {
         return of("algorithms:\n" +
-            "- URL: /get_evaluation_metrics/cross-sectional\n" +
+            "- URL: /risk_assessment_config\n" +
             "  class: <class 'synthetic_tabular_data_generator.algorithms.ctgan.CtganSynthesizer'>\n" +
             "  description:\n" +
             "  display_name: Evaluation\n" +
             "  name: evaluation\n" +
             "  type: cross-sectional\n" +
             "  version: '0.1'");
-    }
-
-    protected override fetchAlgorithmDefinition(definitionPath: string): Observable<string> {
-        return of("name: Evaluation\n" +
-            "type: cross-sectional\n" +
-            "display_name: Evaluation\n" +
-            "description: Metrics used to evaluate the resemblance and utility of synthetic data compared to real data.\n" +
-            "URL: /start_evaluation\n" +
-            "options:\n" +
-            "  singlingout-uni:\n" +
-            "    display_name: Singling records out\n" +
-            "    description: Metrics that indicate if records from the anonymized data can be used to separate record in the real data.\n" +
-            "    parameters:\n" +
-            "    - name: n_attacks\n" +
-            "      label: Number of Attacks\n" +
-            "      description: hi\n" +
-            "      type: integer\n" +
-            "      default_value: 100\n" +
-            "      min_value: 1\n" +
-            "  attribute_inference:\n" +
-            "    display_name: Infer information from attributes (columns)\n" +
-            "    description: Metrics that indicate if attributes for the anonymized data can be used to derive values on the real data.\n" +
-            "    parameters:\n" +
-            "    - name: n_attacks\n" +
-            "      label: Number of Attacks\n" +
-            "      description: hi\n" +
-            "      type: integer\n" +
-            "      default_value: 100\n" +
-            "      min_value: 1\n" +
-            "  linkage:\n" +
-            "    display_name: Infer risk of linking datasets\n" +
-            "    description: Metrics that indicate if subsets of the synthetic dataset can be used for linkage.\n" +
-            "    parameters:\n" +
-            "    - name: n_attacks\n" +
-            "      label: Number of Attacks\n" +
-            "      description: hi\n" +
-            "      type: integer\n" +
-            "      default_value: 100\n" +
-            "      min_value: 1\n" +
-            "    - name: available_columns\n" +
-            "      label: Columns known\n" +
-            "      invert: unavailable_columns\n" +
-            "      description: Select attributes that might be known, e.g. due to a lab report being leaked. Do not select the information that might be of value to the attacker e.g. birthdate, or diagnosis\n" +
-            "      type: attribute_list\n" +
-            "");
     }
 
     public registerConfig() {

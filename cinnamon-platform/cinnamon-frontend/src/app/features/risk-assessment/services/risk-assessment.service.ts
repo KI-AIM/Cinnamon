@@ -5,7 +5,6 @@ import { ConfigurationService } from "../../../shared/services/configuration.ser
 import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
 import { Algorithm } from "../../../shared/model/algorithm";
-import { Observable, of } from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -50,17 +49,6 @@ export class RiskAssessmentService extends AlgorithmService {
         const config = arg[configurationName];
         delete config["data_format"];
         return {config, selectedAlgorithm};
-    }
-
-    protected override fetchAlgorithms(): Observable<string> {
-        return of("algorithms:\n" +
-            "- URL: /risk_assessment_config\n" +
-            "  class: <class 'synthetic_tabular_data_generator.algorithms.ctgan.CtganSynthesizer'>\n" +
-            "  description:\n" +
-            "  display_name: Evaluation\n" +
-            "  name: evaluation\n" +
-            "  type: cross-sectional\n" +
-            "  version: '0.1'");
     }
 
     public registerConfig() {

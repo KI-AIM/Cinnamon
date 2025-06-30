@@ -77,9 +77,15 @@ def load_yaml_config(config_file: str):
         return file.read()
 
 
+@app.get("/algorithms")
+async def get_algorithms():
+    """GET endpoint to retrieve the available algorithms as YAML."""
+    config = load_yaml_config(r"frontend_configs/algorithms.yaml")
+    return Response(content=config, media_type='text/yaml')
+
 @app.get("/risk_assessment_config")
 async def get_risk_assessment_frontend_config():
-    """GET endpoint to retrieve configuration as JSON."""
+    """GET endpoint to retrieve configuration as YAML."""
     config = load_yaml_config(r"frontend_configs/risk_assessment_config.yaml")
     return Response(content=config, media_type='text/yaml')
 

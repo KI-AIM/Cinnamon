@@ -1,0 +1,7 @@
+algorithms:
+- URL: /risk_assessment_config
+  description:
+  display_name: Risk Assessment
+  name: risk_assessment
+  type: cross-sectional
+  version: '0.1'

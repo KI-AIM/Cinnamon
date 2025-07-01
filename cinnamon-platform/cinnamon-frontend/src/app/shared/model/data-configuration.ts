@@ -10,3 +10,10 @@ export class DataConfiguration {
     }
 
 }
+
+export class DataConfigurationEstimation {
+    @Type(() => DataConfiguration)
+    dataConfiguration: DataConfiguration;
+
+    confidences: number[];
+}

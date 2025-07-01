@@ -360,19 +360,18 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div style="display: flex;" class="mb-2 pt-2 border-top border-1">
-                                        <span style="font-size: 1.2rem; margin-right: 0.2rem;">
-                                            Attribute Inference (Details)
-                                        </span>
+                                        <div *ngIf="risks.inference_risk != null && (risks.inference_risk.length ?? 0) > 0 && risks.inference_results != null && (risks.inference_results.length ?? 0) > 0">
+                                            <div style="display: flex;" class="mb-2 pt-2 border-top border-1">
+                                                <span style="font-size: 1.2rem; margin-right: 0.2rem;">
+                                                    Attribute Inference (Details)
+                                                </span>
 
-                                            <!-- <a title="Show Metric Information" style="vertical-align: middle;"
-                                               (click)="metricInfoTableComponent.open(abc.value)">
-                                                <mat-icon fontIcon="info"></mat-icon>
-                                            </a> -->
-                                        </div>
-                                        <div>
-                                            <div *ngIf="risks.inference_risk != null && (risks.inference_risk.length ?? 0) > 0 && risks.inference_results != null && (risks.inference_results.length ?? 0) > 0"
-                                                class="risk-summary">
+                                                <!-- <a title="Show Metric Information" style="vertical-align: middle;"
+                                                   (click)="metricInfoTableComponent.open(abc.value)">
+                                                    <mat-icon fontIcon="info"></mat-icon>
+                                                </a> -->
+                                            </div>
+                                            <div class="risk-summary">
 
                                                 <div *ngIf="projectConfig$ | async as projectConfig"
                                                      style="display: flex; flex-direction: row; width: 100%; justify-content: space-between;">

@@ -9,7 +9,7 @@
                 <ng-container *ngTemplateOutlet="info"></ng-container>
             </app-workstep-item>
 
-            <app-workstep-item title="Select your dataset" [locked]="locked" [invalid]="isConfigFileInvalid"
+            <app-workstep-item title="Select a data configuration if available" [locked]="locked" [invalid]="isConfigFileInvalid"
                                [stepIndex]="1" altConfirm="Continue without a configuration">
                 <ng-container *ngTemplateOutlet="configFileUpload"></ng-container>
             </app-workstep-item>

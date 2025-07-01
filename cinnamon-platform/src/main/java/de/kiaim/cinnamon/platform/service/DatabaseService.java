@@ -387,7 +387,17 @@ public class DatabaseService {
 	                           final DataSetSource dataSetSource)
 			throws BadDataSetIdException, InternalDataSetPersistenceException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
+		return getInfo(dataSetEntity);
+	}
 
+	/**
+	 * Returns the info objects of the given dataset.
+	 *
+	 * @param dataSetEntity The dataset.
+	 * @return The info object.
+	 * @throws InternalDataSetPersistenceException If the internal queries failed.
+	 */
+	public DataSetInfo getInfo(DataSetEntity dataSetEntity) throws InternalDataSetPersistenceException {
 		if (!dataSetEntity.isStoredData()) {
 			return new DataSetInfo(0, 0, false, 0.0f, 0, 0);
 		}

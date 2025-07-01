@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.controller;
 
+import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.service.ProcessService;
@@ -233,7 +234,39 @@ public class ProcessController {
 			@PathVariable final UUID processId,
 			final MultipartHttpServletRequest request
 	) throws ApiException {
-		processService.finishProcess(processId, request.getFileMap().entrySet());
+		processService.finishProcess(processId, request.getFileMap().entrySet(), null);
+		return ResponseEntity.ok().body(null);
+	}
+
+	@Operation(summary = "Callback endpoint for marking processes as failed.",
+	           description = "Callback endpoint for marking processes as failed.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully marked the process as failed.",
+			             content = @Content(schema = @Schema())),
+			@ApiResponse(responseCode = "400",
+			             description = "The process ID is not valid or the corresponding process has been canceled by the user.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "The response could not be processed.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@PostMapping(value = "/{processId}/callback",
+	             consumes = MediaType.APPLICATION_JSON_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE}
+	)
+	public ResponseEntity<String> callbackJson(
+			@Parameter(description = "Id of the process to mark as finished.")
+			@PathVariable final UUID processId,
+			@RequestBody final ErrorRequest errorRequest
+	) throws ApiException {
+		processService.finishProcess(processId, null, errorRequest);
 		return ResponseEntity.ok().body(null);
 	}
 

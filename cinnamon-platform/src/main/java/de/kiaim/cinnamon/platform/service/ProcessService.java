@@ -3,7 +3,6 @@ package de.kiaim.cinnamon.platform.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
-import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
@@ -19,14 +18,14 @@ import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.platform.model.file.FileType;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
+import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -75,6 +74,7 @@ public class ProcessService {
 
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
+	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
 	private final HttpService httpService;
 	private final ProjectService projectService;
@@ -84,6 +84,7 @@ public class ProcessService {
 	                      @Value("${server.port}") final int port, final CinnamonConfiguration cinnamonConfiguration,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
 	                      final CsvProcessor csvProcessor, final DatabaseService databaseService,
+	                      final DataProcessorService dataProcessorService,
 	                      final DataSetService dataSetService, final HttpService httpService,
 	                      final ProjectService projectService, final StepService stepService
 	) {
@@ -95,6 +96,7 @@ public class ProcessService {
 		this.backgroundProcessRepository = backgroundProcessRepository;
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
+		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
 		this.httpService = httpService;
 		this.stepService = stepService;
@@ -955,22 +957,11 @@ public class ProcessService {
 
 	public void addDataSetFile(final MultipartBodyBuilder bodyBuilder,
 	                           final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
-			throws InternalIOException {
-
+			throws InternalIOException, InternalMissingHandlingException {
 		final var outputStream = new ByteArrayOutputStream();
-		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
-		final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
-				dataSet.getDataConfiguration().getColumnNames().toArray(new String[0])).build();
 
-		try {
-			final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
-			for (final DataRow dataRow : dataSet.getDataRows()) {
-				csvPrinter.printRecord(dataRow.getRow());
-			}
-			csvPrinter.flush();
-		} catch (IOException e) {
-			throw new InternalIOException(InternalIOException.CSV_CREATION, "Failed to create the CVS file!", e);
-		}
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(FileType.CSV);
+		dataProcessor.write(outputStream, dataSet);
 
 		bodyBuilder.part(stepInputConfiguration.getPartName(), new ByteArrayResource(outputStream.toByteArray()) {
 			@Override

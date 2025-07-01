@@ -52,19 +52,6 @@ export abstract class AlgorithmService {
         });
     }
 
-    /**
-     * Return the local configuration if available, otherwise fetches the configuration from the backend.
-     * The configuration is in the form of a YAML string.
-     */
-    public getConfig(): Observable<string> {
-        const cachedAlgorithm = this.configurationService.getSelectedAlgorithm(this.getConfigurationName());
-        const cachedConfig = this.configurationService.getSelectedConfiguration(this.getConfigurationName());
-        if (cachedConfig != null && cachedAlgorithm != null) {
-            return of(stringify(this.createConfiguration(cachedConfig, cachedAlgorithm)));
-        }
-        return this.configurationService.loadConfig(this.getConfigurationName());
-    }
-
     public fetchConfiguration(): Observable<ConfigData> {
         const cachedAlgorithm = this.configurationService.getSelectedAlgorithm(this.getConfigurationName());
         const cachedConfig = this.configurationService.getSelectedConfiguration(this.getConfigurationName());

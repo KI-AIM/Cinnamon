@@ -37,6 +37,10 @@ public class DataProcessorService {
 		throw new InternalMissingHandlingException(InternalMissingHandlingException.FILE_TYPE , "Unsupported file type: '" + fileType.name() + "'");
 	}
 
+	public String getFileExtension(final String fileName) {
+		return fileName.substring(fileName.lastIndexOf('.'));
+	}
+
 	/**
 	 * Validates the given file.
 	 * @param file File to be validated.

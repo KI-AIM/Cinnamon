@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.processor;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
@@ -10,11 +11,14 @@ import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.FileType;
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.zip.ZipEntry;
 
 @Service
 public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
@@ -116,6 +120,26 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 
 		List<List<String>> samples = getAttributeSamples(recordIterator, numberColumns);
 		return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void write(final OutputStream outputStream, final DataSet dataset) throws InternalIOException {
+		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+		final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
+				dataset.getDataConfiguration().getColumnNames().toArray(new String[0])).build();
+
+		try {
+			final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
+			for (final DataRow dataRow : dataset.getDataRows()) {
+				csvPrinter.printRecord(dataRow.getRow());
+			}
+			csvPrinter.flush();
+		} catch (IOException e) {
+			throw new InternalIOException(InternalIOException.CSV_CREATION, "Failed to create the CVS file!", e);
+		}
 	}
 
 	/**

@@ -2,7 +2,7 @@
 <div class="d-flex flex-column w-100">
     <mat-form-field>
         <mat-label>Select an attribute to configure</mat-label>
-        <mat-select #attributeDropdown (valueChange)="onSelectionChange($event)">
+        <mat-select #attributeDropdown (valueChange)="onSelectionChange($event)" [disabled]="disabled">
             <mat-option disabled [value]="undefined">Select an attribute to configure</mat-option>
             <mat-option *ngFor="let row of this.getAvailableConfigurationsSortedById()" [value]="row.index">
                 {{ row.name }}
@@ -10,11 +10,11 @@
         </mat-select>
     </mat-form-field>
     <div class="d-flex w-100 justify-content-start align-content-center">
-        <a class="configuration-link" [disabled]="getAvailableConfigurations().length <= 0"
+        <a class="configuration-link" [disabled]="disabled || getAvailableConfigurations().length <= 0"
             (click)="addAllAttributes()" mat-raised-button color="primary" title="Add all attributes">
             <span>Add all attributes</span>
         </a>
-        <a class="configuration-link ms-2" [disabled]="!hasAttributeConfiguration()"
+        <a class="configuration-link ms-2" [disabled]="disabled || !hasAttributeConfiguration()"
             (click)="removeAllAttributes()" mat-raised-button color="warn" title="Remove all attributes">
             <span>Remove all attributes</span>
         </a>
@@ -26,7 +26,7 @@
     <div class="mt-4" formArrayName="attributeConfiguration">
 
         <div *ngFor="let attrConfig of getAttributeConfigurationForms(form); let i = index" [formGroupName]="i">
-            <app-anonymization-attribute-row #configRow [form]="attrConfig"
+            <app-anonymization-attribute-row #configRow [disabled]="disabled" [form]="attrConfig"
                                              (removeEvent)="removeAttributeConfigurationRow(i)">
             </app-anonymization-attribute-row>
         </div>

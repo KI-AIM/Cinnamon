@@ -59,6 +59,7 @@ export class ErrorHandlingService {
         }
 
         if (!errorMessage) {
+            console.error(error);
             errorMessage = "An unexpected error occurred. Please contact the administrator.";
         }
 

@@ -1,7 +1,6 @@
 import { DataType } from "./data-type";
 import { Configuration } from "./configuration";
 import { Type, plainToClass, Expose } from "class-transformer";
-import 'reflect-metadata';
 import { DataScale } from "./data-scale";
 
 export class ColumnConfiguration {

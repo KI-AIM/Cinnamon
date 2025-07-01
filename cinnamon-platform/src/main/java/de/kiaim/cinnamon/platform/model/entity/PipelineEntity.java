@@ -1,14 +1,17 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Entity for representing a pipeline.
@@ -95,6 +98,17 @@ public class PipelineEntity {
 		}
 
 		return null;
+	}
+
+	public Optional<ExternalProcessEntity> getStageByJob(final Job job) {
+		for (final ExecutionStepEntity stepEntity : this.stages) {
+			final Optional<ExternalProcessEntity> process = stepEntity.getProcess(job);
+			if (process.isPresent()) {
+				return process;
+			}
+		}
+
+		return Optional.empty();
 	}
 
 	/**

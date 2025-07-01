@@ -1,79 +1,89 @@
-<div>
-    <div
-        class="mb-3 alert alert-warning" role="alert"
-        *ngIf="isFileTypeXLSX$ | async">
-        <b>WARNING:</b> For XLSX files, Dates can not be estimated correctly, because Excel stores them as numbers internally. They will instead be configured as INTEGER. <br/>
-        Please make sure, that you configure every column that contains dates manually.
-    </div>
+<div class="mb-3 alert alert-warning" role="alert" *ngIf="isFileTypeXLSX$ | async">
+    <b>WARNING:</b> For XLSX files, Dates can not be estimated correctly, because Excel stores them as numbers internally. They will instead be configured as INTEGER. <br/>
+    Please make sure, that you configure every column that contains dates manually.
+</div>
 
-    <mat-accordion>
-        <mat-expansion-panel>
-            <mat-expansion-panel-header>
-                <mat-panel-title [class.invalid-group]="attributeConfigurationform.invalid">Attribute Configuration</mat-panel-title>
-                <mat-panel-description></mat-panel-description>
-            </mat-expansion-panel-header>
+<ng-container *ngIf="{status: status$ | async, dataSetInfo: dataSetInfo$ | async, dataConfiguration: dataConfiguration$ | async } as data">
+    <ng-container *ngIf="data.status !== null && data.dataSetInfo !== null && data.dataConfiguration !== null">
 
-            <!-- Upload -->
-            <div class="py-1">
-                <app-configuration-upload #configurationUpload [configurationName]="configuration.CONFIGURATION_NAME"
-                                          (onUpload)="handleConfigUpload($event);" [disabled]="locked">
-                </app-configuration-upload>
-            </div>
+        <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
-            <div class="mt-2">
-                Configure the attributes of the dataset:
-            </div>
+            <app-workstep-list confirmLabel="Confirm configuration and start validation" [locked]="locked"
+                               [invalid]="isInvalid" [numberSteps]="2" [step]="Steps.DATA_CONFIG"
+                               (confirm)="confirmConfiguration()">
 
-            <div class="d-flex flex-column">
-                <form *ngIf="attributeConfigurationform" [formGroup]="attributeConfigurationform">
-                    <div formArrayName="configurations">
-                        <div *ngFor="let columnConfig of getColumnConfigurationForms(attributeConfigurationform); let i = index" [formGroupName]="i">
-                            <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()"
-                                                         [disabled]="locked" (onInput)="checkUniqueColumnNames()"
-                                                         [columnConfigurationForm]="columnConfig">
-                            </app-attribute-configuration>
-                        </div>
+                <app-workstep-item title="Configure the attributes" [locked]="locked"
+                                   [invalid]="attributeConfigurationform.invalid" [stepIndex]="0">
+                    <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
+                </app-workstep-item>
+
+                <app-workstep-item title="Configure the dataset" [locked]="locked"
+                                   [invalid]="isDataSetConfigurationFormInvalid" [stepIndex]="1">
+                    <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
+                </app-workstep-item>
+
+            </app-workstep-list>
+
+        </ng-container>
+        <ng-container *ngIf="data.status.mode === Mode.EXPERT">
+
+            <app-workstep-box title="Attribute Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
+                <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
+            </app-workstep-box>
+
+            <app-workstep-box title="Dataset Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
+                <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
+            </app-workstep-box>
+
+            <app-workstep-box title="Confirm your configuration">
+                <div class="btn-group">
+                    <div class="px-1">
+                        <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()"
+                                [disabled]="attributeConfigurationform.invalid || isDataSetConfigurationFormInvalid || locked">
+                            Confirm configuration and start validation
+                        </button>
                     </div>
+                </div>
+            </app-workstep-box>
 
-                </form>
-            </div>
-        </mat-expansion-panel>
+        </ng-container>
+    </ng-container>
+</ng-container>
 
-        <mat-expansion-panel *ngIf="dataSetInfo$ | async">
-            <mat-expansion-panel-header>
-                <mat-panel-title [class.invalid-group]="isDataSetConfigurationFormInvalid">Data Set Configuration</mat-panel-title>
-                <mat-panel-description></mat-panel-description>
-            </mat-expansion-panel-header>
+<ng-template #attributeConfiguration>
+    In this step you can view the selected/estimated data configuration.<br/>
+    Please check the data configuration carefully, especially if the data configuration has been estimated.
 
-            <div [formGroup]="dataSetConfigurationForm!">
-                <mat-checkbox color="primary" formControlName="createHoldOutSplit">
-                    Should an extended analysis of the data be carried out automatically (this reduces the amount of usable data and possibly worsens the results)
-                </mat-checkbox>
-                <div style="margin-left: 40px;">
-                    <mat-expansion-panel [disabled]="!createHoldOutSplit" [(expanded)]="isAdvanceConfigurationExpanded">
-                        <mat-expansion-panel-header>
-                            <mat-panel-title>Advanced Configuration</mat-panel-title>
-                        </mat-expansion-panel-header>
-                        <mat-form-field style="width: 100%;">
-                            <mat-label>Percentage of Hold-Out split</mat-label>
-                            <input matInput type="number" formControlName="holdOutSplitPercentage"/>
-                            <mat-error>Percentage must be between 0 and 1</mat-error>
-                        </mat-form-field>
-                    </mat-expansion-panel>
+    <div class="d-flex flex-column mt-2">
+        <form *ngIf="attributeConfigurationform" [formGroup]="attributeConfigurationform">
+            <div formArrayName="configurations">
+                <div *ngFor="let columnConfig of getColumnConfigurationForms(attributeConfigurationform); let i = index" [formGroupName]="i">
+                    <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()"
+                                                 [disabled]="locked" (onInput)="checkUniqueColumnNames()"
+                                                 [columnConfigurationForm]="columnConfig">
+                    </app-attribute-configuration>
                 </div>
             </div>
-        </mat-expansion-panel>
 
-    </mat-accordion>
+        </form>
+    </div>
+</ng-template>
 
-    <div class="box mt-2">
-        <div class="btn-group mt-2">
-            <div class="px-1">
-                <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()"
-                        [disabled]="attributeConfigurationform.invalid || isDataSetConfigurationFormInvalid || locked">
-                    Confirm configuration and start validation
-                </button>
-            </div>
+<ng-template #dataSetConfiguration>
+    <div [formGroup]="dataSetConfigurationForm!">
+        <mat-checkbox color="primary" formControlName="createHoldOutSplit">
+            Should an extended analysis of the data be carried out automatically (this reduces the amount of usable data and possibly worsens the results)
+        </mat-checkbox>
+        <div style="margin-left: 40px;">
+            <mat-expansion-panel [disabled]="!createHoldOutSplit" [(expanded)]="isAdvanceConfigurationExpanded">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>Advanced Configuration</mat-panel-title>
+                </mat-expansion-panel-header>
+
+                <app-configuration-input [disabled]="locked" [form]="dataSetConfigurationForm!"
+                                         [configurationInputDefinition]="holdOutPercentageDefinition">
+                </app-configuration-input>
+            </mat-expansion-panel>
         </div>
     </div>
-</div>
+</ng-template>

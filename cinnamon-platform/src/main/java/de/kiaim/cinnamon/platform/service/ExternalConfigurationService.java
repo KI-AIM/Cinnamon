@@ -1,15 +1,13 @@
 package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
-import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
-import de.kiaim.cinnamon.platform.exception.InternalInvalidStateException;
-import de.kiaim.cinnamon.platform.exception.InternalRequestException;
-import de.kiaim.cinnamon.platform.exception.RequestRuntimeException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalEndpoint;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServer;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.dto.ConfigurationInfo;
+import de.kiaim.cinnamon.platform.model.dto.DataSetInfo;
 import de.kiaim.cinnamon.platform.model.dto.ProcessInfo;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import org.springframework.http.HttpStatusCode;
@@ -27,10 +25,13 @@ import java.util.Collection;
 @Service
 public class ExternalConfigurationService {
 
+	private final DatabaseService databaseService;
 	private final HttpService httpService;
 	private final StepService stepService;
 
-	public ExternalConfigurationService(final HttpService httpService, final StepService stepService) {
+	public ExternalConfigurationService(final DatabaseService databaseService, final HttpService httpService,
+	                                    final StepService stepService) {
+		this.databaseService = databaseService;
 		this.httpService = httpService;
 		this.stepService = stepService;
 	}
@@ -119,6 +120,24 @@ public class ExternalConfigurationService {
 	}
 
 	/**
+	 * Fetches the configuration definition from the external server for the given algorithm and injects parameters.
+	 *
+	 * @param project           The project for resolving the parameter values.
+	 * @param configurationName Name of the configuration associated with the external configuration.
+	 * @param definitionPath    The path under which the configuration definition is available.
+	 * @return A YAML string containing the configuration definition.
+	 * @throws BadConfigurationNameException       If the configuration name is not valid.
+	 * @throws InternalDataSetPersistenceException If retrieving parameters from the database failed.
+	 * @throws InternalRequestException            If the request fetching the definition failed.
+	 */
+	public String fetchAlgorithmDefinition(final ProjectEntity project, final String configurationName,
+	                                       final String definitionPath)
+			throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalRequestException {
+		final String configuration = fetchAlgorithmDefinition(configurationName, definitionPath);
+		return injectParameters(project, configuration);
+	}
+
+	/**
 	 * Fetches the configuration definition from the external server for the given algorithm.
 	 *
 	 * @param configurationName Name of the configuration associated with the external configuration.
@@ -127,7 +146,7 @@ public class ExternalConfigurationService {
 	 * @throws BadConfigurationNameException If the configuration name is not valid.
 	 * @throws InternalRequestException      If the request fetching the definition failed.
 	 */
-	public String fetchAlgorithmDefinition(final String configurationName, final String definitionPath) throws BadConfigurationNameException, InternalRequestException {
+	private String fetchAlgorithmDefinition(final String configurationName, final String definitionPath) throws BadConfigurationNameException, InternalRequestException {
 		final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(configurationName);
 		final ExternalServer externalServer = externalConfiguration.getExternalServer();
 
@@ -154,6 +173,30 @@ public class ExternalConfigurationService {
 			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
 			throw new InternalRequestException(InternalRequestException.CONFIGURATION_DEFINITION, message, errorDetails);
 		}
+	}
+
+	/**
+	 * Inject parameters into the config string.
+	 *
+	 * @param project       The project for resolving the parameter values.
+	 * @param configuration The configuration string.
+	 * @return The configuration string with containing the injected parameter.
+	 * @throws InternalDataSetPersistenceException If retrieving parameters from the database failed.
+	 */
+	private String injectParameters(final ProjectEntity project, final String configuration)
+			throws InternalDataSetPersistenceException {
+		String result = configuration;
+
+		// Inject parameters for the original data set
+		if (project.getOriginalData().getDataSet() != null) {
+			if (configuration.contains("$dataset.original.numberHoldOutRows")) {
+				final DataSetInfo info = databaseService.getInfo(project.getOriginalData().getDataSet());
+				result = result.replace("$dataset.original.numberHoldOutRows",
+				                        String.valueOf(info.getNumberHoldOutRows()));
+			}
+		}
+
+		return result;
 	}
 
 }

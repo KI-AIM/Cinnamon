@@ -33,7 +33,7 @@ export class RiskAssessmentService extends AlgorithmService {
                 n_outlier_targets: 5,
                 n_iterations: 1,
                 columns_excluded: [],
-                "singlingout-multi": {
+                singlingout_multi: {
                     n_attacks: 100,
                 },
                 metrics: {

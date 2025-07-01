@@ -11,17 +11,14 @@ import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
+import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -29,9 +26,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
+@WithMockWebServer
 public class ProcessServiceTest extends ContextRequiredTest {
-
-	private static final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 
 	@Value("${server.port}") private int port;
 	@Autowired private SerializationConfig serializationConfig;
@@ -43,18 +39,12 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	private ObjectMapper jsonMapper = null;
 	private MockWebServer mockBackEnd;
+	private int mockBackEndPort;
 
 	private ProcessService processService;
 
-	@DynamicPropertySource
-	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("cinnamon.external-server.technical-evaluation-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.synthetization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.anonymization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-	}
-
 	@BeforeEach
-	void setUpMockWebServer() throws IOException {
+	void setUpMockWebServer() {
 		BackgroundProcessRepository backgroundProcessRepository = mock(BackgroundProcessRepository.class);
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
@@ -66,17 +56,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		                                         dataProcessorService, dataSetService, httpService, projectService,
 		                                         stepService);
 
-		mockBackEnd = new MockWebServer();
-		mockBackEnd.start(mockBackEndPort);
-
 		if (jsonMapper == null) {
 			jsonMapper = serializationConfig.jsonMapper();
 		}
-	}
-
-	@AfterEach
-	void shutDownMockWebServer() throws IOException {
-		mockBackEnd.shutdown();
 	}
 
 	@Test

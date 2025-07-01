@@ -10,7 +10,9 @@ import {
     ViewChildren
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
-import { catchError, Observable, of, switchMap, tap } from "rxjs";
+import { DataConfiguration } from "@shared/model/data-configuration";
+import { DataConfigurationService } from "@shared/services/data-configuration.service";
+import { catchError, first, Observable, of, switchMap, tap } from "rxjs";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { AlgorithmService } from "../../services/algorithm.service";
@@ -64,6 +66,7 @@ export class ConfigurationFormComponent implements OnInit {
      * @protected
      */
     protected configurationData$: Observable<any>;
+    protected dataConfiguration$: Observable<DataConfiguration>;
 
     /**
      * Event that gets triggered on every change.
@@ -78,6 +81,7 @@ export class ConfigurationFormComponent implements OnInit {
         private readonly anonService: AlgorithmService,
         private readonly changeD: ChangeDetectorRef,
         private readonly configurationService: ConfigurationService,
+        private readonly dataConfigService: DataConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
     ) {
         this.form = new FormGroup({});
@@ -92,24 +96,30 @@ export class ConfigurationFormComponent implements OnInit {
             switchMap(_ => {
                return this.anonService.fetchConfiguration();
             }),
-            tap(value => {
+            switchMap(value => {
+                return this.dataConfiguration$.pipe(
+                    tap(dataConfiguration => {
+                        this.form = this.createForm(this.algorithmDefinition!, value.config, dataConfiguration);
 
-                this.form = this.createForm(this.algorithmDefinition!, value.config);
+                        this.doSetConfiguration(this.algorithmDefinition!, this.form, value.config);
+                        this.updateForm();
 
-                this.doSetConfiguration(this.algorithmDefinition!, this.form, value.config);
-                this.updateForm();
+                        this.form.valueChanges.pipe().subscribe(_ => {
+                            this.onChange.emit(this.valid);
+                        });
 
-                this.form.valueChanges.pipe().subscribe(_ => {
-                    this.onChange.emit(this.valid);
-                });
-
-                this.onChange.emit(this.valid);
+                        this.onChange.emit(this.valid);
+                    }),
+                );
             }),
             catchError(err => {
                 this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
                 return of(null);
             }),
         );
+
+
+        this.dataConfiguration$ = this.dataConfigService.dataConfiguration$;
     }
 
     /**
@@ -142,52 +152,73 @@ export class ConfigurationFormComponent implements OnInit {
             return;
         }
 
-        this.fixAttributeLists(algorithmDefinition, configuration, form);
-        this.form.patchValue(configuration);
-        setTimeout(() => {
-            // Has to be run after the page is initialized
-            for (const group of this.groups) {
-                group.handleMissingOptions(configuration);
+        this.dataConfiguration$.pipe(
+            first(),
+        ).subscribe({
+            next: (dataConfiguration) => {
+                this.form.patchValue(configuration);
+                this.fixAttributeLists(algorithmDefinition, configuration, form, dataConfiguration);
+                this.form.updateValueAndValidity();
+                setTimeout(() => {
+                    // Has to be run after the page is initialized
+                    for (const group of this.groups) {
+                        group.handleMissingOptions(configuration);
+                    }
+                    this.rootGroup.patchComponents(configuration);
+                    this.changeD.detectChanges();
+                });
             }
-            this.rootGroup.patchComponents(configuration);
-            this.changeD.detectChanges();
-        })
+        });
     }
 
-    private fixAttributeLists(cde: ConfigurationGroupDefinition, obj: Object, form: FormGroup) {
+    /**
+     * Sets the values for attribute list parameters.
+     * These cannot be set via patchValue because of the FormArray.
+     *
+     * @param cde The definition.
+     * @param obj The configuration object. Null if the configuration is not available because of an unchecked option.
+     * @param form The form object.
+     * @param dataConfiguration The data configuration used for the inverted list.
+     * @private
+     */
+    private fixAttributeLists(cde: ConfigurationGroupDefinition, obj: Object | null, form: FormGroup, dataConfiguration: DataConfiguration) {
         if (cde.options) {
             for (const [key, value] of Object.entries(cde.options)) {
                 const groupConfiguration = (obj as Record<string, any>)[key];
-                // The configuration is not available if the option is not checked
                 if (groupConfiguration) {
-                    this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup);
+                    this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup, dataConfiguration);
+                } else {
+                    // The configuration is not available if the option is not checked
+                    this.fixAttributeLists(value, null, form.controls[key] as FormGroup, dataConfiguration);
                 }
             }
         }
         if (cde.configurations) {
             for (const [key, value] of Object.entries(cde.configurations)) {
-                this.fixAttributeLists(value, (obj as Record<string, any>)[key] as Object, form.controls[key] as FormGroup);
+                this.fixAttributeLists(value, (obj as Record<string, any>)[key] as Object, form.controls[key] as FormGroup, dataConfiguration);
             }
         }
         if (cde.parameters) {
+
             for (const key of cde.parameters) {
                 if (key.type === ConfigurationInputType.ATTRIBUTE_LIST) {
 
-                    const list = (obj as Record<string, any>)[key.name];
-                    if (Array.isArray(list)) {
-                        (form.get(key.name) as FormArray).clear();
-                        for (const item of list) {
-                            (form.get(key.name) as FormArray).push(new FormControl());
-                        }
+                    const list = obj == null ? [] : (obj as Record<string, string[]>)[key.name];
+                    const formSelected = (form.get(key.name) as FormArray);
+                    formSelected.clear();
+                    for (const item of list) {
+                        formSelected.push(new FormControl(item));
                     }
 
                     if (key.invert) {
-                        const invert = (obj as Record<string, any>)[key.invert];
-                        if (Array.isArray(invert)) {
-                            (form.get(key.invert) as FormArray).clear();
-                            for (const item of invert) {
-                                (form.get(key.invert) as FormArray).push(new FormControl());
+                        const formInverted = (form.get(key.invert) as FormArray);
+                        formInverted.clear();
+
+                        for (const attribute of dataConfiguration.configurations) {
+                            if (list.includes(attribute.name)) {
+                                continue;
                             }
+                            formInverted.push(new FormControl(attribute.name));
                         }
                     }
                 }
@@ -212,11 +243,12 @@ export class ConfigurationFormComponent implements OnInit {
      * HTML must be created separately inside the HTML file as well.
      *
      * @param algorithmDefinition The definition.
-     * @param initialValues
+     * @param initialValues Initial values.
+     * @param dataConfig Data configuration for initializing attribute lists.
      * @private
      */
-    private createForm(algorithmDefinition: AlgorithmDefinition, initialValues: any): FormGroup {
-        const form = this.createGroup(algorithmDefinition);
+    private createForm(algorithmDefinition: AlgorithmDefinition, initialValues: any, dataConfig: DataConfiguration): FormGroup {
+        const form = this.createGroup(algorithmDefinition, dataConfig);
 
         if (this.additionalConfigs) {
             for (const additionalConfig of this.additionalConfigs.configs) {
@@ -228,13 +260,13 @@ export class ConfigurationFormComponent implements OnInit {
         return form;
     }
 
-    private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }) {
+    private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }, dataConfig: DataConfiguration) {
         Object.entries(configurations).forEach(([name, groupDefinition]) => {
-            formGroup[name] = this.createGroup(groupDefinition);
+            formGroup[name] = this.createGroup(groupDefinition, dataConfig);
         });
     }
 
-    private createGroup(groupDefinition: ConfigurationGroupDefinition): FormGroup {
+    private createGroup(groupDefinition: ConfigurationGroupDefinition, dataConfig: DataConfiguration): FormGroup {
         const group: any = {};
 
         if (groupDefinition.parameters) {
@@ -253,6 +285,9 @@ export class ConfigurationFormComponent implements OnInit {
                     group[inputDefinition.name] = new FormArray([], Validators.required);
                     if (inputDefinition.invert) {
                         group[inputDefinition.invert] = new FormArray([], Validators.required);
+                        for (const attribute of dataConfig.configurations) {
+                            group[inputDefinition.invert].push(new FormControl(attribute.name));
+                        }
                     }
                 } else {
                     // Add validators of the input
@@ -270,10 +305,10 @@ export class ConfigurationFormComponent implements OnInit {
         }
 
         if (groupDefinition.configurations) {
-            this.createGroups(group, groupDefinition.configurations);
+            this.createGroups(group, groupDefinition.configurations, dataConfig);
         }
         if (groupDefinition.options) {
-            this.createGroups(group, groupDefinition.options);
+            this.createGroups(group, groupDefinition.options, dataConfig);
         }
 
         return new FormGroup(group);

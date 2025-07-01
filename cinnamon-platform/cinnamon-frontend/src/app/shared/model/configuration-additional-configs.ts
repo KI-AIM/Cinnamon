@@ -1,4 +1,5 @@
 import { FormGroup } from "@angular/forms";
+import { AnonymizationAttributeRowConfiguration } from "@shared/model/anonymization-attribute-config";
 
 export class ConfigurationAdditionalConfigs {
     configs: AdditionalConfig[];
@@ -13,9 +14,9 @@ export class AdditionalConfig {
     title: string;
     description: string;
     formGroupName: string;
-    initializeForm: (formGroup: FormGroup) => void;
+    initializeForm: (formGroup: FormGroup, configs: AnonymizationAttributeRowConfiguration[] | null, disabled: boolean) => void;
 
-    constructor(component: any, title: string, description: string, formGroupName: string, initializeForm: (formGroup: FormGroup) => void) {
+    constructor(component: any, title: string, description: string, formGroupName: string, initializeForm: (formGroup: FormGroup, configs: AnonymizationAttributeRowConfiguration[] | null, disabled: boolean) => void) {
         this.component = component;
         this.title = title;
         this.description = description;

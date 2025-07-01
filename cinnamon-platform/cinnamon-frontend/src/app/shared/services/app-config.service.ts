@@ -36,6 +36,7 @@ export class AppConfigService {
                 this.errorHandlingService.addError(e, "Cinnamon is currently unavailable. Please try again later.");
                 return of({
                     isDemoInstance: false,
+                    maxFileSize: 0,
                     passwordRequirements: {
                         minLength: 0,
                         constraints: [],
@@ -55,6 +56,7 @@ export class AppConfigService {
 
 export interface AppConfig {
     isDemoInstance: boolean;
+    maxFileSize: number;
     passwordRequirements: PasswordRequirements;
 }
 

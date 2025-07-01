@@ -120,22 +120,20 @@
         </ng-container>
     </span>
 
-    <div class="d-flex input-height">
-        <div class="me-2 d-flex flex-column justify-content-center">
-            <a *ngIf="!disabled" title="Set to default" (click)="setToDefault()" class="icon-enabled">
-                <mat-icon fontIcon="replay"></mat-icon>
-            </a>
-            <span *ngIf="disabled" title="Set to default" class="icon-disabled">
-                <mat-icon fontIcon="replay"></mat-icon>
-            </span>
-        </div>
+    <div class="d-flex flex-column justify-content-center input-height">
+        <a *ngIf="!disabled" title="Set to default" (click)="setToDefault()" class="icon-enabled">
+            <mat-icon fontIcon="replay"></mat-icon>
+        </a>
+        <span *ngIf="disabled" title="Set to default" class="icon-disabled">
+            <mat-icon fontIcon="replay"></mat-icon>
+        </span>
+    </div>
 
-        <div class="d-flex flex-column justify-content-center">
-            <span>
-                <app-configuration-input-info [configurationInputDefinition]="configurationInputDefinition">
-                </app-configuration-input-info>
-            </span>
-        </div>
+    <div class="d-flex flex-column justify-content-center input-height">
+        <span>
+            <app-configuration-input-info [configurationInputDefinition]="configurationInputDefinition">
+            </app-configuration-input-info>
+        </span>
     </div>
 
 </div>

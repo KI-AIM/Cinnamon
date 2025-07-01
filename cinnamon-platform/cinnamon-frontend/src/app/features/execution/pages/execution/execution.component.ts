@@ -1,18 +1,18 @@
 import { Component, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
-import { ProcessStatus } from "../../../../core/enums/process-status";
-import { ExecutionStep } from "../../../../shared/model/execution-step";
-import { TitleService } from "../../../../core/services/title-service.service";
-import { Steps } from "../../../../core/enums/steps";
-import { Router } from "@angular/router";
-import { ExecutionService } from "../../services/execution.service";
-import { StatusService } from "../../../../shared/services/status.service";
-import { Observable, tap } from "rxjs";
-import { StatisticsService } from "../../../../shared/services/statistics.service";
-import { StageDefinition } from "../../../../shared/services/execution-step.service";
-import { SynthetizationProcess } from "../../../../shared/model/synthetization-process";
-import { plainToInstance } from "class-transformer";
 import { MatExpansionPanel } from "@angular/material/expansion";
+import { Router } from "@angular/router";
+import { plainToInstance } from "class-transformer";
+import { Observable, tap } from "rxjs";
+import { ProcessStatus } from "../../../../core/enums/process-status";
+import { Steps } from "../../../../core/enums/steps";
+import { TitleService } from "../../../../core/services/title-service.service";
+import { ExecutionStep } from "../../../../shared/model/execution-step";
+import { SynthetizationProcess } from "../../../../shared/model/synthetization-process";
 import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
+import { StageDefinition } from "../../../../shared/services/execution-step.service";
+import { StatisticsService } from "../../../../shared/services/statistics.service";
+import { StatusService } from "../../../../shared/services/status.service";
+import { ExecutionService } from "../../services/execution.service";
 
 @Component({
     selector: 'app-execution',

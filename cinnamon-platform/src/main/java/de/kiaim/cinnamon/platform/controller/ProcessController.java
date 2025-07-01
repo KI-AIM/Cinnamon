@@ -111,12 +111,11 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/{stageName}/configure",
+	@PostMapping(value = "/configure",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Void> configureProcess(
 			@Parameter(description = "Step of which the process should be configured.")
-			@PathVariable final String stageName,
 			@ParameterObject @Valid final ConfigureProcessRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
@@ -124,11 +123,10 @@ public class ProcessController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		final Stage stage = stepService.getStageConfiguration(stageName);
 		final Job job = stepService.getStepConfiguration(requestData.getJobName());
 
 		// Configure process
-		processService.configureProcess(project, stage, job, requestData.isSkip());
+		processService.configureProcess(project, job, requestData.isSkip());
 
 		return ResponseEntity.ok().build();
 	}

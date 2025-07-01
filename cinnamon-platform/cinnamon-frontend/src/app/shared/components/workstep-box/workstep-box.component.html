@@ -1,0 +1,15 @@
+<mat-expansion-panel expanded [hideToggle]="!toggleable" class="workstep-expansion-panel mb-3"
+                     [class.workstep-expansion-panel-static]="!toggleable">
+<mat-expansion-panel-header>
+        <mat-panel-title [class.invalid-group]="invalid">
+            <h4 style="margin-bottom: 0;">{{ title }}</h4>
+        </mat-panel-title>
+    </mat-expansion-panel-header>
+
+    <div class="cinnamon-workstep-div"></div>
+
+    <ng-template matExpansionPanelContent>
+        <ng-content></ng-content>
+    </ng-template>
+
+</mat-expansion-panel>

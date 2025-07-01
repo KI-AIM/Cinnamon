@@ -136,19 +136,16 @@ public class ProcessService {
 	 * Currently, always uses the first configuration for the job.
 	 *
 	 * @param project The project.
-	 * @param stage   The stage.
 	 * @param job     The job to be configured.
 	 * @param skip    If the job should be skipped.
 	 * @throws BadStateException             If the corresponding process is already running or scheduled.
 	 * @throws InternalInvalidStateException If the process entity is missing.
 	 */
 	@Transactional
-	public void configureProcess(final ProjectEntity project, final Stage stage, final Job job, final boolean skip)
+	public void configureProcess(final ProjectEntity project, final Job job, final boolean skip)
 			throws BadStateException, InternalInvalidStateException {
-		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
-
 		// Get process entity
-		final Optional<ExternalProcessEntity> optional = executionStep.getProcess(job);
+		final Optional<ExternalProcessEntity> optional = project.getPipelines().get(0).getStageByJob(job);;
 		if (optional.isEmpty()) {
 			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
 			                                        "No process entity for step '" + job.getName() + "' available!");
@@ -163,8 +160,7 @@ public class ProcessService {
 
 		if (!skip) {
 			// Set the configuration
-			ConfigurationListEntity configurationList = executionStep.getProject().getConfigurationList(
-					job.getEndpoint().getConfiguration());
+			ConfigurationListEntity configurationList = project.getConfigurationList(job.getEndpoint().getConfiguration());
 			if (configurationList == null || configurationList.getConfigurations().isEmpty()) {
 				throw new BadStateException(BadStateException.CONFIGURATION,
 				                            "No configuration '" +
@@ -585,7 +581,7 @@ public class ProcessService {
 
 		if (backgroundProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED) {
 			backgroundProcess.setScheduledTime(null);
-		} else {
+		} else if (!ese.getCancelEndpoint().isBlank()) {
 			// Get configuration
 			final ExternalServer es = stepService.getExternalServerConfiguration(ese);
 
@@ -670,10 +666,8 @@ public class ProcessService {
 				processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
 				lastJob = jobCandidate;
 			} else {
-				// Check if hold out split is required and present.
-				final boolean requiresHoldOut = processCandidate.getJob().getEndpoint().getInputs().stream()
-				                                                .anyMatch(input -> input.getSelector().equals(
-						                                                DataSetSelector.HOLD_OUT));
+				// Check if a hold-out split is required and present.
+				final boolean requiresHoldOut = stepService.requiresHoldOutSplit(processCandidate.getJob());
 				final boolean hasHoldOut = processCandidate.getProject().getOriginalData().isHasHoldOut();
 
 				if (requiresHoldOut && !hasHoldOut) {

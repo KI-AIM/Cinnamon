@@ -20,6 +20,11 @@ public class InternalApplicationConfigurationException extends InternalException
 	 */
 	public static final String MISSING_STAGE_CONFIGURATION = "3";
 
+	/**
+	 * Exception code for multiple usages of the same job.
+	 */
+	public static final String MULTIPLE_JOB_USAGE = "4";
+
 	public InternalApplicationConfigurationException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

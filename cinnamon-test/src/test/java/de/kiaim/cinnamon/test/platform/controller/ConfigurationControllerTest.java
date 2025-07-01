@@ -28,6 +28,24 @@ class ConfigurationControllerTest extends ControllerTest {
 	ProjectService projectService;
 
 	@Test
+	void info() throws Exception {
+		mockMvc.perform(get("/api/config/info")
+				                .param("name", CONFIGURATION_NAME))
+		       .andExpect(status().isOk())
+		       .andExpect(
+				       content().json("{processes: [{job: 'anonymization', skip: false, holdOutFulfilled: true}]}"));
+	}
+
+	@Test
+	void infoInvalidName() throws Exception {
+		mockMvc.perform(get("/api/config/info")
+				                .param("name", "invalid"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_2_1"))
+		       .andExpect(errorMessage("No configuration with name 'invalid' registered!"));
+	}
+
+	@Test
 	void store() throws Exception {
 		final String config = """
 				configurations:

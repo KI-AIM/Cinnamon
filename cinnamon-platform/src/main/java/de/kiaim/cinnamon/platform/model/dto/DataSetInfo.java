@@ -26,12 +26,24 @@ public class DataSetInfo {
 	/**
 	 * If the data set contains a hold out split.
 	 */
-	@Schema(description = "If the data set contains a hold out split.", example = "false")
+	@Schema(description = "If the data set contains a hold out split.", example = "true")
 	private final boolean hasHoldOutSplit;
 
 	/**
-	 * The percentage or rows that are assigned to the hold-out split.
+	 * The percentage of rows that are assigned to the hold-out split.
 	 */
-	@Schema(description = "The percentage or rows that are assigned to the hold-out split.", example = "0.2")
+	@Schema(description = "The percentage of rows that are assigned to the hold-out split.", example = "0.2")
 	private final float holdOutPercentage;
+
+	/**
+	 * Number of rows inside the hold-out split.
+	 */
+	@Schema(description = "The number of rows that are assigned to the hold-out split.", example = "116")
+	private final int numberHoldOutRows;
+
+	/**
+	 * Number of invalid rows inside the hold-out split.
+	 */
+	@Schema(description = "The number of invalid rows inside the hold-out split.", example = "8")
+	private final int numberInvalidHoldOutRows;
 }

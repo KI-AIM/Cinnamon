@@ -4,7 +4,7 @@ display_name: Evaluation
 description: Metrics used to evaluate the resemblance and utility of synthetic data compared to real data.
 URL: /start_evaluation
 options:
-  singlingout-uni:
+  singlingout_uni:
     display_name: Singling records out
     description: Metrics that indicate if records from the anonymized data can be used to separate record in the real data.
     parameters:

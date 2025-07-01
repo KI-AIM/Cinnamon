@@ -49,7 +49,7 @@
             <app-workstep-item title="Confirm the dataset and data configuration" [locked]="locked" [stepIndex]="2">
                 If you noticed any issues in the imported data or the statistics, you can go back to previous steps and change the dataset or the configuration.
                 Otherwise you can continue with the current data, which will lock the import process.
-                If you want to change anything prior to this point, you will have delete the dataset by clicking the "Delete Data" button on the bottom of this page.
+                If you want to change anything prior to this point, you will have to delete the dataset by clicking the "Reset project and delete all data" button on the bottom of this page.
                 Be aware, that this will also delete all data and results of the following steps.
             </app-workstep-item>
 
@@ -57,7 +57,7 @@
 
         <button mat-raised-button color="warn" class="ms-3" (click)="openDeleteDialog(deleteDialog)" [disabled]="!locked">
             <mat-icon>delete</mat-icon>
-            Delete Data
+            Reset project and delete all data
         </button>
 
     </ng-container>
@@ -76,7 +76,7 @@
                 </button>
                 <button mat-raised-button color="warn" (click)="openDeleteDialog(deleteDialog)" [disabled]="!locked">
                     <mat-icon>delete</mat-icon>
-                    Delete Data
+                    Reset project and delete all data
                 </button>
             </div>
         </app-workstep-box>

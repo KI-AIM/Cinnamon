@@ -31,6 +31,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -131,8 +132,8 @@ public class ProcessController {
 		return ResponseEntity.ok().build();
 	}
 
-	@Operation(summary = "Starts the execution.",
-	           description = "Starts the execution.")
+	@Operation(summary = "Starts the execution of a stage.",
+	           description = "Starts the execution of a stage.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully started the execution. Returns the status object.",
@@ -150,12 +151,14 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/{stageName}/start",
+	@PostMapping(value = {"/{stageName}/start", "/{stageName}/start/{jobName}"},
 				 consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ExecutionStepInformation startProcess(
-			@Parameter(description = "Step of which the process should be canceled.")
+			@Parameter(description = "The stage to start.")
 			@PathVariable final String stageName,
+			@Parameter(description = "The job to start. If missing, the first job of the stage is started.")
+			@PathVariable final Optional<String> jobName,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
@@ -163,9 +166,13 @@ public class ProcessController {
 		final ProjectEntity project = projectService.getProject(user);
 
 		final Stage stage = stepService.getStageConfiguration(stageName);
+		Job job = null;
+		if (jobName.isPresent()) {
+			job = stepService.getStepConfiguration(jobName.get());
+		}
 
 		// Start process
-		final ExecutionStepEntity executionStep = processService.start(project, stage);
+		final ExecutionStepEntity executionStep = processService.start(project, stage, job);
 		return executionStepMapper.toDto(executionStep);
 	}
 

@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
+import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.configuration.StepOutputConfiguration;
 import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
@@ -473,6 +474,39 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void startJob() throws Exception {
+		postData(false);
+		configure();
+		start();
+		finish1();
+		finish2();
+
+		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final Job secondJob = firstStage.getJobList().get(1);
+
+		final ExternalProcessResponse response = new ExternalProcessResponse();
+		response.setPid("123");
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(response))
+				                    .build());
+
+		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start/" + secondJob.getName()))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("currentProcessIndex").value(1))
+		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("processes[0].step").value(ANON_JOB))
+		       .andExpect(jsonPath("processes[0].status").value(nullValue()))
+		       .andExpect(jsonPath("processes[0].processSteps[0]").value(ANON_JOB))
+		       .andExpect(jsonPath("processes[1].externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("processes[1].step").value(SYNTH_JOB))
+		       .andExpect(jsonPath("processes[1].status").value(nullValue()))
+		       .andExpect(jsonPath("processes[1].processSteps").value(nullValue()));
+	}
+
+	@Test
 	public void startAndCancelProcess() throws Exception {
 		postData(false);
 		configure();
@@ -669,6 +703,16 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorMessage(
 				       "Failed to start the process! Got status of '404 NOT_FOUND'. Got message: 'Not found'. Got error: 'Nicht gefunden, but in German'."));
+	}
+
+	@Test
+	public void startJobPrecedingNotFinished() throws Exception {
+		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final Job secondJob = firstStage.getJobList().get(1);
+
+		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start/" + secondJob.getName()))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_8_6"));
 	}
 
 	@Test

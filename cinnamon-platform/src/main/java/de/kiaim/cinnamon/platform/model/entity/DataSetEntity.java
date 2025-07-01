@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.platform.converter.StepListAttributeConverter;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
+import jakarta.annotation.PreDestroy;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -161,6 +162,16 @@ public class DataSetEntity extends ProcessOwner {
 		}
 		if (this.originalData == null && this.job == null) {
 			throw new IllegalStateException("One of originalData and job should be set");
+		}
+	}
+
+	/**
+	 * Validates that no data for this dataset is stored to prevent leaks.
+	 */
+	@PreDestroy
+	private void preDestroy() {
+		if (this.storedData) {
+			throw new IllegalStateException("The data must be deleted before deleting the dataset entity");
 		}
 	}
 

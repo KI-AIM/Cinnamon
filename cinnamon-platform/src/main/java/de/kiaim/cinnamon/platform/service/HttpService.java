@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.exception.RequestRuntimeException;
@@ -33,8 +34,15 @@ public class HttpService {
 		try {
 			responseBody = jsonMapper.readValue(response.getBody(), ExternalProcessResponse.class);
 		} catch (JsonProcessingException e) {
-			responseBody = new ExternalProcessResponse();
-			responseBody.setError(response.getBody());
+
+			try {
+				ErrorResponse errorResponse = jsonMapper.readValue(response.getBody(), ErrorResponse.class);
+				responseBody = new ExternalProcessResponse();
+				responseBody.setError(errorResponse.getErrorMessage());
+			} catch (JsonProcessingException e1) {
+				responseBody = new ExternalProcessResponse();
+				responseBody.setError(response.getBody());
+			}
 		}
 
 		final ResponseEntity<ExternalProcessResponse> responseEntity = ResponseEntity.status(response.getStatusCode())

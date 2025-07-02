@@ -1,10 +1,12 @@
 package de.kiaim.cinnamon.anonymization.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.anonymization.model.AnonymizationRequest;
 import de.kiaim.cinnamon.anonymization.service.AnonymizationService;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
@@ -34,9 +37,11 @@ public class AnonymizationController {
 
     private final AnonymizationService anonymizationService;
     private final Map<String, Future<DataSet>> tasks = new ConcurrentHashMap<>();
+    private final ObjectMapper jsonMapper;
 
     public AnonymizationController(final AnonymizationService anonymizationService) {
         this.anonymizationService = anonymizationService;
+        this.jsonMapper = JsonMapper.jsonMapper();
     }
 
     @Operation(summary = "Creates a new anonymization task.",
@@ -52,8 +57,8 @@ public class AnonymizationController {
             @RequestParam("session_key") @Parameter(description = "The process ID for the anonymization task.", required = true) String session_key,
             @RequestPart("data") @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "The dataset to be anonymized.",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DataSet.class)),
-                    required = true) DataSet data,
+                    content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(implementation = DataSet.class)),
+                    required = true) MultipartFile data,
             @RequestPart("anonymizationConfig") @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "The frontend anonymization configuration.",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = FrontendAnonConfigWrapper.class)),
@@ -64,6 +69,8 @@ public class AnonymizationController {
             System.out.println("Request in controller.");
             System.out.println("Process ID: " + session_key);
 
+            DataSet dataset = jsonMapper.readValue(data.getInputStream(), DataSet.class);
+
             if (tasks.containsKey(session_key)) {
                 Future<DataSet> existingTask = tasks.get(session_key);
                 existingTask.cancel(true);
@@ -71,7 +78,7 @@ public class AnonymizationController {
             }
 
             // Create AnonymizationRequest object from request
-            AnonymizationRequest request = new AnonymizationRequest(session_key, data, anonymizationConfig.getAnonymization(), callback);
+            AnonymizationRequest request = new AnonymizationRequest(session_key, dataset, anonymizationConfig.getAnonymization(), callback);
 
             // Run anonymization service asynchronously
             Future<DataSet> future = anonymizationService.anonymizeDataWithCallbackResult(request);
@@ -98,22 +105,11 @@ public class AnonymizationController {
     public ResponseEntity<String> getTaskStatus(@PathVariable @NonNull String processId) {
         Future<DataSet> future = tasks.get(processId);
         if (future == null) {
-            System.out.println("Task with process ID " + processId + " not found.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } else if (future.isDone()) {
-            try {
-                DataSet result = future.get();
-                tasks.remove(processId);
-                return ResponseEntity.ok(result.toString());
-            } catch (InterruptedException | ExecutionException e) {
-                Throwable cause = e.getCause();  // Get the underlying cause of the error
-                e.printStackTrace();
-                System.out.println("Error retrieving task result for process ID " + processId + ": " + (cause != null ? cause.getMessage() : "Unknown cause"));
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-            }
+            return ResponseEntity.status(HttpStatus.OK).body("Anonymization is finished");
         } else {
-            System.out.println("Task with process ID " + processId + " is not yet done.");
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body(null);
+            return ResponseEntity.status(HttpStatus.OK).body("Anonymization is running...");
         }
     }
 

@@ -33,7 +33,7 @@ services:
             - anonymization-network
             - evaluation-network
         environment:
-            CATALINA_OPTS: "-Dserver.tomcat.max-swallow-size=-1 -Dserver.tomcat.max-post-size=${MAX_FILE_SIZE_BYTES:-52428800}"
+            SPRING.SERVLET.MULTIPART.MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
             CINNAMON_MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
 
             # Datasource has to match with the configuration of the cinnamon-db container
@@ -100,6 +100,6 @@ services:
         networks:
             - anonymization-network
         environment:
-            CATALINA_OPTS: "-Dserver.tomcat.max-swallow-size=-1 -Dserver.tomcat.max-post-size=${MAX_FILE_SIZE_BYTES:-52428800}"
+            SPRING.SERVLET.MULTIPART.MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
 #        volumes:
 #            - ~/.m2:/root/.m2

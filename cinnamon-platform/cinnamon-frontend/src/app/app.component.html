@@ -11,6 +11,24 @@
         </div>
         <div class="page-content">
 
+            <ng-container *ngIf="currentStep$ | async as currentStep" >
+                <div *ngIf="statusService.isStepCompleted(currentStep.lockedAfter)"
+                     style="position: sticky; top: 0; z-index: 10;">
+                    <app-info-card typeClass="card-warn">
+                        <span>
+                            This step is locked because subsequent steps depend on it.
+                            You have to reset the subsequent steps first before you can modify this step.
+                        </span>
+                        <div>
+                            <button mat-raised-button color="primary" (click)="stateManagementService.unlockStep(currentStep.enum)">
+                                Reset subsequent steps
+                            </button>
+                        </div>
+                    </app-info-card>
+                </div>
+
+            </ng-container>
+
             <!-- Error -->
             <ng-container *ngIf="errorList$ | async as errorList">
                 <ng-container *ngFor="let error of errorList; let i = index">

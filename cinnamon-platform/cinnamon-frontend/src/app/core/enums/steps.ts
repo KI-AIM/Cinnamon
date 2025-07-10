@@ -11,13 +11,22 @@ export enum Steps {
     EVALUATION,
 }
 
-export const StepConfiguration = {
+export interface StepDefinition {
+    path: string;
+    id: string;
+    text: string;
+    enum: Steps;
+    dependsOn: Steps | null;
+    index: number;
+}
+
+export const StepConfiguration: Record<string, StepDefinition> = {
 	WELCOME: {
 		path: "/start",
 		id: "navLinkStart",
 		text: "Welcome",
 		enum: Steps.WELCOME,
-		dependsOn: "",
+		dependsOn: null,
 		index: 0,
 	},
 	UPLOAD: {

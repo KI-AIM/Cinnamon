@@ -13,7 +13,7 @@
             [id]="step.value.id"
             [routerLink]="[step.value.path]"
             [routerLinkActive]="['active']"
-            [ngClass]="{'completed': statusService.getCompletedSteps().contains(step.value.enum), 'disabled': !userService.isAuthenticated() || !statusService.getCompletedSteps().contains(step.value.dependsOn) && step.value.dependsOn.toString() !== ''}">
+            [ngClass]="{'completed': statusService.getCompletedSteps().contains(step.value.enum), 'disabled': !userService.isAuthenticated() || (step.value.dependsOn != null && !statusService.getCompletedSteps().contains(step.value.dependsOn))}">
                 {{step.value.text}}
             </a>
         </li>

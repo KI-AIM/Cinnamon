@@ -8,6 +8,10 @@ import { Component, EventEmitter, Input, Output, } from '@angular/core';
 })
 export class InfoCardComponent {
     @Input() closable: boolean = false;
+    /**
+     * Defines the color of the card.
+     * Allowed values are: card-success, card-warn, card-failure
+     */
     @Input() typeClass: string;
 
     @Output() public onClose: EventEmitter<void> = new EventEmitter();

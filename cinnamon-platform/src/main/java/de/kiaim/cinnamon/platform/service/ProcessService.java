@@ -107,6 +107,29 @@ public class ProcessService {
 	}
 
 	/**
+	 * Updates and returns the process status of the pipeline.
+	 * If a process is running, the status of that process will be fetched from the external server.
+	 * If fetching the status fails,the process will be set to error and the next process of the same job will be started.
+	 *
+	 * @param project The project.
+	 * @return The updated pipeline.
+	 * @throws InternalInvalidStateException If a running process has no server instance assigned.
+	 */
+	@Transactional
+	public PipelineEntity getPipeline(final ProjectEntity project) throws InternalInvalidStateException {
+		final PipelineEntity pipeline = project.getPipelines().get(0);
+
+		for (final ExecutionStepEntity stage : pipeline.getStages()) {
+			if (stage.getStatus() == ProcessStatus.RUNNING) {
+				getStatus(project, stage.getStage());
+				break;
+			}
+		}
+
+		return pipeline;
+	}
+
+	/**
 	 * Updates and returns the process status of the given step in the given project.
 	 * If a process is running, the status of that process will be fetched from the external server.
 	 * If fetching the status fails,the process will be set to error and the next process of the same job will be started.

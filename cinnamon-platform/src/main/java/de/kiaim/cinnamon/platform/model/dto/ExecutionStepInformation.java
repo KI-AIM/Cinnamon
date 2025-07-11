@@ -12,6 +12,9 @@ import java.util.List;
 @Getter @Setter
 public class ExecutionStepInformation {
 
+	@Schema(description = "Name of the stage.", example = "execution")
+	private String stageName;
+
 	@Schema(description = "The status of the external processing.", example = "RUNNING")
 	private ProcessStatus status = ProcessStatus.NOT_STARTED;
 

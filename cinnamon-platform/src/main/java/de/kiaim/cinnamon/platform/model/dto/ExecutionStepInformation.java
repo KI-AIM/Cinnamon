@@ -8,13 +8,16 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+@Schema(description = "Information about a stage.")
 @Getter @Setter
 public class ExecutionStepInformation {
 
-	@Schema(description = "The status of the external processing.")
+	@Schema(description = "The status of the external processing.", example = "RUNNING")
 	private ProcessStatus status = ProcessStatus.NOT_STARTED;
 
+	@Schema(description = "The index of the current process.", example = "0")
 	private Integer currentProcessIndex;
 
+	@Schema(description = "The list of processes in the stage.")
 	private final List<ExternalProcessInformation> processes = new ArrayList<>();
 }

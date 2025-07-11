@@ -22,6 +22,7 @@ utility:
     - display_name: "Discriminator-based Evaluation"
       function_name: discriminator_based_evaluation
       description: "Measures how easily a machine learning classifier can distinguish between real and protected data."
+      disclaimer: "If anonymization methods have been applied, the results of this metric may be misleading. This is because anonymization can significantly alter the data's characteristics, potentially skewing how easily a classifier distinguishes between real and protected information."
       interpretation: "This score ranges from 0 to 1. An ideal score is 0.5, meaning a classifier cannot distinguish between real and protected data. Scores between 0.5 and 0.6 indicate very good protected data quality, while 0.6-0.7 suggests good quality. A score in the 0.7-0.8 range reflects moderate quality, and scores above 0.8 point to poor protected data quality, as the classifier can easily distinguish protected from real data. Values closer to 0.5 signify better quality protected data, as the discriminator struggles to differentiate between real and protected samples."
       parameters:
         - name: "train_size"

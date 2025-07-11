@@ -82,6 +82,12 @@ def get_metric_metadata(data_format: str, metric_type: str, evaluation_metadata:
                     'version': metric['version']
                 }
 
+                if metric.get('visualization_type'):
+                    metric_data['visualization_type'] = metric['visualization_type']
+                
+                if metric.get('disclaimer'):
+                    metric_data['disclaimer'] = metric['disclaimer']
+                    
                 if metric.get('parameters'):
                     metric_data['parameters'] = metric['parameters']
 
@@ -841,6 +847,8 @@ def get_evaluation_metrics(data_format):
     json_data = json.dumps(metadata, indent=2)
 
     yaml_data = yaml.safe_dump(json.loads(json_data), sort_keys=False, default_style=None)
+
+    print(yaml_data)
 
     return Response(yaml_data, mimetype='text/yaml')
 

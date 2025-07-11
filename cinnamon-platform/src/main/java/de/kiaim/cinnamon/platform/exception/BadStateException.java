@@ -6,7 +6,7 @@ package de.kiaim.cinnamon.platform.exception;
 public class BadStateException extends BadRequestException {
 
 	/**
-	 * Exception code for modifying a configuration when the process is already scheduled or started.
+	 * Exception code for modifying a configuration or process when the process is already scheduled or started.
 	 */
 	public static final String PROCESS_STARTED = "1";
 

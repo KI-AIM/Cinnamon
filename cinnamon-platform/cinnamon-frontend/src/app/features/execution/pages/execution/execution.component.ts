@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatExpansionPanel } from "@angular/material/expansion";
 import { Router } from "@angular/router";
 import { plainToInstance } from "class-transformer";
@@ -20,7 +20,7 @@ import { ExecutionService } from "../../services/execution.service";
     styleUrls: ['./execution.component.less'],
     standalone: false
 })
-export class ExecutionComponent implements OnInit, OnDestroy {
+export class ExecutionComponent implements OnInit {
     protected readonly ProcessStatus = ProcessStatus;
     protected stage$: Observable<ExecutionStep | null>;
     protected stageDefinition$: Observable<StageDefinition>;
@@ -39,10 +39,6 @@ export class ExecutionComponent implements OnInit, OnDestroy {
         private readonly titleService: TitleService,
     ) {
         this.titleService.setPageTitle("Execution");
-    }
-
-    ngOnDestroy() {
-        this.executionService.stopListenToStatus();
     }
 
     ngOnInit() {

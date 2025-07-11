@@ -56,8 +56,7 @@ import java.util.zip.ZipInputStream;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WithUserDetails("test_user")
@@ -720,6 +719,14 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/execution/cancel"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.NOT_STARTED.name()));
+	}
+
+	@Test
+	public void deleteStageInvalidStage() throws Exception {
+		mockMvc.perform(delete("/api/process/invalidStage"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_7_1"))
+		       .andExpect(errorMessage("The step 'invalidStage' is not defined!"));
 	}
 
 	@Test

@@ -97,6 +97,25 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void getPipelineNotStarted() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/process"))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("currentStageIndex").isEmpty());
+	}
+
+	@Test
+	public void getPipelineStarted() throws Exception {
+		postData(false);
+		configure();
+		start();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/process"))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("currentStageIndex").value(0))
+		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()));
+	}
+
+	@Test
 	public void getProcessNotStarted() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/execution"))
 		       .andExpect(status().isOk())

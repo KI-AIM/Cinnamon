@@ -6,6 +6,9 @@ import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.exception.BadStateException;
 import de.kiaim.cinnamon.platform.exception.BadStepNameException;
 import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.cinnamon.platform.model.dto.PipelineInformation;
+import de.kiaim.cinnamon.platform.model.entity.PipelineEntity;
+import de.kiaim.cinnamon.platform.model.mapper.PipelineMapper;
 import de.kiaim.cinnamon.platform.service.ProcessService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.StepService;
@@ -51,15 +54,27 @@ public class ProcessController {
 	private final StepService stepService;
 	private final UserService userService;
 	private final ExecutionStepMapper executionStepMapper;
+	private final PipelineMapper pipelineMapper;
 
 	public ProcessController(final ProcessService processService, final ProjectService projectService,
 	                         final StepService stepService, final UserService userService,
-	                         final ExecutionStepMapper executionStepMapper) {
+	                         final ExecutionStepMapper executionStepMapper, final PipelineMapper pipelineMapper) {
 		this.processService = processService;
 		this.projectService = projectService;
 		this.stepService = stepService;
 		this.userService = userService;
 		this.executionStepMapper = executionStepMapper;
+		this.pipelineMapper = pipelineMapper;
+	}
+
+	@GetMapping(value = "", produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public PipelineInformation getPipeline(
+			@AuthenticationPrincipal final UserEntity requestUser
+	) {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		final PipelineEntity pipeline = project.getPipelines().get(0);
+		return pipelineMapper.toDto(pipeline);
 	}
 
 	@Operation(summary = "Returns the status of the execution.",

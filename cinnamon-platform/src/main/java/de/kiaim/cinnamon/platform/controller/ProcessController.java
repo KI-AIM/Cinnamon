@@ -2,10 +2,7 @@ package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
-import de.kiaim.cinnamon.platform.exception.ApiException;
-import de.kiaim.cinnamon.platform.exception.BadStateException;
-import de.kiaim.cinnamon.platform.exception.BadStepNameException;
-import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.PipelineInformation;
 import de.kiaim.cinnamon.platform.model.entity.PipelineEntity;
 import de.kiaim.cinnamon.platform.model.mapper.PipelineMapper;
@@ -70,10 +67,10 @@ public class ProcessController {
 	@GetMapping(value = "", produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public PipelineInformation getPipeline(
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
+	) throws InternalInvalidStateException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		final PipelineEntity pipeline = project.getPipelines().get(0);
+		final PipelineEntity pipeline = processService.getPipeline(project);
 		return pipelineMapper.toDto(pipeline);
 	}
 

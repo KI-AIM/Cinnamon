@@ -143,4 +143,17 @@ public class BackgroundProcessEntity {
 		resultFiles.clear();
 		externalProcessStatus = ProcessStatus.NOT_STARTED;
 	}
+
+	/**
+	 * Validates the status matches the rest of the process' state.
+	 */
+	@PrePersist @PreUpdate
+	private void validateStatus() {
+		if (this.externalProcessStatus == ProcessStatus.SCHEDULED && this.scheduledTime == null) {
+			throw new IllegalStateException("The stage is scheduled but no scheduled time is set.");
+		}
+		if (this.externalProcessStatus != ProcessStatus.SCHEDULED && this.scheduledTime != null) {
+			throw new IllegalStateException("The stage is not scheduled but a scheduled time is set.");
+		}
+	}
 }

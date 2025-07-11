@@ -715,6 +715,14 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void deleteStageInvalidStage() throws Exception {
+		mockMvc.perform(delete("/api/process/invalidStage"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_7_1"))
+		       .andExpect(errorMessage("The step 'invalidStage' is not defined!"));
+	}
+
+	@Test
 	public void finishInvalidProcess() throws Exception {
 		final String id = UUID.randomUUID().toString();
 		final MockMultipartFile result = new MockMultipartFile("synthetic_data", "result.csv",

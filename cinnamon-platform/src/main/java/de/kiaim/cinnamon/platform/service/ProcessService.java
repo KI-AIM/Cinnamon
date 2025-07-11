@@ -276,6 +276,29 @@ public class ProcessService {
 	}
 
 	/**
+	 * Resets the given stage by deleting all results and resetting the status.
+	 *
+	 * @param project The project.
+	 * @param stage   The step.
+	 * @return The updated execution entity.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 */
+	public ExecutionStepEntity deleteStage(final ProjectEntity project, final Stage stage)
+			throws BadStateException, InternalDataSetPersistenceException {
+		final ExecutionStepEntity executionStep = project.getPipelines().get(0).getStageByStep(stage);
+
+		if (executionStep.getStatus() == ProcessStatus.RUNNING ||
+		    executionStep.getStatus() == ProcessStatus.SCHEDULED) {
+			throw new BadStateException(BadStateException.PROCESS_STARTED,
+			                            "Stage cannot be deleted because processes are running");
+		}
+
+		resetStage(executionStep);
+		return executionStep;
+	}
+
+	/**
 	 * Finishes the process with the given process ID.
 	 * Either resultFiles or errorRequest has to be not null.
 	 * <p>
@@ -1116,6 +1139,21 @@ public class ProcessService {
 
 	private String injectUrlParameter(final String url, final BackgroundProcessEntity externalProcess) {
 		return url.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getUuid().toString());
+	}
+
+	/**
+	 * Resets the given stage by deleting all results and resetting the status.
+	 *
+	 * @param executionStep The stage to be reset.
+	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 */
+	private void resetStage(final ExecutionStepEntity executionStep) throws InternalDataSetPersistenceException {
+		for (final ExternalProcessEntity externalProcessEntity : executionStep.getProcesses()) {
+			resetProcess(externalProcessEntity);
+		}
+
+		executionStep.setCurrentProcessIndex(null);
+		executionStep.setStatus(ProcessStatus.NOT_STARTED);
 	}
 
 	private void resetProcess(final ExternalProcessEntity externalProcess) throws InternalDataSetPersistenceException {

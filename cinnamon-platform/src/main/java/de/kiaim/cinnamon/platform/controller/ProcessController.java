@@ -3,6 +3,9 @@ package de.kiaim.cinnamon.platform.controller;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
+import de.kiaim.cinnamon.platform.exception.BadStateException;
+import de.kiaim.cinnamon.platform.exception.BadStepNameException;
+import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.cinnamon.platform.service.ProcessService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.StepService;
@@ -210,6 +213,34 @@ public class ProcessController {
 		final Stage stage = stepService.getStageConfiguration(stageName);
 
 		final ExecutionStepEntity executionStep = processService.cancel(project, stage);
+		return executionStepMapper.toDto(executionStep);
+	}
+
+	@Operation(summary = "Deletes the data of the given stage.",
+	           description = "Deletes the data of the given stage by deleting the results of all processes and resetting the status.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully deleted the process.",
+			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
+			@ApiResponse(responseCode = "400",
+			             description = "If the given stage name is invalid or the stage is running.",
+			             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500",
+			             description = "If deleting the results failed.",
+			             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+	})
+	@DeleteMapping(value = "/{stageName}",
+	               produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ExecutionStepInformation deleteStage(
+			@Parameter(description = "Step of which the process should be canceled.")
+			@PathVariable final String stageName,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws BadStateException, BadStepNameException, InternalDataSetPersistenceException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		final Stage stage = stepService.getStageConfiguration(stageName);
+
+		final ExecutionStepEntity executionStep = processService.deleteStage(project, stage);
 		return executionStepMapper.toDto(executionStep);
 	}
 

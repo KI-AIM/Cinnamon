@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.test.platform.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
+import de.kiaim.cinnamon.platform.exception.BadStateException;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.entity.*;
@@ -74,21 +75,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@Test
 	public void fetchStatusError() throws IOException {
 		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
-
-		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
-		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
-		externalProcess.setServerInstance("anonymization-server.0");
-		externalProcess.setJob(stage.getJobList().get(0));
-		externalProcess.setUuid(UUID.randomUUID());
-
-		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
-		executionStep.setCurrentProcessIndex(0);
-		executionStep.setStatus(ProcessStatus.RUNNING);
-		executionStep.addProcess(externalProcess);
-
-		final ProjectEntity project = new ProjectEntity();
-		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
-		pipeline.addStage(stage, executionStep);
+		final ProjectEntity project = createProject(stage, ProcessStatus.RUNNING);
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setError("An error occurred!");
@@ -109,21 +96,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@Test
 	public void fetchStatusUnavailable() throws IOException {
 		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
-
-		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
-		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
-		externalProcess.setServerInstance("anonymization-server.0");
-		externalProcess.setJob(stage.getJobList().get(0));
-		externalProcess.setUuid(UUID.randomUUID());
-
-		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
-		executionStep.setCurrentProcessIndex(0);
-		executionStep.setStatus(ProcessStatus.RUNNING);
-		executionStep.addProcess(externalProcess);
-
-		final ProjectEntity project = new ProjectEntity();
-		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
-		pipeline.addStage(stage, executionStep);
+		final ProjectEntity project = createProject(stage, ProcessStatus.RUNNING);
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setError("An error occurred!");
@@ -139,6 +112,55 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		assertTrue(message.startsWith("Failed to fetch the status!"), "Unexpected start of the error message: '" + message + "'");
 		assertEquals("localhost/127.0.0.1:" + mockBackEnd.getPort(), message.substring(message.lastIndexOf("localhost/")),
 		             "Unexpected end of the error message: '" + message + "'");
+	}
+
+	@Test
+	public void deleteStage() {
+		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final ProjectEntity project = createProject(stage, ProcessStatus.FINISHED);
+
+		ExecutionStepEntity executionStep = assertDoesNotThrow(() -> processService.deleteStage(project, stage));
+
+		assertEquals(ProcessStatus.NOT_STARTED, executionStep.getStatus(), "Status should be NOT_STARTED");
+
+		ExternalProcessEntity externalProcess = executionStep.getProcess(0);
+		assertEquals(ProcessStatus.NOT_STARTED, externalProcess.getExternalProcessStatus(), "Status should be NOT_STARTED");
+		assertTrue(externalProcess.getResultFiles().isEmpty(), "Result files should be empty!");
+		assertNull(externalProcess.getStatus(), "Status should be null!");
+	}
+
+	@Test
+	public void deleteStageRunning() {
+		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final ProjectEntity project = createProject(stage, ProcessStatus.RUNNING);
+
+		BadStateException exception = assertThrows(BadStateException.class, () -> processService.deleteStage(project, stage));
+		assertEquals("PLATFORM_1_8_1", exception.getErrorCode(), "Unexpected error code!");
+	}
+
+	private ProjectEntity createProject(final Stage stage, final ProcessStatus status) {
+		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
+		externalProcess.setExternalProcessStatus(status);
+		externalProcess.setJob(stage.getJobList().get(0));
+		externalProcess.setUuid(UUID.randomUUID());
+
+		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
+		executionStep.setStatus(status);
+		executionStep.addProcess(externalProcess);
+
+		final ProjectEntity project = new ProjectEntity();
+		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
+		pipeline.addStage(stage, executionStep);
+
+		if (status == ProcessStatus.RUNNING) {
+			executionStep.setCurrentProcessIndex(0);
+			externalProcess.setServerInstance("anonymization-server.0");
+		} else if (status == ProcessStatus.FINISHED) {
+			externalProcess.setStatus("FINISHED");
+			externalProcess.getResultFiles().put("data", new LobWrapperEntity());
+		}
+
+		return project;
 	}
 
 }

@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { StepDefinition, Steps } from "@core/enums/steps";
+import { StepDefinition } from "@core/enums/steps";
+import { PipelineInformation } from "@shared/model/execution-step";
 import { StatusService } from "@shared/services/status.service";
 import { TitleService } from './core/services/title-service.service';
 import { AppConfig, AppConfigService } from "./shared/services/app-config.service";
-import { map, Observable } from "rxjs";
+import { Observable } from "rxjs";
 import { StateManagementService } from "./core/services/state-management.service";
 import { ErrorHandlingService } from "./shared/services/error-handling.service";
 
@@ -22,6 +23,7 @@ export class AppComponent implements OnInit {
     protected appConfig$: Observable<AppConfig>;
     protected currentStep$: Observable<StepDefinition | null>;
     protected errorList$: Observable<string[]>;
+    protected pipeline$: Observable<PipelineInformation>;
 
     constructor(
         private readonly appConfigService: AppConfigService,
@@ -37,6 +39,7 @@ export class AppComponent implements OnInit {
         this.appConfig$ = this.appConfigService.appConfig$;
         this.currentStep$ = this.stateManagementService.currentStep$;
         this.errorList$ = this.errorHandlingService.errorList$;
+        this.pipeline$ = this.stateManagementService.pipelineInformation$;
     }
 
     getTitle(): String {

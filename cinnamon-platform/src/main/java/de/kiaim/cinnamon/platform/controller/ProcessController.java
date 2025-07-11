@@ -73,7 +73,7 @@ public class ProcessController {
 	) {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		final PipelineEntity pipeline = project.getPipelines().get(0);
+		final PipelineEntity pipeline = processService.getPipeline(project);
 		return pipelineMapper.toDto(pipeline);
 	}
 

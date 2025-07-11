@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { StateManagementService } from "@core/services/state-management.service";
 import { ExecutionStepService } from "../../../shared/services/execution-step.service";
 import { HttpClient } from "@angular/common/http";
 import {Steps} from "../../../core/enums/steps";
@@ -13,9 +14,10 @@ export class EvaluationService extends ExecutionStepService {
     constructor(
         errorHandlingService: ErrorHandlingService,
         http: HttpClient,
+        stateManagementService: StateManagementService,
         statusService: StatusService,
     ) {
-        super(errorHandlingService, http, statusService);
+        super(errorHandlingService, http, stateManagementService, statusService);
     }
 
     protected override getStageName(): string {

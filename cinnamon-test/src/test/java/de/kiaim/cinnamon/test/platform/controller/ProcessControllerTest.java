@@ -74,6 +74,34 @@ public class ProcessControllerTest extends ControllerTest {
 	@Autowired private ProjectService projectService;
 
 	@Test
+	public void getPipelineNotStarted() throws Exception {
+		mockMvc.perform(get("/api/process"))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("currentStageIndex").isEmpty());
+	}
+
+	@Test
+	public void getPipelineStarted() throws Exception {
+		postData(false);
+		configure();
+		start();
+
+		enqueueAnonStatusResponse();
+		mockMvc.perform(get("/api/process"))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("currentStageIndex").value(0))
+		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()));
+
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		String id = process.getUuid().toString();
+
+		var recordedRequest = mockBackEnd.takeRequest();
+		assertEquals("GET", recordedRequest.getMethod());
+		assertEquals("/api/anonymization/process/" + id + "/status", recordedRequest.getPath());
+	}
+
+	@Test
 	public void getProcessNotStarted() throws Exception {
 		mockMvc.perform(get("/api/process/execution"))
 		       .andExpect(status().isOk())
@@ -236,11 +264,7 @@ public class ProcessControllerTest extends ControllerTest {
 		String id = process.getUuid().toString();
 
 		// Get status
-		mockBackEnd.enqueue(new MockResponse.Builder()
-				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-				                    .code(200)
-				                    .body("status")
-				                    .build());
+		enqueueAnonStatusResponse();
 		mockMvc.perform(get("/api/process/execution"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
@@ -758,6 +782,14 @@ public class ProcessControllerTest extends ControllerTest {
 		assertNotNull(process.getUuid(), "Process UUID is null!");
 
 		return process.getUuid().toString();
+	}
+
+	private void enqueueAnonStatusResponse() {
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body("status")
+				                    .build());
 	}
 
 }

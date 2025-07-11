@@ -165,6 +165,12 @@ public class BackgroundProcessEntity {
 		if (this.externalProcessStatus != ProcessStatus.RUNNING && this.serverInstance != null) {
 			throw new IllegalStateException("The server instance is set but the stage is not running.");
 		}
-	}
 
+		if (this.externalProcessStatus == ProcessStatus.SCHEDULED && this.scheduledTime == null) {
+			throw new IllegalStateException("The stage is scheduled but no scheduled time is set.");
+		}
+		if (this.externalProcessStatus != ProcessStatus.SCHEDULED && this.scheduledTime != null) {
+			throw new IllegalStateException("The stage is not scheduled but a scheduled time is set.");
+		}
+	}
 }

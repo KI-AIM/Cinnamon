@@ -1,9 +1,6 @@
 package de.kiaim.cinnamon.platform.model.mapper;
 
-import de.kiaim.cinnamon.platform.exception.BadStateException;
-import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
-import de.kiaim.cinnamon.platform.exception.InternalInvalidStateException;
-import de.kiaim.cinnamon.platform.exception.InternalMissingHandlingException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.dto.ExternalProcessInformation;
 import de.kiaim.cinnamon.platform.model.entity.DataProcessingEntity;
@@ -28,7 +25,7 @@ public abstract class ExternalProcessMapper {
 
 	@Mapping(target = "step", source = "entity.job", qualifiedByName = "job")
 	@Mapping(target = "processSteps", source = "entity", qualifiedByName = "processSteps")
-	public abstract ExternalProcessInformation toDto(ExternalProcessEntity entity);
+	public abstract ExternalProcessInformation toDto(ExternalProcessEntity entity) throws ApiException;
 
 	@Named("job")
 	protected String toJob(Job job) {
@@ -36,16 +33,15 @@ public abstract class ExternalProcessMapper {
 	}
 
 	@Named("processSteps")
-	protected List<String> toProcessed(ExternalProcessEntity entity) {
+	protected List<String> toProcessed(ExternalProcessEntity entity) throws InternalApplicationConfigurationException, InternalInvalidStateException, InternalMissingHandlingException {
 		List<Job> jobs = null;
 		if (entity instanceof DataProcessingEntity dataProcessing) {
 			jobs = dataProcessing.getDataSet() != null ? dataProcessing.getDataSet().getProcessed() : null;
 		} else if (entity instanceof EvaluationProcessingEntity evaluation) {
 			try {
 				jobs = dataSetService.getDataSet(evaluation).getProcessed();
-			} catch (final InternalApplicationConfigurationException | BadStateException | InternalInvalidStateException |
-			         InternalMissingHandlingException e) {
-				log.error("Failed to convert to DTO!", e);
+			} catch (final BadStateException ignored) {
+				// Ignore bad states because the DTO should always be available
 			}
 		}
 

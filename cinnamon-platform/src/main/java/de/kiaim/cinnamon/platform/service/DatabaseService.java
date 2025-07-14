@@ -546,7 +546,7 @@ public class DatabaseService {
 
 	/**
 	 * Confirms the original data of the given project.
-	 * After confirming, the data can not be overwritten, only be deleted.
+	 * After confirming, the data cannot be overwritten, only be deleted.
 	 *
 	 * @param project The project.
 	 * @throws BadDataSetIdException If no data set exists for the original data.
@@ -1182,7 +1182,7 @@ public class DatabaseService {
 		}
 
 		if (dataSet.isConfirmedData()) {
-			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been stored!");
+			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been confirmed!");
 		} else if (dataSet.isStoredData()) {
 			deleteDataSet(dataSet);
 			projectRepository.save(dataSet.getProject());

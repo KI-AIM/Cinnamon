@@ -281,7 +281,7 @@ class DataControllerTest extends ControllerTest {
 				                       objectMapper.writeValueAsString(
 						                       configurationUpdate)))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("The data has already been stored!"));
+		       .andExpect(errorMessage("The data has already been confirmed!"));
 	}
 
 	@Test

@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.platform.exception.BadStateException;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.entity.*;
+import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.service.*;
 import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
@@ -59,11 +60,11 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
-		ProjectService projectService = mock(ProjectService.class);
+		ProjectRepository projectRepository = mock(ProjectRepository.class);
 
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
-		                                         backgroundProcessRepository, csvProcessor, databaseService,
-		                                         dataSetService, httpService, projectService, stepService);
+		                                         backgroundProcessRepository, projectRepository, csvProcessor,
+		                                         databaseService, dataSetService, httpService, stepService);
 
 		mockBackEnd = new MockWebServer();
 		mockBackEnd.start(mockBackEndPort);

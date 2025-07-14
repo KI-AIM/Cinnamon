@@ -21,6 +21,7 @@ import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
+import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutException;
@@ -72,20 +73,20 @@ public class ProcessService {
 	private final CinnamonConfiguration cinnamonConfiguration;
 
 	private final BackgroundProcessRepository backgroundProcessRepository;
+	private final ProjectRepository projectRepository;
 
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
 	private final DataSetService dataSetService;
 	private final HttpService httpService;
-	private final ProjectService projectService;
 	private final StepService stepService;
 
 	public ProcessService(final SerializationConfig serializationConfig,
 	                      @Value("${server.port}") final int port, final CinnamonConfiguration cinnamonConfiguration,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
-	                      final CsvProcessor csvProcessor, final DatabaseService databaseService,
-	                      final DataSetService dataSetService, final HttpService httpService,
-	                      final ProjectService projectService, final StepService stepService
+	                      final ProjectRepository projectRepository, final CsvProcessor csvProcessor,
+	                      final DatabaseService databaseService, final DataSetService dataSetService,
+	                      final HttpService httpService, final StepService stepService
 	) {
 		this.jsonMapper = serializationConfig.jsonMapper();
 		this.yamlMapper = serializationConfig.yamlMapper();
@@ -93,12 +94,12 @@ public class ProcessService {
 		this.port = port;
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.backgroundProcessRepository = backgroundProcessRepository;
+		this.projectRepository = projectRepository;
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
 		this.dataSetService = dataSetService;
 		this.httpService = httpService;
 		this.stepService = stepService;
-		this.projectService = projectService;
 	}
 
 	/**
@@ -146,7 +147,7 @@ public class ProcessService {
 				startScheduledProcess(process.getJob().getEndpoint());
 			}
 
-			projectService.saveProject(executionStep.getProject());
+			projectRepository.save(project);
 		}
 
 		return executionStep;
@@ -205,7 +206,7 @@ public class ProcessService {
 		externalProcess.setSkip(skip);
 
 		// Save project
-		projectService.saveProject(project);
+		projectRepository.save(project);
 	}
 
 	/**
@@ -252,7 +253,7 @@ public class ProcessService {
 			setProcessError(executionStep, e.getMessage());
 			throw e;
 		} finally {
-			projectService.saveProject(project);
+			projectRepository.save(project);
 		}
 
 		return executionStep;
@@ -279,14 +280,30 @@ public class ProcessService {
 			executionStep.setStatus(ProcessStatus.CANCELED);
 			executionStep.setCurrentProcessIndex(null);
 
-			projectService.saveProject(project);
+			projectRepository.save(project);
 		}
 
 		return executionStep;
 	}
 
 	/**
-	 * Resets the given stage by deleting all results and resetting the status.
+	 * Deletes the pipeline of the given project by deleting all stages.
+	 *
+	 * @param project The project.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 */
+	public void deletePipeline(final ProjectEntity project)
+			throws InternalDataSetPersistenceException, BadStateException {
+		final PipelineEntity pipeline = project.getPipelines().get(0);
+		for (final ExecutionStepEntity stage : pipeline.getStages()) {
+			deleteStage(stage);
+		}
+		projectRepository.save(project);
+	}
+
+	/**
+	 * Resets the given and all following stages by deleting all results and resetting the status.
 	 *
 	 * @param project The project.
 	 * @param stage   The step.
@@ -294,17 +311,20 @@ public class ProcessService {
 	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
 	 */
+	@Transactional
 	public ExecutionStepEntity deleteStage(final ProjectEntity project, final Stage stage)
 			throws BadStateException, InternalDataSetPersistenceException {
+		// Check if the pipeline contains the given stage.
 		final ExecutionStepEntity executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
-		if (executionStep.getStatus() == ProcessStatus.RUNNING ||
-		    executionStep.getStatus() == ProcessStatus.SCHEDULED) {
-			throw new BadStateException(BadStateException.PROCESS_STARTED,
-			                            "Stage cannot be deleted because processes are running");
+		for (final ExecutionStepEntity s : project.getPipelines().get(0).getStages()) {
+			deleteStage(s);
+			if (s.getStage().equals(stage)) {
+				break;
+			}
 		}
 
-		resetStage(executionStep);
+		projectRepository.save(project);
 		return executionStep;
 	}
 
@@ -371,7 +391,7 @@ public class ProcessService {
 		process.setUuid(null);
 
 		final ProjectEntity project = process.getProject();
-		projectService.saveProject(project);
+		projectRepository.save(project);
 
 		return containsError;
 	}
@@ -386,7 +406,7 @@ public class ProcessService {
 		}
 
 		final ProjectEntity project = process.getProject();
-		projectService.saveProject(project);
+		projectRepository.save(project);
 	}
 
 	/**
@@ -908,12 +928,12 @@ public class ProcessService {
 			try {
 				doStartBackgroundProcess(externalProcess);
 				externalProcess.setScheduledTime(null);
-				projectService.saveProject(externalProcess.getProject());
+				projectRepository.save(externalProcess.getProject());
 				break;
 			} catch (final ApiException e) {
 				log.warn("Failed to start scheduled process!", e);
 				setProcessError(externalProcess, e.getMessage());
-				projectService.saveProject(externalProcess.getProject());
+				projectRepository.save(externalProcess.getProject());
 			}
 		}
 	}
@@ -1152,6 +1172,26 @@ public class ProcessService {
 
 	private String injectUrlParameter(final String url, final BackgroundProcessEntity externalProcess) {
 		return url.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getUuid().toString());
+	}
+
+	/**
+	 * Resets the given stage by deleting all results and resetting the status.
+	 *
+	 * @param executionStep Stage to delete.
+	 * @return The updated execution entity.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 */
+	private ExecutionStepEntity deleteStage(final ExecutionStepEntity executionStep)
+			throws BadStateException, InternalDataSetPersistenceException {
+		if (executionStep.getStatus() == ProcessStatus.RUNNING ||
+		    executionStep.getStatus() == ProcessStatus.SCHEDULED) {
+			throw new BadStateException(BadStateException.PROCESS_STARTED,
+			                            "Stage cannot be deleted because processes are running");
+		}
+
+		resetStage(executionStep);
+		return executionStep;
 	}
 
 	/**

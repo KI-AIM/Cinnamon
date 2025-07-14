@@ -1,10 +1,7 @@
 package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
-import de.kiaim.cinnamon.platform.exception.BadQueryException;
-import de.kiaim.cinnamon.platform.exception.BadStepNameException;
-import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
-import de.kiaim.cinnamon.platform.exception.InternalIOException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
@@ -99,6 +96,18 @@ public class ProjectController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 		projectService.updateCurrentStep(project, step);
+	}
+
+	@Operation(summary = "Resets the results of the process to the given target.",
+	           description = "Resets the results of the process to the given target.")
+	@DeleteMapping(value = "/reset")
+	public void resetProject(
+			@RequestParam final String target,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws BadStateException, BadStepNameException, InternalDataSetPersistenceException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		projectService.resetProject(project, target);
 	}
 
 	@Operation(summary = "Returns the configuration of the user's project.",

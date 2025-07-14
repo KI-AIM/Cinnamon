@@ -206,7 +206,6 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
         }
 
         for (const row of control.controls) {
-            console.log(row);
             const protection = (row as FormGroup).controls['attributeProtection'].value;
             if (AnonymizationAttributeConfigurationComponent.isGeneralization(protection)) {
                 return null;

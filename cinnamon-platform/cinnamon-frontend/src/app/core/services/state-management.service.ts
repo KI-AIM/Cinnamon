@@ -4,6 +4,7 @@ import { NavigationEnd, Router } from "@angular/router";
 import { ProcessStatus } from "@core/enums/process-status";
 import { ExecutionStep, PipelineInformation } from "@shared/model/execution-step";
 import { Status } from "@shared/model/status";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { StatusService } from "@shared/services/status.service";
 import { UserService } from "@shared/services/user.service";
 import { plainToInstance } from "class-transformer";
@@ -22,6 +23,7 @@ export class StateManagementService {
     private _pipelineSubscription: Subscription | null = null;
 
     constructor(
+        private readonly errorHandlingService: ErrorHandlingService,
         private readonly http: HttpClient,
         private readonly router: Router,
         private readonly userService: UserService,
@@ -48,6 +50,8 @@ export class StateManagementService {
             switchMap(() => this.fetchPipelineInformation()),
             tap(value => this.updatePipeline(value))
         );
+
+        this.initPipeline();
     }
 
     /**
@@ -185,6 +189,28 @@ export class StateManagementService {
      * @param unlock The step to unlock.
      */
     public unlockStep(unlock: Steps): void {
-        // TODO implement
+        let target;
+        if (unlock < Steps.VALIDATION) {
+            target = "original";
+        } else if (unlock < Steps.EXECUTION) {
+            target = "pipeline.execution";
+        } else if (unlock < Steps.EVALUATION) {
+            target = "pipeline.evaluation";
+        } else {
+            // Nothing to do
+            return;
+        }
+
+        const options = {
+            params: {target: target},
+        };
+
+        this.http.delete(environments.apiUrl + "/api/project/reset", options).pipe(
+            switchMap(() => this.statusService.updateNextStep(unlock)),
+        ).subscribe({
+            error: error => {
+                this.errorHandlingService.addError(error);
+            }
+        });
     }
 }

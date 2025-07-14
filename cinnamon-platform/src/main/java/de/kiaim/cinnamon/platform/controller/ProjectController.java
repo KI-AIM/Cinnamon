@@ -102,6 +102,18 @@ public class ProjectController {
 		projectService.updateCurrentStep(project, step);
 	}
 
+	@Operation(summary = "Resets the results of the process to the given target.",
+	           description = "Resets the results of the process to the given target.")
+	@DeleteMapping(value = "/reset")
+	public void resetProject(
+			@RequestParam final String target,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws BadStateException, BadStepNameException, InternalDataSetPersistenceException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		projectService.resetProject(project, target);
+	}
+
 	@Operation(summary = "Returns the configuration of the user's project.",
 	           description = "Returns the configuration of the user's project.")
 	@ApiResponses(value = {

@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.platform.exception.BadStateException;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.entity.*;
+import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.service.*;
 import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
@@ -50,7 +51,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
 		ExternalServerInstanceService externalServerInstanceService = mock(ExternalServerInstanceService.class);
-		ProjectService projectService = mock(ProjectService.class);
+		ProjectRepository projectRepository = mock(ProjectRepository.class);
 
 		var url = cinnamonConfiguration.getExternalServer()
 		                               .get("anonymization-server")
@@ -63,9 +64,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		                     .get("0")
 		                     .setUrl(url.substring(0, url.lastIndexOf(":") + 1) + mockBackEnd.getPort());
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
-		                                         backgroundProcessRepository, csvProcessor, databaseService,
-		                                         dataProcessorService, dataSetService, externalServerInstanceService,
-		                                         httpService, projectService, stepService);
+		                                         backgroundProcessRepository, projectRepository, csvProcessor,
+		                                         databaseService, dataProcessorService, dataSetService,
+		                                         externalServerInstanceService, httpService, stepService);
 
 		if (jsonMapper == null) {
 			jsonMapper = serializationConfig.jsonMapper();
@@ -109,8 +110,10 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		// Got different error messages on different machines, so only checking a part of it
 		var message = updatedExecutionStep.getProcess(0).getStatus();
 		assertNotNull(message, "Status message should not be null!");
-		assertTrue(message.startsWith("Failed to fetch the status!"), "Unexpected start of the error message: '" + message + "'");
-		assertEquals("localhost/127.0.0.1:" + mockBackEnd.getPort(), message.substring(message.lastIndexOf("localhost/")),
+		assertTrue(message.startsWith("Failed to fetch the status!"),
+		           "Unexpected start of the error message: '" + message + "'");
+		assertEquals("localhost/127.0.0.1:" + mockBackEnd.getPort(),
+		             message.substring(message.lastIndexOf("localhost/")),
 		             "Unexpected end of the error message: '" + message + "'");
 	}
 
@@ -124,7 +127,8 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		assertEquals(ProcessStatus.NOT_STARTED, executionStep.getStatus(), "Status should be NOT_STARTED");
 
 		ExternalProcessEntity externalProcess = executionStep.getProcess(0);
-		assertEquals(ProcessStatus.NOT_STARTED, externalProcess.getExternalProcessStatus(), "Status should be NOT_STARTED");
+		assertEquals(ProcessStatus.NOT_STARTED, externalProcess.getExternalProcessStatus(),
+		             "Status should be NOT_STARTED");
 		assertTrue(externalProcess.getResultFiles().isEmpty(), "Result files should be empty!");
 		assertNull(externalProcess.getStatus(), "Status should be null!");
 	}
@@ -134,7 +138,8 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 		final ProjectEntity project = createProject(stage, ProcessStatus.RUNNING);
 
-		BadStateException exception = assertThrows(BadStateException.class, () -> processService.deleteStage(project, stage));
+		BadStateException exception = assertThrows(BadStateException.class,
+		                                           () -> processService.deleteStage(project, stage));
 		assertEquals("PLATFORM_1_8_1", exception.getErrorCode(), "Unexpected error code!");
 	}
 

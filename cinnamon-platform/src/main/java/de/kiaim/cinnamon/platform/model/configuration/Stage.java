@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.model.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +12,7 @@ import java.util.List;
  * @author Daniel Preciado-Marquez
  */
 @Getter @Setter
+@EqualsAndHashCode(of = {"stageName"})
 public class Stage {
 	/**
 	 * List of jobs contained in this stage.

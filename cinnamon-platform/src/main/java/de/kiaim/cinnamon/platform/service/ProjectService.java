@@ -44,18 +44,20 @@ public class ProjectService {
 	private final UserRepository userRepository;
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
+	private final ProcessService processService;
 	private final StepService stepService;
 
 	public ProjectService(final ObjectMapper yamlMapper, final CinnamonConfiguration cinnamonConfiguration,
 	                      final ProjectRepository projectRepository, final UserRepository userRepository,
 	                      final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final StepService stepService) {
+	                      final ProcessService processService, final StepService stepService) {
 		this.yamlMapper = yamlMapper;
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.projectRepository = projectRepository;
 		this.userRepository = userRepository;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
+		this.processService = processService;
 		this.stepService = stepService;
 	}
 
@@ -189,6 +191,36 @@ public class ProjectService {
 			databaseService.delete(p);
 			projectRepository.deleteById(p.getId());
 		}
+	}
+
+	/**
+	 * Restes the data in the project to the given target.
+	 * The target can be 'original' to make the data configuration modifiable
+	 * or in the form 'pipeline.{stage}' to reset the data of a stage.
+	 *
+	 * @param project The project.
+	 * @param target  The target.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws BadStepNameException                If no configuration could be found.
+	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 */
+	@Transactional
+	public void resetProject(final ProjectEntity project, final String target)
+			throws BadStateException, BadStepNameException, InternalDataSetPersistenceException {
+		final String[] parts = target.split("\\.");
+
+		if (parts[0].equals("original")) {
+			processService.deletePipeline(project);
+
+			if (project.getOriginalData().getDataSet() != null) {
+				project.getOriginalData().getDataSet().setConfirmedData(false);
+			}
+		} else if (parts[1].equals("pipeline")) {
+			final Stage stage = stepService.getStageConfiguration(parts[1]);
+			processService.deleteStage(project, stage);
+		}
+
+		projectRepository.save(project);
 	}
 
 	@Transactional

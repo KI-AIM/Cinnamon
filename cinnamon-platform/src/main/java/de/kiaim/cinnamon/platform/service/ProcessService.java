@@ -3,7 +3,6 @@ package de.kiaim.cinnamon.platform.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
-import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
@@ -19,14 +18,14 @@ import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.platform.model.file.FileType;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
+import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -75,6 +74,7 @@ public class ProcessService {
 
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
+	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
 	private final HttpService httpService;
 	private final ProjectService projectService;
@@ -84,6 +84,7 @@ public class ProcessService {
 	                      @Value("${server.port}") final int port, final CinnamonConfiguration cinnamonConfiguration,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
 	                      final CsvProcessor csvProcessor, final DatabaseService databaseService,
+	                      final DataProcessorService dataProcessorService,
 	                      final DataSetService dataSetService, final HttpService httpService,
 	                      final ProjectService projectService, final StepService stepService
 	) {
@@ -95,6 +96,7 @@ public class ProcessService {
 		this.backgroundProcessRepository = backgroundProcessRepository;
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
+		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
 		this.httpService = httpService;
 		this.stepService = stepService;
@@ -188,23 +190,25 @@ public class ProcessService {
 	}
 
 	/**
-	 * Starts the execution of the given step in the given project.
+	 * Starts the execution of the given stage in the given project.
+	 * If the job is provided, starts the stage beginning from this job, otherwise start the stage beginning on the first job.
 	 *
 	 * @param project The project the process corresponds to.
 	 * @param stage   The step the process corresponds to.
 	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
 	 * @throws BadStateException                         If no original data set exist.
+	 * @throws BadStepNameException                      If the given job is not part of the given stage.
 	 * @throws InternalApplicationConfigurationException If the given step is not configured.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
 	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
-	 *                                                   If a finished process does not contain data set.
+	 *                                                   If a finished process does not contain a dataset.
 	 * @throws InternalIOException                       If the request body could not be created.
 	 * @throws InternalMissingHandlingException          If no implementation exists for a valid configuration.
-	 * @throws InternalRequestException                  If the request to start the process failed.
+	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 */
 	@Transactional
-	public ExecutionStepEntity start(final ProjectEntity project, final Stage stage)
-			throws BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
+	public ExecutionStepEntity start(final ProjectEntity project, final Stage stage, @Nullable final Job job)
+			throws BadDataSetIdException, BadStateException, BadStepNameException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
@@ -212,12 +216,22 @@ public class ProcessService {
 		}
 
 		executionStep.setStatus(ProcessStatus.RUNNING);
-		// Reset status from potential previous execution
-		executionStep.getProcesses().forEach(ExternalProcessEntity::reset);
 
 		// Start the first step
 		try {
-			startNext(executionStep);
+			if (job != null) {
+				startJob(executionStep, job);
+			} else {
+				// Reset status from potential previous execution
+				for (final ExternalProcessEntity externalProcessEntity : executionStep.getProcesses()) {
+					resetProcess(externalProcessEntity);
+				}
+
+				startNext(executionStep);
+			}
+		} catch (final Exception e) {
+			setProcessError(executionStep, e.getMessage());
+			throw e;
 		} finally {
 			projectService.saveProject(project);
 		}
@@ -553,15 +567,25 @@ public class ProcessService {
 	 */
 	private void startOrScheduleProcess(final ExternalProcessEntity externalProcess)
 			throws InternalDataSetPersistenceException, InternalRequestException, InternalIOException, InternalInvalidStateException, BadStateException, InternalMissingHandlingException {
-		final String configuration = externalProcess.getConfigurationString();
-
-		if (configuration == null) {
-			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_CONFIGURATION,
-			                                        "No configuration for step '" + externalProcess.getJob().getName() +
-			                                        "' found!");
+		if (externalProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
+		    externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING) {
+			return;
 		}
 
-		startOrScheduleBackendProcess(externalProcess);
+		try {
+			final String configuration = externalProcess.getConfigurationString();
+			if (configuration == null) {
+				throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_CONFIGURATION,
+				                                        "No configuration for step '" + externalProcess.getJob().getName() +
+				                                        "' found!");
+			}
+
+			startOrScheduleBackendProcess(externalProcess);
+
+		} catch (final Exception e) {
+			setProcessError(externalProcess, e.getMessage());
+			throw e;
+		}
 	}
 
 
@@ -612,6 +636,79 @@ public class ProcessService {
 		startScheduledProcess(ese);
 
 		backgroundProcessRepository.save(backgroundProcess);
+	}
+
+	/**
+	 * Starts the stage beginning from the given job.
+	 * Results of the following jobs are cleared.
+	 *
+	 * @param executionStep The stage.
+	 * @param job The job to start.
+	 * @throws BadStateException                   If no original data set exist.
+	 * @throws BadStepNameException                If the given job is not part of the given stage.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
+	 * @throws InternalInvalidStateException       If no ExternalProcessEntity exists for the given step.
+	 *                                             If a finished process does not contain data set.
+	 * @throws InternalIOException                 If the request could not be created.
+	 * @throws InternalMissingHandlingException    If no implementation exists for a valid configuration.
+	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
+	 *
+	 */
+	private void startJob(final ExecutionStepEntity executionStep, final Job job)
+			throws BadStateException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException, InternalInvalidStateException, InternalMissingHandlingException, InternalRequestException  {
+
+		ExternalProcessEntity process = null;
+		boolean foundNext = false;
+
+		for (final var processCandidate : executionStep.getProcesses()) {
+			if (process == null && processCandidate.getJob().getName().equals(job.getName())) {
+				process = processCandidate;
+			}
+
+			if (process == null) {
+				// Validate that preceding jobs are finished or skipped
+				if (processCandidate.getExternalProcessStatus() != ProcessStatus.FINISHED &&
+				    processCandidate.getExternalProcessStatus() != ProcessStatus.SKIPPED) {
+					throw new BadStateException(BadStateException.PRECEDING_JOB_NOT_FINISHED,
+					                            "The preceding job '" + processCandidate.getJob().getName() +
+					                            "' is not finished or skipped!");
+				}
+			} else {
+				// Reset status from potential previous execution for the following steps
+				resetProcess(processCandidate);
+
+				if (!foundNext) {
+					if (processCandidate.isSkip()) {
+						processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
+					} else {
+						// Check if a hold-out split is required and present.
+						final boolean requiresHoldOut = stepService.requiresHoldOutSplit(processCandidate.getJob());
+						final boolean hasHoldOut = processCandidate.getProject().getOriginalData().isHasHoldOut();
+
+						if (requiresHoldOut && !hasHoldOut) {
+							processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
+							processCandidate.setStatus("The process requires a hold out split, but no hold out split is present!");
+						} else {
+							foundNext = true;
+						}
+					}
+				}
+			}
+		}
+
+		if (process == null) {
+			throw new BadStepNameException(BadStepNameException.NOT_IN_STAGE,
+			                               "Job " + job.getName() + " is not contained in stage " +
+			                               executionStep.getStage().getStageName());
+		}
+
+		if (foundNext) {
+			executionStep.setCurrentProcessIndex(process.getJobIndex());
+			startOrScheduleProcess(process);
+		} else {
+			executionStep.setStatus(ProcessStatus.FINISHED);
+		}
+
 	}
 
 	/**
@@ -686,16 +783,7 @@ public class ProcessService {
 		executionStep.setCurrentProcessIndex(nextJob);
 
 		if (nextJob != null) {
-			if (nextProcess.getExternalProcessStatus() != ProcessStatus.SCHEDULED &&
-			    nextProcess.getExternalProcessStatus() != ProcessStatus.RUNNING) {
-
-				try {
-					startOrScheduleProcess(nextProcess);
-				} catch (final Exception e) {
-					setProcessError(nextProcess, e.getMessage());
-					throw e;
-				}
-			}
+			startOrScheduleProcess(nextProcess);
 		} else {
 			executionStep.setStatus(ProcessStatus.FINISHED);
 		}
@@ -960,22 +1048,11 @@ public class ProcessService {
 
 	public void addDataSetFile(final MultipartBodyBuilder bodyBuilder,
 	                           final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
-			throws InternalIOException {
-
+			throws InternalIOException, InternalMissingHandlingException {
 		final var outputStream = new ByteArrayOutputStream();
-		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
-		final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
-				dataSet.getDataConfiguration().getColumnNames().toArray(new String[0])).build();
 
-		try {
-			final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
-			for (final DataRow dataRow : dataSet.getDataRows()) {
-				csvPrinter.printRecord(dataRow.getRow());
-			}
-			csvPrinter.flush();
-		} catch (IOException e) {
-			throw new InternalIOException(InternalIOException.CSV_CREATION, "Failed to create the CVS file!", e);
-		}
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(FileType.CSV);
+		dataProcessor.write(outputStream, dataSet);
 
 		bodyBuilder.part(stepInputConfiguration.getPartName(), new ByteArrayResource(outputStream.toByteArray()) {
 			@Override
@@ -1027,6 +1104,15 @@ public class ProcessService {
 
 	private String injectUrlParameter(final String url, final BackgroundProcessEntity externalProcess) {
 		return url.replace(PROCESS_ID_PLACEHOLDER, externalProcess.getUuid().toString());
+	}
+
+	private void resetProcess(final ExternalProcessEntity externalProcess) throws InternalDataSetPersistenceException {
+		externalProcess.reset();
+
+		if (externalProcess instanceof DataProcessingEntity dataProcessing) {
+			databaseService.deleteDataSet(dataProcessing.getDataSet());
+			dataProcessing.setDataSet(null);
+		}
 	}
 
 }

@@ -728,6 +728,40 @@ public class DatabaseService {
 	}
 
 	/**
+	 * Deletes the data, transformation errors and statistics for the given dataset.
+	 *
+	 * @param dataSet The dataset to delete.
+	 * @throws InternalDataSetPersistenceException If the table could not be deleted.
+	 */
+	@Transactional
+	public void deleteDataSet(@Nullable final DataSetEntity dataSet) throws InternalDataSetPersistenceException {
+		if (dataSet == null) {
+			return;
+		}
+
+		// Delete the table and its data
+		if (existsTable(dataSet.getId())) {
+			try {
+				executeStatement("DROP TABLE IF EXISTS " + getTableName(dataSet.getId()) + ";");
+			} catch (SQLException e) {
+				LOGGER.error("The DataSet could not be deleted!", e);
+				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_DELETE,
+				                                              "The DataSet could not be deleted!", e);
+			}
+		}
+
+		dataSet.getDataTransformationErrors().clear();
+		dataSet.setStoredData(false);
+		dataSet.setConfirmedData(false);
+		dataSet.getStatisticsProcess().reset();
+
+		final OriginalDataEntity original = dataSet.getOriginalData();
+		if (original != null) {
+			original.setHasHoldOut(false);
+		}
+	}
+
+	/**
 	 * Counts the number of rows in the dataset with the given ID.
 	 *
 	 * @param dataSetId The ID of the dataset.
@@ -1117,33 +1151,6 @@ public class DatabaseService {
 		}
 
 		return targetConfiguration;
-	}
-
-	private void deleteDataSet(@Nullable final DataSetEntity dataSet) throws InternalDataSetPersistenceException {
-		if (dataSet == null) {
-			return;
-		}
-
-		// Delete the table and its data
-		if (existsTable(dataSet.getId())) {
-			try {
-				executeStatement("DROP TABLE IF EXISTS " + getTableName(dataSet.getId()) + ";");
-			} catch (SQLException e) {
-				LOGGER.error("The DataSet could not be deleted!", e);
-				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_DELETE,
-				                                              "The DataSet could not be deleted!", e);
-			}
-		}
-
-		dataSet.getDataTransformationErrors().clear();
-		dataSet.setStoredData(false);
-		dataSet.setConfirmedData(false);
-		dataSet.getStatisticsProcess().reset();
-
-		final OriginalDataEntity original = dataSet.getOriginalData();
-		if (original != null) {
-			original.setHasHoldOut(false);
-		}
 	}
 
 	/**

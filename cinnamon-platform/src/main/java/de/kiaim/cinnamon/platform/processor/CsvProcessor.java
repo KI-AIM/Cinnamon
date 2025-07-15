@@ -3,18 +3,23 @@ package de.kiaim.cinnamon.platform.processor;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.FileType;
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.zip.ZipEntry;
 
 @Service
 public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
@@ -83,8 +88,9 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public DataConfiguration estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration,
-	                                                   final DatatypeEstimationAlgorithm algorithm) {
+	public DataConfigurationEstimation estimateDataConfiguration(InputStream data,
+	                                                             FileConfigurationEntity fileConfiguration,
+	                                                             final DatatypeEstimationAlgorithm algorithm) {
 		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
@@ -98,24 +104,56 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 
 		final Iterator<CSVRecord> recordIterator = records.iterator();
 		if (!recordIterator.hasNext()) {
-			return new DataConfiguration();
+			return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
 		}
 
-		int numberColumns = 0;
+		final int numberColumns;
 		final List<String> columnNames;
+		final List<List<String>> samples;
+
 		if (csvFileConfiguration.getHasHeader()) {
-			columnNames = normalizeColumnNames(records.iterator().next().values());
+			columnNames = normalizeColumnNames(recordIterator.next().values());
 			numberColumns = columnNames.size();
+
+			samples = getAttributeSamples(recordIterator, numberColumns);
 		} else {
-			for (final CSVRecord record : records) {
-				numberColumns = record.values().length;
-				break;
-			}
+			CSVRecord firstRecord = recordIterator.next();
+			List<String> firstRow = Arrays.asList(firstRecord.values());
+			numberColumns = firstRow.size();
 			columnNames = Collections.nCopies(numberColumns, "");
+
+			samples = getAttributeSamples(recordIterator, numberColumns);
+			for (int i = 0; i < numberColumns; i++) {
+				List<String> attributeSamples = samples.get(i);
+				if (attributeSamples.size() < NUMBER_OF_SAMPLES) {
+					attributeSamples.add(firstRow.get(i));
+				} else {
+					attributeSamples.set(NUMBER_OF_SAMPLES - 1, firstRow.get(i));
+				}
+			}
 		}
 
-		List<List<String>> samples = getAttributeSamples(recordIterator, numberColumns);
 		return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void write(final OutputStream outputStream, final DataSet dataset) throws InternalIOException {
+		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+		final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
+				dataset.getDataConfiguration().getColumnNames().toArray(new String[0])).build();
+
+		try {
+			final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
+			for (final DataRow dataRow : dataset.getDataRows()) {
+				csvPrinter.printRecord(dataRow.getRow());
+			}
+			csvPrinter.flush();
+		} catch (IOException e) {
+			throw new InternalIOException(InternalIOException.CSV_CREATION, "Failed to create the CVS file!", e);
+		}
 	}
 
 	/**

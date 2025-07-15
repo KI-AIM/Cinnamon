@@ -26,7 +26,6 @@ import { ConfigurationPageComponent } from "./components/configuration-page/conf
 import { ConfigurationGroupComponent } from './components/configuration-group/configuration-group.component';
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatExpansionModule } from "@angular/material/expansion";
-import { ConfigurationManagementComponent } from "./components/configuration-management/configuration-management.component";
 import {DataTableComponent} from "./components/data-table/data-table.component";
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
@@ -55,6 +54,7 @@ import { WorkstepComponent } from "./components/workstep/workstep.component";
 import { WorkstepTitleComponent } from "./components/workstep-title/workstep-title.component";
 import { FileUploadComponent } from "./components/file-upload/file-upload.component";
 import { WorkstepItemComponent } from './components/workstep-item/workstep-item.component';
+import { ProjectExportComponent } from './components/project-export/project-export.component';
 
 @NgModule({
     declarations: [
@@ -71,7 +71,6 @@ import { WorkstepItemComponent } from './components/workstep-item/workstep-item.
         ConfigurationInputAttributeListComponent,
         ConfigurationInputComponent,
         ConfigurationInputInfoComponent,
-        ConfigurationManagementComponent,
         ConfigurationPageComponent,
         ConfigurationSelectionComponent,
         DataInspectionComponent,
@@ -98,6 +97,7 @@ import { WorkstepItemComponent } from './components/workstep-item/workstep-item.
         MetricFilterPipe,
         MetricSorterPipe,
         StatisticsFilterPipe,
+        ProjectExportComponent,
     ],
     imports: [
         CommonModule,
@@ -129,7 +129,6 @@ import { WorkstepItemComponent } from './components/workstep-item/workstep-item.
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,
-        ConfigurationManagementComponent,
         ConfigurationPageComponent,
         DataInspectionComponent,
         DataInspectionAttributeComponent,
@@ -149,6 +148,7 @@ import { WorkstepItemComponent } from './components/workstep-item/workstep-item.
         NoSpaceValidatorDirective,
         // Pipes
         InstanceOfPipe,
+        ProjectExportComponent,
     ],
 })
 export class SharedModule {}

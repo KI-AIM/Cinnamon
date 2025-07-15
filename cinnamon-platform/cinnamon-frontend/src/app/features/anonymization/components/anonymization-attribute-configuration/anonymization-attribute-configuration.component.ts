@@ -7,7 +7,7 @@ import { AnonymizationAttributeConfigurationService } from '../../services/anony
 import { MatSelect } from '@angular/material/select';
 import { AnonymizationAttributeRowConfiguration, AttributeProtection, } from 'src/app/shared/model/anonymization-attribute-config';
 import { Subscription } from "rxjs";
-import { FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 
 @Component({
     selector: 'app-anonymization-attribute-configuration',
@@ -200,13 +200,16 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
      * @return Validation errors if no generalization protection is available, null otherwise.
      * @private
      */
-    private static hasGeneralization(control: FormArray): ValidationErrors | null {
+    private static hasGeneralization(control: AbstractControl): ValidationErrors | null {
+        if (!(control instanceof FormArray)) {
+            return null;
+        }
+
         if (control.controls.length === 0) {
             return null;
         }
 
         for (const row of control.controls) {
-            console.log(row);
             const protection = (row as FormGroup).controls['attributeProtection'].value;
             if (AnonymizationAttributeConfigurationComponent.isGeneralization(protection)) {
                 return null;

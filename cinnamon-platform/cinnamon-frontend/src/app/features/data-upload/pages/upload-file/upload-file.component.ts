@@ -3,8 +3,7 @@ import { AppConfig, AppConfigService } from "@shared/services/app-config.service
 import { Steps } from "src/app/core/enums/steps";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { DataService } from "src/app/shared/services/data.service";
-import { plainToClass } from "class-transformer";
-import { DataConfiguration } from "@shared/model/data-configuration";
+import { DataConfigurationEstimation } from "@shared/model/data-configuration";
 import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
 import { Router } from "@angular/router";
 import { FileService } from "../../services/file.service";
@@ -249,10 +248,14 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         });
     }
 
-    private handleUpload(data: Object) {
-        this.dataConfigurationService.setDataConfiguration(
-            plainToClass(DataConfiguration, data)
-        );
+    /**
+     * Sets the result of the estimation in the service and navigates to the data configuration.
+     * @param estimation The estimation result.
+     * @private
+     */
+    private handleUpload(estimation: DataConfigurationEstimation): void {
+        this.dataConfigurationService.setDataConfiguration(estimation.dataConfiguration);
+        this.dataConfigurationService.confidence = estimation.confidences
         this.navigateToNextStep();
     }
 

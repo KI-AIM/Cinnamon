@@ -9,11 +9,17 @@ import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.PlatformApplication;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.file.FileType;
 import de.kiaim.cinnamon.platform.processor.XlsxProcessor;
+import de.kiaim.cinnamon.test.util.DataSetTestHelper;
 import de.kiaim.cinnamon.test.util.FileConfigurationTestHelper;
+import org.dhatim.fastexcel.reader.Cell;
+import org.dhatim.fastexcel.reader.ReadableWorkbook;
+import org.dhatim.fastexcel.reader.Row;
+import org.dhatim.fastexcel.reader.Sheet;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +27,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.*;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -133,8 +137,9 @@ public class XLSXProcessingTests {
 
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfigurationEstimation estimation = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                         DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -142,6 +147,9 @@ public class XLSXProcessingTests {
         List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
 
         assertEquals(expectedDatatypes, actualDatatypes);
+
+        float[] expectedConfidences = {0.8f, 1.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
     @Test
@@ -152,8 +160,9 @@ public class XLSXProcessingTests {
 
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                        DatatypeEstimationAlgorithm.MOST_GENERAL);
+        DataConfigurationEstimation estimation = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                         DatatypeEstimationAlgorithm.MOST_GENERAL);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -162,6 +171,10 @@ public class XLSXProcessingTests {
         List<DataType> actualDatatypes = actualConfiguration.getDataTypes();
 
         assertEquals(expectedDatatypes, actualDatatypes);
+
+
+        float[] expectedConfidences = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
     @Test
@@ -172,8 +185,9 @@ public class XLSXProcessingTests {
 
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, true);
 
-        DataConfiguration actualConfiguration = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                        DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfigurationEstimation estimation = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+                                                                                         DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+        DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
 
@@ -182,9 +196,59 @@ public class XLSXProcessingTests {
 
         assertEquals(expectedDatatypes, actualDatatypes);
         assertEquals(expectedConfiguration, actualConfiguration);
+
+        float[] expectedConfidences = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        assertArrayEquals(expectedConfidences, estimation.getConfidences());
     }
 
+    @Test
+    void testWrite() {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        DataSet dataset = DataSetTestHelper.generateDataSet();
 
+        assertDoesNotThrow(() -> xlsxProcessor.write(stream, dataset));
+
+        byte[] data = stream.toByteArray();
+
+        try(InputStream is = new ByteArrayInputStream(data); ReadableWorkbook wb = new ReadableWorkbook(is)) {
+            Sheet sheet = wb.getFirstSheet();
+            List<Row> rows = sheet.read();
+
+            assertEquals(dataset.getDataRows().size() + 1, rows.size(), "Number of rows does not match!");
+
+            Row headerRow = rows.get(0);
+            for (int columnIndex = 0; columnIndex < dataset.getDataConfiguration().getColumnNames().size(); columnIndex++) {
+                assertEquals(dataset.getDataConfiguration().getColumnNames().get(columnIndex), headerRow.getCell(columnIndex).asString(), "Column names do not match!");
+            }
+
+            for (int rowIndex = 0; rowIndex < dataset.getDataRows().size(); rowIndex++) {
+                DataRow dataRow = dataset.getDataRows().get(rowIndex);
+                Row row = rows.get(rowIndex + 1);
+
+                for (int columnIndex = 0; columnIndex < dataRow.getData().size(); columnIndex++) {
+                    Data expectedValue = dataRow.getData().get(columnIndex);
+                    Cell actualValue = row.getCell(columnIndex);
+
+                    if (expectedValue instanceof BooleanData booleanData) {
+                        assertEquals(booleanData.getValue(), actualValue.asBoolean(), "Values do not match!");
+                    } else if (expectedValue instanceof DateData dateData) {
+                        assertEquals(dateData.getValue(), actualValue.asDate().toLocalDate(), "Values do not match!");
+                    } else if (expectedValue instanceof DateTimeData dateTimeData) {
+                        assertEquals(dateTimeData.getValue().minus(456, ChronoUnit.MICROS), actualValue.asDate(), "Values do not match!");
+                    } else if (expectedValue instanceof DecimalData decimalData) {
+                        assertEquals(decimalData.getValue(), actualValue.asNumber().floatValue(), "Values do not match!");
+                    } else if (expectedValue instanceof IntegerData integerData) {
+                        assertEquals(integerData.getValue(), actualValue.asNumber().intValue(), "Values do not match!");
+                    } else if (expectedValue instanceof StringData stringData) {
+                        assertEquals(stringData.getValue(), actualValue.asString(), "Values do not match!");
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
 
     private static DataConfiguration getDataConfiguration() {
         DataConfiguration config = new DataConfiguration();

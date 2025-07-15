@@ -15,4 +15,8 @@ public enum DataSetSourceSelector {
 	 * Needs further specification of which job.
 	 */
 	JOB,
+	/**
+	 * Selects the protected dataset resulting from the last job processing the dataset.
+	 */
+	PROTECTED,
 }

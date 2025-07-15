@@ -26,7 +26,7 @@ export class DataSetInfoService {
 
     /**
      * Returns the information to the dataset of the given step.
-     * @param step The step of the data set.
+     * @param step The step of the data set or 'protected'.
      */
     public getDataSetInfo(step: string): Observable<DataSetInfo> {
         const dataSetInfo = this.cache[step]?.dateSetInfo;
@@ -40,7 +40,11 @@ export class DataSetInfoService {
         }
 
         const params = {
-            selector: step.toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
+            selector: step.toLowerCase() === "validation"
+                ? "ORIGINAL"
+                : step.toLowerCase() === "protected"
+                    ? "protected"
+                    : "JOB",
             jobName: step.toLowerCase(),
         }
         const dataSetInfo$ = this.http.get<DataSetInfo>(environments.apiUrl + "/api/data/info", {params: params}).pipe(

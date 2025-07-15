@@ -93,9 +93,15 @@
         <p>
             <b>File Size Limit:</b>
             <br/>
-            The maximum file size is {{ formatMaxFileSize(appConfig.maxFileSize) }}.
-            Most algorithms by this application take a long time to process.
-            To ensure that processing times are somewhat reasonable, we have to limit the dataset size.
+            <ng-container *ngIf="appConfig.maxFileSize >= 0 else noFileSizeLimit">
+                The maximum file size is {{ formatMaxFileSize(appConfig.maxFileSize) }}.
+                Most algorithms by this application take a long time to process.
+                To ensure that processing times are somewhat reasonable, we have to limit the dataset size.
+            </ng-container>
+            <ng-template #noFileSizeLimit>
+                There is no limit for the file size.
+                But be aware that processing times can be long for large datasets.
+            </ng-template>
             <br/><br/>
             <b>Upload Progress:</b>
             <br/>

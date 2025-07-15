@@ -387,9 +387,11 @@ public class DatabaseService {
 	                           final DataSetSource dataSetSource)
 			throws BadDataSetIdException, InternalDataSetPersistenceException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
+		final DataConfigurationInfo dataConfigurationInfo = getDataConfigurationInfo(
+				dataSetEntity.getDataConfiguration());
 
 		if (!dataSetEntity.isStoredData()) {
-			return new DataSetInfo(0, 0, false, 0.0f, 0, 0);
+			return new DataSetInfo(0, 0, false, 0.0f, 0, 0, dataConfigurationInfo);
 		}
 
 		final int rows = countEntries(dataSetEntity.getId());
@@ -413,7 +415,7 @@ public class DatabaseService {
 		}
 
 		return new DataSetInfo(rows, invalidRows, hasHoldOutSplit, holdOutPercentage, numberHoldOutRows,
-		                       numberInvalidHoldOutRows);
+		                       numberInvalidHoldOutRows, dataConfigurationInfo);
 	}
 
 	/**
@@ -1232,6 +1234,31 @@ public class DatabaseService {
 		} else {
 			return query + " WHERE ";
 		}
+	}
+
+	/**
+	 * Returns general information about the given data configuration.
+	 *
+	 * @param dataConfiguration The data configuration.
+	 * @return The information.
+	 */
+	private DataConfigurationInfo getDataConfigurationInfo(final DataConfiguration dataConfiguration) {
+		int numberColumns = 0;
+		int numberNumericColumns = 0;
+		int numberCategoricalColumns = 0;
+		int numberDateColumns = 0;
+
+		for (final ColumnConfiguration columnConfiguration : dataConfiguration.getConfigurations()) {
+			numberColumns++;
+
+			switch (columnConfiguration.getScale()) {
+				case DATE -> numberDateColumns++;
+				case NOMINAL -> numberCategoricalColumns++;
+				case ORDINAL, INTERVAL, RATIO -> numberNumericColumns++;
+			}
+		}
+
+		return new DataConfigurationInfo(numberColumns, numberNumericColumns, numberCategoricalColumns, numberDateColumns);
 	}
 
 }

@@ -29,11 +29,18 @@ export class ReportComponent implements OnInit {
     private readonly PAGE_HEIGHT = 1122;
 
     /**
+     * The name of the project.
+     * @protected
+     */
+    protected projectName: string;
+
+    /**
      * Date of the report creation.
      * @protected
      */
     protected reportDate: string;
 
+    protected appConfig$: Observable<AppConfig>;
     protected metricConfig$: Observable<ProjectSettings>;
     protected statistics$: Observable<StatisticsResponse | null>;
 
@@ -56,12 +63,14 @@ export class ReportComponent implements OnInit {
         private readonly userService: UserService,
     ) {
         titleService.setPageTitle("Report");
+        this.projectName = this.userService.getUser().email;
         this.reportDate = new Date().toLocaleString();
     }
 
     ngOnInit() {
         this.metricConfig$ = this.projectConfigService.projectSettings$;
         this.statistics$ = this.statisticsService.fetchResult();
+        this.appConfig$ = this.appConfigService.appConfig$;
     }
 
     /**
@@ -156,7 +165,7 @@ export class ReportComponent implements OnInit {
     private preprocessStyle(style: string, appConfig: AppConfig): string {
         style = style.replaceAll("{{version}}", appConfig.version);
         style = style.replaceAll("{{now}}", this.reportDate);
-        style = style.replaceAll("{{project}}", this.userService.getUser().email);
+        style = style.replaceAll("{{project}}", this.projectName);
         return style;
     }
 

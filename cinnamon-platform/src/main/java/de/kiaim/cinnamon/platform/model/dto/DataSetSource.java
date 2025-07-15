@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.lang.Nullable;
 
 /**
  * Identifies the {@link DataSetEntity} in requests concerning data sets.
@@ -24,6 +25,10 @@ public class DataSetSource {
 		return new DataSetSource(DataSetSourceSelector.JOB, jobName);
 	}
 
+	public static DataSetSource Protected() {
+		return new DataSetSource(DataSetSourceSelector.PROTECTED, null);
+	}
+
 	/**
 	 * Selects which type of source is used.
 	 */
@@ -33,5 +38,6 @@ public class DataSetSource {
 	/**
 	 * Specifies which job if {@link #selector} is {@link DataSetSourceSelector#JOB}.
 	 */
+	@Nullable
 	private String jobName;
 }

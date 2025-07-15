@@ -25,16 +25,14 @@
 
     </div>
 
-    <ng-content *ngIf="{mc: metricConfig$ | async, statistics: statistics$ | async} as reportData">
-        <ng-container *ngIf="reportData.mc && reportData.statistics">
+    <ng-content *ngIf="{appConfig: appConfig$ | async, mc: metricConfig$ | async, statistics: statistics$ | async} as reportData">
+        <ng-container *ngIf="reportData.appConfig && reportData.mc && reportData.statistics">
 
 
             <div class="box" id="report" style="width: fit-content; margin: 0 auto; padding: 0.5in;">
 
                 <!-- This div is printed -->
                 <div class="report-root">
-
-                    <a href="report#a_chart" title="A Chart" class="report-anchor-link">Go to chart</a>
 
                     <div class="report-header">
                         <h1>Privacy Report</h1>
@@ -43,48 +41,61 @@
                     </div>
 
                     <div class="report-section">
-                        <h2 class="report-header2">About this Report</h2>
 
                         <div class="report-intro-box">
-                            <p>This privacy report serves as a crucial safeguard in the era of data-driven decision
-                                making. This report provides a comprehensive assessment of how well synthetic data
-                                maintains the analytical value of the original data while mitigating privacy
-                                risks.</p>
+                            <h2>About this Report</h2>
 
-                            <h3 class="report-header3">Who can use this report:</h3>
-                            <div class="report-audience-block">
-                                <div class="report-audience-item">
-                                    <strong>Data Privacy Officers</strong>
-                                    <p>To verify compliance with privacy regulations and validate anonymization
-                                        effectiveness before data sharing or publication.</p>
-                                </div>
-                                <div class="report-audience-item">
-                                    <strong>Data Scientists & Analysts</strong>
-                                    <p>To understand utility limitations and statistical properties of the synthetic
-                                        data for accurate model development and analysis.</p>
-                                </div>
-                                <div class="report-audience-item">
-                                    <strong>Medical Staff</strong>
-                                    <p>To make informed decisions about data usage, sharing, and monetization while
-                                        managing privacy risks and compliance.</p>
-                                </div>
+                            <div class="report-text-block">
+                                This report was created with Cinnamon Version {{ reportData.appConfig.version }} and is
+                                intended to provide a comprehensive assessment of how well the protected data maintains
+                                the analytical value of the original data while mitigating privacy risks.
                             </div>
 
-                            <h3 class="report-header3">This report enables to:</h3>
+                            <div class="report-intro-box-list-header">This report provides:</div>
+
                             <ul>
-                                <li><strong>Verify Privacy Protection:</strong> Evaluate if data meets regulatory
-                                    requirements and organizational privacy standards before use.
+                                <li class="report-intro-box-list-item">
+                                    <span class="report-intro-box-list-item-header">Overview of the data protection measures: </span>
+                                    <span>This report provides information about the configuration and methods used for anonymization and synthetization for the original dataset.</span>
                                 </li>
-                                <li><strong>Assess Data Quality:</strong> Determine if the anonymized data maintains
-                                    sufficient utility for intended analytics and AI use cases.
+                                <li class="report-intro-box-list-item">
+                                    <span class="report-intro-box-list-item-header">Data Resemblance: </span>
+                                    <span>
+                                        This report contains an analysis of the quality of the data, by using statistical metrics, describing and comparing the origin dataset and the protected dataset.
+                                        A high resemblance indicates that the protected dataset shares the same statistical properties as the original dataset.
+                                    </span>
                                 </li>
-                                <li><strong>Make Informed Trade-offs:</strong> Balance privacy enhancement methods
-                                    against analytical utility needs.
+                                <li class="report-intro-box-list-item">
+                                    <span class="report-intro-box-list-item-header">Data Utility: </span>
+                                    <span>
+                                        This report provides an analysis of the machine learning utility for the original and the protected data as part of the data quality assessment.
+                                        Comparing the usefulness of the original data against the protected data by utilising downstream machine learning tasks.
+                                    </span>
                                 </li>
-                                <li><strong>Document Due Diligence:</strong> Maintain evidence of privacy
-                                    assessments for compliance and governance purposes.
+                                <li class="report-intro-box-list-item">
+                                    <span class="report-intro-box-list-item-header">Privacy Risks:</span>
+                                    <span>
+                                        This report provides insights on potential privacy risks associated with the original, and the protected data.
+                                        Residual risks might still be present, so the residual privacy risks have to be considered carefully.
+                                    </span>
                                 </li>
                             </ul>
+                        </div>
+
+                        <div class="report-intro-box">
+                            <h2>Disclaimer</h2>
+                            <div>
+                                The analysis and the conclusions contained herein reflect the assessment of the privacy
+                                risks and utility of the dataset {{ projectName }} as analyzed with the Cinnamon tool on
+                                {{ reportDate }}. Although this report aims to provide an informed assessment of privacy
+                                implications, it does not constitute a guarantee against any form of data privacy breach
+                                or residual risks. The decision regarding the use of the data and the associated risks
+                                ultimately lies with the user or the organization. It is recommended to use this report
+                                in the context of further internal controls and evaluation of data quality. The creator
+                                of this report and the developers of Cinnamon assume no liability for direct or indirect
+                                damages arising from the use or interpretation of the information contained in this
+                                report.
+                            </div>
                         </div>
                     </div>
 

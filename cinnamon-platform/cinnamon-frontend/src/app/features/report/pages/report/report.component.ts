@@ -28,6 +28,12 @@ import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.
 export class ReportComponent implements OnInit {
     private readonly PAGE_HEIGHT = 1122;
 
+    /**
+     * Date of the report creation.
+     * @protected
+     */
+    protected reportDate: string;
+
     protected metricConfig$: Observable<ProjectSettings>;
     protected statistics$: Observable<StatisticsResponse | null>;
 
@@ -50,6 +56,7 @@ export class ReportComponent implements OnInit {
         private readonly userService: UserService,
     ) {
         titleService.setPageTitle("Report");
+        this.reportDate = new Date().toLocaleString();
     }
 
     ngOnInit() {
@@ -140,9 +147,15 @@ export class ReportComponent implements OnInit {
         }, 0);
     }
 
+    /**
+     * Replaces variables in the CSS file.
+     * @param style The content of the style sheet.
+     * @param appConfig The app config.
+     * @private
+     */
     private preprocessStyle(style: string, appConfig: AppConfig): string {
         style = style.replaceAll("{{version}}", appConfig.version);
-        style = style.replaceAll("{{now}}", new Date().toLocaleString());
+        style = style.replaceAll("{{now}}", this.reportDate);
         style = style.replaceAll("{{project}}", this.userService.getUser().email);
         return style;
     }

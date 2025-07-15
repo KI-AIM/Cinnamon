@@ -1034,7 +1034,12 @@ public class ProcessService {
 			throws InternalIOException {
 		try {
 			final String dataSetString = JsonMapper.jsonMapper().writeValueAsString(dataSet);
-			bodyBuilder.part(stepInputConfiguration.getPartName(), dataSetString, MediaType.APPLICATION_JSON);
+			bodyBuilder.part(stepInputConfiguration.getPartName(), new ByteArrayResource(dataSetString.getBytes()) {
+				@Override
+				public String getFilename() {
+					return stepInputConfiguration.getFileName();
+				}
+			});
 		} catch (final JsonProcessingException e) {
 			throw new InternalIOException(InternalIOException.DATA_SET_SERIALIZATION,
 			                              "Could not convert dataset to json!", e);

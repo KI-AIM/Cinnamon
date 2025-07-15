@@ -155,7 +155,7 @@ export class FileUploadComponent implements OnInit {
                 take(1),
             ).subscribe({
                 next: value => {
-                    if (file.size > value.maxFileSize) {
+                    if (value.maxFileSize >= 0 && file.size > value.maxFileSize) {
                         this.errors.large = true;
                     } else {
                         this.input.emit(files);

@@ -46,4 +46,9 @@ public class DataSetInfo {
 	 */
 	@Schema(description = "The number of invalid rows inside the hold-out split.", example = "8")
 	private final int numberInvalidHoldOutRows;
+
+	/**
+	 * Information about the corresponding data configuration.
+	 */
+	private final DataConfigurationInfo dataConfigurationInfo;
 }

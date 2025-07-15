@@ -30,6 +30,8 @@ public class BadStateException extends BadRequestException {
 	 */
 	public static final String CONFIGURATION = "5";
 
+	public static final String PRECEDING_JOB_NOT_FINISHED = "6";
+
 	public BadStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

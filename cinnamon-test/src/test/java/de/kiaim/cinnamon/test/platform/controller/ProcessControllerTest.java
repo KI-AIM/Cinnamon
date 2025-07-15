@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
+import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.configuration.StepOutputConfiguration;
 import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
@@ -41,10 +42,10 @@ import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.util.TestSocketUtils;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +56,7 @@ import java.util.zip.ZipInputStream;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WithUserDetails("test_user")
@@ -98,7 +98,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void getProcessNotStarted() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/execution"))
+		mockMvc.perform(get("/api/process/execution"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.NOT_STARTED.name()))
 		       .andExpect(jsonPath("currentProcessIndex").value(nullValue()));
@@ -262,7 +262,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .code(200)
 				                    .body("status")
 				                    .build());
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/execution"))
+		mockMvc.perform(get("/api/process/execution"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
 		       .andExpect(jsonPath("currentProcessIndex").value(0))
@@ -298,7 +298,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
-		                                                                 "info".getBytes());
+		                                                                 "anon-info".getBytes());
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 				                    .code(200)
@@ -323,7 +323,7 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals(firstStage.getJobList().subList(0, 1), dataSetEntity.getProcessed(), "Unexpected previous processes!");
 		assertTrue(process.getResultFiles().containsKey("additional.txt"),
 		           "Additional result has not been set!");
-		assertEquals("info", process.getResultFiles().get("additional.txt").getLobString(),
+		assertEquals("anon-info", process.getResultFiles().get("additional.txt").getLobString(),
 		             "Additional result has not been set correctly!");
 
 	}
@@ -335,7 +335,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		enqueueSynthStatus();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/execution"))
+		mockMvc.perform(get("/api/process/execution"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
 		       .andExpect(jsonPath("currentProcessIndex").value(1))
@@ -365,7 +365,7 @@ public class ProcessControllerTest extends ControllerTest {
 		var resultData = ResourceHelper.loadCsvFile("synthetic_data");
 		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
-		                                                                 "info".getBytes());
+		                                                                 "synth-info".getBytes());
 		mockMvc.perform(multipart("/api/process/" + id + "/callback")
 				                .file(resultData)
 				                .file(resultAdditional))
@@ -377,7 +377,7 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	private void getStatus3() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/process/execution"))
+		mockMvc.perform(get("/api/process/execution"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.FINISHED.name()))
 		       .andExpect(jsonPath("currentProcessIndex").value(nullValue()))
@@ -395,37 +395,44 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	private void getResultFile() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/resultFile")
+		mockMvc.perform(get("/api/project/resultFile")
 		                                      .param("executionStepName", "execution")
 		                                      .param("processStepName", "anonymization")
 		                                      .param("name", "additional.txt"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string("info"));
+		       .andExpect(content().string("anon-info"));
 	}
 
 	private void getResultZip() throws Exception {
-		var result = mockMvc.perform(MockMvcRequestBuilders.get("/api/project/zip")
-		                                                   .param("executionStepName", "EVALUATION")
-		                                                   .param("processStepName", "anonymization")
-		                                                   .param("name", "additional.txt"))
+		var result = mockMvc.perform(get("/api/project/zip")
+				                             .param("bundleConfigurations", "false")
+				                             .param("resources", "configuration.anonymization")
+				                             .param("resources", "configuration.configurations")
+				                             .param("resources", "configuration.synthetization_configuration")
+				                             .param("resources", "original.dataset")
+				                             .param("resources", "pipeline.execution.anonymization.dataset")
+				                             .param("resources", "pipeline.execution.anonymization.other")
+				                             .param("resources", "pipeline.execution.synthetization.dataset")
+				                             .param("resources", "pipeline.execution.synthetization.other")
+		                    )
 		                    .andExpect(status().isOk())
 		                    .andExpect(header().exists("Content-Disposition"))
-		                    .andExpect(header().string("Content-Disposition", "attachment; filename=process.zip"))
+		                    .andExpect(header().string("Content-Disposition", "attachment; filename=\"test_user_Cinnamon-export_" + LocalDate.now() + ".zip\""))
 		                    .andExpect(content().contentType("application/zip"))
 		                    .andReturn();
 
 		final var expectedEntries = new java.util.HashMap<>(Map.ofEntries(
-				Map.entry("attribute_config.yaml",
+				Map.entry("original-attribute_config.yaml",
 				          MutablePair.of(false, DataConfigurationTestHelper.generateDataConfigurationAsYaml())),
-				Map.entry("original.csv", MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
+				Map.entry("original-dataset.csv", MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
 				Map.entry("anonymization.yaml", MutablePair.of(false, "configuration")),
-				Map.entry("anonymization.csv", MutablePair.of(false, ResourceHelper.loadCsvFileWithErrorsAsString()
+				Map.entry("anonymization-dataset.csv", MutablePair.of(false, ResourceHelper.loadCsvFileWithErrorsAsString()
 				                                                                   .replace("forty two", ""))),
-				Map.entry("additional.txt", MutablePair.of(false, "info")),
+				Map.entry("anonymization-additional.txt", MutablePair.of(false, "anon-info")),
 				Map.entry("synthetization_configuration.yaml", MutablePair.of(false, "configuration")),
-				Map.entry("anonymization-synthetization.csv",
+				Map.entry("anonymization-synthetization-dataset.csv",
 				          MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
-				Map.entry("additional_1.txt", MutablePair.of(false, "info"))
+				Map.entry("synthetization-additional.txt", MutablePair.of(false, "synth-info"))
 		));
 		final List<String> unexpectedEntries = new ArrayList<>();
 
@@ -470,6 +477,39 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .code(200)
 				                    .body(jsonMapper.writeValueAsString(synthStatus))
 				                    .build());
+	}
+
+	@Test
+	public void startJob() throws Exception {
+		postData(false);
+		configure();
+		start();
+		finish1();
+		finish2();
+
+		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final Job secondJob = firstStage.getJobList().get(1);
+
+		final ExternalProcessResponse response = new ExternalProcessResponse();
+		response.setPid("123");
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(jsonMapper.writeValueAsString(response))
+				                    .build());
+
+		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start/" + secondJob.getName()))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("currentProcessIndex").value(1))
+		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("processes[0].step").value(ANON_JOB))
+		       .andExpect(jsonPath("processes[0].status").value(nullValue()))
+		       .andExpect(jsonPath("processes[0].processSteps[0]").value(ANON_JOB))
+		       .andExpect(jsonPath("processes[1].externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("processes[1].step").value(SYNTH_JOB))
+		       .andExpect(jsonPath("processes[1].status").value(nullValue()))
+		       .andExpect(jsonPath("processes[1].processSteps").value(nullValue()));
 	}
 
 	@Test
@@ -669,6 +709,16 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorMessage(
 				       "Failed to start the process! Got status of '404 NOT_FOUND'. Got message: 'Not found'. Got error: 'Nicht gefunden, but in German'."));
+	}
+
+	@Test
+	public void startJobPrecedingNotFinished() throws Exception {
+		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final Job secondJob = firstStage.getJobList().get(1);
+
+		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start/" + secondJob.getName()))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_8_6"));
 	}
 
 	@Test

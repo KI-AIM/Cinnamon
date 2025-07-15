@@ -1,7 +1,7 @@
 <div *ngIf="(stage$ | async) as status" class="stage-head">
     <button type="submit" mat-raised-button color="primary"
             [disabled]="status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING"
-            (click)="executionService.start()">
+            (click)="executionService.start(null)">
         Start
         <mat-icon fontIcon="play_arrow"></mat-icon>
     </button>
@@ -56,10 +56,21 @@
                     <!-- Head -->
                     <div class="step-head">
                         <span> {{ getJobName(process) }} </span>
+                        <span>
+                            <a *ngIf="data.stage != null && data.stage.status !== ProcessStatus.SCHEDULED && data.stage.status !== ProcessStatus.RUNNING && data.stage.status !== ProcessStatus.NOT_STARTED && data.stage.processes[i].externalProcessStatus !== ProcessStatus.NOT_STARTED; else disabledStart"
+                               title="Start" (click)="executionService.start(process);" class="icon-enabled">
+                                <mat-icon fontIcon="play_arrow" style="color: green;"></mat-icon>
+                            </a>
+                            <ng-template #disabledStart>
+                                <span title="Start" class="icon-disabled">
+                                    <mat-icon fontIcon="play_arrow"></mat-icon>
+                                </span>
+                            </ng-template>
+                        </span>
                         <span *ngIf="data.stage && data.stage.processes[i] as process" class="status"
                               [ngClass]="process.externalProcessStatus">
-                        <span>{{ process.externalProcessStatus.replace("_", " ") }}</span>
-                    </span>
+                            <span>{{ process.externalProcessStatus.replace("_", " ") }}</span>
+                        </span>
                     </div>
 
                     <div class="step-body">

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { DataConfiguration } from '../model/data-configuration';
 import { HttpClient } from '@angular/common/http';
-import { map, Observable, of, ReplaySubject, take } from 'rxjs';
+import { map, Observable, ReplaySubject, take } from 'rxjs';
 import { plainToInstance } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
@@ -62,7 +62,6 @@ export class DataConfigurationService {
         configReg.name = this.CONFIGURATION_NAME;
         configReg.orderNumber = 0;
         configReg.storeConfig = (configName, yamlConfigString) => this.postDataConfigurationString(yamlConfigString);
-        configReg.getConfigCallback = () => this.getConfigurationCallback();
         configReg.setConfigCallback = (config) => this.setConfigCallback(config);
 
         this.configurationService.registerConfiguration(configReg);
@@ -87,14 +86,6 @@ export class DataConfigurationService {
         const formData = new FormData();
         formData.append("configuration", configString);
         return this.httpClient.post<void>(this.baseUrl, formData);
-    }
-
-    private getConfigurationCallback(): Observable<Object> {
-        if (this.localDataConfiguration !== null) {
-            return of(this.localDataConfiguration);
-        } else {
-            return this.dataConfiguration$;
-        }
     }
 
     private setConfigCallback(importData: ImportPipeData): void {

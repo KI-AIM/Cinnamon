@@ -15,6 +15,7 @@
 	<description>The base project for Cinnamon, that includes the web app for data management, anonymization and evaluation.</description>
 
 	<properties>
+		<org.dhatim.fastexcel.version>0.19.0</org.dhatim.fastexcel.version>
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
 	</properties>
 
@@ -83,8 +84,13 @@
 		</dependency>
 		<dependency>
 			<groupId>org.dhatim</groupId>
+			<artifactId>fastexcel</artifactId>
+			<version>${org.dhatim.fastexcel.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.dhatim</groupId>
 			<artifactId>fastexcel-reader</artifactId>
-			<version>0.18.4</version>
+			<version>${org.dhatim.fastexcel.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -208,8 +214,6 @@
 				<includes>
 					<include>**/banner.txt</include>
 					<include>**/*.properties</include>
-					<!-- TODO Remove when we fetch this -->
-					<include>**/organized_resemblance_metrics_synthetic.yaml</include>
 				</includes>
 			</resource>
 		</resources>

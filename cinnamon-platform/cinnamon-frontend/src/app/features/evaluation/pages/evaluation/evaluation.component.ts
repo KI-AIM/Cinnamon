@@ -135,13 +135,7 @@ export class EvaluationComponent implements OnInit {
     }
 
     protected getJobName(name: string): string {
-        const jobNames: Record<string, string> = {
-            'technical_evaluation': 'Technical Evaluation',
-            'risk_evaluation': 'Risk Evaluation',
-            'base_evaluation': 'Base Evaluation',
-        };
-
-        return jobNames[name];
+        return this.evaluationService.getJobName(name);
     }
 
     // Method for generatting color index

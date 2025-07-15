@@ -1,32 +1,32 @@
 package de.kiaim.cinnamon.platform.service;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
-import de.kiaim.cinnamon.platform.exception.BadDataSetIdException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
+import de.kiaim.cinnamon.platform.model.configuration.ExternalConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
-import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
-import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
-import de.kiaim.cinnamon.platform.exception.InternalIOException;
+import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
+import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -43,22 +43,25 @@ public class ProjectService {
 	private final ProjectRepository projectRepository;
 	private final UserRepository userRepository;
 	private final DatabaseService databaseService;
+	private final DataProcessorService dataProcessorService;
 	private final StepService stepService;
 
 	public ProjectService(final ObjectMapper yamlMapper, final CinnamonConfiguration cinnamonConfiguration,
 	                      final ProjectRepository projectRepository, final UserRepository userRepository,
-	                      final DatabaseService databaseService,
+	                      final DatabaseService databaseService, final DataProcessorService dataProcessorService,
 	                      final StepService stepService) {
 		this.yamlMapper = yamlMapper;
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.projectRepository = projectRepository;
 		this.userRepository = userRepository;
 		this.databaseService = databaseService;
+		this.dataProcessorService = dataProcessorService;
 		this.stepService = stepService;
 	}
 
 	/**
 	 * Checks if the given user has a project.
+	 *
 	 * @param user The user to check.
 	 * @return If the user ha a project.
 	 */
@@ -91,7 +94,8 @@ public class ProjectService {
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
 	 */
 	@Transactional
-	public ProjectEntity createProject(final UserEntity user, final long projectSeed) throws InternalApplicationConfigurationException {
+	public ProjectEntity createProject(final UserEntity user,
+	                                   final long projectSeed) throws InternalApplicationConfigurationException {
 		if (hasProject(user)) {
 			return user.getProject();
 		}
@@ -152,6 +156,7 @@ public class ProjectService {
 
 	/**
 	 * Saves the given project entity.
+	 *
 	 * @param projectEntity Entity to be saved.
 	 */
 	@Transactional
@@ -195,7 +200,7 @@ public class ProjectService {
 	/**
 	 * Sets the current step of the given project to the given step.
 	 *
-	 * @param project The project to be updated.
+	 * @param project     The project to be updated.
 	 * @param currentStep The new step.
 	 */
 	@Transactional
@@ -207,69 +212,96 @@ public class ProjectService {
 	/**
 	 * Writes a ZIP to the given OutputStream containing the data set and data configuration of the given project and the given configuration.
 	 *
-	 * @param project      The project of the data set.
-	 * @param outputStream The OutputStream to write to.
+	 * @param project                The project of the data set.
+	 * @param outputStream           The OutputStream to write to.
+	 * @param projectExportParameter Parameter specifying what should be exported.
+	 * @throws BadConfigurationNameException       If the requested configuration name is unknown.
+	 * @throws BadStepNameException                If a resource from an unknown step is requested.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 * @throws InternalIOException                 If the request body could not be created.
+	 * @throws InternalMissingHandlingException    If no data processor for the target file type could be found.
 	 */
 	@Transactional
-	public void createZipFile(final ProjectEntity project, final OutputStream outputStream)
-			throws InternalDataSetPersistenceException, InternalIOException {
+	public void createZipFile(final ProjectEntity project, final OutputStream outputStream,
+	                          final ProjectExportParameter projectExportParameter)
+			throws BadConfigurationNameException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
 
-			// Add original data set
-			final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
-			if (dataSetEntity != null) {
-				// Add data configuration
-				final ZipEntry attributeConfigZipEntry = new ZipEntry("attribute_config.yaml");
-				zipOut.putNextEntry(attributeConfigZipEntry);
-				yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
-				          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
-				zipOut.closeEntry();
-
-				// Add data set
-				if (dataSetEntity.isStoredData()) {
-					final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, HoldOutSelector.ALL);
-					addCsvToZip(zipOut, dataSet, "original");
-				}
-
-				// Add statistics
-				final LobWrapperEntity statistics = project.getOriginalData().getDataSet().getStatistics();
-				if (statistics != null) {
-					final ZipEntry statisticsEntry = new ZipEntry("statistics.yaml");
-					zipOut.putNextEntry(statisticsEntry);
-					zipOut.write(statistics.getLob());
-					zipOut.closeEntry();
-				}
-			}
-
-			// Add results
 			Map<String, Integer> zipEntryCounter = new HashMap<>();
-			for (final PipelineEntity pipeline : project.getPipelines()) {
-				for (final ExecutionStepEntity executionStep : pipeline.getStages()) {
-					for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {
-						// Add configuration
-						if (externalProcess.getConfigurationString() != null) {
-							final String configurationName = stepService.getExternalServerEndpointConfiguration(externalProcess.getJob())
-							                                            .getConfigurationName();
-							final ZipEntry configZipEntry = new ZipEntry(configurationName + ".yaml");
-							zipOut.putNextEntry(configZipEntry);
-							zipOut.write(externalProcess.getConfigurationString().getBytes());
-							zipOut.closeEntry();
-						}
 
-						// Add data set
-						if (externalProcess instanceof DataProcessingEntity dataProcessing ) {
-							if (dataProcessing.getDataSet() != null && dataProcessing.getDataSet().isStoredData()) {
-								addCsvToZip(zipOut, databaseService.exportDataSet(dataProcessing.getDataSet(), HoldOutSelector.ALL),
-								            dataProcessing.getDataSet().getProcessed().stream().map(Job::getName)
-								                          .collect(Collectors.joining("-")));
+			final List<String> configurationNames = new ArrayList<>();
+			final PipelineEntity pipeline = project.getPipelines().get(0);
+			for (final String resources : projectExportParameter.getResources()) {
+				final String[] parts = resources.split("\\.");
+
+				if (parts[0].equals("configuration")) {
+					configurationNames.add(parts[1]);
+
+				} else if (parts[0].equals("original")) {
+
+					final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
+					if (dataSetEntity != null) {
+
+						if (parts[1].equals("dataset")) {
+
+							if (dataSetEntity.isStoredData()) {
+								final DataSet dataSet = databaseService.exportDataSet(dataSetEntity,
+								                                                      projectExportParameter.getHoldOutSelector());
+								addDatasetToZip(zipOut, dataSet, projectExportParameter.getDatasetFileType(), "original-dataset");
+							}
+
+						} else if (parts[1].equals("statistics")) {
+
+							final LobWrapperEntity statistics = project.getOriginalData().getDataSet().getStatistics();
+							if (statistics != null) {
+								final ZipEntry statisticsEntry = new ZipEntry("original-statistics.yaml");
+								zipOut.putNextEntry(statisticsEntry);
+								zipOut.write(statistics.getLob());
+								zipOut.closeEntry();
 							}
 						}
+					}
 
-						// Add additional files
+				} else if (parts[0].equals("pipeline")) {
+
+					final Stage stage = stepService.getStageConfiguration(parts[1]);
+					final ExecutionStepEntity executionStep = pipeline.getStageByStep(stage);
+
+					final Job job = stepService.getStepConfiguration(parts[2]);
+					final ExternalProcessEntity externalProcess = executionStep.getProcess(job).get();
+
+					if (externalProcess instanceof DataProcessingEntity dataProcessing) {
+						if (dataProcessing.getDataSet() != null) {
+							final String name = dataProcessing.getDataSet().getProcessed().stream().map(Job::getName)
+							                                  .collect(Collectors.joining("-"));
+
+							if (parts[3].equals("dataset")) {
+
+								if (dataProcessing.getDataSet().isStoredData()) {
+									final DataSet dataSet = databaseService.exportDataSet(dataProcessing.getDataSet(),
+									                                                      HoldOutSelector.ALL);
+									addDatasetToZip(zipOut, dataSet, projectExportParameter.getDatasetFileType(), name + "-dataset");
+								}
+
+							} else if (parts[3].equals("statistics")) {
+								final var resultFiles = dataProcessing.getDataSet().getStatisticsProcess()
+								                                      .getResultFiles();
+
+								// TODO calculate statistics if not present?
+								if (resultFiles.containsKey("metrics.json")) {
+									final var statisticsLob = resultFiles.get("metrics.json");
+									final ZipEntry configZipEntry = new ZipEntry(name + "-statistics.json");
+									zipOut.putNextEntry(configZipEntry);
+									zipOut.write(statisticsLob.getLob());
+									zipOut.closeEntry();
+								}
+							}
+						}
+					}
+
+					if (parts[3].equals("other")) {
 						for (final var entry : externalProcess.getResultFiles().entrySet()) {
-							String entryKey = entry.getKey();
+							String entryKey = job.getName() + "-" + entry.getKey();
 							if (zipEntryCounter.containsKey(entryKey)) {
 								var count = zipEntryCounter.get(entryKey);
 								entryKey = entryKey.substring(0, entryKey.lastIndexOf('.')) + "_" + count +
@@ -285,7 +317,65 @@ public class ProjectService {
 							zipOut.closeEntry();
 						}
 					}
+
 				}
+			}
+
+			if (!configurationNames.isEmpty()) {
+
+				if (projectExportParameter.isBundleConfigurations()) {
+					StringBuilder bundledConfigurations = new StringBuilder();
+
+					for (final String configName : configurationNames) {
+						final String configurationString = getConfigurationString(project, configName);
+						if (configurationString != null) {
+							bundledConfigurations.append(configurationString);
+						}
+					}
+
+					final ZipEntry configZipEntry = new ZipEntry("all-configurations.yaml");
+					zipOut.putNextEntry(configZipEntry);
+					zipOut.write(bundledConfigurations.toString().getBytes());
+					zipOut.closeEntry();
+
+				} else {
+					// Add configurations
+					for (final String configName : configurationNames) {
+						// Special case for data configuration
+						if (configName.equals("configurations")) {
+
+							final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
+							if (dataSetEntity != null) {
+								final ZipEntry attributeConfigZipEntry = new ZipEntry("original-attribute_config.yaml");
+								zipOut.putNextEntry(attributeConfigZipEntry);
+								yamlMapper.writer().without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
+								          .writeValue(zipOut, dataSetEntity.getDataConfiguration());
+								zipOut.closeEntry();
+							}
+						} else {
+							final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(
+									configName);
+							final ConfigurationListEntity configList = project.getConfigurationList(
+									externalConfiguration);
+
+							if (configList == null) {
+								continue;
+							}
+
+							final String config = configList.getConfigurations().get(0).getConfiguration();
+
+							if (config == null) {
+								continue;
+							}
+
+							final ZipEntry configZipEntry = new ZipEntry(configName + ".yaml");
+							zipOut.putNextEntry(configZipEntry);
+							zipOut.write(config.getBytes());
+							zipOut.closeEntry();
+						}
+					}
+				}
+
 			}
 
 			zipOut.finish();
@@ -294,20 +384,42 @@ public class ProjectService {
 		}
 	}
 
-	private void addCsvToZip(final ZipOutputStream zipOut, final DataSet dataSet, final String name) throws IOException {
-		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(zipOut, StandardCharsets.UTF_8);
-		final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
-				dataSet.getDataConfiguration().getColumnNames().toArray(new String[0])).build();
+	private void addDatasetToZip(final ZipOutputStream zipOut, final DataSet dataSet, final FileType fileType,
+	                             final String name)
+			throws IOException, InternalIOException, InternalMissingHandlingException {
 
-		final ZipEntry dataZipEntry = new ZipEntry(name + ".csv");
+		final String fileExtension = fileType.getFileExtensions().iterator().next();
+		final ZipEntry dataZipEntry = new ZipEntry(name + fileExtension);
 		zipOut.putNextEntry(dataZipEntry);
 
-		final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
-		for (final DataRow dataRow : dataSet.getDataRows()) {
-			csvPrinter.printRecord(dataRow.getRow());
-		}
-		csvPrinter.flush();
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileType);
+		dataProcessor.write(zipOut, dataSet);
 
 		zipOut.closeEntry();
 	}
+
+	@Nullable
+	private String getConfigurationString(final ProjectEntity project,
+	                                      final String configName) throws JsonProcessingException, BadConfigurationNameException {
+		// Special case for data configurations
+		if (configName.equals("configurations")) {
+			final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
+
+			if (dataSetEntity == null) {
+				return null;
+			}
+			return yamlMapper.writeValueAsString(dataSetEntity.getDataConfiguration());
+
+		} else {
+			final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(configName);
+			final ConfigurationListEntity configList = project.getConfigurationList(externalConfiguration);
+
+			if (configList == null) {
+				return null;
+			}
+
+			return configList.getConfigurations().get(0).getConfiguration();
+		}
+	}
+
 }

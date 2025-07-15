@@ -60,21 +60,28 @@ export abstract class ExecutionStepService {
 
     /**
      * Starts the anonymization and synthetization process.
+     * @param job The job to start. If null, the first job will be started.
      * @protected
      */
-    public start() {
+    public start(job: string | null) {
         // Sets the step in case later steps have already been completed.
         this.statusService.updateNextStep(this.getStep()).subscribe();
 
-        this.asyncStart().subscribe();
+        this.asyncStart(job).subscribe();
     }
 
     /**
      * Returns an observable for starting the process.
+     * @param job The job to start. If null, the first job will be started.
      * @protected
      */
-    public asyncStart(): Observable<ExecutionStep | null> {
-        return this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStageName() + "/start", {}).pipe(
+    public asyncStart(job: string | null): Observable<ExecutionStep | null> {
+        let url = this.baseUrl + "/" + this.getStageName() + "/start";
+        if (job != null) {
+            url += "/" + job;
+        }
+
+        return this.http.post<ExecutionStep>(url, {}).pipe(
             tap(value => {
                     // For some reason value is a plain object here
                     this.update(plainToInstance(ExecutionStep, value));

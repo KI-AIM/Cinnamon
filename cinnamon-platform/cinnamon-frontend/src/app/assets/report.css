@@ -1,7 +1,51 @@
+:root {
+    --color-header-footer: #8d8290;
+
+    --size-header-footer: 12px;
+}
+
 @media print {
     @page {
         size: A4;
         margin: 0.33in 0 0.34in 0; /* Minimum margins for headers and footers */
+
+        @top-center {
+            color: var(--color-header-footer);
+            content: "Project: {{project}}";
+            font-size: var(--size-header-footer);
+        }
+        @bottom-center {
+            color: var(--color-header-footer);
+            content: "- " counter(page) " -" ;
+            font-size: var(--size-header-footer);
+        }
+        @bottom-left {
+            color: var(--color-header-footer);
+            content: "The report was created with Cinnamon v {{version}}";
+            font-size: var(--size-header-footer);
+            margin-left: 10px;
+        }
+        @bottom-right {
+            color: var(--color-header-footer);
+            content: "Created: {{now}}";
+            font-size: var(--size-header-footer);
+            margin-right: 10px;
+        }
+    }
+
+    @page :first {
+        @top-center {
+            content: "";
+        }
+        @bottom-center {
+            content: "";
+        }
+        @bottom-left {
+            content: "";
+        }
+        @bottom-right {
+            content: "";
+        }
     }
 }
 

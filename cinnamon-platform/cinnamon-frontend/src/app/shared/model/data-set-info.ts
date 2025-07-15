@@ -1,3 +1,5 @@
+import { Type } from "class-transformer";
+
 export class DataSetInfo {
     numberRows: number;
     numberInvalidRows: number;
@@ -6,6 +8,9 @@ export class DataSetInfo {
     numberHoldOutRows: number;
     numberInvalidHoldOutRows: number;
 
+    @Type(() => DataConfigurationInfo)
+    dataConfigurationInfo: DataConfigurationInfo;
+
     public get numberNotHoldOutRows(): number {
         return this.numberRows - this.numberHoldOutRows;
     }
@@ -13,4 +18,11 @@ export class DataSetInfo {
     public get numberInvalidNotHoldOutRows(): number {
         return this.numberInvalidRows - this.numberInvalidHoldOutRows;
     }
+}
+
+export class DataConfigurationInfo {
+    numberColumns: number;
+    numberNumericColumns: number;
+    numberCategoricalColumns: number;
+    numberDateColumns: number;
 }

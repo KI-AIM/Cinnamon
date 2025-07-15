@@ -990,7 +990,7 @@ public class ProcessService {
 		// Add config
 		final String configuration = externalProcess.getConfigurationString();
 		if (configuration != null) {
-			addConfig(configuration, endpoint, bodyBuilder);
+			httpService.addConfig(configuration, endpoint, bodyBuilder);
 		}
 
 		// Generate new UUID
@@ -1050,39 +1050,6 @@ public class ProcessService {
 				message += e.getMessage();
 			}
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
-		}
-	}
-
-	private void addConfig(final String configuration, final ExternalEndpoint stepConfiguration,
-	                       final MultipartBodyBuilder bodyBuilder)
-			throws InternalIOException, InternalMissingHandlingException {
-		switch (stepConfiguration.getConfigurationEncoding()) {
-			case FILE -> {
-				bodyBuilder.part(stepConfiguration.getConfigurationPartName(),
-				                 new ByteArrayResource(configuration.getBytes()) {
-					                 @Override
-					                 public String getFilename() {
-						                 return "synthesizer_config.yaml";
-					                 }
-				                 });
-			}
-			case JSON -> {
-				//Convert yaml config to json for anonymization controller
-				try {
-					final String jsonConfig = YamlMapper.toJson(configuration);
-					bodyBuilder.part(stepConfiguration.getConfigurationPartName(), jsonConfig,
-					                 MediaType.APPLICATION_JSON);
-				} catch (JsonProcessingException e) {
-					throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
-					                              "Could not convert configuration from yaml to json!", e);
-				}
-			}
-			default -> {
-				throw new InternalMissingHandlingException(
-						InternalMissingHandlingException.STEP_INPUT_ENCODING,
-						"No handling for adding data set of type '" + stepConfiguration.getConfigurationEncoding() +
-						"'!");
-			}
 		}
 	}
 

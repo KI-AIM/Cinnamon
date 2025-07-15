@@ -3,9 +3,13 @@ package de.kiaim.cinnamon.anonymization.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.anonymization.model.AnonymizationRequest;
 import de.kiaim.cinnamon.anonymization.service.AnonymizationService;
+import de.kiaim.cinnamon.anonymization.service.ReportService;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
+import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAttributeConfig;
+import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendModelConfig;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.model.dto.ModuleReportContent;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,22 +30,29 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/anonymization")
 public class AnonymizationController {
 
     private final AnonymizationService anonymizationService;
+    private final ReportService reportService;
+
     private final Map<String, Future<DataSet>> tasks = new ConcurrentHashMap<>();
     private final ObjectMapper jsonMapper;
 
-    public AnonymizationController(final AnonymizationService anonymizationService) {
+    public AnonymizationController(final AnonymizationService anonymizationService, final ReportService reportService) {
         this.anonymizationService = anonymizationService;
-        this.jsonMapper = JsonMapper.jsonMapper();
+	    this.reportService = reportService;
+	    this.jsonMapper = JsonMapper.jsonMapper();
     }
 
     @Operation(summary = "Creates a new anonymization task.",
@@ -223,5 +234,21 @@ public class AnonymizationController {
             tasks.remove(processId);
             return ResponseEntity.ok("Task " + processId + " has been cancelled successfully");
         }
+    }
+
+    @Operation(summary = "Generates the anonymization report content for the given anonymization configuration.",
+            description = "Generates the anonymization report content for the given anonymization configuration.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Report content generated successfully.",
+                         content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = ModuleReportContent.class))),
+    })
+    @PostMapping(value = "/report",
+                 consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+                 produces = MediaType.APPLICATION_JSON_VALUE)
+    public ModuleReportContent getReportContent(
+            @RequestPart("configuration") final FrontendAnonConfigWrapper configuration
+    ) {
+        return reportService.getReportContent(configuration);
     }
 }

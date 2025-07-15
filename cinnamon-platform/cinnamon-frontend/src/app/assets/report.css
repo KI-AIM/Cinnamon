@@ -1,5 +1,7 @@
 :root {
     --color-header-footer: #8d8290;
+    /*TODO read colors from other CSS*/
+    --color-primary: #3b7dd8;
 
     --size-header-footer: 12px;
     --margin-text: 0.5rem;
@@ -101,10 +103,22 @@
     /*padding-bottom: 20px;*/
     /*border-bottom: 1px solid #eee;*/
 }
+.report-header-s {
+    border-radius: 2px;
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-bottom: 15px;
+    padding: 7px 15px;
+    text-align: left;
+}
 .report-header2 {
     color: #2c3e50;
     border-left: 4px solid #3498db;
+    font-size: 1.4em;
+    font-weight: bold;
+    padding-bottom: 2px;
     padding-left: 10px;
+    padding-top: 2px;
 
     page-break-after: avoid;
     break-after: avoid;
@@ -114,6 +128,10 @@
 
     page-break-after: avoid;
     break-after: avoid;
+}
+.report-header4 {
+    font-weight: bold;
+    margin-bottom: calc(var(--margin-text) / 3) ;
 }
 .report-metric-card {
     background-color: #f8f9fa;
@@ -125,7 +143,6 @@
 .report-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 15px 0;
 }
 
 .report-table-title {
@@ -135,7 +152,23 @@
 .report-table-description-continued {
     font-style: italic;
 }
-
+.report-table > thead > tr {
+    background-color: var(--color-primary);
+    color: white;
+}
+.report-table > tbody > tr:nth-child(even) {
+    background-color: white;
+}
+.report-table > tbody > tr:nth-child(odd) {
+    background-color: #e6e6e6;
+}
+.report-table td, .report-table th {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+.report-table td:not(:first-child), .report-table th:not(:first-child) {
+    text-align: center;
+}
 .report-th, .report-td {
     border: 1px solid #ddd;
     padding: 8px 12px;
@@ -187,6 +220,10 @@
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 .report-text-block {
+    text-align: justify;
+    margin-bottom: var(--margin-text);
+}
+.report-text-block > p {
     margin-bottom: var(--margin-text);
 }
 .report-keep-together {

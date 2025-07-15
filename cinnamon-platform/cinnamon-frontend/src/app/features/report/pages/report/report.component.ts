@@ -1,16 +1,17 @@
+import { AsyncPipe, NgForOf, NgIf } from "@angular/common";
+import { HttpClient } from "@angular/common/http";
 import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatButton } from "@angular/material/button";
-import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
-import { SharedModule } from "../../../../shared/shared.module";
-import { AsyncPipe, NgForOf, NgIf } from "@angular/common";
+import { TitleService } from "@core/services/title-service.service";
+import { ChartFrequencyComponent } from "@shared/components/chart-frequency/chart-frequency.component";
+import { ProjectSettings } from "@shared/model/project-settings";
+import { StatisticsResponse } from "@shared/model/statistics";
+import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
+import { Color, StatisticsService } from "@shared/services/statistics.service";
+import { UserService } from "@shared/services/user.service";
+import { SharedModule } from "@shared/shared.module";
 import { map, Observable, switchMap } from "rxjs";
-import { ProjectSettings } from "../../../../shared/model/project-settings";
-import { TitleService } from "../../../../core/services/title-service.service";
-import { ProjectConfigurationService } from "../../../../shared/services/project-configuration.service";
-import { StatisticsResponse } from "../../../../shared/model/statistics";
-import { Color, StatisticsService } from "../../../../shared/services/statistics.service";
-import { ChartFrequencyComponent } from "../../../../shared/components/chart-frequency/chart-frequency.component";
-import { HttpClient } from "@angular/common/http";
+import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 
 @Component({
     selector: 'app-report',
@@ -46,6 +47,7 @@ export class ReportComponent implements OnInit {
         private projectConfigService: ProjectConfigurationService,
         private statisticsService: StatisticsService,
         titleService: TitleService,
+        private readonly userService: UserService,
     ) {
         titleService.setPageTitle("Report");
     }
@@ -70,7 +72,7 @@ export class ReportComponent implements OnInit {
             switchMap(value => {
                return this.appConfigService.appConfig$.pipe(
                    map((config: AppConfig) => {
-                      return {style: value, config: config};
+                      return {style: this.preprocessStyle(value, config), config: config};
                    }),
                );
             }),
@@ -136,6 +138,13 @@ export class ReportComponent implements OnInit {
 
             mywindow.print();
         }, 0);
+    }
+
+    private preprocessStyle(style: string, appConfig: AppConfig): string {
+        style = style.replaceAll("{{version}}", appConfig.version);
+        style = style.replaceAll("{{now}}", new Date().toLocaleString());
+        style = style.replaceAll("{{project}}", this.userService.getUser().email);
+        return style;
     }
 
     /**

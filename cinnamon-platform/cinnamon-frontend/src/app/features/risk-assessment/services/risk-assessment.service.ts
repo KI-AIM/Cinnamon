@@ -118,7 +118,6 @@ export class RiskAssessmentService extends AlgorithmService {
         configReg.name = "risk_assessment_configuration";
         configReg.orderNumber = 4;
         configReg.storeConfig = null;
-        configReg.getConfigCallback = () => this.getConfig();
         configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);

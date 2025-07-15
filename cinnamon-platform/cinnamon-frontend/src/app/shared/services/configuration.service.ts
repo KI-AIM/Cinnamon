@@ -173,43 +173,6 @@ export class ConfigurationService {
     }
 
     /**
-     * Downloads the registered configurations which names are included in the given array.
-     * Uses the getConfigCallback function to retrieve the configuration.
-     * If configured, stores the configuration under the configured name into the database.
-     * @param includedConfigurations Names of the configurations to download.
-     */
-    public downloadAllConfigurations(includedConfigurations: Array<string>): Observable<string> {
-        return from(includedConfigurations).pipe(
-            map(configName => {
-                // Get the registered data about the configuration
-               return this.getRegisteredConfigurationByName(configName);
-            }),
-            filter(value => {
-                // Filter unknown configurations
-                return value !== null;
-            }),
-            switchMap(value => {
-                // Get the configuration string
-                return value.getConfigCallback().pipe(
-                    map(config => {
-                        const configString = typeof config === 'string' ? config : stringify(config);
-                        return {config: configString, metadata: value};
-                    }),
-                );
-            }),
-            scan((acc, value) => {
-                return acc + value.config;
-            }, ""),
-            debounceTime(0),
-            tap(value => {
-                // TODO use project name
-                const fileName = "configuration.yaml"
-                this.fileUtilityService.saveYamlFile(value, fileName);
-            }),
-        )
-    }
-
-    /**
      * Uploads the configurations that are contained in the file and included in the given array.
      * Uses the setConfigCallback function to update the configuration in the application.
      * If configured, stores the configuration under the configured name into the database.

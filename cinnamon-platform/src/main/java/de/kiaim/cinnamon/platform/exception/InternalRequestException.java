@@ -37,6 +37,11 @@ public class InternalRequestException extends InternalException {
 	 */
 	public static final String NO_INSTANCE_AVAILABLE = "6";
 
+	/**
+	 * Exception code for failed fetching of report data.
+	 */
+	public static final String REPORT_DATA = "7";
+
 	public InternalRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

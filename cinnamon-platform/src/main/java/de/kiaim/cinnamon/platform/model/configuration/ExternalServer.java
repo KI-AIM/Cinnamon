@@ -45,6 +45,9 @@ public class ExternalServer {
 	 */
 	private Map<String, ExternalServerInstance> instances = new HashMap<>();
 
+	@Nullable
+	private String reportEndpoint = null;
+
 	//=========================
 	//--- Automatically set ---
 	//=========================

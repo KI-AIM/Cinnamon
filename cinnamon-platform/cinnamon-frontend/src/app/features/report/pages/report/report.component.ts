@@ -3,14 +3,19 @@ import { HttpClient } from "@angular/common/http";
 import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatButton } from "@angular/material/button";
 import { TitleService } from "@core/services/title-service.service";
+import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
+import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
 import { ChartFrequencyComponent } from "@shared/components/chart-frequency/chart-frequency.component";
+import { DataSetInfo } from "@shared/model/data-set-info";
 import { ProjectSettings } from "@shared/model/project-settings";
+import { RiskAssessmentConfig } from "@shared/model/risk-assessment-config";
 import { StatisticsResponse } from "@shared/model/statistics";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
 import { map, Observable, switchMap } from "rxjs";
 import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
+import { environments } from "src/environments/environment";
 
 @Component({
     selector: 'app-report',
@@ -19,13 +24,18 @@ import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.
         SharedModule,
         AsyncPipe,
         NgIf,
-        NgForOf
+        NgForOf,
     ],
     templateUrl: './report.component.html',
     styleUrl: './report.component.less'
 })
 export class ReportComponent implements OnInit {
+
+    private readonly baseUrl: string = environments.apiUrl + "/api/report";
     private readonly PAGE_HEIGHT = 1122;
+
+    protected readonly Object = Object;
+    protected readonly StatisticsService = StatisticsService;
 
     /**
      * Date of the report creation.
@@ -34,7 +44,11 @@ export class ReportComponent implements OnInit {
     protected reportDate: string;
 
     protected appConfig$: Observable<AppConfig>;
+    protected datasetInfoOriginal$: Observable<DataSetInfo>;
+    protected datasetInfoProtected$: Observable<DataSetInfo>;
     protected metricConfig$: Observable<ProjectSettings>;
+    protected reportData$: Observable<ReportData>;
+    protected riskAssessmentConfig$: Observable<RiskAssessmentConfig>;
     protected statistics$: Observable<StatisticsResponse | null>;
 
     @ViewChildren('chart', {read: ElementRef}) protected chartDivs: QueryList<ElementRef<HTMLElement>>;
@@ -49,8 +63,10 @@ export class ReportComponent implements OnInit {
 
     constructor(
         private readonly appConfigService: AppConfigService,
+        private readonly datasetInfoService: DataSetInfoService,
         private readonly http: HttpClient,
         private projectConfigService: ProjectConfigurationService,
+        private readonly riskAssessmentService: RiskAssessmentService,
         private statisticsService: StatisticsService,
         titleService: TitleService,
     ) {
@@ -59,9 +75,15 @@ export class ReportComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.metricConfig$ = this.projectConfigService.projectSettings$;
-        this.statistics$ = this.statisticsService.fetchResult();
         this.appConfig$ = this.appConfigService.appConfig$;
+        this.datasetInfoOriginal$ = this.datasetInfoService.getDataSetInfo("VALIDATION");
+        this.datasetInfoProtected$ = this.datasetInfoService.getDataSetInfo("PROTECTED");
+        this.metricConfig$ = this.projectConfigService.projectSettings$;
+        this.reportData$ = this.fetchReportData();
+        this.riskAssessmentConfig$ = this.riskAssessmentService.fetchConfiguration().pipe(
+            map(value => value.config as RiskAssessmentConfig),
+        )
+        this.statistics$ = this.statisticsService.fetchResult();
     }
 
     /**
@@ -284,5 +306,16 @@ export class ReportComponent implements OnInit {
         return this.statisticsService.getColorSchemeGradient(value);
     }
 
-    protected readonly StatisticsService = StatisticsService;
+    private fetchReportData(): Observable<ReportData> {
+        return this.http.get<ReportData>(this.baseUrl);
+    }
+}
+
+interface ReportData {
+    [key: string]: ModuleReportContent;
+}
+
+interface ModuleReportContent {
+    configDescription: string;
+    glossar: string | null;
 }

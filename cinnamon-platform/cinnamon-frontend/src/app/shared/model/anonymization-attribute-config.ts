@@ -12,10 +12,6 @@ export enum AttributeProtection {
     NO_PROTECTION = "NO_PROTECTION",
 }
 
-export class AnonymizationAttributeConfiguration {
-    attributeConfiguration: AnonymizationAttributeRowConfiguration[];
-}
-
 export class AnonymizationAttributeRowConfiguration {
     index: number;
     name: String;

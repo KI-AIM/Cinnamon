@@ -60,7 +60,7 @@
                 <div *ngFor="let columnConfig of getColumnConfigurationForms(attributeConfigurationform); let i = index" [formGroupName]="i">
                     <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()"
                                                  [disabled]="locked" (onInput)="checkUniqueColumnNames()"
-                                                 [columnConfigurationForm]="columnConfig">
+                                                 [columnConfigurationForm]="columnConfig" [confidence]="getConfidence(i)">
                     </app-attribute-configuration>
                 </div>
             </div>

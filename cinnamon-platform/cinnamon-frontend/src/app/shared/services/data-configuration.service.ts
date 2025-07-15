@@ -24,6 +24,7 @@ export class DataConfigurationService {
 
     public localDataConfiguration: DataConfiguration | null = null;
     public localDataSetConfiguration: DataSetConfiguration | null = null;
+    public confidence: number[] | null = null;
 
     constructor(
         private httpClient: HttpClient,
@@ -68,6 +69,7 @@ export class DataConfigurationService {
 
     public setDataConfiguration(value: DataConfiguration) {
         this.localDataConfiguration = null;
+        this.confidence = null
         this.dataConfigurationSubject.next(value);
     }
 

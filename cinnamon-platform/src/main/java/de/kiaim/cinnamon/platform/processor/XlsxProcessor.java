@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
@@ -207,8 +208,9 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      * {@inheritDoc}
      */
     @Override
-    public DataConfiguration estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration,
-                                                       final DatatypeEstimationAlgorithm algorithm) {
+    public DataConfigurationEstimation estimateDataConfiguration(InputStream data,
+                                                                 FileConfigurationEntity fileConfiguration,
+                                                                 final DatatypeEstimationAlgorithm algorithm) {
         final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
         List<List<String>> rows;
 
@@ -221,21 +223,23 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         }
 
         if (rows.isEmpty()) {
-            return new DataConfiguration();
+            return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
         }
 
-        int numberColumns = 0;
+        final int numberColumns;
         final List<String> columnNames;
+        final Iterator<List<String>> rowIterator = rows.iterator();
 
         if (xlsxFileConfiguration.getHasHeader()) {
             columnNames = normalizeColumnNames(rows.get(0).toArray(new String[0]));
             numberColumns = columnNames.size();
+            rowIterator.next();
         } else {
             numberColumns = rows.get(0).size();
             columnNames = Collections.nCopies(numberColumns, "");
         }
 
-        List<List<String>> samples = getAttributeSamples(rows.iterator(), numberColumns);
+        List<List<String>> samples = getAttributeSamples(rowIterator, numberColumns);
         return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
     }
 

@@ -25,8 +25,14 @@
 
     </div>
 
-    <ng-content *ngIf="{appConfig: appConfig$ | async, mc: metricConfig$ | async, statistics: statistics$ | async} as reportData">
-        <ng-container *ngIf="reportData.appConfig && reportData.mc && reportData.statistics">
+    <ng-container *ngIf="{anonymizationConfiguration: anonymizationConfiguration$ | async,
+                          appConfig: appConfig$ | async,
+                          datasetInfoOriginal: datasetInfoOriginal$ | async,
+                          datasetInfoProtected: datasetInfoProtected$ | async,
+                          mc: metricConfig$ | async,
+                          riskAssessmentConfig: riskAssessmentConfig$ | async,
+                          statistics: statistics$ | async} as reportData">
+        <ng-container *ngIf="reportData.appConfig && reportData.anonymizationConfiguration && reportData.datasetInfoOriginal && reportData.datasetInfoProtected && reportData.mc && reportData.riskAssessmentConfig && reportData.statistics">
 
 
             <div class="box" id="report" style="width: fit-content; margin: 0 auto; padding: 0.5in;">
@@ -84,7 +90,7 @@
 
                         <div class="report-intro-box">
                             <h2>Disclaimer</h2>
-                            <div>
+                            <div class="report-text-block">
                                 The analysis and the conclusions contained herein reflect the assessment of the privacy
                                 risks and utility of the dataset {{ projectName }} as analyzed with the Cinnamon tool on
                                 {{ reportDate }}. Although this report aims to provide an informed assessment of privacy
@@ -95,8 +101,107 @@
                                 of this report and the developers of Cinnamon assume no liability for direct or indirect
                                 damages arising from the use or interpretation of the information contained in this
                                 report.
+
+                                <!-- TODO Contact -->
                             </div>
                         </div>
+                    </div>
+
+                    <div class="report-section">
+                        <div class="report-header report-header-s">
+                            Quality Summary: Data Quality and Privacy Risks
+                        </div>
+
+                        <div class="report-header2">Data Protection Strategy</div>
+
+                        <div style="display: flex; gap: 20px;">
+                            <div style="width: 50%;">
+                                <div class="report-text-block">
+                                    <!-- TODO handling for not applied method -->
+                                    The Cinnamon Platform applies a two-step data protection by first, anonymizing the
+                                    dataset and then synthesizing the anonymized data.
+                                </div>
+                                <div>
+                                    <!-- TODO missing -->
+                                    Overall, [XX%] of the data records could be retained.
+                                </div>
+                            </div>
+                            <div style="width: 50%;">
+                                <table class="report-table">
+                                    <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Original</th>
+                                        <th>Protected</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>No. of records (rows)</td>
+                                        <td>{{ reportData.datasetInfoOriginal.numberRows }}</td>
+                                        <td>{{ reportData.datasetInfoProtected.numberRows }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>No. of attributes (columns)</td>
+                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberColumns }}</td>
+                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberColumns }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>No. of numeric attributes</td>
+                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberNumericColumns }}</td>
+                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberNumericColumns }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>No. of nominal attributes</td>
+                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberCategoricalColumns }}</td>
+                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberCategoricalColumns }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>No. of dates attributes</td>
+                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberDateColumns }}</td>
+                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberDateColumns }}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="report-header4" >Anonymization</div>
+                            <div class="report-text-block">
+                                <!-- TODO insert from risk assessment config -->
+                                The used privacy model optimized the dataset to reach a
+                                <strong>
+                                    {{ reportData.anonymizationConfiguration.modelConfiguration.riskThresholdType === 'Max' ? "maximum" : "average" }}
+                                    residual risk of
+                                    {{ (reportData.anonymizationConfiguration.modelConfiguration.riskThresholdValue * 100) + "%" }}
+                                </strong>
+                                based on XX attributes (...,...,...). This means that [all/most] records are
+                                indistinguishable to [xx] other records in these attributes.
+                            </div>
+                            <div class="report-text-block">
+                                The generalization was set to be
+                                <ng-container *ngIf="reportData.anonymizationConfiguration.modelConfiguration.generalizationSetting === 'Global'">
+                                    <strong>global</strong>, meaning that all values in a column have the same
+                                    underlying generalization interval.
+                                </ng-container>
+                                <ng-container *ngIf="reportData.anonymizationConfiguration.modelConfiguration.generalizationSetting === 'Local'">
+                                    <strong>local</strong>, meaning that the values in a column might have used
+                                    different generalization intervals.
+                                </ng-container>
+                            </div>
+                            <div class="report-text-block">
+                                <div *ngFor="let entry of Object.entries(summarizeAttributeAnonymization(reportData.anonymizationConfiguration.attributeConfiguration))">
+                                    The {{ entry[1].length === 1 ? "1 attribute, that was" : entry[1].length + " attributes, that were " }}
+                                    protected via <strong>{{ entry[0] }}</strong>,
+                                    {{ entry[1].length === 1 ? "was" : "were" }} {{ entry[1].join(", ") }}.
+                                </div>
+                            </div>
+                            <div class="report-text-block">
+                                For further details, look into the dedicated anonymization section of this report.
+                            </div>
+                        </div>
+
                     </div>
 
                     <div class="report-section">
@@ -214,281 +319,6 @@
                                 <td class="report-td">Number of Date Attributes</td>
                                 <td class="report-td">1</td>
                                 <td class="report-td">1</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">2</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">3</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">4</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">5</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">6</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">7</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">8</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">9</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">10</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">11</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">12</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">13</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">14</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">15</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">16</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">17</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">18</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">19</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">20</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">21</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">22</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">23</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">24</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">25</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">26</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">27</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">28</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">29</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">30</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">31</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">31</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">32</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">33</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">34</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">35</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">36</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">37</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">38</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">39</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">40</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">41</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">42</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">43</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">44</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">45</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">46</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">47</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">48</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">49</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">50</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">51</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">52</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">53</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">54</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">55</td>
                             </tr>
                         </table>
 
@@ -763,5 +593,5 @@
             </div>
 
         </ng-container>
-    </ng-content>
+    </ng-container>
 </div>

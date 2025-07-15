@@ -3,14 +3,23 @@ import { HttpClient } from "@angular/common/http";
 import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatButton } from "@angular/material/button";
 import { TitleService } from "@core/services/title-service.service";
+import { AnonymizationService } from "@features/anonymization/services/anonymization.service";
+import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
+import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
 import { ChartFrequencyComponent } from "@shared/components/chart-frequency/chart-frequency.component";
+import {
+    AnonymizationAttributeRowConfiguration,
+    AnonymizationConfiguration, AttributeProtection
+} from "@shared/model/anonymization-attribute-config";
+import { DataSetInfo } from "@shared/model/data-set-info";
 import { ProjectSettings } from "@shared/model/project-settings";
+import { RiskAssessmentConfig } from "@shared/model/risk-assessment-config";
 import { StatisticsResponse } from "@shared/model/statistics";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { UserService } from "@shared/services/user.service";
 import { SharedModule } from "@shared/shared.module";
-import { map, Observable, switchMap } from "rxjs";
+import { map, Observable, switchMap, tap } from "rxjs";
 import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 
 @Component({
@@ -28,6 +37,9 @@ import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.
 export class ReportComponent implements OnInit {
     private readonly PAGE_HEIGHT = 1122;
 
+    protected readonly Object = Object;
+    protected readonly StatisticsService = StatisticsService;
+
     /**
      * The name of the project.
      * @protected
@@ -40,8 +52,12 @@ export class ReportComponent implements OnInit {
      */
     protected reportDate: string;
 
+    protected anonymizationConfiguration$: Observable<AnonymizationConfiguration>;
     protected appConfig$: Observable<AppConfig>;
+    protected datasetInfoOriginal$: Observable<DataSetInfo>;
+    protected datasetInfoProtected$: Observable<DataSetInfo>;
     protected metricConfig$: Observable<ProjectSettings>;
+    protected riskAssessmentConfig$: Observable<RiskAssessmentConfig>;
     protected statistics$: Observable<StatisticsResponse | null>;
 
     @ViewChildren('chart', {read: ElementRef}) protected chartDivs: QueryList<ElementRef<HTMLElement>>;
@@ -55,9 +71,12 @@ export class ReportComponent implements OnInit {
     protected riskScoreP = 0.7;
 
     constructor(
+        private readonly anonymizationService: AnonymizationService,
         private readonly appConfigService: AppConfigService,
+        private readonly datasetInfoService: DataSetInfoService,
         private readonly http: HttpClient,
         private projectConfigService: ProjectConfigurationService,
+        private readonly riskAssessmentService: RiskAssessmentService,
         private statisticsService: StatisticsService,
         titleService: TitleService,
         private readonly userService: UserService,
@@ -68,9 +87,18 @@ export class ReportComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.metricConfig$ = this.projectConfigService.projectSettings$;
-        this.statistics$ = this.statisticsService.fetchResult();
+        this.anonymizationConfiguration$ = this.anonymizationService.fetchConfiguration().pipe(
+            map(value => value.config as AnonymizationConfiguration),
+        );
         this.appConfig$ = this.appConfigService.appConfig$;
+        this.datasetInfoOriginal$ = this.datasetInfoService.getDataSetInfo("VALIDATION");
+        this.datasetInfoProtected$ = this.datasetInfoService.getDataSetInfo("PROTECTED");
+        this.metricConfig$ = this.projectConfigService.projectSettings$;
+        this.riskAssessmentConfig$ = this.riskAssessmentService.fetchConfiguration().pipe(
+            map(value => value.config as RiskAssessmentConfig),
+            tap(config => { console.log(config) })
+        )
+        this.statistics$ = this.statisticsService.fetchResult();
     }
 
     /**
@@ -227,6 +255,38 @@ export class ReportComponent implements OnInit {
         }
     }
 
+    private readonly attributeProtectionNames: Record<AttributeProtection, string> = {
+        ATTRIBUTE_DELETION: "Attribute Deletion",
+        GENERALIZATION: "Generalization",
+        MICRO_AGGREGATION: "Microaggregation",
+        DATE_GENERALIZATION: "Date Generalization",
+        VALUE_DELETION: "Value Deletion",
+        RECORD_DELETION: "Record Deletion",
+        MASKING: "Masking",
+        NO_PROTECTION: "No Protection",
+    }
+
+    protected summarizeAttributeAnonymization(config: AnonymizationAttributeRowConfiguration[]): Record<string, String[]> {
+        const methods = {} as Record<string, String[]>;
+
+        for (const attribute of config) {
+            if (attribute.attributeProtection == null) {
+                continue;
+            }
+
+            const name = attribute.name;
+            const protection = this.attributeProtectionNames[attribute.attributeProtection];
+
+            if (methods[protection] == null) {
+                methods[protection] = [name];
+            } else {
+                methods[protection].push(name);
+            }
+        }
+
+        return methods;
+    }
+
     protected get utilityScoreOX(): number {
         return this.calculatePos(this.utilityScoreO);
     }
@@ -258,6 +318,4 @@ export class ReportComponent implements OnInit {
     protected getColors(value: string): Color[] {
         return this.statisticsService.getColorSchemeGradient(value);
     }
-
-    protected readonly StatisticsService = StatisticsService;
 }

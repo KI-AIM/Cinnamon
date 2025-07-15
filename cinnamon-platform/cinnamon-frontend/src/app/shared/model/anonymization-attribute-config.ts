@@ -12,6 +12,16 @@ export enum AttributeProtection {
     NO_PROTECTION = "NO_PROTECTION",
 }
 
+export enum RiskThresholdType {
+    AVG = "Avg",
+    MAX = "Max",
+}
+
+export enum GeneralizationSetting {
+    GLOBAL = "Global",
+    LOCAL = "Local",
+}
+
 export class AnonymizationAttributeConfiguration {
     attributeConfiguration: AnonymizationAttributeRowConfiguration[];
 }
@@ -23,4 +33,15 @@ export class AnonymizationAttributeRowConfiguration {
     scale: DataScale;
     attributeProtection: AttributeProtection | null = null;
     intervalSize: string | number | null;
+}
+
+export class AnonymizationModelConfiguration {
+    riskThresholdType: RiskThresholdType;
+    riskThresholdValue: number;
+    generalizationSetting: GeneralizationSetting;
+    suppressionLimit: number;
+}
+
+export class AnonymizationConfiguration extends AnonymizationAttributeConfiguration {
+    modelConfiguration: AnonymizationModelConfiguration;
 }

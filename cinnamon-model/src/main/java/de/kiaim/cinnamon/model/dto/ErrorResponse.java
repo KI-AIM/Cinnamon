@@ -1,0 +1,97 @@
+package de.kiaim.cinnamon.model.dto;
+
+import com.fasterxml.jackson.annotation.JsonSetter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.springframework.lang.Nullable;
+
+import java.util.Date;
+
+/**
+ * Response for an invalid request.
+ *
+ * @author Daniel Preciado-Marquez
+ */
+@Schema(description = "Response for an invalid request.")
+@Getter
+@AllArgsConstructor
+public class ErrorResponse {
+
+	/**
+	 * URL describing the error.
+	 */
+	@Schema(description = "URL linking to a description of the error.", example = "about:blank",
+	        requiredMode = Schema.RequiredMode.REQUIRED)
+	private String type = "about:blank";
+
+	/**
+	 * Name of the status code.
+	 */
+	@Schema(description = "Name of the HTTP status code.", example = "BAD_REQUEST",
+	        requiredMode = Schema.RequiredMode.REQUIRED)
+	private String title;
+
+	/**
+	 * Timestamp of the error.
+	 */
+	@Schema(description = "Timestamp of the request arriving.", example = "2023-12-05T13:33:23.296+00:00",
+	        requiredMode = Schema.RequiredMode.REQUIRED)
+	private final Date timestamp = new Date();
+
+	/**
+	 * Value of the status code.
+	 */
+	@Schema(description = "Http status code.", example = "400", requiredMode = Schema.RequiredMode.REQUIRED)
+	private int status;
+
+	/**
+	 * URL of the called API.
+	 */
+	@Schema(description = "Path of the request.", example = "/api/data", requiredMode = Schema.RequiredMode.REQUIRED)
+	private String path;
+
+	/**
+	 * Error Code in the form [SOURCE]_[ExceptionTypeCode]_[ExceptionClassCode]_[ExceptionCode].
+	 */
+	@Schema(description = "Code specifying the exact error.", example = "PLATFORM_1_5_1",
+	        requiredMode = Schema.RequiredMode.REQUIRED)
+	private String errorCode;
+
+	/**
+	 * Human-readable message of the error.
+	 */
+	@Schema(description = "Short description of the error", example = "Unsupported fiel type: .txt",
+	        requiredMode = Schema.RequiredMode.REQUIRED)
+	private String errorMessage;
+
+	/**
+	 * Additional information for the error as JSON. Content depends on the specific error.
+	 */
+	@Schema(description = "JSON containing a detailed error description. Not always available.",
+	        example = "{\"email\":\"Email is not available!\"}", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	@Nullable
+	private ErrorDetails errorDetails;
+
+	/**
+	 * Sets the path field to the given value.
+	 * For compatibility with Springs error responses.
+	 *
+	 * @param instance The instance of the request.
+	 */
+	@JsonSetter
+	public void setInstance(final String instance) {
+		path = instance;
+	}
+
+	/**
+	 * Sets the error message field to the given value.
+	 * For compatibility with Springs error responses.
+	 *
+	 * @param detail The message.
+	 */
+	@JsonSetter
+	public void setDetail(final String detail) {
+		errorMessage = detail;
+	}
+}

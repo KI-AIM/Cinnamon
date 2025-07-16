@@ -63,6 +63,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String ARGUMENT = "11";
 
+	/**
+	 * Error class code for {@link BadUserConfirmationException}.
+	 */
+	public static final String USER_CONFIRMATION = "12";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

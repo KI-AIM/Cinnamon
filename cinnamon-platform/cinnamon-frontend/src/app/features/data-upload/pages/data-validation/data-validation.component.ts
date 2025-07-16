@@ -1,17 +1,19 @@
-import {Component, OnInit, TemplateRef } from "@angular/core";
-import { LoadingService } from "src/app/shared/services/loading.service";
-import { Router } from "@angular/router";
-import { DataService } from "src/app/shared/services/data.service";
-import { HttpErrorResponse } from "@angular/common/http";
-import { Steps } from "src/app/core/enums/steps";
-import { TitleService } from "src/app/core/services/title-service.service";
+import { Component, OnInit, TemplateRef } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
-import { InformationDialogComponent } from "src/app/shared/components/information-dialog/information-dialog.component";
-import { ErrorMessageService } from "src/app/shared/services/error-message.service";
-import {DataSetInfoService} from "../../services/data-set-info.service";
-import { map, Observable, switchMap } from "rxjs";
-import { StatusService } from "../../../../shared/services/status.service";
-import {FileService} from "../../services/file.service";
+import { Router } from "@angular/router";
+import { Mode } from "@core/enums/mode";
+import { Steps } from "@core/enums/steps";
+import { TitleService } from "@core/services/title-service.service";
+import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
+import { FileService } from "@features/data-upload/services/file.service";
+import { DataSetInfo } from "@shared/model/data-set-info";
+import { Status } from "@shared/model/status";
+import { ConfigurationService } from "@shared/services/configuration.service";
+import { DataService } from "@shared/services/data.service";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { LoadingService } from "@shared/services/loading.service";
+import { StatusService } from "@shared/services/status.service";
+import { Observable, switchMap } from "rxjs";
 
 @Component({
     selector: "app-data-validation",
@@ -20,34 +22,29 @@ import {FileService} from "../../services/file.service";
     standalone: false
 })
 export class DataValidationComponent implements OnInit {
-    protected numberRows$: Observable<number>;
-    protected numberInvalidRows$: Observable<number>;
+    protected readonly Mode = Mode;
+
+    protected dataSetInfo$: Observable<DataSetInfo>;
+    protected status$: Observable<Status>;
 
 	constructor(
 		private loadingService: LoadingService,
 		private router: Router,
         private statusService: StatusService,
+        private readonly configurationService: ConfigurationService,
         protected dataSetInfoService: DataSetInfoService,
         private readonly fileService: FileService,
 		private dataService: DataService,
 		private titleService: TitleService,
         private dialog: MatDialog,
-		private errorMessageService: ErrorMessageService,
+        private errorHandlingService: ErrorHandlingService,
 	) {
         this.titleService.setPageTitle("Data validation");
     }
 
     ngOnInit(): void {
-        this.numberRows$ = this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
-            map(value => {
-                return value.numberRows;
-            }),
-        );
-        this.numberInvalidRows$ = this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
-            map(value => {
-                return value.numberInvalidRows;
-            }),
-        );
+        this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfoOriginal$();
+        this.status$ = this.statusService.status$;
     }
 
     protected get locked(): boolean {
@@ -70,7 +67,7 @@ export class DataValidationComponent implements OnInit {
             }),
         ).subscribe({
             next: () => this.handleConfirm(),
-            error: (e) => this.handleError(e),
+            error: (e) => this.errorHandlingService.addError(e),
         });
 	}
 
@@ -81,7 +78,9 @@ export class DataValidationComponent implements OnInit {
                 }),
             ).subscribe({
             next: () => {
+                this.configurationService.invalidateCache();
                 this.fileService.invalidateCache();
+                this.dataSetInfoService.invalidateCache();
                 this.router.navigateByUrl("/upload");
             }
         });
@@ -92,14 +91,5 @@ export class DataValidationComponent implements OnInit {
 		this.router.navigateByUrl("/anonymizationConfiguration");
 	}
 
-	private handleError(error: HttpErrorResponse) {
-		this.loadingService.setLoadingStatus(false);
-
-		this.dialog.open(InformationDialogComponent, {
-			data: {
-				title: "An error occurred",
-				content: "We are sorry, something went wrong: " + this.errorMessageService.convertResponseToMessage(error),
-			}
-		});
-	}
+    protected readonly Steps = Steps;
 }

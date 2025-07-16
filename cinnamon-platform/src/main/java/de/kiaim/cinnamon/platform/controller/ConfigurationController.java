@@ -4,8 +4,9 @@ import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.AlgorithmDefinitionRequest;
 import de.kiaim.cinnamon.platform.model.dto.AvailableAlgorithmsRequest;
+import de.kiaim.cinnamon.platform.model.dto.ConfigurationInfo;
 import de.kiaim.cinnamon.platform.model.dto.ConfigurationRequest;
-import de.kiaim.cinnamon.platform.model.dto.ErrorResponse;
+import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.DatabaseService;
@@ -43,6 +44,41 @@ public class ConfigurationController {
 		this.databaseService = databaseService;
 		this.projectService = projectService;
 		this.userService = userService;
+	}
+
+	@Operation(summary = "Returns general information about the given configuration.",
+	           description = "Returns general information about the given configuration.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Returns the information.",
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = ConfigurationInfo.class))),
+			@ApiResponse(responseCode = "400",
+			             description = "The configuration name is invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "The application state is invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@GetMapping(value = "/info", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ConfigurationInfo info(
+			@Parameter(description = "Name of the configuration.",
+			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
+			                              schema = @Schema(implementation = String.class)),
+			           required = true)
+			@RequestParam("name") final String configurationName,
+			@AuthenticationPrincipal UserEntity requestUser
+	) throws BadConfigurationNameException, InternalInvalidStateException {
+		// Load user from the database because lazy loaded fields cannot be read from the injected user
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		return externalConfigurationService.getInfo(configurationName, project);
 	}
 
 	@Operation(summary = "Stores any configuration under the given name.",

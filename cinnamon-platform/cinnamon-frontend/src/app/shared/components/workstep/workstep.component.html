@@ -1,0 +1,20 @@
+<div class="cinnamon-confirm-div">
+
+    <div class="cinnamon-workstep-error" *ngIf="!locked && !valid">
+        The step is not completed or contains errors.
+    </div>
+
+    <div class="cinnamon-workstep-error" *ngIf="locked">
+        The step is locked.
+    </div>
+
+    <div class="cinnamon-buttons-div">
+        <button [disabled]="locked || !valid" (click)="confirmStep()" mat-raised-button color="primary">
+            Continue
+        </button>
+        <button *ngIf="altConfirm" [disabled]="locked || !altConfirmValid" (click)="altConfirmStep()" mat-raised-button
+                color="primary">
+            {{ altConfirm }}
+        </button>
+    </div>
+</div>

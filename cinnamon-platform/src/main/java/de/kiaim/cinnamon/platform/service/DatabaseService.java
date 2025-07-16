@@ -389,7 +389,7 @@ public class DatabaseService {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
 
 		if (!dataSetEntity.isStoredData()) {
-			return new DataSetInfo(0, 0, false, 0.0f);
+			return new DataSetInfo(0, 0, false, 0.0f, 0, 0);
 		}
 
 		final int rows = countEntries(dataSetEntity.getId());
@@ -397,13 +397,23 @@ public class DatabaseService {
 
 		boolean hasHoldOutSplit = false;
 		float holdOutPercentage = 0.0f;
+
+		int numberHoldOutRows = 0;
+		int numberInvalidHoldOutRows = 0;
+
 		final OriginalDataEntity originalData = dataSetEntity.getOriginalData();
 		if (originalData != null) {
 			hasHoldOutSplit = originalData.isHasHoldOut();
 			holdOutPercentage = originalData.getHoldOutPercentage();
+
+			if (hasHoldOutSplit) {
+				numberHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ALL);
+				numberInvalidHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ERRORS);
+			}
 		}
 
-		return new DataSetInfo(rows, invalidRows, hasHoldOutSplit, holdOutPercentage);
+		return new DataSetInfo(rows, invalidRows, hasHoldOutSplit, holdOutPercentage, numberHoldOutRows,
+		                       numberInvalidHoldOutRows);
 	}
 
 	/**
@@ -606,7 +616,6 @@ public class DatabaseService {
 		var calcRowNumbers = rowSelector != RowSelector.ALL;
 
 		final var startRow = (pageNumber - 1) * pageSize;
-		final var endRow = startRow + pageSize;
 
 		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
 		final DataSet dataSet = exportDataSet(dataSetEntity, rowSelector, columnNames,
@@ -618,6 +627,7 @@ public class DatabaseService {
 			rowNumbers = dataSet.getData().stream().map(a -> (Integer) a.get(a.size() - 1)).toList();
 			errors = errorRepository.findByDataSetIdAndRowIndexIn(dataSetEntity.getId(), rowNumbers);
 		} else {
+			var endRow = startRow + dataSet.getDataRows().size();
 			errors = errorRepository.findByDataSetIdAndRowIndexBetween(dataSetEntity.getId(), startRow, endRow - 1);
 		}
 
@@ -688,6 +698,10 @@ public class DatabaseService {
 	public void delete(final ProjectEntity project)
 			throws BadDataSetIdException, InternalDataSetPersistenceException {
 		project.getOriginalData().setFile(null);
+		project.getOriginalData().setHasHoldOut(false);
+		project.getOriginalData().setHoldOutPercentage(0.0f);
+		project.getOriginalData().setHoldOutSeed(0);
+
 		deleteDataSet(project.getOriginalData().getDataSet());
 
 		for (final var pipeline : project.getPipelines()) {
@@ -708,7 +722,43 @@ public class DatabaseService {
 			}
 		}
 
+		project.getConfigurations().clear();
+
 		projectRepository.save(project);
+	}
+
+	/**
+	 * Deletes the data, transformation errors and statistics for the given dataset.
+	 *
+	 * @param dataSet The dataset to delete.
+	 * @throws InternalDataSetPersistenceException If the table could not be deleted.
+	 */
+	@Transactional
+	public void deleteDataSet(@Nullable final DataSetEntity dataSet) throws InternalDataSetPersistenceException {
+		if (dataSet == null) {
+			return;
+		}
+
+		// Delete the table and its data
+		if (existsTable(dataSet.getId())) {
+			try {
+				executeStatement("DROP TABLE IF EXISTS " + getTableName(dataSet.getId()) + ";");
+			} catch (SQLException e) {
+				LOGGER.error("The DataSet could not be deleted!", e);
+				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_DELETE,
+				                                              "The DataSet could not be deleted!", e);
+			}
+		}
+
+		dataSet.getDataTransformationErrors().clear();
+		dataSet.setStoredData(false);
+		dataSet.setConfirmedData(false);
+		dataSet.getStatisticsProcess().reset();
+
+		final OriginalDataEntity original = dataSet.getOriginalData();
+		if (original != null) {
+			original.setHasHoldOut(false);
+		}
 	}
 
 	/**
@@ -719,17 +769,7 @@ public class DatabaseService {
 	 * @throws InternalDataSetPersistenceException If the Number could not be retrieved.
 	 */
 	public int countEntries(final long dataSetId) throws InternalDataSetPersistenceException {
-		final String countQuery = "SELECT count(*) FROM " + getTableName(dataSetId) + ";";
-		try (final Statement countStatement = connection.createStatement()) {
-			try (ResultSet resultSet = countStatement.executeQuery(countQuery)) {
-				resultSet.next();
-				return resultSet.getInt(1);
-			}
-		} catch (SQLException e) {
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_COUNT,
-			                                              "Failed to count rows for dataset with ID '" + dataSetId +
-			                                              "'!", e);
-		}
+		return countEntries(dataSetId, HoldOutSelector.ALL, RowSelector.ALL);
 	}
 
 	/**
@@ -1111,33 +1151,6 @@ public class DatabaseService {
 		}
 
 		return targetConfiguration;
-	}
-
-	private void deleteDataSet(@Nullable final DataSetEntity dataSet) throws InternalDataSetPersistenceException {
-		if (dataSet == null) {
-			return;
-		}
-
-		// Delete the table and its data
-		if (existsTable(dataSet.getId())) {
-			try {
-				executeStatement("DROP TABLE IF EXISTS " + getTableName(dataSet.getId()) + ";");
-			} catch (SQLException e) {
-				LOGGER.error("The DataSet could not be deleted!", e);
-				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_DELETE,
-				                                              "The DataSet could not be deleted!", e);
-			}
-		}
-
-		dataSet.getDataTransformationErrors().clear();
-		dataSet.setStoredData(false);
-		dataSet.setConfirmedData(false);
-		dataSet.getStatisticsProcess().reset();
-
-		final OriginalDataEntity original = dataSet.getOriginalData();
-		if (original != null) {
-			original.setHasHoldOut(false);
-		}
 	}
 
 	/**

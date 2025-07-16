@@ -1,15 +1,25 @@
-import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { debounceTime, distinctUntilChanged, map, Observable, Subscription, switchMap, tap } from "rxjs";
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import {
+    catchError,
+    debounceTime,
+    distinctUntilChanged,
+    map,
+    Observable,
+    of,
+    Subscription,
+    switchMap,
+    tap
+} from "rxjs";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import {
     TechnicalEvaluationService
-} from "../../../features/technical-evaluation/services/technical-evaluation.service";
+} from "src/app/features/technical-evaluation/services/technical-evaluation.service";
 import { ProjectConfigurationService } from "../../services/project-configuration.service";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
 import { MetricImportance, MetricImportanceData } from "../../model/project-settings";
-import { MatDialog } from "@angular/material/dialog";
 import { StatisticsService } from "../../services/statistics.service";
+import { ErrorHandlingService } from "../../services/error-handling.service";
 
 @Component({
     selector: 'app-metric-configuration',
@@ -26,10 +36,9 @@ export class MetricConfigurationComponent implements OnInit, OnDestroy {
     protected importanceForm: FormGroup;
 
     private updateSubscription: Subscription | null = null;
-    @ViewChild('metricSelectionDialog') private dialogWrap: TemplateRef<any>;
 
     constructor(
-        private readonly matDialog: MatDialog,
+        private readonly errorHandlingService: ErrorHandlingService,
         private readonly projectConfigurationService: ProjectConfigurationService,
         protected readonly statisticsService: StatisticsService,
         private readonly technicalEvaluationService: TechnicalEvaluationService,
@@ -42,6 +51,10 @@ export class MetricConfigurationComponent implements OnInit, OnDestroy {
         this.algorithmDefinition$ = this.technicalEvaluationService.algorithms.pipe(
             switchMap(value => {
                 return this.technicalEvaluationService.getAlgorithmDefinition(value[0]);
+            }),
+            catchError(error => {
+                this.errorHandlingService.addError(error, "Failed to load metrics!");
+                return of(new AlgorithmDefinition());
             }),
             tap(value => {
                 // Create form
@@ -65,12 +78,6 @@ export class MetricConfigurationComponent implements OnInit, OnDestroy {
         if (this.updateSubscription !== null) {
             this.updateSubscription.unsubscribe();
         }
-    }
-
-    public open(): void {
-        this.matDialog.open(this.dialogWrap, {
-            width: '60%'
-        });
     }
 
     private createForm(algorithmDefinition: AlgorithmDefinition): void {

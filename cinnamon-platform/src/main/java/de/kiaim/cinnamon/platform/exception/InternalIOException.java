@@ -40,6 +40,11 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String DATA_SET_SERIALIZATION = "7";
 
+	/**
+	 * Exception code for failed XLSX file creation.
+	 */
+	public static final String XLSX_CREATION = "8";
+
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

@@ -8,6 +8,7 @@ import pandas as pd
 import yaml
 from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Path
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from base_assessment.general_assessment_process import general_assessment
@@ -199,3 +200,9 @@ async def load_attribute_config(attribute_config):
 @app.delete("/base_assessments/{process_id}")
 async def cancel_base_assessment(process_id: str = Path()):
     return kill_process(process_id)
+
+
+@app.get("/actuator/health")
+async def health_check():
+    status = {"status": "UP"}
+    return JSONResponse(content=status, status_code=200)

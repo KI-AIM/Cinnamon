@@ -10,6 +10,7 @@ import de.kiaim.cinnamon.anonymization.processor.AnonymizedDatasetProcessor;
 import de.kiaim.cinnamon.anonymization.processor.DataSetProcessor;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
@@ -25,7 +26,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import reactor.util.retry.Retry;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
@@ -203,28 +203,12 @@ public class AnonymizationService {
                 errorMessage = anonymizationException.getMessage();
             }
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("error_code", new ByteArrayResource(errorCode.getBytes(StandardCharsets.UTF_8)) {
-                @Override
-                public String getFilename() { return "error_code.txt"; }
-            });
-            body.add("error_message", new ByteArrayResource(errorMessage.getBytes(StandardCharsets.UTF_8)) {
-                @Override
-                public String getFilename() {
-                    return "error_message.txt";
-                }
-            });
-            body.add("exception_message", new ByteArrayResource(exceptionMessage.getBytes(StandardCharsets.UTF_8)) {
-                @Override
-                public String getFilename() {
-                    return "exception_message.txt";
-                }
-            });
+            ErrorRequest errorResponse = new ErrorRequest("about:blank", errorCode, errorMessage, exceptionMessage);
 
             webClient.post()
                     .uri(callbackUrl)
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
-                    .body(BodyInserters.fromMultipartData(body))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(errorResponse)
                     .retrieve()
                     .bodyToMono(Void.class)
                     .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(2)))

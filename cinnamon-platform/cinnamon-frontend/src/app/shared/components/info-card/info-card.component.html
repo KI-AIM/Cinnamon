@@ -1,7 +1,19 @@
 <div>
-    <mat-card class="mb-2" [ngClass]="this.typeClass">
+    <mat-card class="mb-3" [ngClass]="this.typeClass">
         <mat-card-content>
-            <ng-content></ng-content>
+            <div style="display: flex;">
+                <div class="card-icon">
+                    <mat-icon *ngIf="typeClass === 'card-failure'" fontIcon="error"></mat-icon>
+                    <mat-icon *ngIf="typeClass === 'card-warn'" fontIcon="warning"></mat-icon>
+                    <mat-icon *ngIf="typeClass === 'card-success'" fontIcon="check_circle"></mat-icon>
+                </div>
+                <div>
+                    <ng-content></ng-content>
+                </div>
+                <div *ngIf="closable" class="card-close-icon">
+                    <mat-icon fontIcon="close" (click)="close()"></mat-icon>
+                </div>
+            </div>
         </mat-card-content>
     </mat-card>
 </div>

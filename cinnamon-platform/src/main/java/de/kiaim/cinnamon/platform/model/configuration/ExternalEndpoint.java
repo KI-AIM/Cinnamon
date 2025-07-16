@@ -16,10 +16,10 @@ import java.util.List;
 public class ExternalEndpoint {
 
 	/**
-	 * Index of the server.
+	 * Name of the server.
 	 */
 	@NotBlank
-	private Integer externalServerIndex;
+	private String externalServerName;
 
 	/**
 	 * Name of the callback url part in the request.
@@ -30,8 +30,7 @@ public class ExternalEndpoint {
 	 * Endpoint for cancelling requests.
 	 */
 	@JsonIgnore
-	@NotBlank
-	private String cancelEndpoint;
+	private String cancelEndpoint = "";
 
 	/**
 	 * HTTP method for the cancel endpoint.
@@ -46,7 +45,6 @@ public class ExternalEndpoint {
 	/**
 	 * Name of the configuration.
 	 */
-	@NotBlank
 	private String configurationName;
 
 	/**
@@ -107,6 +105,13 @@ public class ExternalEndpoint {
 
 	/**
 	 * Configuration required by this endpoint.
+	 * Mapping for {@link ExternalConfiguration#getUsages()}.
 	 */
 	private ExternalConfiguration configuration;
+
+	/**
+	 * List of jobs that use this endpoint.
+	 * Mapping for {@link Job#getEndpoint()}.
+	 */
+	private List<Job> usages = new ArrayList<>();
 }

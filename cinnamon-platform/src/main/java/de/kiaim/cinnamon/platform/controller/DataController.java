@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.controller;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.*;
@@ -48,16 +49,6 @@ import java.util.Map;
                                        "Supports CSV files. " +
                                        "Data Sets are associated with the user of the request.")
 public class DataController {
-
-	private final static String DATA_EXAMPLE = "[[true,\"2023-12-24\",\"2023-12-24T18:30:01.123456\",4.2,42,\"Hello World!\"]]";
-
-	private final static String DATA_CONFIGURATION_EXAMPLE = """
-			{"configurations":[{"index":0,"name":"column0_boolean","type":"BOOLEAN","scale":"NOMINAL","configurations":[]},{"index":1,"name":"column1_date","type":"DATE","scale":"DATE","configurations":[{"name":"DateFormatConfiguration","dateFormatter":"yyyy-MM-dd"},{"name":"RangeConfiguration","minValue":"1970-01-01","maxValue":"2030-01-01"}]},{"index":2,"name":"column2_date_time","type":"DATE_TIME","scale":"DATE","configurations":[{"name":"DateTimeFormatConfiguration","dateTimeFormatter":"yyyy-MM-dd'T'HH:mm:ss.SSSSSS"},{"name":"RangeConfiguration","minValue":"1970-01-01T00:01:00","maxValue":"2030-01-01T23:59:00"}]},{"index":3,"name":"column3_decimal","type":"DECIMAL","scale":"RATIO","configurations":[]},{"index":4,"name":"column4_integer","type":"INTEGER","scale":"INTERVAL","configurations":[{"name":"RangeConfiguration","minValue":0,"maxValue":100}]},{"index":5,"name":"column5_string","type":"STRING","scale":"NOMINAL","configurations":[{"name":"StringPatternConfiguration","pattern":".*"}]}]}""";
-
-	private final static String DATA_SET_EXAMPLE = """
-					{"dataConfiguration":""" + DATA_CONFIGURATION_EXAMPLE +
-			"""
-					,"data":""" + DATA_EXAMPLE + "}";
 
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
@@ -140,10 +131,9 @@ public class DataController {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully estimated the data configuration. Returns the estimated data configuration.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = DataConfiguration.class),
-			                                 examples = @ExampleObject(DATA_CONFIGURATION_EXAMPLE)),
+			                                 schema = @Schema(implementation = DataConfigurationEstimation.class)),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = DataConfiguration.class))}),
+			                                 schema = @Schema(implementation = DataConfigurationEstimation.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The data set has already been confirmed.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -265,8 +255,7 @@ public class DataController {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully found the configuration. Returns the configuration of the data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = DataConfiguration.class),
-			                                 examples = @ExampleObject(DATA_CONFIGURATION_EXAMPLE)),
+			                                 schema = @Schema(implementation = DataConfiguration.class)),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = DataConfiguration.class))}),
 			@ApiResponse(responseCode = "400",
@@ -329,7 +318,7 @@ public class DataController {
 			             description = "Successfully found the data and returns the data.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 array = @ArraySchema(schema = @Schema(implementation = DataRow.class)),
-			                                 examples = {@ExampleObject(DATA_EXAMPLE)}),
+			                                 examples = {@ExampleObject("[" + DataRow.DATA_ROW_EXAMPLE + "]")}),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 array = @ArraySchema(schema = @Schema(implementation = DataRow.class)),
 			                                 examples = {
@@ -402,8 +391,7 @@ public class DataController {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully found the data set. Returns the data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = DataSet.class),
-			                                 examples = @ExampleObject(DATA_SET_EXAMPLE)),
+			                                 schema = @Schema(implementation = DataSet.class)),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = DataSet.class))}),
 			@ApiResponse(responseCode = "400",
@@ -588,12 +576,13 @@ public class DataController {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
 						file.getFileConfiguration().getFileType());
 				final InputStream inputStream = new ByteArrayInputStream(file.getFile());
-				result = dataProcessor.estimateDataConfiguration(inputStream,
-				                                                 file.getFileConfiguration(),
-				                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+				DataConfigurationEstimation estimation = dataProcessor.estimateDataConfiguration(inputStream,
+				                                                                                 file.getFileConfiguration(),
+				                                                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+				result = estimation;
 
 				try {
-					databaseService.storeOriginalDataConfiguration((DataConfiguration) result, projectEntity);
+					databaseService.storeOriginalDataConfiguration(estimation.getDataConfiguration(), projectEntity);
 				} catch (final BadDataConfigurationException e) {
 					throw new InternalInvalidResultException(InternalInvalidResultException.INVALID_ESTIMATION,
 					                                         "Estimation created an invalid configuration!", e);

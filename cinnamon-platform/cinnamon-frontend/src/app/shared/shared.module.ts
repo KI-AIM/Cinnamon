@@ -2,6 +2,10 @@ import { NgModule } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ChartCorrelationComponent } from "src/app/shared/components/chart-correlation/chart-correlation.component";
 import { StatisticsSorterPipe } from "src/app/shared/pipes/statistics-sorter.pipe";
+import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
+import { MatTooltip } from "@angular/material/tooltip";
+import { WorkstepBoxComponent } from "@shared/components/workstep-box/workstep-box.component";
+import { WorkstepListComponent } from "@shared/components/workstep-list/workstep-list.component";
 import { InformationDialogComponent } from "./components/information-dialog/information-dialog.component";
 import { MatDialogModule } from "@angular/material/dialog";
 import { MatButtonModule } from "@angular/material/button";
@@ -24,8 +28,6 @@ import { ConfigurationPageComponent } from "./components/configuration-page/conf
 import { ConfigurationGroupComponent } from './components/configuration-group/configuration-group.component';
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatExpansionModule } from "@angular/material/expansion";
-import { ConfigurationUploadComponent } from "./components/configuration-upload/configuration-upload.component";
-import { ConfigurationManagementComponent } from "./components/configuration-management/configuration-management.component";
 import {DataTableComponent} from "./components/data-table/data-table.component";
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
@@ -50,6 +52,11 @@ import {InstanceOfPipe} from "./pipes/instance-of.pipe";
 import { MetricInfoTableComponent } from './components/metric-info-table/metric-info-table.component';
 import { MetricConfigurationComponent } from './components/metric-configuration/metric-configuration.component';
 import { ConfigurationInputAttributeListComponent } from './components/configuration-input-attribute-list/configuration-input-attribute-list.component';
+import { WorkstepComponent } from "./components/workstep/workstep.component";
+import { WorkstepTitleComponent } from "./components/workstep-title/workstep-title.component";
+import { FileUploadComponent } from "./components/file-upload/file-upload.component";
+import { WorkstepItemComponent } from './components/workstep-item/workstep-item.component';
+import { ProjectExportComponent } from './components/project-export/project-export.component';
 
 @NgModule({
     declarations: [
@@ -64,20 +71,28 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         ConfigurationFormComponent,
         ConfigurationGroupComponent,
         ConfigurationInputArrayComponent,
+        ConfigurationInputAttributeListComponent,
         ConfigurationInputComponent,
         ConfigurationInputInfoComponent,
-        ConfigurationManagementComponent,
         ConfigurationPageComponent,
         ConfigurationSelectionComponent,
-        ConfigurationUploadComponent,
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataInspectionAttributeDetailsComponent,
         DataTableComponent,
+        FileUploadComponent,
         InfoCardComponent,
         InformationDialogComponent,
         LoadingSpinnerComponent,
+        MetricConfigurationComponent,
         MetricInfoTableComponent,
+        ProjectExportComponent,
+        ProjectSettingsComponent,
+        WorkstepComponent,
+        WorkstepBoxComponent,
+        WorkstepItemComponent,
+        WorkstepListComponent,
+        WorkstepTitleComponent,
         // Directives
         NoSpaceValidatorDirective,
         // Pipes
@@ -86,8 +101,6 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         MetricFilterPipe,
         MetricSorterPipe,
         StatisticsFilterPipe,
-        MetricConfigurationComponent,
-        ConfigurationInputAttributeListComponent,
     ],
     imports: [
         CommonModule,
@@ -112,24 +125,34 @@ import { ConfigurationInputAttributeListComponent } from './components/configura
         })),
         MatMenuModule,
         MatRadioModule,
+        MatTooltip,
         StatisticsSorterPipe,
     ],
     exports: [
+        // Components
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,
-        ConfigurationManagementComponent,
         ConfigurationPageComponent,
-        ConfigurationUploadComponent,
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataTableComponent,
+        FileUploadComponent,
         InfoCardComponent,
         LoadingSpinnerComponent,
-        MetricInfoTableComponent,
-        NoSpaceValidatorDirective,
-        InstanceOfPipe,
         MetricConfigurationComponent,
+        MetricInfoTableComponent,
+        ProjectExportComponent,
+        ProjectSettingsComponent,
+        WorkstepComponent,
+        WorkstepBoxComponent,
+        WorkstepItemComponent,
+        WorkstepListComponent,
+        WorkstepTitleComponent,
+        // Directives
+        NoSpaceValidatorDirective,
+        // Pipes
+        InstanceOfPipe,
     ],
 })
 export class SharedModule {}

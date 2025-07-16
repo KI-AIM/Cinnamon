@@ -1,13 +1,25 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, toArray } from "rxjs";
+import {
+    catchError,
+    concatMap, debounceTime,
+    filter,
+    from,
+    map,
+    mergeMap,
+    Observable,
+    of, scan,
+    switchMap,
+    tap,
+    throwError,
+    toArray
+} from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { FileUtilityService } from './file-utility.service';
 import { parse, stringify } from 'yaml';
 import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data";
-import { Steps } from "../../core/enums/steps";
-import { environments } from "../../../environments/environment";
-import { StatusService } from "./status.service";
+import { environments } from "src/environments/environment";
+import { Algorithm } from "../model/algorithm";
 
 /**
  * Service for managing configurations.
@@ -19,12 +31,73 @@ export class ConfigurationService {
     private baseUrl: string = environments.apiUrl + "/api/config";
     private registeredConfigurations: Array<ConfigurationRegisterData>;
 
+    private configurationCache: Record<string, {
+        selectedAlgorithm: Algorithm | null,
+        configuration: {[algorithmName: string]: Object},
+    }> = {};
+
     constructor(
         private fileUtilityService: FileUtilityService,
         private httpClient: HttpClient,
-        private readonly statusService: StatusService,
     ) {
         this.registeredConfigurations = [];
+    }
+
+    /**
+     * Caches the selected algorithm for the given configuration name.
+     * @param configurationName The configuration name.
+     * @param algorithm The algorithm to cache.
+     */
+    public setSelectedAlgorithm(configurationName: string, algorithm: Algorithm): void {
+        this.initCache(configurationName);
+        this.configurationCache[configurationName].selectedAlgorithm = algorithm;
+    }
+
+    /**
+     * Gets the cached selected algorithm for the given configuration name or null if no algorithm is cached.
+     * @param configurationName The configuration name.
+     */
+    public getSelectedAlgorithm(configurationName: string): Algorithm | null {
+        return this.configurationCache[configurationName]?.selectedAlgorithm || null;
+    }
+
+    /**
+     * Gets the cached configuration for the given configuration name and algorithm or null if no configuration is cached.
+     * @param configurationName The configuration name.
+     * @param algorithm The algorithm to get the configuration for.
+     */
+    public getConfiguration(configurationName: string, algorithm: Algorithm): Object | null {
+        return this.configurationCache[configurationName]?.configuration[algorithm.name] || null;
+    }
+
+    /**
+     * Caches the configuration for the given configuration name and algorithm.
+     * @param configurationName The configuration name.
+     * @param algorithm The algorithm to cache the configuration for.
+     * @param configuration The configuration to cache.
+     */
+    public setConfiguration(configurationName: string, algorithm: Algorithm, configuration: Object): void {
+        this.initCache(configurationName);
+        this.configurationCache[configurationName].configuration[algorithm.name] = configuration;
+    }
+
+    /**
+     * Returns the cached configuration for the cached algorithm of the given configuration name.
+     * @param configurationName The configuration name.
+     */
+    public getSelectedConfiguration(configurationName: string): Object | null {
+        const selectedAlgorithm = this.getSelectedAlgorithm(configurationName);
+        if (selectedAlgorithm === null) {
+            return null;
+        }
+        return this.getConfiguration(configurationName, selectedAlgorithm);
+    }
+
+    /**
+     * Invalidates the cached configurations.
+     */
+    public invalidateCache(): void {
+        this.configurationCache = {};
     }
 
     /**
@@ -36,7 +109,7 @@ export class ConfigurationService {
     }
 
     /**
-     * Returns the registered configuration with given name if present.
+     * Returns the registered configuration with the given name if present.
      * Otherwise, returns null.
      * @param name Name of the registered configuration to return.
      * @returns The registered configuration or null.
@@ -65,37 +138,6 @@ export class ConfigurationService {
 
         this.registeredConfigurations.push(data);
         this.registeredConfigurations = this.registeredConfigurations.sort((a, b) => a.orderNumber - b.orderNumber);
-    }
-
-    /**
-     * Extracts the configuration object with the given name form the given YAML configuration file.
-     * Calls the given callback with the parameter in the form of {<configuration name>: <extracted config>}.
-     * If the config is not present, <extracted config> is null.
-     *
-     * @param file YAML file containing configurations.
-     * @param configurationName Name of the configuration to extract.
-     * @param callback Callback that gets called with the configuration.
-     */
-    public extractConfig(file: Blob, configurationName: string, callback: (result: object | null) => void) {
-        const reader = new FileReader();
-        reader.addEventListener("load", () => {
-            const configData = reader.result as string;
-            const configurations = parse(configData);
-
-            const result: { [a: string]: object | null } = {};
-            result[configurationName] = null;
-
-            for (const [name, config] of Object.entries(configurations)) {
-                if (name === configurationName) {
-                    result[configurationName] = config as object;
-                    break;
-                }
-            }
-
-            callback(result);
-        }, false);
-
-        reader.readAsText(file);
     }
 
     /**
@@ -128,36 +170,6 @@ export class ConfigurationService {
             formData.append("url", url);
         }
         return this.httpClient.post<void>(environments.apiUrl + "/api/config", formData);
-    }
-
-    /**
-     * Downloads the registered configurations which names are included in the given array.
-     * Uses the getConfigCallback function to retrieve the configuration.
-     * If configured, stores the configuration under the configured name into the database.
-     * @param includedConfigurations Names of the configurations to download.
-     */
-    downloadAllConfigurations(includedConfigurations: Array<string>) {
-        let configString = "";
-        for (const config of this.getRegisteredConfigurations()) {
-            if (!includedConfigurations.includes(config.name)) {
-                continue;
-            }
-
-            const configData = config.getConfigCallback();
-            if (typeof configData === "string") {
-                configString += configData;
-            } else {
-                configString += stringify(configData)
-            }
-
-            if (!this.statusService.isStepCompleted(config.lockedAfterStep)) {
-                config.storeConfig!(config.name, configString).subscribe();
-            }
-        }
-
-        // TODO use project name
-        const fileName = "configuration.yaml"
-        this.fileUtilityService.saveYamlFile(configString, fileName);
     }
 
     /**
@@ -244,37 +256,37 @@ export class ConfigurationService {
                     }),
                 );
             }),
-            catchError((error) => {
-                console.log('Error during configuration read:', error);
-                return of(null);
+            switchMap(result => {
+                if (includedConfigurations !== null && result) {
+                    // Look if all configurations are present
+                    const missing: string[] = [];
+                    for (const config of includedConfigurations) {
+                        if (!result.some(value => value.name === config)) {
+                            missing.push(config);
+                        }
+                    }
+
+                    if (missing.length > 0) {
+                        return throwError(() => "Invalid configuration file! The configuration must contain the following properties: " + missing.map(val => "'" + val + "'").join(", "));
+                    }
+                }
+                return of(result);
             }),
         );
     }
 
     /**
-     * Fetches all configurations from the backend for steps that are available before the given step.
-     * Calls the setConfigCallback function if a configuration is available.
-     * @param step The step up to which the configurations should be fetched.
+     * Initializes the cache for the given configuration name if it does not exist.
+     * @param configurationName The name of the configuration to initialize.
+     * @private
      */
-    public fetchConfigurations(step: Steps) {
-        const stepIndex = Number.parseInt(Steps[step]);
-        for (const config of this.getRegisteredConfigurations()) {
-            if (config.availableAfterStep < stepIndex) {
-                config.fetchConfig!(config.name).subscribe({
-                    next: value => {
-                        const data = new ImportPipeData();
-                        data.success = true;
-                        data.name = config.name;
-                        data.configData = config;
-                        data.yamlConfigString = value;
-
-                        config.setConfigCallback(data);
-                    },
-                    error: err => {
-                        console.log(err);
-                    }
-                });
-            }
+    private initCache(configurationName: string): void {
+        if (!this.configurationCache[configurationName]) {
+            this.configurationCache[configurationName] = {
+                selectedAlgorithm: null,
+                configuration: {},
+            };
         }
     }
+
 }

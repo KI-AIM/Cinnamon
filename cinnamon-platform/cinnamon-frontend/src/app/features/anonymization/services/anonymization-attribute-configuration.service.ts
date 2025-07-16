@@ -1,114 +1,68 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { finalize, Observable, of, share, tap } from 'rxjs';
-import { AnonymizationAttributeConfiguration, AnonymizationAttributeRowConfiguration } from 'src/app/shared/model/anonymization-attribute-config';
-import { environments } from 'src/environments/environment';
-import { AnonymizationService } from './anonymization.service';
+import { AttributeProtection } from 'src/app/shared/model/anonymization-attribute-config';
+import { List } from "../../../core/utils/list";
+import { areEnumValuesEqual } from "../../../shared/helper/enum-helper";
+import { DataScale } from "../../../shared/model/data-scale";
+import { DataType } from "../../../shared/model/data-type";
 
 @Injectable({
     providedIn: 'root',
 })
 export class AnonymizationAttributeConfigurationService {
 
-    private attributeConfiguration: AnonymizationAttributeConfiguration | null = null;
-	private attributeConfiguration$: Observable<AnonymizationAttributeConfiguration> | null = null;
+    /**
+     * Determines the valid transformations that can be applied
+     * to a given attribute configuration.
+     *
+     * @returns Array<AttributeProtection>
+     */
+    public getValidTransformationsForAttribute(scale: DataScale, dataType: DataType): List<String> {
+        const transformations = [];
 
-    constructor(private http: HttpClient) {
-	}
+        if (areEnumValuesEqual(DataScale, scale, DataScale.DATE) ||
+            areEnumValuesEqual(DataScale, scale, DataScale.NOMINAL) ||
+            areEnumValuesEqual(DataScale, scale, DataScale.ORDINAL) ||
+            areEnumValuesEqual(DataScale, scale, DataScale.INTERVAL) ||
+            areEnumValuesEqual(DataScale, scale, DataScale.RATIO)
+        ) {
+            transformations.push(AttributeProtection.MASKING);
+        }
 
-	/**
-	 * Creates an object representation of the data of the
-	 * AnonymizationAttributeConfiguration stored in this service
-	 * @returns Object<AnonymizationAttributeConfiguration>
-	 */
-	createConfiguration(): Object {
-        return {
-			...this.attributeConfiguration
-         };
+        if (areEnumValuesEqual(DataScale, scale, DataScale.DATE)) {
+            transformations.push(AttributeProtection.DATE_GENERALIZATION);
+        }
+
+        if (areEnumValuesEqual(DataScale, scale, DataScale.ORDINAL)) {
+            transformations.push(AttributeProtection.GENERALIZATION);
+        }
+
+        if (areEnumValuesEqual(DataScale, scale, DataScale.RATIO) ||
+            areEnumValuesEqual(DataScale, scale, DataScale.INTERVAL)
+        ) {
+            if (areEnumValuesEqual(DataType, dataType, DataType.DECIMAL) ||
+                areEnumValuesEqual(DataType, dataType, DataType.INTEGER)
+            ) {
+                transformations.push(AttributeProtection.GENERALIZATION);
+                transformations.push(AttributeProtection.MICRO_AGGREGATION);
+            }
+        }
+
+        transformations.push(AttributeProtection.ATTRIBUTE_DELETION);
+        transformations.push(AttributeProtection.RECORD_DELETION);
+        transformations.push(AttributeProtection.NO_PROTECTION);
+        // transformations.push(AttributeProtection.VALUE_DELETION); // Not supported ye
+
+        return new List<String>(transformations);
     }
 
-	/**
-	 * Initializes the attribute configuration with empty values
-	 */
-	initConfig(attributeConfigurations: AnonymizationAttributeRowConfiguration[] | null = null) {
-		this.attributeConfiguration = new AnonymizationAttributeConfiguration();
-		if (attributeConfigurations !== null) {
-			this.attributeConfiguration.attributeConfiguration = attributeConfigurations;
-		} else {
-			this.attributeConfiguration.attributeConfiguration = new Array();
-		}
-	}
-
-	/**
-	 * Adds a new attribute row to the configuration.
-	 * Initializes the configuration if it has not been
-	 * initialized before
-	 * @param rowConfiguration to add to the configuration.
-	 */
-	addRowConfiguration(rowConfiguration: AnonymizationAttributeRowConfiguration) {
-		if (this.attributeConfiguration === null) {
-			this.initConfig();
-		}
-
-		if (this.attributeConfiguration !== null) {
-			this.attributeConfiguration.attributeConfiguration.push(rowConfiguration);
-		}
-	}
-
-	/**
-	 * Removes a row from the configuration with the
-	 * provided index of the configuration
-	 * @param id
-	 */
-	removeRowConfigurationById(id: number) {
-		if (this.attributeConfiguration !== null) {
-			this.attributeConfiguration.attributeConfiguration =
-				this.attributeConfiguration.attributeConfiguration =
-					this.attributeConfiguration.attributeConfiguration.filter(config => config.index !== id);
-		}
-	}
-
-	/**
-	 * Returns the information of the Anonymization Attribure configuration.
-	 * Fetches information from backend, if it is not initialized yet
-	 * @returns
-	 */
-	/*getAttributeConfiguration(): Observable<AnonymizationAttributeConfiguration> {
-		if (this.attributeConfiguration) {
-			return of(this.attributeConfiguration);
-		}
-		if (this.attributeConfiguration$) {
-			return this.attributeConfiguration$;
-		}
-
-		this.attributeConfiguration$ = this.http.get<AnonymizationAttributeConfiguration>(environments.apiUrl + "/api/").pipe(
-			tap(value => {
-				this.attributeConfiguration = value;
-			}),
-			share(),
-			finalize(() => {
-				this.attributeConfiguration$ = null
-			})
-		);
-		return this.attributeConfiguration$;
-	}
-	*/
-
-	getAttributeConfiguration(): AnonymizationAttributeConfiguration | null {
-		return this.attributeConfiguration;
-	}
-
-	/**
-	 * Set an attribute configuration by providing
-	 * the requested configuration for the anonymization.
-	 * @param config object from the anonymization
-	 */
-	setAttributeConfiguration(config: {anonymization: {privacyModels: Object, attributeConfiguration: AnonymizationAttributeRowConfiguration[]}}) {
-		let attributeConfigs = config.anonymization.attributeConfiguration;
-		this.initConfig(attributeConfigs);
-
-		if (this.attributeConfiguration !== null) {
-			this.attributeConfiguration$ = of(this.attributeConfiguration);
-		}
-	}
+    public getDefaultAttributeProtection(scale: DataScale, dataType: DataType): AttributeProtection {
+        const transformations = this.getValidTransformationsForAttribute(scale, dataType);
+        if (transformations.contains(AttributeProtection.DATE_GENERALIZATION)) {
+            return AttributeProtection.DATE_GENERALIZATION;
+        } else if (transformations.contains(AttributeProtection.MICRO_AGGREGATION)) {
+            return AttributeProtection.MICRO_AGGREGATION;
+        } else {
+            return AttributeProtection.ATTRIBUTE_DELETION;
+        }
+    }
 }

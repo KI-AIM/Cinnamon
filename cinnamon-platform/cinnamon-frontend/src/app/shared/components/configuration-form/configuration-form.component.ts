@@ -1,5 +1,16 @@
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    QueryList,
+    ViewChild,
+    ViewChildren
+} from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
+import { catchError, Observable, of, switchMap, tap } from "rxjs";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { AlgorithmService } from "../../services/algorithm.service";
@@ -7,9 +18,10 @@ import { Algorithm } from "../../model/algorithm";
 import {
     ConfigurationGroupDefinition,
 } from "../../model/configuration-group-definition";
-import {ConfigurationGroupComponent} from "../configuration-group/configuration-group.component";
+import { ConfigurationGroupComponent } from "../configuration-group/configuration-group.component";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
-import { HttpErrorResponse } from "@angular/common/http";
+import { ErrorHandlingService } from "../../services/error-handling.service";
+import { ConfigurationService } from "../../services/configuration.service";
 
 /**
  * HTML form and submit button for one algorithm.
@@ -40,7 +52,7 @@ export class ConfigurationFormComponent implements OnInit {
      * The definition of the configuration fetched from the external API.
      * @protected
      */
-    protected algorithmDefinition: AlgorithmDefinition;
+    protected algorithmDefinition: AlgorithmDefinition | null = null;
     /**
      * Dynamically created form for the configuration.
      * @protected
@@ -48,50 +60,56 @@ export class ConfigurationFormComponent implements OnInit {
     protected form: FormGroup;
 
     /**
+     * Observable that loads the configurations and creates the form group.
+     * @protected
+     */
+    protected configurationData$: Observable<any>;
+
+    /**
      * Event that gets triggered on every change.
      */
-    @Output() public onChange: EventEmitter<void> = new EventEmitter();
-
-    /**
-     * Event for submitting the configurations.
-     * Emits the raw JSON of the form.
-     */
-    @Output() public submitConfiguration = new EventEmitter<Object>();
-
-    /**
-     * Event that gets triggered when an error occurs in the form.
-     */
-    @Output() public onError: EventEmitter<string> = new EventEmitter();
+    @Output() public onChange: EventEmitter<boolean> = new EventEmitter();
 
     @ViewChildren(ConfigurationGroupComponent) private groups: QueryList<ConfigurationGroupComponent>;
 
+    @ViewChild(ConfigurationGroupComponent) private rootGroup: ConfigurationGroupComponent;
+
     constructor(
         private readonly anonService: AlgorithmService,
+        private readonly changeD: ChangeDetectorRef,
+        private readonly configurationService: ConfigurationService,
+        private readonly errorHandlingService: ErrorHandlingService,
     ) {
-       this.form = new FormGroup({});
+        this.form = new FormGroup({});
     }
 
     ngOnInit() {
-        // Fetch the configuration definition.
-        this.anonService.getAlgorithmDefinition(this.algorithm)
-            .subscribe({
-                next:
-                    value => {
-                        this.algorithmDefinition = value
-                        this.form = this.createForm(value);
-                        this.updateForm();
-                        this.readFromCache();
 
-                        this.form.valueChanges.subscribe(() => {
-                            this.onChange.emit();
-                        });
-                    },
-                error: (err: HttpErrorResponse) => {
-                    this.onError.emit(`Failed to load algorithm definition! Status: ${err.status} (${err.statusText})`);
-                },
-            });
+        this.configurationData$ = this.anonService.getAlgorithmDefinition(this.algorithm).pipe(
+            tap(value => {
+                this.algorithmDefinition = value
+            }),
+            switchMap(_ => {
+               return this.anonService.fetchConfiguration();
+            }),
+            tap(value => {
 
+                this.form = this.createForm(this.algorithmDefinition!, value.config);
 
+                this.doSetConfiguration(this.algorithmDefinition!, this.form, value.config);
+                this.updateForm();
+
+                this.form.valueChanges.pipe().subscribe(_ => {
+                    this.onChange.emit(this.valid);
+                });
+
+                this.onChange.emit(this.valid);
+            }),
+            catchError(err => {
+                this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
+                return of(null);
+            }),
+        );
     }
 
     /**
@@ -113,41 +131,37 @@ export class ConfigurationFormComponent implements OnInit {
      * Reads the configuration from the cache.
      */
     public readFromCache(): void {
-        if (this.anonService.configCache[this.algorithm.name]) {
-            //Timeout is 0, so function is called before data is overwritten
-            setTimeout(() => {
-                const config = this.anonService.configCache[this.anonService.selectCache!.name];
-                // config can be undefined if no changes have been made
-                if (config) {
-                    this.setConfiguration(this.anonService.configCache[this.anonService.selectCache!.name]);
-                }
-            }, 0);
+        const a = this.configurationService.getConfiguration(this.anonService.getConfigurationName(), this.algorithm)
+        if (a) {
+            this.doSetConfiguration(this.algorithmDefinition!, this.form, a);
         }
     }
 
-    /**
-     * Sets the values of the form from the given JSON object.
-     * @param configuration JSON of the form.
-     */
-    public setConfiguration(configuration: Object) {
-        //Wait here so that form is loaded before updating it
-        setTimeout(() => {
-            if (Object.keys(this.form.controls).length === 0) {
-                return;
-            }
+    private doSetConfiguration(algorithmDefinition: AlgorithmDefinition, form: FormGroup, configuration: Object) {
+        if (Object.keys(configuration).length === 0) {
+            return;
+        }
 
-            this.fixAttributeLists(this.algorithmDefinition, configuration, this.form);
+        this.fixAttributeLists(algorithmDefinition, configuration, form);
+        this.form.patchValue(configuration);
+        setTimeout(() => {
+            // Has to be run after the page is initialized
             for (const group of this.groups) {
                 group.handleMissingOptions(configuration);
             }
-            this.form.patchValue(configuration);
-        }, 100);
+            this.rootGroup.patchComponents(configuration);
+            this.changeD.detectChanges();
+        })
     }
 
     private fixAttributeLists(cde: ConfigurationGroupDefinition, obj: Object, form: FormGroup) {
         if (cde.options) {
             for (const [key, value] of Object.entries(cde.options)) {
-                this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup);
+                const groupConfiguration = (obj as Record<string, any>)[key];
+                // The configuration is not available if the option is not checked
+                if (groupConfiguration) {
+                    this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup);
+                }
             }
         }
         if (cde.configurations) {
@@ -194,22 +208,24 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     /**
-     * Emits the submit-event with the current form.
-     * @protected
-     */
-    protected onSubmit() {
-        this.submitConfiguration.emit(this.formData);
-    }
-
-    /**
      * Dynamically creates the form object based on the given definition.
      * HTML must be created separately inside the HTML file as well.
      *
      * @param algorithmDefinition The definition.
+     * @param initialValues
      * @private
      */
-    private createForm(algorithmDefinition: AlgorithmDefinition): FormGroup {
-        return this.createGroup(algorithmDefinition);
+    private createForm(algorithmDefinition: AlgorithmDefinition, initialValues: any): FormGroup {
+        const form = this.createGroup(algorithmDefinition);
+
+        if (this.additionalConfigs) {
+            for (const additionalConfig of this.additionalConfigs.configs) {
+                const config = initialValues[additionalConfig.formGroupName] ? initialValues[additionalConfig.formGroupName] : null;
+                additionalConfig.initializeForm(form, config, this.disabled);
+            }
+        }
+
+        return form;
     }
 
     private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }) {

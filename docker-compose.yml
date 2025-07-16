@@ -20,9 +20,6 @@ services:
 #            - ./volumes/cinnamon-db/data:/var/lib/postgresql/data
     cinnamon-platform:
         image: ghcr.io/ki-aim/cinnamon-platform:latest
-        build:
-            context: ./
-            dockerfile: ./cinnamon-platform/Dockerfile
         container_name: cinnamon-platform
         restart: unless-stopped
         ports:
@@ -36,6 +33,9 @@ services:
             - anonymization-network
             - evaluation-network
         environment:
+            SPRING.SERVLET.MULTIPART.MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
+            CINNAMON_MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
+
             # Datasource has to match with the configuration of the cinnamon-db container
             SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD}
             SPRING_DATASOURCE_URL: jdbc:postgresql://cinnamon-db:5432/${PG_DATABASE}
@@ -46,24 +46,27 @@ services:
             CINNAMON_IS-DEMO-INSTANCE: ${IS_DEMO_INSTANCE:-false}
 
             # Anonymization
-            CINNAMON.EXTERNAL-SERVER.0.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.0.URL-SERVER: http://cinnamon-anonymization:8080
+            CINNAMON.EXTERNAL-SERVER.anonymization-server.CALLBACK-HOST: cinnamon-platform
+            CINNAMON.EXTERNAL-SERVER.anonymization-server.URL-SERVER: http://cinnamon-anonymization:8080
             # Synthetization
-            CINNAMON.EXTERNAL-SERVER.1.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.1.URL-SERVER: http://cinnamon-synthetization:5000
+            CINNAMON.EXTERNAL-SERVER.synthetization-server.CALLBACK-HOST: cinnamon-platform
+            CINNAMON.EXTERNAL-SERVER.synthetization-server.URL-SERVER: http://cinnamon-synthetization:5000
             # Evaluation
-            CINNAMON.EXTERNAL-SERVER.2.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.2.URL-SERVER: http://cinnamon-evaluation:5010
+            CINNAMON.EXTERNAL-SERVER.technical-evaluation-server.CALLBACK-HOST: cinnamon-platform
+            CINNAMON.EXTERNAL-SERVER.technical-evaluation-server.URL-SERVER: http://cinnamon-evaluation:5010
 
-            CINNAMON.EXTERNAL-SERVER.3.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.3.URL-SERVER: http://cinnamon-risk-assessment:8000
+            CINNAMON.EXTERNAL-SERVER.risk-assessment-server.CALLBACK-HOST: cinnamon-platform
+            CINNAMON.EXTERNAL-SERVER.risk-assessment-server.URL-SERVER: http://cinnamon-risk-assessment:8000
         depends_on:
             - cinnamon-db
+        healthcheck:
+            test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+            interval: 30s
+            timeout: 3s
+            retries: 3
+            start_period: 20s
     cinnamon-synthetization:
         image: ghcr.io/ki-aim/cinnamon-synthetization:latest
-        build:
-            context: ./cinnamon-synthetization
-            dockerfile: Dockerfile
         container_name: cinnamon-synthetization
         restart: unless-stopped
         ports:
@@ -72,9 +75,6 @@ services:
             - synthetization-network
     cinnamon-evaluation:
         image: ghcr.io/ki-aim/cinnamon-evaluation:latest
-        build:
-            context: ./cinnamon-evaluation
-            dockerfile: Dockerfile
         container_name: cinnamon-evaluation
         restart: unless-stopped
         ports:
@@ -83,9 +83,6 @@ services:
             - evaluation-network
     cinnamon-risk-assessment:
         image: ghcr.io/ki-aim/cinnamon-risk-assessment:latest
-        build:
-            context: ./cinnamon-risk-assessment
-            dockerfile: Dockerfile
         container_name: cinnamon-risk-assessment
         restart: unless-stopped
         ports:
@@ -95,9 +92,6 @@ services:
             - evaluation-network
     cinnamon-anonymization:
         image:  ghcr.io/ki-aim/cinnamon-anonymization:latest
-        build:
-            context: ./
-            dockerfile: ./cinnamon-anonymization/Dockerfile
         container_name: cinnamon-anonymization
         restart: unless-stopped
         ports:
@@ -105,5 +99,7 @@ services:
             - "127.0.0.1:9001:8000"
         networks:
             - anonymization-network
+        environment:
+            SPRING.SERVLET.MULTIPART.MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
 #        volumes:
 #            - ~/.m2:/root/.m2

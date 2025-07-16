@@ -4,6 +4,9 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Local files ###
+.env
+
 ### STS ###
 .apt_generated
 .classpath

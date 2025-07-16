@@ -1,32 +1,16 @@
 <div class="d-flex flex-row mb-2 justify-content-between" [formGroup]="form">
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
-            <mat-label>
-                Column name
-            </mat-label>
-
-            <input
-                type="text"
-                matInput
-                [id]="formElements.name.name"
-                [formControlName]="formElements.name.name"
-            />
+            <mat-label>Column name</mat-label>
+            <input type="text" matInput formControlName="name"/>
         </mat-form-field>
     </div>
 
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
-            <mat-label>
-                Column type
-            </mat-label>
-            <mat-select
-                [id]="formElements.dataType.name"
-                [formControlName]="formElements.dataType.name"
-            >
-                <mat-option
-                    *ngFor="let type of getAllTypes().getAll()"
-                    [value]="type"
-                >
+            <mat-label>Column type</mat-label>
+            <mat-select formControlName="dataType">
+                <mat-option *ngFor="let type of getAllTypes().getAll()" [value]="type">
                     {{ type }}
                 </mat-option>
             </mat-select>
@@ -35,17 +19,9 @@
 
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
-            <mat-label>
-                Column scale
-            </mat-label>
-            <mat-select
-                [id]="formElements.scale.name"
-                [formControlName]="formElements.scale.name"
-            >
-                <mat-option
-                    *ngFor="let scale of getAllDataScales().getAll()"
-                    [value]="scale"
-                >
+            <mat-label>Column scale</mat-label>
+            <mat-select formControlName="scale">
+                <mat-option *ngFor="let scale of getAllDataScales().getAll()" [value]="scale">
                     {{ scale }}
                 </mat-option>
             </mat-select>
@@ -54,49 +30,41 @@
 
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
-            <mat-label>
-                Transformation type
-            </mat-label>
-            <mat-select
-                [id]="formElements.transformationType.name"
-                (selectionChange)="updateTransformationType(); setIntervalConditions(); updateForm();"
-                [formControlName]="formElements.transformationType.name"
-            >
-                <mat-option
-                    *ngFor="let transformation of getTransformations().getAll()"
-                    [value]="transformation"
-                    >{{ transformation }}
+            <mat-label>Transformation type</mat-label>
+            <mat-select (selectionChange)="setIntervalConditions();" formControlName="attributeProtection">
+                <mat-option *ngFor="let transformation of getTransformations().getAll()" [value]="transformation">
+                    {{ transformation }}
                 </mat-option>
             </mat-select>
-            <mat-error *ngIf="form.controls[formElements.transformationType.name].hasError('required')">
+            <mat-error *ngIf="form.controls['attributeProtection'].hasError('required')">
                 Value must not be empty
              </mat-error>
         </mat-form-field>
     </div>
 
     <div class="d-flex flex-column px-2 w-100">
-        <mat-form-field [hideRequiredMarker]="form.controls[formElements.interval.name].disabled">
+        <mat-form-field [hideRequiredMarker]="form.controls['intervalSize'].disabled">
             <mat-label>
                 <!-- Change label according to selected Transformation Type -->
-                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'MASKING'">
+                <ng-container *ngIf="getTransformationType() === 'MASKING'">
                     Masked characters
                 </ng-container>
-                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'RECORD_DELETION'">
+                <ng-container *ngIf="getTransformationType() === 'RECORD_DELETION'">
                     Using suppression limit
                 </ng-container>
-                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'ATTRIBUTE_DELETION'">
+                <ng-container *ngIf="getTransformationType() === 'ATTRIBUTE_DELETION'">
                     Column deletion
                 </ng-container>
-                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'NO_PROTECTION'">
+                <ng-container *ngIf="getTransformationType() === 'NO_PROTECTION'">
                     Original data remains
                 </ng-container>
-                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'DATE_GENERALIZATION'">
+                <ng-container *ngIf="getTransformationType() === 'DATE_GENERALIZATION'">
                     Generalization interval
                 </ng-container>
-                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'GENERALIZATION'">
+                <ng-container *ngIf="getTransformationType() === 'GENERALIZATION'">
                     Generalization interval
                 </ng-container>
-                <ng-container *ngIf="anonymizationRowConfiguration.attributeProtection === 'MICRO_AGGREGATION'">
+                <ng-container *ngIf="getTransformationType() === 'MICRO_AGGREGATION'">
                     Aggregation interval
                 </ng-container>
             </mat-label>
@@ -106,45 +74,39 @@
                     [min]="intervalMin"
                     [max]="intervalMax"
                     [step]="intervalMin"
-                    [id]="formElements.interval.name"
-                    (change)="updateIntervalSize(); updateForm();"
-                    [formControlName]="formElements.interval.name"
+                    formControlName="intervalSize"
                     matInput
                 >
             </ng-container>
 
             <ng-template #selectField>
-                <mat-select
-                    [id]="formElements.interval.name"
-                    [formControlName]="formElements.interval.name"
-                    (change)="updateIntervalSize(); updateForm();"
-                >
-                    <mat-option
-                        *ngFor="let interval of getIntervalEnumOptions().getAll()"
-                        [value]="interval"
-                    >
-                    {{ interval }}
+                <mat-select formControlName="intervalSize">
+                    <mat-option *ngFor="let interval of getIntervalEnumOptions().getAll()" [value]="interval">
+                        {{ interval }}
                     </mat-option>
                 </mat-select>
             </ng-template>
 
-            <mat-error *ngIf="form.controls[formElements.interval.name].hasError('required')">
+            <mat-error *ngIf="form.controls['intervalSize'].hasError('required')">
                 Value must not be empty
              </mat-error>
-             <mat-error *ngIf="form.controls[formElements.interval.name].hasError('max')">
+             <mat-error *ngIf="form.controls['intervalSize'].hasError('max')">
                  Value must be less than or equal to {{ this.intervalMax }}
              </mat-error>
-             <mat-error *ngIf="form.controls[formElements.interval.name].hasError('min')">
+             <mat-error *ngIf="form.controls['intervalSize'].hasError('min')">
                  Value must be greater than or equal to {{ this.intervalMin }}
              </mat-error>
         </mat-form-field>
     </div>
 
-    <div class="d-flex flex-column px-2">
-        <div class="h-100 d-flex justify-content-center align-items-center">
-            <a title="Remove configuration" (click)="removeCurrentRow()">
+    <div class="px-2 d-flex input-height">
+        <div class="d-flex flex-column justify-content-center">
+            <a *ngIf="!disabled" title="Remove configuration" (click)="removeCurrentRow()" class="icon-enabled">
                 <mat-icon fontIcon="delete_forever"></mat-icon>
             </a>
+            <span *ngIf="disabled" title="Remove configuration" class="icon-disabled">
+                <mat-icon fontIcon="delete_forever"></mat-icon>
+            </span>
         </div>
     </div>
 </div>

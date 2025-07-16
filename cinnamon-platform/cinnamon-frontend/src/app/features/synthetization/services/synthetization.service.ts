@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AlgorithmService } from "../../../shared/services/algorithm.service";
+import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
@@ -18,20 +18,8 @@ export class SynthetizationService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName() {
-        return "synthetization";
-    }
-
     public override getConfigurationName(): string {
         return "synthetization_configuration";
-    }
-
-    public override getExecStepName(): string {
-        return "execution";
-    }
-
-    override getJobs(): string[] {
-        return ["synthetization"];
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
@@ -47,7 +35,7 @@ export class SynthetizationService extends AlgorithmService {
         };
     }
 
-    public override readConfiguration(arg: any, configurationName: string): {config: Object, selectedAlgorithm: Algorithm} {
+    public override readConfiguration(arg: any, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName(arg[configurationName]["algorithm"]["synthesizer"]);
         const config = arg[configurationName]["algorithm"];
         delete config["synthesizer"];
@@ -66,7 +54,6 @@ export class SynthetizationService extends AlgorithmService {
         configReg.name = "synthetization_configuration";
         configReg.orderNumber = 2;
         configReg.storeConfig = null;
-        configReg.getConfigCallback = () => this.getConfig();
         configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);

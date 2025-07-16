@@ -1,0 +1,40 @@
+<div style="display: flex; flex-direction: row; align-items: center;">
+    <ng-container *ngTemplateOutlet="statusIcon; context: {stepIndex: stepIndex}"></ng-container>
+
+    <h4 style="margin-left: 1rem; margin-bottom: 0;">
+        <ng-content></ng-content>
+    </h4>
+</div>
+
+
+<ng-template #statusIcon let-stepIndex="stepIndex">
+
+    <!-- Completed -->
+    <ng-container *ngIf="finished || stepIndex < currentStep">
+        <div class="workstep-title">
+            <div class="workstep-title-icon workstep-title-completed">
+                <div class="workstep-title-icon-check">
+                    <mat-icon fontIcon="check"></mat-icon>
+                </div>
+            </div>
+        </div>
+    </ng-container>
+
+    <!-- Current-->
+    <ng-container *ngIf="!finished && stepIndex === currentStep">
+        <div class="workstep-title">
+            <div class="workstep-title-icon workstep-title-current">
+                <div class="workstep-title-icon-dot"></div>
+            </div>
+        </div>
+    </ng-container>
+
+    <!-- Locked-->
+    <ng-container *ngIf="!finished && stepIndex > currentStep">
+        <div class="workstep-title">
+            <div class="workstep-title-icon workstep-title-locked">
+                <div class="workstep-title-icon-dot"></div>
+            </div>
+        </div>
+    </ng-container>
+</ng-template>

@@ -1,15 +1,16 @@
-import { AfterViewInit, Component, Input, OnInit, ViewChild } from "@angular/core";
-import { DataSet } from "src/app/shared/model/data-set";
-import { MatTableDataSource } from "@angular/material/table";
-import { MatPaginator } from "@angular/material/paginator";
-import { DataRowTransformationError } from "src/app/shared/model/data-row-transformation-error";
-import { catchError, map, Observable, of, startWith, switchMap } from "rxjs";
-import {DataConfigurationService} from "../../services/data-configuration.service";
-import {DataConfiguration} from "../../model/data-configuration";
 import { HttpClient } from "@angular/common/http";
-import {environments} from "../../../../environments/environment";
-import { DataSetInfo } from "../../model/data-set-info";
-import { DataSetInfoService } from "../../../features/data-upload/services/data-set-info.service";
+import { AfterViewInit, Component, Input, OnInit, ViewChild } from "@angular/core";
+import { MatPaginator } from "@angular/material/paginator";
+import { MatTableDataSource } from "@angular/material/table";
+import { HoldOutSelector } from "@core/enums/hold-out-selector";
+import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
+import { DataConfiguration } from "@shared/model/data-configuration";
+import { DataRowTransformationError } from "@shared/model/data-row-transformation-error";
+import { DataSet } from "@shared/model/data-set";
+import { DataSetInfo } from "@shared/model/data-set-info";
+import { DataConfigurationService } from "@shared/services/data-configuration.service";
+import { catchError, map, Observable, of, startWith, switchMap } from "rxjs";
+import { environments } from "src/environments/environment";
 
 @Component({
     selector: "app-data-table",
@@ -23,12 +24,14 @@ export class DataTableComponent implements OnInit, AfterViewInit {
     @Input() public columnIndex: number | null = null;
     @Input() public hideHoldOutSplit: boolean = false;
 
+    protected readonly HoldOutSelector = HoldOutSelector;
+
 	dataSource = new MatTableDataSource<TableElement>();
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	displayedColumns: string[] = ['position'];
     protected rowIndexOffset: number = 0;
 	protected errorFilter = "ALL";
-    protected holdOutFilter = "NOT_HOLD_OUT";
+    protected holdOutFilter: HoldOutSelector = HoldOutSelector.NOT_HOLD_OUT;
 
     protected isLoading: boolean = false;
     protected total: number;
@@ -191,6 +194,7 @@ export class DataTableComponent implements OnInit, AfterViewInit {
 
 	/**
 	 * Applies a filter to the table based on the select menu in frontend.
+     * Goes to the first page of the table.
 	 * Shows different data depending on the number of errors in a row.
      * It triggers the table to fetch the data from the backend.
      *
@@ -198,17 +202,20 @@ export class DataTableComponent implements OnInit, AfterViewInit {
 	 */
 	applyErrorFilter($event: any) {
 		this.errorFilter = $event.value;
+        this.paginator.firstPage()
         this.paginator.page.emit();
 	}
 
     /**
      * Applies the hold-out split filter of the event.
+     * Goes to the first page of the table.
      * It triggers the table to fetch the data from the backend.
      *
      * @param $event Event
      */
     applyHoldOutFilter($event: any) {
         this.holdOutFilter = $event.value;
+        this.paginator.firstPage()
         this.paginator.page.emit();
     }
 

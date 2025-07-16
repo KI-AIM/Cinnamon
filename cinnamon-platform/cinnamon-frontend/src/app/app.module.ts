@@ -30,11 +30,13 @@ import { ExecutionModule } from "./features/execution/execution.module";
 import { TechnicalEvaluationModule } from "./features/technical-evaluation/technical-evaluation.module";
 import { EvaluationModule } from "./features/evaluation/evaluation.module";
 import { RiskAssessmentModule } from "./features/risk-assessment/risk-assessment.module";
+import { NotFoundComponent } from './core/components/not-found/not-found.component';
 
 @NgModule({
     declarations: [
         AppComponent,
         NavigationComponent,
+        NotFoundComponent,
     ],
     imports: [
         BrowserModule,

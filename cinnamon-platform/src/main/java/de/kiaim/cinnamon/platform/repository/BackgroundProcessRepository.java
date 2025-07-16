@@ -6,6 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ public interface BackgroundProcessRepository extends CrudRepository<BackgroundPr
 	long countByEndpointAndExternalProcessStatus(int endpoint, ProcessStatus externalProcessStatus);
 	long countByEndpointInAndExternalProcessStatus(Collection<Integer> endpoints, ProcessStatus externalProcessStatus);
 
-	Optional<BackgroundProcessEntity> findFirstByEndpointInAndExternalProcessStatusOrderByScheduledTimeAsc(
+	List<BackgroundProcessEntity> findByEndpointInAndExternalProcessStatusOrderByScheduledTimeAsc(
 			Collection<Integer> endpoints,
 			ProcessStatus externalProcessStatus);
 }

@@ -3,6 +3,7 @@ import { ExecutionStepService } from "../../../shared/services/execution-step.se
 import { HttpClient } from "@angular/common/http";
 import {Steps} from "../../../core/enums/steps";
 import { StatusService } from "../../../shared/services/status.service";
+import { ErrorHandlingService } from "../../../shared/services/error-handling.service";
 
 @Injectable({
     providedIn: 'root'
@@ -10,10 +11,11 @@ import { StatusService } from "../../../shared/services/status.service";
 export class EvaluationService extends ExecutionStepService {
 
     constructor(
+        errorHandlingService: ErrorHandlingService,
         http: HttpClient,
         statusService: StatusService,
     ) {
-        super(http, statusService);
+        super(errorHandlingService, http, statusService);
     }
 
     protected override getStageName(): string {
@@ -22,5 +24,19 @@ export class EvaluationService extends ExecutionStepService {
 
     protected override getStep(): Steps {
         return Steps.EVALUATION;
+    }
+
+    /**
+     * Returns the display name for the given job.
+     * @param name Key of the job.
+     */
+    public getJobName(name: string): string {
+        const jobNames: Record<string, string> = {
+            'technical_evaluation': 'Technical Evaluation',
+            'risk_evaluation': 'Risk Evaluation',
+            'base_evaluation': 'Base Evaluation',
+        };
+
+        return jobNames[name];
     }
 }

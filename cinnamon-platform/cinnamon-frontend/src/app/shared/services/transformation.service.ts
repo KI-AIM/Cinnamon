@@ -39,7 +39,7 @@ export class TransformationService {
             return of(this.transformationResult);
         }
 
-        return this.statusService.fetchStatus().pipe(
+        return this.statusService.status$.pipe(
             concatMap(status => {
                 if (this.statusService.isStepCompleted(Steps.VALIDATION)) {
                     return this.http.get<TransformationResult>(environments.apiUrl + "/api/data/validation/transformationResult")

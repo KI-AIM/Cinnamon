@@ -2,7 +2,7 @@ import { Component, OnInit } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { TitleService } from "../../../../core/services/title-service.service";
-import { UserService } from "src/app/shared/services/user.service";
+import { LogoutMode, UserService } from "src/app/shared/services/user.service";
 import { StateManagementService } from "../../../../core/services/state-management.service";
 
 interface LoginForm {
@@ -18,7 +18,7 @@ interface LoginForm {
 })
 export class LoginComponent implements OnInit {
 	loginForm: FormGroup<LoginForm>;
-	mode: string;
+	mode: LogoutMode | null;
 
 	constructor(
 		private readonly activateRoute: ActivatedRoute,
@@ -37,7 +37,7 @@ export class LoginComponent implements OnInit {
 				validators: [Validators.required],
 			}),
 		});
-		this.titleService.setPageTitle("Login");
+		this.titleService.setPageTitle("Open project");
 	}
 
 	ngOnInit() {
@@ -49,7 +49,7 @@ export class LoginComponent implements OnInit {
 			if (params["mode"]) {
 				this.mode = params["mode"];
 			} else {
-				this.mode = "";
+				this.mode = null;
 			}
 		});
 	}
@@ -61,7 +61,7 @@ export class LoginComponent implements OnInit {
 				if (error === "") {
                     this.stateManagementService.fetchAndRouteToCurrentStep();
 				} else {
-					this.router.navigate(["/login", { mode: "fail" }]);
+					this.router.navigate(["/open", { mode: "fail" }]);
 				}
 			}
 		);

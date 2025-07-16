@@ -1,14 +1,15 @@
 import { Injectable } from '@angular/core';
 import { DataConfiguration } from '../model/data-configuration';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { map, Observable, ReplaySubject, take } from 'rxjs';
 import { plainToInstance } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { Steps } from 'src/app/core/enums/steps';
 import { parse, stringify } from "yaml";
 import { ImportPipeData } from "../model/import-pipe-data";
-import { environments } from "../../../environments/environment";
+import { environments } from "src/environments/environment";
+import { ErrorHandlingService } from './error-handling.service';
 
 @Injectable({
     providedIn: 'root',
@@ -18,19 +19,37 @@ export class DataConfigurationService {
     public readonly CONFIGURATION_NAME = "configurations";
 
     private readonly _dataConfiguration$: Observable<DataConfiguration>;
-    private dataConfigurationSubject: BehaviorSubject<DataConfiguration>;
+    private dataConfigurationSubject: ReplaySubject<DataConfiguration>;
+    private fetched: boolean = false;
 
     public localDataConfiguration: DataConfiguration | null = null;
+    public localDataSetConfiguration: DataSetConfiguration | null = null;
+    public confidence: number[] | null = null;
 
     constructor(
         private httpClient: HttpClient,
         private configurationService: ConfigurationService,
+        private readonly errorHandlingService: ErrorHandlingService,
     ) {
-        this.dataConfigurationSubject = new BehaviorSubject(new DataConfiguration());
+        this.dataConfigurationSubject = new ReplaySubject(1);
         this._dataConfiguration$ = this.dataConfigurationSubject.asObservable();
     }
 
     public get dataConfiguration$() {
+        if (!this.fetched) {
+            this.fetched = true;
+            this.downloadDataConfigurationAsJson().pipe(
+                take(1),
+            ).subscribe({
+                next: value => {
+                    this.dataConfigurationSubject.next(value);
+                },
+                error: err => {
+                    this.fetched = false;
+                    this.errorHandlingService.addError(err, "Failed to fetch the data configuration.");
+                }
+            });
+        }
         return this._dataConfiguration$;
     }
 
@@ -43,7 +62,6 @@ export class DataConfigurationService {
         configReg.name = this.CONFIGURATION_NAME;
         configReg.orderNumber = 0;
         configReg.storeConfig = (configName, yamlConfigString) => this.postDataConfigurationString(yamlConfigString);
-        configReg.getConfigCallback = () => this.getConfigurationCallback();
         configReg.setConfigCallback = (config) => this.setConfigCallback(config);
 
         this.configurationService.registerConfiguration(configReg);
@@ -51,6 +69,7 @@ export class DataConfigurationService {
 
     public setDataConfiguration(value: DataConfiguration) {
         this.localDataConfiguration = null;
+        this.confidence = null
         this.dataConfigurationSubject.next(value);
     }
 
@@ -58,7 +77,9 @@ export class DataConfigurationService {
         const params = {
             selector: "ORIGINAL",
         }
-        return this.httpClient.get<DataConfiguration>(this.baseUrl + "?format=json", {params: params});
+        return this.httpClient.get<DataConfiguration>(this.baseUrl + "?format=json", {params: params}).pipe(
+            map(value => plainToInstance(DataConfiguration, value)),
+        );
     }
 
     public postDataConfigurationString(configString: string): Observable<void> {
@@ -67,20 +88,14 @@ export class DataConfigurationService {
         return this.httpClient.post<void>(this.baseUrl, formData);
     }
 
-    private getConfigurationCallback(): Object {
-        let config;
-        if (this.localDataConfiguration !== null) {
-            config = this.localDataConfiguration;
-            this.setDataConfiguration(config);
-        } else {
-            config = this.dataConfigurationSubject.getValue();
-        }
-        return config;
-    }
-
     private setConfigCallback(importData: ImportPipeData): void {
         const config = parse(importData.yamlConfigString);
         const dataConfig = plainToInstance(DataConfiguration, config);
         this.setDataConfiguration(dataConfig);
     }
+}
+
+export interface DataSetConfiguration {
+    holdOutSplitPercentage: number;
+    createHoldOutSplit: boolean;
 }

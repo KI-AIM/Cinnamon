@@ -31,7 +31,7 @@ from visualization.vis_converter import (
     remove_synthetic_and_difference,
     convert_attributes_to_date,
     extract_and_enrich_utility_metrics,
-    add_resembance_description, 
+    add_resembance_description,
     add_overview_to_config
 )
 
@@ -84,10 +84,10 @@ def get_metric_metadata(data_format: str, metric_type: str, evaluation_metadata:
 
                 if metric.get('visualization_type'):
                     metric_data['visualization_type'] = metric['visualization_type']
-                
+
                 if metric.get('disclaimer'):
                     metric_data['disclaimer'] = metric['disclaimer']
-                    
+
                 if metric.get('parameters'):
                     metric_data['parameters'] = metric['parameters']
 
@@ -631,7 +631,7 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
     print("Data format:", data_format)
 
     print("Calculating Metrics")
-    metrics_result = None 
+    metrics_result = None
     try:
         if data_format == 'cross-sectional':
             metrics_result = dispatch_metrics(processed_real_data, processed_synthetic_data, evaluation_config,
@@ -799,7 +799,7 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
 
     except requests.exceptions.RequestException as e:
         print(f"Failed to send final results callback to URL {callback_url}: {e}", file=sys.stderr)
-        pass 
+        pass
 
     except Exception as e:
          print(f"Unexpected error preparing or sending final results callback to URL {callback_url}: {e}", file=sys.stderr)
@@ -948,7 +948,7 @@ def send_callback_error(callback_url, session_key, error_message, error_code, er
     # Prepare the JSON payload according to the ErrorRequest structure
     payload = {
         "type": "about:blank",  # Default value as per ErrorRequest
-        "timestamp": datetime.now().isoformat(timespec='milliseconds') + 'Z',  
+        "timestamp": datetime.now().isoformat(timespec='milliseconds') + 'Z',
         "errorCode": error_code,
         "errorMessage": error_message,
         "errorDetails": error_details
@@ -968,6 +968,16 @@ def send_callback_error(callback_url, session_key, error_message, error_code, er
         print(f"Failed to send error to callback URL: {e}")
 
 
+@app.route('/actuator/health', methods=['GET'])
+def health_check():
+    """
+    Provides a health status for the application.
+
+    Returns:
+        A JSON object indicating the application's health status.
+    """
+    status = {"status": "UP"}
+    return jsonify(status), 200
 
 
 if __name__ == '__main__':

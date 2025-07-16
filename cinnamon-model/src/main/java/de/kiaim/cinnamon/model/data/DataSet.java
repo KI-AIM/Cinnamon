@@ -13,12 +13,19 @@ import lombok.ToString;
 
 import java.util.List;
 
+@Schema(description = "A data set containing a list of rows.", example = DataSet.DATA_SET_EXAMPLE)
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode
 @ToString
 @JsonDeserialize(using = DataSetDeserializer.class)
 public class DataSet {
+
+	public final static String DATA_SET_EXAMPLE = """
+	                                              {"dataConfiguration":""" +
+	                                              DataConfiguration.DATA_CONFIGURATION_EXAMPLE +
+	                                              """
+	                                              ,"data":[""" + DataRow.DATA_ROW_EXAMPLE + "]}";
 
 	@JsonIgnore
 	final List<DataRow> dataRows;

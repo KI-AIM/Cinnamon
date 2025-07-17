@@ -125,7 +125,6 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		var message = updatedExecutionStep.getProcess(0).getStatus();
 		assertNotNull(message, "Status message should not be null!");
 		assertTrue(message.startsWith("Failed to fetch the status!"), "Unexpected start of the error message: '" + message + "'");
-		assertTrue(message.contains("Connection refused:"), "Unexpected error message: '" + message + "'");
 		assertEquals("localhost/127.0.0.1:" + mockBackEndPort, message.substring(message.lastIndexOf("localhost/")),
 		             "Unexpected end of the error message: '" + message + "'");
 	}

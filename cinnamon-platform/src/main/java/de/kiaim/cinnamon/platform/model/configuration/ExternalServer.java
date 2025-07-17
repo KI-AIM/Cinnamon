@@ -30,6 +30,12 @@ public class ExternalServer {
 	@NotBlank
 	private String urlServer;
 
+
+	public String getUrlServer() {
+		System.out.println("urlServer: " + urlServer);
+		return urlServer;
+	}
+
 	/**
 	 * Endpoint used for health checks.
 	 */

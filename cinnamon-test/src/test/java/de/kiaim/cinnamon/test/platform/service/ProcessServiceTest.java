@@ -39,7 +39,6 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	private ObjectMapper jsonMapper = null;
 	private MockWebServer mockBackEnd;
-	private int mockBackEndPort;
 
 	private ProcessService processService;
 
@@ -51,6 +50,10 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		DatabaseService databaseService = mock(DatabaseService.class);
 		ProjectService projectService = mock(ProjectService.class);
 
+		var url = cinnamonConfiguration.getExternalServer().get("anonymization-server").getUrlServer();
+		System.out.println("URL: " + url);
+		cinnamonConfiguration.getExternalServer().get("anonymization-server")
+		                     .setUrlServer(url.substring(0, url.lastIndexOf(":") + 1) + mockBackEnd.getPort());
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
 		                                         backgroundProcessRepository, csvProcessor, databaseService,
 		                                         dataProcessorService, dataSetService, httpService, projectService,
@@ -125,7 +128,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		var message = updatedExecutionStep.getProcess(0).getStatus();
 		assertNotNull(message, "Status message should not be null!");
 		assertTrue(message.startsWith("Failed to fetch the status!"), "Unexpected start of the error message: '" + message + "'");
-		assertEquals("localhost/127.0.0.1:" + mockBackEndPort, message.substring(message.lastIndexOf("localhost/")),
+		assertEquals("localhost/127.0.0.1:" + mockBackEnd.getPort(), message.substring(message.lastIndexOf("localhost/")),
 		             "Unexpected end of the error message: '" + message + "'");
 	}
 

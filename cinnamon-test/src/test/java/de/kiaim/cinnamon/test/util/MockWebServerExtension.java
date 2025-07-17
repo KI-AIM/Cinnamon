@@ -58,9 +58,6 @@ public class MockWebServerExtension implements BeforeAllCallback, BeforeEachCall
 				if (field.getType() == MockWebServer.class) {
 					field.setAccessible(true);
 					field.set(testInstance, mockBackEnd);
-				} else if (field.getType() == int.class && field.getName().equals("mockBackEndPort")) {
-					field.setAccessible(true);
-					field.setInt(testInstance, mockBackEndPort);
 				}
 			}
 		} catch (IllegalAccessException e) {

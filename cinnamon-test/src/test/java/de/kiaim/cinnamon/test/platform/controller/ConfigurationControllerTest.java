@@ -32,7 +32,6 @@ class ConfigurationControllerTest extends ControllerTest {
 	ProjectService projectService;
 
 	private MockWebServer mockWebServer;
-	private int mockBackEndPort;
 
 	@Test
 	void info() throws Exception {
@@ -148,8 +147,6 @@ class ConfigurationControllerTest extends ControllerTest {
 	void getAlgorithmDefinition() throws Exception {
 		postData();
 		createHoldOut(0.2f);
-
-		System.out.println("mockBackEndPort = " + mockBackEndPort);
 
 		mockWebServer.enqueue(new MockResponse.Builder()
 				                      .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)

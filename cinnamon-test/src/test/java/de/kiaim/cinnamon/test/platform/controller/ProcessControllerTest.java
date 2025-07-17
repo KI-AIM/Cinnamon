@@ -23,6 +23,7 @@ import de.kiaim.cinnamon.test.platform.ControllerTest;
 import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
 import de.kiaim.cinnamon.test.util.DataSetTestHelper;
 import de.kiaim.cinnamon.test.util.ResourceHelper;
+import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
@@ -39,12 +40,8 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.util.TestSocketUtils;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,13 +56,12 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WithMockWebServer
 @WithUserDetails("test_user")
 public class ProcessControllerTest extends ControllerTest {
 
 	private static final String ANON_JOB = "anonymization";
 	private static final String SYNTH_JOB = "synthetization";
-
-	private static final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 
 	@Value("${cinnamon.external-server.synthetization-server.callback-host}")
 	private String callbackHost;
@@ -77,24 +73,6 @@ public class ProcessControllerTest extends ControllerTest {
 	@Autowired private DataSetService dataSetService;
 	@Autowired private UserService userService;
 	@Autowired private ProjectService projectService;
-
-	@DynamicPropertySource
-	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("cinnamon.external-server.technical-evaluation-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.synthetization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.anonymization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-	}
-
-	@BeforeEach
-	void setUpMockWebServer() throws IOException {
-		mockBackEnd = new MockWebServer();
-		mockBackEnd.start(mockBackEndPort);
-	}
-
-	@AfterEach
-	void shutDownMockWebServer() throws IOException {
-		mockBackEnd.shutdown();
-	}
 
 	@Test
 	public void getProcessNotStarted() throws Exception {

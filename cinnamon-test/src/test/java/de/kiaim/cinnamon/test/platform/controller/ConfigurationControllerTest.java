@@ -5,6 +5,9 @@ import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
+import de.kiaim.cinnamon.test.util.WithMockWebServer;
+import mockwebserver3.MockResponse;
+import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -19,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Transactional
+@WithMockWebServer
 @WithUserDetails("test_user")
 class ConfigurationControllerTest extends ControllerTest {
 
@@ -26,6 +30,8 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Autowired
 	ProjectService projectService;
+
+	private MockWebServer mockWebServer;
 
 	@Test
 	void info() throws Exception {
@@ -138,7 +144,25 @@ class ConfigurationControllerTest extends ControllerTest {
 	}
 
 	@Test
-	void getAvailableAlgorithmMissingParam() throws Exception {
+	void getAlgorithmDefinition() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockWebServer.enqueue(new MockResponse.Builder()
+				                      .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                      .code(200)
+				                      .body("algorithms $dataset.original.numberHoldOutRows")
+				                      .build());
+
+		mockMvc.perform(get("/api/config/algorithm")
+				                .param("configurationName", CONFIGURATION_NAME)
+				                .param("definitionPath", "/algorithm"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string("algorithms 1"));
+	}
+
+	@Test
+	void getAlgorithmDefinitionMissingParam() throws Exception {
 		mockMvc.perform(get("/api/config/algorithm"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_3_2_1"));

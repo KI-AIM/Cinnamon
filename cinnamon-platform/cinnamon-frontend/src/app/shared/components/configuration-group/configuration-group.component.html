@@ -33,7 +33,21 @@
                                   [value]="groupDefinition.key" (change)="toggleActive($event);" [checked]="true"
                                   (click)="$event.stopPropagation();" class="allow-click" color="primary">
                     </mat-checkbox>
-                    {{ groupDefinition.value.display_name }}
+
+                    <span>
+                        {{ groupDefinition.value.display_name }}
+                    </span>
+
+                    <ng-container *ngIf="groupDefinition.value.disclaimer">
+                        <span #disclaimer class="icon-warning ms-2 position-relative">
+                            <mat-icon fontIcon="warning"></mat-icon>
+
+                            <app-tooltip [target]="disclaimer">
+                                {{ groupDefinition.value.disclaimer }}
+                            </app-tooltip>
+                        </span>
+                    </ng-container>
+
                 </mat-panel-title>
                 <mat-panel-description>
                     {{ groupDefinition.value.description }}

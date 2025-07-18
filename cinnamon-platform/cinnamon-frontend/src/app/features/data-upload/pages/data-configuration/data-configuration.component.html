@@ -27,15 +27,15 @@
         </ng-container>
         <ng-container *ngIf="data.status.mode === Mode.EXPERT">
 
-            <app-workstep-box title="Attribute Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
+            <app-workstep-box header="Attribute Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
                 <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
             </app-workstep-box>
 
-            <app-workstep-box title="Dataset Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
+            <app-workstep-box header="Dataset Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
                 <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
             </app-workstep-box>
 
-            <app-workstep-box title="Confirm your configuration">
+            <app-workstep-box header="Confirm your configuration">
                 <div class="btn-group">
                     <div class="px-1">
                         <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()"

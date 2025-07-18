@@ -1,4 +1,4 @@
-<app-workstep-box *ngIf="status$ | async as status;" title="Welcome to Cinnamon">
+<app-workstep-box *ngIf="status$ | async as status;" header="Welcome to Cinnamon">
 
     <p>This tool is designed to anonymize your data by providing methods both for direct
         anonymization as well as data generation with synthetic methods.</p>
@@ -31,7 +31,7 @@
     <div class="d-flex justify-content-between">
         <mat-card class="me-2 w-50" [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD"
                   [class.cinnamon-unselected-mode]="status.mode !== Mode.STANDARD"
-                  (click)="selectMode(Mode.STANDARD);"          
+                  (click)="selectMode(Mode.STANDARD);"
         >
             <mat-card-header>
                 <mat-card-title>Extensive Guidance</mat-card-title>

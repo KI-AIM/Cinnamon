@@ -57,24 +57,24 @@
 
         <ng-container *ngIf="data.status.mode === Mode.EXPERT">
 
-            <app-workstep-box title="Process Activation">
+            <app-workstep-box header="Process Activation">
                 <ng-container *ngTemplateOutlet="processActivation"></ng-container>
             </app-workstep-box>
 
-            <app-workstep-box title="Configuration Upload">
+            <app-workstep-box header="Configuration Upload">
                 Upload an existing configuration:
                 <app-file-upload accept=".yml,.yaml" [disabled]="disabled || !oneEnabled"
                                  (input)="uploadConfiguration($event)"></app-file-upload>
             </app-workstep-box>
 
-            <app-workstep-box title="Algorithm Selection" [class.d-none]="!hasAlgorithmSelection">
+            <app-workstep-box header="Algorithm Selection" [class.d-none]="!hasAlgorithmSelection">
                 <app-configuration-selection #selection [algorithms]="algorithms"
                                              [initialValue]="data.configurationData.selectedAlgorithm"
                                              [disabled]="disabled || !oneEnabled" (change)="onSelectionChange($event)">
                 </app-configuration-selection>
             </app-workstep-box>
 
-            <app-workstep-box title="Algorithm Configuration" [invalid]="selectedAlgorithm !== null && !formValid">
+            <app-workstep-box header="Algorithm Configuration" [invalid]="selectedAlgorithm !== null && !formValid">
                 <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                     <div class="ms-auto me-auto" style="width: fit-content">
                         Please select an algorithm
@@ -93,7 +93,7 @@
                 </ng-template>
             </app-workstep-box>
 
-            <app-workstep-box title="Confirm your configuration">
+            <app-workstep-box header="Confirm your configuration">
                 <button type="submit" mat-raised-button color="primary"
                         [disabled]="disabled || (oneEnabled && !formValid)" (click)="submit()">
                     Continue

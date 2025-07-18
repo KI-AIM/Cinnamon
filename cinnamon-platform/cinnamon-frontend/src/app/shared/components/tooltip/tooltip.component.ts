@@ -15,9 +15,14 @@ import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 export class TooltipComponent implements OnInit {
 
     /**
+     * Gap between the arrow and the target div.
+     */
+    @Input() public gap: number = 5;
+
+    /**
      * The target div for listening to hover events.
      */
-    @Input() public target!: HTMLDivElement;
+    @Input() public target!: HTMLElement;
 
     @ViewChild('tooltip') private tooltip!: ElementRef;
     @ViewChild('tooltipArrow') private tooltipArrow!: ElementRef;
@@ -35,10 +40,15 @@ export class TooltipComponent implements OnInit {
     private openTooltip(): void {
         this.tooltip.nativeElement.classList.add("shown");
 
+        const targetRect = this.target.getBoundingClientRect();
         const rect = this.tooltip.nativeElement.getBoundingClientRect();
+
         const maxArrowOffset = (rect.height - 17) / 2;
         const topOffset = 65 - rect.top;
         const bottomOffset = (window.outerHeight - 125) - rect.bottom;
+
+        const xOffset = (targetRect.right - rect.left) + this.gap;
+        this.tooltip.nativeElement.style.left = `${xOffset}px`;
 
         if (topOffset > 0) {
             this.tooltip.nativeElement.style.transform = `translateY(-50%) translateY(${topOffset}px)`;
@@ -57,6 +67,7 @@ export class TooltipComponent implements OnInit {
         this.tooltip.nativeElement.classList.remove("shown");
         this.tooltip.nativeElement.style.transform = `translateY(-50%)`;
         this.tooltipArrow.nativeElement.style.transform = "";
+        this.tooltip.nativeElement.style.left = "";
     }
 
 }

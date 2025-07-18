@@ -191,3 +191,15 @@ input[type="file"]:disabled::-webkit-file-upload-button {
     padding-top: 5px;
     padding-bottom: 5px;
 }
+
+// Overwrite behavior of checked disabled checkboxes
+.mdc-checkbox:hover>.mdc-checkbox__native-control:disabled:checked~.mdc-checkbox__background {
+    background-color: var(--mdc-checkbox-disabled-selected-icon-color) !important;
+    border-color: transparent !important;
+}
+.mdc-checkbox:hover>.mdc-checkbox__native-control:disabled:checked+.mdc-checkbox__ripple {
+    opacity: 0 !important;
+}
+.mdc-checkbox:active>.mdc-checkbox__native-control:disabled:checked+.mdc-checkbox__ripple {
+    opacity: 0 !important;
+}

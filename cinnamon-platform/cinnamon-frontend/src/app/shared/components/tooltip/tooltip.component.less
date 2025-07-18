@@ -1,0 +1,32 @@
+@import '../../../styles/colors';
+
+.tooltip {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 15px;
+    background-color: @color-side;
+    z-index: 3;
+    color: @color-primary-text-color;
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+    transition: visibility 0s, opacity 0.2s ease-in-out;
+    opacity: 0;
+    visibility: hidden;
+    width: 300px;
+}
+
+.tooltip.shown {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tooltip-arrow {
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent @color-side transparent transparent;
+}

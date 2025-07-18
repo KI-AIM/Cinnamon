@@ -57,6 +57,7 @@ import { WorkstepTitleComponent } from "./components/workstep-title/workstep-tit
 import { FileUploadComponent } from "./components/file-upload/file-upload.component";
 import { WorkstepItemComponent } from './components/workstep-item/workstep-item.component';
 import { ProjectExportComponent } from './components/project-export/project-export.component';
+import { TooltipComponent } from './components/tooltip/tooltip.component';
 
 @NgModule({
     declarations: [
@@ -88,6 +89,7 @@ import { ProjectExportComponent } from './components/project-export/project-expo
         MetricInfoTableComponent,
         ProjectExportComponent,
         ProjectSettingsComponent,
+        TooltipComponent,
         WorkstepComponent,
         WorkstepBoxComponent,
         WorkstepItemComponent,
@@ -153,6 +155,7 @@ import { ProjectExportComponent } from './components/project-export/project-expo
         NoSpaceValidatorDirective,
         // Pipes
         InstanceOfPipe,
+        TooltipComponent,
     ],
 })
 export class SharedModule {}

@@ -121,6 +121,12 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
 
             component.afterExpand.subscribe(() => this.afterExpand(native.nativeElement));
             native.nativeElement.addEventListener('click', () => this.beforeCollapseExpand(native.nativeElement));
+
+            native.nativeElement.classList.add('cinnamon-overflow-handling');
+
+            if (!component.expanded) {
+                this.afterCollapse(native.nativeElement);
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-<mat-expansion-panel [disabled]="stepIndex > currentStep" class="workstep-expansion-panel"
+<mat-expansion-panel [disabled]="stepIndex > currentStep" class="workstep-expansion-panel cinnamon-overflow-handling"
                      [class.workstep-complete]="currentStep > stepIndex || stepsCompleted"
                      (afterCollapse)="afterCollapse()" (afterExpand)="afterExpand()" (click)="beforeCollapseExpand()">
     <mat-expansion-panel-header>

@@ -174,7 +174,7 @@ input[type="file"]:disabled::-webkit-file-upload-button {
 }
 
 // Overwrite overflow so the absolute positioning of custom tooltips is working
-.mat-content, .mat-expansion-panel {
+.cinnamon-overflow-handling .mat-content, .mat-expansion-panel.cinnamon-overflow-handling {
     overflow: visible !important;
 }
 
@@ -192,8 +192,8 @@ input[type="file"]:disabled::-webkit-file-upload-button {
     padding-bottom: 5px;
 }
 
-.mat-expansion-panel.cinnamon-overflow-hidden,
-.cinnamon-overflow-hidden > .mat-expansion-panel-header > .mat-content {
+.mat-expansion-panel.cinnamon-overflow-handling.cinnamon-overflow-hidden,
+.cinnamon-overflow-handling.cinnamon-overflow-hidden > .mat-expansion-panel-header > .mat-content {
     overflow: hidden !important;
 }
 

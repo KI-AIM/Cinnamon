@@ -23,7 +23,7 @@
 
 <div [formGroup]="form">
 
-    <div class="mt-4" formArrayName="attributeConfiguration">
+    <div class="mt-4" formArrayName="attributeConfiguration"  style="overflow:auto;">
 
         <div *ngFor="let attrConfig of getAttributeConfigurationForms(form); let i = index" [formGroupName]="i">
             <app-anonymization-attribute-row #configRow [disabled]="disabled" [form]="attrConfig"

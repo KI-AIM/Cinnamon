@@ -1,5 +1,6 @@
 import { NgModule } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
+import { ExpansionPanelOverflowDirective } from "@shared/directives/expansion-panel-overflow.directive";
 import { ChartCorrelationComponent } from "src/app/shared/components/chart-correlation/chart-correlation.component";
 import { StatisticsSorterPipe } from "src/app/shared/pipes/statistics-sorter.pipe";
 import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
@@ -96,6 +97,7 @@ import { TooltipComponent } from './components/tooltip/tooltip.component';
         WorkstepListComponent,
         WorkstepTitleComponent,
         // Directives
+        ExpansionPanelOverflowDirective,
         NoSpaceValidatorDirective,
         // Pipes
         ColumnConfigurationNameFilterPipe,
@@ -152,6 +154,7 @@ import { TooltipComponent } from './components/tooltip/tooltip.component';
         WorkstepListComponent,
         WorkstepTitleComponent,
         // Directives
+        ExpansionPanelOverflowDirective,
         NoSpaceValidatorDirective,
         // Pipes
         InstanceOfPipe,

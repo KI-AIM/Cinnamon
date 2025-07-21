@@ -6,7 +6,7 @@
 <mat-accordion>
     <ng-container *ngFor="let groupDefinition of group.configurations | keyvalue">
 
-        <mat-expansion-panel>
+        <mat-expansion-panel appExpansionPanelOverflow>
             <mat-expansion-panel-header>
                 <mat-panel-title [class.invalid-group]="formGroup.controls[groupDefinition.key].invalid">
                     {{ groupDefinition.value.display_name }}
@@ -24,7 +24,7 @@
     </ng-container>
     <ng-container *ngFor="let groupDefinition of group.options | keyvalue">
 
-        <mat-expansion-panel [class.prevent-click]="isGroupEmpty(groupDefinition.value)"
+        <mat-expansion-panel appExpansionPanelOverflow [class.prevent-click]="isGroupEmpty(groupDefinition.value)"
                              [hideToggle]="isGroupEmpty(groupDefinition.value)">
             <mat-expansion-panel-header>
 
@@ -70,7 +70,7 @@
 
     <ng-container *ngIf="additionalConfigs">
         <ng-container *ngFor="let additionalConfig of additionalConfigs.configs">
-            <mat-expansion-panel>
+            <mat-expansion-panel appExpansionPanelOverflow>
                 <mat-expansion-panel-header>
                     <mat-panel-title
                         [class.invalid-group]="formGroup.controls[additionalConfig.formGroupName].invalid">

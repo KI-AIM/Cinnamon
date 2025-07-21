@@ -1,12 +1,13 @@
 import {
     AfterViewInit,
-    Component, ComponentRef,
+    Component, ComponentRef, ElementRef,
     Input, OnChanges,
     QueryList, SimpleChanges,
     ViewChild,
     ViewChildren,
     ViewContainerRef
 } from '@angular/core';
+import { MatExpansionPanel } from "@angular/material/expansion";
 import { AdditionalConfigurationGroup } from "@shared/interfaces/AdditionalConfigurationGroup";
 import { ConfigurationGroupDefinition, VisualizationType } from "../../model/configuration-group-definition";
 import { FormGroup } from "@angular/forms";
@@ -92,6 +93,17 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
     @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
 
     /**
+     * Native elements of all MatExpansionPanels inside this group.
+     * @private
+     */
+    @ViewChildren(MatExpansionPanel, {read: ElementRef}) private panelsNative: QueryList<ElementRef>;
+    /**
+     * All MatExpansionPanels inside this group.
+     * @private
+     */
+    @ViewChildren(MatExpansionPanel) private panelsComponent: QueryList<MatExpansionPanel>;
+
+    /**
      * Component refs for additional configurations.
      * @private
      */
@@ -99,6 +111,17 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
 
     public ngAfterViewInit() {
         this.loadComponents();
+
+        for (let i = 0; i < this.panelsComponent.length; i++) {
+            const component = this.panelsComponent.toArray()[i];
+            const native = this.panelsNative.toArray()[i];
+
+            component.afterCollapse.subscribe(() => this.afterCollapse(native.nativeElement));
+            native.nativeElement.addEventListener('click', () => this.beforeCollapseExpand(native.nativeElement));
+
+            component.afterExpand.subscribe(() => this.afterExpand(native.nativeElement));
+            native.nativeElement.addEventListener('click', () => this.beforeCollapseExpand(native.nativeElement));
+        }
     }
 
     /**
@@ -255,5 +278,40 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
         this.additionalConfigs.configs.forEach((config, i) => {
             this.instances[i].instance.patchValue(obj[config.formGroupName]);
         });
+    }
+
+    /**
+     * Temporarily hides the overflow for mat-expansion panels.
+     * And shows the content of the panel if it is currently expanded.
+     *
+     * @param panel The native panel.
+     * @private
+     */
+    private beforeCollapseExpand(panel : any) {
+        panel.classList.add('cinnamon-overflow-hidden');
+        if (panel.classList.contains('mat-expanded')) {
+            panel.querySelector('.mat-expansion-panel-body').style.display = '';
+        }
+    }
+
+    /**
+     * Show the overflow for mat-expansion panels and hides the content of the panel.
+     *
+     * @param panel The native panel.
+     * @private
+     */
+    private afterCollapse(panel : any) {
+        panel.classList.remove('cinnamon-overflow-hidden');
+        panel.querySelector('.mat-expansion-panel-body').style.display = 'none';
+    }
+
+    /**
+     * Shows the overflow for mat-expansion panels.
+     *
+     * @param panel The native panel.
+     * @private
+     */
+    private afterExpand(panel: any) {
+        panel.classList.remove('cinnamon-overflow-hidden');
     }
 }

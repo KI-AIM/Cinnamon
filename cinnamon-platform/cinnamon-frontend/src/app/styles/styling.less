@@ -174,7 +174,7 @@ input[type="file"]:disabled::-webkit-file-upload-button {
 }
 
 // Overwrite overflow so the absolute positioning of custom tooltips is working
-.mat-expanded .mat-content, .mat-expansion-panel.mat-expanded {
+.mat-content, .mat-expansion-panel {
     overflow: visible !important;
 }
 
@@ -190,6 +190,11 @@ input[type="file"]:disabled::-webkit-file-upload-button {
 .mat-expansion-panel-header-description {
     padding-top: 5px;
     padding-bottom: 5px;
+}
+
+.mat-expansion-panel.cinnamon-overflow-hidden,
+.cinnamon-overflow-hidden > .mat-expansion-panel-header > .mat-content {
+    overflow: hidden !important;
 }
 
 // Overwrite behavior of checked disabled checkboxes

@@ -1,10 +1,19 @@
 :root {
-    --color-header-footer: #8d8290;
-    /*TODO read colors from other CSS*/
-    --color-primary: #3b7dd8;
+    --report-color-header-footer: #8d8290;
+    --report-color-background: #ebeff2;
+    --report-color-foreground: #fff;
+    --report-color-border: #d0d5db;
+    --report-color-primary: #3b7dd8;
+    --report-color-primary-dark: #212a3e;
+    --report-color-error: #e63946;
+    --report-color-warning: #ffa726;
+    --report-color-success: #007e33;
+    --report-color-text: #333f55;
 
     --size-header-footer: 12px;
     --margin-text: 0.5rem;
+
+    --report-color-header-border: var(--report-color-primary-dark);
 }
 
 @media print {
@@ -13,23 +22,23 @@
         margin: 0.33in 0 0.34in 0; /* Minimum margins for headers and footers */
 
         @top-center {
-            color: var(--color-header-footer);
+            color: var(--report-color-header-footer);
             content: "Project: {{project}}";
             font-size: var(--size-header-footer);
         }
         @bottom-center {
-            color: var(--color-header-footer);
+            color: var(--report-color-header-footer);
             content: "- " counter(page) " -" ;
             font-size: var(--size-header-footer);
         }
         @bottom-left {
-            color: var(--color-header-footer);
+            color: var(--report-color-header-footer);
             content: "The report was created with Cinnamon v {{version}}";
             font-size: var(--size-header-footer);
             margin-left: 10px;
         }
         @bottom-right {
-            color: var(--color-header-footer);
+            color: var(--report-color-header-footer);
             content: "Creator: {{creator}} \A Created: {{now}}";
             font-size: var(--size-header-footer);
             margin-right: 10px;
@@ -61,12 +70,12 @@
     margin: 0;
 
     width: 794px;
-    background-color: white;
+    background-color: var(--report-color-foreground);
 }
 .report-header {
     position: relative;
-    background: linear-gradient(to right, #2c3e50, #3498db);
-    color: white;
+    background: linear-gradient(to right, var(--report-color-primary-dark), var(--report-color-primary));
+    color: var(--report-color-foreground);
     padding: 30px;
     border-radius: 5px;
     margin-bottom: 40px;
@@ -88,7 +97,7 @@
 .report-header h1 {
     font-size: 2.6em;
     margin: 0 0 10px 0;
-    color: white;
+    color: var(--report-color-foreground);
     text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     position: relative;
 }
@@ -112,8 +121,8 @@
     text-align: left;
 }
 .report-header2 {
-    color: #2c3e50;
-    border-left: 4px solid #3498db;
+    color: var(--report-color-text);
+    border-left: 4px solid var(--report-color-header-border);
     font-size: 1.4em;
     font-weight: bold;
     padding-bottom: 2px;
@@ -124,7 +133,7 @@
     break-after: avoid;
 }
 .report-header3 {
-    color: #3498db;
+    color: var(--report-color-primary);
 
     page-break-after: avoid;
     break-after: avoid;
@@ -134,7 +143,7 @@
     margin-bottom: calc(var(--margin-text) / 3) ;
 }
 .report-metric-card {
-    background-color: #f8f9fa;
+    background-color: var(--report-color-background);
     border-radius: 5px;
     padding: 15px;
     margin-bottom: 15px;
@@ -153,14 +162,14 @@
     font-style: italic;
 }
 .report-table > thead > tr {
-    background-color: var(--color-primary);
-    color: white;
+    background-color: var(--report-color-primary);
+    color: var(--report-color-foreground);
 }
 .report-table > tbody > tr:nth-child(even) {
-    background-color: white;
+    background-color: var(--report-color-foreground);
 }
 .report-table > tbody > tr:nth-child(odd) {
-    background-color: #e6e6e6;
+    background-color: var(--report-color-background);
 }
 .report-table td, .report-table th {
     padding-left: 5px;
@@ -170,19 +179,19 @@
     text-align: center;
 }
 .report-th, .report-td {
-    border: 1px solid #ddd;
+    border: 1px solid var(--report-color-border);
     padding: 8px 12px;
     text-align: left;
 }
 .report-th {
-    background-color: #f2f2f2;
+    background-color: var(--report-color-background);
 }
-.report-risk-high {color: #e74c3c;}
-.report-risk-medium {color: #f39c12;}
-.report-risk-low {color: #27ae60;}
+.report-risk-high {color: var(--report-color-error);}
+.report-risk-medium {color: var(--report-color-warning);}
+.report-risk-low {color: var(--report-color-success);}
 .report-intro-box {
-    background-color: #f8f9fa;
-    border-left: 4px solid #3498db;
+    background-color: var(--report-color-background);
+    border-left: 4px solid var(--report-color-header-border);
     padding: 5px 20px;
     margin-bottom: 30px;
     border-radius: 0 5px 5px 0;
@@ -192,7 +201,7 @@
     font-weight: bold;
     margin-top: 0;
     margin-bottom: var(--margin-text);
-    color: #2c3e53;
+    color: var(--report-color-text);
 }
 .report-intro-box-list-header {
     font-weight: bold;
@@ -213,7 +222,7 @@
 .report-audience-item {
     flex: 1;
     min-width: 250px;
-    background-color: white;
+    background-color: var(--report-color-foreground);
     margin: 10px;
     padding: 15px;
     border-radius: 5px;

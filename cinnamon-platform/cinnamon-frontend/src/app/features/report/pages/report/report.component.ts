@@ -139,7 +139,15 @@ export class ReportComponent implements OnInit {
             const id = chartDiv.nativeElement.id;
             const newChart = mywindow.document.getElementById(id);
             newChart!.style.display = 'none';
-            newChart!.parentElement!.insertBefore(image, newChart);
+
+            // Center images again because of potential page margin changes
+            const chartWrapper = document.createElement("div");
+            chartWrapper.style.width = '100%';
+            chartWrapper.style.display = 'flex'
+            chartWrapper.style.justifyContent = 'center'
+            chartWrapper.appendChild(image);
+
+            newChart!.parentElement!.insertBefore(chartWrapper, newChart);
         }
 
         // Handle elements that do not fit on one page

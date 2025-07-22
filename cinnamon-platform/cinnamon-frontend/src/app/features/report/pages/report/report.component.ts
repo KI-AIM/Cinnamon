@@ -83,6 +83,12 @@ export class ReportComponent implements OnInit {
      * @author Daniel Preciado-Marquez
      */
     protected printReport(): void {
+        // Preprocess the report
+        // Assign IDs to all charts
+        for (let i = 0; i < this.chartDivs.length; i++) {
+            const chart = this.chartDivs.get(i);
+            chart!.nativeElement.id = "chart" + i;
+        }
 
         this.http.get("/app/assets/report.css", {responseType: 'text'}).pipe(
             switchMap(value => {

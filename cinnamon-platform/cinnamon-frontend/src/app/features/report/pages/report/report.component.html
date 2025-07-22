@@ -736,26 +736,35 @@
                         </table>
                     </div>
 
+                    <a id="a_chart"></a>
+
+                    <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes" style="width: 100%;">
+                        <div>
+                            Attribute: {{ attributeStatistics.attribute_information.name }}
+                        </div>
+
+                        <ng-container *ngIf="attributeStatistics.plot.histogram">
+                            <app-chart-frequency #chart
+                                                 [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                 [data]="attributeStatistics.plot.histogram!" [limit]="null"
+                                                 [simple]="false" originalSeriesLabel="Original"
+                                                 syntheticSeriesLabel="Protected">
+                            </app-chart-frequency>
+                        </ng-container>
+                        <ng-container *ngIf="attributeStatistics.plot.frequency_plot">
+                            <app-chart-frequency #chart
+                                                 [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                 [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
+                                                 [simple]="false" originalSeriesLabel="Original"
+                                                 syntheticSeriesLabel="Protected">
+                            </app-chart-frequency>
+                        </ng-container>
+                    </div>
+
                     <div
                         style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; color: #7f8c8d; font-size: 14px;">
                         <p>Privacy Report | Prepared: 01.01.2025</p>
                         <p>Confidential - For Internal Use Only</p>
-                    </div>
-
-                    <a id="a_chart"></a>
-
-                    <div style="width: 100%;">
-                        <app-chart-frequency id="chart1" #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
-                                             [data]="reportData.statistics.statistics!.resemblance.attributes[0].plot.histogram!"
-                                             [limit]="null" originalSeriesLabel="Original" [simple]="false"
-                                             syntheticSeriesLabel="Protected"></app-chart-frequency>
-                    </div>
-
-                    <div style="width: 100%;">
-                        <app-chart-frequency id="chart2" #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
-                                             [data]="reportData.statistics.statistics!.resemblance.attributes[2].plot.histogram!"
-                                             [limit]="null" originalSeriesLabel="Original" [simple]="false"
-                                             syntheticSeriesLabel="Protected"></app-chart-frequency>
                     </div>
 
                 </div>

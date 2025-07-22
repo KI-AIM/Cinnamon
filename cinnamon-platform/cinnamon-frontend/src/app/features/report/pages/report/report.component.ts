@@ -96,8 +96,7 @@ export class ReportComponent implements OnInit {
         this.metricConfig$ = this.projectConfigService.projectSettings$;
         this.riskAssessmentConfig$ = this.riskAssessmentService.fetchConfiguration().pipe(
             map(value => value.config as RiskAssessmentConfig),
-            tap(config => { console.log(config) })
-        )
+        );
         this.statistics$ = this.statisticsService.fetchResult();
     }
 
@@ -111,6 +110,12 @@ export class ReportComponent implements OnInit {
      * @author Daniel Preciado-Marquez
      */
     protected printReport(): void {
+        // Preprocess the report
+        // Assign IDs to all charts
+        for (let i = 0; i < this.chartDivs.length; i++) {
+            const chart = this.chartDivs.get(i);
+            chart!.nativeElement.id = "chart" + i;
+        }
 
         this.http.get("/app/assets/report.css", {responseType: 'text'}).pipe(
             switchMap(value => {

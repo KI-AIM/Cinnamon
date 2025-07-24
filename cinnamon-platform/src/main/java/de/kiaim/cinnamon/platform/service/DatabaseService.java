@@ -719,6 +719,7 @@ public class DatabaseService {
 				for (final var job : stage.getProcesses()) {
 					job.setStatus(null);
 					job.setExternalProcessStatus(ProcessStatus.NOT_STARTED);
+					job.setServerInstance(null);
 					job.setScheduledTime(null);
 					job.setConfiguration(null);
 					job.getResultFiles().clear();

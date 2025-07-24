@@ -32,6 +32,11 @@ public class InternalRequestException extends InternalException {
 	 */
 	public static final String CONFIGURATION_DEFINITION = "5";
 
+	/**
+	 * Exception code for unavailable external server instances.
+	 */
+	public static final String NO_INSTANCE_AVAILABLE = "6";
+
 	public InternalRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

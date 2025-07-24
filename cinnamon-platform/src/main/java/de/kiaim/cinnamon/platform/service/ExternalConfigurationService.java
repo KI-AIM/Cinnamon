@@ -2,10 +2,7 @@ package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.exception.*;
-import de.kiaim.cinnamon.platform.model.configuration.ExternalConfiguration;
-import de.kiaim.cinnamon.platform.model.configuration.ExternalEndpoint;
-import de.kiaim.cinnamon.platform.model.configuration.ExternalServer;
-import de.kiaim.cinnamon.platform.model.configuration.Job;
+import de.kiaim.cinnamon.platform.model.configuration.*;
 import de.kiaim.cinnamon.platform.model.dto.ConfigurationInfo;
 import de.kiaim.cinnamon.platform.model.dto.DataSetInfo;
 import de.kiaim.cinnamon.platform.model.dto.ProcessInfo;
@@ -26,12 +23,15 @@ import java.util.Collection;
 public class ExternalConfigurationService {
 
 	private final DatabaseService databaseService;
+	private final ExternalServerInstanceService externalServerInstanceService;
 	private final HttpService httpService;
 	private final StepService stepService;
 
-	public ExternalConfigurationService(final DatabaseService databaseService, final HttpService httpService,
-	                                    final StepService stepService) {
+	public ExternalConfigurationService(final DatabaseService databaseService,
+	                                    final ExternalServerInstanceService externalServerInstanceService,
+	                                    final HttpService httpService, final StepService stepService) {
 		this.databaseService = databaseService;
+		this.externalServerInstanceService = externalServerInstanceService;
 		this.httpService = httpService;
 		this.stepService = stepService;
 	}
@@ -93,8 +93,15 @@ public class ExternalConfigurationService {
 			throws BadConfigurationNameException, InternalRequestException {
 		final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(configurationName);
 		final ExternalServer externalServer = externalConfiguration.getExternalServer();
+		final ExternalServerInstance instance  = externalServerInstanceService.findAvailableExternalServerInstance(externalServer, true);
 
-		final String serverUrl = externalServer.getUrlServer();
+		if (instance == null) {
+			throw new InternalRequestException(InternalRequestException.NO_INSTANCE_AVAILABLE,
+			                                   "No available external server instance found for configuration '" +
+			                                   configurationName + "'");
+		}
+
+		final String serverUrl = instance.getUrl();
 		final String urlPath = externalConfiguration.getAlgorithmEndpoint();
 
 		try {
@@ -149,8 +156,15 @@ public class ExternalConfigurationService {
 	private String fetchAlgorithmDefinition(final String configurationName, final String definitionPath) throws BadConfigurationNameException, InternalRequestException {
 		final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(configurationName);
 		final ExternalServer externalServer = externalConfiguration.getExternalServer();
+		final ExternalServerInstance instance  = externalServerInstanceService.findAvailableExternalServerInstance(externalServer, true);
 
-		final String serverUrl = externalServer.getUrlServer();
+		if (instance == null) {
+			throw new InternalRequestException(InternalRequestException.NO_INSTANCE_AVAILABLE,
+			                                   "No available external server instance found for configuration '" +
+			                                   configurationName + "'");
+		}
+
+		final String serverUrl = instance.getUrl();
 
 		try {
 			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();

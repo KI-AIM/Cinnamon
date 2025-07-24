@@ -23,11 +23,11 @@ public class MockWebServerExtension implements BeforeAllCallback, BeforeEachCall
 
 	@Override
 	public void beforeAll(final ExtensionContext context) {
-		System.setProperty("cinnamon.external-server.technical-evaluation-server.urlServer",
+		System.setProperty("cinnamon.external-server.technical-evaluation-server.instances.0.url",
 		                   String.format("http://localhost:%s", mockBackEndPort));
-		System.setProperty("cinnamon.external-server.synthetization-server.urlServer",
+		System.setProperty("cinnamon.external-server.synthetization-server.instances.0.url",
 		                   String.format("http://localhost:%s", mockBackEndPort));
-		System.setProperty("cinnamon.external-server.anonymization-server.urlServer",
+		System.setProperty("cinnamon.external-server.anonymization-server.instances.0.url",
 		                   String.format("http://localhost:%s", mockBackEndPort));
 	}
 

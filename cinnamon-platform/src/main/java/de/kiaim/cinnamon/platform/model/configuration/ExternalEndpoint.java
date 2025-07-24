@@ -1,10 +1,8 @@
 package de.kiaim.cinnamon.platform.model.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.kiaim.cinnamon.platform.helper.KiAimConfigurationPostProcessor;
 import de.kiaim.cinnamon.platform.model.enumeration.StepInputEncoding;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -72,13 +70,6 @@ public class ExternalEndpoint {
 	private List<StepOutputConfiguration> outputs = new ArrayList<>();
 
 	/**
-	 * Maximum number of processes that are allowed to run in parallel.
-	 */
-	@JsonIgnore
-	@NotNull
-	private Integer maxParallelProcess;
-
-	/**
 	 * List of required pre-processors for this step.
 	 */
 	@JsonIgnore
@@ -94,7 +85,7 @@ public class ExternalEndpoint {
 	//=========================
 
 	/**
-	 * Index of the endpoint. Is automatically set at {@link KiAimConfigurationPostProcessor#assignIndices()}.
+	 * Index of the endpoint.
 	 */
 	private int index;
 

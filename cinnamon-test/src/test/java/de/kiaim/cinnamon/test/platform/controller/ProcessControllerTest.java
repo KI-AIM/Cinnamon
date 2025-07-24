@@ -29,7 +29,6 @@ import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
 import org.apache.commons.fileupload2.core.DiskFileItem;
 import org.apache.commons.fileupload2.core.DiskFileItemFactory;
-import org.apache.commons.fileupload2.core.FileItem;
 import org.apache.commons.fileupload2.core.FileItemFactory;
 import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -191,6 +190,7 @@ public class ProcessControllerTest extends ControllerTest {
 		assertNotNull(process, "No external process has been created!");
 		assertEquals(ProcessStatus.RUNNING, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
+		assertEquals("anonymization-server.0", process.getServerInstance(), "Unexpected server instance has been set!");
 
 		// Test request
 		RecordedRequest recordedRequest = mockBackEnd.takeRequest();
@@ -205,14 +205,15 @@ public class ProcessControllerTest extends ControllerTest {
 
 		// Parse request
 		final FileItemFactory<DiskFileItem> factory = DiskFileItemFactory.builder().get();
-		final var upload = new JakartaServletFileUpload(factory);
+		final var upload = new JakartaServletFileUpload<>(factory);
 		final List<DiskFileItem> fileItems = upload.parseRequest(request);
 
+		assertNotNull(process.getUuid());
 		String id = process.getUuid().toString();
 		final String callbackUrl = "http://" + callbackHost + ":8080/api/process/" + id + "/callback";
 
 		// Test request content
-		for (final FileItem fileItem : fileItems) {
+		for (final DiskFileItem fileItem : fileItems) {
 			if (fileItem.getFieldName().equals("data")) {
 				assertEquals(DataSetTestHelper.generateDataSetAsJson(false), fileItem.getString(),
 				             "Unexpected content of data!");
@@ -296,6 +297,7 @@ public class ProcessControllerTest extends ControllerTest {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(updateTestProject, DataSetSource.Job(firstStage.getJobs().get(0)));
 		assertEquals(ProcessStatus.FINISHED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
+		assertNull(process.getServerInstance(), "Server instance has not been reset!");
 		assertTrue(existsDataSet(dataSetEntity.getId()), "Dataset has not been stored!");
 		assertTrue(dataSetEntity.isStoredData(), "Dataset has not been stored!");
 		assertEquals(firstStage.getJobList().subList(0, 1), dataSetEntity.getProcessed(), "Unexpected previous processes!");
@@ -304,6 +306,9 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals("anon-info", process.getResultFiles().get("additional.txt").getLobString(),
 		             "Additional result has not been set correctly!");
 
+		var secondProcess = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(1);
+		assertEquals(ProcessStatus.RUNNING, secondProcess.getExternalProcessStatus(), "Unexpected status of second process!");
+		assertEquals("synthetization-server.0", secondProcess.getServerInstance(), "Unexpected server instance of second process!");
 	}
 
 	private void getStatus2() throws Exception {
@@ -523,6 +528,7 @@ public class ProcessControllerTest extends ControllerTest {
 		final ExternalProcessEntity process = getTestProject().getPipelines().get(0).getStageByIndex(0).getProcess(0);
 		assertEquals(ProcessStatus.CANCELED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
+		assertNull(process.getServerInstance(), "Server instance has not been reset!");
 	}
 
 	@Test
@@ -598,10 +604,11 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("status").value(ProcessStatus.CANCELED.name()));
 
 		project = projectService.getProject(user);
+		var process = project.getPipelines().get(0).getStageByIndex(0).getProcess(0);
 
 		// Check if the second process is running
-		assertEquals(ProcessStatus.RUNNING,
-		             project.getPipelines().get(0).getStageByIndex(0).getProcess(0).getExternalProcessStatus());
+		assertEquals(ProcessStatus.RUNNING, process.getExternalProcessStatus());
+		assertEquals("anonymization-server.0", process.getServerInstance());
 	}
 
 	@Test
@@ -633,6 +640,7 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals(ProcessStatus.ERROR, process.getExecutionStep().getStatus());
 		assertEquals(ProcessStatus.ERROR, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
+		assertNull(process.getServerInstance(), "Server instance has not been reset!");
 		assertEquals("An error occurred!", process.getStatus());
 		assertFalse(process.getResultFiles().containsKey("exception_message.txt"),
 		           "Exception message should not have been set!");

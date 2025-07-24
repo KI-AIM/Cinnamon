@@ -48,15 +48,23 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
+		ExternalServerInstanceService externalServerInstanceService = mock(ExternalServerInstanceService.class);
 		ProjectService projectService = mock(ProjectService.class);
 
-		var url = cinnamonConfiguration.getExternalServer().get("anonymization-server").getUrlServer();
-		cinnamonConfiguration.getExternalServer().get("anonymization-server")
-		                     .setUrlServer(url.substring(0, url.lastIndexOf(":") + 1) + mockBackEnd.getPort());
+		var url = cinnamonConfiguration.getExternalServer()
+		                               .get("anonymization-server")
+		                               .getInstances()
+		                               .get("0")
+		                               .getUrl();
+		cinnamonConfiguration.getExternalServer()
+		                     .get("anonymization-server")
+		                     .getInstances()
+		                     .get("0")
+		                     .setUrl(url.substring(0, url.lastIndexOf(":") + 1) + mockBackEnd.getPort());
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
 		                                         backgroundProcessRepository, csvProcessor, databaseService,
-		                                         dataProcessorService, dataSetService, httpService, projectService,
-		                                         stepService);
+		                                         dataProcessorService, dataSetService, externalServerInstanceService,
+		                                         httpService, projectService, stepService);
 
 		if (jsonMapper == null) {
 			jsonMapper = serializationConfig.jsonMapper();
@@ -69,6 +77,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
+		externalProcess.setServerInstance("anonymization-server.0");
 		externalProcess.setJob(stage.getJobList().get(0));
 		externalProcess.setUuid(UUID.randomUUID());
 
@@ -89,7 +98,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		var updatedExecutionStep = processService.getStatus(project, stage);
+		var updatedExecutionStep = assertDoesNotThrow(() -> processService.getStatus(project, stage));
 
 		assertEquals(ProcessStatus.ERROR, updatedExecutionStep.getStatus(), "Status should be ERROR");
 		assertEquals(
@@ -103,6 +112,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
+		externalProcess.setServerInstance("anonymization-server.0");
 		externalProcess.setJob(stage.getJobList().get(0));
 		externalProcess.setUuid(UUID.randomUUID());
 
@@ -119,7 +129,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		response.setError("An error occurred!");
 		mockBackEnd.shutdown();
 
-		final var updatedExecutionStep = processService.getStatus(project, stage);
+		final var updatedExecutionStep = assertDoesNotThrow(() -> processService.getStatus(project, stage));
 
 		assertEquals(ProcessStatus.ERROR, updatedExecutionStep.getStatus(), "Status should be ERROR");
 

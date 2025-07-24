@@ -1,24 +1,30 @@
 package de.kiaim.cinnamon.platform.processor;
 
 import de.kiaim.cinnamon.model.configuration.data.*;
-import de.kiaim.cinnamon.model.data.DataRow;
-import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
+import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
+import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.FileType;
+
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import org.dhatim.fastexcel.Workbook;
+import org.dhatim.fastexcel.Worksheet;
 import org.dhatim.fastexcel.reader.Cell;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
 import org.dhatim.fastexcel.reader.Sheet;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -29,7 +35,13 @@ import java.util.stream.Stream;
 @Service
 public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
 
-    @Override
+    private final String cinnamonVersion;
+
+    public XlsxProcessor(@Value("${cinnamon.version}") final String cinnamonVersion) {
+        this.cinnamonVersion = cinnamonVersion;
+    }
+
+	@Override
     public FileType getSupportedDataType() {
         return FileType.XLSX;
     }
@@ -196,8 +208,9 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      * {@inheritDoc}
      */
     @Override
-    public DataConfiguration estimateDataConfiguration(InputStream data, FileConfigurationEntity fileConfiguration,
-                                                       final DatatypeEstimationAlgorithm algorithm) {
+    public DataConfigurationEstimation estimateDataConfiguration(InputStream data,
+                                                                 FileConfigurationEntity fileConfiguration,
+                                                                 final DatatypeEstimationAlgorithm algorithm) {
         final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
         List<List<String>> rows;
 
@@ -210,22 +223,93 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         }
 
         if (rows.isEmpty()) {
-            return new DataConfiguration();
+            return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
         }
 
-        int numberColumns = 0;
+        final int numberColumns;
         final List<String> columnNames;
+        final Iterator<List<String>> rowIterator = rows.iterator();
 
         if (xlsxFileConfiguration.getHasHeader()) {
             columnNames = normalizeColumnNames(rows.get(0).toArray(new String[0]));
             numberColumns = columnNames.size();
+            rowIterator.next();
         } else {
             numberColumns = rows.get(0).size();
             columnNames = Collections.nCopies(numberColumns, "");
         }
 
-        List<List<String>> samples = getAttributeSamples(rows.iterator(), numberColumns);
+        List<List<String>> samples = getAttributeSamples(rowIterator, numberColumns);
         return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void write(final OutputStream outputStream, final DataSet dataset) throws InternalIOException {
+        var versionParts = cinnamonVersion.split("\\.");
+        var version = versionParts[0] + "." + versionParts[1];
+
+        try (final Workbook workbook = new Workbook(outputStream, "Cinnamon", version);) {
+            final Worksheet worksheet = workbook.newWorksheet("dataset");
+
+            final List<String> columnNames = dataset.getDataConfiguration().getColumnNames();
+            for (int i = 0; i < columnNames.size(); i++) {
+                worksheet.value(0, i, columnNames.get(i));
+            }
+
+            List<String> dateFormatter = new ArrayList<>();
+            for (final ColumnConfiguration columnConfiguration : dataset.getDataConfiguration().getConfigurations()) {
+                dateFormatter.add("");
+                columnConfiguration.getConfigurations()
+                                   .stream()
+                                   .filter(configuration -> configuration.getClass()
+                                                                         .equals(DateFormatConfiguration.class))
+                                   .findFirst()
+                                   .ifPresent(configuration -> {
+                                       dateFormatter.set(dateFormatter.size() - 1,
+                                                         ((DateFormatConfiguration) configuration).getDateFormatter());
+                                   });
+
+                columnConfiguration.getConfigurations()
+                                   .stream()
+                                   .filter(configuration -> configuration.getClass()
+                                                                         .equals(DateTimeFormatConfiguration.class))
+                                   .findFirst()
+                                   .ifPresent(configuration -> {
+                                       dateFormatter.set(dateFormatter.size() - 1,
+                                                         ((DateTimeFormatConfiguration) configuration).getDateTimeFormatter());
+                                   });
+            }
+
+            for (int rowIndex = 0; rowIndex < dataset.getDataRows().size(); rowIndex++) {
+                final DataRow row = dataset.getDataRows().get(rowIndex);
+
+                for (int columnIndex = 0; columnIndex < row.getRow().size(); columnIndex++) {
+                    final Data data = row.getData().get(columnIndex);
+
+                    if (data instanceof BooleanData booleanData) {
+                        worksheet.value(rowIndex + 1, columnIndex, booleanData.getValue());
+                    } else if (data instanceof DateData dateData) {
+                        worksheet.value(rowIndex + 1, columnIndex, dateData.getValue());
+                        worksheet.style(rowIndex + 1, columnIndex).format(dateFormatter.get(columnIndex)).set();
+                    } else if (data instanceof DateTimeData dateTimeData) {
+                        worksheet.value(rowIndex + 1, columnIndex, dateTimeData.getValue());
+                        worksheet.style(rowIndex + 1, columnIndex).format(dateFormatter.get(columnIndex)).set();
+                    } else if (data instanceof DecimalData decimalData) {
+                        worksheet.value(rowIndex + 1, columnIndex, decimalData.getValue());
+                    } else if (data instanceof IntegerData integerData) {
+                        worksheet.value(rowIndex + 1, columnIndex, integerData.getValue());
+                    } else if (data instanceof StringData stringData) {
+                        worksheet.value(rowIndex + 1, columnIndex, stringData.getValue());
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+	        throw new InternalIOException(InternalIOException.XLSX_CREATION, "Failed to create the XLSX file!", e);
+        }
     }
 
     private DataConfiguration getStringDataConfiguration(Sheet sheet) {

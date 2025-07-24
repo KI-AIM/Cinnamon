@@ -542,6 +542,18 @@ def send_callback_error(callback_url, session_key, message, status_code):
         print(f"Failed to send error to callback URL: {str(e)}")
 
 
+@app.route('/actuator/health', methods=['GET'])
+def health_check():
+    """
+    Provides a health status for the application.
+
+    Returns:
+        A JSON object indicating the application's health status.
+    """
+    status = {"status": "UP"}
+    return jsonify(status), 200
+
+
 if __name__ == '__main__':
     app.run(debug=True)
 

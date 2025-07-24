@@ -1,7 +1,7 @@
 <mat-form-field style="width: 100%;">
     <mat-label>Which algorithm do you want to use?</mat-label>
 
-    <mat-select #selectElement [disabled]="disabled" (selectionChange)="onChange($event)">
+    <mat-select #selectElement [disabled]="disabled" (selectionChange)="onChange($event)" [value]="initialValue">
         <mat-option *ngFor="let option of algorithms" [value]="option">
             {{ option.display_name }}
         </mat-option>

@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { NotFoundComponent } from "@core/components/not-found/not-found.component";
 import { StartpageComponent } from './features/start/pages/startpage/startpage.component';
 import { UploadFileComponent } from './features/data-upload/pages/upload-file/upload-file.component';
 import { DataConfigurationComponent } from './features/data-upload/pages/data-configuration/data-configuration.component';
@@ -21,9 +22,9 @@ import {
 } from "./features/risk-assessment/pages/risk-assessment-configuration/risk-assessment-configuration.component";
 
 const routes: Routes = [
-    {path: '', redirectTo: 'login', pathMatch: 'full'},
-    {path: 'login' , component: LoginComponent},
-    {path: 'register', component: RegisterComponent},
+    {path: '', redirectTo: 'open', pathMatch: 'full'},
+    {path: 'open' , component: LoginComponent},
+    {path: 'create', component: RegisterComponent},
     {path: 'start', component: StartpageComponent, canActivate: [AuthGuard]},
     {path: 'upload', component: UploadFileComponent, canActivate: [AuthGuard]},
     {path: 'dataConfiguration', component: DataConfigurationComponent, canActivate: [AuthGuard]},
@@ -34,6 +35,7 @@ const routes: Routes = [
     {path: 'technicalEvaluationConfiguration', component: TechnicalEvaluationConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'riskEvaluationConfiguration', component: RiskAssessmentConfigurationComponent, canActivate: [AuthGuard]},
     {path: 'evaluation', component: EvaluationComponent, canActivate: [AuthGuard]},
+    {path: '**', component: NotFoundComponent},
 ];
 
 @NgModule({

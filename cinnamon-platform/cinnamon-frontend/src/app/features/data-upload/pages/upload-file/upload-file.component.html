@@ -1,93 +1,122 @@
-<div class="box">
+<ng-container *ngIf="status$ | async as status">
+    <ng-container *ngIf="status.mode === Mode.STANDARD">
 
-    <p>
-        This page allows you to easily upload files to our system. Multiple file types are supported by the application.
-    </p>
+        <app-workstep-list confirmLabel="Confirm file and start configuration" [locked]="locked" [invalid]="isInvalid"
+                           [numberSteps]="2" resetSteps [step]="Steps.UPLOAD" (confirm)="uploadFile()">
 
-    <div>
-        <span>Current File: </span>
-        <ng-container *ngIf="(fileInfo$ | async) as fileInfo">
-            <ng-container *ngIf="fileInfo.name !== null; else noFile">
-                <span>{{ fileInfo.name }}</span>
-            </ng-container>
+            <app-workstep-item title="Select your dataset" [locked]="locked" [invalid]="isDataFileInvalid" [stepIndex]="0">
+                <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
+                <ng-container *ngTemplateOutlet="info"></ng-container>
+            </app-workstep-item>
+
+            <app-workstep-item title="Select a data configuration if available" [locked]="locked" [invalid]="isConfigFileInvalid"
+                               [stepIndex]="1" altConfirm="Continue without a configuration">
+                <ng-container *ngTemplateOutlet="configFileUpload"></ng-container>
+            </app-workstep-item>
+
+        </app-workstep-list>
+
+    </ng-container>
+
+    <ng-container *ngIf="status.mode === Mode.EXPERT">
+
+        <app-workstep-box title="Upload your dataset and data configuration">
+            <div>
+                <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
+            </div>
+
+            <div class="mt-4">
+                <ng-container *ngTemplateOutlet="configFileUpload"></ng-container>
+            </div>
+
+            <div class="mt-4">
+                <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="isInvalid">
+                    Confirm file and start configuration
+                </button>
+            </div>
+
+            <ng-container *ngTemplateOutlet="info"></ng-container>
+        </app-workstep-box>
+
+    </ng-container>
+</ng-container>
+
+<ng-template #dataFileUpload>
+    <ng-container *ngIf="(fileInfo$ | async) as fileInfo">
+        <ng-container *ngIf="fileInfo.name !== null; else noFile">
+            <span>You previously uploaded the file: </span>
+            <span>{{ fileInfo.name }}</span><br/>
+            <span *ngIf="!locked">You can select another dataset by uploading a new file:</span>
+            <span *ngIf="locked">You already confirmed the dataset. If you want to select another dataset, you have to delete the current dataset on the "Data validation" page first.</span>
         </ng-container>
         <ng-template #noFile>
-            <i>No File Selected</i>
+            Select the file containing the dataset you want to anonymize:
         </ng-template>
-    </div>
+    </ng-container>
 
-    <div>
-        <input type="file" accept=".csv,.xlsx" #fileForm (input)="onFileInput($event)" [disabled]="locked">
+    <div class="mt-2">
+        <div class="d-flex align-items-center w-100">
+            <app-file-upload accept=".csv,.xlsx" [disabled]="locked" (input)="onFileInput($event)"
+                             class="flex-grow-1"></app-file-upload>
 
-        <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
-           [hidden]="isDataFileInvalid" class="icon-enabled">
-            <mat-icon fontIcon="settings"></mat-icon>
-        </a>
-        <div class="cinnamon-file-input-error" *ngIf="isDataFileTypeInvalid">
-            Please select a CSV or XLSX file.
-        </div>
-
-    </div>
-
-    <p>
-        If you already have a configuration file, you can upload it here.
-    </p>
-
-    <div class="mb-2">
-        <input id="configInput" type="file" accept=".yml,.yaml" (input)="onDataConfigurationFileInput($event)"
-               [disabled]="locked">
-
-        <div class="cinnamon-file-input-error" *ngIf="isConfigFileTypeInvalid">
-            Please select a YAML file.
+            <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
+               [hidden]="isDataFileInvalid" class="icon-enabled ms-1">
+                <mat-icon fontIcon="settings"></mat-icon>
+            </a>
         </div>
     </div>
+</ng-template>
 
-    <div class="py-2">
-        <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="isInvalid">Confirm file and
-            start configuration
-        </button>
+<ng-template #configFileUpload>
+    If you already have a configuration file, you can upload it here.
+    If not, you can continue without a configuration and a data configuration will be estimated based on the selected dateset.
+
+    <div class="mt-2">
+        <app-file-upload accept=".yml,.yaml" [disabled]="locked" (input)="onDataConfigurationFileInput($event)"></app-file-upload>
     </div>
+</ng-template>
 
-    <h3>More Information</h3>
+<ng-template #info>
+    <div *ngIf="appConfig$ | async as appConfig" class="mt-4">
+        <p>
+            <b>Supported File Types:</b>
+            <br/>
+            Ensure your files are in a supported format. You'll be notified if the file type is not accepted. <br/>
+            Supported file types are:
+        </p>
+        <ul>
+            <li>CSV Files</li>
+            <li>XLSX Files</li>
+        </ul>
+        FHIR support is under development and will be available soon.<br/><br/>
 
-    <p>
-        <b>Upload:</b>
-        <br/>
-        Use the 'Browse' button to open your file explorer and select the file(s) you want to
-        upload. Alternatively, drag and drop your files directly into the designated area.
-        <br/><br/>
-        <b>Supported File Types:</b>
-        <br/>
-        Ensure your files are in a supported format. You'll be notified if
-        the file type is not accepted. <br/>
-        Supported file types are:
-    </p>
-    <ul>
-        <li>CSV Files</li>
-        <li>XLSX Files</li>
-    </ul>
-    FHIR support is under development and will be available soon.<br/><br/>
-
-    <p>
-        <b>File Size Limit:</b>
-        <br/>
-        Please note that there is a limit on the size of each file you can
-        upload. Most algorithms by this application take a long time to process. To ensure that processing times
-        are somewhat reasonable, we have to limit the dataset size.
-        <br/><br/>
-        <b>Upload Progress:</b>
-        <br/>
-        Once you've selected your file, the upload process will begin. You will see a loading screen. Before
-        saving the data, the application will transform and validate it. The validation results will be shown
-        after the process is finished.
-        <br/><br/>
-        <b>Security:</b> Your files are transmitted securely using
-        encryption protocols to protect your data. The data never leaves the system where the Cinnamon application
-        is installed. The processed data will also only be accessible to the user that uploaded the data and
-        will be deleted after the process was finished.
-    </p>
-
-</div>
+        <p>
+            <b>File Size Limit:</b>
+            <br/>
+            <ng-container *ngIf="appConfig.maxFileSize >= 0 else noFileSizeLimit">
+                The maximum file size is {{ formatMaxFileSize(appConfig.maxFileSize) }}.
+                Most algorithms by this application take a long time to process.
+                To ensure that processing times are somewhat reasonable, we have to limit the dataset size.
+            </ng-container>
+            <ng-template #noFileSizeLimit>
+                There is no limit for the file size.
+                But be aware that processing times can be long for large datasets.
+            </ng-template>
+            <br/><br/>
+            <b>Upload Progress:</b>
+            <br/>
+            Once you've selected your file, the upload process will begin. You will see a loading screen.
+            Before saving the data, the application will transform and validate it.
+            The validation results will be shown after the process is finished.
+            <br/><br/>
+            <b>Security:</b>
+            <br/>
+            Your files are transmitted securely using encryption protocols to protect your data.
+            The data never leaves the system where the Cinnamon application is installed.
+            The processed data will also only be accessible to the user that uploaded the data and will be deleted after the process was finished.
+        </p>
+    </div>
+</ng-template>
 
 <ng-template #fileConfigurationDialog>
     <mat-dialog-content class="mat-typography">

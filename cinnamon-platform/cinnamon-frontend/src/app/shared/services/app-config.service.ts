@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { environments } from "../../../environments/environment";
 import { HttpClient } from "@angular/common/http";
-import { catchError, finalize, Observable, of, share, tap } from "rxjs";
-import { ErrorHandlingService } from "./error-handling.service";
+import { ErrorHandlingService } from "src/app/shared/services/error-handling.service";
+import { environments } from "src/environments/environment";
+import { catchError, finalize, Observable, of, shareReplay, tap } from "rxjs";
 
 @Injectable({
     providedIn: 'root'
@@ -10,7 +10,7 @@ import { ErrorHandlingService } from "./error-handling.service";
 export class AppConfigService {
     private readonly baseURL = environments.apiUrl;
 
-    private _appConfig: AppConfig| null = null;
+    private _appConfig: AppConfig | null = null;
     private _appConfig$: Observable<AppConfig> | null = null;
 
     constructor(
@@ -31,10 +31,17 @@ export class AppConfigService {
             tap(value => {
                 this._appConfig = value;
             }),
-            share(),
+            shareReplay(1),
             catchError((e) => {
                 this.errorHandlingService.addError(e, "Cinnamon is currently unavailable. Please try again later.");
-                return of({isDemoInstance: false});
+                return of({
+                    isDemoInstance: false,
+                    maxFileSize: 0,
+                    passwordRequirements: {
+                        minLength: 0,
+                        constraints: [],
+                    },
+                });
             }),
             finalize(() => {
                 this._appConfig$ = null;
@@ -49,4 +56,13 @@ export class AppConfigService {
 
 export interface AppConfig {
     isDemoInstance: boolean;
+    maxFileSize: number;
+    passwordRequirements: PasswordRequirements;
 }
+
+export interface PasswordRequirements {
+    minLength: number;
+    constraints: PasswordConstraint[];
+}
+
+export type PasswordConstraint = 'LOWERCASE' | 'DIGIT' | 'SPECIAL_CHAR' | 'UPPERCASE';

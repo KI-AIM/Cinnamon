@@ -59,6 +59,7 @@ export class ErrorHandlingService {
         }
 
         if (!errorMessage) {
+            console.error(error);
             errorMessage = "An unexpected error occurred. Please contact the administrator.";
         }
 
@@ -86,7 +87,7 @@ export class ErrorHandlingService {
                 }
 
             } else if (response.status === 401) {
-                this.userService.invalidate();
+                this.userService.logout('expired');
                 return "Session expired. Please log in again.";
             } else if (response.status === 504) {
                 return "The API at " + response.url + " could not be reached";

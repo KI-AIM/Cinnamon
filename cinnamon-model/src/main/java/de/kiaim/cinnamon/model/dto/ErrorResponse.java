@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,33 +37,33 @@ public class ErrorResponse {
 	 */
 	@Schema(description = "Timestamp of the request arriving.", example = "2023-12-05T13:33:23.296+00:00",
 	        requiredMode = Schema.RequiredMode.REQUIRED)
-	final Date timestamp = new Date();
+	private final Date timestamp = new Date();
 
 	/**
 	 * Value of the status code.
 	 */
 	@Schema(description = "Http status code.", example = "400", requiredMode = Schema.RequiredMode.REQUIRED)
-	final int status;
+	private int status;
 
 	/**
 	 * URL of the called API.
 	 */
 	@Schema(description = "Path of the request.", example = "/api/data", requiredMode = Schema.RequiredMode.REQUIRED)
-	final String path;
+	private String path;
 
 	/**
 	 * Error Code in the form [SOURCE]_[ExceptionTypeCode]_[ExceptionClassCode]_[ExceptionCode].
 	 */
 	@Schema(description = "Code specifying the exact error.", example = "PLATFORM_1_5_1",
 	        requiredMode = Schema.RequiredMode.REQUIRED)
-	final String errorCode;
+	private String errorCode;
 
 	/**
 	 * Human-readable message of the error.
 	 */
 	@Schema(description = "Short description of the error", example = "Unsupported fiel type: .txt",
 	        requiredMode = Schema.RequiredMode.REQUIRED)
-	final String errorMessage;
+	private String errorMessage;
 
 	/**
 	 * Additional information for the error as JSON. Content depends on the specific error.
@@ -70,5 +71,27 @@ public class ErrorResponse {
 	@Schema(description = "JSON containing a detailed error description. Not always available.",
 	        example = "{\"email\":\"Email is not available!\"}", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	@Nullable
-	final ErrorDetails errorDetails;
+	private ErrorDetails errorDetails;
+
+	/**
+	 * Sets the path field to the given value.
+	 * For compatibility with Springs error responses.
+	 *
+	 * @param instance The instance of the request.
+	 */
+	@JsonSetter
+	public void setInstance(final String instance) {
+		path = instance;
+	}
+
+	/**
+	 * Sets the error message field to the given value.
+	 * For compatibility with Springs error responses.
+	 *
+	 * @param detail The message.
+	 */
+	@JsonSetter
+	public void setDetail(final String detail) {
+		errorMessage = detail;
+	}
 }

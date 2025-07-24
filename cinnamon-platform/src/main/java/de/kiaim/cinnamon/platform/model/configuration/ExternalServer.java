@@ -30,14 +30,19 @@ public class ExternalServer {
 	@NotBlank
 	private String urlServer;
 
+	/**
+	 * Endpoint used for health checks.
+	 */
+	private String healthEndpoint = "";
+
 	//=========================
 	//--- Automatically set ---
 	//=========================
 
 	/**
-	 * Index of the server. Is automatically set at {@link KiAimConfigurationPostProcessor#assignIndices()}.
+	 * Name of the server. Is automatically set at {@link KiAimConfigurationPostProcessor#assignIndices()}.
 	 */
-	private int index;
+	private String name;
 
 	/**
 	 * Endpoints of the server.

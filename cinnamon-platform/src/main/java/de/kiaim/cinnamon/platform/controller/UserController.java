@@ -1,8 +1,12 @@
 package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
+import de.kiaim.cinnamon.platform.exception.BadDataSetIdException;
+import de.kiaim.cinnamon.platform.exception.BadUserConfirmationException;
 import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
+import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -16,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -86,5 +91,34 @@ public class UserController {
 	) {
 		userService.save(registerRequest.getEmail(), registerRequest.getPassword());
 		return new ResponseEntity<>(HttpStatus.OK);
+	}
+
+	@Operation(summary="Deletes the currently authenticated user.",
+	           description="Deletes the currently authenticated user.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully deleted the user.",
+			             content = @Content),
+			@ApiResponse(responseCode = "403",
+			             description = "The credentials do not match the authenticated user.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "An internal error occurred when deleting the user.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@DeleteMapping(value = "/delete",
+	               consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+	public void delete(
+			@ParameterObject @Valid final ConfirmUserRequest confirmUserRequest,
+			@AuthenticationPrincipal final UserEntity user)
+			throws BadDataSetIdException, BadUserConfirmationException, InternalDataSetPersistenceException {
+		userService.confirmUser(confirmUserRequest, user);
+		userService.deleteUser(user);
 	}
 }

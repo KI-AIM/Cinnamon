@@ -1,5 +1,6 @@
 import { NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle } from "@angular/material/dialog";
 import { LoginComponent } from "./pages/login/login.component";
 import { RegisterComponent } from "./pages/register/register.component";
 import { MatInputModule } from "@angular/material/input";
@@ -12,16 +13,20 @@ import { AppRoutingModule } from "src/app/app-routing.module";
 
 @NgModule({
 	declarations: [LoginComponent, RegisterComponent],
-	imports: [
-		AppRoutingModule,
-		CommonModule,
-		FormsModule,
-		MatButtonModule,
-		MatCardModule,
-		MatIconModule,
-		MatInputModule,
-		ReactiveFormsModule,
-		SharedModule,
-	],
+    imports: [
+        AppRoutingModule,
+        CommonModule,
+        FormsModule,
+        MatButtonModule,
+        MatCardModule,
+        MatDialogActions,
+        MatDialogClose,
+        MatDialogContent,
+        MatDialogTitle,
+        MatIconModule,
+        MatInputModule,
+        ReactiveFormsModule,
+        SharedModule,
+    ],
 })
 export class AuthModule {}

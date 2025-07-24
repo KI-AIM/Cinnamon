@@ -17,6 +17,10 @@ import java.util.TreeMap;
 @ConfigurationProperties(prefix = "cinnamon")
 @Getter @Setter
 public class CinnamonConfiguration {
+
+	@NestedConfigurationProperty
+	private PasswordRequirementsConfiguration passwordRequirements = new PasswordRequirementsConfiguration();
+
 	/**
 	 * Map containing all steps.
 	 */
@@ -26,7 +30,7 @@ public class CinnamonConfiguration {
 
 	private Map<String, ExternalConfiguration> externalConfiguration = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-	private Map<Integer, ExternalServer> externalServer = new HashMap<>();
+	private Map<String, ExternalServer> externalServer = new HashMap<>();
 
 	private Map<Integer, ExternalEndpoint> externalServerEndpoints = new HashMap<>();
 

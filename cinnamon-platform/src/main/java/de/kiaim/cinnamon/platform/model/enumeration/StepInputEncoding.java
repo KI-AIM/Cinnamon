@@ -7,11 +7,11 @@ package de.kiaim.cinnamon.platform.model.enumeration;
  */
 public enum StepInputEncoding {
 	/**
-	 * Writes the bytes of the data into a file.
+	 * Writes the data into a CSV file and the data configuration into a separate YAML file.
 	 */
 	FILE,
 	/**
-	 * Converts the data into JSON.
+	 * Writes the data and data configuration into one JSON file.
 	 */
 	JSON,
 }

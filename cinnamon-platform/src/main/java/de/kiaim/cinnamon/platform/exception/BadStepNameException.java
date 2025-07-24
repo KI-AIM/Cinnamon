@@ -10,6 +10,11 @@ public class BadStepNameException extends BadRequestException {
 	 */
 	public static final String NOT_FOUND = "1";
 
+	/**
+	 * Exception code for step names that are not in the stage defined by the context.
+	 */
+	public static final String NOT_IN_STAGE = "2";
+
 	public BadStepNameException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

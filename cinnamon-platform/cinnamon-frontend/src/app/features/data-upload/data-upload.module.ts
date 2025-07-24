@@ -1,5 +1,6 @@
 import { NgModule, inject, provideAppInitializer } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { MatTooltip } from "@angular/material/tooltip";
 import { AdditionalConfigurationComponent } from "./components/additional-configuration/additional-configuration.component";
 import { AttributeConfigurationComponent } from "./components/attribute-configuration/attribute-configuration.component";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
@@ -54,6 +55,7 @@ import { NgxEchartsModule } from "ngx-echarts";
         ReactiveFormsModule,
         MatCheckboxModule,
         NgxEchartsModule,
+        MatTooltip,
     ],
 	exports: [
 		AdditionalConfigurationComponent,

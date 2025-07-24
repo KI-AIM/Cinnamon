@@ -5,46 +5,62 @@ import { Status } from "../model/status";
 import { Mode } from "../../core/enums/mode";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
-import { finalize, Observable, of, share, tap } from "rxjs";
+import { Observable, ReplaySubject } from "rxjs";
+import { ErrorHandlingService } from "./error-handling.service";
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class StatusService {
     private readonly baseUrl: string = environments.apiUrl + "/api/project"
 
-    private status: Status;
-    private status$: Observable<Status> | null = null;
-    private fetched: boolean = false;
+    private _status: Status;
+    private statusSubject: ReplaySubject<Status> | null = null;
 
     /**
      * List of all completed steps.
      * @private
      */
-    private readonly completedSteps: List<Steps>;
+    private readonly completedSteps: List<Steps> = new List();
 
-  constructor(
-      private readonly http: HttpClient,
-  ) {
-      this.status = new Status()
-      this.status.mode = Mode.UNSET;
-      this.status.currentStep = Steps.WELCOME;
-      this.completedSteps = new List();
-  }
+    constructor(
+        private readonly errorHandlingService: ErrorHandlingService,
+        private readonly http: HttpClient,
+    ) {
+    }
 
-  public get currentStep(): Steps {
-      return this.status.currentStep;
-  }
+    public get status$(): Observable<Status> {
+        return this.initializeStatus().asObservable();
+    }
+
+    private initializeStatus(): ReplaySubject<Status> {
+        if (this.statusSubject === null) {
+            this.statusSubject = new ReplaySubject<Status>(1);
+
+            this.http.get<Status>(this.baseUrl + "/status").subscribe({
+                next: (value: Status) => {
+                    this._status = value;
+                    this.setNextStep(value.currentStep);
+                    this.statusSubject?.next(value);
+                },
+                error: err => {
+                  this.errorHandlingService.addError(err, "Failed to fetch project state.");
+                },
+            });
+        }
+
+        return this.statusSubject;
+    }
 
     /**
      * Sets the mode to the given value and synchronizes the status with the backend.
      * @param mode The selected mode.
      */
-    setMode(mode: Mode): Observable<void> {
-        this.status.mode = mode;
+    public setMode(mode: Mode): Observable<void> {
+        this._status.mode = mode;
+        this.initializeStatus().next(this._status);
 
         const formData = new FormData();
-
         formData.append("mode", mode.toString());
         return this.http.post<void>(this.baseUrl, formData);
     }
@@ -71,7 +87,8 @@ export class StatusService {
      * @param step The next step.
      */
     setNextStep(step: Steps): void {
-        this.status.currentStep = step;
+        this._status.currentStep = step;
+        this.initializeStatus().next(this._status);
 
         this.completedSteps.clear();
 
@@ -81,34 +98,6 @@ export class StatusService {
                 this.addCompletedStep(Steps[value as keyof typeof Steps]);
             }
         });
-    }
-
-    /**
-     * Fetches the status from the backend.
-     */
-    public fetchStatus(): Observable<Status> {
-        if (this.fetched) {
-            return of(this.status);
-        }
-
-        if (this.status$) {
-            return this.status$;
-        }
-
-        this.status$ = this.http.get<Status>(this.baseUrl + "/status")
-            .pipe(
-                tap(value => {
-                    this.fetched = true;
-                    this.status = value;
-                    this.setNextStep(value.currentStep);
-                }),
-                share(),
-                finalize(() => {
-                    this.status$ = null;
-                }),
-            );
-
-        return this.status$;
     }
 
     private postStep(step: Steps): Observable<void> {

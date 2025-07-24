@@ -1,0 +1,92 @@
+<ng-template #projectSettingsDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Project Settings</h2>
+
+        <div class="slides">
+
+            <div #main>
+                <mat-dialog-content class="mat-typography dialog-content">
+                <div class="vertical-boxes">
+
+                    <div class="box">
+                        <div class="box-name">
+                            General
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="settings-label">
+                                Project Name
+                            </div>
+                            <mat-form-field class="w-100 hide-mat-error-gap">
+                                <input matInput [disabled]="true" [value]="projectName">
+                            </mat-form-field>
+                        </div>
+
+                        <div>
+                            <div class="settings-label">
+                                Delete Project
+                            </div>
+                            <div>
+                                <button mat-raised-button color="warn" type="button" (click)="openDeletionConfirmation()">
+                                    Delete Project
+                                    <mat-icon>chevron_right</mat-icon>
+                                </button>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <app-metric-configuration class="box"></app-metric-configuration>
+                </div>
+                </mat-dialog-content>
+            </div>
+
+            <div #deletionConfirmation>
+                <mat-dialog-content class="h-100 mat-typography dialog-content">
+                <div class="box">
+                    <div class="box-name">
+                        Delete Project
+                    </div>
+                    <div class="settings-info">
+                        Deleting the project is irreversible. Make sure that you downloaded all the data you want to keep.<br>
+                        Please confirm that you want to delete the project by entering the project name and password again:
+                    </div>
+                    <div>
+                        <mat-form-field class="w-100 hide-mat-error-gap">
+                            <mat-label>Project Name</mat-label>
+                            <input type="text" matInput #confirmProjectNameInput>
+                        </mat-form-field>
+                    </div>
+
+                    <div>
+                        <mat-form-field class="w-100 hide-mat-error-gap">
+                            <mat-label>Password</mat-label>
+                            <input type="password" matInput #confirmPasswordInput>
+                        </mat-form-field>
+                    </div>
+
+                    <div>
+                        <div *ngIf="deletionError != null" class="error">
+                            {{ deletionError }}
+                        </div>
+                        <button mat-raised-button color="warn" type="button"
+                                [disabled]="confirmProjectNameInput.value !== projectName || confirmPasswordInput.value === ''"
+                                (click)="deleteProject(confirmProjectNameInput.value, confirmPasswordInput.value)">
+                            <mat-icon>delete</mat-icon>
+                            Delete Project
+                        </button>
+                    </div>
+                </div>
+                </mat-dialog-content>
+            </div>
+
+        </div>
+
+    <mat-dialog-actions align="end">
+        <button *ngIf="!isMainOpen" mat-raised-button color="primary" type="button" (click)="openMain()">
+            <mat-icon>chevron_left</mat-icon>
+            Back
+        </button>
+        <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
+    </mat-dialog-actions>
+</ng-template>

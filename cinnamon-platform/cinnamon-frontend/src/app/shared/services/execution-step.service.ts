@@ -60,21 +60,28 @@ export abstract class ExecutionStepService {
 
     /**
      * Starts the anonymization and synthetization process.
+     * @param job The job to start. If null, the first job will be started.
      * @protected
      */
-    public start() {
+    public start(job: string | null) {
         // Sets the step in case later steps have already been completed.
         this.statusService.updateNextStep(this.getStep()).subscribe();
 
-        this.asyncStart().subscribe();
+        this.asyncStart(job).subscribe();
     }
 
     /**
      * Returns an observable for starting the process.
+     * @param job The job to start. If null, the first job will be started.
      * @protected
      */
-    public asyncStart(): Observable<ExecutionStep | null> {
-        return this.http.post<ExecutionStep>(this.baseUrl + "/" + this.getStageName() + "/start", {}).pipe(
+    public asyncStart(job: string | null): Observable<ExecutionStep | null> {
+        let url = this.baseUrl + "/" + this.getStageName() + "/start";
+        if (job != null) {
+            url += "/" + job;
+        }
+
+        return this.http.post<ExecutionStep>(url, {}).pipe(
             tap(value => {
                     // For some reason value is a plain object here
                     this.update(plainToInstance(ExecutionStep, value));
@@ -121,6 +128,44 @@ export abstract class ExecutionStepService {
             this.statusSubscription = null;
         }
     }
+
+    /**
+     * Determines the CSS class for the line based on the process status of a given stage.
+     *
+     * @param {ExecutionStep | null} stage - The current execution step, or null if no stage is present.
+     * @param {number} jobIndex - The index of the job in the process list.
+     * @param {'top' | 'bottom'} part - Specifies whether the class should be determined for the 'top' or 'bottom' part of the line.
+     * @return {string} A string representing the CSS class: "current", "past", "error", or "future".
+     */
+    public getLineClass(stage: ExecutionStep | null, jobIndex: number, part: 'top'| 'bottom'): string {
+        const index = part === 'top' ? jobIndex : jobIndex + 1;
+
+        let status: ProcessStatus;
+        if (stage === null) {
+            status = ProcessStatus.NOT_STARTED;
+        } else {
+            if (index < stage.processes.length) {
+                status = stage.processes[index].externalProcessStatus;
+            } else {
+                if (stage.status === ProcessStatus.FINISHED) {
+                    status = ProcessStatus.FINISHED;
+                } else {
+                    status = ProcessStatus.NOT_STARTED;
+                }
+            }
+        }
+
+        if (status === ProcessStatus.RUNNING || status === ProcessStatus.SCHEDULED) {
+            return "current";
+        } else if (status === ProcessStatus.FINISHED || status === ProcessStatus.SKIPPED) {
+            return "past";
+        } else if (status === ProcessStatus.CANCELED || status === ProcessStatus.ERROR) {
+            return "error";
+        } else {
+            return "future";
+        }
+    }
+
 
     /**
      * Name of the step. Must be equal to the name of the step in the backend.

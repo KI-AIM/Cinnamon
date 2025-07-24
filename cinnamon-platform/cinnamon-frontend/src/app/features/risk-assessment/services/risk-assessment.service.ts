@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
-import { AlgorithmService } from "../../../shared/services/algorithm.service";
+import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
 import { Algorithm } from "../../../shared/model/algorithm";
 import { Observable, of } from "rxjs";
@@ -19,20 +19,8 @@ export class RiskAssessmentService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName(): string {
-        return "risk_evaluation";
-    }
-
     public override getConfigurationName(): string {
         return "risk_assessment_configuration";
-    }
-
-    override getExecStepName(): string {
-        return "evaluation";
-    }
-
-    override getJobs(): string[] {
-        return ["risk_evaluation"];
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
@@ -56,7 +44,7 @@ export class RiskAssessmentService extends AlgorithmService {
         };
     }
 
-    public override readConfiguration(arg: Object, configurationName: string): { config: Object; selectedAlgorithm: Algorithm; } {
+    public override readConfiguration(arg: Object, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName("evaluation");
         // @ts-ignore
         const config = arg[configurationName];
@@ -130,7 +118,6 @@ export class RiskAssessmentService extends AlgorithmService {
         configReg.name = "risk_assessment_configuration";
         configReg.orderNumber = 4;
         configReg.storeConfig = null;
-        configReg.getConfigCallback = () => this.getConfig();
         configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);

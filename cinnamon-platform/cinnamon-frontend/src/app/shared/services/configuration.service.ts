@@ -1,13 +1,24 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, throwError, toArray } from "rxjs";
+import {
+    catchError,
+    concatMap, debounceTime,
+    filter,
+    from,
+    map,
+    mergeMap,
+    Observable,
+    of, scan,
+    switchMap,
+    tap,
+    throwError,
+    toArray
+} from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { FileUtilityService } from './file-utility.service';
 import { parse, stringify } from 'yaml';
 import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data";
-import { Steps } from "../../core/enums/steps";
-import { environments } from "../../../environments/environment";
-import { StatusService } from "./status.service";
+import { environments } from "src/environments/environment";
 import { Algorithm } from "../model/algorithm";
 
 /**
@@ -28,7 +39,6 @@ export class ConfigurationService {
     constructor(
         private fileUtilityService: FileUtilityService,
         private httpClient: HttpClient,
-        private readonly statusService: StatusService,
     ) {
         this.registeredConfigurations = [];
     }
@@ -99,7 +109,7 @@ export class ConfigurationService {
     }
 
     /**
-     * Returns the registered configuration with given name if present.
+     * Returns the registered configuration with the given name if present.
      * Otherwise, returns null.
      * @param name Name of the registered configuration to return.
      * @returns The registered configuration or null.
@@ -128,37 +138,6 @@ export class ConfigurationService {
 
         this.registeredConfigurations.push(data);
         this.registeredConfigurations = this.registeredConfigurations.sort((a, b) => a.orderNumber - b.orderNumber);
-    }
-
-    /**
-     * Extracts the configuration object with the given name form the given YAML configuration file.
-     * Calls the given callback with the parameter in the form of {<configuration name>: <extracted config>}.
-     * If the config is not present, <extracted config> is null.
-     *
-     * @param file YAML file containing configurations.
-     * @param configurationName Name of the configuration to extract.
-     * @param callback Callback that gets called with the configuration.
-     */
-    public extractConfig(file: Blob, configurationName: string, callback: (result: object | null) => void) {
-        const reader = new FileReader();
-        reader.addEventListener("load", () => {
-            const configData = reader.result as string;
-            const configurations = parse(configData);
-
-            const result: { [a: string]: object | null } = {};
-            result[configurationName] = null;
-
-            for (const [name, config] of Object.entries(configurations)) {
-                if (name === configurationName) {
-                    result[configurationName] = config as object;
-                    break;
-                }
-            }
-
-            callback(result);
-        }, false);
-
-        reader.readAsText(file);
     }
 
     /**
@@ -191,36 +170,6 @@ export class ConfigurationService {
             formData.append("url", url);
         }
         return this.httpClient.post<void>(environments.apiUrl + "/api/config", formData);
-    }
-
-    /**
-     * Downloads the registered configurations which names are included in the given array.
-     * Uses the getConfigCallback function to retrieve the configuration.
-     * If configured, stores the configuration under the configured name into the database.
-     * @param includedConfigurations Names of the configurations to download.
-     */
-    downloadAllConfigurations(includedConfigurations: Array<string>) {
-        let configString = "";
-        for (const config of this.getRegisteredConfigurations()) {
-            if (!includedConfigurations.includes(config.name)) {
-                continue;
-            }
-
-            const configData = config.getConfigCallback();
-            if (typeof configData === "string") {
-                configString += configData;
-            } else {
-                configString += stringify(configData)
-            }
-
-            if (!this.statusService.isStepCompleted(config.lockedAfterStep)) {
-                config.storeConfig!(config.name, configString).subscribe();
-            }
-        }
-
-        // TODO use project name
-        const fileName = "configuration.yaml"
-        this.fileUtilityService.saveYamlFile(configString, fileName);
     }
 
     /**
@@ -323,38 +272,7 @@ export class ConfigurationService {
                 }
                 return of(result);
             }),
-            // catchError((error) => {
-            //     console.log('Error during configuration read:', error);
-            //     return of(null);
-            // }),
         );
-    }
-
-    /**
-     * Fetches all configurations from the backend for steps that are available before the given step.
-     * Calls the setConfigCallback function if a configuration is available.
-     * @param step The step up to which the configurations should be fetched.
-     */
-    public fetchConfigurations(step: Steps) {
-        const stepIndex = Number.parseInt(Steps[step]);
-        for (const config of this.getRegisteredConfigurations()) {
-            if (config.availableAfterStep < stepIndex) {
-                config.fetchConfig!(config.name).subscribe({
-                    next: value => {
-                        const data = new ImportPipeData();
-                        data.success = true;
-                        data.name = config.name;
-                        data.configData = config;
-                        data.yamlConfigString = value;
-
-                        config.setConfigCallback(data);
-                    },
-                    error: err => {
-                        console.log(err);
-                    }
-                });
-            }
-        }
     }
 
     /**

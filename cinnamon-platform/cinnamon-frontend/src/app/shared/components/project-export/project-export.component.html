@@ -1,0 +1,153 @@
+<ng-template #projectExportDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Project Export</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+
+        <div class="vertical-boxes">
+            <div class="box">
+                <div class="box-name">Configurations</div>
+
+                <div class="mb-3">
+                    <!-- Configuration selection -->
+                    <div class="settings-label">
+                        Configurations to export
+                    </div>
+                    <div *ngFor="let config of configurationService.getRegisteredConfigurations()">
+                        <span>
+                            <mat-checkbox #resource color="primary"
+                                          [disabled]="!statusService.isStepCompleted(config.availableAfterStep)"
+                                          [value]="'configuration.' + config.name"
+                                          (input)="updateNumberChecked()">
+                                {{ config.displayName }}
+                            </mat-checkbox>
+                        </span>
+                    </div>
+                    <div class="settings-label">
+                        Bundle Configurations
+                    </div>
+                    <div>
+                        <mat-checkbox [(ngModel)]="bundleConfigurations" color="primary">
+                            Bundle Configurations into one file
+                        </mat-checkbox>
+                    </div>
+                </div>
+
+                <!-- Datasets -->
+                <div class="box-name">Datasets</div>
+                <div class="mb-3">
+                    <div class="settings-label">
+                        Datasets to export
+                    </div>
+                    <table>
+                        <tr *ngIf="{datasetInfo: dataSetInfo$ | async} as data">
+                            <td>
+                                Original Dataset
+                            </td>
+                            <td>
+                                <mat-checkbox #resource color="primary" value="original.dataset" [disabled]="data.datasetInfo == null"
+                                              (input)="updateNumberChecked()">
+                                    Dataset
+                                </mat-checkbox>
+                            </td>
+                            <td>
+                                <mat-checkbox #resource color="primary" value="original.statistics" [disabled]="data.datasetInfo == null"
+                                              (input)="updateNumberChecked()">
+                                    Statistics
+                                </mat-checkbox>
+                            </td>
+                            <td></td>
+                        </tr>
+
+                        <ng-container *ngIf="executionInfo$ | async as executionInfo">
+                            <tr *ngFor="let process of executionInfo.processes">
+                                <td>
+                                    {{ executionService.getJobName(process.step) }} Result
+                                </td>
+                                <td>
+                                    <mat-checkbox #resource color="primary"
+                                                  [value]="'pipeline.execution.' + process.step + '.dataset'"
+                                                  [disabled]="process.externalProcessStatus !== ProcessStatus.FINISHED"
+                                                  (input)="updateNumberChecked()">
+                                        Dataset
+                                    </mat-checkbox>
+                                </td>
+                                <td>
+                                    <mat-checkbox #resource color="primary"
+                                                  [value]="'pipeline.execution.' + process.step + '.statistics'"
+                                                  [disabled]="process.externalProcessStatus !== ProcessStatus.FINISHED"
+                                                  (input)="updateNumberChecked()">
+                                        Statistics
+                                    </mat-checkbox>
+                                </td>
+                                <td>
+                                    <mat-checkbox #resource *ngIf="process.step === 'synthetization'" color="primary"
+                                                  value="pipeline.execution.synthetization.other"
+                                                  [disabled]="process.externalProcessStatus !== ProcessStatus.FINISHED"
+                                                  (input)="updateNumberChecked()">
+                                        Model
+                                    </mat-checkbox>
+                                </td>
+                            </tr>
+                        </ng-container>
+                    </table>
+
+                    <ng-container *ngIf="{datasetInfo: dataSetInfo$ | async} as data">
+                        <div class="settings-label">Dataset splits to include</div>
+                        <mat-form-field class="hide-mat-error-gap">
+                            <mat-select [disabled]="data.datasetInfo == null || !data.datasetInfo.hasHoldOutSplit" [(ngModel)]="holdOutSelector">
+                                <mat-option [value]="HoldOutSelector.ALL">All</mat-option>
+                                <mat-option [value]="HoldOutSelector.HOLD_OUT">Hold-Out</mat-option>
+                                <mat-option [value]="HoldOutSelector.NOT_HOLD_OUT">Not Hold-Out</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </ng-container>
+
+                    <div class="settings-label">Format of datasets</div>
+                    <mat-form-field class="hide-mat-error-gap">
+                        <mat-select [(ngModel)]="datasetFileType">
+                            <mat-option [value]="FileType.CSV">CSV</mat-option>
+                            <mat-option [value]="FileType.XLSX">XLSX</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                </div>
+
+                <!-- Evaluation results -->
+                <div class="box-name">Evaluation</div>
+                <div class="settings-label">Evaluation results to export</div>
+
+                <ng-container *ngIf="evaluationInfo$ | async as evaluationInfo">
+                    <div *ngFor="let process of evaluationInfo.processes">
+                        <mat-checkbox #resource color="primary"
+                                      [value]="'pipeline.evaluation.' + process.step + '.other'"
+                                      [disabled]="process.externalProcessStatus !== ProcessStatus.FINISHED"
+                                      (input)="updateNumberChecked()">
+                        {{ evaluationService.getJobName(process.step) }}
+                        </mat-checkbox>
+                    </div>
+                </ng-container>
+
+            </div>
+        </div>
+
+
+    </mat-dialog-content>
+    <mat-dialog-actions>
+        <div class="me-auto">
+            <button mat-raised-button color="primary" (click)="toggleAll(true)">
+                <mat-icon>check_box</mat-icon>
+                Select All
+            </button>
+            <button mat-raised-button color="primary" (click)="toggleAll(false)">
+                <mat-icon>check_box_outline_blank</mat-icon>
+                Unselect All
+            </button>
+        </div>
+        <div class="ms-auto">
+            <button mat-raised-button color="primary" [disabled]="numberChecked <= 0" (click)="exportProject()">
+                <mat-icon>file_download</mat-icon>
+                Download
+            </button>
+            <button mat-raised-button mat-dialog-close color="primary">Close</button>
+        </div>
+    </mat-dialog-actions>
+</ng-template>

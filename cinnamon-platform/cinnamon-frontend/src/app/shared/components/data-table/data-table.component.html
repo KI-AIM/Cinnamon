@@ -9,9 +9,9 @@
                     <mat-form-field *ngIf="dataSetInfo.hasHoldOutSplit" class="me-2">
                         <mat-label>Hold out</mat-label>
                         <mat-select (selectionChange)="applyHoldOutFilter($event)" [value]="holdOutFilter">
-                            <mat-option value="ALL">All</mat-option>
-                            <mat-option value="HOLD_OUT">Hold-Out</mat-option>
-                            <mat-option value="NOT_HOLD_OUT">Not Hold-Out</mat-option>
+                            <mat-option [value]="HoldOutSelector.ALL">All</mat-option>
+                            <mat-option [value]="HoldOutSelector.HOLD_OUT">Hold-Out</mat-option>
+                            <mat-option [value]="HoldOutSelector.NOT_HOLD_OUT">Not Hold-Out</mat-option>
                         </mat-select>
                     </mat-form-field>
                 </ng-container>

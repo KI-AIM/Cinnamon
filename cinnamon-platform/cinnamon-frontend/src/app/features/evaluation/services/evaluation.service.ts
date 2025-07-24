@@ -25,4 +25,18 @@ export class EvaluationService extends ExecutionStepService {
     protected override getStep(): Steps {
         return Steps.EVALUATION;
     }
+
+    /**
+     * Returns the display name for the given job.
+     * @param name Key of the job.
+     */
+    public getJobName(name: string): string {
+        const jobNames: Record<string, string> = {
+            'technical_evaluation': 'Technical Evaluation',
+            'risk_evaluation': 'Risk Evaluation',
+            'base_evaluation': 'Base Evaluation',
+        };
+
+        return jobNames[name];
+    }
 }

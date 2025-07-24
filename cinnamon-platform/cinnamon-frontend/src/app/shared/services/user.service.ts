@@ -63,12 +63,6 @@ export class UserService {
 			});
 	}
 
-	logout() {
-		sessionStorage.removeItem(this.USER_KEY)
-		this.router.navigate(['login', { mode: 'logout' }]).then(
-			() => window.location.reload()
-		);
-	}
 
 	register(request: {
 		email: string;
@@ -79,12 +73,29 @@ export class UserService {
 	}
 
     /**
-     * Invalidates the current session and redirects to the login page.
+     * Deletes the currently authenticated user.
+     * @param email The email of the user.
+     * @param password The password of the user.
      */
-    public invalidate(): void {
-        sessionStorage.removeItem(this.USER_KEY);
-        this.router.navigate(['login', { mode: 'expired' }]).then(
+    public delete(email: string, password: string): Observable<void> {
+        const formData = new FormData();
+        formData.append("email", email);
+        formData.append("password", password);
+
+        return this.http.delete<void>(this.baseURL + "/delete", {body: formData});
+    }
+
+    /**
+     * Logs out the user, redirects to the login page and displays a message based on the given mode.
+     * @param mode The mode defining the displayed message.
+     */
+    public logout(mode: LogoutMode) {
+        sessionStorage.removeItem(this.USER_KEY)
+        this.user = new User(false, "", "");
+        this.router.navigate(['open', { mode: mode }]).then(
             () => window.location.reload()
         );
     }
 }
+
+export type LogoutMode = "close" | "create" | "delete" | "expired" | "fail" | "noPermission";

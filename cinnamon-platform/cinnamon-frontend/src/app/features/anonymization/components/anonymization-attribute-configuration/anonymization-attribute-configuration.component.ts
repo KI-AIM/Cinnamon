@@ -1,4 +1,5 @@
 import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AdditionalConfigurationGroup } from "@shared/interfaces/AdditionalConfigurationGroup";
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
@@ -6,7 +7,7 @@ import { AnonymizationAttributeConfigurationService } from '../../services/anony
 import { MatSelect } from '@angular/material/select';
 import { AnonymizationAttributeRowConfiguration, AttributeProtection, } from 'src/app/shared/model/anonymization-attribute-config';
 import { Subscription } from "rxjs";
-import { FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 
 @Component({
     selector: 'app-anonymization-attribute-configuration',
@@ -14,8 +15,8 @@ import { FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from 
     styleUrls: ['./anonymization-attribute-configuration.component.less'],
     standalone: false
 })
-export class AnonymizationAttributeConfigurationComponent implements OnInit, OnDestroy {
-
+export class AnonymizationAttributeConfigurationComponent implements OnInit, OnDestroy, AdditionalConfigurationGroup {
+    @Input() public disabled!: boolean;
     @Input() public form!: FormGroup;
 
     @ViewChild("attributeDropdown") attributeDropdown: MatSelect;
@@ -41,9 +42,12 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
     /**
      * Initializes the given form to be used by this component.
      * @param form The form to be initialized.
+     * @param configs The initial configuration.
+     * @param disabled If the form is disabled initially.
      */
-    static initForm(form: FormGroup): void {
+    static initForm(form: FormGroup, configs: AnonymizationAttributeRowConfiguration[] | null, disabled: boolean): void {
         form.addControl(AnonymizationAttributeConfigurationComponent.formGroupName, new FormArray([], [Validators.required, AnonymizationAttributeConfigurationComponent.hasGeneralization]));
+        AnonymizationAttributeConfigurationComponent.doSetValue(configs, new FormBuilder(), AnonymizationAttributeConfigurationComponent.getAttributeConfigurationFormArray(form), disabled);
     }
 
     ngOnInit() {
@@ -125,16 +129,24 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
      */
     public patchValue(configs: AnonymizationAttributeRowConfiguration[]) {
         this.removeAllAttributes();
+        AnonymizationAttributeConfigurationComponent.doSetValue(configs, this.formBuilder, this.getAttributeConfigurationFormArray(this.form), this.disabled);
+    }
+
+    public static doSetValue(configs: AnonymizationAttributeRowConfiguration[] | null, formBuilder: FormBuilder, form: FormArray, disabled: boolean) {
+        if (configs == null) {
+            return;
+        }
         configs.forEach(config => {
-            const group = this.formBuilder.group({
-                attributeProtection: [config.attributeProtection, [Validators.required]],
+            const group = formBuilder.group({
+                attributeProtection: [{value: config.attributeProtection, disabled: disabled}, [Validators.required]],
                 dataType: [{value: config.dataType, disabled: true}, [Validators.required]],
                 index: [config.index, [Validators.required]],
-                intervalSize: [config.intervalSize, [Validators.required]],
+                intervalSize: [{value: config.intervalSize, disabled: disabled}, [Validators.required]],
                 name: [{value: config.name, disabled: true}, [Validators.required]],
                 scale: [{value: config.scale, disabled: true}, [Validators.required]],
             });
-            this.getAttributeConfigurationFormArray(this.form).push(group);
+
+            form.push(group);
         });
     }
 
@@ -142,10 +154,10 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
         const defaultAttributeProtection = this.attributeConfigurationService.getDefaultAttributeProtection(selectedRow.scale, selectedRow.type);
 
         const group = this.formBuilder.group({
-            attributeProtection: [defaultAttributeProtection, [Validators.required]],
+            attributeProtection: [{value: defaultAttributeProtection, disabled: this.disabled}, [Validators.required]],
             dataType: [{value: selectedRow.type, disabled: true}, [Validators.required]],
             index: [selectedRow.index, [Validators.required]],
-            intervalSize: [10, [Validators.required]], // Interval size is set in the row component
+            intervalSize: [{value: 10, disabled: this.disabled}, [Validators.required]], // Interval size is set in the row component
             name: [{value: selectedRow.name, disabled: true}, [Validators.required]],
             scale: [{value: selectedRow.scale, disabled: true}, [Validators.required]],
         });
@@ -153,6 +165,10 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
     }
 
     protected getAttributeConfigurationFormArray(form: FormGroup): FormArray {
+        return form.controls[AnonymizationAttributeConfigurationComponent.formGroupName] as FormArray;
+    }
+
+    private static getAttributeConfigurationFormArray(form: FormGroup): FormArray {
         return form.controls[AnonymizationAttributeConfigurationComponent.formGroupName] as FormArray;
     }
 
@@ -184,13 +200,16 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
      * @return Validation errors if no generalization protection is available, null otherwise.
      * @private
      */
-    private static hasGeneralization(control: FormArray): ValidationErrors | null {
+    private static hasGeneralization(control: AbstractControl): ValidationErrors | null {
+        if (!(control instanceof FormArray)) {
+            return null;
+        }
+
         if (control.controls.length === 0) {
             return null;
         }
 
         for (const row of control.controls) {
-            console.log(row);
             const protection = (row as FormGroup).controls['attributeProtection'].value;
             if (AnonymizationAttributeConfigurationComponent.isGeneralization(protection)) {
                 return null;

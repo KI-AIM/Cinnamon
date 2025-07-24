@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AlgorithmService } from "../../../shared/services/algorithm.service";
+import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
@@ -26,20 +26,8 @@ export class AnonymizationService extends AlgorithmService {
         super(http, configurationService);
     }
 
-    public override getStepName() {
-        return "anonymization";
-    }
-
     public override getConfigurationName(): string {
         return "anonymization";
-    }
-
-    public override getExecStepName(): string {
-        return "execution";
-    }
-
-    public override getJobs(): string[] {
-        return ["anonymization"];
     }
 
     public override createConfiguration(arg: AnonymizationFormConfig, selectedAlgorithm: Algorithm): Object {
@@ -58,7 +46,7 @@ export class AnonymizationService extends AlgorithmService {
          };
     }
 
-    public override readConfiguration(arg: any, configurationName: string): {config: Object, selectedAlgorithm: Algorithm} {
+    public override readConfiguration(arg: any, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName(arg["anonymization"]["privacyModels"][0]["name"])
         const config = arg["anonymization"]["privacyModels"][0];
         delete config["name"];
@@ -79,7 +67,6 @@ export class AnonymizationService extends AlgorithmService {
         configReg.name = "anonymization";
         configReg.orderNumber = 1;
         configReg.storeConfig = null;
-        configReg.getConfigCallback = () => this.getConfig();
         configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);

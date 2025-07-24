@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.controller;
 
+import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.service.ProcessService;
@@ -30,6 +31,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -110,12 +112,11 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/{stageName}/configure",
+	@PostMapping(value = "/configure",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Void> configureProcess(
 			@Parameter(description = "Step of which the process should be configured.")
-			@PathVariable final String stageName,
 			@ParameterObject @Valid final ConfigureProcessRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
@@ -123,17 +124,16 @@ public class ProcessController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		final Stage stage = stepService.getStageConfiguration(stageName);
 		final Job job = stepService.getStepConfiguration(requestData.getJobName());
 
 		// Configure process
-		processService.configureProcess(project, stage, job, requestData.isSkip());
+		processService.configureProcess(project, job, requestData.isSkip());
 
 		return ResponseEntity.ok().build();
 	}
 
-	@Operation(summary = "Starts the execution.",
-	           description = "Starts the execution.")
+	@Operation(summary = "Starts the execution of a stage.",
+	           description = "Starts the execution of a stage.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully started the execution. Returns the status object.",
@@ -151,12 +151,14 @@ public class ProcessController {
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@PostMapping(value = "/{stageName}/start",
+	@PostMapping(value = {"/{stageName}/start", "/{stageName}/start/{jobName}"},
 				 consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ExecutionStepInformation startProcess(
-			@Parameter(description = "Step of which the process should be canceled.")
+			@Parameter(description = "The stage to start.")
 			@PathVariable final String stageName,
+			@Parameter(description = "The job to start. If missing, the first job of the stage is started.")
+			@PathVariable final Optional<String> jobName,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
@@ -164,9 +166,13 @@ public class ProcessController {
 		final ProjectEntity project = projectService.getProject(user);
 
 		final Stage stage = stepService.getStageConfiguration(stageName);
+		Job job = null;
+		if (jobName.isPresent()) {
+			job = stepService.getStepConfiguration(jobName.get());
+		}
 
 		// Start process
-		final ExecutionStepEntity executionStep = processService.start(project, stage);
+		final ExecutionStepEntity executionStep = processService.start(project, stage, job);
 		return executionStepMapper.toDto(executionStep);
 	}
 
@@ -235,7 +241,39 @@ public class ProcessController {
 			@PathVariable final UUID processId,
 			final MultipartHttpServletRequest request
 	) throws ApiException {
-		processService.finishProcess(processId, request.getFileMap().entrySet());
+		processService.finishProcess(processId, request.getFileMap().entrySet(), null);
+		return ResponseEntity.ok().body(null);
+	}
+
+	@Operation(summary = "Callback endpoint for marking processes as failed.",
+	           description = "Callback endpoint for marking processes as failed.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully marked the process as failed.",
+			             content = @Content(schema = @Schema())),
+			@ApiResponse(responseCode = "400",
+			             description = "The process ID is not valid or the corresponding process has been canceled by the user.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "The response could not be processed.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@PostMapping(value = "/{processId}/callback",
+	             consumes = MediaType.APPLICATION_JSON_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE}
+	)
+	public ResponseEntity<String> callbackJson(
+			@Parameter(description = "Id of the process to mark as finished.")
+			@PathVariable final UUID processId,
+			@RequestBody final ErrorRequest errorRequest
+	) throws ApiException {
+		processService.finishProcess(processId, null, errorRequest);
 		return ResponseEntity.ok().body(null);
 	}
 

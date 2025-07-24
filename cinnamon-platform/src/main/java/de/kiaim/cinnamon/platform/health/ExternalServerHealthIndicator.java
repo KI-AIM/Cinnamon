@@ -1,102 +1,73 @@
 package de.kiaim.cinnamon.platform.health;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.kiaim.cinnamon.platform.exception.UnhealthyException;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServer;
 import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthContributor;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.Status;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Health indicator that checks if all external servers are healthy.
+ * Health indicator that checks if an external server is healthy.
  *
  * @author Daniel Preciado-Marquez
  */
 public class ExternalServerHealthIndicator implements HealthIndicator {
 
-	private final ObjectMapper objectMapper = new ObjectMapper();
-	private final ExternalServer externalServer;
-	private final WebClient webClient;
-
-	public ExternalServerHealthIndicator(ExternalServer externalServer) {
-		this.externalServer = externalServer;
-		webClient = WebClient.builder().baseUrl(externalServer.getUrlServer()).build();
-	}
+	private final Map<String, HealthContributor> healthContributors = new LinkedHashMap<>();
 
 	/**
-	 * Checks if the external server is healthy.
-	 * @return Health object.
+	 * The external server.
 	 */
+	private final ExternalServer externalServer;
+
+	public ExternalServerHealthIndicator(final ExternalServer externalServer) {
+		this.externalServer = externalServer;
+
+		for (final var instance : externalServer.getInstances().values()) {
+			final var healthIndicator = new ExternalServerInstanceHealthIndicator(instance);
+			healthContributors.put(instance.getId(), healthIndicator);
+		}
+	}
+
 	@Override
 	public Health health() {
-		Health.Builder builder = Health.up();
+		int numHealthy = 0;
+		int numUnknown = 0;
 
-		var healthEndpoint = externalServer.getHealthEndpoint();
-		try {
-			var response = webClient.method(HttpMethod.GET)
-			                        .uri(healthEndpoint)
-			                        .retrieve()
-			                        .onStatus(HttpStatusCode::isError,
-			                                  errorResponse -> errorResponse.toEntity(String.class)
-			                                                                .map(r -> this.buildErrorResponse(r,
-			                                                                                                  errorResponse.statusCode())))
-			                        .bodyToMono(Map.class)
-			                        .block();
+		final Map<String, Object> healthDetails = new LinkedHashMap<>();
 
-			var status = (response != null && response.containsKey("status"))
-			             ? (String) response.get("status")
-			             : Status.UNKNOWN.getCode();
-			builder.withDetail("ping", "UP");
-			builder.withDetail("health", status);
+		final Map<String, Health> instanceHealth = new LinkedHashMap<>();
 
-			builder.status(status);
-		} catch (UnhealthyException e) {
-			builder.withDetail("ping", "UP");
-			builder.withDetail("health", e.getStatus());
-			builder.withDetail("error", e.getStatusCode().toString());
+		for (final Map.Entry<String, HealthContributor> entry : healthContributors.entrySet()) {
+			if (entry.getValue() instanceof HealthIndicator indicator) {
+				final Health health = indicator.health();
+				instanceHealth.put(entry.getKey(), health);
 
-			builder.status(e.getStatus());
-		} catch (Exception e) {
-			builder.withDetail("ping", "DOWN");
-			builder.withDetail("health", "DOWN");
-
-			builder.down(e);
-		}
-
-		builder.withDetail("url", externalServer.getUrlServer());
-		builder.withDetail("healthEndpoint", healthEndpoint);
-
-		return builder.build();
-	}
-
-	/**
-	 * Handles health checks responses with error HTTP status codes.
-	 * @param response The response body.
-	 * @return An exception.
-	 */
-	private UnhealthyException buildErrorResponse(final ResponseEntity<String> response, final HttpStatusCode statusCode) {
-		var status = externalServer.getHealthEndpoint().isBlank()
-		             ? Status.UNKNOWN.getCode()
-		             : Status.DOWN.getCode();
-		try {
-			var body = objectMapper.readValue(response.getBody(), Map.class);
-			if (body != null && body.containsKey("status")) {
-				// Status can also be the HTTP Status of an error response
-				if (body.get("status") instanceof String bodyStatus) {
-					status = bodyStatus;
+				if (Status.UP.equals(health.getStatus())) {
+					numHealthy++;
+				} else if (Status.UNKNOWN.equals(health.getStatus())) {
+					numUnknown++;
 				}
 			}
-		} catch (JsonProcessingException ignored) {
 		}
 
-		return new UnhealthyException(status, statusCode);
-	}
+		healthDetails.put("minUp", externalServer.getMinUp());
+		healthDetails.put("numUp", numHealthy);
+		healthDetails.put("instances", instanceHealth);
 
+		final Health.Builder builder;
+
+		if (numHealthy >= externalServer.getMinUp()) {
+			builder = Health.up();
+		} else if (numHealthy + numUnknown >= externalServer.getMinUp()) {
+			builder = Health.unknown();
+		} else {
+			builder = Health.down();
+		}
+
+		return builder.withDetails(healthDetails).build();
+	}
 }

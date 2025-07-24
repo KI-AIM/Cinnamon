@@ -47,16 +47,16 @@ services:
 
             # Anonymization
             CINNAMON.EXTERNAL-SERVER.anonymization-server.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.anonymization-server.URL-SERVER: http://cinnamon-anonymization:8080
+            CINNAMON.EXTERNAL-SERVER.anonymization-server.instances.0.URL: http://cinnamon-anonymization:8080
             # Synthetization
             CINNAMON.EXTERNAL-SERVER.synthetization-server.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.synthetization-server.URL-SERVER: http://cinnamon-synthetization:5000
+            CINNAMON.EXTERNAL-SERVER.synthetization-server.instances.0.URL: http://cinnamon-synthetization:5000
             # Evaluation
             CINNAMON.EXTERNAL-SERVER.technical-evaluation-server.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.technical-evaluation-server.URL-SERVER: http://cinnamon-evaluation:5010
+            CINNAMON.EXTERNAL-SERVER.technical-evaluation-server.instances.0.URL: http://cinnamon-evaluation:5010
 
             CINNAMON.EXTERNAL-SERVER.risk-assessment-server.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.risk-assessment-server.URL-SERVER: http://cinnamon-risk-assessment:8000
+            CINNAMON.EXTERNAL-SERVER.risk-assessment-server.instances.0.URL: http://cinnamon-risk-assessment:8000
         depends_on:
             - cinnamon-db
         healthcheck:

@@ -28,10 +28,10 @@ public class ExternalServerHealthIndicatorTest extends ContextRequiredTest {
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("cinnamon.external-server.technical-evaluation-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.synthetization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.technical-evaluation-server.instances.0.url", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.synthetization-server.instances.0.url", () -> String.format("http://localhost:%s", mockBackEndPort));
 		registry.add("cinnamon.external-server.synthetization-server.healthEndpoint", () -> "");
-		registry.add("cinnamon.external-server.anonymization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.anonymization-server.instances.0.url", () -> String.format("http://localhost:%s", mockBackEndPort));
 		registry.add("cinnamon.external-server.anonymization-server.healthEndpoint", () -> "/health");
 	}
 

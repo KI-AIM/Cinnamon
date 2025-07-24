@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
@@ -16,7 +17,7 @@ import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -30,9 +31,9 @@ public class StatisticsControllerTest extends ControllerTest {
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("cinnamon.external-server.technical-evaluation-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.synthetization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.anonymization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.technical-evaluation-server.instances.0.url", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.synthetization-server.instances.0.url", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.anonymization-server.instances.0.url", () -> String.format("http://localhost:%s", mockBackEndPort));
 	}
 
 	@BeforeEach
@@ -77,11 +78,15 @@ public class StatisticsControllerTest extends ControllerTest {
 		assertEquals("POST", recordedRequest.getMethod());
 		assertEquals("/calculate_descriptive_statistics", recordedRequest.getPath());
 
-		// Finish
 		var updateTestProject = getTestProject();
+		assertNotNull(updateTestProject.getOriginalData().getDataSet());
 		var process = updateTestProject.getOriginalData().getDataSet().getStatisticsProcess();
+		assertEquals(ProcessStatus.RUNNING, process.getExternalProcessStatus(), "Unexpected status!");
+		assertEquals("technical-evaluation-server.0", process.getServerInstance(), "Unexpected server instance!");
+		assertNotNull(process.getUuid());
 		String id = process.getUuid().toString();
 
+		// Finish
 		final MockMultipartFile resultAdditional = new MockMultipartFile("metrics.json", "metrics.json",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
 		                                                                 "statistics".getBytes());
@@ -90,7 +95,7 @@ public class StatisticsControllerTest extends ControllerTest {
 				                .file(resultAdditional))
 		       .andExpect(status().isOk());
 
-		// Second request fetching statistics from database
+		// Second request fetching statistics from the database
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 				                    .code(404)
@@ -103,5 +108,11 @@ public class StatisticsControllerTest extends ControllerTest {
 		       .andExpect(content().json("{status: 'FINISHED', statistics: 'statistics'}"));
 
 		assertEquals(1, mockBackEnd.getRequestCount(), "No request should have been made!");
+
+		updateTestProject = getTestProject();
+		assertNotNull(updateTestProject.getOriginalData().getDataSet());
+		process = updateTestProject.getOriginalData().getDataSet().getStatisticsProcess();
+		assertEquals(ProcessStatus.FINISHED, process.getExternalProcessStatus(), "Unexpected status!");
+		assertNull(process.getServerInstance(), "Unexpected server instance!");
 	}
 }

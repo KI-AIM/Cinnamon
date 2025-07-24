@@ -29,6 +29,9 @@ public class KiAimConfigurationPostProcessor {
 		// Set indices of external stuff
 		for (final var externalServer : config.getExternalServer().entrySet()) {
 			externalServer.getValue().setName(externalServer.getKey());
+			for (final var externalServerInstance : externalServer.getValue().getInstances().entrySet()) {
+				externalServerInstance.getValue().setName(externalServerInstance.getKey());
+			}
 		}
 		for (final var externalConfiguration : config.getExternalConfiguration().entrySet()) {
 			externalConfiguration.getValue().setConfigurationName(externalConfiguration.getKey());
@@ -47,6 +50,13 @@ public class KiAimConfigurationPostProcessor {
 	}
 
 	private void link() throws InternalApplicationConfigurationException {
+		// Link server and instance
+		for (final var server : config.getExternalServer().values()) {
+			for (final var instance : server.getInstances().values()) {
+				instance.setServer(server);
+			}
+		}
+
 		// Link server and endpoints
 		for (final var endpoint : config.getExternalServerEndpoints().values()) {
 			final var serverIndex = endpoint.getExternalServerName();

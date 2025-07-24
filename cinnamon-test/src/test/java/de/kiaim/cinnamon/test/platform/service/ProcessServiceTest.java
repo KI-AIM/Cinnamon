@@ -48,9 +48,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("cinnamon.external-server.technical-evaluation-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.synthetization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.anonymization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.technical-evaluation-server.instances.0.url", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.synthetization-server.instances.0.url", () -> String.format("http://localhost:%s", mockBackEndPort));
+		registry.add("cinnamon.external-server.anonymization-server.instances.0.url", () -> String.format("http://localhost:%s", mockBackEndPort));
 	}
 
 	@BeforeEach
@@ -59,12 +59,13 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
+		ExternalServerInstanceService externalServerInstanceService = mock(ExternalServerInstanceService.class);
 		ProjectService projectService = mock(ProjectService.class);
 
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
 		                                         backgroundProcessRepository, csvProcessor, databaseService,
-		                                         dataProcessorService, dataSetService, httpService, projectService,
-		                                         stepService);
+		                                         dataProcessorService, dataSetService, externalServerInstanceService,
+		                                         httpService, projectService, stepService);
 
 		mockBackEnd = new MockWebServer();
 		mockBackEnd.start(mockBackEndPort);
@@ -85,6 +86,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
+		externalProcess.setServerInstance("anonymization-server.0");
 		externalProcess.setJob(stage.getJobList().get(0));
 		externalProcess.setUuid(UUID.randomUUID());
 
@@ -105,7 +107,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		var updatedExecutionStep = processService.getStatus(project, stage);
+		var updatedExecutionStep = assertDoesNotThrow(() -> processService.getStatus(project, stage));
 
 		assertEquals(ProcessStatus.ERROR, updatedExecutionStep.getStatus(), "Status should be ERROR");
 		assertEquals(
@@ -119,6 +121,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
+		externalProcess.setServerInstance("anonymization-server.0");
 		externalProcess.setJob(stage.getJobList().get(0));
 		externalProcess.setUuid(UUID.randomUUID());
 
@@ -135,7 +138,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		response.setError("An error occurred!");
 		mockBackEnd.shutdown();
 
-		final var updatedExecutionStep = processService.getStatus(project, stage);
+		final var updatedExecutionStep = assertDoesNotThrow(() -> processService.getStatus(project, stage));
 
 		assertEquals(ProcessStatus.ERROR, updatedExecutionStep.getStatus(), "Status should be ERROR");
 

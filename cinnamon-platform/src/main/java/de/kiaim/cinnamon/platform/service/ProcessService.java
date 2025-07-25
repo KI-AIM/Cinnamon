@@ -76,6 +76,7 @@ public class ProcessService {
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
+	private final ExternalServerInstanceService externalServerInstanceService;
 	private final HttpService httpService;
 	private final ProjectService projectService;
 	private final StepService stepService;
@@ -84,9 +85,10 @@ public class ProcessService {
 	                      @Value("${server.port}") final int port, final CinnamonConfiguration cinnamonConfiguration,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
 	                      final CsvProcessor csvProcessor, final DatabaseService databaseService,
-	                      final DataProcessorService dataProcessorService,
-	                      final DataSetService dataSetService, final HttpService httpService,
-	                      final ProjectService projectService, final StepService stepService
+	                      final DataProcessorService dataProcessorService, final DataSetService dataSetService,
+	                      final ExternalServerInstanceService externalServerInstanceService,
+	                      final HttpService httpService, final ProjectService projectService,
+	                      final StepService stepService
 	) {
 		this.jsonMapper = serializationConfig.jsonMapper();
 		this.yamlMapper = serializationConfig.yamlMapper();
@@ -98,6 +100,7 @@ public class ProcessService {
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
+		this.externalServerInstanceService = externalServerInstanceService;
 		this.httpService = httpService;
 		this.stepService = stepService;
 		this.projectService = projectService;
@@ -111,20 +114,25 @@ public class ProcessService {
 	 * @param project The project.
 	 * @param stage   The stage.
 	 * @return The updated execution.
+	 * @throws InternalInvalidStateException If the process has no server instance.
 	 */
 	@Transactional
-	public ExecutionStepEntity getStatus(final ProjectEntity project, final Stage stage) {
+	public ExecutionStepEntity getStatus(final ProjectEntity project, final Stage stage) throws InternalInvalidStateException {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
 			final var process = executionStep.getCurrentProcess();
+
 			try {
 				updateProcessStatus(process);
 			} catch (final InternalRequestException e) {
+				final ExternalServerInstance instance = stepService.getExternalServerInstanceConfiguration(
+						process.getServerInstance());
+
 				setProcessError(executionStep, e.getMessage());
 
 				// Start the next process of the same step
-				startScheduledProcess(process.getJob().getEndpoint());
+				startScheduledProcess(process.getJob().getEndpoint(), instance);
 			}
 
 			projectService.saveProject(executionStep.getProject());
@@ -246,10 +254,11 @@ public class ProcessService {
 	 * @param stage   The step.
 	 * @return The updated execution entity.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
+	 * @throws InternalInvalidStateException If the process has no server instance.
 	 */
 	@Transactional
 	public ExecutionStepEntity cancel(final ProjectEntity project, final Stage stage)
-			throws InternalApplicationConfigurationException {
+			throws InternalApplicationConfigurationException, InternalInvalidStateException {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
@@ -280,12 +289,13 @@ public class ProcessService {
 	 * @param processId   The ID of the process to finish.
 	 * @param resultFiles All files send in the callback request.
 	 * @throws BadProcessIdException If the given process ID is not valid.
+	 * @throws InternalInvalidStateException If the process has no server instance.
 	 */
 	@Transactional
 	public void finishProcess(final UUID processId,
 	                          @Nullable final Set<Map.Entry<String, MultipartFile>> resultFiles,
 	                          @Nullable final ErrorRequest errorRequest)
-			throws BadProcessIdException {
+			throws BadProcessIdException, InternalInvalidStateException {
 		final Optional<BackgroundProcessEntity> backgroundProcessOptional = backgroundProcessRepository.findByUuid(
 				processId);
 		// Invalid processID
@@ -295,6 +305,8 @@ public class ProcessService {
 			                                "' exists!");
 		}
 		final var process = backgroundProcessOptional.get();
+		final ExternalServerInstance instance = stepService.getExternalServerInstanceConfiguration(
+				process.getServerInstance());
 
 		// Finish the current process
 		final boolean containsError = tryFinishProcess(process, resultFiles, errorRequest);
@@ -306,7 +318,7 @@ public class ProcessService {
 			}
 
 			// Start the next process of the same step
-			startScheduledProcess(externalProcess.getJob().getEndpoint());
+			startScheduledProcess(externalProcess.getJob().getEndpoint(), instance);
 		}
 
 	}
@@ -360,6 +372,7 @@ public class ProcessService {
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
 	 * @throws InternalDataSetPersistenceException       If the data set could not be exported.
 	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
+	 *                                                   If the process has no server instance.
 	 * @throws InternalIOException                       If a result file could not be read.
 	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
 	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
@@ -486,6 +499,7 @@ public class ProcessService {
 			setProcessError(process, errorMessage);
 		} else {
 			process.setExternalProcessStatus(ProcessStatus.FINISHED);
+			process.setServerInstance(null);
 		}
 
 		return containsError;
@@ -506,9 +520,11 @@ public class ProcessService {
 	 * If the process is running, updates the status by calling the external API.
 	 *
 	 * @param externalProcess The process which status should be updated.
+	 * @throws InternalInvalidStateException If the process has no server instance.
 	 * @throws InternalRequestException If the request for the status fails.
 	 */
-	private void updateProcessStatus(final ExternalProcessEntity externalProcess) throws InternalRequestException {
+	private void updateProcessStatus(final ExternalProcessEntity externalProcess)
+			throws InternalRequestException, InternalInvalidStateException {
 		if (externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING) {
 			fetchStatus(externalProcess);
 		}
@@ -534,19 +550,9 @@ public class ProcessService {
 		                                                       .get(externalProcess.getEndpoint());
 		final ExternalServer server = endpoint.getServer();
 
-		// Check if max number of processes is reached
-		final Set<Integer> endpoints = server.getEndpoints().stream()
-		                                     .map(ExternalEndpoint::getIndex)
-		                                     .collect(Collectors.toSet());
-
-		// TODO check for number of process for the endpoint
-//		final var numberRunningProcessesEndpoint = backgroundProcessRepository.countByEndpointAndExternalProcessStatus(
-//				endpoint.getIndex(), ProcessStatus.RUNNING);
-		final var numberRunningProcessesServer = backgroundProcessRepository.countByEndpointInAndExternalProcessStatus(
-				endpoints, ProcessStatus.RUNNING);
-
-		if (numberRunningProcessesServer < server.getMaxParallelProcess()) {
-			doStartBackgroundProcess(externalProcess);
+		final ExternalServerInstance instance = externalServerInstanceService.findAvailableExternalServerInstance(server, false);
+		if (instance != null) {
+			doStartBackgroundProcess(externalProcess, instance);
 		} else {
 			scheduleProcess(externalProcess);
 		}
@@ -593,23 +599,24 @@ public class ProcessService {
 	 * Cancels the given process.
 	 *
 	 * @param backgroundProcess The process to be canceled.
+	 * @throws InternalInvalidStateException If the process has no server instance.
 	 */
 	@Transactional
-	public void cancelProcess(final BackgroundProcessEntity backgroundProcess) {
+	public void cancelProcess(final BackgroundProcessEntity backgroundProcess) throws InternalInvalidStateException {
 		if (!(backgroundProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
 		      backgroundProcess.getExternalProcessStatus() == ProcessStatus.RUNNING)) {
 			return;
 		}
 
+		// Get configuration
 		final ExternalEndpoint ese = stepService.getExternalServerEndpointConfiguration(backgroundProcess);
+		final ExternalServerInstance esi = stepService.getExternalServerInstanceConfiguration(backgroundProcess.getServerInstance());
 
 		if (backgroundProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED) {
 			backgroundProcess.setScheduledTime(null);
 		} else if (!ese.getCancelEndpoint().isBlank()) {
-			// Get configuration
-			final ExternalServer es = stepService.getExternalServerConfiguration(ese);
 
-			final String serverUrl = es.getUrlServer();
+			final String serverUrl = esi.getUrl();
 			final String cancelEndpoint = injectUrlParameter(ese.getCancelEndpoint(), backgroundProcess);
 
 			final MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
@@ -633,7 +640,8 @@ public class ProcessService {
 		}
 
 		backgroundProcess.setExternalProcessStatus(ProcessStatus.CANCELED);
-		startScheduledProcess(ese);
+		backgroundProcess.setServerInstance(null);
+		startScheduledProcess(ese, esi);
 
 		backgroundProcessRepository.save(backgroundProcess);
 	}
@@ -793,15 +801,16 @@ public class ProcessService {
 	 * Fetches the staus of the given process from the external server.
 	 *
 	 * @param externalProcess The process.
+	 * @throws InternalInvalidStateException If the process has no server instance.
 	 * @throws InternalRequestException If the request failed.
 	 */
-	private void fetchStatus(final ExternalProcessEntity externalProcess) throws InternalRequestException {
+	private void fetchStatus(final ExternalProcessEntity externalProcess) throws InternalRequestException, InternalInvalidStateException {
 		// Get configuration
 		final Job stepConfiguration = externalProcess.getJob();
 		final ExternalEndpoint ese = stepService.getExternalServerEndpointConfiguration(stepConfiguration);
-		final ExternalServer es = stepService.getExternalServerConfiguration(ese);
+		final ExternalServerInstance esi = stepService.getExternalServerInstanceConfiguration(externalProcess.getServerInstance());
 
-		final String serverUrl = es.getUrlServer();
+		final String serverUrl = esi.getUrl();
 		final String statusEndpoint = ese.getStatusEndpoint();
 
 		if (statusEndpoint.isEmpty()) {
@@ -843,12 +852,13 @@ public class ProcessService {
 	}
 
 	/**
-	 * Starts the next scheduled process for the given endpoint.
+	 * Starts the next scheduled process for the given endpoint using the given instance.
 	 *
 	 * @param endpoint The endpoint.
+	 * @param instance The instance to be used.
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	protected void startScheduledProcess(final ExternalEndpoint endpoint) {
+	protected void startScheduledProcess(final ExternalEndpoint endpoint, final ExternalServerInstance instance) {
 		final var server = endpoint.getServer();
 
 		final Set<Integer> endpoints = server.getEndpoints().stream()
@@ -864,7 +874,7 @@ public class ProcessService {
 
 		for (final var externalProcess : processes) {
 			try {
-				doStartBackgroundProcess(externalProcess);
+				doStartBackgroundProcess(externalProcess, instance);
 				externalProcess.setScheduledTime(null);
 				projectService.saveProject(externalProcess.getProject());
 				break;
@@ -880,18 +890,17 @@ public class ProcessService {
 	 * Starts the given process with the given data.
 	 *
 	 * @param externalProcess The process to be started.
+	 * @param instance        The instance to be used.
 	 * @throws BadStateException                   If no original data set exist.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
-	 * @throws InternalInvalidStateException       If a finished process does not contain data set.
+	 * @throws InternalInvalidStateException       If a finished process does not contain a dataset.
 	 * @throws InternalIOException                 If the request body could not be created.
 	 * @throws InternalMissingHandlingException    If no implementation exists for a valid configuration.
-	 * @throws InternalRequestException            If the request to start the process failed.
+	 * @throws InternalRequestException            If the request starting the process failed.
 	 */
-	private void doStartBackgroundProcess(final BackgroundProcessEntity externalProcess)
+	private void doStartBackgroundProcess(final BackgroundProcessEntity externalProcess, final ExternalServerInstance instance)
 			throws InternalDataSetPersistenceException, InternalIOException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		final var endpoint = cinnamonConfiguration.getExternalServerEndpoints().get(externalProcess.getEndpoint());
-
-		final ExternalServer es = stepService.getExternalServerConfiguration(endpoint);
 
 		// Prepare body
 		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
@@ -910,7 +919,7 @@ public class ProcessService {
 		externalProcess.setUuid(uuid);
 
 		bodyBuilder.part("session_key", uuid.toString());
-		final String callbackHost = es.getCallbackHost();
+		final String callbackHost = instance.getCallbackHost();
 		final var serverAddress = ServletUriComponentsBuilder.fromCurrentContextPath()
 		                                                     .host(callbackHost)
 		                                                     .port(this.port)
@@ -922,7 +931,7 @@ public class ProcessService {
 
 		// Do the request
 		try {
-			final String serverUrl = es.getUrlServer();
+			final String serverUrl = instance.getUrl();
 			String url = endpoint.getProcessEndpoint().isBlank() ? externalProcess.getConfiguration().getProcessUrl()
 			                                                     : endpoint.getProcessEndpoint();
 			url = injectUrlParameter(url, externalProcess);
@@ -950,6 +959,7 @@ public class ProcessService {
 
 			externalProcess.setExternalId(response.getPid());
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
+			externalProcess.setServerInstance(instance.getId());
 		} catch (final RequestRuntimeException e) {
 			final String message = httpService.buildError(e, "start the process");
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
@@ -1077,6 +1087,7 @@ public class ProcessService {
 
 	public void setProcessError(final BackgroundProcessEntity process, final String message) {
 		process.setExternalProcessStatus(ProcessStatus.ERROR);
+		process.setServerInstance(null);
 		process.setScheduledTime(null);
 		process.setUuid(null);
 
@@ -1094,6 +1105,7 @@ public class ProcessService {
 		if (currentProcess != null) {
 			currentProcess.setExternalProcessStatus(ProcessStatus.ERROR);
 			currentProcess.setUuid(null);
+			currentProcess.setServerInstance(null);
 			currentProcess.setScheduledTime(null);
 			currentProcess.setStatus(message);
 		}
@@ -1114,5 +1126,4 @@ public class ProcessService {
 			dataProcessing.setDataSet(null);
 		}
 	}
-
 }

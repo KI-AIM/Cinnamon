@@ -1,13 +1,17 @@
 package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
+import de.kiaim.cinnamon.platform.exception.InternalInvalidStateException;
 import de.kiaim.cinnamon.platform.model.configuration.*;
 import de.kiaim.cinnamon.platform.exception.BadStepNameException;
 import de.kiaim.cinnamon.platform.model.entity.BackgroundProcessEntity;
 import de.kiaim.cinnamon.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+
+import java.util.regex.Pattern;
 
 /**
  * Service for steps.
@@ -33,6 +37,28 @@ public class StepService {
 
 	public ExternalServer getExternalServerConfiguration(final ExternalEndpoint externalServerEndpoint) {
 		return cinnamonConfiguration.getExternalServer().get(externalServerEndpoint.getExternalServerName());
+	}
+
+	/**
+	 * Returns the server instance for the given ID.
+	 * See {@link ExternalServerInstance#getId()} for the form.
+	 *
+	 * @param instanceId The ID.
+	 * @return The server instance.
+	 * @throws InternalInvalidStateException If the process has no server instance.
+	 */
+	public ExternalServerInstance getExternalServerInstanceConfiguration(@Nullable final String instanceId)
+			throws InternalInvalidStateException {
+		if (instanceId == null) {
+			throw new InternalInvalidStateException(InternalInvalidStateException.NO_SERVER_INSTANCE_SET, "No server instance is set!");
+		}
+
+		final String[] instanceIdParts = instanceId.split(Pattern.quote(ExternalServerInstance.ID_SEPARATOR));
+		final String externalServerName = instanceIdParts[0];
+		final String instanceName = instanceIdParts[1];
+
+		final ExternalServer externalServer= cinnamonConfiguration.getExternalServer().get(externalServerName);
+		return externalServer.getInstances().get(instanceName);
 	}
 
 	/**

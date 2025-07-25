@@ -155,7 +155,7 @@ public class ProjectController {
 			             content = @Content()),
 	})
 	@PutMapping(value = "/configuration", consumes = {MediaType.APPLICATION_JSON_VALUE})
-	public void getProjectConfiguration(
+	public void setProjectConfiguration(
 			@RequestBody @Valid final ProjectConfigurationDTO projectConfigurationDTO,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) {

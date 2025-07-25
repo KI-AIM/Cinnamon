@@ -28,9 +28,10 @@
         }
         @bottom-right {
             color: var(--color-header-footer);
-            content: "Created: {{now}}";
+            content: "Creator: {{creator}} \A Created: {{now}}";
             font-size: var(--size-header-footer);
             margin-right: 10px;
+            white-space: pre-wrap;
         }
     }
 

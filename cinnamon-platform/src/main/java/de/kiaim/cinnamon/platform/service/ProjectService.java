@@ -104,6 +104,8 @@ public class ProjectService {
 
 		final ProjectEntity project = createProject(projectSeed);
 		user.setProject(project);
+		// TODO change if projects are decoupled form users
+		project.getProjectConfiguration().setProjectName(user.getEmail());
 
 		return userRepository.save(user).getProject();
 	}

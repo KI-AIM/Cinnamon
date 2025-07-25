@@ -21,6 +21,44 @@
                             </mat-form-field>
                         </div>
 
+                        <div class="mb-3">
+                            <div class="settings-label settings-label-required"
+                                 [ngClass]="{'settings-label-error': projectSettingsForm!.get('projectName')!.hasError('required')}">
+                                Project Display Name
+                            </div>
+                            <mat-form-field class="w-100 hide-mat-error-gap">
+                                <input matInput formControlName="projectName">
+                                <mat-error *ngIf="projectSettingsForm!.get('projectName')!.hasError('required')">Mist</mat-error>
+                            </mat-form-field>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="settings-label">
+                                Contact Mail
+                            </div>
+                            <mat-form-field class="w-100 hide-mat-error-gap">
+                                <input matInput formControlName="contactMail">
+                            </mat-form-field>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="settings-label">
+                                Contact URL
+                            </div>
+                            <mat-form-field class="w-100 hide-mat-error-gap">
+                                <input matInput formControlName="contactUrl">
+                            </mat-form-field>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="settings-label">
+                                Report Creator
+                            </div>
+                            <mat-form-field class="w-100 hide-mat-error-gap">
+                                <input matInput formControlName="reportCreator">
+                            </mat-form-field>
+                        </div>
+
                         <div>
                             <div class="settings-label">
                                 Delete Project

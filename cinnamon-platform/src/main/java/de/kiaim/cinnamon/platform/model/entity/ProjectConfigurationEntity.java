@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
+import org.springframework.lang.Nullable;
 
 /**
  * Entity containing all configurations for a project.
@@ -25,6 +26,29 @@ public class ProjectConfigurationEntity {
 	@Id
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
 	private Long id;
+
+	/**
+	 * Name of the dataset.
+	 */
+	private String projectName;
+
+	/**
+	 * Contact mail address.
+	 */
+	@Nullable
+	private String contactMail;
+
+	/**
+	 * Website.
+	 */
+	@Nullable
+	private String contactUrl;
+
+	/**
+	 * Name of report creator.
+	 */
+	@Nullable
+	private String reportCreator;
 
 	/**
 	 * JSON string for metric importance.

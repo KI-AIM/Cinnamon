@@ -138,6 +138,20 @@ app-navigation{
     font-weight: bold;
 }
 
+.settings-label-required::after {
+    content: "*";
+    font-size: 0.8rem;
+    font-weight: normal;
+    margin-left: -0.2rem;
+}
+
+.settings-label:has(+ .mat-form-field-invalid)  {
+    color: var(--mat-form-field-error-text-color);
+}
+
+.settings-label-error {
+}
+
 .settings-info {
     font-size: 0.8rem;
 }

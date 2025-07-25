@@ -35,9 +35,9 @@
                 <div class="report-root">
 
                     <div class="report-header">
-                        <h1>Privacy Report</h1>
+                        <h1>Cinnamon Data Report for <q>{{reportData.mc.projectName}}</q></h1>
                         <p>Assessment of Resemblance, Utility and Privacy Risks</p>
-                        <p>Report Date: {{reportDate}} </p>
+                        <p>Report Date: {{reportDate}}, Creator: {{reportData.mc.reportCreator ?? 'Unknown'}} </p>
                     </div>
 
                     <div class="report-section">
@@ -86,15 +86,22 @@
                             <h2>Disclaimer</h2>
                             <div>
                                 The analysis and the conclusions contained herein reflect the assessment of the privacy
-                                risks and utility of the dataset {{ projectName }} as analyzed with the Cinnamon tool on
-                                {{ reportDate }}. Although this report aims to provide an informed assessment of privacy
-                                implications, it does not constitute a guarantee against any form of data privacy breach
-                                or residual risks. The decision regarding the use of the data and the associated risks
-                                ultimately lies with the user or the organization. It is recommended to use this report
-                                in the context of further internal controls and evaluation of data quality. The creator
-                                of this report and the developers of Cinnamon assume no liability for direct or indirect
-                                damages arising from the use or interpretation of the information contained in this
-                                report.
+                                risks and utility of the dataset <strong><q>{{ reportData.mc.projectName }}</q></strong>
+                                as analyzed with the Cinnamon tool on {{ reportDate }}. Although this report aims to
+                                provide an informed assessment of privacy implications, it does not constitute a
+                                guarantee against any form of data privacy breach or residual risks. The decision
+                                regarding the use of the data and the associated risks ultimately lies with the user or
+                                the organization. It is recommended to use this report in the context of further
+                                internal controls and evaluation of data quality. The creator of this report and the
+                                developers of Cinnamon assume no liability for direct or indirect damages arising from
+                                the use or interpretation of the information contained in this report.
+                            </div>
+                            <div *ngIf="reportData.mc.contactMail || reportData.mc.contactUrl" class="report-text-block">
+                                <span>In case of questions, please</span>
+                                <span *ngIf="reportData.mc.contactUrl"> visit <a [href]="reportData.mc.contactUrl" target="_blank">{{ reportData.mc.contactUrl }}</a></span>
+                                <span *ngIf="reportData.mc.contactMail && reportData.mc.contactUrl"> or</span>
+                                <span *ngIf="reportData.mc.contactMail"> reach out via email to <a [href]="'mailto:' + reportData.mc.contactMail">{{reportData.mc.contactMail}}</a></span>
+                                <span>.</span>
                             </div>
                         </div>
                     </div>

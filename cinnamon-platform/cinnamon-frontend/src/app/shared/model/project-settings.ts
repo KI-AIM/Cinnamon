@@ -1,6 +1,11 @@
 import { Type } from "class-transformer";
 
 export class ProjectSettings {
+    projectName: string;
+    contactMail: string | null;
+    contactUrl: string | null;
+    reportCreator: string | null;
+
     @Type(() => MetricSettings)
     metricConfiguration: MetricSettings;
 }

@@ -8,7 +8,6 @@ import { ProjectSettings } from "@shared/model/project-settings";
 import { StatisticsResponse } from "@shared/model/statistics";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
-import { UserService } from "@shared/services/user.service";
 import { SharedModule } from "@shared/shared.module";
 import { map, Observable, switchMap } from "rxjs";
 import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
@@ -27,12 +26,6 @@ import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.
 })
 export class ReportComponent implements OnInit {
     private readonly PAGE_HEIGHT = 1122;
-
-    /**
-     * The name of the project.
-     * @protected
-     */
-    protected projectName: string;
 
     /**
      * Date of the report creation.
@@ -60,10 +53,8 @@ export class ReportComponent implements OnInit {
         private projectConfigService: ProjectConfigurationService,
         private statisticsService: StatisticsService,
         titleService: TitleService,
-        private readonly userService: UserService,
     ) {
         titleService.setPageTitle("Report");
-        this.projectName = this.userService.getUser().email;
         this.reportDate = new Date().toLocaleString();
     }
 
@@ -92,15 +83,32 @@ export class ReportComponent implements OnInit {
 
         this.http.get("/app/assets/report.css", {responseType: 'text'}).pipe(
             switchMap(value => {
-               return this.appConfigService.appConfig$.pipe(
-                   map((config: AppConfig) => {
-                      return {style: this.preprocessStyle(value, config), config: config};
-                   }),
-               );
+                return this.appConfigService.appConfig$.pipe(
+                    map((config: AppConfig) => {
+                        return {style: value, appConfig: config};
+                    }),
+                );
             }),
+            switchMap(value => {
+                return this.projectConfigService.projectSettings2$.pipe(
+                    map((projectSettings: ProjectSettings) => {
+                        return {
+                            style: value.style,
+                            appConfig: value.appConfig,
+                            projectSettings: projectSettings,
+                        };
+                    }),
+                )
+            }),
+            map(value => {
+                return {
+                    style: this.preprocessStyle(value.style, value.appConfig, value.projectSettings),
+                    appConfig: value.appConfig
+                };
+            })
         ).subscribe({
             next: value => {
-                this.doPrintReport(value.style, value.config);
+                this.doPrintReport(value.style, value.appConfig);
             }
         });
     }
@@ -172,14 +180,17 @@ export class ReportComponent implements OnInit {
 
     /**
      * Replaces variables in the CSS file.
+     *
      * @param style The content of the style sheet.
      * @param appConfig The app config.
+     * @param projectSettings The project settings.
      * @private
      */
-    private preprocessStyle(style: string, appConfig: AppConfig): string {
+    private preprocessStyle(style: string, appConfig: AppConfig, projectSettings: ProjectSettings): string {
         style = style.replaceAll("{{version}}", appConfig.version);
         style = style.replaceAll("{{now}}", this.reportDate);
-        style = style.replaceAll("{{project}}", this.projectName);
+        style = style.replaceAll("{{creator}}", projectSettings.reportCreator ?? "Unknown");
+        style = style.replaceAll("{{project}}", projectSettings.projectName);
         return style;
     }
 

@@ -1,11 +1,11 @@
 <ng-template #projectSettingsDialog>
     <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Project Settings</h2>
 
-        <div class="slides">
+    <div *ngIf="pageData$ | async as pageData" class="slides">
 
-            <div #main>
-                <mat-dialog-content class="mat-typography dialog-content">
-                <div class="vertical-boxes">
+        <div #main>
+            <mat-dialog-content class="mat-typography dialog-content">
+                <div class="vertical-boxes" [formGroup]="projectSettingsForm">
 
                     <div class="box">
                         <div class="box-name">
@@ -26,7 +26,8 @@
                                 Delete Project
                             </div>
                             <div>
-                                <button mat-raised-button color="warn" type="button" (click)="openDeletionConfirmation()">
+                                <button mat-raised-button color="warn" type="button"
+                                        (click)="openDeletionConfirmation()">
                                     Delete Project
                                     <mat-icon>chevron_right</mat-icon>
                                 </button>
@@ -36,20 +37,24 @@
 
                     </div>
 
-                    <app-metric-configuration class="box"></app-metric-configuration>
+                    <app-metric-configuration [algorithmDefinition]="pageData.algorithmDefinition"
+                                              [projectSettingsForm]="projectSettingsForm" class="box">
+                    </app-metric-configuration>
                 </div>
-                </mat-dialog-content>
-            </div>
+            </mat-dialog-content>
+        </div>
 
-            <div #deletionConfirmation>
-                <mat-dialog-content class="h-100 mat-typography dialog-content">
+        <div #deletionConfirmation>
+            <mat-dialog-content class="h-100 mat-typography dialog-content">
                 <div class="box">
                     <div class="box-name">
                         Delete Project
                     </div>
                     <div class="settings-info">
-                        Deleting the project is irreversible. Make sure that you downloaded all the data you want to keep.<br>
-                        Please confirm that you want to delete the project by entering the project name and password again:
+                        Deleting the project is irreversible. Make sure that you downloaded all the data you want to
+                        keep.<br>
+                        Please confirm that you want to delete the project by entering the project name and password
+                        again:
                     </div>
                     <div>
                         <mat-form-field class="w-100 hide-mat-error-gap">
@@ -77,10 +82,10 @@
                         </button>
                     </div>
                 </div>
-                </mat-dialog-content>
-            </div>
-
+            </mat-dialog-content>
         </div>
+
+    </div>
 
     <mat-dialog-actions align="end">
         <button *ngIf="!isMainOpen" mat-raised-button color="primary" type="button" (click)="openMain()">

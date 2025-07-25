@@ -1,24 +1,7 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormControl, FormGroup, Validators } from "@angular/forms";
-import {
-    catchError,
-    debounceTime,
-    distinctUntilChanged,
-    map,
-    Observable,
-    of,
-    Subscription,
-    switchMap,
-    tap
-} from "rxjs";
-import {
-    TechnicalEvaluationService
-} from "src/app/features/technical-evaluation/services/technical-evaluation.service";
+import { Component, Input } from '@angular/core';
+import { FormGroup } from "@angular/forms";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
-import { ConfigurationGroupDefinition, VisualizationType } from "../../model/configuration-group-definition";
 import { MetricImportance, MetricImportanceData } from "../../model/project-settings";
-import { ErrorHandlingService } from "../../services/error-handling.service";
-import { ProjectConfigurationService } from "../../services/project-configuration.service";
 import { StatisticsService } from "../../services/statistics.service";
 
 @Component({
@@ -27,115 +10,21 @@ import { StatisticsService } from "../../services/statistics.service";
     styleUrls: ['./metric-configuration.component.less'],
     standalone: false
 })
-export class MetricConfigurationComponent implements OnInit, OnDestroy {
+export class MetricConfigurationComponent {
+
+    @Input() public algorithmDefinition!: AlgorithmDefinition
+    @Input() public projectSettingsForm!: FormGroup;
+
     protected readonly MetricImportance = MetricImportance;
     protected readonly MetricImportanceData = MetricImportanceData;
     protected readonly Object = Object;
 
-    protected algorithmDefinition$: Observable<AlgorithmDefinition>;
-    protected importanceForm: FormGroup;
-
-    private updateSubscription: Subscription | null = null;
-
     constructor(
-        private readonly errorHandlingService: ErrorHandlingService,
-        private readonly projectConfigurationService: ProjectConfigurationService,
         protected readonly statisticsService: StatisticsService,
-        private readonly technicalEvaluationService: TechnicalEvaluationService,
     ) {
-        this.importanceForm = new FormGroup({});
     }
 
-    public ngOnInit(): void {
-        // Prepare observable for metric configuration form
-        this.algorithmDefinition$ = this.technicalEvaluationService.algorithms.pipe(
-            switchMap(value => {
-                return this.technicalEvaluationService.getAlgorithmDefinition(value[0]);
-            }),
-            catchError(error => {
-                this.errorHandlingService.addError(error, "Failed to load metrics!");
-                return of(new AlgorithmDefinition());
-            }),
-            tap(value => {
-                // Create form
-                this.createForm(value);
-            }),
-            switchMap(value => {
-                // Load initial values from backend
-                return this.projectConfigurationService.projectSettings$.pipe(
-                    tap(value1 => {
-                        this.importanceForm.patchValue(value1.metricConfiguration);
-                    }),
-                    map(() => {
-                        return value;
-                    }),
-                );
-            }),
-        );
-    }
-
-    public ngOnDestroy(): void {
-        if (this.updateSubscription !== null) {
-            this.updateSubscription.unsubscribe();
-        }
-    }
-
-    private createForm(algorithmDefinition: AlgorithmDefinition): void {
-        const form: any = {};
-
-        form["colorScheme"] = new FormControl({value: 'Default', disabled: false});
-
-        form["useUserDefinedImportance"] = new FormControl({value: false, disabled: false});
-
-        const group: any = {};
-        this.createGroup(group, algorithmDefinition);
-        form["userDefinedImportance"] = new FormGroup(group);
-
-        this.importanceForm = new FormGroup(form);
-
-        if (this.updateSubscription !== null) {
-            this.updateSubscription.unsubscribe();
-        }
-        this.updateSubscription = this.importanceForm.valueChanges.pipe(
-            debounceTime(300),
-            distinctUntilChanged(),
-            switchMap(value => {
-                return this.projectConfigurationService.projectSettings$.pipe(
-                    tap(value1 => {
-                        value1.metricConfiguration = value;
-                    }),
-                );
-            }),
-            switchMap(value => {
-                return this.projectConfigurationService.setProjectSettings(value);
-            }),
-        ).subscribe({
-            error: value => {
-                // Upload of config failed
-                console.error(value);
-            }
-        });
-    }
-
-    private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }) {
-        Object.values(configurations).forEach((groupDefinition) => {
-            this.createGroup(formGroup, groupDefinition);
-        });
-    }
-
-    private createGroup(group: any, groupDefinition: ConfigurationGroupDefinition): void {
-        if (groupDefinition.configurations) {
-            this.createGroups(group, groupDefinition.configurations);
-        }
-        if (groupDefinition.options) {
-            Object.keys(groupDefinition.options).forEach(inputDefinition => {
-                const validators = [Validators.required];
-                // The initial value does not as it will be overwritten after the for is created
-                group[inputDefinition] = new FormControl({
-                    value: MetricImportance.IMPORTANT,
-                    disabled: false
-                }, validators)
-            });
-        }
+    protected get metricSettingsForm(): FormGroup {
+        return this.projectSettingsForm.get('metricConfiguration') as FormGroup;
     }
 }

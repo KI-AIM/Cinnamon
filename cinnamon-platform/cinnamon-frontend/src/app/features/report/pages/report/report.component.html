@@ -31,11 +31,20 @@
                           datasetInfoProtected: datasetInfoProtected$ | async,
                           mc: metricConfig$ | async,
                           riskAssessmentConfig: riskAssessmentConfig$ | async,
-                          statistics: statistics$ | async} as reportData">
-        <ng-container *ngIf="reportData.appConfig && reportData.anonymizationConfiguration && reportData.datasetInfoOriginal && reportData.datasetInfoProtected && reportData.mc && reportData.riskAssessmentConfig && reportData.statistics">
+                          statistics: statistics$ | async,
+                          synthetizationConfiguration: synthetizationConfiguration$ | async,
+                          } as reportData">
+        <ng-container *ngIf="reportData.appConfig &&
+                             reportData.anonymizationConfiguration &&
+                             reportData.datasetInfoOriginal &&
+                             reportData.datasetInfoProtected &&
+                             reportData.mc &&
+                             reportData.riskAssessmentConfig &&
+                             reportData.statistics &&
+                             reportData.synthetizationConfiguration">
 
 
-            <div class="box" id="report" style="width: fit-content; margin: 0 auto; padding: 0.5in;">
+        <div class="box" id="report" style="width: fit-content; margin: 0 auto; padding: 0.5in;">
 
                 <!-- This div is printed -->
                 <div class="report-root">
@@ -125,10 +134,9 @@
                                     <!-- TODO handling for not applied method -->
                                     The Cinnamon Platform applies a two-step data protection by first, anonymizing the
                                     dataset and then synthesizing the anonymized data.
-                                </div>
-                                <div>
-                                    <!-- TODO missing -->
-                                    Overall, [XX%] of the data records could be retained.
+                                    <br>
+                                    Overall, <strong>[XX%] of the data records</strong> could be retained during the anonymization.
+                                    Then <strong>{{reportData.datasetInfoProtected.numberRows}} records were synthesized.</strong>
                                 </div>
                             </div>
                             <div style="width: 50%;">
@@ -203,7 +211,25 @@
                                 </div>
                             </div>
                             <div class="report-text-block">
+                                No other protection mechanism were applied.
+                            </div>
+                            <div class="report-text-block">
                                 For further details, look into the dedicated anonymization section of this report.
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="report-header4">Synthetization</div>
+                            <div class="report-text-block">
+                                The used generative model was <strong>{{reportData.synthetizationConfiguration.selectedAlgorithm.display_name}}</strong> with a batch size of [??].
+                                The modle was trained with [??] epochs.
+                            </div>
+                            <div class="report-text-block">
+                                <!-- TODO description of algorithm-->
+                                [??]
+                            </div>
+                            <div class="report-text-block">
+                                For further details, look into the dedicated synthetization section of this report.
                             </div>
                         </div>
 

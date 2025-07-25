@@ -1,7 +1,7 @@
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { catchError, map, Observable, of, tap } from "rxjs";
+import { catchError, map, Observable, of, switchMap, tap } from "rxjs";
 import { parse, stringify } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
@@ -60,6 +60,11 @@ export abstract class AlgorithmService {
         }
 
         return this.configurationService.loadConfig(this.getConfigurationName()).pipe(
+            switchMap(value => {
+                return this.algorithms.pipe(
+                    map(_ => value),
+                );
+            }),
             map(value => {
                 return this.readConfiguration(parse(value), this.getConfigurationName());
             }),

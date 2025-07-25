@@ -6,7 +6,9 @@ import { TitleService } from "@core/services/title-service.service";
 import { AnonymizationService } from "@features/anonymization/services/anonymization.service";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
 import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
+import { SynthetizationService } from "@features/synthetization/services/synthetization.service";
 import { ChartFrequencyComponent } from "@shared/components/chart-frequency/chart-frequency.component";
+import { Algorithm } from "@shared/model/algorithm";
 import {
     AnonymizationAttributeRowConfiguration,
     AnonymizationConfiguration, AttributeProtection
@@ -52,6 +54,7 @@ export class ReportComponent implements OnInit {
     protected metricConfig$: Observable<ProjectSettings>;
     protected riskAssessmentConfig$: Observable<RiskAssessmentConfig>;
     protected statistics$: Observable<StatisticsResponse | null>;
+    protected synthetizationConfiguration$: Observable<any>;
 
     @ViewChildren('chart', {read: ElementRef}) protected chartDivs: QueryList<ElementRef<HTMLElement>>;
     @ViewChildren('chart') protected charts: QueryList<ChartFrequencyComponent>;
@@ -71,6 +74,7 @@ export class ReportComponent implements OnInit {
         private projectConfigService: ProjectConfigurationService,
         private readonly riskAssessmentService: RiskAssessmentService,
         private statisticsService: StatisticsService,
+        private readonly synthetizationService: SynthetizationService,
         titleService: TitleService,
     ) {
         titleService.setPageTitle("Report");
@@ -89,6 +93,11 @@ export class ReportComponent implements OnInit {
             map(value => value.config as RiskAssessmentConfig),
         );
         this.statistics$ = this.statisticsService.fetchResult();
+        this.synthetizationConfiguration$ = this.synthetizationService.fetchConfiguration().pipe(
+            map(value => {
+                return value as SynthetizationConfig;
+            }),
+        );
     }
 
     /**
@@ -342,4 +351,15 @@ export class ReportComponent implements OnInit {
     protected getColors(value: string): Color[] {
         return this.statisticsService.getColorSchemeGradient(value);
     }
+
+    protected readonly JSON = JSON;
+}
+
+class SynthetizationConfig {
+    selectedAlgorithm: Algorithm;
+    config: {
+        sampling: {
+            num_samples: number,
+        }
+    };
 }

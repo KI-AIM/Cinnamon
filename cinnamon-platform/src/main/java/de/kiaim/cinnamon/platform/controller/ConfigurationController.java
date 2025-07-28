@@ -182,9 +182,12 @@ public class ConfigurationController {
 	})
 	@GetMapping(value = "/algorithm", produces = {CustomMediaType.TEXT_YAML_VALUE})
 	public String getAlgorithmDefinition(
-			@Valid final AlgorithmDefinitionRequest request
-	) throws InternalRequestException, BadConfigurationNameException {
-		return externalConfigurationService.fetchAlgorithmDefinition(request.getConfigurationName(),
+			@Valid final AlgorithmDefinitionRequest request,
+			@AuthenticationPrincipal UserEntity requestUser
+	) throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalRequestException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		return externalConfigurationService.fetchAlgorithmDefinition(project, request.getConfigurationName(),
 		                                                             request.getDefinitionPath());
 	}
 

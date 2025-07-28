@@ -2,49 +2,24 @@ package de.kiaim.cinnamon.test.platform.controller;
 
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
+import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.util.TestSocketUtils;
-
-import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WithMockWebServer
 @WithUserDetails("test_user")
 public class StatisticsControllerTest extends ControllerTest {
 
-	private static final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
-
 	private MockWebServer mockBackEnd;
-
-	@DynamicPropertySource
-	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("cinnamon.external-server.technical-evaluation-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.synthetization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.anonymization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-	}
-
-	@BeforeEach
-	void setUpMockWebServer() throws IOException {
-		mockBackEnd = new MockWebServer();
-		mockBackEnd.start(mockBackEndPort);
-	}
-
-	@AfterEach
-	void shutDownMockWebServer() throws IOException {
-		mockBackEnd.shutdown();
-	}
 
 	@Test
 	public void getStatisticsNoData() throws Exception {

@@ -11,17 +11,14 @@ import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
+import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -29,9 +26,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
+@WithMockWebServer
 public class ProcessServiceTest extends ContextRequiredTest {
-
-	private static final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 
 	@Value("${server.port}") private int port;
 	@Autowired private SerializationConfig serializationConfig;
@@ -46,37 +42,25 @@ public class ProcessServiceTest extends ContextRequiredTest {
 
 	private ProcessService processService;
 
-	@DynamicPropertySource
-	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("cinnamon.external-server.technical-evaluation-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.synthetization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.anonymization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-	}
-
 	@BeforeEach
-	void setUpMockWebServer() throws IOException {
+	void setUpMockWebServer() {
 		BackgroundProcessRepository backgroundProcessRepository = mock(BackgroundProcessRepository.class);
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
 		ProjectService projectService = mock(ProjectService.class);
 
+		var url = cinnamonConfiguration.getExternalServer().get("anonymization-server").getUrlServer();
+		cinnamonConfiguration.getExternalServer().get("anonymization-server")
+		                     .setUrlServer(url.substring(0, url.lastIndexOf(":") + 1) + mockBackEnd.getPort());
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
 		                                         backgroundProcessRepository, csvProcessor, databaseService,
 		                                         dataProcessorService, dataSetService, httpService, projectService,
 		                                         stepService);
 
-		mockBackEnd = new MockWebServer();
-		mockBackEnd.start(mockBackEndPort);
-
 		if (jsonMapper == null) {
 			jsonMapper = serializationConfig.jsonMapper();
 		}
-	}
-
-	@AfterEach
-	void shutDownMockWebServer() throws IOException {
-		mockBackEnd.shutdown();
 	}
 
 	@Test
@@ -142,9 +126,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		// Got different error messages on different machines, so only checking a part of it
 		var message = updatedExecutionStep.getProcess(0).getStatus();
 		assertNotNull(message, "Status message should not be null!");
-		assertTrue(message.startsWith("Failed to fetch the status!"), "Unexpected error message: '" + message + "'");
-		assertTrue(message.contains("Connection refused:"), "Unexpected error message: '" + message + "'");
-		assertTrue(message.endsWith("localhost/127.0.0.1:" + mockBackEndPort),"Unexpected error message: " + message + "'");
+		assertTrue(message.startsWith("Failed to fetch the status!"), "Unexpected start of the error message: '" + message + "'");
+		assertEquals("localhost/127.0.0.1:" + mockBackEnd.getPort(), message.substring(message.lastIndexOf("localhost/")),
+		             "Unexpected end of the error message: '" + message + "'");
 	}
 
 }

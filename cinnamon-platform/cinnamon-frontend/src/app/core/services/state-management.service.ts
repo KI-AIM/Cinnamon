@@ -16,6 +16,10 @@ import { StepConfiguration, StepDefinition, Steps } from '../enums/steps';
     providedIn: 'root'
 })
 export class StateManagementService {
+    /**
+     * The step of the page that is currently opened.
+     * Null if the current page is not associated with any step, for example, the login page.
+     */
     public readonly currentStep$: Observable<StepDefinition | null>;
 
     private readonly _pipelineSubject: BehaviorSubject<PipelineInformation | null> = new BehaviorSubject<PipelineInformation | null>(null);

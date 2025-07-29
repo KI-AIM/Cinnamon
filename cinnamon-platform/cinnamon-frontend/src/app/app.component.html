@@ -11,9 +11,9 @@
         </div>
         <div class="page-content">
             <!-- Info for locked step -->
-            <ng-container *ngIf="{currentStep: currentStep$ | async, pipeline: pipeline$ | async} as data" >
-                <ng-container *ngIf="data.currentStep != null && data.pipeline != null">
-                    <div *ngIf="statusService.isStepCompleted(data.currentStep.lockedAfter) || data.pipeline.currentStageIndex != null"
+            <ng-container *ngIf="{currentStep: currentStep$ | async, pipeline: pipeline$ | async, status: status$ | async} as data" >
+                <ng-container *ngIf="data.currentStep != null && data.pipeline != null && data.status != null">
+                    <div *ngIf="statusService.isStepCompleted(data.currentStep.lockedAfter) || (data.pipeline.currentStageIndex != null && data.currentStep.enum !== data.status.currentStep)"
                          style="position: sticky; top: 0; z-index: 10;">
                         <app-info-card typeClass="card-warn">
                             <div *ngIf="statusService.isStepCompleted(data.currentStep.lockedAfter)">

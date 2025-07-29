@@ -49,6 +49,9 @@ import java.util.stream.Collectors;
 @Service
 public class DatabaseService {
 
+	private final static Set<ProcessStatus> targetStatus = Set.of(ProcessStatus.SKIPPED, ProcessStatus.FINISHED,
+	                                                              ProcessStatus.ERROR, ProcessStatus.CANCELED);
+
 	private final Logger LOGGER = LoggerFactory.getLogger(DatabaseService.class);
 
 	private final Connection connection;
@@ -330,6 +333,7 @@ public class DatabaseService {
 	/**
 	 * Stores an arbitrary configuration under the given identifier.
 	 * If a configuration with the given name is already present, it will be overwritten.
+	 * If the configuration has changed and is used by processes, marks them as outdated.
 	 *
 	 * @param configName    Identifier for the configuration.
 	 * @param url           The URL for starting the process.
@@ -363,8 +367,14 @@ public class DatabaseService {
 			}
 		}
 
-		config.setProcessUrl(url);
-		config.setConfiguration(configuration);
+		if (!Objects.equals(url, config.getProcessUrl()) || !Objects.equals(configuration, config.getConfiguration())) {
+			config.setProcessUrl(url);
+			config.setConfiguration(configuration);
+
+			for (final BackgroundProcessEntity usage: config.getUsages()) {
+				markProcessOutdated(usage);
+			}
+		}
 
 		projectRepository.save(project);
 	}
@@ -854,6 +864,82 @@ public class DatabaseService {
 		try (final Statement statement = connection.createStatement()) {
 			statement.setQueryTimeout(20);
 			statement.execute(query);
+		}
+	}
+
+	/**
+	 * Marks the given process as outdated.
+	 * If the process is part of a stage, sets the stage and the following processes to outdated.
+	 * The changes are not saved to the database.
+	 *
+	 * @param process The process to mark as outdated.
+	 * @throws BadStateException If the process is running or scheduled.
+	 */
+	public void markProcessOutdated(final BackgroundProcessEntity process) throws BadStateException {
+		if (process.getExternalProcessStatus() == ProcessStatus.RUNNING ||
+		    process.getExternalProcessStatus() == ProcessStatus.SCHEDULED) {
+			throw new BadStateException(BadStateException.PROCESS_STARTED,
+			                            "Process cannot be configured if the it is scheduled or started!");
+		}
+
+		if (!targetStatus.contains(process.getExternalProcessStatus())) {
+			return;
+		}
+
+		process.setExternalProcessStatus(ProcessStatus.OUTDATED);
+
+		if (process instanceof ExternalProcessEntity externalProcessEntity) {
+			final ExecutionStepEntity stage = externalProcessEntity.getExecutionStep();
+
+			// Set dependent steps to outdated
+			markStageOutdated(stage, process.getJobIndex());
+
+			// Set the following stages as outdated
+			final PipelineEntity pipeline = stage.getPipeline();
+			for (final ExecutionStepEntity other : pipeline.getStages()) {
+				if (other.getStageIndex() > stage.getStageIndex()) {
+					markStageOutdated(other, -1);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Marks the given stage as outdated, starting after the given job index.
+	 * Pass a negative index to mark all jobs as outdated.
+	 * The changes are not saved to the database.
+	 *
+	 * @param stage The stage to mark as outdated.
+	 * @param startJobIndex Index of the first job to set as outdated.
+	 * @throws BadStateException If the stage is running or scheduled.
+	 */
+	private void markStageOutdated(final ExecutionStepEntity stage, final int startJobIndex) throws BadStateException {
+		if (stage.getStatus() == ProcessStatus.RUNNING || stage.getStatus() == ProcessStatus.SCHEDULED) {
+			throw new BadStateException(BadStateException.PROCESS_STARTED,
+			                            "Process cannot be configured if the it is scheduled or started!");
+		}
+
+		if (stage.getStatus() == ProcessStatus.NOT_STARTED) {
+			return;
+		}
+
+		boolean outdateProcess = false;
+		for (final ExternalProcessEntity other : stage.getProcesses()) {
+			if (other.getJobIndex() > startJobIndex) {
+				// Ignore SKIPPED processes here, as their state can only outdated directly by markProcessOutdated.
+				if (targetStatus.contains(other.getExternalProcessStatus())) {
+					if (other.getExternalProcessStatus() != ProcessStatus.SKIPPED) {
+						other.setExternalProcessStatus(ProcessStatus.OUTDATED);
+						outdateProcess = true;
+					}
+				} else {
+					return;
+				}
+			}
+		}
+
+		if ((startJobIndex >= 0 || outdateProcess) && targetStatus.contains(stage.getStatus())) {
+			stage.setStatus(ProcessStatus.OUTDATED);
 		}
 	}
 

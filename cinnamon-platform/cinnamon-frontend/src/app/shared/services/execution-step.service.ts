@@ -4,7 +4,7 @@ import { ExecutionStep } from "../model/execution-step";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
 import { ProcessStatus } from "../../core/enums/process-status";
-import { BehaviorSubject, catchError, map, Observable, of, tap } from "rxjs";
+import { catchError, map, Observable, of, tap } from "rxjs";
 import { plainToInstance } from "class-transformer";
 import { StatusService } from "./status.service";
 import { Steps } from "../../core/enums/steps";
@@ -15,8 +15,6 @@ import { ErrorHandlingService } from "./error-handling.service";
 })
 export abstract class ExecutionStepService {
     private readonly baseUrl = environments.apiUrl + "/api/process";
-
-    private _statusSubject: BehaviorSubject<ExecutionStep | null> = new BehaviorSubject<ExecutionStep | null>(null);
 
     /**
      * Observer that periodically sends requests to fetch the status

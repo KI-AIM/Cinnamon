@@ -260,9 +260,12 @@ export class StateManagementService {
         this.http.delete(environments.apiUrl + "/api/project/reset", options).pipe(
             switchMap(() => this.statusService.updateNextStep(unlock)),
         ).subscribe({
+            next: value => {
+                this.initPipeline();
+            },
             error: error => {
                 this.errorHandlingService.addError(error);
-            }
+            },
         });
     }
 }

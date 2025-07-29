@@ -1,63 +1,69 @@
-<div *ngIf="(stage$ | async) as status" class="stage-head">
-    <button type="submit" mat-raised-button color="primary"
-            [disabled]="status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING"
-            (click)="executionService.start(null)">
-        Start
-        <mat-icon fontIcon="play_arrow"></mat-icon>
-    </button>
+<ng-container *ngIf="pageData$ | async as pageData">
 
-    <button type="submit" mat-raised-button color="warn"
-            [disabled]="!(status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING)"
-            (click)="executionService.cancel()">
-        Cancel
-        <mat-icon fontIcon="stop"></mat-icon>
-    </button>
+    <div *ngIf="pageData.stage as status" class="stage-head">
+        <button type="submit" mat-raised-button color="primary"
+                [disabled]="status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING || pageData.locked"
+                (click)="executionService.start(null)">
+            Start
+            <mat-icon fontIcon="play_arrow"></mat-icon>
+        </button>
 
-    <span class="status" [ngClass]="status.status">
+        <button type="submit" mat-raised-button color="warn"
+                [disabled]="!(status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING)"
+                (click)="executionService.cancel()">
+            Cancel
+            <mat-icon fontIcon="stop"></mat-icon>
+        </button>
+
+        <span class="status" [ngClass]="status.status">
         <span>{{ status.status.replace("_", " ") }}</span>
-    </span>
-</div>
+        </span>
+    </div>
 
 
-<div class="stage-tree">
-    <!-- Steps on the right -->
-    <div *ngIf="{stage: stage$ | async, stageDefinition: stageDefinition$ | async} as data" class="stage-tree-steps">
-        <div *ngFor="let process of data.stageDefinition?.jobs; let i = index" class="stage-tree-step">
+    <div class="stage-tree">
+        <!-- Steps on the right -->
+        <div class="stage-tree-steps">
+            <div *ngFor="let process of pageData.stageDefinition?.jobs; let i = index" class="stage-tree-step">
 
-            <div class="step">
-                <div class="step-lines">
-                    <div class="step-horizontal-line-wrapper">
-                        <div class="step-horizontal-line" [ngClass]="executionService.getLineClass(data.stage, i,  'top')">
+                <div class="step">
+                    <div class="step-lines">
+                        <div class="step-horizontal-line-wrapper">
+                            <div class="step-horizontal-line"
+                                 [ngClass]="executionService.getLineClass(pageData.stage, i,  'top')">
+                            </div>
                         </div>
-                    </div>
-                    <div class="step-vertical-alignment">
-                        <div class="step-vertical-relative">
-                            <div class="step-vertical-line-wrapper step-vertical-line-wrapper-top">
-                                <div class="step-vertical-line" [ngClass]="executionService.getLineClass(data.stage, i,  'top')">
+                        <div class="step-vertical-alignment">
+                            <div class="step-vertical-relative">
+                                <div class="step-vertical-line-wrapper step-vertical-line-wrapper-top">
+                                    <div class="step-vertical-line"
+                                         [ngClass]="executionService.getLineClass(pageData.stage, i,  'top')">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="step-vertical-line-wrapper step-vertical-line-wrapper-bottom">
-                                <div class="step-vertical-line" [ngClass]="executionService.getLineClass(data.stage, i,  'bottom')">
+                                <div class="step-vertical-line-wrapper step-vertical-line-wrapper-bottom">
+                                    <div class="step-vertical-line"
+                                         [ngClass]="executionService.getLineClass(pageData.stage, i,  'bottom')">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="step-circle-wrapper">
-                                <div class="step-circle" [ngClass]="executionService.getLineClass(data.stage, i,  'top')">
-                                    <div class="step-number">
-                                        {{ i + 1 }}
+                                <div class="step-circle-wrapper">
+                                    <div class="step-circle"
+                                         [ngClass]="executionService.getLineClass(pageData.stage, i,  'top')">
+                                        <div class="step-number">
+                                            {{ i + 1 }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Wrapper for step -->
-                <div class="box step-wrapper">
-                    <!-- Head -->
-                    <div class="step-head">
-                        <span> {{ getJobName(process) }} </span>
-                        <span>
-                            <a *ngIf="data.stage != null && data.stage.status !== ProcessStatus.SCHEDULED && data.stage.status !== ProcessStatus.RUNNING && data.stage.status !== ProcessStatus.NOT_STARTED && data.stage.processes[i].externalProcessStatus !== ProcessStatus.NOT_STARTED; else disabledStart"
+                    <!-- Wrapper for step -->
+                    <div class="box step-wrapper">
+                        <!-- Head -->
+                        <div class="step-head">
+                            <span> {{ getJobName(process) }} </span>
+                            <span>
+                            <a *ngIf="pageData.stage != null && pageData.stage.status !== ProcessStatus.SCHEDULED && pageData.stage.status !== ProcessStatus.RUNNING && pageData.stage.status !== ProcessStatus.NOT_STARTED && pageData.stage.processes[i].externalProcessStatus !== ProcessStatus.NOT_STARTED && !pageData.locked; else disabledStart"
                                title="Start" (click)="executionService.start(process);" class="icon-enabled">
                                 <mat-icon fontIcon="play_arrow" style="color: green;"></mat-icon>
                             </a>
@@ -67,114 +73,115 @@
                                 </span>
                             </ng-template>
                         </span>
-                        <span *ngIf="data.stage && data.stage.processes[i] as process" class="status"
-                              [ngClass]="process.externalProcessStatus">
+                            <span *ngIf="pageData.stage && pageData.stage.processes[i] as process" class="status"
+                                  [ngClass]="process.externalProcessStatus">
                             <span>{{ process.externalProcessStatus.replace("_", " ") }}</span>
                         </span>
-                    </div>
+                        </div>
 
-                    <div class="step-body">
-                        <mat-accordion>
-                            <!-- Status -->
-                            <mat-expansion-panel #statusPanel>
-                                <mat-expansion-panel-header>
-                                    <mat-panel-title>Status</mat-panel-title>
-                                    <mat-panel-description></mat-panel-description>
-                                </mat-expansion-panel-header>
+                        <div class="step-body">
+                            <mat-accordion>
+                                <!-- Status -->
+                                <mat-expansion-panel #statusPanel>
+                                    <mat-expansion-panel-header>
+                                        <mat-panel-title>Status</mat-panel-title>
+                                        <mat-panel-description></mat-panel-description>
+                                    </mat-expansion-panel-header>
 
-                                <ng-container *ngIf="process === 'anonymization'">
-                                    <div *ngIf="data.stage && data.stage.processes[i].status as status; else noStatus">
-                                        {{ status }}
-                                    </div>
-                                </ng-container>
-                                <ng-container *ngIf="process === 'synthetization'">
-                                    <div *ngIf="data.stage && data.stage.processes[i].status as status; else noStatus">
-                                        <div *ngIf="getSynthetizationStatus(status) as synthetizationProcess; else statusIsString">
-                                            <table class="table">
-                                                <thead>
-                                                <th>Step</th>
-                                                <th>Finished</th>
-                                                <th>Remaining Time/ Duration</th>
-                                                </thead>
-                                                <tbody>
-                                                <tr *ngFor="let step of synthetizationProcess.status">
-                                                    <td>{{ step.step }}</td>
-                                                    <td>{{ step?.completed }}</td>
-                                                    <td>{{ formatTime(step) }}</td>
-                                                </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <ng-template #statusIsString>
+                                    <ng-container *ngIf="process === 'anonymization'">
+                                        <div *ngIf="pageData.stage && pageData.stage.processes[i].status as status; else noStatus">
                                             {{ status }}
-                                        </ng-template>
-                                    </div>
-                                </ng-container>
-                                <ng-template #noStatus>
-                                    <div>No Status Available</div>
-                                </ng-template>
-
-                            </mat-expansion-panel>
-
-                            <!-- Data -->
-                            <mat-expansion-panel>
-                                <mat-expansion-panel-header>
-                                    <mat-panel-title>Data</mat-panel-title>
-                                    <mat-panel-description></mat-panel-description>
-                                </mat-expansion-panel-header>
-
-                                <ng-template matExpansionPanelContent>
-                                    <div>
-                                        <div
-                                            *ngIf="data.stage && data.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED; else anonNoData">
-                                            <app-data-table [sourceProcess]="getJobName(process)"></app-data-table>
                                         </div>
-                                        <ng-template #anonNoData>
-                                            <div>
-                                                No Data Available
+                                    </ng-container>
+                                    <ng-container *ngIf="process === 'synthetization'">
+                                        <div *ngIf="pageData.stage && pageData.stage.processes[i].status as status; else noStatus">
+                                            <div
+                                                *ngIf="getSynthetizationStatus(status) as synthetizationProcess; else statusIsString">
+                                                <table class="table">
+                                                    <thead>
+                                                    <th>Step</th>
+                                                    <th>Finished</th>
+                                                    <th>Remaining Time/ Duration</th>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr *ngFor="let step of synthetizationProcess.status">
+                                                        <td>{{ step.step }}</td>
+                                                        <td>{{ step?.completed }}</td>
+                                                        <td>{{ formatTime(step) }}</td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
                                             </div>
-                                        </ng-template>
-                                    </div>
-                                </ng-template>
-                            </mat-expansion-panel>
-
-                            <!-- Inspection -->
-                            <mat-expansion-panel>
-                                <mat-expansion-panel-header>
-                                    <mat-panel-title>Inspection</mat-panel-title>
-                                    <mat-panel-description></mat-panel-description>
-                                </mat-expansion-panel-header>
-
-                                <ng-template matExpansionPanelContent>
-
-                                    <div class="mt-1">
-                                        <div
-                                            *ngIf="data.stage && data.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED; else synthNoData">
-                                            <app-data-inspection [sourceDataset]="process"></app-data-inspection>
+                                            <ng-template #statusIsString>
+                                                {{ status }}
+                                            </ng-template>
                                         </div>
-                                        <ng-template #synthNoData>
-                                            <div>
-                                                No Inspection Available
-                                            </div>
-                                        </ng-template>
-                                    </div>
-                                </ng-template>
-                            </mat-expansion-panel>
+                                    </ng-container>
+                                    <ng-template #noStatus>
+                                        <div>No Status Available</div>
+                                    </ng-template>
 
-                        </mat-accordion>
+                                </mat-expansion-panel>
+
+                                <!-- Data -->
+                                <mat-expansion-panel>
+                                    <mat-expansion-panel-header>
+                                        <mat-panel-title>Data</mat-panel-title>
+                                        <mat-panel-description></mat-panel-description>
+                                    </mat-expansion-panel-header>
+
+                                    <ng-template matExpansionPanelContent>
+                                        <div>
+                                            <div *ngIf="pageData.stage && pageData.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED; else anonNoData">
+                                                <app-data-table [sourceProcess]="getJobName(process)"></app-data-table>
+                                            </div>
+                                            <ng-template #anonNoData>
+                                                <div>
+                                                    No Data Available
+                                                </div>
+                                            </ng-template>
+                                        </div>
+                                    </ng-template>
+                                </mat-expansion-panel>
+
+                                <!-- Inspection -->
+                                <mat-expansion-panel>
+                                    <mat-expansion-panel-header>
+                                        <mat-panel-title>Inspection</mat-panel-title>
+                                        <mat-panel-description></mat-panel-description>
+                                    </mat-expansion-panel-header>
+
+                                    <ng-template matExpansionPanelContent>
+
+                                        <div class="mt-1">
+                                            <div *ngIf="pageData.stage && pageData.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED; else synthNoData">
+                                                <app-data-inspection [sourceDataset]="process"></app-data-inspection>
+                                            </div>
+                                            <ng-template #synthNoData>
+                                                <div>
+                                                    No Inspection Available
+                                                </div>
+                                            </ng-template>
+                                        </div>
+                                    </ng-template>
+                                </mat-expansion-panel>
+
+                            </mat-accordion>
+
+                        </div>
 
                     </div>
-
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
-</div>
 
-<div class="box" *ngIf="(stage$ | async) as status">
-    <button type="button" mat-raised-button color="primary" [disabled]="status.status != ProcessStatus.FINISHED"
-            (click)="continue()">
-        Continue
-    </button>
-</div>
+    <div class="box" *ngIf="pageData.stage as status">
+        <button type="button" mat-raised-button color="primary" [disabled]="status.status != ProcessStatus.FINISHED || pageData.locked"
+                (click)="continue()">
+            Continue
+        </button>
+    </div>
+
+</ng-container>

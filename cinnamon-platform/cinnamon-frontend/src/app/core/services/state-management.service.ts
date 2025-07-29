@@ -8,7 +8,19 @@ import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { StatusService } from "@shared/services/status.service";
 import { UserService } from "@shared/services/user.service";
 import { plainToInstance } from "class-transformer";
-import { BehaviorSubject, filter, interval, map, Observable, Subscription, switchMap, take, tap } from "rxjs";
+import {
+    BehaviorSubject,
+    filter,
+    interval,
+    map,
+    Observable,
+    of,
+    shareReplay,
+    Subscription,
+    switchMap,
+    take,
+    tap
+} from "rxjs";
 import { environments } from "src/environments/environment";
 import { StepConfiguration, StepDefinition, Steps } from '../enums/steps';
 
@@ -48,6 +60,7 @@ export class StateManagementService {
 
                return null;
             }),
+            shareReplay(1),
         );
 
         this._pipelineObserver$ = interval(2000).pipe(
@@ -65,6 +78,41 @@ export class StateManagementService {
     public get pipelineInformation$(): Observable<PipelineInformation> {
         return this._pipelineSubject.asObservable().pipe(
             filter(value => value !=null),
+        );
+    }
+
+    /**
+     * Observable that updates if the current page should be locked.
+     */
+    public get currentStepLocked$(): Observable<LockedInformation> {
+        return of(null).pipe(
+            switchMap(() => {
+                return this.currentStep$;
+            }),
+            switchMap(value => {
+                return this.pipelineInformation$.pipe(
+                    map(p => {
+                        return {currentStep: value, p: p};
+                    }),
+                )
+            }),
+            switchMap(value => {
+                return this.statusService.status$.pipe(
+                    map(status => {
+                        return {currentStep: value.currentStep, p: value.p, status: status};
+                    }),
+                )
+            }),
+            map(value =>{
+                const reasons: LockedReason[] = [];
+                if (this.statusService.isStepCompleted(value.currentStep?.lockedAfter)) {
+                    reasons.push(LockedReason.STEP_CONFIRMED);
+                }
+                if (value.p.currentStageIndex != null && value.currentStep?.enum !== value.status.currentStep) {
+                    reasons.push(LockedReason.PROCESS_RUNNING);
+                }
+                return {isLocked: reasons.length > 0, reasons: reasons, currentStep: value.currentStep ?? null} as LockedInformation;
+            }),
         );
     }
 
@@ -217,4 +265,15 @@ export class StateManagementService {
             }
         });
     }
+}
+
+export interface LockedInformation {
+    isLocked: boolean;
+    reasons: LockedReason[];
+    currentStep: StepDefinition | null;
+}
+
+export enum LockedReason {
+    STEP_CONFIRMED = "STEP_CONFIRMED",
+    PROCESS_RUNNING = "PROCESS_RUNNING",
 }

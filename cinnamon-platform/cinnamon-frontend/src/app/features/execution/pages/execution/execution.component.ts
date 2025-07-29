@@ -1,8 +1,9 @@
 import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatExpansionPanel } from "@angular/material/expansion";
 import { Router } from "@angular/router";
+import { StateManagementService } from "@core/services/state-management.service";
 import { plainToInstance } from "class-transformer";
-import { Observable, tap } from "rxjs";
+import { combineLatest, map, Observable, tap } from "rxjs";
 import { ProcessStatus } from "../../../../core/enums/process-status";
 import { Steps } from "../../../../core/enums/steps";
 import { TitleService } from "../../../../core/services/title-service.service";
@@ -22,8 +23,12 @@ import { ExecutionService } from "../../services/execution.service";
 })
 export class ExecutionComponent implements OnInit {
     protected readonly ProcessStatus = ProcessStatus;
-    protected stage$: Observable<ExecutionStep | null>;
-    protected stageDefinition$: Observable<StageDefinition>;
+
+    protected pageData$: Observable<{
+        locked: boolean,
+        stage: ExecutionStep | null,
+        stageDefinition: StageDefinition,
+    }>
 
     @ViewChildren('statusPanel') private statusPanels: QueryList<MatExpansionPanel>;
 
@@ -34,6 +39,7 @@ export class ExecutionComponent implements OnInit {
         private errorHandlingService: ErrorHandlingService,
         protected readonly executionService: ExecutionService,
         private readonly router: Router,
+        private readonly stateManagementService: StateManagementService,
         private readonly statisticsService: StatisticsService,
         private readonly statusService: StatusService,
         private readonly titleService: TitleService,
@@ -42,47 +48,51 @@ export class ExecutionComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.stage$ = this.executionService.status$.pipe(
-            tap(value => {
-                // Create an error notification
-                if (this.statusPanels && value && value.status === ProcessStatus.ERROR &&
-                    this.currentStatus !== ProcessStatus.ERROR && this.currentStatus !== null) {
+        this.pageData$ = combineLatest({
+            locked: this.stateManagementService.currentStepLocked$.pipe(
+                map(value => value.isLocked),
+            ),
+            stage: this.executionService.status$.pipe(
+                tap(value => {
+                    // Create an error notification
+                    if (this.statusPanels && value && value.status === ProcessStatus.ERROR &&
+                        this.currentStatus !== ProcessStatus.ERROR && this.currentStatus !== null) {
 
-                    let jobIndex = null;
-                    for (let i = 0; i < value.processes.length; i++) {
-                        if (value.processes[i].externalProcessStatus === ProcessStatus.ERROR) {
-                            jobIndex = i;
-                            break;
+                        let jobIndex = null;
+                        for (let i = 0; i < value.processes.length; i++) {
+                            if (value.processes[i].externalProcessStatus === ProcessStatus.ERROR) {
+                                jobIndex = i;
+                                break;
+                            }
+                        }
+
+                        if (jobIndex !== null) {
+                            this.statusPanels.get(jobIndex)?.open();
+                            const name = this.getJobName(value.processes[jobIndex].step);
+                            this.errorHandlingService.addError(`The ${name} process failed. See the status panel for more information.`);
                         }
                     }
+                }),
+                tap(value => {
+                    // Open the status panel when the next job starts
+                    if (value && this.statusPanels) {
+                        if (value.currentProcessIndex === null && value.status === ProcessStatus.FINISHED) {
+                            this.statusPanels.forEach(panel => panel.close());
+                        }
 
-                    if (jobIndex !== null) {
-                        this.statusPanels.get(jobIndex)?.open();
-                        const name = this.getJobName(value.processes[jobIndex].step);
-                        this.errorHandlingService.addError(`The ${name} process failed. See the status panel for more information.`);
+                        if (value.currentProcessIndex !== null && value.currentProcessIndex !== this.currentJob) {
+                            this.statusPanels.forEach(panel => panel.close());
+                            this.statusPanels.get(value.currentProcessIndex)?.open();
+                        }
+
+                        // Update the current status
+                        this.currentJob = value.currentProcessIndex;
+                        this.currentStatus = value.status;
                     }
-                }
-            }),
-            tap(value => {
-                // Open the status panel when the next job starts
-                if (value && this.statusPanels) {
-                    if (value.currentProcessIndex === null && value.status === ProcessStatus.FINISHED) {
-                        this.statusPanels.forEach(panel => panel.close());
-                    }
-
-                    if (value.currentProcessIndex !== null && value.currentProcessIndex !== this.currentJob) {
-                        this.statusPanels.forEach(panel => panel.close());
-                        this.statusPanels.get(value.currentProcessIndex)?.open();
-                    }
-
-                    // Update the current status
-                    this.currentJob = value.currentProcessIndex;
-                    this.currentStatus = value.status;
-                }
-            }),
-        );
-
-        this.stageDefinition$ = this.executionService.fetchStageDefinition$();
+                }),
+            ),
+            stageDefinition: this.executionService.fetchStageDefinition$(),
+        });
     }
 
     protected continue() {

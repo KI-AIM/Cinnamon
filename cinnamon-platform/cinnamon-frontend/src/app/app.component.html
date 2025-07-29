@@ -11,30 +11,26 @@
         </div>
         <div class="page-content">
             <!-- Info for locked step -->
-            <ng-container *ngIf="{currentStep: currentStep$ | async, pipeline: pipeline$ | async, status: status$ | async} as data" >
-                <ng-container *ngIf="data.currentStep != null && data.pipeline != null && data.status != null">
-                    <div *ngIf="statusService.isStepCompleted(data.currentStep.lockedAfter) || (data.pipeline.currentStageIndex != null && data.currentStep.enum !== data.status.currentStep)"
-                         style="position: sticky; top: 0; z-index: 10;">
-                        <app-info-card typeClass="card-warn">
-                            <div *ngIf="statusService.isStepCompleted(data.currentStep.lockedAfter)">
-                                This step is locked because subsequent steps depend on it.
-                                You have to reset the subsequent steps first before you can modify this step.
-                            </div>
-                            <div *ngIf="data.pipeline.currentStageIndex != null">
-                                This step is locked because a Process is currently running.
-                                You have to wait for it to finish or cancel the process before you can modify this step.
-                            </div>
-                            <div *ngIf="statusService.isStepCompleted(data.currentStep.lockedAfter)">
-                                <button mat-raised-button color="primary"
-                                        [disabled]="data.pipeline.currentStageIndex != null"
-                                        (click)="stateManagementService.unlockStep(data.currentStep.enum)">
-                                    Reset subsequent steps
-                                </button>
-                            </div>
-                        </app-info-card>
-                    </div>
-
-                </ng-container>
+            <ng-container *ngIf="locked$ | async as locked">
+                <div style="position: sticky; top: 0; z-index: 10">
+                    <app-info-card *ngIf="locked.isLocked" typeClass="card-warn">
+                        <div *ngIf="locked.reasons.includes(LockedReason.STEP_CONFIRMED)">
+                            This step is locked because subsequent steps depend on it.
+                            You have to reset the subsequent steps first before you can modify this step.
+                        </div>
+                        <div *ngIf="locked.reasons.includes(LockedReason.PROCESS_RUNNING)">
+                            This step is locked because a Process is currently running.
+                            You have to wait for it to finish or cancel the process before you can modify this step.
+                        </div>
+                        <div *ngIf="locked.reasons.includes(LockedReason.STEP_CONFIRMED)">
+                            <button mat-raised-button color="warn"
+                                    [disabled]="locked.reasons.includes(LockedReason.PROCESS_RUNNING)"
+                                    (click)="stateManagementService.unlockStep(locked.currentStep!.enum)">
+                                Reset subsequent steps
+                            </button>
+                        </div>
+                    </app-info-card>
+                </div>
             </ng-container>
 
             <!-- Error -->

@@ -58,7 +58,8 @@ public class StatisticsService {
 		} else {
 			if (statisticsProcess.getExternalProcessStatus() == ProcessStatus.NOT_STARTED ||
 			    statisticsProcess.getExternalProcessStatus() == ProcessStatus.ERROR ||
-			    statisticsProcess.getExternalProcessStatus() == ProcessStatus.CANCELED) {
+			    statisticsProcess.getExternalProcessStatus() == ProcessStatus.CANCELED ||
+			    statisticsProcess.getExternalProcessStatus() == ProcessStatus.OUTDATED) {
 
 				try {
 					statisticsProcess.setEndpoint(cinnamonConfiguration.getStatisticsEndpoint());

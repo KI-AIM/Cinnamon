@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, TemplateRef } from "@angular/core";
+import { LockedInformation, StateManagementService } from "@core/services/state-management.service";
 import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
 import { Steps } from "src/app/core/enums/steps";
 import { TitleService } from "src/app/core/services/title-service.service";
@@ -14,7 +15,7 @@ import { LoadingService } from "src/app/shared/services/loading.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
 import { StatusService } from "@shared/services/status.service";
-import { Observable } from "rxjs";
+import { combineLatest, Observable } from "rxjs";
 import { FileInformation } from "@shared/model/file-information";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { Status } from "@shared/model/status";
@@ -35,9 +36,12 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     protected dataFile: File | null = null;
     public fileConfiguration: FileConfiguration;
 
-    protected appConfig$: Observable<AppConfig>;
-    protected fileInfo$: Observable<FileInformation>;
-    protected status$: Observable<Status>;
+    protected pageData$: Observable<{
+        appConfig: AppConfig;
+        fileInfo: FileInformation;
+        locked: LockedInformation;
+        status: Status;
+    }>;
 
     public lineEndings = Object.values(LineEnding);
     public lineEndingLabels: Record<LineEnding, string> = {
@@ -70,6 +74,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         public loadingService: LoadingService,
         private configurationService: ConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
+        private readonly stateManagementService: StateManagementService,
     ) {
         this.titleService.setPageTitle("Upload data");
         this.fileConfiguration = fileService.getFileConfiguration();
@@ -80,9 +85,12 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     }
 
     public ngOnInit(): void {
-        this.appConfig$ = this.appConfigService.appConfig$;
-        this.fileInfo$ = this.fileService.fileInfo$;
-        this.status$ = this.statusService.status$;
+        this.pageData$ = combineLatest({
+            appConfig: this.appConfigService.appConfig$,
+            fileInfo: this.fileService.fileInfo$,
+            locked: this.stateManagementService.currentStepLocked$,
+            status: this.statusService.status$,
+        });
     }
 
     /**
@@ -115,10 +123,6 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         } else {
             return this.isDataFileInvalid;
         }
-    }
-
-    protected get locked(): boolean {
-        return this.statusService.isStepCompleted(Steps.VALIDATION);
     }
 
     protected onFileInput(files: FileList | null) {

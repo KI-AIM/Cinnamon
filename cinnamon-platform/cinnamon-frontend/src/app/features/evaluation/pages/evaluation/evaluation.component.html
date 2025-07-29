@@ -60,7 +60,14 @@
                     <div class="step-head">
                         <span> {{ getJobName(job) }} </span>
                         <span>
-                            <a *ngIf="data.stage != null && data.stage.status !== ProcessStatus.SCHEDULED && data.stage.status !== ProcessStatus.RUNNING && data.stage.status !== ProcessStatus.NOT_STARTED && data.stage.processes[i].externalProcessStatus !== ProcessStatus.NOT_STARTED; else disabledStart"
+                            <a *ngIf="data.stage != null &&
+                                      data.stage.status !== ProcessStatus.SCHEDULED &&
+                                      data.stage.status !== ProcessStatus.RUNNING &&
+                                      data.stage.status !== ProcessStatus.NOT_STARTED &&
+                                      (data.stage.status !== ProcessStatus.OUTDATED ||
+                                        (i != 0 && data.stage.processes[i-1].externalProcessStatus !== ProcessStatus.OUTDATED)) &&
+                                      data.stage.processes[i].externalProcessStatus !== ProcessStatus.NOT_STARTED;
+                                      else disabledStart"
                                title="Start" (click)="evaluationService.start(job);" class="icon-enabled">
                                 <mat-icon fontIcon="play_arrow" style="color: green;"></mat-icon>
                             </a>

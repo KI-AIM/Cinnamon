@@ -168,6 +168,7 @@ public class ProcessService {
 	/**
 	 * Configures the job.
 	 * Currently, always uses the first configuration for the job.
+	 * Marks the job as outdated if something changed.
 	 *
 	 * @param project The project.
 	 * @param job     The job to be configured.
@@ -192,6 +193,8 @@ public class ProcessService {
 			                            "Process cannot be configured if the it is scheduled or started!");
 		}
 
+		boolean markAsOutdated = false;
+
 		if (!skip) {
 			// Set the configuration
 			ConfigurationListEntity configurationList = project.getConfigurationList(job.getEndpoint().getConfiguration());
@@ -211,11 +214,21 @@ public class ProcessService {
 				                            job.getName() + "'!");
 			}
 
-			externalProcess.setConfiguration(config);
+			if (externalProcess.getConfiguration() == null) {
+				externalProcess.setConfiguration(config);
+				markAsOutdated = true;
+			}
 		}
 
 		// Set if the process should be skipped
-		externalProcess.setSkip(skip);
+		if (skip != externalProcess.isSkip()) {
+			externalProcess.setSkip(skip);
+			markAsOutdated = true;
+		}
+
+		if (markAsOutdated) {
+			databaseService.markProcessOutdated(externalProcess);
+		}
 
 		// Save project
 		projectRepository.save(project);

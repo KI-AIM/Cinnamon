@@ -7,13 +7,13 @@ import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
+import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
-import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
-import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
-import de.kiaim.cinnamon.platform.model.entity.UserEntity;
+import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
+import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.service.DatabaseService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.DatabaseTest;
@@ -284,5 +284,33 @@ class DatabaseServiceTest extends DatabaseTest {
 	void existsTableNot() {
 		final boolean exists = assertDoesNotThrow(() -> databaseService.existsTable(0));
 		assertFalse(exists, "Table does exist!");
+	}
+
+	@Test
+	void markProcessOutdated() throws InternalApplicationConfigurationException {
+		ProjectEntity project =  projectService.createProject(123L);
+
+		ExecutionStepEntity stage1 = project.getPipelines().get(0).getStageByIndex(0);
+		stage1.setStatus(ProcessStatus.FINISHED);
+		var process11 = stage1.getProcess(0);
+		process11.setExternalProcessStatus(ProcessStatus.FINISHED);
+		var process12 = stage1.getProcess(1);
+		process12.setExternalProcessStatus(ProcessStatus.FINISHED);
+
+		ExecutionStepEntity stage2 = project.getPipelines().get(0).getStageByIndex(1);
+		stage2.setStatus(ProcessStatus.FINISHED);
+		var process21 = stage2.getProcess(0);
+		process21.setExternalProcessStatus(ProcessStatus.SKIPPED);
+		var process22 = stage2.getProcess(1);
+		process22.setExternalProcessStatus(ProcessStatus.FINISHED);
+
+		assertDoesNotThrow(() -> databaseService.markProcessOutdated(process12));
+
+		assertEquals(ProcessStatus.OUTDATED, stage1.getStatus());
+		assertEquals(ProcessStatus.FINISHED, process11.getExternalProcessStatus());
+		assertEquals(ProcessStatus.OUTDATED, process12.getExternalProcessStatus());
+		assertEquals(ProcessStatus.OUTDATED, stage2.getStatus());
+		assertEquals(ProcessStatus.SKIPPED, process21.getExternalProcessStatus());
+		assertEquals(ProcessStatus.OUTDATED, process22.getExternalProcessStatus());
 	}
 }

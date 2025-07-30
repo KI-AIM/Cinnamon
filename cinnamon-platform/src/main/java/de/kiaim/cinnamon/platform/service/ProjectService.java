@@ -215,6 +215,8 @@ public class ProjectService {
 			if (project.getOriginalData().getDataSet() != null) {
 				project.getOriginalData().getDataSet().setConfirmedData(false);
 			}
+
+			project.getConfigurations().clear();
 		} else if (parts[1].equals("pipeline")) {
 			final Stage stage = stepService.getStageConfiguration(parts[1]);
 			processService.deleteStage(project, stage);

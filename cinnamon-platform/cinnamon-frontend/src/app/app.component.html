@@ -15,8 +15,8 @@
                 <div style="position: sticky; top: 0; z-index: 10">
                     <app-info-card *ngIf="locked.isLocked" typeClass="card-warn">
                         <div *ngIf="locked.reasons.includes(LockedReason.STEP_CONFIRMED)">
-                            This step is locked because subsequent steps depend on it.
-                            You have to reset the subsequent steps first before you can modify this step.
+                            The data configuration is locked as subsequent steps depend on it.
+                            In order to modify the data configuration, you have to reset the subsequent steps first.
                         </div>
                         <div *ngIf="locked.reasons.includes(LockedReason.PROCESS_RUNNING)">
                             This step is locked because a Process is currently running.
@@ -26,7 +26,7 @@
                             <button mat-raised-button color="warn"
                                     [disabled]="locked.reasons.includes(LockedReason.PROCESS_RUNNING)"
                                     (click)="stateManagementService.unlockStep(locked.currentStep!.enum)">
-                                Reset subsequent steps
+                                Unlock data configuration and delete all results
                             </button>
                         </div>
                     </app-info-card>

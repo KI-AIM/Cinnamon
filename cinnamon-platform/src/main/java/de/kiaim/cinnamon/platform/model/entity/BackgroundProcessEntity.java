@@ -110,7 +110,7 @@ public class BackgroundProcessEntity {
 		this.owner = owner;
 	}
 
-	public void setConfiguration(final BackgroundProcessConfiguration newConfiguration) {
+	public void setConfiguration(@Nullable final BackgroundProcessConfiguration newConfiguration) {
 		final BackgroundProcessConfiguration oldConfiguration = this.configuration;
 		this.configuration = newConfiguration;
 		if (oldConfiguration != null && oldConfiguration.getUsages().contains(this)) {
@@ -152,6 +152,7 @@ public class BackgroundProcessEntity {
 		resultFiles.clear();
 		externalProcessStatus = ProcessStatus.NOT_STARTED;
 		serverInstance = null;
+		scheduledTime = null;
 	}
 
 	/**

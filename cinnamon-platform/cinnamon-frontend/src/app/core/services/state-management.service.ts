@@ -105,11 +105,14 @@ export class StateManagementService {
             }),
             map(value =>{
                 const reasons: LockedReason[] = [];
-                if (this.statusService.isStepCompleted(value.currentStep?.lockedAfter)) {
-                    reasons.push(LockedReason.STEP_CONFIRMED);
-                }
-                if (value.p.currentStageIndex != null && value.currentStep?.enum !== value.status.currentStep) {
-                    reasons.push(LockedReason.PROCESS_RUNNING);
+                if (value.currentStep != null) {
+                    if (value.currentStep.enum <= Steps.VALIDATION &&
+                        this.statusService.isStepCompleted(value.currentStep.lockedAfter)) {
+                        reasons.push(LockedReason.STEP_CONFIRMED);
+                    }
+                    if (value.p.currentStageIndex != null && value.currentStep.enum !== value.status.currentStep) {
+                        reasons.push(LockedReason.PROCESS_RUNNING);
+                    }
                 }
                 return {isLocked: reasons.length > 0, reasons: reasons, currentStep: value.currentStep ?? null} as LockedInformation;
             }),
@@ -242,11 +245,11 @@ export class StateManagementService {
      */
     public unlockStep(unlock: Steps): void {
         let target;
-        if (unlock < Steps.VALIDATION) {
+        if (unlock <= Steps.VALIDATION) {
             target = "original";
-        } else if (unlock < Steps.EXECUTION) {
+        } else if (unlock <= Steps.EXECUTION) {
             target = "pipeline.execution";
-        } else if (unlock < Steps.EVALUATION) {
+        } else if (unlock <= Steps.EVALUATION) {
             target = "pipeline.evaluation";
         } else {
             // Nothing to do

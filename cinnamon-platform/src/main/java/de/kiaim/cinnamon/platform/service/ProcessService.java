@@ -1213,25 +1213,23 @@ public class ProcessService {
 			                            "Stage cannot be deleted because processes are running");
 		}
 
-		resetStage(executionStep);
-		return executionStep;
-	}
-
-	/**
-	 * Resets the given stage by deleting all results and resetting the status.
-	 *
-	 * @param executionStep The stage to be reset.
-	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
-	 */
-	private void resetStage(final ExecutionStepEntity executionStep) throws InternalDataSetPersistenceException {
 		for (final ExternalProcessEntity externalProcessEntity : executionStep.getProcesses()) {
 			resetProcess(externalProcessEntity);
+			externalProcessEntity.setConfiguration(null);
 		}
 
 		executionStep.setCurrentProcessIndex(null);
 		executionStep.setStatus(ProcessStatus.NOT_STARTED);
+
+		return executionStep;
 	}
 
+	/**
+	 * Resets the results of the given process.
+	 *
+	 * @param externalProcess The process to reset.
+	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 */
 	private void resetProcess(final ExternalProcessEntity externalProcess) throws InternalDataSetPersistenceException {
 		externalProcess.reset();
 

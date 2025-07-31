@@ -1,56 +1,134 @@
 package de.kiaim.cinnamon.platform.processor;
 
+import ca.uhn.fhir.context.FhirContext;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
+import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.unimuenster.imi.fhir.columns_parser.Column;
+import de.unimuenster.imi.fhir.transform.BundleTransformer;
+import de.unimuenster.imi.fhir.transform.ResourceExtractor;
+import de.unimuenster.imi.fhir.transform.TransformationParameters;
+import org.apache.commons.csv.CSVFormat;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
+/**
+ * Class for processing FHIR bundles.
+ * Reading a FHIR bundle converts the bundle into a CSV string and uses the {@link CsvProcessor}.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Service
 public class FhirProcessor implements DataProcessor {
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public FileType getSupportedDataType() {
-        return FileType.FHIR;
-    }
+	private final CsvProcessor csvProcessor;
 
-    @Override
-    public int getNumberColumns(InputStream data, FileConfigurationEntity fileConfiguration) {
-        return 0;
-    }
+	public FhirProcessor(final CsvProcessor csvProcessor) {
+		this.csvProcessor = csvProcessor;
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
-                                     DataConfiguration configuration) {
-        return null;
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public FileType getSupportedDataType() {
+		return FileType.FHIR;
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public DataConfigurationEstimation estimateDataConfiguration(InputStream data,
-                                                                 FileConfigurationEntity fileConfiguration,
-                                                                 final DatatypeEstimationAlgorithm algorithm) {
-        return null;
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getNumberColumns(final InputStream data, final FileConfigurationEntity fileConfiguration
+	) throws InternalIOException {
+		final CSVFormat csvFormat = buildCsvFormat();
+		final String csvString = getCsvString(data, csvFormat);
+		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
+		return csvProcessor.getNumberColumns(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration);
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void write(OutputStream outputStream, DataSet dataset) {
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public TransformationResult read(final InputStream data,
+	                                 final FileConfigurationEntity fileConfiguration,
+	                                 final DataConfiguration configuration
+	) throws InternalIOException {
+		final CSVFormat csvFormat = buildCsvFormat();
+		final String csvString = getCsvString(data, csvFormat);
+		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
+		return csvProcessor.read(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration, configuration);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public DataConfigurationEstimation estimateDataConfiguration(
+			final InputStream data,
+			final FileConfigurationEntity fileConfiguration,
+			final DatatypeEstimationAlgorithm algorithm
+	) throws InternalIOException {
+		final CSVFormat csvFormat = buildCsvFormat();
+		final String csvString = getCsvString(data, csvFormat);
+		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
+		return csvProcessor.estimateDataConfiguration(new ByteArrayInputStream(csvString.getBytes()),
+		                                              csvFileConfiguration, algorithm);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void write(OutputStream outputStream, DataSet dataset) {
+	}
+
+	/**
+	 * Returns the CSVFormat for converting the FHIR bundle into a CSV file.
+	 *
+	 * @return The CSV format.
+	 */
+	private CSVFormat buildCsvFormat() {
+		return CSVFormat.Builder.create(CSVFormat.DEFAULT).setHeader().build();
+	}
+
+	/**
+	 * Convert the given FHIR bundle string into a CSV string.
+	 *
+	 * @param fhirBundle The FHIR bundle.
+	 * @param csvFormat  The CSV format used for the output.
+	 * @return The CSV string.
+	 * @throws InternalIOException If reading the FHIR bundle failed.
+	 */
+	private String getCsvString(final InputStream fhirBundle, final CSVFormat csvFormat) throws InternalIOException {
+		final FhirContext fhirContext = FhirContext.forR4();
+		final BundleTransformer bundleTransformer = new BundleTransformer(fhirContext);
+
+		final ResourceExtractor extractor = ResourceExtractor.Companion.forR4();
+
+		final String content;
+		try {
+			content = new String(fhirBundle.readAllBytes());
+		} catch (IOException e) {
+			throw new InternalIOException(InternalIOException.FHIR_READING, "Failed to convert FHIR bundle into a CSV.",
+			                              e);
+		}
+
+		final List<Column> attributes = extractor.getResourceFieldsForEntriesInBundle(content);
+		final TransformationParameters transformationParameters = new TransformationParameters(
+				csvFormat, Integer.MAX_VALUE, attributes, false, true);
+		return bundleTransformer.processBundle(content, transformationParameters);
+	}
 }

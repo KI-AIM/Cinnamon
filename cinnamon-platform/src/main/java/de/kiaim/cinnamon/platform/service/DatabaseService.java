@@ -107,11 +107,13 @@ public class DatabaseService {
 	 * @throws BadDataSetIdException               If the data set has already been confirmed.
 	 * @throws BadFileException                    If the file could not be read.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
+	 * @throws InternalIOException                 If reading the data failed.
 	 * @throws InternalMissingHandlingException    If no processor for the file type of the file could be found.
 	 */
 	@Transactional
 	public FileInformation storeFile(final ProjectEntity project, final MultipartFile file,
-	                                 final FileConfiguration fileConfiguration) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalMissingHandlingException {
+	                                 final FileConfiguration fileConfiguration
+	) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 
 		dataProcessorService.validateFileOrThrow(file);

@@ -623,7 +623,9 @@ public class DatabaseService {
 			throws InternalDataSetPersistenceException, BadColumnNameException, InternalIOException {
 		final List<String> columnNames = loadDataRequest != null ? loadDataRequest.getColumnNames() : new ArrayList<>();
 
-		var calcRowNumbers = rowSelector != RowSelector.ALL;
+		var hasHoldOut = dataSetEntity.getOriginalData() != null && dataSetEntity.getOriginalData().isHasHoldOut();
+		var calcRowNumbers = rowSelector != RowSelector.ALL ||
+		                     (hasHoldOut && loadDataRequest.getHoldOutSelector() != HoldOutSelector.ALL);
 
 		final var startRow = (pageNumber - 1) * pageSize;
 

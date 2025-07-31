@@ -709,6 +709,22 @@ class DataControllerTest extends ControllerTest {
 				       "{'data':[[42],[24],['forty two']],'transformationErrors':[{'index':2,'dataTransformationErrors':[{'index':0,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':1,'perPage':10,total:3,'totalPages':1}"));
 	}
 
+	@Test
+	void loadTransformationResultPageSelectHoldOut() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
+				                .param("page", "1")
+				                .param("perPage", "10")
+				                .param("rowSelector", RowSelector.ALL.name())
+				                .param("holdOutSelector", HoldOutSelector.NOT_HOLD_OUT.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':1,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[0,2],'page':1,'perPage':10,total:2,'totalPages':1}"));
+	}
 
 	@Test
 	void deleteDataNoDataSet() throws Exception {

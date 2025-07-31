@@ -1,24 +1,24 @@
 import { Component, OnDestroy, OnInit, TemplateRef } from "@angular/core";
-import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
-import { Steps } from "src/app/core/enums/steps";
-import { TitleService } from "src/app/core/services/title-service.service";
-import { DataService } from "src/app/shared/services/data.service";
-import { DataConfigurationEstimation } from "@shared/model/data-configuration";
-import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
-import { Router } from "@angular/router";
-import { FileService } from "../../services/file.service";
 import { MatDialog } from "@angular/material/dialog";
-import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
-import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
-import { LoadingService } from "src/app/shared/services/loading.service";
+import { Router } from "@angular/router";
+import { Mode } from "@core/enums/mode";
+import { DataConfigurationEstimation } from "@shared/model/data-configuration";
+import { FileInformation } from "@shared/model/file-information";
+import { Status } from "@shared/model/status";
+import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
-import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { StatusService } from "@shared/services/status.service";
 import { Observable } from "rxjs";
-import { FileInformation } from "@shared/model/file-information";
-import { ErrorHandlingService } from "@shared/services/error-handling.service";
-import { Status } from "@shared/model/status";
-import { Mode } from "@core/enums/mode";
+import { Steps } from "src/app/core/enums/steps";
+import { TitleService } from "src/app/core/services/title-service.service";
+import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
+import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
+import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
+import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
+import { DataService } from "src/app/shared/services/data.service";
+import { LoadingService } from "src/app/shared/services/loading.service";
+import { FileService } from "../../services/file.service";
 
 @Component({
     selector: "app-upload-file",
@@ -223,6 +223,9 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         switch (fileExtension) {
             case "csv":
                 this.fileConfiguration.fileType = FileType.CSV;
+                break;
+            case "json":
+                this.fileConfiguration.fileType = FileType.FHIR;
                 break;
             case "xlsx":
                 this.fileConfiguration.fileType = FileType.XLSX;

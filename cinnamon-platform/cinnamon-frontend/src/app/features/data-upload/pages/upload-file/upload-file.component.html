@@ -56,7 +56,7 @@
 
     <div class="mt-2">
         <div class="d-flex align-items-center w-100">
-            <app-file-upload accept=".csv,.xlsx" [disabled]="locked" (input)="onFileInput($event)"
+            <app-file-upload accept=".csv,.json,.xlsx" [disabled]="locked" (input)="onFileInput($event)"
                              class="flex-grow-1"></app-file-upload>
 
             <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
@@ -87,8 +87,8 @@
         <ul>
             <li>CSV Files</li>
             <li>XLSX Files</li>
+            <li>FHIR Bundles</li>
         </ul>
-        FHIR support is under development and will be available soon.<br/><br/>
 
         <p>
             <b>File Size Limit:</b>

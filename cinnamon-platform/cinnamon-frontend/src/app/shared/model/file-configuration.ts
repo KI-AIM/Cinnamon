@@ -3,6 +3,7 @@ import { XlsxFileConfiguration } from "./xlsx-file-configuration";
 
 export enum FileType {
 	CSV = "CSV",
+    FHIR = "FHIR",
     XLSX = "XLSX",
 }
 

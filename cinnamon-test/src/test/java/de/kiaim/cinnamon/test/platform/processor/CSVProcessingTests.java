@@ -56,7 +56,8 @@ public class CSVProcessingTests {
 		DataConfiguration config = getDataConfiguration();
 
 		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-		TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+		TransformationResult actualResult = assertDoesNotThrow(
+				() -> csvProcessor.read(stream, fileConfiguration, config));
 
 		TransformationResult expectedResult = testReadMethodOfCsvProcessor_getExpectedTransformationResult();
 
@@ -80,7 +81,8 @@ public class CSVProcessingTests {
 		DataConfiguration config = getDataConfiguration();
 
 		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-		TransformationResult actualResult = csvProcessor.read(stream, fileConfiguration, config);
+		TransformationResult actualResult = assertDoesNotThrow(
+				() -> csvProcessor.read(stream, fileConfiguration, config));
 
 		TransformationResult expectedResult = testReadMethodOfCsvProcessor_getExpectedTransformationResult();
 
@@ -151,8 +153,9 @@ public class CSVProcessingTests {
 
 
 		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-		DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
-		                                                                                DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+		DataConfigurationEstimation estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+				                                             DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 		DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
 		DataConfiguration expectedConfiguration = removeNames(getDataConfiguration());
@@ -177,8 +180,9 @@ public class CSVProcessingTests {
 
 
 		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-		DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
-		                                                                                DatatypeEstimationAlgorithm.MOST_GENERAL);
+		DataConfigurationEstimation estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+				                                             DatatypeEstimationAlgorithm.MOST_GENERAL));
 		DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
 		DataConfiguration expectedConfiguration = removeNames(getDataConfiguration());
@@ -205,8 +209,9 @@ public class CSVProcessingTests {
 		                                                                                                  true);
 
 		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-		DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
-		                                                                                DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+		DataConfigurationEstimation estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+				                                             DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 		DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
 		DataConfiguration expectedConfiguration = getDataConfiguration();
@@ -237,8 +242,9 @@ public class CSVProcessingTests {
 		                                                                                                  true);
 
 		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-		DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
-		                                                                                DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+		DataConfigurationEstimation estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+				                                             DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 		DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
 		DataConfiguration expectedConfiguration = getDataConfiguration();
@@ -264,8 +270,9 @@ public class CSVProcessingTests {
 		                                                                                                  true);
 
 		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-		DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
-		                                                                                DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+		DataConfigurationEstimation estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+				                                             DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 		DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
 		DataConfiguration expectedConfiguration = getDataConfiguration();

@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.zip.ZipEntry;
 
 @Service
 public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
@@ -36,7 +35,8 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int getNumberColumns(final InputStream data, final FileConfigurationEntity fileConfiguration) {
+	public int getNumberColumns(final InputStream data,
+	                            final FileConfigurationEntity fileConfiguration) throws InternalIOException {
 		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
@@ -44,8 +44,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		try {
 			records = csvFormat.parse(new InputStreamReader(data));
 		} catch (IOException e) {
-			// TODO catch Error
-			throw new RuntimeException(e);
+			throw new InternalIOException(InternalIOException.CSV_READING, "Failed to parse CSV file", e);
 		}
 
 		return records.iterator().next().size();
@@ -56,7 +55,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 */
 	@Override
 	public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
-	                                 DataConfiguration configuration) {
+	                                 DataConfiguration configuration) throws InternalIOException {
 		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
@@ -64,8 +63,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		try {
 			records = csvFormat.parse(new InputStreamReader(data));
 		} catch (IOException e) {
-			// TODO catch Error
-			throw new RuntimeException(e);
+			throw new InternalIOException(InternalIOException.CSV_READING, "Failed to parse CSV file", e);
 		}
 
 		final Iterator<CSVRecord> recordIterator = records.iterator();
@@ -90,7 +88,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	@Override
 	public DataConfigurationEstimation estimateDataConfiguration(InputStream data,
 	                                                             FileConfigurationEntity fileConfiguration,
-	                                                             final DatatypeEstimationAlgorithm algorithm) {
+	                                                             final DatatypeEstimationAlgorithm algorithm) throws InternalIOException {
 		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
@@ -98,8 +96,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		try {
 			records = csvFormat.parse(new InputStreamReader(data));
 		} catch (IOException e) {
-			// TODO catch Error
-			throw new RuntimeException(e);
+			throw new InternalIOException(InternalIOException.CSV_READING, "Failed to parse CSV file", e);
 		}
 
 		final Iterator<CSVRecord> recordIterator = records.iterator();

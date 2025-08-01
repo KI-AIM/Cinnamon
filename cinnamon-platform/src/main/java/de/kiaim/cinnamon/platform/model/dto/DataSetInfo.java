@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.model.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.lang.Nullable;
 
 /**
  * General info about a dataset.
@@ -24,7 +25,7 @@ public class DataSetInfo {
 	private final int numberInvalidRows;
 
 	/**
-	 * If the data set contains a hold out split.
+	 * If the data set contains a hold-out split.
 	 */
 	@Schema(description = "If the data set contains a hold out split.", example = "true")
 	private final boolean hasHoldOutSplit;
@@ -46,6 +47,14 @@ public class DataSetInfo {
 	 */
 	@Schema(description = "The number of invalid rows inside the hold-out split.", example = "8")
 	private final int numberInvalidHoldOutRows;
+
+	/**
+	 * The number of rows retained from the original dataset.
+	 * Value is null if the info is about the original dataset.
+	 */
+	@Nullable
+	@Schema(description = "The number of rows retained from the original dataset.", example = "43")
+	private final Integer numberRetainedRows;
 
 	/**
 	 * Information about the corresponding data configuration.

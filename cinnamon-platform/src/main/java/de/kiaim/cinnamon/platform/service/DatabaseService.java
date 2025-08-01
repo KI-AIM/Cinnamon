@@ -182,11 +182,11 @@ public class DatabaseService {
 	 * Returns an ID to access the data.
 	 *
 	 * @param transformationResult The transformation result to be stored.
-	 * @param project The project.
+	 * @param project              The project.
 	 * @return The ID of the data set.
-	 * @throws BadDataConfigurationException If the number of attributes do not match with the stored data configuration.
-	 * @throws BadDataSetIdException If the data set is already stored.
-	 * @throws BadStateException If no file for the original data has been selected.
+	 * @throws BadDataConfigurationException       If the number of attributes do not match with the stored data configuration.
+	 * @throws BadDataSetIdException               If the data set is already stored.
+	 * @throws BadStateException                   If no file for the original data has been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored.
 	 */
 	@Transactional
@@ -284,7 +284,8 @@ public class DatabaseService {
 			try {
 				executeStatement(resetQuery);
 			} catch (final SQLException e) {
-				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT, "Failed to reset the hold-out split!", e);
+				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT,
+				                                              "Failed to reset the hold-out split!", e);
 			}
 
 			project.getOriginalData().setHasHoldOut(false);
@@ -301,7 +302,8 @@ public class DatabaseService {
 		try {
 			executeStatement(seedQuery);
 		} catch (final SQLException e) {
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT, "Failed to set the seed!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT,
+			                                              "Failed to set the seed!", e);
 		}
 
 		// Create new hold-out split
@@ -322,7 +324,8 @@ public class DatabaseService {
 		try {
 			executeStatement(query);
 		} catch (final SQLException e) {
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT, "Failed to create the hold-out split!", e);
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT,
+			                                              "Failed to create the hold-out split!", e);
 		}
 
 		project.getOriginalData().setHasHoldOut(true);
@@ -357,7 +360,7 @@ public class DatabaseService {
 		} else {
 			config = configurationList.getConfigurations().get(0);
 
-			for (final var usage: config.getUsages()) {
+			for (final var usage : config.getUsages()) {
 
 				if (usage.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
 				    usage.getExternalProcessStatus() == ProcessStatus.RUNNING) {
@@ -387,6 +390,7 @@ public class DatabaseService {
 	 * @return The info object.
 	 * @throws BadDataSetIdException                     If no dataset exists.
 	 * @throws BadStateException                         If the data set does not exist.
+	 *                                                   If the given dataset is not the original one and the project does not have one.
 	 * @throws BadStepNameException                      If the source is a job and the job does not exist or does not have a data set.
 	 * @throws InternalApplicationConfigurationException If the process is not configured correctly
 	 * @throws InternalDataSetPersistenceException       If the internal queries failed.
@@ -405,14 +409,18 @@ public class DatabaseService {
 	 *
 	 * @param dataSetEntity The dataset.
 	 * @return The info object.
+	 * @throws BadStateException                   If the given dataset is not the original one and the project does not have one.
 	 * @throws InternalDataSetPersistenceException If the internal queries failed.
 	 */
-	public DataSetInfo getInfo(DataSetEntity dataSetEntity) throws InternalDataSetPersistenceException {
+	public DataSetInfo getInfo(
+			DataSetEntity dataSetEntity) throws BadStateException, InternalDataSetPersistenceException {
+		final OriginalDataEntity originalData = dataSetEntity.getOriginalData();
 		final DataConfigurationInfo dataConfigurationInfo = getDataConfigurationInfo(
 				dataSetEntity.getDataConfiguration());
 
 		if (!dataSetEntity.isStoredData()) {
-			return new DataSetInfo(0, 0, false, 0.0f, 0, 0, dataConfigurationInfo);
+			final Integer numberRetainedRows = originalData == null ? 0 : null;
+			return new DataSetInfo(0, 0, false, 0.0f, 0, 0, numberRetainedRows, dataConfigurationInfo);
 		}
 
 		final int rows = countEntries(dataSetEntity.getId());
@@ -424,19 +432,23 @@ public class DatabaseService {
 		int numberHoldOutRows = 0;
 		int numberInvalidHoldOutRows = 0;
 
-		final OriginalDataEntity originalData = dataSetEntity.getOriginalData();
+		Integer numberRetainedRows = null;
+
 		if (originalData != null) {
 			hasHoldOutSplit = originalData.isHasHoldOut();
 			holdOutPercentage = originalData.getHoldOutPercentage();
 
 			if (hasHoldOutSplit) {
 				numberHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ALL);
-				numberInvalidHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ERRORS);
+				numberInvalidHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT,
+				                                        RowSelector.ERRORS);
 			}
+		} else {
+			numberRetainedRows = getNumberOfRetainedRows(dataSetEntity);
 		}
 
 		return new DataSetInfo(rows, invalidRows, hasHoldOutSplit, holdOutPercentage, numberHoldOutRows,
-		                       numberInvalidHoldOutRows, dataConfigurationInfo);
+		                       numberInvalidHoldOutRows, numberRetainedRows, dataConfigurationInfo);
 	}
 
 	/**
@@ -477,7 +489,8 @@ public class DatabaseService {
 	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
 	 */
 	@Transactional
-	public DataSet exportDataSet(final ProjectEntity project, final HoldOutSelector holdOutSelector, final DataSetSource dataSetSource)
+	public DataSet exportDataSet(final ProjectEntity project, final HoldOutSelector holdOutSelector,
+	                             final DataSetSource dataSetSource)
 			throws InternalDataSetPersistenceException, BadDataSetIdException, InternalIOException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		try {
 			return exportDataSet(project, new ArrayList<>(), holdOutSelector, dataSetSource);
@@ -591,7 +604,9 @@ public class DatabaseService {
 	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
 	 */
 	@Transactional
-	public TransformationResult exportTransformationResult(final ProjectEntity project, final HoldOutSelector holdOutSelector, final DataSetSource dataSetSource)
+	public TransformationResult exportTransformationResult(final ProjectEntity project,
+	                                                       final HoldOutSelector holdOutSelector,
+	                                                       final DataSetSource dataSetSource)
 			throws BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
 		final DataSet dataSet = exportDataSet(project, holdOutSelector, dataSetSource);
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
@@ -642,9 +657,11 @@ public class DatabaseService {
 
 		final var startRow = (pageNumber - 1) * pageSize;
 
-		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
+		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
+				dataSetEntity.getDataConfiguration(), columnNames);
 		final DataSet dataSet = exportDataSet(dataSetEntity, rowSelector, columnNames,
-		                                      loadDataRequest.getHoldOutSelector(), true, startRow, pageSize, calcRowNumbers);
+		                                      loadDataRequest.getHoldOutSelector(), true, startRow, pageSize,
+		                                      calcRowNumbers);
 
 		List<Integer> rowNumbers = null;
 		final Set<DataTransformationErrorEntity> errors;
@@ -656,7 +673,8 @@ public class DatabaseService {
 			errors = errorRepository.findByDataSetIdAndRowIndexBetween(dataSetEntity.getId(), startRow, endRow - 1);
 		}
 
-		List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, rowNumbers, columnIndexMapping,
+		List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, rowNumbers,
+		                                                        columnIndexMapping,
 		                                                        loadDataRequest);
 
 		if (calcRowNumbers) {
@@ -673,7 +691,8 @@ public class DatabaseService {
 			}
 
 			if (!rowErrors.containsKey(error.getRowIndex())) {
-				final int index = rowNumbers != null ? rowNumbers.indexOf(error.getRowIndex()) : error.getRowIndex() - startRow;
+				final int index =
+						rowNumbers != null ? rowNumbers.indexOf(error.getRowIndex()) : error.getRowIndex() - startRow;
 				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(index));
 			}
 			final var rowError = rowErrors.get(error.getRowIndex());
@@ -784,7 +803,8 @@ public class DatabaseService {
 	 * @return The number of entries.
 	 * @throws InternalDataSetPersistenceException If the number could not be retrieved.
 	 */
-	public int countEntries(final long dataSetId, final HoldOutSelector holdOutSelector, final RowSelector rowSelector) throws InternalDataSetPersistenceException {
+	public int countEntries(final long dataSetId, final HoldOutSelector holdOutSelector,
+	                        final RowSelector rowSelector) throws InternalDataSetPersistenceException {
 		String countQuery = "SELECT count(*) FROM " + getTableName(dataSetId) + " as d ";
 		countQuery = appendHoldOutCondition(countQuery, holdOutSelector);
 		countQuery = appendRowSelectorCondition(countQuery, rowSelector, dataSetId);
@@ -1091,7 +1111,8 @@ public class DatabaseService {
 					}
 
 					if (exportRowIndexColumn) {
-						data.add(convertResultToData(resultSet, dataConfiguration.getConfigurations().size() + 1, DataType.INTEGER));
+						data.add(convertResultToData(resultSet, dataConfiguration.getConfigurations().size() + 1,
+						                             DataType.INTEGER));
 					}
 					dataRows.add(new DataRow(data));
 				}
@@ -1132,10 +1153,11 @@ public class DatabaseService {
 		}
 	}
 
-	private String createSelectQuery(final Long dataSetId, final RowSelector rowSelector, final List<String> columnNames,
+	private String createSelectQuery(final Long dataSetId, final RowSelector rowSelector,
+	                                 final List<String> columnNames,
 	                                 final HoldOutSelector holdOutSelector, final boolean pagination,
 	                                 final int startRow, final int pageSize, final boolean exportRowIndexColumn) {
-		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"")
+		final List<String> quotedColumnNames = columnNames.stream().map(this::quoteColumnName)
 		                                                  .collect(Collectors.toCollection(ArrayList::new));
 		if (exportRowIndexColumn) {
 			quotedColumnNames.add("\"" + DataschemeGenerator.ROW_INDEX_NAME + "\"");
@@ -1294,11 +1316,13 @@ public class DatabaseService {
 			case ALL -> {}
 			case VALID -> {
 				query = appendWhere(query);
-				query += "NOT EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
+				query += "NOT EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " +
+				         dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
 			}
 			case ERRORS -> {
 				query = appendWhere(query);
-				query += "EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
+				query += "EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId +
+				         " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
 			}
 		}
 
@@ -1335,7 +1359,98 @@ public class DatabaseService {
 			}
 		}
 
-		return new DataConfigurationInfo(numberColumns, numberNumericColumns, numberCategoricalColumns, numberDateColumns);
+		return new DataConfigurationInfo(numberColumns, numberNumericColumns, numberCategoricalColumns,
+		                                 numberDateColumns);
+	}
+
+	/**
+	 * Counts the number of rows in the given dataset that are retained from the corresponding original dataset.
+	 *
+	 * @param dataSet The dataset.
+	 * @return The number of retained rows.
+	 * @throws BadStateException                   If the corresponding project has no original dataset.
+	 * @throws InternalDataSetPersistenceException If executing the query failed.
+	 */
+	private int getNumberOfRetainedRows(
+			final DataSetEntity dataSet) throws BadStateException, InternalDataSetPersistenceException {
+		final DataSetEntity original = dataSet.getProject().getOriginalData().getDataSet();
+		if (original == null) {
+			throw new BadStateException(BadStateException.NO_DATA_SET, "No original dataset for comparison available!");
+		}
+
+		final String originalTableName = getTableName(original.getId());
+		final String otherTableName = getTableName(dataSet.getId());
+
+		final String tableA = "f";
+		final String tableB = "s";
+		final String joinPart = getJoinStatement(original.getDataConfiguration(), tableA, tableB);
+
+		final String query =
+				"""
+				WITH original_table_filtered AS (
+				    SELECT *, ROW_NUMBER() OVER (ORDER BY %s) - 1 as row_number
+				    FROM %s
+				    WHERE %s = false
+				)
+				SELECT COUNT(*) as matching_rows
+				FROM original_table_filtered %s
+				JOIN %s %s %s
+				    AND %s.row_number = %s.%s;
+				""".formatted(DataschemeGenerator.ROW_INDEX_NAME, originalTableName,
+				              DataschemeGenerator.HOLD_OUT_FLAG_NAME, tableA, otherTableName, tableB, joinPart, tableA,
+				              tableB, DataschemeGenerator.ROW_INDEX_NAME);
+
+		try (final Statement countStatement = connection.createStatement()) {
+			try (ResultSet resultSet = countStatement.executeQuery(query)) {
+				resultSet.next();
+				return resultSet.getInt(1);
+			}
+		} catch (SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATASET_COMPARISON,
+			                                              "Failed to compare rows for dataset with ID '" +
+			                                              dataSet.getId() + "'!", e);
+		}
+	}
+
+	/**
+	 * Creates the join statements for joining two datasets on all columns of the dataset.
+	 *
+	 * @param dataConfiguration The data configuration that contains the column names.
+	 * @param tableA            Alias for the first table.
+	 * @param tableB            Alias for the second table.
+	 * @return The join statement.
+	 */
+	private String getJoinStatement(final DataConfiguration dataConfiguration, final String tableA,
+	                                final String tableB) {
+		final StringBuilder joinStatement = new StringBuilder();
+
+		String firstColumn = dataConfiguration.getConfigurations().get(0).getName();
+		firstColumn = quoteColumnName(firstColumn);
+		joinStatement.append(" ON ")
+		             .append(tableA).append(".").append(firstColumn)
+		             .append(" = ")
+		             .append(tableB).append(".").append(firstColumn);
+
+		for (int i = 1; i < dataConfiguration.getConfigurations().size(); ++i) {
+			String columnName = dataConfiguration.getConfigurations().get(i).getName();
+			columnName = quoteColumnName(columnName);
+			joinStatement.append(" AND ")
+			             .append(tableA).append(".").append(columnName)
+			             .append(" = ")
+			             .append(tableB).append(".").append(columnName);
+		}
+
+		return joinStatement.toString();
+	}
+
+	/**
+	 * Puts the given column name to allow reserved keywords.
+	 *
+	 * @param columnName The column name.
+	 * @return The quoted name.
+	 */
+	final String quoteColumnName(final String columnName) {
+		return "\"" + columnName + "\"";
 	}
 
 }

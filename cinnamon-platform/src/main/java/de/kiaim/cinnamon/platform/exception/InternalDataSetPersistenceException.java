@@ -55,6 +55,11 @@ public class InternalDataSetPersistenceException extends InternalException {
 	 */
 	public static final String HOLD_OUT = "10";
 
+	/**
+	 * Exception code for errors when comparing datasets.
+	 */
+	public static final String DATASET_COMPARISON = "11";
+
 	public InternalDataSetPersistenceException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

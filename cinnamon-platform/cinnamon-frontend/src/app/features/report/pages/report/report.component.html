@@ -26,13 +26,16 @@
     </div>
 
     <ng-container *ngIf="{appConfig: appConfig$ | async,
+                          datasetInfoAnonymized: datasetInfoAnonymized$ | async,
                           datasetInfoOriginal: datasetInfoOriginal$ | async,
                           datasetInfoProtected: datasetInfoProtected$ | async,
                           mc: metricConfig$ | async,
                           reportData: reportData$ | async,
                           riskAssessmentConfig: riskAssessmentConfig$ | async,
-                          statistics: statistics$ | async} as reportData">
+                          statistics: statistics$ | async,
+                          } as reportData">
         <ng-container *ngIf="reportData.appConfig &&
+                             reportData.datasetInfoAnonymized &&
                              reportData.datasetInfoOriginal &&
                              reportData.datasetInfoProtected &&
                              reportData.mc &&
@@ -131,10 +134,11 @@
                                     <!-- TODO handling for not applied method -->
                                     The Cinnamon Platform applies a two-step data protection by first, anonymizing the
                                     dataset and then synthesizing the anonymized data.
-                                </div>
-                                <div>
-                                    <!-- TODO missing -->
-                                    Overall, [XX%] of the data records could be retained.
+                                    <br>
+                                    Overall, <strong>{{ reportData.datasetInfoAnonymized.numberRetainedRows }} of the
+                                    data records</strong> could be retained during the anonymization.
+                                    Then <strong>{{ reportData.datasetInfoProtected.numberRows }} records were
+                                    synthesized.</strong>
                                 </div>
                             </div>
                             <div style="width: 50%;">
@@ -269,7 +273,7 @@
                                 <span class="report-table-description"> This is an overview.</span>
                             </caption>
                             <tr class="report-table-header">
-                                <th class="report-th">Characterisitc</th>
+                                <th class="report-th">Characteristic</th>
                                 <th class="report-th">Original Dataset</th>
                                 <th class="report-th">Anonymized Dataset</th>
                             </tr>
@@ -323,7 +327,7 @@
                                 <td class="report-td">Global</td>
                             </tr>
                             <tr>
-                                <td class="report-td">Supression Limit</td>
+                                <td class="report-td">Suppression Limit</td>
                                 <td class="report-td">0.7</td>
                             </tr>
                         </table>

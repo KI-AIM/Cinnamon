@@ -135,11 +135,12 @@ public class ExternalConfigurationService {
 	 * @return A YAML string containing the configuration definition.
 	 * @throws BadConfigurationNameException       If the configuration name is not valid.
 	 * @throws InternalDataSetPersistenceException If retrieving parameters from the database failed.
+	 * @throws InternalInvalidStateException       If getting the dataset info failed.
 	 * @throws InternalRequestException            If the request fetching the definition failed.
 	 */
 	public String fetchAlgorithmDefinition(final ProjectEntity project, final String configurationName,
 	                                       final String definitionPath)
-			throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalRequestException {
+			throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalRequestException {
 		final String configuration = fetchAlgorithmDefinition(configurationName, definitionPath);
 		return injectParameters(project, configuration);
 	}
@@ -195,16 +196,22 @@ public class ExternalConfigurationService {
 	 * @param project       The project for resolving the parameter values.
 	 * @param configuration The configuration string.
 	 * @return The configuration string with containing the injected parameter.
+	 * @throws InternalInvalidStateException       If getting the dataset info failed.
 	 * @throws InternalDataSetPersistenceException If retrieving parameters from the database failed.
 	 */
 	private String injectParameters(final ProjectEntity project, final String configuration)
-			throws InternalDataSetPersistenceException {
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		String result = configuration;
 
 		// Inject parameters for the original data set
 		if (project.getOriginalData().getDataSet() != null) {
 			if (configuration.contains("$dataset.original.numberHoldOutRows")) {
-				final DataSetInfo info = databaseService.getInfo(project.getOriginalData().getDataSet());
+				final DataSetInfo info;
+				try {
+					info = databaseService.getInfo(project.getOriginalData().getDataSet());
+				} catch (BadStateException e) {
+					throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_DATA_STET, "Failed to get dataset info!", e);
+				}
 				result = result.replace("$dataset.original.numberHoldOutRows",
 				                        String.valueOf(info.getNumberHoldOutRows()));
 			}

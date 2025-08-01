@@ -7,6 +7,7 @@ export class DataSetInfo {
     holdOutPercentage: number;
     numberHoldOutRows: number;
     numberInvalidHoldOutRows: number;
+    numberRetainedRows: number | null;
 
     @Type(() => DataConfigurationInfo)
     dataConfigurationInfo: DataConfigurationInfo;

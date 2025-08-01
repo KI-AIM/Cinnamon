@@ -42,6 +42,10 @@ public class InternalInvalidStateException extends InternalException {
 		super(exceptionCode, message);
 	}
 
+	public InternalInvalidStateException(final String exceptionCode, final String message, final Throwable cause) {
+		super(exceptionCode, message, cause);
+	}
+
 	@Override
 	protected String getExceptionClassCode() {
 		return INVALID_STATE;

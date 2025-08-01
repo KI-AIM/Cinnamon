@@ -314,7 +314,7 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(get("/api/data/info")
 				                .param("selector", "original"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("{numberRows: 3, numberInvalidRows:  1, hasHoldOutSplit: false, numberHoldOutRows: 0, numberInvalidHoldOutRows: 0}"));
+		       .andExpect(content().json("{numberRows: 3, numberInvalidRows:  1, hasHoldOutSplit: false, numberHoldOutRows: 0, numberInvalidHoldOutRows: 0, numberRetainedRows: null}"));
 	}
 
 	@Test

@@ -44,6 +44,7 @@ export class ReportComponent implements OnInit {
     protected reportDate: string;
 
     protected appConfig$: Observable<AppConfig>;
+    protected datasetInfoAnonymized$: Observable<DataSetInfo>;
     protected datasetInfoOriginal$: Observable<DataSetInfo>;
     protected datasetInfoProtected$: Observable<DataSetInfo>;
     protected metricConfig$: Observable<ProjectSettings>;
@@ -76,6 +77,7 @@ export class ReportComponent implements OnInit {
 
     ngOnInit() {
         this.appConfig$ = this.appConfigService.appConfig$;
+        this.datasetInfoAnonymized$ = this.datasetInfoService.getDataSetInfo("anonymization");
         this.datasetInfoOriginal$ = this.datasetInfoService.getDataSetInfo("VALIDATION");
         this.datasetInfoProtected$ = this.datasetInfoService.getDataSetInfo("PROTECTED");
         this.metricConfig$ = this.projectConfigService.projectSettings$;

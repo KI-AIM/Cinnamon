@@ -48,7 +48,7 @@ public abstract class ApiException extends Exception {
 		this.errorDetails = errorDetails;
 	}
 
-	public ApiException(final String exceptionCode, final String message, final Exception cause) {
+	public ApiException(final String exceptionCode, final String message, final Throwable cause) {
 		super(message, cause);
 		this.exceptionCode = exceptionCode;
 	}

@@ -1,8 +1,8 @@
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { catchError, map, Observable, of, tap } from "rxjs";
-import { parse, stringify } from "yaml";
+import { catchError, map, Observable, of, switchMap, tap } from "rxjs";
+import { parse } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
 import { ImportPipeData } from "../model/import-pipe-data";
@@ -60,6 +60,11 @@ export abstract class AlgorithmService {
         }
 
         return this.configurationService.loadConfig(this.getConfigurationName()).pipe(
+            switchMap(value => {
+                return this.algorithms.pipe(
+                    map(_ => value),
+                );
+            }),
             map(value => {
                 return this.readConfiguration(parse(value), this.getConfigurationName());
             }),
@@ -70,7 +75,7 @@ export abstract class AlgorithmService {
     }
 
     /**
-     * Sets the configuration form the given data to the UI.
+     * Sets the configuration from the given data to the UI.
      * @param data Data containing the result of the import.
      */
     public setConfig(data: ImportPipeData): void {

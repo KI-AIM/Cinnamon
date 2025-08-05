@@ -19,6 +19,7 @@ export interface StepDefinition {
     dependsOn: Steps | null;
     lockedAfter: Steps | null;
     index: number;
+    stageName?: string;
 }
 
 export const StepConfiguration: Record<string, StepDefinition> = {
@@ -84,6 +85,7 @@ export const StepConfiguration: Record<string, StepDefinition> = {
         dependsOn: Steps.SYNTHETIZATION,
         lockedAfter: Steps.EXECUTION,
         index: 6,
+        stageName: "execution",
     },
     TECHNICAL_EVALUATION : {
         path: "/technicalEvaluationConfiguration",
@@ -111,5 +113,15 @@ export const StepConfiguration: Record<string, StepDefinition> = {
         dependsOn: Steps.RISK_EVALUATION,
         lockedAfter: Steps.EVALUATION,
         index: 9,
+        stageName: "evaluation",
     },
 };
+
+export function getStepDefinition(step: Steps): StepDefinition | null {
+    for (const def of Object.values(StepConfiguration)) {
+        if (def.enum === step) {
+            return def;
+        }
+    }
+    return null;
+}

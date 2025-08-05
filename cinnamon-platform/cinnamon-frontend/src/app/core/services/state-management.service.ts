@@ -43,7 +43,7 @@ export class StateManagementService {
         private readonly http: HttpClient,
         private readonly router: Router,
         private readonly userService: UserService,
-        private readonly statusService: StatusService
+        private readonly statusService: StatusService,
     ) {
         if (this.userService.isAuthenticated()) {
             this.fetchCurrentStep();
@@ -65,7 +65,7 @@ export class StateManagementService {
 
         this._pipelineObserver$ = interval(2000).pipe(
             switchMap(() => this.fetchPipelineInformation()),
-            tap(value => this.updatePipeline(value))
+            tap(value => this.updatePipeline(value)),
         );
 
         this.initPipeline();
@@ -94,14 +94,14 @@ export class StateManagementService {
                     map(p => {
                         return {currentStep: value, p: p};
                     }),
-                )
+                );
             }),
             switchMap(value => {
                 return this.statusService.status$.pipe(
                     map(status => {
                         return {currentStep: value.currentStep, p: value.p, status: status};
                     }),
-                )
+                );
             }),
             map(value =>{
                 const reasons: LockedReason[] = [];
@@ -112,6 +112,19 @@ export class StateManagementService {
                     }
                     if (value.p.currentStageIndex != null && value.currentStep.enum !== value.status.currentStep) {
                         reasons.push(LockedReason.PROCESS_RUNNING);
+                    }
+                    if (value.currentStep.stageName != null) {
+                        // Check if all previous stages are finished
+                         for (const stage of value.p.stages) {
+                             if (stage.stageName === value.currentStep.stageName) {
+                                 break;
+                             } else {
+                                 if (stage.status !== ProcessStatus.FINISHED) {
+                                     reasons.push(LockedReason.PREVIOUS_STAGE_NOT_FINISHED);
+                                     break;
+                                 }
+                             }
+                         }
                     }
                 }
                 return {isLocked: reasons.length > 0, reasons: reasons, currentStep: value.currentStep ?? null} as LockedInformation;
@@ -282,4 +295,5 @@ export interface LockedInformation {
 export enum LockedReason {
     STEP_CONFIRMED = "STEP_CONFIRMED",
     PROCESS_RUNNING = "PROCESS_RUNNING",
+    PREVIOUS_STAGE_NOT_FINISHED = "PREVIOUS_STAGE_NOT_FINISHED",
 }

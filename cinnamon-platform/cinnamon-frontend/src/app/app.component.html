@@ -22,6 +22,9 @@
                             This step is locked because a Process is currently running.
                             You have to wait for it to finish or cancel the process before you can modify this step.
                         </div>
+                        <div *ngIf="locked.reasons.includes(LockedReason.PREVIOUS_STAGE_NOT_FINISHED)">
+                            This step is locked because the previous stage is not finished.
+                        </div>
                         <div *ngIf="locked.reasons.includes(LockedReason.STEP_CONFIRMED)">
                             <button mat-raised-button color="warn"
                                     [disabled]="locked.reasons.includes(LockedReason.PROCESS_RUNNING)"

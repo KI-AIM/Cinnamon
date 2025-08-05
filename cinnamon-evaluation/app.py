@@ -4,6 +4,9 @@ import os
 from threading import Event
 import multiprocessing
 import sys
+import numpy as np
+import math
+
 from typing import Optional, Tuple, Union, Any, Dict, List, BinaryIO
 from datetime import datetime
 
@@ -211,27 +214,33 @@ def initialize_input_statistics() -> Union[Tuple[str, str, dict, dict, pd.DataFr
     return session_key, callback_url, attribute_config, evaluation_config, real_data
 
 
+def convert_special_floats(val: Any) -> Any:
+    """
+    Convert NaN, Infinity, -Infinity to string equivalents.
+    """
+    if isinstance(val, float):
+        if math.isnan(val):
+            return "NaN"
+    elif isinstance(val, (np.floating, np.integer)):
+        if np.isnan(val):
+            return "NaN"
+    return val
+
 def make_serializable(item: Any) -> Union[Dict, List, Any]:
     """
-    Convert non-serializable objects into JSON serializable format.
-
-    Args:
-        item (Any): Object to be converted, can be DataFrame, dict, list or other types
-
-    Returns:
-        Union[Dict, List, Any]: Serializable version of the input item where:
-            - DataFrames are converted to list of records
-            - Dictionaries have values recursively converted
-            - Lists have elements recursively converted
-            - Other types are returned as-is if already serializable
+    Recursively convert data to a JSON-serializable format with stringified NaNs and infinities.
     """
     if isinstance(item, pd.DataFrame):
-        return item.to_dict(orient='records')
+        return [
+            {k: convert_special_floats(v) for k, v in row.items()}
+            for row in item.to_dict(orient='records')
+        ]
     elif isinstance(item, dict):
         return {k: make_serializable(v) for k, v in item.items()}
     elif isinstance(item, list):
         return [make_serializable(i) for i in item]
-    return item
+    else:
+        return convert_special_floats(item)
 
 
 def prepare_callback_data(metrics: Dict) -> Dict[str, Tuple[str, BinaryIO, str]]:

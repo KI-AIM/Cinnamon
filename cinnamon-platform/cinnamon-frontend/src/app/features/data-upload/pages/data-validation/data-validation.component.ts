@@ -76,7 +76,7 @@ export class DataValidationComponent implements OnInit {
 	}
 
     protected deleteData() {
-        this.dataService.deleteData().pipe(
+        this.stateManagementService.resetProject(null).pipe(
                 switchMap(() => {
                     return this.statusService.updateNextStep(Steps.UPLOAD);
                 }),

@@ -104,9 +104,27 @@ public class ProjectController {
 
 	@Operation(summary = "Resets the results of the process to the given target.",
 	           description = "Resets the results of the process to the given target.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully reset the project.",
+			             content = @Content(schema = @Schema(implementation = ProjectConfigurationDTO.class))),
+			@ApiResponse(responseCode = "400",
+			             description = "The given target is invalid or the project has a running process.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "Resetting the project failed.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
 	@DeleteMapping(value = "/reset")
 	public void resetProject(
-			@RequestParam final String target,
+			@Parameter(description = "Target identifier to reset. If missing or empty, the entire project is reset.")
+			@RequestParam(required = false) final String target,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws BadStateException, BadStepNameException, InternalDataSetPersistenceException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());

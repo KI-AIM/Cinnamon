@@ -184,11 +184,19 @@ public class ProjectService {
 		return user2.getProject();
 	}
 
+	/**
+	 * Deletes the project of the given user.
+	 *
+	 * @param user The user.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 */
 	@Transactional
-	public void deleteProject(final UserEntity user) throws InternalDataSetPersistenceException, BadDataSetIdException {
+	public void deleteProject(final UserEntity user)
+			throws BadStateException, InternalDataSetPersistenceException {
 		if (hasProject(user)) {
 			final ProjectEntity p = getProject(user);
-			databaseService.delete(p);
+			resetEntireProject(p);
 			projectRepository.deleteById(p.getId());
 		}
 	}
@@ -205,21 +213,27 @@ public class ProjectService {
 	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
 	 */
 	@Transactional
-	public void resetProject(final ProjectEntity project, final String target)
+	public void resetProject(final ProjectEntity project, @Nullable final String target)
 			throws BadStateException, BadStepNameException, InternalDataSetPersistenceException {
-		final String[] parts = target.split("\\.");
 
-		if (parts[0].equals("original")) {
-			processService.deletePipeline(project);
+		if (target == null || target.isBlank()) {
+			resetEntireProject(project);
+		} else {
 
-			if (project.getOriginalData().getDataSet() != null) {
-				project.getOriginalData().getDataSet().setConfirmedData(false);
+			final String[] parts = target.split("\\.");
+
+			if (parts[0].equals("original")) {
+				processService.deletePipeline(project);
+
+				if (project.getOriginalData().getDataSet() != null) {
+					project.getOriginalData().getDataSet().setConfirmedData(false);
+				}
+
+				project.getConfigurations().clear();
+			} else if (parts[1].equals("pipeline")) {
+				final Stage stage = stepService.getStageConfiguration(parts[1]);
+				processService.deleteStage(project, stage);
 			}
-
-			project.getConfigurations().clear();
-		} else if (parts[1].equals("pipeline")) {
-			final Stage stage = stepService.getStageConfiguration(parts[1]);
-			processService.deleteStage(project, stage);
 		}
 
 		projectRepository.save(project);
@@ -456,4 +470,16 @@ public class ProjectService {
 		}
 	}
 
+	/**
+	 * Resets all data inside the given project.
+	 *
+	 * @param project The project to reset.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 */
+	private void resetEntireProject(final ProjectEntity project)
+			throws BadStateException, InternalDataSetPersistenceException {
+		databaseService.deleteOriginalData(project);
+		processService.deletePipeline(project);
+	}
 }

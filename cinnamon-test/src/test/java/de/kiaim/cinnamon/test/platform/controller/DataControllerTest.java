@@ -196,7 +196,7 @@ class DataControllerTest extends ControllerTest {
 		assertTrue(dataSetEntity.isStoredData(), "Flag that the data is stored should be true!");
 		assertFalse(dataSetEntity.isConfirmedData(), "Flag that the data is confirmed should be false!");
 
-		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/project/reset")
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk());
 
@@ -249,7 +249,7 @@ class DataControllerTest extends ControllerTest {
 		final DataSetEntity dataSetEntity = dataSetRepository.findById(dataSetId).get();
 		assertTrue(dataSetEntity.isConfirmedData(), "Flag that the data is confirmed should be true!");
 
-		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/project/reset")
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk());
 
@@ -724,13 +724,6 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
 				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':1,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[0,2],'page':1,'perPage':10,total:2,'totalPages':1}"));
-	}
-
-	@Test
-	void deleteDataNoDataSet() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.delete("/api/data")
-		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
-		       .andExpect(status().isOk());
 	}
 
 	private String wrapInQuotes(final String value) {

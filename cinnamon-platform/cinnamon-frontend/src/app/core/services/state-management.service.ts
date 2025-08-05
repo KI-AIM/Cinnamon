@@ -2,8 +2,11 @@ import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { NavigationEnd, Router } from "@angular/router";
 import { ProcessStatus } from "@core/enums/process-status";
+import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
+import { FileService } from "@features/data-upload/services/file.service";
 import { ExecutionStep, PipelineInformation } from "@shared/model/execution-step";
 import { Status } from "@shared/model/status";
+import { ConfigurationService } from "@shared/services/configuration.service";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { StatusService } from "@shared/services/status.service";
 import { UserService } from "@shared/services/user.service";
@@ -39,7 +42,10 @@ export class StateManagementService {
     private _pipelineSubscription: Subscription | null = null;
 
     constructor(
+        private readonly configurationService: ConfigurationService,
+        protected readonly dataSetInfoService: DataSetInfoService,
         private readonly errorHandlingService: ErrorHandlingService,
+        private readonly fileService: FileService,
         private readonly http: HttpClient,
         private readonly router: Router,
         private readonly userService: UserService,
@@ -271,20 +277,36 @@ export class StateManagementService {
             return;
         }
 
-        const options = {
-            params: {target: target},
-        };
-
-        this.http.delete(environments.apiUrl + "/api/project/reset", options).pipe(
+        this.resetProject(target).pipe(
             switchMap(() => this.statusService.updateNextStep(unlock)),
         ).subscribe({
-            next: value => {
-                this.initPipeline();
-            },
             error: error => {
                 this.errorHandlingService.addError(error);
             },
         });
+    }
+
+    /**
+     * Resets the currently opened project to the given target
+     * If the target is null, the entire project will be reset.
+     *
+     * @param target The target.
+     */
+    public resetProject(target: string | null): Observable<void> {
+        target = target ?? "";
+
+        const options = {
+            params: {target: target},
+        };
+
+        return this.http.delete<void>(environments.apiUrl + "/api/project/reset", options).pipe(
+            tap(() => {
+                this.initPipeline();
+                this.configurationService.invalidateCache();
+                this.fileService.invalidateCache();
+                this.dataSetInfoService.invalidateCache();
+            }),
+        );
     }
 }
 

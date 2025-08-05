@@ -709,43 +709,20 @@ public class DatabaseService {
 	}
 
 	/**
-	 * Removes the DataSet and the transformation errors associated with the given project from the database
-	 * and deletes the corresponding table.
+	 * Removes the file, dataset and transformation errors of the original data associated with the given project
+	 * from the database and deletes the corresponding table.
 	 *
-	 * @param project The project of which the data set should be deleted.
-	 * @throws BadDataSetIdException               If no data set is associated with the given project.
-	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @param project The project of which the original data set should be deleted.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
 	 */
 	@Transactional
-	public void delete(final ProjectEntity project)
-			throws BadDataSetIdException, InternalDataSetPersistenceException {
+	public void deleteOriginalData(final ProjectEntity project) throws InternalDataSetPersistenceException {
 		project.getOriginalData().setFile(null);
 		project.getOriginalData().setHasHoldOut(false);
 		project.getOriginalData().setHoldOutPercentage(0.0f);
 		project.getOriginalData().setHoldOutSeed(0);
 
 		deleteDataSet(project.getOriginalData().getDataSet());
-
-		for (final var pipeline : project.getPipelines()) {
-			for (final var stage : pipeline.getStages()) {
-				for (final var job : stage.getProcesses()) {
-					job.setStatus(null);
-					job.setExternalProcessStatus(ProcessStatus.NOT_STARTED);
-					job.setServerInstance(null);
-					job.setScheduledTime(null);
-					job.setConfiguration(null);
-					job.getResultFiles().clear();
-
-					if (job instanceof DataProcessingEntity dataProcessing) {
-						deleteDataSet(dataProcessing.getDataSet());
-					}
-				}
-
-				stage.setStatus(ProcessStatus.NOT_STARTED);
-			}
-		}
-
-		project.getConfigurations().clear();
 
 		projectRepository.save(project);
 	}

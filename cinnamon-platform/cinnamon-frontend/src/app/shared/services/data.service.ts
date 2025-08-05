@@ -47,8 +47,4 @@ export class DataService {
     public confirmData(): Observable<void> {
         return this.httpClient.post<void>(this.baseUrl + "/confirm", {});
     }
-
-    public deleteData(): Observable<void> {
-        return this.httpClient.delete<void>(this.baseUrl);
-    }
 }

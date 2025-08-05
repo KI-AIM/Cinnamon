@@ -64,7 +64,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertEquals(0, dataTransformationErrorRepository.countByDataSetId((testProject).getId()),
 		             "No transformation errors should have been persisted!");
 
-		assertDoesNotThrow(() -> databaseService.delete(testProject));
+		assertDoesNotThrow(() -> databaseService.deleteOriginalData(testProject));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(dataSetEntity.isStoredData(), "Flag that the data is stored should be false!");
@@ -87,7 +87,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertEquals(2, dataTransformationErrorRepository.countByDataSetId(dataSetId),
 		             "Transformation errors have not been persisted!");
 
-		assertDoesNotThrow(() -> databaseService.delete(testProject));
+		assertDoesNotThrow(() -> databaseService.deleteOriginalData(testProject));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(dataSetEntity.isStoredData(), "Flag that the data is stored should be false!");
@@ -149,8 +149,6 @@ class DatabaseServiceTest extends DatabaseTest {
 		final DataSet export = assertDoesNotThrow(
 				() -> databaseService.exportDataSet(project, new ArrayList<>(), HoldOutSelector.ALL, DataSetSource.Original()));
 		assertEquals(transformationResult.getDataSet(), export, "Data sets do not match!");
-
-		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
@@ -186,8 +184,6 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertEquals(2, firstRow.getData().size(), "Number of columns does not match!");
 		assertEquals(DataType.INTEGER, firstRow.getData().get(0).getDataType(), "Type of first value does not match!");
 		assertEquals(DataType.BOOLEAN, firstRow.getData().get(1).getDataType(), "Type of second value does not match!");
-
-		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
@@ -246,8 +242,6 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final int numberRows = assertDoesNotThrow(() -> databaseService.countEntries(dataSet.getId()));
 		assertEquals(2, numberRows, "Number of entries does not match!");
-
-		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
@@ -261,8 +255,6 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final int numberInvalidRows = assertDoesNotThrow(() -> databaseService.countInvalidRows(dataSet.getId()));
 		assertEquals(1, numberInvalidRows, "Number of invalid rows does not match!");
-
-		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
@@ -276,8 +268,6 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final boolean exists = assertDoesNotThrow(() -> databaseService.existsTable(dataSet.getId()));
 		assertTrue(exists, "Table does not exist!");
-
-		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test

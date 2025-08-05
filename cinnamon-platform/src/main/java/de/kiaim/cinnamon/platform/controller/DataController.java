@@ -496,39 +496,11 @@ public class DataController {
 				page, perPage, request);
 	}
 
-	@Operation(summary = "Deletes the data set from the internal data base.",
-	           description = "Deletes the data set from the internal data base.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200",
-			             description = "Successfully deleted the data set.",
-			             content = @Content),
-			@ApiResponse(responseCode = "400",
-			             description = "The user has no stored data set.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
-			@ApiResponse(responseCode = "500",
-			             description = "An internal error occurred.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))})
-	})
-	@DeleteMapping(value = "",
-	               produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ResponseEntity<Object> deleteData(
-			@AuthenticationPrincipal UserEntity user
-	) throws ApiException {
-		return handleRequest(RequestType.DELETE, null, null, null, user);
-	}
-
 	/**
 	 * Handles a request of the given type.
 	 * For each RequestType, different attributes must not be null:
 	 * <ul>
 	 *     <li>{@link RequestType#ESTIMATE}: </li>
-	 *     <li>{@link RequestType#DELETE}: requestUser</li>
 	 *     <li>{@link RequestType#INFO}: requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_CONFIG}: requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_DATA}: loadDataRequest, requestUser, stepName</li>
@@ -588,10 +560,6 @@ public class DataController {
 					                                         "Estimation created an invalid configuration!", e);
 				}
 			}
-			case DELETE -> {
-				databaseService.delete(projectEntity);
-				result = null;
-			}
 			case INFO -> {
 				result = databaseService.getInfo(projectEntity, dataSetSource);
 			}
@@ -646,7 +614,6 @@ public class DataController {
 	private enum RequestType {
 		CONFIRM_DATE_SET,
 		ESTIMATE,
-		DELETE,
 		INFO,
 		LOAD_CONFIG,
 		LOAD_DATA,

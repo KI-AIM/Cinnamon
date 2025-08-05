@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.service;
 
-import de.kiaim.cinnamon.platform.exception.BadDataSetIdException;
+import de.kiaim.cinnamon.platform.exception.BadStateException;
 import de.kiaim.cinnamon.platform.exception.BadUserConfirmationException;
 import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
@@ -76,14 +76,27 @@ public class UserService implements UserDetailsService {
 		}
 	}
 
+	/**
+	 * Deletes the given user.
+	 *
+	 * @param user The user.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 */
 	@Transactional
-	public void deleteUser(final UserEntity user) throws InternalDataSetPersistenceException, BadDataSetIdException {
+	public void deleteUser(final UserEntity user) throws BadStateException, InternalDataSetPersistenceException {
 		projectService.deleteProject(user);
 		userRepository.delete(user);
 	}
 
+	/**
+	 * Deletes all users.
+	 *
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 */
 	@Transactional
-	public void deleteAllUsers() throws InternalDataSetPersistenceException, BadDataSetIdException {
+	public void deleteAllUsers() throws BadStateException, InternalDataSetPersistenceException {
 		final var users = userRepository.findAll();
 		for (final var user : users) {
 			deleteUser(user);

@@ -1,11 +1,8 @@
 package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
-import de.kiaim.cinnamon.platform.exception.BadDataSetIdException;
-import de.kiaim.cinnamon.platform.exception.BadUserConfirmationException;
-import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
-import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -99,6 +96,12 @@ public class UserController {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully deleted the user.",
 			             content = @Content),
+			@ApiResponse(responseCode = "400",
+			             description = "If the user has a project with a running process.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "403",
 			             description = "The credentials do not match the authenticated user.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -117,7 +120,7 @@ public class UserController {
 	public void delete(
 			@ParameterObject @Valid final ConfirmUserRequest confirmUserRequest,
 			@AuthenticationPrincipal final UserEntity user)
-			throws BadDataSetIdException, BadUserConfirmationException, InternalDataSetPersistenceException {
+			throws BadDataSetIdException, BadStateException, BadUserConfirmationException, InternalDataSetPersistenceException {
 		userService.confirmUser(confirmUserRequest, user);
 		userService.deleteUser(user);
 	}

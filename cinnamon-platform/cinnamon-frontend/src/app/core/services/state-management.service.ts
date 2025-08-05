@@ -106,7 +106,7 @@ export class StateManagementService {
             map(value =>{
                 const reasons: LockedReason[] = [];
                 if (value.currentStep != null) {
-                    if (value.currentStep.enum <= Steps.VALIDATION &&
+                    if (StepConfiguration[value.currentStep.enum].index <= StepConfiguration[Steps.VALIDATION].index &&
                         this.statusService.isStepCompleted(value.currentStep.lockedAfter)) {
                         reasons.push(LockedReason.STEP_CONFIRMED);
                     }
@@ -257,12 +257,14 @@ export class StateManagementService {
      * @param unlock The step to unlock.
      */
     public unlockStep(unlock: Steps): void {
+        const index = StepConfiguration[unlock].index;
+
         let target;
-        if (unlock <= Steps.VALIDATION) {
+        if (index <= StepConfiguration[Steps.VALIDATION].index) {
             target = "original";
-        } else if (unlock <= Steps.EXECUTION) {
+        } else if (index <= StepConfiguration[Steps.EXECUTION].index) {
             target = "pipeline.execution";
-        } else if (unlock <= Steps.EVALUATION) {
+        } else if (index <= StepConfiguration[Steps.EVALUATION].index) {
             target = "pipeline.evaluation";
         } else {
             // Nothing to do

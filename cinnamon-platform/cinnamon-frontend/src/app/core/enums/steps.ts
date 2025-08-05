@@ -1,14 +1,14 @@
 export enum Steps {
-	WELCOME,
-	UPLOAD,
-	DATA_CONFIG,
-	VALIDATION,
-	ANONYMIZATION,
-    SYNTHETIZATION,
-    EXECUTION,
-    TECHNICAL_EVALUATION,
-    RISK_EVALUATION,
-    EVALUATION,
+    WELCOME = "WELCOME",
+    UPLOAD = "UPLOAD",
+    DATA_CONFIG = "DATA_CONFIG",
+    VALIDATION = "VALIDATION",
+    ANONYMIZATION = "ANONYMIZATION",
+    SYNTHETIZATION = "SYNTHETIZATION",
+    EXECUTION = "EXECUTION",
+    TECHNICAL_EVALUATION = "TECHNICAL_EVALUATION",
+    RISK_EVALUATION = "RISK_EVALUATION",
+    EVALUATION = "EVALUATION",
 }
 
 export interface StepDefinition {
@@ -22,7 +22,7 @@ export interface StepDefinition {
     stageName?: string;
 }
 
-export const StepConfiguration: Record<string, StepDefinition> = {
+export const StepConfiguration: Record<Steps, StepDefinition> = {
 	WELCOME: {
 		path: "/start",
 		id: "navLinkStart",
@@ -116,12 +116,3 @@ export const StepConfiguration: Record<string, StepDefinition> = {
         stageName: "evaluation",
     },
 };
-
-export function getStepDefinition(step: Steps): StepDefinition | null {
-    for (const def of Object.values(StepConfiguration)) {
-        if (def.enum === step) {
-            return def;
-        }
-    }
-    return null;
-}

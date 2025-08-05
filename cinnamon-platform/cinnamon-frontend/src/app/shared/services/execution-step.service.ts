@@ -7,7 +7,7 @@ import { ProcessStatus } from "../../core/enums/process-status";
 import { catchError, map, Observable, of, tap } from "rxjs";
 import { plainToInstance } from "class-transformer";
 import { StatusService } from "./status.service";
-import { getStepDefinition, Steps } from "../../core/enums/steps";
+import { StepConfiguration, Steps } from "../../core/enums/steps";
 import { ErrorHandlingService } from "./error-handling.service";
 
 @Injectable({
@@ -141,7 +141,7 @@ export abstract class ExecutionStepService {
     protected abstract getStageName2(): string;
 
     protected getStageName(): string {
-        return getStepDefinition(this.getStep())!.stageName!;
+        return StepConfiguration[this.getStep()].stageName!;
     }
     /**
      * Corresponding step of the execution page.

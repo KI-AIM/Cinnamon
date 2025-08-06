@@ -262,7 +262,7 @@ export class StateManagementService {
      * Unlocks the given step by resetting subsequent steps.
      * @param unlock The step to unlock.
      */
-    public unlockStep(unlock: Steps): void {
+    public unlockStep(unlock: Steps): Observable<void> {
         const index = StepConfiguration[unlock].index;
 
         let target;
@@ -274,26 +274,8 @@ export class StateManagementService {
             target = "pipeline.evaluation";
         } else {
             // Nothing to do
-            return;
+            return of(undefined);
         }
-
-        this.resetProject(target).pipe(
-            switchMap(() => this.statusService.updateNextStep(unlock)),
-        ).subscribe({
-            error: error => {
-                this.errorHandlingService.addError(error);
-            },
-        });
-    }
-
-    /**
-     * Resets the currently opened project to the given target
-     * If the target is null, the entire project will be reset.
-     *
-     * @param target The target.
-     */
-    public resetProject(target: string | null): Observable<void> {
-        target = target ?? "";
 
         const options = {
             params: {target: target},
@@ -317,6 +299,9 @@ export interface LockedInformation {
 }
 
 export enum LockedReason {
+    /**
+     * The reason for locked data configuration because of a previous confirmation of the data.
+     */
     STEP_CONFIRMED = "STEP_CONFIRMED",
     PROCESS_RUNNING = "PROCESS_RUNNING",
     PREVIOUS_STAGE_NOT_FINISHED = "PREVIOUS_STAGE_NOT_FINISHED",

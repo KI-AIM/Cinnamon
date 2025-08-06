@@ -111,7 +111,7 @@ export class StateManagementService {
             }),
             map(value =>{
                 const reasons: LockedReason[] = [];
-                if (value.currentStep != null) {
+                if (value.currentStep != null && value.currentStep.enum != Steps.WELCOME) {
                     if (StepConfiguration[value.currentStep.enum].index <= StepConfiguration[Steps.VALIDATION].index &&
                         this.statusService.isStepCompleted(value.currentStep.lockedAfter)) {
                         reasons.push(LockedReason.STEP_CONFIRMED);

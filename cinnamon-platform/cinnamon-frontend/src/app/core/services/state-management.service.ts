@@ -7,7 +7,6 @@ import { FileService } from "@features/data-upload/services/file.service";
 import { ExecutionStep, PipelineInformation } from "@shared/model/execution-step";
 import { Status } from "@shared/model/status";
 import { ConfigurationService } from "@shared/services/configuration.service";
-import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { StatusService } from "@shared/services/status.service";
 import { UserService } from "@shared/services/user.service";
 import { plainToInstance } from "class-transformer";
@@ -44,7 +43,6 @@ export class StateManagementService {
     constructor(
         private readonly configurationService: ConfigurationService,
         protected readonly dataSetInfoService: DataSetInfoService,
-        private readonly errorHandlingService: ErrorHandlingService,
         private readonly fileService: FileService,
         private readonly http: HttpClient,
         private readonly router: Router,
@@ -292,17 +290,39 @@ export class StateManagementService {
     }
 }
 
+/**
+ * Information for displaying the info box about locked steps
+ */
 export interface LockedInformation {
+    /**
+     * If the current step is locked.
+     */
     isLocked: boolean;
+    /**
+     * Reasons for the state being locked.
+     */
     reasons: LockedReason[];
+    /**
+     * The step of the visited page.
+     * Value is null if the page is not part of a step.
+     */
     currentStep: StepDefinition | null;
 }
 
+/**
+ * Reasons for a step being locked.
+ */
 export enum LockedReason {
     /**
-     * The reason for locked data configuration because of a previous confirmation of the data.
+     * Locked data configuration because of a previous confirmation of the data.
      */
     STEP_CONFIRMED = "STEP_CONFIRMED",
+    /**
+     * Locked because of a running process.
+     */
     PROCESS_RUNNING = "PROCESS_RUNNING",
+    /**
+     * Locked because of an incomplete or outdated previous stage.
+     */
     PREVIOUS_STAGE_NOT_FINISHED = "PREVIOUS_STAGE_NOT_FINISHED",
 }

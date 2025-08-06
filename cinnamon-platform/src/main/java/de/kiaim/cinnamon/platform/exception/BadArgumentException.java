@@ -8,10 +8,14 @@ package de.kiaim.cinnamon.platform.exception;
 public class BadArgumentException extends BadRequestException {
 
 	/**
-	 * Exception code for invalid hold out percentage.
+	 * Exception code for invalid hold-out percentage.
 	 */
 	public static final String HOLD_OUT_PERCENTAGE = "1";
 
+	/**
+	 * Exception code for an invalid resource key.
+	 */
+	public static final String INVALID_RESOURCE_KEY = "2";
 
 	public BadArgumentException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);

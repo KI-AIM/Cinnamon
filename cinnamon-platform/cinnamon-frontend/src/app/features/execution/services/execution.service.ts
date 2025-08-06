@@ -20,10 +20,6 @@ export class ExecutionService extends ExecutionStepService {
         super(errorHandlingService, http, stateManagementService, statusService);
     }
 
-    protected override getStageName2(): string {
-        return "execution";
-    }
-
     protected override getStep(): Steps {
         return Steps.EXECUTION;
     }

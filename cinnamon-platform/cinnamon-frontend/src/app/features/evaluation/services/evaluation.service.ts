@@ -20,10 +20,6 @@ export class EvaluationService extends ExecutionStepService {
         super(errorHandlingService, http, stateManagementService, statusService);
     }
 
-    protected override getStageName2(): string {
-        return "evaluation";
-    }
-
     protected override getStep(): Steps {
         return Steps.EVALUATION;
     }

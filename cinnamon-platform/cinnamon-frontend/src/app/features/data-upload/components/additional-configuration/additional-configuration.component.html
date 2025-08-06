@@ -56,6 +56,6 @@
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close type="button" color="primary" (click)="cancel()">Cancel</button>
-        <button mat-raised-button mat-dialog-close type="button" color="primary">Confirm</button>
+        <button mat-raised-button mat-dialog-close type="button" color="primary" [disabled]="disabled">Confirm</button>
     </mat-dialog-actions>
 </ng-template>

@@ -12,28 +12,38 @@
         <div class="page-content">
             <!-- Info for locked step -->
             <ng-container *ngIf="locked$ | async as locked">
-                <div style="position: sticky; top: 0; z-index: 10">
-                    <app-info-card *ngIf="locked.isLocked" typeClass="card-warn">
-                        <div *ngIf="locked.reasons.includes(LockedReason.STEP_CONFIRMED)">
-                            The data configuration is locked as subsequent steps depend on it.
-                            In order to modify the data configuration, you have to reset the subsequent steps first.
-                        </div>
-                        <div *ngIf="locked.reasons.includes(LockedReason.PROCESS_RUNNING)">
-                            This step is locked because a Process is currently running.
-                            You have to wait for it to finish or cancel the process before you can modify this step.
-                        </div>
-                        <div *ngIf="locked.reasons.includes(LockedReason.PREVIOUS_STAGE_NOT_FINISHED)">
-                            This step is locked because the previous stage is not finished.
-                        </div>
-                        <div *ngIf="locked.reasons.includes(LockedReason.STEP_CONFIRMED)">
-                            <button mat-raised-button color="warn"
-                                    [disabled]="locked.reasons.includes(LockedReason.PROCESS_RUNNING)"
-                                    (click)="stateManagementService.unlockStep(locked.currentStep!.enum)">
-                                Unlock data configuration and delete all results
-                            </button>
-                        </div>
-                    </app-info-card>
-                </div>
+                <app-info-card *ngIf="locked.isLocked" typeClass="card-warn">
+                    <div *ngIf="locked.reasons.includes(LockedReason.STEP_CONFIRMED)">
+                        The data import is locked as subsequent steps depend on it.
+                        In order to modify the data configuration, you have to reset the subsequent steps first.
+
+                        <button mat-raised-button color="warn"
+                                [disabled]="locked.reasons.includes(LockedReason.PROCESS_RUNNING)"
+                                (click)="openDeleteDialog(deleteDialog);">
+                            Delete all results and unlock the data import
+                        </button>
+                    </div>
+                    <div *ngIf="locked.reasons.includes(LockedReason.PROCESS_RUNNING)">
+                        This step is locked because a Process is currently running.
+                        You have to wait for it to finish or cancel the process before you can modify this step.
+                    </div>
+                    <div *ngIf="locked.reasons.includes(LockedReason.PREVIOUS_STAGE_NOT_FINISHED)">
+                        This step is locked because the previous stage is not finished.
+                    </div>
+                </app-info-card>
+
+                <ng-template #deleteDialog>
+                    <mat-dialog-content class="mat-typography">
+                        <h1>Delete Results</h1>
+                        <div>Do you really want to delete all results?</div>
+                    </mat-dialog-content>
+                    <mat-dialog-actions align="end">
+                        <button mat-raised-button mat-dialog-close color="primary">Keep Results</button>
+                        <button mat-raised-button mat-dialog-close color="warn"
+                                (click)="deleteData(locked.currentStep!.enum)">Delete Results
+                        </button>
+                    </mat-dialog-actions>
+                </ng-template>
             </ng-container>
 
             <!-- Error -->

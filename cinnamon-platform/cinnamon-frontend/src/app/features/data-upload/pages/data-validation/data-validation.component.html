@@ -53,18 +53,13 @@
                 If you noticed any issues in the imported data or the statistics, you can go back to previous steps and
                 change the dataset or the configuration.
                 Otherwise you can continue with the current data, which will lock the import process.
+                An info box on the top of the page will inform you about this.
                 If you want to change anything prior to this point, you will have to delete the dataset by clicking the
-                "Reset project and delete all data" button on the bottom of this page.
+                "Unlock data configuration and delete all results" button in the info box.
                 Be aware, that this will also delete all data and results of the following steps.
             </app-workstep-item>
 
         </app-workstep-list>
-
-        <button mat-raised-button color="warn" class="ms-3" (click)="openDeleteDialog(deleteDialog)"
-                [disabled]="!pageData.locked.isLocked">
-            <mat-icon>delete</mat-icon>
-            Reset project and delete all data
-        </button>
 
     </ng-container>
     <ng-container *ngIf="pageData.status.mode === Mode.EXPERT">
@@ -76,18 +71,11 @@
                 results of the following steps.
             </div>
 
-            <div class="d-flex align-items-center justify-content-start my-2">
-                <button mat-raised-button color="primary" class="me-2" (click)="confirmData()"
-                        [disabled]="pageData.locked.isLocked">
-                    Continue
-                    <mat-icon>arrow_forward</mat-icon>
-                </button>
-                <button mat-raised-button color="warn" (click)="openDeleteDialog(deleteDialog)"
-                        [disabled]="!pageData.locked.isLocked">
-                    <mat-icon>delete</mat-icon>
-                    Reset project and delete all data
-                </button>
-            </div>
+            <button mat-raised-button color="primary" class="my-2" (click)="confirmData()"
+                    [disabled]="pageData.locked.isLocked">
+                Continue
+                <mat-icon>arrow_forward</mat-icon>
+            </button>
         </app-workstep-box>
 
         <app-workstep-box title="Data Upload Result" toggleable>
@@ -157,19 +145,3 @@
             </table>
         </ng-template>
     </ng-template>
-
-    <ng-template #deleteDialog>
-        <mat-dialog-content class="mat-typography">
-            <h1>Delete Data</h1>
-            <div>
-                Do you really want to delete the data.
-                This will also delete the data and result of all following steps.
-            </div>
-        </mat-dialog-content>
-        <mat-dialog-actions align="end">
-            <button mat-raised-button mat-dialog-close color="primary">Keep Data</button>
-            <button mat-raised-button mat-dialog-close color="warn" (click)="deleteData()">Delete Data</button>
-        </mat-dialog-actions>
-    </ng-template>
-
-</ng-container>

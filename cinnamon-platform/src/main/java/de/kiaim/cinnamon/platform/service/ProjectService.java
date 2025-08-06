@@ -214,7 +214,7 @@ public class ProjectService {
 	 */
 	@Transactional
 	public void resetProject(final ProjectEntity project, @Nullable final String target)
-			throws BadStateException, BadStepNameException, InternalDataSetPersistenceException {
+			throws BadStateException, BadStepNameException, InternalDataSetPersistenceException, BadArgumentException {
 
 		if (target == null || target.isBlank()) {
 			resetEntireProject(project);
@@ -230,9 +230,13 @@ public class ProjectService {
 				}
 
 				project.getConfigurations().clear();
-			} else if (parts[1].equals("pipeline")) {
+			} else if (parts[0].equals("pipeline")) {
 				final Stage stage = stepService.getStageConfiguration(parts[1]);
 				processService.deleteStage(project, stage);
+			} else {
+				throw new BadArgumentException(BadArgumentException.INVALID_RESOURCE_KEY,
+				                               "The first part of the resource selector '" + target +
+				                               "' is not a valid key!");
 			}
 		}
 

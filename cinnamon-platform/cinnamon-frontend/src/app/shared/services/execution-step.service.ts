@@ -134,15 +134,13 @@ export abstract class ExecutionStepService {
         }
     }
 
-
     /**
-     * Name of the step. Must be equal to the name of the step in the backend.
+     * Name of the stage displayed in the step defined by {@link #getStep()}.
      */
-    protected abstract getStageName2(): string;
-
     protected getStageName(): string {
         return StepConfiguration[this.getStep()].stageName!;
     }
+
     /**
      * Corresponding step of the execution page.
      * @protected

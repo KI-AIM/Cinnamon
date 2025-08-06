@@ -29,7 +29,7 @@ export class AppComponent implements OnInit {
         protected readonly errorHandlingService: ErrorHandlingService,
         private readonly dialog: MatDialog,
         // StateManagementService is injected so it gets initialized
-        protected readonly stateManagementService: StateManagementService,
+        private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
         private titleService: TitleService,
     ) {

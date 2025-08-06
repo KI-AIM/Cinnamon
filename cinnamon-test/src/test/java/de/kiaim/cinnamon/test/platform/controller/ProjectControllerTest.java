@@ -55,6 +55,15 @@ public class ProjectControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void resetInvalidTarget() throws Exception {
+		mockMvc.perform(delete("/api/project/reset")
+				                .queryParam("target", "INVALID.RESOURCE"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_11_2"))
+		       .andExpect(errorMessage("The first part of the resource selector 'INVALID.RESOURCE' is not a valid key!"));
+	}
+
+	@Test
 	public void getProjectConfiguration() throws Exception {
 		mockMvc.perform(get("/api/project/configuration"))
 		       .andExpect(status().isOk())

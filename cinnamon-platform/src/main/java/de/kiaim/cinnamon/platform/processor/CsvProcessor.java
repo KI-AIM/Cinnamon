@@ -6,10 +6,13 @@ import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
+import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -29,6 +32,23 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	@Override
 	public FileType getSupportedDataType() {
 		return FileType.CSV;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Returns the default CSV file configuration (see {@link CsvFileConfiguration} without looking at the data.
+	 */
+	@Override
+	public FileConfigurationEstimation estimateFileConfiguration(final InputStream data) {
+		// TODO implement estimation
+		final var csvFileConfiguration = new CsvFileConfiguration();
+		final var fileConfiguration =  new FileConfiguration();
+
+		fileConfiguration.setFileType(FileType.CSV);
+		fileConfiguration.setCsvFileConfiguration(csvFileConfiguration);
+
+		return new FileConfigurationEstimation(fileConfiguration);
 	}
 
 	/**

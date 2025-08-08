@@ -1,4 +1,8 @@
-import { FhirFileConfiguration, FileConfiguration } from "../../../shared/model/file-configuration";
+import {
+    FhirFileConfiguration,
+    FileConfiguration,
+    FileConfigurationEstimation
+} from "../../../shared/model/file-configuration";
 import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "../../../shared/model/csv-file-configuration";
 import { XlsxFileConfiguration } from "src/app/shared/model/xlsx-file-configuration";
 import { HttpClient } from "@angular/common/http";
@@ -68,5 +72,18 @@ export class FileService {
         return this.httpClient.post<FileInformation>(this.baseUrl, formData).pipe(tap(value => {
             this._fileInfo = value;
         }));
+    }
+
+    /**
+     * Estimates the file configuration for the given file.
+     *
+     * @param file The file
+     * @return The estimation result.
+     */
+    public estimateFileConfiguration(file: File): Observable<FileConfigurationEstimation> {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        return this.httpClient.post<FileConfigurationEstimation>(this.baseUrl + "/estimation", formData);
     }
 }

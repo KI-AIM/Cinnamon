@@ -28,3 +28,19 @@ export class FhirFileConfiguration {
     ) {
     }
 }
+
+/**
+ * Result of the file configuration estimation.
+ */
+export class FileConfigurationEstimation {
+    /**
+     * The estimated file configuration.
+     */
+    estimation: FileConfiguration;
+
+    /**
+     * If the estimated file type is FHIR, contains all resource types in the given FHIR bundle.
+     * Otherwise, the value is null.
+     */
+    fhirResourceTypes: string[] | null;
+}

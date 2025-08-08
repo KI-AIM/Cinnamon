@@ -35,6 +35,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     protected configurationFile: File | null = null;
     protected dataFile: File | null = null;
     public fileConfiguration: FileConfiguration;
+    protected fhirResourceTypes: string[] = [];
+    protected loadingEstimation: boolean = false;
 
     protected pageData$: Observable<{
         appConfig: AppConfig;
@@ -119,17 +121,44 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     protected get isInvalid(): boolean {
         const stepCompleted = this.statusService.isStepCompleted(Steps.UPLOAD);
         if (stepCompleted) {
-            return this.isDataFileInvalid && this.isConfigFileInvalid;
+            return (this.isDataFileInvalid || this.isFileConfigurationInvalid())  && this.isConfigFileInvalid;
         } else {
-            return this.isDataFileInvalid;
+            return this.isDataFileInvalid || this.isFileConfigurationInvalid();
         }
     }
 
-    protected onFileInput(files: FileList | null) {
+    /**
+     * Callback for file inputs.
+     * Estimates the file configuration for the new file.
+     *
+     * @param files File list from the input event.
+     * @protected
+     */
+    protected onFileInput(files: FileList | null): void {
         if (files) {
-            const fileExtension = this.getFileExtension(files[0])!;
-            this.dataFile = files[0];
-            this.setFileType(fileExtension);
+            const file = files[0];
+            this.dataFile = file;
+
+            this.loadingEstimation = true;
+            this.fileService.estimateFileConfiguration(file).subscribe({
+                next: (value) => {
+                    this.fileConfiguration = value.estimation;
+                    if (value.fhirResourceTypes != null) {
+                        this.fhirResourceTypes = value.fhirResourceTypes;
+                    }
+                },
+                error: (e) => {
+                    this.handleError(e, "Failed to estimate the file configuration");
+
+                    const fileExtension = this.getFileExtension(file);
+                    if (fileExtension != null) {
+                        this.setFileType(fileExtension);
+                    }
+                },
+                complete: () => {
+                    this.loadingEstimation = false;
+                },
+            });
         }
     }
 
@@ -275,5 +304,20 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     private handleError(err: any, message?: string) {
         this.loadingService.setLoadingStatus(false);
         this.errorHandlingService.addError(err, message);
+    }
+
+    /**
+     * Checks if the current file configuration {@link #fileConfiguration} is invalid.
+     * @return true if the file configuration is invalid.
+     * @private
+     */
+    private isFileConfigurationInvalid(): boolean {
+        if (this.fileConfiguration.fileType === FileType.FHIR) {
+            if (this.fileConfiguration.fhirFileConfiguration.resourceType == null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

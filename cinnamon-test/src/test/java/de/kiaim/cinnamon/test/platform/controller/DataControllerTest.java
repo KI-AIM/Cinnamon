@@ -79,6 +79,46 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(validationError("file", "Data must be present!"));
 	}
 
+	@Test
+	void postFileMissingFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
+	}
+
+	@Test
+	void postFileWrongFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		fileConfiguration.setCsvFileConfiguration(null);
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration", "CSV file configuration must be set for CSV files!"));
+	}
+
+	@Test
+	void postFileInvalidFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		fileConfiguration.getCsvFileConfiguration().setColumnSeparator(null);
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration.csvFileConfiguration.columnSeparator", "Column separator must be present"));
+	}
 
 	@Test
 	void estimateDatatypesMissingFileName() throws Exception {
@@ -106,18 +146,6 @@ class DataControllerTest extends ControllerTest {
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Missing file extension"));
-	}
-
-
-	@Test
-	void postFileMissingFileConfiguration() throws Exception {
-		MockMultipartFile file = ResourceHelper.loadCsvFile();
-
-		mockMvc.perform(multipart("/api/data/file")
-				                .file(file))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Request validation failed"))
-		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
 	}
 
 	@Test

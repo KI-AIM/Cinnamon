@@ -1,5 +1,6 @@
 import { NgModule, inject, provideAppInitializer } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatTooltip } from "@angular/material/tooltip";
 import { AdditionalConfigurationComponent } from "./components/additional-configuration/additional-configuration.component";
 import { AttributeConfigurationComponent } from "./components/attribute-configuration/attribute-configuration.component";
@@ -56,6 +57,7 @@ import { NgxEchartsModule } from "ngx-echarts";
         MatCheckboxModule,
         NgxEchartsModule,
         MatTooltip,
+        MatProgressSpinner,
     ],
 	exports: [
 		AdditionalConfigurationComponent,

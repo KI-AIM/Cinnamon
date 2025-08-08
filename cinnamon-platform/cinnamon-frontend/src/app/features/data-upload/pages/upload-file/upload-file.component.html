@@ -3,7 +3,7 @@
     <ng-container *ngIf="pageData.status.mode === Mode.STANDARD">
 
         <app-workstep-list confirmLabel="Confirm file and start configuration" [locked]="pageData.locked.isLocked"
-                           [invalid]="isInvalid"
+                           [invalid]="isInvalid || loadingEstimation"
                            [numberSteps]="2" resetSteps [step]="Steps.UPLOAD" (confirm)="uploadFile()">
 
             <app-workstep-item header="Select your dataset" [locked]="pageData.locked.isLocked"
@@ -34,7 +34,8 @@
             </div>
 
             <div class="mt-4">
-                <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="isInvalid">
+                <button mat-raised-button color="primary" (click)="uploadFile()"
+                        [disabled]="isInvalid || loadingEstimation">
                     Confirm file and start configuration
                 </button>
             </div>
@@ -60,10 +61,19 @@
                 <app-file-upload accept=".csv,.json,.xlsx" [disabled]="pageData.locked.isLocked"
                                  (input)="onFileInput($event)" class="flex-grow-1"></app-file-upload>
 
-                <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
-                   [hidden]="isDataFileInvalid" class="icon-enabled ms-1">
-                    <mat-icon fontIcon="settings"></mat-icon>
-                </a>
+                <div *ngIf="loadingEstimation" class="ms-1">
+                    <mat-spinner [diameter]="24"></mat-spinner>
+                </div>
+                <div *ngIf="!loadingEstimation" class="ms-1">
+                    <a *ngIf="!isDataFileInvalid" title="Additional Settings"
+                       (click)="openDialog(fileConfigurationDialog)" class="icon-enabled">
+                        <mat-icon fontIcon="settings"></mat-icon>
+                    </a>
+                    <span *ngIf="isDataFileInvalid" title="Additional Settings" class="icon-disabled">
+                        <mat-icon fontIcon="settings"></mat-icon>
+                    </span>
+                </div>
+
             </div>
         </div>
     </ng-template>
@@ -174,7 +184,11 @@
                 <div>
                     <mat-form-field>
                         <mat-label>FHIR Resource Type</mat-label>
-                        <input matInput [(ngModel)]="this.fileConfiguration.fhirFileConfiguration.resourceType">
+                        <mat-select [(ngModel)]="this.fileConfiguration.fhirFileConfiguration.resourceType" required>
+                            <mat-option *ngFor="let option of fhirResourceTypes" [value]="option">
+                                {{ option }}
+                            </mat-option>
+                        </mat-select>
                     </mat-form-field>
                 </div>
             </div>

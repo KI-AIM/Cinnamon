@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
+import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
@@ -20,6 +21,15 @@ public interface DataProcessor {
 	 * @return The FileType.
 	 */
 	FileType getSupportedDataType();
+
+	/**
+	 * Estimates the file configuration based on the file's content.
+	 *
+	 * @param data The file content
+	 * @return The estimated file configuration.
+	 * @throws InternalIOException If reading the data failed.
+	 */
+	FileConfigurationEstimation estimateFileConfiguration(InputStream data) throws InternalIOException;
 
 	/**
 	 * Returns the number of columns in the given data.

@@ -19,6 +19,20 @@ public class FhirProcessorTest extends ContextRequiredTest {
 	@Autowired private FhirProcessor fhirProcessor;
 
 	@Test
+	public void estimateFileConfiguration() throws IOException {
+		var bundle = ResourceHelper.loadFhirBundleAsString();
+
+		var estimation = assertDoesNotThrow(() ->
+			fhirProcessor.estimateFileConfiguration(new ByteArrayInputStream(bundle.getBytes()))
+		);
+
+		assertNotNull(estimation.getFhirResourceTypes());
+		assertEquals(2, estimation.getFhirResourceTypes().size());
+		assertTrue(estimation.getFhirResourceTypes().contains("Patient"));
+		assertTrue(estimation.getFhirResourceTypes().contains("Observation"));
+	}
+
+	@Test
 	public void read() throws IOException {
 		var bundle = ResourceHelper.loadFhirBundleAsString();
 

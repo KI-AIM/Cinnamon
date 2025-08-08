@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.platform.model.file.FhirFileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.lang.Nullable;
@@ -21,6 +22,7 @@ public class FhirFileConfigurationEntity extends FileConfigurationEntity {
 	/**
 	 * The resource type to export from the bundle.
 	 */
+	@NotBlank(message = "Resource type must not be blank.")
 	private String resourceType;
 
 	/**

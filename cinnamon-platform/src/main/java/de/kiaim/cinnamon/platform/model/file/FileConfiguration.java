@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model.file;
 
+import de.kiaim.cinnamon.platform.model.validation.FileConfigurationSet;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Schema(description = "Metadata describing the type of the uploaded data.")
+@FileConfigurationSet
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,11 +22,11 @@ public class FileConfiguration {
 	private FileType fileType;
 
 	@Schema(description = "Configurations specific for CSV files.")
-	@NotNull(message = "CSV file configuration must be present")
 	@Valid
 	private CsvFileConfiguration csvFileConfiguration;
 
 	@Schema(description = "Configuration specific for XLSX files")
+	@Valid
 	private XlsxFileConfiguration xlsxFileConfiguration;
 
 	/**
@@ -32,5 +34,6 @@ public class FileConfiguration {
 	 * Must be set if {@link #fileType} is set to {@link FileType#FHIR}.
 	 */
 	@Schema(description = "Configuration specific for FHIR bundles.")
+	@Valid
 	private FhirFileConfiguration fhirFileConfiguration;
 }

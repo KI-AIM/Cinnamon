@@ -5,11 +5,15 @@ import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
+import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.platform.model.file.FhirFileConfiguration;
+import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
 import de.unimuenster.imi.fhir.columns_parser.Column;
 import de.unimuenster.imi.fhir.transform.BundleTransformer;
@@ -22,7 +26,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Class for processing FHIR bundles.
@@ -45,6 +51,33 @@ public class FhirProcessor implements DataProcessor {
 	@Override
 	public FileType getSupportedDataType() {
 		return FileType.FHIR;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public FileConfigurationEstimation estimateFileConfiguration(final InputStream data) throws InternalIOException {
+		final String fhirContent;
+		try {
+			fhirContent = new String(data.readAllBytes(), StandardCharsets.UTF_8);
+		} catch (final IOException e) {
+			throw new InternalIOException(InternalIOException.FHIR_READING,
+			                              "Failed to read the input stream while estimating the FHIR file configuration",
+			                              e);
+		}
+
+		final FhirContext fhirContext = FhirContext.forR4();
+		final BundleTransformer bundleTransformer = new BundleTransformer(fhirContext);
+		final Set<String> resourceTypes = bundleTransformer.getResourceTypesInBundle(fhirContent);
+
+		final var fhirFileConfiguration = new FhirFileConfiguration();
+		final var fileConfiguration = new FileConfiguration();
+
+		fileConfiguration.setFileType(FileType.FHIR);
+		fileConfiguration.setFhirFileConfiguration(fhirFileConfiguration);
+
+		return new FileConfigurationEstimation(fileConfiguration, resourceTypes);
 	}
 
 	/**

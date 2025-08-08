@@ -170,6 +170,14 @@
                     </mat-checkbox>
                 </div>
             </div>
+            <div *ngIf="this.fileConfiguration.fileType === FileType.FHIR">
+                <div>
+                    <mat-form-field>
+                        <mat-label>FHIR Resource Type</mat-label>
+                        <input matInput [(ngModel)]="this.fileConfiguration.fhirFileConfiguration.resourceType">
+                    </mat-form-field>
+                </div>
+            </div>
         </mat-dialog-content>
         <mat-dialog-actions align="end">
             <button mat-raised-button mat-dialog-close color="primary">Close</button>

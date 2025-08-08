@@ -88,14 +88,14 @@
 		</dependency>
 
 		<dependency>
-		  <groupId>de.unimuenster.imi.fhir.columns_parser</groupId>
+		  <groupId>de.unimuenster.imi.fhir</groupId>
 		  <artifactId>columns-parser-jvm</artifactId>
-		  <version>1.8.0-DEV2</version>
+		  <version>1.8.0-DEV4</version>
 		</dependency>
 		<dependency>
-		  <groupId>de.unimuenster.imi.fhir.transform</groupId>
+		  <groupId>de.unimuenster.imi.fhir</groupId>
 		  <artifactId>transform-fhir</artifactId>
-		  <version>1.8.0-DEV2</version>
+		  <version>1.8.0-DEV4</version>
 		</dependency>
 
 		<dependency>

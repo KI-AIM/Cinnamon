@@ -120,7 +120,7 @@ public class DatabaseService {
 
 		final FileConfigurationEntity fileConfigurationEntity = switch (fileConfiguration.getFileType()) {
 			case CSV -> new CsvFileConfigurationEntity(fileConfiguration.getCsvFileConfiguration());
-			case FHIR -> new FhirFileConfigurationEntity();
+			case FHIR -> new FhirFileConfigurationEntity(fileConfiguration.getFhirFileConfiguration());
 			case XLSX -> new XlsxFileConfigurationEntity(fileConfiguration.getXlsxFileConfiguration());
 		};
 

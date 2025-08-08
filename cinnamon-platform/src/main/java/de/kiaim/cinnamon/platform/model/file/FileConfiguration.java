@@ -26,4 +26,11 @@ public class FileConfiguration {
 
 	@Schema(description = "Configuration specific for XLSX files")
 	private XlsxFileConfiguration xlsxFileConfiguration;
+
+	/**
+	 * Configuration specific for FHIR bundles.
+	 * Must be set if {@link #fileType} is set to {@link FileType#FHIR}.
+	 */
+	@Schema(description = "Configuration specific for FHIR bundles.")
+	private FhirFileConfiguration fhirFileConfiguration;
 }

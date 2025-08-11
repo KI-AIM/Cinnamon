@@ -12,12 +12,12 @@
                            [invalid]="isInvalid" [numberSteps]="2" [step]="Steps.DATA_CONFIG"
                            (confirm)="confirmConfiguration()">
 
-            <app-workstep-item title="Configure the attributes" [locked]="data.locked.isLocked"
+            <app-workstep-item header="Configure the attributes" [locked]="data.locked.isLocked"
                                [invalid]="attributeConfigurationform.invalid" [stepIndex]="0">
                 <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
             </app-workstep-item>
 
-            <app-workstep-item title="Configure the dataset" [locked]="data.locked.isLocked"
+            <app-workstep-item header="Configure the dataset" [locked]="data.locked.isLocked"
                                [invalid]="isDataSetConfigurationFormInvalid" [stepIndex]="1">
                 <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
             </app-workstep-item>

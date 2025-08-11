@@ -4,7 +4,7 @@
         <app-workstep-list confirmLabel="Continue with the current dataset and data configuration"
                            [locked]="pageData.locked.isLocked" [numberSteps]="3" [step]="Steps.VALIDATION"
                            (confirm)="confirmData()">
-            <app-workstep-item title="View the imported dataset" [locked]="pageData.locked.isLocked" [stepIndex]="0">
+            <app-workstep-item header="View the imported dataset" [locked]="pageData.locked.isLocked" [stepIndex]="0">
                 <p>
                     The transformation of the data for your configuration was successful. You can inspect the result
                     below. <br/><br/>
@@ -37,7 +37,7 @@
                 </div>
             </app-workstep-item>
 
-            <app-workstep-item title="View statistics" [locked]="pageData.locked.isLocked" [stepIndex]="1">
+            <app-workstep-item header="View statistics" [locked]="pageData.locked.isLocked" [stepIndex]="1">
                 The statistics give an overview of the configured metadata as well as basic metrics for each attribute.
                 You can confirm, that the value distribution has not changed significantly after the import, especially
                 if faulty rows were deleted or the holdout split was created.
@@ -48,7 +48,7 @@
                 </div>
             </app-workstep-item>
 
-            <app-workstep-item title="Confirm the dataset and data configuration" [locked]="pageData.locked.isLocked"
+            <app-workstep-item header="Confirm the dataset and data configuration" [locked]="pageData.locked.isLocked"
                                [stepIndex]="2">
                 If you noticed any issues in the imported data or the statistics, you can go back to previous steps and
                 change the dataset or the configuration.

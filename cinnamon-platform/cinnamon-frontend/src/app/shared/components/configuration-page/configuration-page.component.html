@@ -4,14 +4,14 @@
         <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="4"
                            [step]="step" [invalid]="oneEnabled && !formValid" (confirm)="submit()">
             <!-- Activation -->
-            <app-workstep-item title="Select steps to execute" [locked]="data.locked" [stepIndex]="0"
+            <app-workstep-item header="Select steps to execute" [locked]="data.locked" [stepIndex]="0"
                                [invalid]="!oneEnabled" altConfirm="Skip all steps" [altConfirmAll]="true"
                                [altConfirmValid]="!oneEnabled">
                 <ng-container *ngTemplateOutlet="processActivation"></ng-container>
             </app-workstep-item>
 
             <!-- Upload -->
-            <app-workstep-item title="Upload a configuration if available" [locked]="data.locked"
+            <app-workstep-item header="Upload a configuration if available" [locked]="data.locked"
                                [stepIndex]="1" altConfirm="Continue witout a configuraiton"
                                [invalid]="configFileCache === null" (confirm)="uploadCachedConfiguration()">
                 Upload an existing configuration:
@@ -20,7 +20,7 @@
             </app-workstep-item>
 
             <!-- Algorithm Selection -->
-            <app-workstep-item title="Select the algorithm to be executed" [locked]="data.locked"
+            <app-workstep-item header="Select the algorithm to be executed" [locked]="data.locked"
                                [stepIndex]="2" [invalid]="selectedAlgorithm == null">
                 <app-configuration-selection #selection [algorithms]="algorithms"
                                              [disabled]="data.locked || !oneEnabled"
@@ -30,7 +30,7 @@
             </app-workstep-item>
 
             <!-- Algorithm Configuration -->
-            <app-workstep-item title="Configure the selected algorithm" [locked]="data.locked"
+            <app-workstep-item header="Configure the selected algorithm" [locked]="data.locked"
                                [stepIndex]="3" [invalid]="!formValid">
                 <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                     <div class="ms-auto me-auto" style="width: fit-content">

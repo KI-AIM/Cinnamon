@@ -12,7 +12,7 @@ export class WorkstepItemComponent {
     @Input() public stepIndex!: number;
     @Input({transform: booleanAttribute}) public invalid: boolean = false;
     @Input({transform: booleanAttribute}) public locked: boolean = false;
-    @Input() public title!: string;
+    @Input() public header!: string;
 
     @Input() public altConfirm: string | null = null;
     @Input() public altConfirmValid: boolean = true;

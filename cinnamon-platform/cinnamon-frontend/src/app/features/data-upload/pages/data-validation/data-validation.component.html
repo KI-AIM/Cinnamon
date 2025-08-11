@@ -63,7 +63,7 @@
 
     </ng-container>
     <ng-container *ngIf="pageData.status.mode === Mode.EXPERT">
-        <app-workstep-box title="Import Summary">
+        <app-workstep-box header="Import Summary">
             <ng-container *ngTemplateOutlet="statisticsTable"></ng-container>
 
             <div class="mt-2">
@@ -78,7 +78,7 @@
             </button>
         </app-workstep-box>
 
-        <app-workstep-box title="Data Upload Result" toggleable>
+        <app-workstep-box header="Data Upload Result" toggleable>
             Lines that are marked in red contain at least one value that could not be transformed with your
             configuration.
             The faulty column is marked in a deeper tone of red.

@@ -1,5 +1,8 @@
 import { NgModule } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
+import { ExpansionPanelOverflowDirective } from "@shared/directives/expansion-panel-overflow.directive";
+import { ChartCorrelationComponent } from "src/app/shared/components/chart-correlation/chart-correlation.component";
+import { StatisticsSorterPipe } from "src/app/shared/pipes/statistics-sorter.pipe";
 import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
 import { MatTooltip } from "@angular/material/tooltip";
 import { WorkstepBoxComponent } from "@shared/components/workstep-box/workstep-box.component";
@@ -55,6 +58,7 @@ import { WorkstepTitleComponent } from "./components/workstep-title/workstep-tit
 import { FileUploadComponent } from "./components/file-upload/file-upload.component";
 import { WorkstepItemComponent } from './components/workstep-item/workstep-item.component';
 import { ProjectExportComponent } from './components/project-export/project-export.component';
+import { TooltipComponent } from './components/tooltip/tooltip.component';
 
 @NgModule({
     declarations: [
@@ -64,6 +68,7 @@ import { ProjectExportComponent } from './components/project-export/project-expo
         ChartComponent,
         ChartSelectComponent,
         ChartCalendarComponent,
+        ChartCorrelationComponent,
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationGroupComponent,
@@ -83,13 +88,16 @@ import { ProjectExportComponent } from './components/project-export/project-expo
         LoadingSpinnerComponent,
         MetricConfigurationComponent,
         MetricInfoTableComponent,
+        ProjectExportComponent,
         ProjectSettingsComponent,
+        TooltipComponent,
         WorkstepComponent,
         WorkstepBoxComponent,
         WorkstepItemComponent,
         WorkstepListComponent,
         WorkstepTitleComponent,
         // Directives
+        ExpansionPanelOverflowDirective,
         NoSpaceValidatorDirective,
         // Pipes
         ColumnConfigurationNameFilterPipe,
@@ -97,7 +105,6 @@ import { ProjectExportComponent } from './components/project-export/project-expo
         MetricFilterPipe,
         MetricSorterPipe,
         StatisticsFilterPipe,
-        ProjectExportComponent,
     ],
     imports: [
         CommonModule,
@@ -123,6 +130,7 @@ import { ProjectExportComponent } from './components/project-export/project-expo
         MatMenuModule,
         MatRadioModule,
         MatTooltip,
+        StatisticsSorterPipe,
     ],
     exports: [
         // Components
@@ -138,6 +146,7 @@ import { ProjectExportComponent } from './components/project-export/project-expo
         LoadingSpinnerComponent,
         MetricConfigurationComponent,
         MetricInfoTableComponent,
+        ProjectExportComponent,
         ProjectSettingsComponent,
         WorkstepComponent,
         WorkstepBoxComponent,
@@ -145,10 +154,11 @@ import { ProjectExportComponent } from './components/project-export/project-expo
         WorkstepListComponent,
         WorkstepTitleComponent,
         // Directives
+        ExpansionPanelOverflowDirective,
         NoSpaceValidatorDirective,
         // Pipes
         InstanceOfPipe,
-        ProjectExportComponent,
+        TooltipComponent,
     ],
 })
 export class SharedModule {}

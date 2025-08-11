@@ -45,10 +45,13 @@ html.cdk-global-scrollblock {
     background-color: whitesmoke !important;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    border-bottom: 1px solid black;
+    border-bottom: 1px rgba(0, 0, 0, 0.42) solid;
     display: flex;
     height: 32px;
-    margin-left: 25px;
+}
+
+.flat-mat-form-button:hover {
+    border-bottom-color: black;
 }
 
 input[type="file"]::file-selector-button {
@@ -141,6 +144,10 @@ input[type="file"]:disabled::-webkit-file-upload-button {
     vertical-align: middle;
 }
 
+.icon-warning .mat-icon {
+    color: @color-warning;
+}
+
 .mat-mdc-raised-button:disabled {
     background-color: @color-disabled !important;
     color: @color-unimportant !important;
@@ -164,4 +171,40 @@ input[type="file"]:disabled::-webkit-file-upload-button {
 .mat-expansion-panel .mat-expansion-panel-body,
 .mat-expansion-panel .mat-expansion-panel-header-title {
     color: @color-text;
+}
+
+// Overwrite overflow so the absolute positioning of custom tooltips is working
+.cinnamon-overflow-handling .mat-content, .mat-expansion-panel.cinnamon-overflow-handling {
+    overflow: visible !important;
+}
+
+// Overwrite height so long descriptions are shown completely
+.mat-expansion-panel-header {
+    height: fit-content !important;
+    min-height: var(--mat-expansion-header-collapsed-state-height);
+    transition: min-height 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.mat-expansion-panel-header.mat-expanded {
+    min-height: var(--mat-expansion-header-expanded-state-height);
+}
+.mat-expansion-panel-header-description {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.mat-expansion-panel.cinnamon-overflow-handling.cinnamon-overflow-hidden,
+.cinnamon-overflow-handling.cinnamon-overflow-hidden > .mat-expansion-panel-header > .mat-content {
+    overflow: hidden !important;
+}
+
+// Overwrite behavior of checked disabled checkboxes
+.mdc-checkbox:hover>.mdc-checkbox__native-control:disabled:checked~.mdc-checkbox__background {
+    background-color: var(--mdc-checkbox-disabled-selected-icon-color) !important;
+    border-color: transparent !important;
+}
+.mdc-checkbox:hover>.mdc-checkbox__native-control:disabled:checked+.mdc-checkbox__ripple {
+    opacity: 0 !important;
+}
+.mdc-checkbox:active>.mdc-checkbox__native-control:disabled:checked+.mdc-checkbox__ripple {
+    opacity: 0 !important;
 }

@@ -1,22 +1,22 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { ProcessStatus } from "@core/enums/process-status";
 import {
     catchError,
     distinctUntilKeyChanged,
     filter,
     Observable,
-    of,
-    ReplaySubject,
-    Subject,
+    of, ReplaySubject, Subject,
     switchMap,
     take,
     takeUntil,
     tap,
     timer
 } from "rxjs";
+import { SortDirection } from "src/app/shared/model/metric-table-data";
+import { StatisticsSortType } from "src/app/shared/pipes/statistics-sorter.pipe";
 import { StatisticsResponse } from "../../model/statistics";
-import { StatisticsService } from "../../services/statistics.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
-import { ProcessStatus } from "../../../core/enums/process-status";
+import { StatisticsService } from "../../services/statistics.service";
 
 @Component({
     selector: 'app-data-inspection',
@@ -34,6 +34,9 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
     protected readonly ProcessStatus = ProcessStatus;
 
     protected filterText: string;
+    protected statisticsSortDirection: SortDirection = 'asc';
+    protected statisticsSortType: StatisticsSortType = 'index';
+
     protected startedCalculation: boolean = false;
     protected statistics$: Observable<StatisticsResponse | null>;
 

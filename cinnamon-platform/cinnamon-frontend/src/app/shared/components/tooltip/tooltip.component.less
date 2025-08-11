@@ -1,0 +1,35 @@
+@import '../../../styles/colors';
+
+.cinnamon-tooltip-container {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    color: @color-primary-text-color;
+    transition: visibility 0s, opacity 0.2s ease-in-out;
+    opacity: 0;
+    visibility: hidden;
+    width: 300px;
+}
+
+.cinnamon-tooltip-container.shown {
+    opacity: 1;
+    visibility: visible;
+}
+
+.cinnamon-tooltip {
+    border-radius: 5px;
+    padding: 0.2rem 0.5rem;
+    width: fit-content;
+    background-color: @color-side;
+}
+
+.tooltip-arrow {
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent @color-side transparent transparent;
+}

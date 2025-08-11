@@ -10,6 +10,10 @@
             "skipTests": true,
             "standalone": false,
             "style": "less"
+        },
+        "@schematics/angular:directive": {
+          "skipTests": true,
+          "standalone": false
         }
       },
       "root": "",

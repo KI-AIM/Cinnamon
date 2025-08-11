@@ -4,7 +4,9 @@ import {
     TemplateRef,
 } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
-import { AttributeStatistics } from "../../model/statistics";
+import { areEnumValuesEqual } from "src/app/shared/helper/enum-helper";
+import { DataScale } from "src/app/shared/model/data-scale";
+import { AttributeStatistics, GraphType } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
 import { Observable } from "rxjs";
@@ -28,7 +30,7 @@ export class DataInspectionAttributeComponent implements OnInit {
     protected syntheticDisplayName: string;
     protected hasSynthetic: boolean = false;
 
-    protected graphType = 'histogram';
+    protected graphType: GraphType = 'histogram';
 
     protected metricConfig$: Observable<ProjectSettings>;
 
@@ -40,11 +42,16 @@ export class DataInspectionAttributeComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.graphType = this.isContinuous() ? 'histogram' : 'frequency';
         this.hasSynthetic = this.mainData == 'synthetic';
         this.originalDisplayName = this.statisticsService.getOriginalName(this.sourceDataset);
         this.syntheticDisplayName = this.statisticsService.getSyntheticName(this.processingSteps);
 
         this.metricConfig$ = this.projectConfigService.projectSettings$;
+    }
+
+    protected isContinuous(): boolean {
+        return this.attributeStatistics.plot.density != null;
     }
 
     protected openDetailsDialog(templateRef: TemplateRef<any>) {
@@ -53,6 +60,8 @@ export class DataInspectionAttributeComponent implements OnInit {
         });
     }
 
+    protected readonly areEnumValuesEqual = areEnumValuesEqual;
+    protected readonly DataScale = DataScale;
     protected readonly DataType = DataType;
     protected readonly MetricImportance = MetricImportance;
 }

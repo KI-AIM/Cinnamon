@@ -1,11 +1,20 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { environments } from "../../../environments/environment";
+import { Injectable } from '@angular/core';
 import { BehaviorSubject, map, Observable, of, shareReplay, switchMap, tap } from "rxjs";
-import {MetricImportance, MetricImportanceDefinition, MetricSettings, ProjectSettings} from "../model/project-settings";
+import { environments } from "../../../environments/environment";
 import { TechnicalEvaluationService } from "../../features/technical-evaluation/services/technical-evaluation.service";
-import { ConfigurationGroupDefinition, ConfigurationGroupDefinitions } from "../model/configuration-group-definition";
-import {AttributeStatistics, StatisticsValueTypes} from "../model/statistics";
+import {
+    ConfigurationGroupDefinition,
+    ConfigurationGroupDefinitions,
+    VisualizationType
+} from "../model/configuration-group-definition";
+import {
+    MetricImportance,
+    MetricImportanceDefinition,
+    MetricSettings,
+    ProjectSettings
+} from "../model/project-settings";
+import { AttributeStatistics, StatisticsValueTypes } from "../model/statistics";
 
 @Injectable({
     providedIn: 'root'
@@ -141,11 +150,12 @@ export class ProjectConfigurationService {
             this.createGroups(metricSettings, groupDefinition.configurations);
         }
         if (groupDefinition.options) {
-            Object.keys(groupDefinition.options).forEach(inputDefinition => {
-                metricSettings[inputDefinition] = MetricImportance.IMPORTANT;
+            Object.entries(groupDefinition.options).forEach(inputDefinition => {
+                metricSettings[inputDefinition[0]] = inputDefinition[1].visualization_type === VisualizationType.IMPORTANT_METRICS
+                    ? MetricImportance.IMPORTANT
+                    : MetricImportance.ADDITIONAL;
             });
         }
     }
 
 }
-

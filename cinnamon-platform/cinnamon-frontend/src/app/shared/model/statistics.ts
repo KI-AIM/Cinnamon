@@ -38,6 +38,9 @@ export class AttributeStatistics {
     @Transform(transformStatisticsValuesRecord, { toClassOnly: true })
     details: Record<string, StatisticsValueTypes>;
 
+    @Type(() => StatisticsDataOverview)
+    overview?: StatisticsDataOverview;
+
     @Type(() => PlotData)
     plot: PlotData;
 
@@ -54,6 +57,9 @@ export class PlotData {
 
     @Type(() => StatisticsData<HistogramPlotData>)
     frequency_plot?: StatisticsData<HistogramPlotData>;
+
+    @Type(() => StatisticsData<CorrelationPlotData>)
+    visualize_columnwise_correlations?: StatisticsData<CorrelationPlotData>;
 }
 
 export class StatisticsMetaData {
@@ -73,6 +79,32 @@ export class StatisticsValues extends StatisticsMetaData {
 export class StatisticsValuesNominal<T> extends StatisticsMetaData {
     @Type(() => StatisticsData<T>)
     values: StatisticsData<T>;
+}
+
+export class StatisticsDataOverview {
+    // Always present
+    calculate_columnwise_correlations: number;
+    calculate_columnwise_correlations_distance: number;
+    missing_values_count: number;
+    resemblance_score: { value: number, color_index: number };
+
+    // For numerical attributes
+    fifth_percentile?: number;
+    kolmogorov_smirnov?: number;
+    maximum?: number;
+    mean?: number;
+    median?: number;
+    minimum?: number;
+    ninety_fifth_percentile?: number;
+    q1?: number;
+    q3?: number;
+    standard_deviation?: number;
+    variance?: number;
+
+    // For categorical values
+    distinct_values?: number;
+    hellinger_distance?: number;
+    mode?: number;
 }
 
 export type StatisticsValueTypes = StatisticsValues | StatisticsValuesNominal<any>;
@@ -108,6 +140,13 @@ export class HistogramData {
     value: number;
     color_index: number;
     label: string;
+}
+
+export class CorrelationPlotData {
+    correlation_values: number[];
+    x_axis: string;
+    x_values: string[];
+    y_axis: string;
 }
 
 export class UtilityMetricData2 extends StatisticsMetaData {
@@ -147,6 +186,8 @@ export class UtilityStatistics {
 }
 
 export type UtilityMetricDataObject = { [key: string]: UtilityMetricData2 | UtilityMetricData3 };
+
+export type GraphType = 'correlation' | 'density' | 'frequency' | 'histogram' | 'heatmap';
 
 function transformStatisticsValuesRecord(params: TransformFnParams): Record<string, StatisticsValueTypes> {
     if (!params.value) {

@@ -1,14 +1,17 @@
 import {
     AfterViewInit,
-    Component, ComponentRef,
-    Input, OnChanges,
-    QueryList, SimpleChanges,
+    Component,
+    ComponentRef,
+    Input,
+    OnChanges,
+    QueryList,
+    SimpleChanges,
     ViewChild,
     ViewChildren,
     ViewContainerRef
 } from '@angular/core';
 import { AdditionalConfigurationGroup } from "@shared/interfaces/AdditionalConfigurationGroup";
-import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
+import { ConfigurationGroupDefinition, VisualizationType } from "../../model/configuration-group-definition";
 import { FormGroup } from "@angular/forms";
 import {ConfigurationInputComponent} from "../configuration-input/configuration-input.component";
 import { MatCheckbox, MatCheckboxChange } from "@angular/material/checkbox";
@@ -24,6 +27,7 @@ import { ConfigurationAdditionalConfigs } from "../../model/configuration-additi
     standalone: false
 })
 export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
+    protected readonly VisualizationType = VisualizationType;
 
     /**
      * Configurations displayed additionally to the given definition.
@@ -255,5 +259,4 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
             this.instances[i].instance.patchValue(obj[config.formGroupName]);
         });
     }
-
 }

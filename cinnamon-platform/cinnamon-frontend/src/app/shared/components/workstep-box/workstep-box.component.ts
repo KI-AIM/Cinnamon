@@ -13,15 +13,16 @@ import { booleanAttribute, Component, Input } from '@angular/core';
     standalone: false,
 })
 export class WorkstepBoxComponent {
-    /**
-     * If the workstep is invalid.
-     */
-    @Input({transform: booleanAttribute}) public invalid: boolean = false;
 
     /**
      * Title of the workstep.
      */
-    @Input() public title!: string;
+    @Input() public header!: string;
+
+    /**
+     * If the workstep is invalid.
+     */
+    @Input({transform: booleanAttribute}) public invalid: boolean = false;
 
     /**
      * If the box can be closed/opened.

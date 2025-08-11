@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { FormControl, FormGroup, Validators } from "@angular/forms";
 import {
     catchError,
     debounceTime,
@@ -10,16 +11,15 @@ import {
     switchMap,
     tap
 } from "rxjs";
-import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import {
     TechnicalEvaluationService
 } from "src/app/features/technical-evaluation/services/technical-evaluation.service";
-import { ProjectConfigurationService } from "../../services/project-configuration.service";
-import { FormControl, FormGroup, Validators } from "@angular/forms";
-import { ConfigurationGroupDefinition } from "../../model/configuration-group-definition";
+import { AlgorithmDefinition } from "../../model/algorithm-definition";
+import { ConfigurationGroupDefinition, VisualizationType } from "../../model/configuration-group-definition";
 import { MetricImportance, MetricImportanceData } from "../../model/project-settings";
-import { StatisticsService } from "../../services/statistics.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
+import { ProjectConfigurationService } from "../../services/project-configuration.service";
+import { StatisticsService } from "../../services/statistics.service";
 
 @Component({
     selector: 'app-metric-configuration',
@@ -130,6 +130,7 @@ export class MetricConfigurationComponent implements OnInit, OnDestroy {
         if (groupDefinition.options) {
             Object.keys(groupDefinition.options).forEach(inputDefinition => {
                 const validators = [Validators.required];
+                // The initial value does not as it will be overwritten after the for is created
                 group[inputDefinition] = new FormControl({
                     value: MetricImportance.IMPORTANT,
                     disabled: false

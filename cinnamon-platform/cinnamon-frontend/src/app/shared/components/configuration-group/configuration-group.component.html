@@ -6,7 +6,7 @@
 <mat-accordion>
     <ng-container *ngFor="let groupDefinition of group.configurations | keyvalue">
 
-        <mat-expansion-panel>
+        <mat-expansion-panel appExpansionPanelOverflow>
             <mat-expansion-panel-header>
                 <mat-panel-title [class.invalid-group]="formGroup.controls[groupDefinition.key].invalid">
                     {{ groupDefinition.value.display_name }}
@@ -24,16 +24,37 @@
     </ng-container>
     <ng-container *ngFor="let groupDefinition of group.options | keyvalue">
 
-        <mat-expansion-panel [class.prevent-click]="isGroupEmpty(groupDefinition.value)"
+        <mat-expansion-panel appExpansionPanelOverflow [class.prevent-click]="isGroupEmpty(groupDefinition.value)"
                              [hideToggle]="isGroupEmpty(groupDefinition.value)">
             <mat-expansion-panel-header>
 
                 <mat-panel-title [class.invalid-group]="formGroup.controls[groupDefinition.key].invalid">
-                    <mat-checkbox #optionCheckboxes [id]="'isActive' + groupDefinition.key" [disabled]="disabled"
-                                  [value]="groupDefinition.key" (change)="toggleActive($event);" [checked]="true"
-                                  (click)="$event.stopPropagation();" class="allow-click" color="primary">
-                    </mat-checkbox>
-                    {{ groupDefinition.value.display_name }}
+                    <div #optionCheckboxContainer class="position-relative">
+                        <mat-checkbox #optionCheckboxes [id]="'isActive' + groupDefinition.key"
+                                      [disabled]="disabled || groupDefinition.value.visualization_type === VisualizationType.IMPORTANT_METRICS"
+                                      [value]="groupDefinition.key" (change)="toggleActive($event);" [checked]="true"
+                                      (click)="$event.stopPropagation();" class="allow-click" color="primary">
+                        </mat-checkbox>
+                        <app-tooltip *ngIf="!disabled && groupDefinition.value.visualization_type === VisualizationType.IMPORTANT_METRICS"
+                                     [target]="optionCheckboxContainer" [gap]="-3">
+                            Essential metrics cannot be deactivated.
+                        </app-tooltip>
+                    </div>
+
+                    <span>
+                        {{ groupDefinition.value.display_name }}
+                    </span>
+
+                    <ng-container *ngIf="groupDefinition.value.disclaimer">
+                        <span #disclaimer class="icon-warning ms-2 position-relative">
+                            <mat-icon fontIcon="warning"></mat-icon>
+
+                            <app-tooltip [target]="disclaimer">
+                                {{ groupDefinition.value.disclaimer }}
+                            </app-tooltip>
+                        </span>
+                    </ng-container>
+
                 </mat-panel-title>
                 <mat-panel-description>
                     {{ groupDefinition.value.description }}
@@ -49,7 +70,7 @@
 
     <ng-container *ngIf="additionalConfigs">
         <ng-container *ngFor="let additionalConfig of additionalConfigs.configs">
-            <mat-expansion-panel>
+            <mat-expansion-panel appExpansionPanelOverflow>
                 <mat-expansion-panel-header>
                     <mat-panel-title
                         [class.invalid-group]="formGroup.controls[additionalConfig.formGroupName].invalid">

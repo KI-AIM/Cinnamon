@@ -12,6 +12,7 @@ import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
+import de.kiaim.cinnamon.platform.model.file.FhirFileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -102,7 +103,8 @@ class DataControllerTest extends ControllerTest {
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
-		       .andExpect(validationError("fileConfiguration", "CSV file configuration must be set for CSV files!"));
+		       .andExpect(validationError("fileConfiguration.csvFileConfiguration",
+		                                  "CSV file configuration must be set for CSV files!"));
 	}
 
 	@Test
@@ -117,7 +119,22 @@ class DataControllerTest extends ControllerTest {
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
-		       .andExpect(validationError("fileConfiguration.csvFileConfiguration.columnSeparator", "Column separator must be present"));
+		       .andExpect(validationError("fileConfiguration.csvFileConfiguration.columnSeparator",
+		                                  "Column separator must be present"));
+	}
+
+	@Test
+	void postFileOtherInvalidFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		fileConfiguration.setFhirFileConfiguration(new FhirFileConfiguration());
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
 	}
 
 	@Test

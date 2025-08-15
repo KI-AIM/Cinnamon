@@ -174,6 +174,7 @@ public class DatabaseService {
 	@Transactional
 	public void storeOriginalDataConfiguration(final DataConfiguration dataConfiguration, final ProjectEntity project)
 			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+		checkFile(project, dataConfiguration);
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 		doStoreOriginalDataConfiguration(project, dataConfiguration);
 	}
@@ -198,11 +199,16 @@ public class DatabaseService {
 	public Long storeOriginalTransformationResult(final TransformationResult transformationResult,
 	                                              ProjectEntity project)
 			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+		final DataSet dataSet = transformationResult.getDataSet();
+		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
+
+		// Test configuration
+		checkFile(project, dataConfiguration);
+
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 
 		// Store configuration
-		final DataSet dataSet = transformationResult.getDataSet();
 		DataSetEntity dataSetEntity = doStoreOriginalDataConfiguration(project, dataSet.getDataConfiguration());
 
 		// Store transformation errors
@@ -869,10 +875,7 @@ public class DatabaseService {
 	}
 
 	private DataSetEntity doStoreOriginalDataConfiguration(ProjectEntity project,
-	                                                       final DataConfiguration dataConfiguration)
-			throws BadDataConfigurationException, BadStateException, InternalIOException {
-		checkFile(project, dataConfiguration);
-
+	                                                       final DataConfiguration dataConfiguration) {
 		final DataSetEntity dataSetEntity;
 
 		if (project.getOriginalData().getDataSet() == null) {

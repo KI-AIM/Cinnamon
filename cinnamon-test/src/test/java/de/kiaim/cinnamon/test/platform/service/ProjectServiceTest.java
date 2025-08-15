@@ -85,7 +85,7 @@ public class ProjectServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, BadFileException, InternalApplicationConfigurationException, BadConfigurationNameException {
+	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalApplicationConfigurationException, BadConfigurationNameException, InternalIOException {
 		// Preparation
 		final var project = projectService.createProject(System.currentTimeMillis());
 		final var stage = cinnamonConfiguration.getPipeline().getStageList().get(0);

@@ -215,6 +215,23 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void storeConfigInvalidFhirColumns() throws Exception {
+		postFhirFile();
+		estimateDataConfiguration();
+
+		var project = getTestProject();
+		var configuration = project.getOriginalData().getDataSet().getDataConfiguration();
+		configuration.getConfigurations().get(3).setName("invalid");
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/data/configuration")
+				                .param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta[0].source[0]'"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "9", "3")));
+	}
+
+	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void storeDataAndDeleteData() throws Exception {

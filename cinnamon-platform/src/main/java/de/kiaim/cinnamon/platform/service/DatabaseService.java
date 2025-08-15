@@ -11,6 +11,8 @@ import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
+import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.platform.processor.FhirProcessor;
 import de.kiaim.cinnamon.platform.repository.DataProcessingRepository;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.repository.DataTransformationErrorRepository;
@@ -65,6 +67,7 @@ public class DatabaseService {
 
 	private final DataSetService dataSetService;
 	private final DataProcessorService dataProcessorService;
+	private final FhirProcessor fhirProcessor;
 	private final StepService stepService;
 
 	@Autowired
@@ -73,7 +76,7 @@ public class DatabaseService {
 	                       final SerializationConfig serializationConfig, final DataSetRepository dataSetRepository,
 	                       final ProjectRepository projectRepository, final DataschemeGenerator dataschemeGenerator,
 	                       final DataSetService dataSetService, final DataProcessorService dataProcessorService,
-	                       final StepService stepService) {
+	                       final FhirProcessor fhirProcessor, final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		this.dataProcessingRepository = dataProcessingRepository;
 		this.errorRepository = errorRepository;
@@ -83,6 +86,7 @@ public class DatabaseService {
 		this.dataschemeGenerator = dataschemeGenerator;
 		this.dataSetService = dataSetService;
 		this.dataProcessorService = dataProcessorService;
+		this.fhirProcessor = fhirProcessor;
 		this.stepService = stepService;
 	}
 
@@ -168,10 +172,11 @@ public class DatabaseService {
 	 * @throws BadDataSetIdException               If the data has already been confirmed.
 	 * @throws BadStateException                   If the file for the dataset has not been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
+	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
 	 */
 	@Transactional
 	public void storeOriginalDataConfiguration(final DataConfiguration dataConfiguration, final ProjectEntity project)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 		doStoreOriginalDataConfiguration(project, dataConfiguration);
 	}
@@ -184,17 +189,18 @@ public class DatabaseService {
 	 * Returns an ID to access the data.
 	 *
 	 * @param transformationResult The transformation result to be stored.
-	 * @param project The project.
+	 * @param project              The project.
 	 * @return The ID of the data set.
-	 * @throws BadDataConfigurationException If the number of attributes do not match with the stored data configuration.
-	 * @throws BadDataSetIdException If the data set is already stored.
-	 * @throws BadStateException If no file for the original data has been selected.
+	 * @throws BadDataConfigurationException       If the number of attributes do not match with the stored data configuration.
+	 * @throws BadDataSetIdException               If the data set is already stored.
+	 * @throws BadStateException                   If no file for the original data has been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored.
+	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
 	 */
 	@Transactional
 	public Long storeOriginalTransformationResult(final TransformationResult transformationResult,
 	                                              ProjectEntity project)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 
@@ -222,12 +228,13 @@ public class DatabaseService {
 	 * @throws BadDataSetIdException               If the data has already been confirmed.
 	 * @throws BadStateException                   If the file for the dataset has not been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
+	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
 	 */
 	@Transactional
 	public void storeTransformationResult(final TransformationResult transformationResult,
 	                                      final DataProcessingEntity dataProcessingEntity,
 	                                      final List<Job> processed)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(dataProcessingEntity.getDataSet());
 
@@ -928,7 +935,7 @@ public class DatabaseService {
 
 	private DataSetEntity doStoreOriginalDataConfiguration(ProjectEntity project,
 	                                                       final DataConfiguration dataConfiguration)
-			throws BadDataConfigurationException, BadStateException {
+			throws BadDataConfigurationException, BadStateException, InternalIOException {
 		checkFile(project, dataConfiguration);
 
 		final DataSetEntity dataSetEntity;
@@ -950,7 +957,7 @@ public class DatabaseService {
 	                                               final DataConfiguration dataConfiguration,
 	                                               final DataProcessingEntity dataProcessingEntity,
 	                                               final List<Job> processed
-	) throws BadDataConfigurationException, BadStateException {
+	) throws BadDataConfigurationException, BadStateException, InternalIOException {
 		checkFile(project, dataConfiguration);
 
 		final DataSetEntity dataSetEntity;
@@ -968,7 +975,7 @@ public class DatabaseService {
 	}
 
 	private void checkFile(final ProjectEntity project, final DataConfiguration dataConfiguration
-	) throws BadStateException, BadDataConfigurationException {
+	) throws BadStateException, BadDataConfigurationException, InternalIOException {
 		final FileEntity file = project.getOriginalData().getFile();
 		if (file == null) {
 			throw new BadStateException(BadStateException.NO_DATASET_FILE,
@@ -980,6 +987,24 @@ public class DatabaseService {
 			                                        "Dataset contains " + file.getNumberOfAttributes() +
 			                                        " attributes, but the data configuration " +
 			                                        dataConfiguration.getConfigurations().size() + " attributes!");
+		}
+
+		// Validate that column names match the paths of the FHIR bundle
+		final FileType fileType = file.getFileConfiguration().getFileType();
+		if (fileType == FileType.FHIR) {
+			final List<String> expectedColumns = fhirProcessor.getAttributeNames(
+					new ByteArrayInputStream(file.getFile()), file.getFileConfiguration());
+
+			for (int i = 0; i < file.getNumberOfAttributes(); i++) {
+				final String columnName = dataConfiguration.getConfigurations().get(i).getName();
+				final String fhirColumnName = expectedColumns.get(i);
+				if (!columnName.equals(fhirColumnName)) {
+					throw new BadDataConfigurationException(BadDataConfigurationException.FHIR_ATTRIBUTE_MISMATCH,
+					                                        "Attribute number " + (i + 1) + " with name '" + columnName +
+					                                        "' does not match the column name of the FHIR bundle '" +
+					                                        fhirColumnName + "'");
+				}
+			}
 		}
 	}
 

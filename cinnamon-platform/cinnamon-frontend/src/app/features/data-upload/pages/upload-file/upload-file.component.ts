@@ -105,6 +105,21 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Checks if the current file configuration {@link #fileConfiguration} is invalid.
+     * @return true if the file configuration is invalid.
+     * @private
+     */
+    protected isFileConfigurationInvalid(): boolean {
+        if (this.fileConfiguration.fileType === FileType.FHIR) {
+            if (this.fileConfiguration.fhirFileConfiguration.resourceType == null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Checks if the configuration file input is invalid.
      * @return If the configuration file input is invalid.
      * @protected
@@ -121,7 +136,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     protected get isInvalid(): boolean {
         const stepCompleted = this.statusService.isStepCompleted(Steps.UPLOAD);
         if (stepCompleted) {
-            return (this.isDataFileInvalid || this.isFileConfigurationInvalid())  && this.isConfigFileInvalid;
+            return (this.isDataFileInvalid || this.isFileConfigurationInvalid()) && this.isConfigFileInvalid;
         } else {
             return this.isDataFileInvalid || this.isFileConfigurationInvalid();
         }
@@ -304,20 +319,5 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     private handleError(err: any, message?: string) {
         this.loadingService.setLoadingStatus(false);
         this.errorHandlingService.addError(err, message);
-    }
-
-    /**
-     * Checks if the current file configuration {@link #fileConfiguration} is invalid.
-     * @return true if the file configuration is invalid.
-     * @private
-     */
-    private isFileConfigurationInvalid(): boolean {
-        if (this.fileConfiguration.fileType === FileType.FHIR) {
-            if (this.fileConfiguration.fhirFileConfiguration.resourceType == null) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

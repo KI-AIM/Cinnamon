@@ -34,6 +34,9 @@
             </div>
 
             <div class="mt-4">
+                <div *ngIf="isFileConfigurationInvalid()" class="cinnamon-error">
+                    Please correct the errors in the file configuration.
+                </div>
                 <button mat-raised-button color="primary" (click)="uploadFile()"
                         [disabled]="isInvalid || loadingEstimation">
                     Confirm file and start configuration
@@ -66,8 +69,11 @@
                 </div>
                 <div *ngIf="!loadingEstimation" class="ms-1">
                     <a *ngIf="!isDataFileInvalid" title="Additional Settings"
-                       (click)="openDialog(fileConfigurationDialog)" class="icon-enabled">
+                       (click)="openDialog(fileConfigurationDialog)" class="icon icon-enabled"
+                       [class.icon-error]="isFileConfigurationInvalid()">
                         <mat-icon fontIcon="settings"></mat-icon>
+                        <div class="icon-error-background"></div>
+                        <mat-icon fontIcon="error" class="icon-error-foreground"></mat-icon>
                     </a>
                     <span *ngIf="isDataFileInvalid" title="Additional Settings" class="icon-disabled">
                         <mat-icon fontIcon="settings"></mat-icon>

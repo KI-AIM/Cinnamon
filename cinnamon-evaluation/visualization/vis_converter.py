@@ -568,7 +568,6 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
     attributes = modified_config["resemblance"]["attributes"]
     all_attribute_scores: List[float] = []
     
-    # First process each attribute as before
     for i, attr in enumerate(attributes):
         overview = {}
         all_percentages = []
@@ -576,30 +575,30 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
         if "important_metrics" in attr:
             for metric_name, metric_data in attr["important_metrics"].items():
                 if "difference" in metric_data and "percentage" in metric_data["difference"]:
-                    percentage = metric_data["difference"]["percentage"]
-                    all_percentages.append(percentage)
-                    overview[metric_name] = percentage
+                    pct = metric_data["difference"]["percentage"]
+                    all_percentages.append(abs(pct))
+                    overview[metric_name] = pct
         
         if "details" in attr:
             for metric_name, metric_data in attr["details"].items():
                 if "difference" in metric_data and "percentage" in metric_data["difference"]:
-                    percentage = metric_data["difference"]["percentage"]
-                    all_percentages.append(percentage)
-                    overview[metric_name] = percentage
+                    pct = metric_data["difference"]["percentage"]
+                    all_percentages.append(abs(pct))
+                    overview[metric_name] = pct
         
         if all_percentages:
             avg_difference = sum(all_percentages) / len(all_percentages)
+            avg_difference = max(0.0, min(100.0, avg_difference))
             color_index = get_color_index(avg_difference)
             overview["resemblance_score"] = {
-                "value": 1 - (avg_difference / 100),
+                "value": 1 - (avg_difference / 100.0),
                 "color_index": color_index
             }
-            all_attribute_scores.append(avg_difference)
+            all_attribute_scores.append(avg_difference / 100.0)
         
         if overview:
             modified_config["resemblance"]["attributes"][i]["overview"] = overview
     
-    # Extract utility scores from machine learning method
     real_utility_score = 0.0
     synthetic_utility_score = 0.0
     
@@ -608,36 +607,30 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
             if "machine_learning" in method:
                 ml_method = method["machine_learning"]
                 
-                # Extract real utility score
                 if "real" in ml_method and "predictions" in ml_method["real"]:
                     predictions = ml_method["real"]["predictions"]
                     
-                    # First try to get Balanced Accuracy
                     if "Balanced Accuracy" in predictions:
                         for classifier in predictions["Balanced Accuracy"]:
                             if classifier["classifier"] == "Summary":
                                 real_utility_score = classifier["score"]
                                 break
                     
-                    # If Balanced Accuracy not available, try Adjusted R2
                     elif "Adjusted R-Squared" in predictions:
                         for classifier in predictions["Adjusted R-Squared"]:
                             if classifier["classifier"] == "Summary":
                                 real_utility_score = classifier["score"]
                                 break
                 
-                # Extract synthetic utility score
                 if "synthetic" in ml_method and "predictions" in ml_method["synthetic"]:
                     predictions = ml_method["synthetic"]["predictions"]
                     
-                    # First try to get Balanced Accuracy
                     if "Balanced Accuracy" in predictions:
                         for classifier in predictions["Balanced Accuracy"]:
                             if classifier["classifier"] == "Summary":
                                 synthetic_utility_score = classifier["score"]
                                 break
                     
-                    # If Balanced Accuracy not available, try Adjusted R2
                     elif "Adjusted R-Squared" in predictions:
                         for classifier in predictions["Adjusted R-Squared"]:
                             if classifier["classifier"] == "Summary":
@@ -657,7 +650,7 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
                         "description": "This metric quantifies the statistical similarity between synthetic and real data by calculating the normalized differences across all attributes and statistical measures. The aggregated score may not fully capture specific distributional anomalies or outliers in individual metrics. It is strongly recommended to examine the detailed statistical comparisons for a complete understanding of data resemblance.",
                         "values": {
                             "real": 1.0,  
-                            "synthetic": (1 - overall_resemblance_score)
+                            "synthetic": (1.0 - overall_resemblance_score)
                         }
                     },
                     "overall_utility": {

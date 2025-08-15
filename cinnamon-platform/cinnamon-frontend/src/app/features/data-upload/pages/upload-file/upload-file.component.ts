@@ -161,6 +161,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                     if (value.fhirResourceTypes != null) {
                         this.fhirResourceTypes = value.fhirResourceTypes;
                     }
+
+                    this.loadingEstimation = false;
                 },
                 error: (e) => {
                     this.handleError(e, "Failed to estimate the file configuration");
@@ -169,8 +171,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                     if (fileExtension != null) {
                         this.setFileType(fileExtension);
                     }
-                },
-                complete: () => {
+
                     this.loadingEstimation = false;
                 },
             });

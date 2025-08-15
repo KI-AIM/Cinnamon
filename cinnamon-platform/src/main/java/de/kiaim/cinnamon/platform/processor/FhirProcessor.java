@@ -12,7 +12,6 @@ import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
-import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FhirFileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
@@ -137,6 +136,22 @@ public class FhirProcessor implements DataProcessor {
 	 */
 	@Override
 	public void write(OutputStream outputStream, DataSet dataset) {
+	}
+
+	/**
+	 * Returns the column names containing the FHIR paths from the bundle of the specified resource.
+	 *
+	 * @param data              The FHIR bundle.
+	 * @param fileConfiguration The file configuration.
+	 * @return List of column names.
+	 * @throws InternalIOException If reading the FHIR bundle failed.
+	 */
+	public List<String> getAttributeNames(final InputStream data,
+	                                      final FileConfigurationEntity fileConfiguration) throws InternalIOException {
+		final CSVFormat csvFormat = buildCsvFormat();
+		final String csvString = getCsvString(data, (FhirFileConfigurationEntity) fileConfiguration, csvFormat);
+		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
+		return csvProcessor.getFirstRow(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration);
 	}
 
 	/**

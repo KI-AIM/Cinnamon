@@ -12,11 +12,19 @@ public class FileConfigurationTestHelper {
 	}
 
 	public static FileConfiguration generateFileConfiguration(final boolean hasHeader) {
+		return generateFileConfiguration(hasHeader, FileType.CSV);
+	}
+
+	public static FileConfiguration generateFileConfiguration(final FileType fileType) {
+		return generateFileConfiguration(true, fileType);
+	}
+
+	public static FileConfiguration generateFileConfiguration(final boolean hasHeader, final FileType fileType) {
 		return new FileConfiguration(
-				FileType.CSV,
+				fileType,
 				new CsvFileConfiguration(",", "\n", '"', hasHeader),
 				new XlsxFileConfiguration(hasHeader),
-				new FhirFileConfiguration()
+				new FhirFileConfiguration("Observation")
 		);
 	}
 

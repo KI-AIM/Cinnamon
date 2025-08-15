@@ -37,6 +37,10 @@ public class ResourceHelper {
 		            .replaceAll("\n", "\r\n");
 	}
 
+	public static MockMultipartFile loadFhirBundle() throws IOException {
+		return new MockMultipartFile("file", "file.json", null, loadFhirBundleAsString().getBytes());
+	}
+
 	public static String loadFhirBundleAsString() throws IOException {
 		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
 

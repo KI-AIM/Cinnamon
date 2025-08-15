@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.processor;
 
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.BadFileException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
@@ -27,9 +28,11 @@ public interface DataProcessor {
 	 *
 	 * @param data The file content
 	 * @return The estimated file configuration.
+	 * @throws BadFileException    If the data format cannot be processed.
 	 * @throws InternalIOException If reading the data failed.
 	 */
-	FileConfigurationEstimation estimateFileConfiguration(InputStream data) throws InternalIOException;
+	FileConfigurationEstimation estimateFileConfiguration(InputStream data)
+			throws InternalIOException, BadFileException;
 
 	/**
 	 * Returns the number of columns in the given data.

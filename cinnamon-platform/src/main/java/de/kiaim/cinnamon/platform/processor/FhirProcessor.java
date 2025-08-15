@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.processor;
 import ca.uhn.fhir.context.FhirContext;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.BadFileException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
@@ -57,7 +58,8 @@ public class FhirProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public FileConfigurationEstimation estimateFileConfiguration(final InputStream data) throws InternalIOException {
+	public FileConfigurationEstimation estimateFileConfiguration(final InputStream data)
+			throws InternalIOException, BadFileException {
 		final String fhirContent;
 		try {
 			fhirContent = new String(data.readAllBytes(), StandardCharsets.UTF_8);
@@ -69,7 +71,15 @@ public class FhirProcessor implements DataProcessor {
 
 		final FhirContext fhirContext = FhirContext.forR4();
 		final BundleTransformer bundleTransformer = new BundleTransformer(fhirContext);
-		final Set<String> resourceTypes = bundleTransformer.getResourceTypesInBundle(fhirContent);
+
+		final Set<String> resourceTypes;
+		try {
+			resourceTypes = bundleTransformer.getResourceTypesInBundle(fhirContent);
+		} catch (final Exception e) {
+			throw new BadFileException(BadFileException.INVALID_FHIR,
+			                           "Failed to read the FHIR bundle while estimating the FHIR file configuration",
+			                           e);
+		}
 
 		final var fhirFileConfiguration = new FhirFileConfiguration();
 		final var fileConfiguration = new FileConfiguration();

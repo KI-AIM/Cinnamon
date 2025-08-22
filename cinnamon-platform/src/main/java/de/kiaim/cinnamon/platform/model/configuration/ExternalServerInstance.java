@@ -24,6 +24,14 @@ public class ExternalServerInstance {
 	private String callbackHost = null;
 
 	/**
+	 * See {@link #getHealthTimeout()}.
+	 * <p>
+	 * The default value is {@code null}.
+	 */
+	@Nullable
+	private Integer healthTimeout = null;
+
+	/**
 	 * See {@link #getMaxParallelProcess()}.
 	 */
 	@Nullable
@@ -61,6 +69,15 @@ public class ExternalServerInstance {
 	 */
 	public String getCallbackHost() {
 		return callbackHost == null ? server.getCallbackHost() : callbackHost;
+	}
+
+	/**
+	 * Timeout in milliseconds for the health endpoint.
+	 * If the request timeouts the instance is considered DOWN.
+	 * If the timeout of the instance is null, the value set for the external server is used.
+	 */
+	public int getHealthTimeout() {
+		return healthTimeout == null ? server.getHealthTimeout() : healthTimeout;
 	}
 
 	/**

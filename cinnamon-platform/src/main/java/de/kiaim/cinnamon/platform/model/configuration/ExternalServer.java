@@ -35,6 +35,15 @@ public class ExternalServer {
 	private String healthEndpoint = "";
 
 	/**
+	 * Timeout in milliseconds for the health endpoint.
+	 * If the request timeouts the instance is considered DOWN.
+	 * Can be overwritten in the instance configuration.
+	 * <p>
+	 * The default value is 10 s.
+	 */
+	private int healthTimeout = 10_000;
+
+	/**
 	 * See {@link #getMinUp()}
 	 */
 	@Nullable

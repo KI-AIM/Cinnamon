@@ -10,6 +10,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -89,6 +90,7 @@ public class ExternalServerInstanceService {
 			                        .uri(healthEndpoint)
 			                        .retrieve()
 			                        .bodyToMono(Map.class)
+			                        .timeout(Duration.ofMillis(instance.getHealthTimeout()))
 			                        .block();
 
 			return response != null && response.get("status").equals("UP");

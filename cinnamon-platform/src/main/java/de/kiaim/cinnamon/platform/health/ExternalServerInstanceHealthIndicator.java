@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -50,6 +51,7 @@ public class ExternalServerInstanceHealthIndicator implements HealthIndicator {
 			                                                                .map(r -> this.buildErrorResponse(r,
 			                                                                                                  errorResponse.statusCode())))
 			                        .bodyToMono(Map.class)
+			                        .timeout(Duration.ofMillis(instance.getHealthTimeout()))
 			                        .block();
 
 			var status = (response != null && response.containsKey("status"))

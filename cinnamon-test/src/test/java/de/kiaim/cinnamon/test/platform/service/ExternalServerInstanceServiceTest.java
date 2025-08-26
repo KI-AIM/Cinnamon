@@ -12,10 +12,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,10 +36,7 @@ public class ExternalServerInstanceServiceTest {
 
 	@Test
 	public void findAvailable() {
-		BackgroundProcessRepository repo = mock(BackgroundProcessRepository.class);
-		when(repo.countByServerInstance(any())).thenReturn(0L);
-		var service = new ExternalServerInstanceService(repo);
-		var es = createConfig();
+		var service = createService(0, 0, 0);
 
 		var esi = service.findAvailableExternalServerInstance(es, true);
 
@@ -50,11 +46,7 @@ public class ExternalServerInstanceServiceTest {
 
 	@Test
 	public void findAvailableLeastUsage() {
-		BackgroundProcessRepository repo = mock(BackgroundProcessRepository.class);
-		when(repo.countByServerInstance(eq(esi1.getId()))).thenReturn(1L);
-		when(repo.countByServerInstance(eq(esi2.getId()))).thenReturn(0L);
-		when(repo.countByServerInstance(eq(esi3.getId()))).thenReturn(1L);
-		var service = new ExternalServerInstanceService(repo);
+		var service = createService(1, 0, 1);
 
 		var esi = service.findAvailableExternalServerInstance(es, true);
 
@@ -64,11 +56,7 @@ public class ExternalServerInstanceServiceTest {
 
 	@Test
 	public void findAvailableMaxProcesses() {
-		BackgroundProcessRepository repo = mock(BackgroundProcessRepository.class);
-		when(repo.countByServerInstance(eq(esi1.getId()))).thenReturn(2L);
-		when(repo.countByServerInstance(eq(esi2.getId()))).thenReturn(1L);
-		when(repo.countByServerInstance(eq(esi3.getId()))).thenReturn(3L);
-		var service = new ExternalServerInstanceService(repo);
+		var service = createService(2, 1, 3);
 
 		esi2.setMaxParallelProcess(1);
 		var esi = service.findAvailableExternalServerInstance(es, false);
@@ -78,32 +66,54 @@ public class ExternalServerInstanceServiceTest {
 	}
 
 	@Test
-	public void findAvailableHealthy() throws IOException {
-		try (MockWebServer mockBackEnd = new MockWebServer()) {
-			final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
-			mockBackEnd.start(mockBackEndPort);
-
-			esi1.setUrl(String.format("http://localhost:%s", mockBackEndPort));
-			esi2.setUrl(String.format("http://localhost:%s", mockBackEndPort));
-			esi3.setUrl(String.format("http://localhost:%s", mockBackEndPort));
-
+	public void findAvailableHealthy() {
+		withMockBackend((mockBackEnd) -> {
 			// Ordered by the number of running processes
 			enqueueStatusCheck(mockBackEnd, 200, "DOWN");
 			enqueueStatusCheck(mockBackEnd, 404, "");
 			enqueueStatusCheck(mockBackEnd, 200, "UP");
 
-			BackgroundProcessRepository repo = mock(BackgroundProcessRepository.class);
-			when(repo.countByServerInstance(eq(esi1.getId()))).thenReturn(2L);
-			when(repo.countByServerInstance(eq(esi2.getId()))).thenReturn(1L);
-			when(repo.countByServerInstance(eq(esi3.getId()))).thenReturn(3L);
-			var service = new ExternalServerInstanceService(repo);
+			var service = createService(2, 1, 3);
 
 			es.setMinUp(1);
 			var esi = service.findAvailableExternalServerInstance(es, false);
 
 			assertNotNull(esi);
 			assertEquals(esi3.getName(), esi.getName());
-		}
+		});
+	}
+
+	@Test
+	public void findAvailableExtendedTimeout() {
+		withMockBackend((mockBackEnd) -> {
+			enqueueStatusCheck(mockBackEnd, 200, "DOWN", 1_000);
+			enqueueStatusCheck(mockBackEnd, 404, "", 1_000);
+			enqueueStatusCheck(mockBackEnd, 200, "UP", 1_000);
+
+			var service = createService(2, 1, 3);
+			es.setHealthTimeout(2_000);
+			es.setMinUp(1);
+			var esi = service.findAvailableExternalServerInstance(es, false);
+
+			assertNotNull(esi);
+			assertEquals(esi3.getName(), esi.getName());
+		});
+	}
+
+	@Test
+	public void findAvailableTimeout() {
+		withMockBackend((mockBackEnd) -> {
+			enqueueStatusCheck(mockBackEnd, 200, "DOWN", 1_000);
+			enqueueStatusCheck(mockBackEnd, 404, "", 1_000);
+			enqueueStatusCheck(mockBackEnd, 200, "UP", 1_000);
+
+			var service = createService(2, 1, 3);
+			es.setHealthTimeout(500);
+			es.setMinUp(1);
+			var esi = service.findAvailableExternalServerInstance(es, false);
+
+			assertNull(esi);
+		});
 	}
 
 	private ExternalServer createConfig() {
@@ -127,12 +137,41 @@ public class ExternalServerInstanceServiceTest {
 		es.getInstances().put(esi.getName(), esi);
 	}
 
+	private ExternalServerInstanceService createService(final long count1, final long count2, final long count3) {
+		BackgroundProcessRepository repo = mock(BackgroundProcessRepository.class);
+		when(repo.countByServerInstance(eq(esi1.getId()))).thenReturn(count1);
+		when(repo.countByServerInstance(eq(esi2.getId()))).thenReturn(count2);
+		when(repo.countByServerInstance(eq(esi3.getId()))).thenReturn(count3);
+		return new ExternalServerInstanceService(repo);
+	}
+
 	private void enqueueStatusCheck(final MockWebServer mockBackEnd, final int httpStatus, final String status) {
+		enqueueStatusCheck(mockBackEnd, httpStatus, status, 0);
+	}
+
+	private void enqueueStatusCheck(final MockWebServer mockBackEnd, final int httpStatus, final String status,
+	                                final long delay) {
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .headersDelay(delay, java.util.concurrent.TimeUnit.MILLISECONDS)
 				                    .code(httpStatus)
 				                    .body("{\"status\": \"" + status + "\"}")
 				                    .build());
+	}
+
+	private void withMockBackend(final Consumer<MockWebServer> runnable) {
+		try (MockWebServer mockBackEnd = new MockWebServer()) {
+			final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
+			mockBackEnd.start(mockBackEndPort);
+
+			esi1.setUrl(String.format("http://localhost:%s", mockBackEndPort));
+			esi2.setUrl(String.format("http://localhost:%s", mockBackEndPort));
+			esi3.setUrl(String.format("http://localhost:%s", mockBackEndPort));
+
+			runnable.accept(mockBackEnd);
+		} catch (IOException e) {
+			fail(e);
+		}
 	}
 
 }

@@ -1,21 +1,13 @@
-import {Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
+import { StateManagementService } from "@core/services/state-management.service";
 import { ExecutionStep } from "../model/execution-step";
 import { HttpClient } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
 import { ProcessStatus } from "../../core/enums/process-status";
-import {
-    BehaviorSubject,
-    catchError,
-    interval, map,
-    Observable,
-    of,
-    Subscription,
-    switchMap,
-    tap
-} from "rxjs";
+import { catchError, map, Observable, of, tap } from "rxjs";
 import { plainToInstance } from "class-transformer";
 import { StatusService } from "./status.service";
-import { Steps } from "../../core/enums/steps";
+import { StepConfiguration, Steps } from "../../core/enums/steps";
 import { ErrorHandlingService } from "./error-handling.service";
 
 @Injectable({
@@ -24,38 +16,34 @@ import { ErrorHandlingService } from "./error-handling.service";
 export abstract class ExecutionStepService {
     private readonly baseUrl = environments.apiUrl + "/api/process";
 
-    private _statusSubject: BehaviorSubject<ExecutionStep | null>;
-
     /**
      * Observer that periodically sends requests to fetch the status
      * @private
      */
-    private statusObserver$: Observable<any>;
-    /**
-     * Subscription of the {@link #statusObserver$}.
-     * @private
-     */
-    private statusSubscription: Subscription | null = null;
+    private readonly statusObserver$: Observable<any>;
 
     protected constructor(
         private readonly errorHandlingService: ErrorHandlingService,
         private readonly http: HttpClient,
+        private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
     ) {
         // Create the status observer
-        this.statusObserver$ = interval(2000).pipe(
-            switchMap(() => {
-                return this.getProcess();
-            }),
-            tap(value => {
-                this.update(value)
+        this.statusObserver$ = this.stateManagementService.pipelineInformation$.pipe(
+            map(value => {
+                for (const stage of value.stages) {
+                    if (stage.stageName === this.getStageName()) {
+                        return stage;
+                    }
+                }
+                return null;
             }),
         );
     }
 
     public get status$(): Observable<ExecutionStep | null> {
-        this.initializeProjectSettings();
-        return this._statusSubject!.asObservable();
+        this.stateManagementService.initPipeline();
+        return this.statusObserver$;
     }
 
     /**
@@ -82,9 +70,11 @@ export abstract class ExecutionStepService {
         }
 
         return this.http.post<ExecutionStep>(url, {}).pipe(
+            map(value => plainToInstance(ExecutionStep, value)),
             tap(value => {
                     // For some reason value is a plain object here
-                    this.update(plainToInstance(ExecutionStep, value));
+                    this.update(value);
+                    this.stateManagementService.startListenToPipeline();
             }),
             catchError(() => {
                 return this.fetchStatus();
@@ -105,28 +95,6 @@ export abstract class ExecutionStepService {
                 this.errorHandlingService.addError(err, "Failed to cancel the process.");
             }
         });
-    }
-
-    /**
-     * Starts the observer by subscribing.
-     * Does nothing if a subscriber already exists.
-     * @private
-     */
-    public startListenToStatus(): void {
-        if (this.statusSubscription === null) {
-            this.statusSubscription = this.statusObserver$.subscribe();
-        }
-    }
-
-    /**
-     * Stops listening to the status by unsubscribing.
-     * @private
-     */
-    public stopListenToStatus(): void {
-        if (this.statusSubscription !== null) {
-            this.statusSubscription.unsubscribe();
-            this.statusSubscription = null;
-        }
     }
 
     /**
@@ -166,11 +134,12 @@ export abstract class ExecutionStepService {
         }
     }
 
-
     /**
-     * Name of the step. Must be equal to the name of the step in the backend.
+     * Name of the stage displayed in the step defined by {@link #getStep()}.
      */
-    protected abstract getStageName(): string;
+    protected getStageName(): string {
+        return StepConfiguration[this.getStep()].stageName!;
+    }
 
     /**
      * Corresponding step of the execution page.
@@ -185,9 +154,7 @@ export abstract class ExecutionStepService {
      */
     private setState(status: ProcessStatus): void {
         if (status === ProcessStatus.SCHEDULED || status === ProcessStatus.RUNNING) {
-            this.startListenToStatus();
         } else {
-            this.stopListenToStatus();
         }
     }
 
@@ -228,21 +195,8 @@ export abstract class ExecutionStepService {
         );
     }
 
-    private initializeProjectSettings(): void {
-        if (!this._statusSubject) {
-            this._statusSubject = new BehaviorSubject<ExecutionStep | null>(null)
-            this.fetchStatus().subscribe({
-                    next: value => {
-                        this._statusSubject!.next(value);
-                    }
-                }
-            );
-        }
-    }
-
     private update(executionStep: ExecutionStep) {
-        this.setState(executionStep.status);
-        this._statusSubject.next(executionStep);
+        this.stateManagementService.updateStage(executionStep);
     }
 }
 

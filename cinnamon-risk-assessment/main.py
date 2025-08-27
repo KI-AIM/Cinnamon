@@ -6,7 +6,7 @@ from typing import Optional
 
 import pandas as pd
 import yaml
-from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Path
+from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Path, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
@@ -73,19 +73,21 @@ async def cancel_risk_assessment(
 
 def load_yaml_config(config_file: str):
     """Loads YAML configuration and returns it as a dictionary."""
-    config_path = Path(config_file)
-    if not config_path.exists():
-        return {"error": "Configuration file not found"}
+    with open(config_file, "r") as file:
+        return file.read()
 
-    with open(config_path, "r") as file:
-        return yaml.safe_load(file)
 
+@app.get("/algorithms")
+async def get_algorithms():
+    """GET endpoint to retrieve the available algorithms as YAML."""
+    config = load_yaml_config(r"frontend_configs/algorithms.yaml")
+    return Response(content=config, media_type='text/yaml')
 
 @app.get("/risk_assessment_config")
 async def get_risk_assessment_frontend_config():
-    """GET endpoint to retrieve configuration as JSON."""
+    """GET endpoint to retrieve configuration as YAML."""
     config = load_yaml_config(r"frontend_configs/risk_assessment_config.yaml")
-    return config
+    return Response(content=config, media_type='text/yaml')
 
 
 @app.post("/risk_assessments/{process_id}")

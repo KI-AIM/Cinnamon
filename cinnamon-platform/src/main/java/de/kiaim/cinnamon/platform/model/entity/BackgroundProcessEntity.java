@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
+import de.kiaim.cinnamon.platform.model.configuration.ExternalServerInstance;
 import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -48,6 +49,14 @@ public class BackgroundProcessEntity {
 	 */
 	@Column(nullable = false)
 	private int endpoint;
+
+	/**
+	 * The server instance executing the process.
+	 * See {@link ExternalServerInstance#getId()} for the form.
+	 * Null if status is not RUNNING.
+	 */
+	@Nullable
+	private String serverInstance;
 
 	/**
 	 * The configuration used for the process.
@@ -101,7 +110,7 @@ public class BackgroundProcessEntity {
 		this.owner = owner;
 	}
 
-	public void setConfiguration(final BackgroundProcessConfiguration newConfiguration) {
+	public void setConfiguration(@Nullable final BackgroundProcessConfiguration newConfiguration) {
 		final BackgroundProcessConfiguration oldConfiguration = this.configuration;
 		this.configuration = newConfiguration;
 		if (oldConfiguration != null && oldConfiguration.getUsages().contains(this)) {
@@ -142,5 +151,27 @@ public class BackgroundProcessEntity {
 	public void reset() {
 		resultFiles.clear();
 		externalProcessStatus = ProcessStatus.NOT_STARTED;
+		serverInstance = null;
+		scheduledTime = null;
+	}
+
+	/**
+	 * Validates the status matches the rest of the process' state.
+	 */
+	@PrePersist @PreUpdate
+	private void validateStatus() {
+		if (this.externalProcessStatus == ProcessStatus.RUNNING && this.serverInstance == null) {
+			throw new IllegalStateException("The stage is running but the current server instance is not set.");
+		}
+		if (this.externalProcessStatus != ProcessStatus.RUNNING && this.serverInstance != null) {
+			throw new IllegalStateException("The server instance is set but the stage is not running.");
+		}
+
+		if (this.externalProcessStatus == ProcessStatus.SCHEDULED && this.scheduledTime == null) {
+			throw new IllegalStateException("The stage is scheduled but no scheduled time is set.");
+		}
+		if (this.externalProcessStatus != ProcessStatus.SCHEDULED && this.scheduledTime != null) {
+			throw new IllegalStateException("The stage is not scheduled but a scheduled time is set.");
+		}
 	}
 }

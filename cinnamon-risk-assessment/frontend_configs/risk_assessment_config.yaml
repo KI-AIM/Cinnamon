@@ -1,0 +1,43 @@
+name: Evaluation
+type: cross-sectional
+display_name: Evaluation
+description: Metrics used to evaluate the resemblance and utility of synthetic data compared to real data.
+URL: /start_evaluation
+options:
+  singlingout_uni:
+    display_name: Singling records out
+    description: Metrics that indicate if records from the anonymized data can be used to separate record in the real data.
+    parameters:
+    - name: n_attacks
+      label: Number of Attacks
+      description: Number of attacks
+      type: integer
+      default_value: 100
+      min_value: 1
+  attribute_inference:
+    display_name: Infer information from attributes (columns)
+    description: Metrics that indicate if attributes for the anonymized data can be used to derive values on the real data.
+    parameters:
+    - name: n_attacks
+      label: Number of Attacks
+      description: Number of attacks
+      type: integer
+      default_value: 100
+      min_value: 1
+      max_value: $dataset.original.numberHoldOutRows
+  linkage:
+    display_name: Infer risk of linking datasets
+    description: Metrics that indicate if subsets of the synthetic dataset can be used for linkage.
+    parameters:
+    - name: n_attacks
+      label: Number of Attacks
+      description: Number of attacks
+      type: integer
+      default_value: 100
+      min_value: 1
+      max_value: $dataset.original.numberHoldOutRows
+    - name: available_columns
+      label: Columns known
+      invert: unavailable_columns
+      description: Select attributes that might be known, e.g. due to a lab report being leaked. Do not select the information that might be of value to the attacker e.g. birthdate, or diagnosis
+      type: attribute_list

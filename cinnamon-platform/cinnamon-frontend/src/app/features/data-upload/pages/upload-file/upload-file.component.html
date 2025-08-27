@@ -1,16 +1,20 @@
-<ng-container *ngIf="status$ | async as status">
-    <ng-container *ngIf="status.mode === Mode.STANDARD">
+<ng-container *ngIf="pageData$ | async as pageData">
 
-        <app-workstep-list confirmLabel="Confirm file and start configuration" [locked]="locked" [invalid]="isInvalid"
+    <ng-container *ngIf="pageData.status.mode === Mode.STANDARD">
+
+        <app-workstep-list confirmLabel="Confirm file and start configuration" [locked]="pageData.locked.isLocked"
+                           [invalid]="isInvalid"
                            [numberSteps]="2" resetSteps [step]="Steps.UPLOAD" (confirm)="uploadFile()">
 
-            <app-workstep-item title="Select your dataset" [locked]="locked" [invalid]="isDataFileInvalid" [stepIndex]="0">
+            <app-workstep-item title="Select your dataset" [locked]="pageData.locked.isLocked"
+                               [invalid]="isDataFileInvalid" [stepIndex]="0">
                 <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
                 <ng-container *ngTemplateOutlet="info"></ng-container>
             </app-workstep-item>
 
-            <app-workstep-item title="Select a data configuration if available" [locked]="locked" [invalid]="isConfigFileInvalid"
-                               [stepIndex]="1" altConfirm="Continue without a configuration">
+            <app-workstep-item title="Select a data configuration if available" [locked]="pageData.locked.isLocked"
+                               [invalid]="isConfigFileInvalid" [stepIndex]="1"
+                               altConfirm="Continue without a configuration">
                 <ng-container *ngTemplateOutlet="configFileUpload"></ng-container>
             </app-workstep-item>
 
@@ -18,7 +22,7 @@
 
     </ng-container>
 
-    <ng-container *ngIf="status.mode === Mode.EXPERT">
+    <ng-container *ngIf="pageData.status.mode === Mode.EXPERT">
 
         <app-workstep-box header="Upload your dataset and data configuration">
             <div>
@@ -39,134 +43,136 @@
         </app-workstep-box>
 
     </ng-container>
-</ng-container>
 
-<ng-template #dataFileUpload>
-    <ng-container *ngIf="(fileInfo$ | async) as fileInfo">
-        <ng-container *ngIf="fileInfo.name !== null; else noFile">
+    <ng-template #dataFileUpload>
+        <ng-container *ngIf="pageData.fileInfo.name !== null; else noFile">
             <span>You previously uploaded the file: </span>
-            <span>{{ fileInfo.name }}</span><br/>
-            <span *ngIf="!locked">You can select another dataset by uploading a new file:</span>
-            <span *ngIf="locked">You already confirmed the dataset. If you want to select another dataset, you have to delete the current dataset on the "Data validation" page first.</span>
+            <span>{{ pageData.fileInfo.name }}</span><br/>
+            <span *ngIf="!pageData.locked.isLocked">You can select another dataset by uploading a new file:</span>
+            <span *ngIf="pageData.locked.isLocked">You already confirmed the dataset. If you want to select another dataset, you have to delete the current dataset on the "Data validation" page first.</span>
         </ng-container>
         <ng-template #noFile>
             Select the file containing the dataset you want to anonymize:
         </ng-template>
-    </ng-container>
 
-    <div class="mt-2">
-        <div class="d-flex align-items-center w-100">
-            <app-file-upload accept=".csv,.xlsx" [disabled]="locked" (input)="onFileInput($event)"
-                             class="flex-grow-1"></app-file-upload>
+        <div class="mt-2">
+            <div class="d-flex align-items-center w-100">
+                <app-file-upload accept=".csv,.xlsx" [disabled]="pageData.locked.isLocked" (input)="onFileInput($event)"
+                                 class="flex-grow-1"></app-file-upload>
 
-            <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
-               [hidden]="isDataFileInvalid" class="icon-enabled ms-1">
-                <mat-icon fontIcon="settings"></mat-icon>
-            </a>
-        </div>
-    </div>
-</ng-template>
-
-<ng-template #configFileUpload>
-    If you already have a configuration file, you can upload it here.
-    If not, you can continue without a configuration and a data configuration will be estimated based on the selected dateset.
-
-    <div class="mt-2">
-        <app-file-upload accept=".yml,.yaml" [disabled]="locked" (input)="onDataConfigurationFileInput($event)"></app-file-upload>
-    </div>
-</ng-template>
-
-<ng-template #info>
-    <div *ngIf="appConfig$ | async as appConfig" class="mt-4">
-        <p>
-            <b>Supported File Types:</b>
-            <br/>
-            Ensure your files are in a supported format. You'll be notified if the file type is not accepted. <br/>
-            Supported file types are:
-        </p>
-        <ul>
-            <li>CSV Files</li>
-            <li>XLSX Files</li>
-        </ul>
-        FHIR support is under development and will be available soon.<br/><br/>
-
-        <p>
-            <b>File Size Limit:</b>
-            <br/>
-            <ng-container *ngIf="appConfig.maxFileSize >= 0 else noFileSizeLimit">
-                The maximum file size is {{ formatMaxFileSize(appConfig.maxFileSize) }}.
-                Most algorithms by this application take a long time to process.
-                To ensure that processing times are somewhat reasonable, we have to limit the dataset size.
-            </ng-container>
-            <ng-template #noFileSizeLimit>
-                There is no limit for the file size.
-                But be aware that processing times can be long for large datasets.
-            </ng-template>
-            <br/><br/>
-            <b>Upload Progress:</b>
-            <br/>
-            Once you've selected your file, the upload process will begin. You will see a loading screen.
-            Before saving the data, the application will transform and validate it.
-            The validation results will be shown after the process is finished.
-            <br/><br/>
-            <b>Security:</b>
-            <br/>
-            Your files are transmitted securely using encryption protocols to protect your data.
-            The data never leaves the system where the Cinnamon application is installed.
-            The processed data will also only be accessible to the user that uploaded the data and will be deleted after the process was finished.
-        </p>
-    </div>
-</ng-template>
-
-<ng-template #fileConfigurationDialog>
-    <mat-dialog-content class="mat-typography">
-        <h1>Configure the file</h1>
-        <div *ngIf="this.fileConfiguration.fileType === FileType.CSV">
-            <div>
-                <mat-form-field class="d-block">
-                    <mat-label>Column Separator</mat-label>
-                    <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.columnSeparator">
-                        <mat-option *ngFor="let delimiter of delimiters" [value]="delimiter">
-                            {{ delimiterLabels[delimiter] }}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
-            </div>
-            <div>
-                <mat-form-field class="d-block">
-                    <mat-label>Line break</mat-label>
-                    <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.lineSeparator">
-                        <mat-option *ngFor="let lineEnd of lineEndings" [value]="lineEnd">
-                            {{ lineEndingLabels[lineEnd] }}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
-            </div>
-            <div>
-                <mat-form-field class="d-block">
-                    <mat-label>Quote Char</mat-label>
-                    <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.quoteChar">
-                        <mat-option *ngFor="let quoteChar of quoteChars" [value]="quoteChar">
-                            {{ quoteCharLabels[quoteChar] }}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
-            </div>
-            <div>
-                <mat-checkbox [(ngModel)]="this.fileConfiguration.csvFileConfiguration.hasHeader" color="primary">
-                    Use first row as header
-                </mat-checkbox>
+                <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
+                   [hidden]="isDataFileInvalid" class="icon-enabled ms-1">
+                    <mat-icon fontIcon="settings"></mat-icon>
+                </a>
             </div>
         </div>
-        <div *ngIf="this.fileConfiguration.fileType === FileType.XLSX">
-            <div>
-                <mat-checkbox [(ngModel)]="this.fileConfiguration.xlsxFileConfiguration.hasHeader" color="primary">
-                    Use first row as header
-                </mat-checkbox>
-            </div>
+    </ng-template>
+
+    <ng-template #configFileUpload>
+        If you already have a configuration file, you can upload it here.
+        If not, you can continue without a configuration and a data configuration will be estimated based on the
+        selected dateset.
+
+        <div class="mt-2">
+            <app-file-upload accept=".yml,.yaml" [disabled]="pageData.locked.isLocked"
+                             (input)="onDataConfigurationFileInput($event)"></app-file-upload>
         </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-        <button mat-raised-button mat-dialog-close color="primary">Close</button>
-    </mat-dialog-actions>
-</ng-template>
+    </ng-template>
+
+    <ng-template #info>
+        <div>
+            <p>
+                <b>Supported File Types:</b>
+                <br/>
+                Ensure your files are in a supported format. You'll be notified if the file type is not accepted. <br/>
+                Supported file types are:
+            </p>
+            <ul>
+                <li>CSV Files</li>
+                <li>XLSX Files</li>
+            </ul>
+            FHIR support is under development and will be available soon.<br/><br/>
+
+            <p>
+                <b>File Size Limit:</b>
+                <br/>
+                <ng-container *ngIf="pageData.appConfig.maxFileSize >= 0 else noFileSizeLimit">
+                    The maximum file size is {{ formatMaxFileSize(pageData.appConfig.maxFileSize) }}.
+                    Most algorithms by this application take a long time to process.
+                    To ensure that processing times are somewhat reasonable, we have to limit the dataset size.
+                </ng-container>
+                <ng-template #noFileSizeLimit>
+                    There is no limit for the file size.
+                    But be aware that processing times can be long for large datasets.
+                </ng-template>
+                <br/><br/>
+                <b>Upload Progress:</b>
+                <br/>
+                Once you've selected your file, the upload process will begin. You will see a loading screen.
+                Before saving the data, the application will transform and validate it.
+                The validation results will be shown after the process is finished.
+                <br/><br/>
+                <b>Security:</b>
+                <br/>
+                Your files are transmitted securely using encryption protocols to protect your data.
+                The data never leaves the system where the Cinnamon application is installed.
+                The processed data will also only be accessible to the user that uploaded the data and will be deleted
+                after the process was finished.
+            </p>
+        </div>
+    </ng-template>
+
+    <ng-template #fileConfigurationDialog>
+        <mat-dialog-content class="mat-typography">
+            <h1>Configure the file</h1>
+            <div *ngIf="this.fileConfiguration.fileType === FileType.CSV">
+                <div>
+                    <mat-form-field class="d-block">
+                        <mat-label>Column Separator</mat-label>
+                        <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.columnSeparator">
+                            <mat-option *ngFor="let delimiter of delimiters" [value]="delimiter">
+                                {{ delimiterLabels[delimiter] }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div>
+                    <mat-form-field class="d-block">
+                        <mat-label>Line break</mat-label>
+                        <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.lineSeparator">
+                            <mat-option *ngFor="let lineEnd of lineEndings" [value]="lineEnd">
+                                {{ lineEndingLabels[lineEnd] }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div>
+                    <mat-form-field class="d-block">
+                        <mat-label>Quote Char</mat-label>
+                        <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.quoteChar">
+                            <mat-option *ngFor="let quoteChar of quoteChars" [value]="quoteChar">
+                                {{ quoteCharLabels[quoteChar] }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div>
+                    <mat-checkbox [(ngModel)]="this.fileConfiguration.csvFileConfiguration.hasHeader" color="primary">
+                        Use first row as header
+                    </mat-checkbox>
+                </div>
+            </div>
+            <div *ngIf="this.fileConfiguration.fileType === FileType.XLSX">
+                <div>
+                    <mat-checkbox [(ngModel)]="this.fileConfiguration.xlsxFileConfiguration.hasHeader" color="primary">
+                        Use first row as header
+                    </mat-checkbox>
+                </div>
+            </div>
+        </mat-dialog-content>
+        <mat-dialog-actions align="end">
+            <button mat-raised-button mat-dialog-close color="primary">Close</button>
+        </mat-dialog-actions>
+    </ng-template>
+
+</ng-container>

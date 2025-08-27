@@ -1,33 +1,34 @@
-<ng-container *ngIf="status$ | async as status">
-    <ng-container *ngIf="status.mode === Mode.STANDARD">
+<ng-container *ngIf="pageData$ | async as pageData">
+    <ng-container *ngIf="pageData.status.mode === Mode.STANDARD">
 
-        <app-workstep-list confirmLabel="Continue with the current dataset and data configuration" [locked]="locked"
-                           [numberSteps]="3" [step]="Steps.VALIDATION"
+        <app-workstep-list confirmLabel="Continue with the current dataset and data configuration"
+                           [locked]="pageData.locked.isLocked" [numberSteps]="3" [step]="Steps.VALIDATION"
                            (confirm)="confirmData()">
-            <app-workstep-item title="View the imported dataset" [locked]="locked" [stepIndex]="0">
+            <app-workstep-item title="View the imported dataset" [locked]="pageData.locked.isLocked" [stepIndex]="0">
                 <p>
                     The transformation of the data for your configuration was successful. You can inspect the result
                     below. <br/><br/>
 
-                    Lines that are marked in red contain at least one value that could not be transformed with your configuration.
+                    Lines that are marked in red contain at least one value that could not be transformed with your
+                    configuration.
                     The faulty column is marked in a deeper tone of red.
                     These values will be removed from the dataset and not be available for the anonymization.
                     You can filter for valid and invalid rows in the table below.
                     <br/><br/>
 
-                    This application does not offer any mechanism to fix your data. You can however continue with the valid values.
+                    This application does not offer any mechanism to fix your data. You can however continue with the
+                    valid values.
                     If you want to change anything, please adjust your data manually and start again.
                 </p>
 
-                <ng-container *ngIf="dataSetInfo$ | async as dataSetInfo">
-                    <ng-container *ngIf="dataSetInfo.hasHoldOutSplit">
-                        <p>
-                            Because of the extended analysis, the dataset was split into two parts.
-                            The first part will be anonymized and used for the synthesis.
-                            The second part will not be contained in the result and instead be used to evaluate the privacy.
-                            You can view the data contained in both splits by selecting the respective split in the table below.
-                        </p>
-                    </ng-container>
+                <ng-container *ngIf="pageData.dataSetInfo.hasHoldOutSplit">
+                    <p>
+                        Because of the extended analysis, the dataset was split into two parts.
+                        The first part will be anonymized and used for the synthesis.
+                        The second part will not be contained in the result and instead be used to evaluate the privacy.
+                        You can view the data contained in both splits by selecting the respective split in the table
+                        below.
+                    </p>
                 </ng-container>
                 <ng-container *ngTemplateOutlet="statisticsTable"></ng-container>
 
@@ -36,9 +37,10 @@
                 </div>
             </app-workstep-item>
 
-            <app-workstep-item title="View statistics" [locked]="locked" [stepIndex]="1">
+            <app-workstep-item title="View statistics" [locked]="pageData.locked.isLocked" [stepIndex]="1">
                 The statistics give an overview of the configured metadata as well as basic metrics for each attribute.
-                You can confirm, that the value distribution has not changed significantly after the import, especially if faulty rows were deleted or the holdout split was created.
+                You can confirm, that the value distribution has not changed significantly after the import, especially
+                if faulty rows were deleted or the holdout split was created.
                 Statistics can also give you hints what attributes needs to be protected during the anonymization.
 
                 <div class="mt-1">
@@ -46,43 +48,39 @@
                 </div>
             </app-workstep-item>
 
-            <app-workstep-item title="Confirm the dataset and data configuration" [locked]="locked" [stepIndex]="2">
-                If you noticed any issues in the imported data or the statistics, you can go back to previous steps and change the dataset or the configuration.
+            <app-workstep-item title="Confirm the dataset and data configuration" [locked]="pageData.locked.isLocked"
+                               [stepIndex]="2">
+                If you noticed any issues in the imported data or the statistics, you can go back to previous steps and
+                change the dataset or the configuration.
                 Otherwise you can continue with the current data, which will lock the import process.
-                If you want to change anything prior to this point, you will have to delete the dataset by clicking the "Reset project and delete all data" button on the bottom of this page.
+                An info box on the top of the page will inform you about this.
+                If you want to change anything prior to this point, you will have to delete the dataset by clicking the
+                "Unlock data configuration and delete all results" button in the info box.
                 Be aware, that this will also delete all data and results of the following steps.
             </app-workstep-item>
 
         </app-workstep-list>
 
-        <button mat-raised-button color="warn" class="ms-3" (click)="openDeleteDialog(deleteDialog)" [disabled]="!locked">
-            <mat-icon>delete</mat-icon>
-            Reset project and delete all data
-        </button>
-
     </ng-container>
-    <ng-container *ngIf="status.mode === Mode.EXPERT">
+    <ng-container *ngIf="pageData.status.mode === Mode.EXPERT">
         <app-workstep-box header="Import Summary">
             <ng-container *ngTemplateOutlet="statisticsTable"></ng-container>
 
             <div class="mt-2">
-                By proceeding, previous steps will be locked and can only be changed by deleting all data, including the results of the following steps.
+                By proceeding, previous steps will be locked and can only be changed by deleting all data, including the
+                results of the following steps.
             </div>
 
-            <div class="d-flex align-items-center justify-content-start my-2">
-                <button mat-raised-button color="primary" class="me-2" (click)="confirmData()" [disabled]="locked">
-                    Continue
-                    <mat-icon>arrow_forward</mat-icon>
-                </button>
-                <button mat-raised-button color="warn" (click)="openDeleteDialog(deleteDialog)" [disabled]="!locked">
-                    <mat-icon>delete</mat-icon>
-                    Reset project and delete all data
-                </button>
-            </div>
+            <button mat-raised-button color="primary" class="my-2" (click)="confirmData()"
+                    [disabled]="pageData.locked.isLocked">
+                Continue
+                <mat-icon>arrow_forward</mat-icon>
+            </button>
         </app-workstep-box>
 
         <app-workstep-box header="Data Upload Result" toggleable>
-            Lines that are marked in red contain at least one value that could not be transformed with your configuration.
+            Lines that are marked in red contain at least one value that could not be transformed with your
+            configuration.
             The faulty column is marked in a deeper tone of red.
             These values will be removed from the dataset and not be available for the anonymization.
             You can filter for valid and invalid rows in the table below.
@@ -97,12 +95,10 @@
         </app-workstep-box>
 
     </ng-container>
-</ng-container>
 
 
-<ng-template #statisticsTable>
-    <ng-container *ngIf="dataSetInfo$ | async as dataSetInfo">
-        <ng-container *ngIf="dataSetInfo.hasHoldOutSplit; else noHoldOutSplit">
+    <ng-template #statisticsTable>
+        <ng-container *ngIf="pageData.dataSetInfo.hasHoldOutSplit; else noHoldOutSplit">
             <table class="statistics-table">
                 <tr>
                     <td></td>
@@ -112,17 +108,17 @@
                 </tr>
                 <tr>
                     <td>Rows in the dataset:</td>
-                    <td>{{ dataSetInfo.numberNotHoldOutRows }}</td>
-                    <td>{{ dataSetInfo.numberHoldOutRows }}</td>
-                    <td>{{ dataSetInfo.numberRows }}</td>
+                    <td>{{ pageData.dataSetInfo.numberNotHoldOutRows }}</td>
+                    <td>{{ pageData.dataSetInfo.numberHoldOutRows }}</td>
+                    <td>{{ pageData.dataSetInfo.numberRows }}</td>
                 </tr>
                 <tr>
                     <td>Rows that will be adjusted:</td>
-                    <td>{{ dataSetInfo.numberInvalidNotHoldOutRows }}</td>
-                    <td>{{ dataSetInfo.numberInvalidHoldOutRows }}</td>
+                    <td>{{ pageData.dataSetInfo.numberInvalidNotHoldOutRows }}</td>
+                    <td>{{ pageData.dataSetInfo.numberInvalidHoldOutRows }}</td>
                     <td>
-                        <span>{{ dataSetInfo.numberInvalidRows }}</span>
-                        <mat-icon *ngIf="dataSetInfo.numberInvalidRows > dataSetInfo.numberRows * 0.25"
+                        <span>{{ pageData.dataSetInfo.numberInvalidRows }}</span>
+                        <mat-icon *ngIf="pageData.dataSetInfo.numberInvalidRows > pageData.dataSetInfo.numberRows * 0.25"
                                   fontIcon="warning" class="warn-icon"
                                   matTooltip="More than 25% of the rows are faulty. You may want to revise your configuration."
                                   matTooltipPosition="right"></mat-icon>
@@ -134,13 +130,13 @@
             <table class="statistics-table">
                 <tr>
                     <td>Rows in the dataset:</td>
-                    <td>{{ dataSetInfo.numberRows }}</td>
+                    <td>{{ pageData.dataSetInfo.numberRows }}</td>
                 </tr>
                 <tr>
                     <td>Rows that will be adjusted:</td>
                     <td>
-                        <span>{{ dataSetInfo.numberInvalidRows }}</span>
-                        <mat-icon *ngIf="dataSetInfo.numberInvalidRows > dataSetInfo.numberRows * 0.25"
+                        <span>{{ pageData.dataSetInfo.numberInvalidRows }}</span>
+                        <mat-icon *ngIf="pageData.dataSetInfo.numberInvalidRows > pageData.dataSetInfo.numberRows * 0.25"
                                   fontIcon="warning" class="warn-icon"
                                   matTooltip="More than 25% of the rows are faulty. You may want to revise your configuration."
                                   matTooltipPosition="right"></mat-icon>
@@ -148,19 +144,6 @@
                 </tr>
             </table>
         </ng-template>
-    </ng-container>
-</ng-template>
+    </ng-template>
 
-<ng-template #deleteDialog>
-    <mat-dialog-content class="mat-typography">
-        <h1>Delete Data</h1>
-        <div>
-            Do you really want to delete the data.
-            This will also delete the data and result of all following steps.
-        </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-        <button mat-raised-button mat-dialog-close color="primary">Keep Data</button>
-        <button mat-raised-button mat-dialog-close color="warn" (click)="deleteData()">Delete Data</button>
-    </mat-dialog-actions>
-</ng-template>
+</ng-container>

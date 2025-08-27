@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { List } from "../../core/utils/list";
-import { Steps } from "../../core/enums/steps";
+import { StepConfiguration, Steps } from "../../core/enums/steps";
 import { Status } from "../model/status";
 import { Mode } from "../../core/enums/mode";
 import { HttpClient } from "@angular/common/http";
@@ -92,19 +92,17 @@ export class StatusService {
 
         this.completedSteps.clear();
 
-        Object.entries(Steps).forEach(([key, value]) => {
-            const currentIndex = typeof step === "number" ? step : Steps[step];
-            if (key < currentIndex) {
-                this.addCompletedStep(Steps[value as keyof typeof Steps]);
+        const currentIndex = StepConfiguration[step].index;
+        Object.values(StepConfiguration).forEach(value => {
+            if (value.index < currentIndex) {
+                this.addCompletedStep(value.enum);
             }
         });
     }
 
     private postStep(step: Steps): Observable<void> {
-        const stepValue = typeof step === "number" ? Steps[step] : step;
-
         const formData = new FormData();
-        formData.append("step", stepValue);
+        formData.append("step", step);
         return this.http.post<void>(this.baseUrl + "/step", formData);
     }
 

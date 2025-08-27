@@ -1,51 +1,27 @@
 package de.kiaim.cinnamon.test.platform.service;
 
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
+import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.service.ExternalConfigurationService;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
+import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.util.TestSocketUtils;
-
-import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@WithMockWebServer
 public class ExternalConfigurationServiceTest extends ContextRequiredTest {
-
-	private static final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 
 	@Autowired private CinnamonConfiguration cinnamonConfiguration;
 	@Autowired private ExternalConfigurationService externalConfigurationService;
 
 	private MockWebServer mockBackEnd;
-
-	@DynamicPropertySource
-	static void dynamicProperties(DynamicPropertyRegistry registry) {
-		registry.add("cinnamon.external-server.technical-evaluation-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.synthetization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-		registry.add("cinnamon.external-server.anonymization-server.urlServer", () -> String.format("http://localhost:%s", mockBackEndPort));
-	}
-
-	@BeforeEach
-	void setUpMockWebServer() throws IOException {
-		mockBackEnd = new MockWebServer();
-		mockBackEnd.start(mockBackEndPort);
-	}
-
-	@AfterEach
-	void shutDownMockWebServer() throws IOException {
-		mockBackEnd.shutdown();
-	}
 
 	@Test
 	public void fetchAlgorithms() {
@@ -71,7 +47,9 @@ public class ExternalConfigurationServiceTest extends ContextRequiredTest {
 		final String configurationName = cinnamonConfiguration.getExternalConfiguration().keySet().iterator().next();
 		final String definitionPath = "/algorithmA";
 
-		final String availableAlgorithms = assertDoesNotThrow(() -> externalConfigurationService.fetchAlgorithmDefinition(configurationName, definitionPath));
+		final String availableAlgorithms = assertDoesNotThrow(
+				() -> externalConfigurationService.fetchAlgorithmDefinition(new ProjectEntity(), configurationName,
+				                                                            definitionPath));
 		assertEquals("algorithms", availableAlgorithms);
 
 		// Test request

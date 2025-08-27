@@ -12,5 +12,5 @@ public enum ProcessStatus {
 	CANCELED,
 	FINISHED,
 	SKIPPED,
-	;
+	OUTDATED,
 }

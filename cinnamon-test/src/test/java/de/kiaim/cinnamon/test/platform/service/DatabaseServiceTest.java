@@ -7,13 +7,13 @@ import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
+import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
-import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
-import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
-import de.kiaim.cinnamon.platform.model.entity.UserEntity;
+import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
+import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.service.DatabaseService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.DatabaseTest;
@@ -64,7 +64,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertEquals(0, dataTransformationErrorRepository.countByDataSetId((testProject).getId()),
 		             "No transformation errors should have been persisted!");
 
-		assertDoesNotThrow(() -> databaseService.delete(testProject));
+		assertDoesNotThrow(() -> databaseService.deleteOriginalData(testProject));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(dataSetEntity.isStoredData(), "Flag that the data is stored should be false!");
@@ -87,7 +87,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertEquals(2, dataTransformationErrorRepository.countByDataSetId(dataSetId),
 		             "Transformation errors have not been persisted!");
 
-		assertDoesNotThrow(() -> databaseService.delete(testProject));
+		assertDoesNotThrow(() -> databaseService.deleteOriginalData(testProject));
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(dataSetEntity.isStoredData(), "Flag that the data is stored should be false!");
@@ -149,8 +149,6 @@ class DatabaseServiceTest extends DatabaseTest {
 		final DataSet export = assertDoesNotThrow(
 				() -> databaseService.exportDataSet(project, new ArrayList<>(), HoldOutSelector.ALL, DataSetSource.Original()));
 		assertEquals(transformationResult.getDataSet(), export, "Data sets do not match!");
-
-		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
@@ -186,8 +184,6 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertEquals(2, firstRow.getData().size(), "Number of columns does not match!");
 		assertEquals(DataType.INTEGER, firstRow.getData().get(0).getDataType(), "Type of first value does not match!");
 		assertEquals(DataType.BOOLEAN, firstRow.getData().get(1).getDataType(), "Type of second value does not match!");
-
-		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
@@ -246,8 +242,6 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final int numberRows = assertDoesNotThrow(() -> databaseService.countEntries(dataSet.getId()));
 		assertEquals(2, numberRows, "Number of entries does not match!");
-
-		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
@@ -261,8 +255,6 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final int numberInvalidRows = assertDoesNotThrow(() -> databaseService.countInvalidRows(dataSet.getId()));
 		assertEquals(1, numberInvalidRows, "Number of invalid rows does not match!");
-
-		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
@@ -276,13 +268,39 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final boolean exists = assertDoesNotThrow(() -> databaseService.existsTable(dataSet.getId()));
 		assertTrue(exists, "Table does not exist!");
-
-		assertDoesNotThrow(() -> databaseService.delete(project));
 	}
 
 	@Test
 	void existsTableNot() {
 		final boolean exists = assertDoesNotThrow(() -> databaseService.existsTable(0));
 		assertFalse(exists, "Table does exist!");
+	}
+
+	@Test
+	void markProcessOutdated() throws InternalApplicationConfigurationException {
+		ProjectEntity project =  projectService.createProject(123L);
+
+		ExecutionStepEntity stage1 = project.getPipelines().get(0).getStageByIndex(0);
+		stage1.setStatus(ProcessStatus.FINISHED);
+		var process11 = stage1.getProcess(0);
+		process11.setExternalProcessStatus(ProcessStatus.FINISHED);
+		var process12 = stage1.getProcess(1);
+		process12.setExternalProcessStatus(ProcessStatus.FINISHED);
+
+		ExecutionStepEntity stage2 = project.getPipelines().get(0).getStageByIndex(1);
+		stage2.setStatus(ProcessStatus.FINISHED);
+		var process21 = stage2.getProcess(0);
+		process21.setExternalProcessStatus(ProcessStatus.SKIPPED);
+		var process22 = stage2.getProcess(1);
+		process22.setExternalProcessStatus(ProcessStatus.FINISHED);
+
+		assertDoesNotThrow(() -> databaseService.markProcessOutdated(process12));
+
+		assertEquals(ProcessStatus.OUTDATED, stage1.getStatus());
+		assertEquals(ProcessStatus.FINISHED, process11.getExternalProcessStatus());
+		assertEquals(ProcessStatus.OUTDATED, process12.getExternalProcessStatus());
+		assertEquals(ProcessStatus.OUTDATED, stage2.getStatus());
+		assertEquals(ProcessStatus.SKIPPED, process21.getExternalProcessStatus());
+		assertEquals(ProcessStatus.OUTDATED, process22.getExternalProcessStatus());
 	}
 }

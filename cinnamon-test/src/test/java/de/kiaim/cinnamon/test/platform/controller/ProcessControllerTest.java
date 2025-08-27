@@ -74,11 +74,31 @@ public class ProcessControllerTest extends ControllerTest {
 	@Autowired private ProjectService projectService;
 
 	@Test
-	public void getProcessNotStarted() throws Exception {
-		mockMvc.perform(get("/api/process/execution"))
+	public void getPipelineNotStarted() throws Exception {
+		mockMvc.perform(get("/api/process"))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("status").value(ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("currentProcessIndex").value(nullValue()));
+		       .andExpect(jsonPath("currentStageIndex").isEmpty());
+	}
+
+	@Test
+	public void getPipelineStarted() throws Exception {
+		postData(false);
+		configure();
+		start();
+
+		enqueueAnonStatusResponse();
+		mockMvc.perform(get("/api/process"))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("currentStageIndex").value(0))
+		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()));
+
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		String id = process.getUuid().toString();
+
+		var recordedRequest = mockBackEnd.takeRequest();
+		assertEquals("GET", recordedRequest.getMethod());
+		assertEquals("/api/anonymization/process/" + id + "/status", recordedRequest.getPath());
 	}
 
 	@Test
@@ -236,23 +256,20 @@ public class ProcessControllerTest extends ControllerTest {
 		String id = process.getUuid().toString();
 
 		// Get status
-		mockBackEnd.enqueue(new MockResponse.Builder()
-				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-				                    .code(200)
-				                    .body("status")
-				                    .build());
-		mockMvc.perform(get("/api/process/execution"))
+		enqueueAnonStatusResponse();
+		mockMvc.perform(get("/api/process"))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("currentProcessIndex").value(0))
-		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("processes[0].status").value("status"))
-		       .andExpect(jsonPath("processes[0].step").value(ANON_JOB))
-		       .andExpect(jsonPath("processes[0].processSteps").value(nullValue()))
-		       .andExpect(jsonPath("processes[1].externalProcessStatus").value( ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("processes[1].step").value(SYNTH_JOB))
-		       .andExpect(jsonPath("processes[1].status").value(nullValue()))
-		       .andExpect(jsonPath("processes[1].processSteps").value(nullValue()));
+		       .andExpect(jsonPath("currentStageIndex").value(0))
+		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("stages[0].currentProcessIndex").value(0))
+		       .andExpect(jsonPath("stages[0].processes[0].externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("stages[0].processes[0].status").value("status"))
+		       .andExpect(jsonPath("stages[0].processes[0].step").value(ANON_JOB))
+		       .andExpect(jsonPath("stages[0].processes[0].processSteps").value(nullValue()))
+		       .andExpect(jsonPath("stages[0].processes[1].externalProcessStatus").value( ProcessStatus.NOT_STARTED.name()))
+		       .andExpect(jsonPath("stages[0].processes[1].step").value(SYNTH_JOB))
+		       .andExpect(jsonPath("stages[0].processes[1].status").value(nullValue()))
+		       .andExpect(jsonPath("stages[0].processes[1].processSteps").value(nullValue()));
 
 
 		var recordedRequest = mockBackEnd.takeRequest();
@@ -318,18 +335,19 @@ public class ProcessControllerTest extends ControllerTest {
 
 		enqueueSynthStatus();
 
-		mockMvc.perform(get("/api/process/execution"))
+		mockMvc.perform(get("/api/process"))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("currentProcessIndex").value(1))
-		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("processes[0].status").value("status"))
-		       .andExpect(jsonPath("processes[0].step").value(ANON_JOB))
-		       .andExpect(jsonPath("processes[0].processSteps[0]").value(ANON_JOB))
-		       .andExpect(jsonPath("processes[1].externalProcessStatus").value( ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("processes[1].status").value("{\"status\":[{\"completed\":\"False\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"))
-		       .andExpect(jsonPath("processes[1].step").value(SYNTH_JOB))
-		       .andExpect(jsonPath("processes[1].processSteps").value(nullValue()));
+		       .andExpect(jsonPath("currentStageIndex").value(0))
+		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("stages[0].currentProcessIndex").value(1))
+		       .andExpect(jsonPath("stages[0].processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("stages[0].processes[0].status").value("status"))
+		       .andExpect(jsonPath("stages[0].processes[0].step").value(ANON_JOB))
+		       .andExpect(jsonPath("stages[0].processes[0].processSteps[0]").value(ANON_JOB))
+		       .andExpect(jsonPath("stages[0].processes[1].externalProcessStatus").value( ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath("stages[0].processes[1].status").value("{\"status\":[{\"completed\":\"False\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"))
+		       .andExpect(jsonPath("stages[0].processes[1].step").value(SYNTH_JOB))
+		       .andExpect(jsonPath("stages[0].processes[1].processSteps").value(nullValue()));
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("GET", recordedRequest.getMethod());
 		assertEquals("/get_status/" + id, recordedRequest.getPath());
@@ -360,21 +378,22 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	private void getStatus3() throws Exception {
-		mockMvc.perform(get("/api/process/execution"))
+		mockMvc.perform(get("/api/process"))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("status").value(ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("currentProcessIndex").value(nullValue()))
-		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("processes[0].status").value("status"))
-		       .andExpect(jsonPath("processes[0].step").value(ANON_JOB))
-		       .andExpect(jsonPath("processes[0].processSteps[0]").value(ANON_JOB))
-		       .andExpect(jsonPath("processes[0].processSteps[1]").doesNotExist())
-		       .andExpect(jsonPath("processes[1].externalProcessStatus").value( ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("processes[1].status").value("{\"status\":[{\"completed\":\"True\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"))
-		       .andExpect(jsonPath("processes[1].step").value(SYNTH_JOB))
-		       .andExpect(jsonPath("processes[1].processSteps[0]").value(ANON_JOB))
-		       .andExpect(jsonPath("processes[1].processSteps[1]").value(SYNTH_JOB))
-		       .andExpect(jsonPath("processes[1].processSteps[2]").doesNotExist());
+		       .andExpect(jsonPath("currentStageIndex").value(nullValue()))
+		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("stages[0].currentProcessIndex").value(nullValue()))
+		       .andExpect(jsonPath("stages[0].processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("stages[0].processes[0].status").value("status"))
+		       .andExpect(jsonPath("stages[0].processes[0].step").value(ANON_JOB))
+		       .andExpect(jsonPath("stages[0].processes[0].processSteps[0]").value(ANON_JOB))
+		       .andExpect(jsonPath("stages[0].processes[0].processSteps[1]").doesNotExist())
+		       .andExpect(jsonPath("stages[0].processes[1].externalProcessStatus").value( ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath("stages[0].processes[1].status").value("{\"status\":[{\"completed\":\"True\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"))
+		       .andExpect(jsonPath("stages[0].processes[1].step").value(SYNTH_JOB))
+		       .andExpect(jsonPath("stages[0].processes[1].processSteps[0]").value(ANON_JOB))
+		       .andExpect(jsonPath("stages[0].processes[1].processSteps[1]").value(SYNTH_JOB))
+		       .andExpect(jsonPath("stages[0].processes[1].processSteps[2]").doesNotExist());
 	}
 
 	private void getResultFile() throws Exception {
@@ -750,6 +769,14 @@ public class ProcessControllerTest extends ControllerTest {
 		assertNotNull(process.getUuid(), "Process UUID is null!");
 
 		return process.getUuid().toString();
+	}
+
+	private void enqueueAnonStatusResponse() {
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body("status")
+				                    .build());
 	}
 
 }

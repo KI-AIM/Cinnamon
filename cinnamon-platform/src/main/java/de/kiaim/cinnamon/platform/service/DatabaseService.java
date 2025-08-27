@@ -49,6 +49,9 @@ import java.util.stream.Collectors;
 @Service
 public class DatabaseService {
 
+	private final static Set<ProcessStatus> targetStatus = Set.of(ProcessStatus.SKIPPED, ProcessStatus.FINISHED,
+	                                                              ProcessStatus.ERROR, ProcessStatus.CANCELED);
+
 	private final Logger LOGGER = LoggerFactory.getLogger(DatabaseService.class);
 
 	private final Connection connection;
@@ -330,6 +333,7 @@ public class DatabaseService {
 	/**
 	 * Stores an arbitrary configuration under the given identifier.
 	 * If a configuration with the given name is already present, it will be overwritten.
+	 * If the configuration has changed and is used by processes, marks them as outdated.
 	 *
 	 * @param configName    Identifier for the configuration.
 	 * @param url           The URL for starting the process.
@@ -363,8 +367,14 @@ public class DatabaseService {
 			}
 		}
 
-		config.setProcessUrl(url);
-		config.setConfiguration(configuration);
+		if (!Objects.equals(url, config.getProcessUrl()) || !Objects.equals(configuration, config.getConfiguration())) {
+			config.setProcessUrl(url);
+			config.setConfiguration(configuration);
+
+			for (final BackgroundProcessEntity usage: config.getUsages()) {
+				markProcessOutdated(usage);
+			}
+		}
 
 		projectRepository.save(project);
 	}
@@ -546,7 +556,7 @@ public class DatabaseService {
 
 	/**
 	 * Confirms the original data of the given project.
-	 * After confirming, the data can not be overwritten, only be deleted.
+	 * After confirming, the data cannot be overwritten, only be deleted.
 	 *
 	 * @param project The project.
 	 * @throws BadDataSetIdException If no data set exists for the original data.
@@ -699,43 +709,20 @@ public class DatabaseService {
 	}
 
 	/**
-	 * Removes the DataSet and the transformation errors associated with the given project from the database
-	 * and deletes the corresponding table.
+	 * Removes the file, dataset and transformation errors of the original data associated with the given project
+	 * from the database and deletes the corresponding table.
 	 *
-	 * @param project The project of which the data set should be deleted.
-	 * @throws BadDataSetIdException               If no data set is associated with the given project.
-	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @param project The project of which the original data set should be deleted.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
 	 */
 	@Transactional
-	public void delete(final ProjectEntity project)
-			throws BadDataSetIdException, InternalDataSetPersistenceException {
+	public void deleteOriginalData(final ProjectEntity project) throws InternalDataSetPersistenceException {
 		project.getOriginalData().setFile(null);
 		project.getOriginalData().setHasHoldOut(false);
 		project.getOriginalData().setHoldOutPercentage(0.0f);
 		project.getOriginalData().setHoldOutSeed(0);
 
 		deleteDataSet(project.getOriginalData().getDataSet());
-
-		for (final var pipeline : project.getPipelines()) {
-			for (final var stage : pipeline.getStages()) {
-				for (final var job : stage.getProcesses()) {
-					job.setStatus(null);
-					job.setExternalProcessStatus(ProcessStatus.NOT_STARTED);
-					job.setServerInstance(null);
-					job.setScheduledTime(null);
-					job.setConfiguration(null);
-					job.getResultFiles().clear();
-
-					if (job instanceof DataProcessingEntity dataProcessing) {
-						deleteDataSet(dataProcessing.getDataSet());
-					}
-				}
-
-				stage.setStatus(ProcessStatus.NOT_STARTED);
-			}
-		}
-
-		project.getConfigurations().clear();
 
 		projectRepository.save(project);
 	}
@@ -854,6 +841,82 @@ public class DatabaseService {
 		try (final Statement statement = connection.createStatement()) {
 			statement.setQueryTimeout(20);
 			statement.execute(query);
+		}
+	}
+
+	/**
+	 * Marks the given process as outdated.
+	 * If the process is part of a stage, sets the stage and the following processes to outdated.
+	 * The changes are not saved to the database.
+	 *
+	 * @param process The process to mark as outdated.
+	 * @throws BadStateException If the process is running or scheduled.
+	 */
+	public void markProcessOutdated(final BackgroundProcessEntity process) throws BadStateException {
+		if (process.getExternalProcessStatus() == ProcessStatus.RUNNING ||
+		    process.getExternalProcessStatus() == ProcessStatus.SCHEDULED) {
+			throw new BadStateException(BadStateException.PROCESS_STARTED,
+			                            "Process cannot be configured if the it is scheduled or started!");
+		}
+
+		if (!targetStatus.contains(process.getExternalProcessStatus())) {
+			return;
+		}
+
+		process.setExternalProcessStatus(ProcessStatus.OUTDATED);
+
+		if (process instanceof ExternalProcessEntity externalProcessEntity) {
+			final ExecutionStepEntity stage = externalProcessEntity.getExecutionStep();
+
+			// Set dependent steps to outdated
+			markStageOutdated(stage, process.getJobIndex());
+
+			// Set the following stages as outdated
+			final PipelineEntity pipeline = stage.getPipeline();
+			for (final ExecutionStepEntity other : pipeline.getStages()) {
+				if (other.getStageIndex() > stage.getStageIndex()) {
+					markStageOutdated(other, -1);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Marks the given stage as outdated, starting after the given job index.
+	 * Pass a negative index to mark all jobs as outdated.
+	 * The changes are not saved to the database.
+	 *
+	 * @param stage The stage to mark as outdated.
+	 * @param startJobIndex Index of the first job to set as outdated.
+	 * @throws BadStateException If the stage is running or scheduled.
+	 */
+	private void markStageOutdated(final ExecutionStepEntity stage, final int startJobIndex) throws BadStateException {
+		if (stage.getStatus() == ProcessStatus.RUNNING || stage.getStatus() == ProcessStatus.SCHEDULED) {
+			throw new BadStateException(BadStateException.PROCESS_STARTED,
+			                            "Process cannot be configured if the it is scheduled or started!");
+		}
+
+		if (stage.getStatus() == ProcessStatus.NOT_STARTED) {
+			return;
+		}
+
+		boolean outdateProcess = false;
+		for (final ExternalProcessEntity other : stage.getProcesses()) {
+			if (other.getJobIndex() > startJobIndex) {
+				// Ignore SKIPPED processes here, as their state can only outdated directly by markProcessOutdated.
+				if (targetStatus.contains(other.getExternalProcessStatus())) {
+					if (other.getExternalProcessStatus() != ProcessStatus.SKIPPED) {
+						other.setExternalProcessStatus(ProcessStatus.OUTDATED);
+						outdateProcess = true;
+					}
+				} else {
+					return;
+				}
+			}
+		}
+
+		if ((startJobIndex >= 0 || outdateProcess) && targetStatus.contains(stage.getStatus())) {
+			stage.setStatus(ProcessStatus.OUTDATED);
 		}
 	}
 
@@ -1182,7 +1245,7 @@ public class DatabaseService {
 		}
 
 		if (dataSet.isConfirmedData()) {
-			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been stored!");
+			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been confirmed!");
 		} else if (dataSet.isStoredData()) {
 			deleteDataSet(dataSet);
 			projectRepository.save(dataSet.getProject());

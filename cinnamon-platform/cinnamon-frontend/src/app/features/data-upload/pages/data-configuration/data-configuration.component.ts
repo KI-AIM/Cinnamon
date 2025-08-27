@@ -3,6 +3,7 @@ import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from "@angular/forms";
 import { Router } from '@angular/router';
 import { Mode } from "@core/enums/mode";
+import { LockedInformation, StateManagementService } from "@core/services/state-management.service";
 import { noSpaceValidator } from "@shared/directives/no-space-validator.directive";
 import { ConfigurationInputDefinition } from "@shared/model/configuration-input-definition";
 import { ConfigurationInputType } from "@shared/model/configuration-input-type";
@@ -15,7 +16,17 @@ import { StringPatternConfiguration } from "@shared/model/string-pattern-configu
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { StatusService } from "@shared/services/status.service";
 import { plainToInstance } from 'class-transformer';
-import { catchError, debounceTime, distinctUntilChanged, map, Observable, of, switchMap, tap } from "rxjs";
+import {
+    catchError,
+    combineLatest,
+    debounceTime,
+    distinctUntilChanged,
+    map,
+    Observable,
+    of,
+    switchMap,
+    tap
+} from "rxjs";
 import { Steps } from 'src/app/core/enums/steps';
 import { TitleService } from 'src/app/core/services/title-service.service';
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
@@ -41,10 +52,13 @@ export class DataConfigurationComponent implements OnInit {
 
     protected isAdvanceConfigurationExpanded: boolean = false;
 
-    protected dataSetInfo$: Observable<DataSetInfo | null>;
-    protected isFileTypeXLSX$: Observable<boolean>;
-    protected status$: Observable<Status>;
-    protected dataConfiguration$: Observable<DataConfiguration>;
+    protected pageData$: Observable<{
+        dataConfiguration: DataConfiguration,
+        dataSetInfo: DataSetInfo | null,
+        isFileTypeXLSX: boolean,
+        locked: LockedInformation,
+        status: Status,
+    }>
 
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
 
@@ -59,51 +73,58 @@ export class DataConfigurationComponent implements OnInit {
         private router: Router,
         private readonly statusService: StatusService,
         public loadingService: LoadingService,
+        private readonly stateManagementService: StateManagementService,
     ) {
         this.titleService.setPageTitle("Data configuration");
     }
 
-    protected get locked(): boolean {
+    private get locked(): boolean {
         return this.statusService.isStepCompleted(Steps.VALIDATION)
     }
 
     ngOnInit(): void {
-        this.isFileTypeXLSX$ = this.fileService.fileInfo$.pipe(
-            map(value => {
-               return value.type === FileType.XLSX;
-            })
-        );
 
-        this.dataConfiguration$ = this.configuration.dataConfiguration$.pipe(
-            tap(value => {
-                if (this.configuration.localDataConfiguration !== null) {
-                    this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration);
-                } else {
-                    this.setEmptyColumnNames(value);
-                    this.attributeConfigurationform = this.createAttributeConfigurationForm(value);
-                }
+        this.pageData$ = combineLatest({
+            dataConfiguration: this.configuration.dataConfiguration$.pipe(
+                tap(value => {
+                    if (this.configuration.localDataConfiguration !== null) {
+                        this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration);
+                    } else {
+                        this.setEmptyColumnNames(value);
+                        this.attributeConfigurationform = this.createAttributeConfigurationForm(value);
+                    }
 
-                this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
-                    this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
-                });
-            }),
-        );
-
-        this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
-            tap(value => {
-                if (this.configuration.localDataSetConfiguration !== null) {
-                    this.createDataSetConfigurationForm(this.configuration.localDataSetConfiguration.createHoldOutSplit, this.configuration.localDataSetConfiguration.holdOutSplitPercentage);
-                } else {
-                    this.createDataSetConfigurationForm(value.hasHoldOutSplit, value.holdOutPercentage);
-                }
-            }),
-            catchError(error => {
-                this.handleError(error);
-                return of(null);
-            }),
-        );
-
-        this.status$ = this.statusService.status$;
+                    this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
+                        this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
+                    });
+                }),
+            ),
+            dataSetInfo: this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
+                tap(value => {
+                    if (this.configuration.localDataSetConfiguration !== null) {
+                        this.createDataSetConfigurationForm(this.configuration.localDataSetConfiguration.createHoldOutSplit, this.configuration.localDataSetConfiguration.holdOutSplitPercentage);
+                    } else {
+                        this.createDataSetConfigurationForm(value.hasHoldOutSplit, value.holdOutPercentage);
+                    }
+                }),
+                catchError(error => {
+                    this.handleError(error);
+                    return of(null);
+                }),
+            ),
+            isFileTypeXLSX: this.fileService.fileInfo$.pipe(
+                map(value => {
+                    return value.type === FileType.XLSX;
+                }),
+            ),
+            locked: this.stateManagementService.currentStepLocked$.pipe(
+                tap(value => {
+                    this.setFormEnabled(this.dataSetConfigurationForm, value.isLocked);
+                    this.setFormEnabled(this.attributeConfigurationform, value.isLocked);
+                }),
+            ),
+            status: this.statusService.status$,
+        });
     }
 
     protected get createHoldOutSplit(): boolean {
@@ -350,6 +371,23 @@ export class DataConfigurationComponent implements OnInit {
         def.max_value = 1;
         def.default_value = 0.2;
         return def;
+    }
+
+    /**
+     * Enables or disabled the given form based on the value of `locked`.
+     *
+     * @param form The form.
+     * @param locked If the form should be disabled.
+     * @private
+     */
+    private setFormEnabled(form: FormGroup | null, locked: boolean) {
+        if (form) {
+            if (locked) {
+                form.disable();
+            } else {
+                form.enable();
+            }
+        }
     }
 
     protected readonly Mode = Mode;

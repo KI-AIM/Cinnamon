@@ -3,8 +3,9 @@ import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular
 import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
+import { StateManagementService } from "@core/services/state-management.service";
 import { Status } from "@shared/model/status";
-import { catchError, from, mergeMap, Observable, of, switchMap, tap } from "rxjs";
+import { catchError, combineLatest, filter, from, map, mergeMap, Observable, of, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
 import { Algorithm } from "../../model/algorithm";
@@ -43,20 +44,17 @@ export class ConfigurationPageComponent implements OnInit {
     @Input() public additionalConfigs: ConfigurationAdditionalConfigs | null = null
     @Input() public hasAlgorithmSelection: boolean = true;
 
-    protected configurationData$: Observable<ConfigData | null>;
-    protected status$: Observable<Status>;
+    protected pageData$: Observable<{
+        configurationData: ConfigData,
+        locked: boolean,
+        status: Status,
+    }>
 
     /**
      * Available algorithms fetched from the external API.
      * @protected
      */
     protected algorithms: Algorithm[] = [];
-
-    /**
-     * If this form is disabled.
-     * @protected
-     */
-    protected disabled: boolean = true;
 
     /**
      * If the corresponding process should be executed.
@@ -94,6 +92,7 @@ export class ConfigurationPageComponent implements OnInit {
         private readonly errorHandlingService: ErrorHandlingService,
         private httpClient: HttpClient,
         private readonly router: Router,
+        private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
     ) {
     }
@@ -106,38 +105,38 @@ export class ConfigurationPageComponent implements OnInit {
             }
         }
 
-        this.configurationData$ = this.algorithmService.algorithms.pipe(
-            tap(value => {
-                this.algorithms = value;
-            }),
-            switchMap(_ => {
-                return this.algorithmService.fetchConfiguration();
-            }),
-            tap(value => {
-                this.selectedAlgorithm = value.selectedAlgorithm
-                if (value.selectedAlgorithm != null) {
-                    this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
-                } else if (!this.hasAlgorithmSelection) {
-                    this.selectedAlgorithm = this.algorithms[0];
-                    this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.algorithms[0]);
-                    value.selectedAlgorithm = this.selectedAlgorithm;
-                }
-            }),
-            catchError(err => {
-                this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
-                return of(null);
-            }),
-        );
+        this.pageData$ = combineLatest({
+            configurationData: this.algorithmService.algorithms.pipe(
+                tap(value => {
+                    this.algorithms = value;
+                }),
+                switchMap(_ => {
+                    return this.algorithmService.fetchConfiguration();
+                }),
+                tap(value => {
+                    this.selectedAlgorithm = value.selectedAlgorithm
+                    if (value.selectedAlgorithm != null) {
+                        this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
+                    } else if (!this.hasAlgorithmSelection) {
+                        this.selectedAlgorithm = this.algorithms[0];
+                        this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.algorithms[0]);
+                        value.selectedAlgorithm = this.selectedAlgorithm;
+                    }
+                }),
+                catchError(err => {
+                    this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
+                    return of(null);
+                }),
+                filter(value => value != null),
+            ),
+            locked: this.stateManagementService.currentStepLocked$.pipe(
+                map(value => value.isLocked),
+            ),
+            status: this.statusService.status$,
+        });
 
         // Set callback functions
         this.algorithmService.setDoSetConfig((error: string | null) => this.setConfig(error));
-
-        this.status$ = this.statusService.status$.pipe(
-            tap(() => {
-                const registryData = this.configurationService.getRegisteredConfigurationByName(this.algorithmService.getConfigurationName());
-                this.disabled = this.statusService.isStepCompleted(registryData?.lockedAfterStep);
-            }),
-        );
     }
 
     /**

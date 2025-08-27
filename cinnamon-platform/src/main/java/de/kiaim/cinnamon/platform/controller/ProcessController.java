@@ -2,7 +2,10 @@ package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
-import de.kiaim.cinnamon.platform.exception.ApiException;
+import de.kiaim.cinnamon.platform.exception.*;
+import de.kiaim.cinnamon.platform.model.dto.PipelineInformation;
+import de.kiaim.cinnamon.platform.model.entity.PipelineEntity;
+import de.kiaim.cinnamon.platform.model.mapper.PipelineMapper;
 import de.kiaim.cinnamon.platform.service.ProcessService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.StepService;
@@ -48,49 +51,40 @@ public class ProcessController {
 	private final StepService stepService;
 	private final UserService userService;
 	private final ExecutionStepMapper executionStepMapper;
+	private final PipelineMapper pipelineMapper;
 
 	public ProcessController(final ProcessService processService, final ProjectService projectService,
 	                         final StepService stepService, final UserService userService,
-	                         final ExecutionStepMapper executionStepMapper) {
+	                         final ExecutionStepMapper executionStepMapper, final PipelineMapper pipelineMapper) {
 		this.processService = processService;
 		this.projectService = projectService;
 		this.stepService = stepService;
 		this.userService = userService;
 		this.executionStepMapper = executionStepMapper;
+		this.pipelineMapper = pipelineMapper;
 	}
 
-	@Operation(summary = "Returns the status of the execution.",
-	           description = "Returns the status of the execution.")
+	@Operation(summary = "Returns the status of the pipeline.",
+	           description = "Returns the status of the pipeline.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully returns the status object.",
 			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
-			@ApiResponse(responseCode = "400",
-			             description = "The step name is not valid.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
-			             description = "The Request for fetching the status from the external server failed.",
+			             description = "The application is in an invalid state.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
 			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
-	@GetMapping(value = "/{stageName}", produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
-	public ExecutionStepInformation getProcess(
-			@Parameter(description = "Step of which the process should be canceled.")
-			@PathVariable final String stageName,
+	@GetMapping(value = "", produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public PipelineInformation getPipeline(
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws ApiException {
+	) throws InternalInvalidStateException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-
-		final Stage stage = stepService.getStageConfiguration(stageName);
-
-		final ExecutionStepEntity executionStep = processService.getStatus(project, stage);
-		return executionStepMapper.toDto(executionStep);
+		final PipelineEntity pipeline = processService.getPipeline(project);
+		return pipelineMapper.toDto(pipeline);
 	}
 
 	@Operation(summary = "Saves the configuration and the URL of the selected process for the given step.",

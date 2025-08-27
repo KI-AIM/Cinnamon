@@ -110,7 +110,7 @@ public class BackgroundProcessEntity {
 		this.owner = owner;
 	}
 
-	public void setConfiguration(final BackgroundProcessConfiguration newConfiguration) {
+	public void setConfiguration(@Nullable final BackgroundProcessConfiguration newConfiguration) {
 		final BackgroundProcessConfiguration oldConfiguration = this.configuration;
 		this.configuration = newConfiguration;
 		if (oldConfiguration != null && oldConfiguration.getUsages().contains(this)) {
@@ -152,6 +152,7 @@ public class BackgroundProcessEntity {
 		resultFiles.clear();
 		externalProcessStatus = ProcessStatus.NOT_STARTED;
 		serverInstance = null;
+		scheduledTime = null;
 	}
 
 	/**
@@ -165,6 +166,12 @@ public class BackgroundProcessEntity {
 		if (this.externalProcessStatus != ProcessStatus.RUNNING && this.serverInstance != null) {
 			throw new IllegalStateException("The server instance is set but the stage is not running.");
 		}
-	}
 
+		if (this.externalProcessStatus == ProcessStatus.SCHEDULED && this.scheduledTime == null) {
+			throw new IllegalStateException("The stage is scheduled but no scheduled time is set.");
+		}
+		if (this.externalProcessStatus != ProcessStatus.SCHEDULED && this.scheduledTime != null) {
+			throw new IllegalStateException("The stage is not scheduled but a scheduled time is set.");
+		}
+	}
 }

@@ -115,9 +115,14 @@ export class DataConfigurationComponent implements OnInit {
             isFileTypeXLSX: this.fileService.fileInfo$.pipe(
                 map(value => {
                     return value.type === FileType.XLSX;
-                })
+                }),
             ),
-            locked: this.stateManagementService.currentStepLocked$,
+            locked: this.stateManagementService.currentStepLocked$.pipe(
+                tap(value => {
+                    this.setFormEnabled(this.dataSetConfigurationForm, value.isLocked);
+                    this.setFormEnabled(this.attributeConfigurationform, value.isLocked);
+                }),
+            ),
             status: this.statusService.status$,
         });
     }
@@ -366,6 +371,23 @@ export class DataConfigurationComponent implements OnInit {
         def.max_value = 1;
         def.default_value = 0.2;
         return def;
+    }
+
+    /**
+     * Enables or disabled the given form based on the value of `locked`.
+     *
+     * @param form The form.
+     * @param locked If the form should be disabled.
+     * @private
+     */
+    private setFormEnabled(form: FormGroup | null, locked: boolean) {
+        if (form) {
+            if (locked) {
+                form.disable();
+            } else {
+                form.enable();
+            }
+        }
     }
 
     protected readonly Mode = Mode;

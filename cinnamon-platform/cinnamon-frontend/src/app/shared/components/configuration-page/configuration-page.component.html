@@ -4,14 +4,14 @@
         <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="4"
                            [step]="step" [invalid]="oneEnabled && !formValid" (confirm)="submit()">
             <!-- Activation -->
-            <app-workstep-item title="Select steps to execute" [locked]="data.locked" [stepIndex]="0"
+            <app-workstep-item header="Select steps to execute" [locked]="data.locked" [stepIndex]="0"
                                [invalid]="!oneEnabled" altConfirm="Skip all steps" [altConfirmAll]="true"
                                [altConfirmValid]="!oneEnabled">
                 <ng-container *ngTemplateOutlet="processActivation"></ng-container>
             </app-workstep-item>
 
             <!-- Upload -->
-            <app-workstep-item title="Upload a configuration if available" [locked]="data.locked"
+            <app-workstep-item header="Upload a configuration if available" [locked]="data.locked"
                                [stepIndex]="1" altConfirm="Continue witout a configuraiton"
                                [invalid]="configFileCache === null" (confirm)="uploadCachedConfiguration()">
                 Upload an existing configuration:
@@ -20,7 +20,7 @@
             </app-workstep-item>
 
             <!-- Algorithm Selection -->
-            <app-workstep-item title="Select the algorithm to be executed" [locked]="data.locked"
+            <app-workstep-item header="Select the algorithm to be executed" [locked]="data.locked"
                                [stepIndex]="2" [invalid]="selectedAlgorithm == null">
                 <app-configuration-selection #selection [algorithms]="algorithms"
                                              [disabled]="data.locked || !oneEnabled"
@@ -30,7 +30,7 @@
             </app-workstep-item>
 
             <!-- Algorithm Configuration -->
-            <app-workstep-item title="Configure the selected algorithm" [locked]="data.locked"
+            <app-workstep-item header="Configure the selected algorithm" [locked]="data.locked"
                                [stepIndex]="3" [invalid]="!formValid">
                 <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                     <div class="ms-auto me-auto" style="width: fit-content">
@@ -58,17 +58,17 @@
 
     <ng-container *ngIf="data.status.mode === Mode.EXPERT">
 
-        <app-workstep-box title="Process Activation">
+        <app-workstep-box header="Process Activation">
             <ng-container *ngTemplateOutlet="processActivation"></ng-container>
         </app-workstep-box>
 
-        <app-workstep-box title="Configuration Upload">
+        <app-workstep-box header="Configuration Upload">
             Upload an existing configuration:
             <app-file-upload accept=".yml,.yaml" [disabled]="data.locked || !oneEnabled"
                              (input)="uploadConfiguration($event)"></app-file-upload>
         </app-workstep-box>
 
-        <app-workstep-box title="Algorithm Selection" [class.d-none]="!hasAlgorithmSelection">
+        <app-workstep-box header="Algorithm Selection" [class.d-none]="!hasAlgorithmSelection">
             <app-configuration-selection #selection [algorithms]="algorithms"
                                          [initialValue]="data.configurationData.selectedAlgorithm"
                                          [disabled]="data.locked || !oneEnabled"
@@ -76,7 +76,7 @@
             </app-configuration-selection>
         </app-workstep-box>
 
-        <app-workstep-box title="Algorithm Configuration" [invalid]="selectedAlgorithm !== null && !formValid">
+        <app-workstep-box header="Algorithm Configuration" [invalid]="selectedAlgorithm !== null && !formValid">
             <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                 <div class="ms-auto me-auto" style="width: fit-content">
                     Please select an algorithm
@@ -97,7 +97,7 @@
             </ng-template>
         </app-workstep-box>
 
-        <app-workstep-box title="Confirm your configuration">
+        <app-workstep-box header="Confirm your configuration">
             <button type="submit" mat-raised-button color="primary"
                     [disabled]="data.locked || (oneEnabled && !formValid)" (click)="submit()">
                 Continue

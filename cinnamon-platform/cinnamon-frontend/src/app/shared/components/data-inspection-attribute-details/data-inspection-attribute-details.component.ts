@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import {
     AttributeStatistics,
+    GraphType,
     StatisticsData,
     StatisticsValues,
     StatisticsValueTypes
@@ -30,7 +31,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     @Input() public mainData: 'real' | 'synthetic' = 'real';
     @Input() public processingSteps: string[] = [];
 
-    protected graphType: string = 'histogram';
+    protected graphType: GraphType = 'histogram';
     protected hasSynthetic: boolean = false;
 
     protected importantMetricsTableData = new MetricTableData();
@@ -50,6 +51,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        this.graphType = this.isContinuous() ? 'histogram' : 'frequency';
         this.hasSynthetic = this.mainData == 'synthetic';
 
         if (this.hasSynthetic) {
@@ -105,5 +107,9 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         return input.map(value => {
             return [value[0], value[1], MetricImportanceData[config.userDefinedImportance[value[0]]].value];
         });
+    }
+
+    protected isContinuous(): boolean {
+        return this.attributeStatistics.plot.density != null;
     }
 }

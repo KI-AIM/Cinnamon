@@ -1,5 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {MatSelectChange} from "@angular/material/select";
+import { GraphType } from "src/app/shared/model/statistics";
 import { DataType } from "../../model/data-type";
 
 @Component({
@@ -9,9 +10,11 @@ import { DataType } from "../../model/data-type";
     standalone: false
 })
 export class ChartSelectComponent {
+    @Input() public comparison!: boolean;
+    @Input() public continuous!: boolean;
     @Input() dataType!: DataType;
     @Input() simple: boolean = false;
-    @Input() graph!: string;
+    @Input() graph!: GraphType;
     @Output() graphChange: EventEmitter<string> = new EventEmitter<string>();
 
     protected update(v : MatSelectChange): void {

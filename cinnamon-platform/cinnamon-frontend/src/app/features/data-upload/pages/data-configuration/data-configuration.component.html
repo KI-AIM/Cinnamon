@@ -12,12 +12,12 @@
                            [invalid]="isInvalid" [numberSteps]="2" [step]="Steps.DATA_CONFIG"
                            (confirm)="confirmConfiguration()">
 
-            <app-workstep-item title="Configure the attributes" [locked]="data.locked.isLocked"
+            <app-workstep-item header="Configure the attributes" [locked]="data.locked.isLocked"
                                [invalid]="attributeConfigurationform.invalid" [stepIndex]="0">
                 <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
             </app-workstep-item>
 
-            <app-workstep-item title="Configure the dataset" [locked]="data.locked.isLocked"
+            <app-workstep-item header="Configure the dataset" [locked]="data.locked.isLocked"
                                [invalid]="isDataSetConfigurationFormInvalid" [stepIndex]="1">
                 <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
             </app-workstep-item>
@@ -27,15 +27,15 @@
     </ng-container>
     <ng-container *ngIf="data.status.mode === Mode.EXPERT">
 
-        <app-workstep-box title="Attribute Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
+        <app-workstep-box header="Attribute Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
             <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
         </app-workstep-box>
 
-        <app-workstep-box title="Dataset Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
+        <app-workstep-box header="Dataset Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
             <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
         </app-workstep-box>
 
-        <app-workstep-box title="Confirm your configuration">
+        <app-workstep-box header="Confirm your configuration">
             <div class="btn-group">
                 <div class="px-1">
                     <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()"

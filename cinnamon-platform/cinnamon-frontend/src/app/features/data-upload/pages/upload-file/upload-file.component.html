@@ -6,13 +6,13 @@
                            [invalid]="isInvalid"
                            [numberSteps]="2" resetSteps [step]="Steps.UPLOAD" (confirm)="uploadFile()">
 
-            <app-workstep-item title="Select your dataset" [locked]="pageData.locked.isLocked"
+            <app-workstep-item header="Select your dataset" [locked]="pageData.locked.isLocked"
                                [invalid]="isDataFileInvalid" [stepIndex]="0">
                 <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
                 <ng-container *ngTemplateOutlet="info"></ng-container>
             </app-workstep-item>
 
-            <app-workstep-item title="Select a data configuration if available" [locked]="pageData.locked.isLocked"
+            <app-workstep-item header="Select a data configuration if available" [locked]="pageData.locked.isLocked"
                                [invalid]="isConfigFileInvalid" [stepIndex]="1"
                                altConfirm="Continue without a configuration">
                 <ng-container *ngTemplateOutlet="configFileUpload"></ng-container>
@@ -24,7 +24,7 @@
 
     <ng-container *ngIf="pageData.status.mode === Mode.EXPERT">
 
-        <app-workstep-box title="Upload your dataset and data configuration">
+        <app-workstep-box header="Upload your dataset and data configuration">
             <div>
                 <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
             </div>

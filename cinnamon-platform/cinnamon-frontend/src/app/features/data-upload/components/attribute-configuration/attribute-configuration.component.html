@@ -1,19 +1,16 @@
 <div class="d-flex flex-row mb-2 justify-content-between" [formGroup]="columnConfigurationForm">
 
-    <div *ngIf="confidence != null" class="confidence" [class.confidence-high]="confidence == 1.0"
-         [class.confidence-medium]="confidence < 1.0 && confidence > 0.5" [class.confidence-low]="confidence <= 0.5"
-         (mouseenter)="openTooltip()" (mouseleave)="closeTooltip()">
+    <div #confidence_indicator *ngIf="confidence != null" class="confidence" [class.confidence-high]="confidence == 1.0"
+         [class.confidence-medium]="confidence < 1.0 && confidence > 0.5" [class.confidence-low]="confidence <= 0.5">
 
-        <div #tooltip class="confidence-tooltip" id="confidenceTooltip">
-            <div #tooltipArrow class="confidence-tooltip-arrow"></div>
-
+        <app-tooltip [target]="confidence_indicator">
             <div *ngIf="confidence == 1.0">
                 The automatic estimation found a suitable configuration.
             </div>
             <div *ngIf="confidence < 1.0">
                 The automatic estimation could not find a suitable configuration that fits all values.
             </div>
-        </div>
+        </app-tooltip>
     </div>
 
     <div class="d-flex flex-column px-2 w-100">

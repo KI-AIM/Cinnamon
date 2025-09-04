@@ -53,7 +53,7 @@ public class ExternalServerInstanceService {
 
 		for (final Pair<ExternalServerInstance, Long> instance : instances) {
 			// Check if capacities are available for this instance
-			if (instance.getFirst().getMaxParallelProcess() >= 0) {
+			if (!ignoreMaxParallelProcess && instance.getFirst().getMaxParallelProcess() >= 0) {
 				if (instance.getSecond() >= instance.getFirst().getMaxParallelProcess()) {
 					continue;
 				}

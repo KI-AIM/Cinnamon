@@ -32,15 +32,20 @@ public class ExternalServerInstance {
 	private Integer healthTimeout = null;
 
 	/**
+	 * Name of the host this instances runs on.
+	 */
+	private String hostName;
+
+	/**
 	 * See {@link #getMaxParallelProcess()}.
 	 */
 	@Nullable
 	private Integer maxParallelProcess = null;
 
 	/**
-	 * URL of the instance.
+	 * Port of the instance on the host.
 	 */
-	private String url;
+	private int port;
 
 	//=========================
 	//--- Automatically set ---
@@ -51,6 +56,12 @@ public class ExternalServerInstance {
 	 * Mapped by {@link ExternalServer#getInstances()}
 	 */
 	private ExternalServer server;
+
+	/**
+	 * The host this instance is running on.
+	 * Mapped by {@link ExternalHost#getInstances()}
+	 */
+	private ExternalHost host;
 
 	/**
 	 * The name of the instance defined in {@link ExternalServer#getInstances()}.
@@ -99,6 +110,15 @@ public class ExternalServerInstance {
 	 */
 	public String getId() {
 		return server.getName() + ID_SEPARATOR + name;
+	}
+
+	/**
+	 * URL of this instance.
+	 *
+	 * @return The URL.
+	 */
+	public String getUrl() {
+		return host.getUrl() + ":" + port;
 	}
 
 }

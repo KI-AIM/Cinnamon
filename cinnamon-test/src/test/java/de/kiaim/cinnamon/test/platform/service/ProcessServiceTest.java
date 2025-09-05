@@ -62,7 +62,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		                     .get("anonymization-server")
 		                     .getInstances()
 		                     .get("0")
-		                     .setUrl(url.substring(0, url.lastIndexOf(":") + 1) + mockBackEnd.getPort());
+		                     .setPort(mockBackEnd.getPort());
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
 		                                         backgroundProcessRepository, projectRepository, csvProcessor,
 		                                         databaseService, dataProcessorService, dataSetService,

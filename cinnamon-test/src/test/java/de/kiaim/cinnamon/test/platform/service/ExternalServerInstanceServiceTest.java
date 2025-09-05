@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.test.platform.service;
 
+import de.kiaim.cinnamon.platform.model.configuration.ExternalHost;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServer;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServerInstance;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 public class ExternalServerInstanceServiceTest {
 
+	ExternalHost host;
 	ExternalServer es;
 	ExternalServerInstance esi1;
 	ExternalServerInstance esi2;
@@ -28,6 +30,10 @@ public class ExternalServerInstanceServiceTest {
 
 	@BeforeEach
 	public void setup() {
+		host = new ExternalHost();
+		host.setName("localhost");
+		host.setUrl("http://localhost");
+
 		es = createConfig();
 		esi1 = es.getInstances().get("esi1");
 		esi2 = es.getInstances().get("esi2");
@@ -135,6 +141,9 @@ public class ExternalServerInstanceServiceTest {
 
 		esi.setServer(es);
 		es.getInstances().put(esi.getName(), esi);
+
+		esi.setHost(host);
+		host.getInstances().add(esi);
 	}
 
 	private ExternalServerInstanceService createService(final long count1, final long count2, final long count3) {
@@ -164,9 +173,9 @@ public class ExternalServerInstanceServiceTest {
 			final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 			mockBackEnd.start(mockBackEndPort);
 
-			esi1.setUrl(String.format("http://localhost:%s", mockBackEndPort));
-			esi2.setUrl(String.format("http://localhost:%s", mockBackEndPort));
-			esi3.setUrl(String.format("http://localhost:%s", mockBackEndPort));
+			esi1.setPort(mockBackEndPort);
+			esi2.setPort(mockBackEndPort);
+			esi3.setPort(mockBackEndPort);
 
 			runnable.accept(mockBackEnd);
 		} catch (IOException e) {

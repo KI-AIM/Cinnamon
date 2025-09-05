@@ -11,11 +11,11 @@ import org.springframework.stereotype.Component;
  * @author Daniel Preciado-Marquez
  */
 @Component
-public class KiAimConfigurationPostProcessor {
+public class CinnamonConfigurationPostProcessor {
 
 	private final CinnamonConfiguration config;
 
-	public KiAimConfigurationPostProcessor(final CinnamonConfiguration config) {
+	public CinnamonConfigurationPostProcessor(final CinnamonConfiguration config) {
 		this.config = config;
 	}
 
@@ -47,6 +47,11 @@ public class KiAimConfigurationPostProcessor {
 		for (final var entry : config.getStages().entrySet()) {
 			entry.getValue().setStageName(entry.getKey());
 		}
+
+		// Set names of hosts
+		for (final var entry : config.getExternalHost().entrySet()) {
+			entry.getValue().setName(entry.getKey());
+		}
 	}
 
 	private void link() throws InternalApplicationConfigurationException {
@@ -54,6 +59,11 @@ public class KiAimConfigurationPostProcessor {
 		for (final var server : config.getExternalServer().values()) {
 			for (final var instance : server.getInstances().values()) {
 				instance.setServer(server);
+
+				// Link hosts and instances
+				final var host = config.getExternalHost().get(instance.getHostName());
+				host.getInstances().add(instance);
+				instance.setHost(host);
 			}
 		}
 

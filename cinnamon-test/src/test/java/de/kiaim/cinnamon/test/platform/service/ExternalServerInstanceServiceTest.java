@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.test.platform.service;
 
+import de.kiaim.cinnamon.platform.model.configuration.ExternalHost;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServer;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServerInstance;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
@@ -12,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -135,13 +137,23 @@ public class ExternalServerInstanceServiceTest {
 
 		esi.setServer(es);
 		es.getInstances().put(esi.getName(), esi);
+
+		var host = new ExternalHost();
+		host.setUrl("http://localhost");
+		esi.setHost(host);
+		host.getInstances().add(esi);
 	}
 
 	private ExternalServerInstanceService createService(final long count1, final long count2, final long count3) {
 		BackgroundProcessRepository repo = mock(BackgroundProcessRepository.class);
+
 		when(repo.countByServerInstance(eq(esi1.getId()))).thenReturn(count1);
 		when(repo.countByServerInstance(eq(esi2.getId()))).thenReturn(count2);
 		when(repo.countByServerInstance(eq(esi3.getId()))).thenReturn(count3);
+
+		when(repo.countByServerInstanceIn(eq(Set.of(esi1.getId())))).thenReturn(count1);
+		when(repo.countByServerInstanceIn(eq(Set.of(esi2.getId())))).thenReturn(count2);
+		when(repo.countByServerInstanceIn(eq(Set.of(esi3.getId())))).thenReturn(count3);
 		return new ExternalServerInstanceService(repo);
 	}
 
@@ -164,9 +176,7 @@ public class ExternalServerInstanceServiceTest {
 			final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 			mockBackEnd.start(mockBackEndPort);
 
-			esi1.setUrl(String.format("http://localhost:%s", mockBackEndPort));
-			esi2.setUrl(String.format("http://localhost:%s", mockBackEndPort));
-			esi3.setUrl(String.format("http://localhost:%s", mockBackEndPort));
+			es.setInstanceHostPort(mockBackEndPort);
 
 			runnable.accept(mockBackEnd);
 		} catch (IOException e) {

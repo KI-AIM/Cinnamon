@@ -53,16 +53,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		ExternalServerInstanceService externalServerInstanceService = mock(ExternalServerInstanceService.class);
 		ProjectRepository projectRepository = mock(ProjectRepository.class);
 
-		var url = cinnamonConfiguration.getExternalServer()
-		                               .get("anonymization-server")
-		                               .getInstances()
-		                               .get("0")
-		                               .getUrl();
 		cinnamonConfiguration.getExternalServer()
 		                     .get("anonymization-server")
-		                     .getInstances()
-		                     .get("0")
-		                     .setUrl(url.substring(0, url.lastIndexOf(":") + 1) + mockBackEnd.getPort());
+		                     .setInstanceHostPort(mockBackEnd.getPort());
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
 		                                         backgroundProcessRepository, projectRepository, csvProcessor,
 		                                         databaseService, dataProcessorService, dataSetService,

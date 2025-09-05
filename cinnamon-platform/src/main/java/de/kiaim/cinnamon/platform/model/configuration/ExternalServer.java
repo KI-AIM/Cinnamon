@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.model.configuration;
 
-import de.kiaim.cinnamon.platform.helper.KiAimConfigurationPostProcessor;
+import de.kiaim.cinnamon.platform.helper.CinnamonConfigurationPostProcessor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.lang.Nullable;
@@ -50,6 +50,13 @@ public class ExternalServer {
 	private Integer minUp = null;
 
 	/**
+	 * Default host port used for all instances.
+	 * <p>
+	 * The default value is 80.
+	 */
+	private int instanceHostPort = 80;
+
+	/**
 	 * List of instances for the external server.
 	 */
 	private Map<String, ExternalServerInstance> instances = new HashMap<>();
@@ -59,7 +66,7 @@ public class ExternalServer {
 	//=========================
 
 	/**
-	 * Name of the server. Is automatically set at {@link KiAimConfigurationPostProcessor#init()}.
+	 * Name of the server. Is automatically set at {@link CinnamonConfigurationPostProcessor#init()}.
 	 */
 	private String name;
 

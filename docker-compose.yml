@@ -45,18 +45,25 @@ services:
 
             CINNAMON_IS-DEMO-INSTANCE: ${IS_DEMO_INSTANCE:-false}
 
+            # Hosts
+            CINNAMON.EXTERNAL-HOST.anonymization-host.URL: http://cinnamon-anonymization
+            CINNAMON.EXTERNAL-HOST.synthetization-host.URL: http://cinnamon-synthetization
+            CINNAMON.EXTERNAL-HOST.technical-evaluation-host.URL: http://cinnamon-evaluation
+            CINNAMON.EXTERNAL-HOST.risk-assessment-host.URL: http://cinnamon-risk-assessment
+
             # Anonymization
             CINNAMON.EXTERNAL-SERVER.anonymization-server.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.anonymization-server.instances.0.URL: http://cinnamon-anonymization:8080
+            CINNAMON.EXTERNAL-SERVER.anonymization-server.INSTANCE-HOST-PORT: 8080
+            CINNAMON.EXTERNAL-SERVER.anonymization-server.INSTANCES.0.HOST-NAME: anonymization-host
             # Synthetization
             CINNAMON.EXTERNAL-SERVER.synthetization-server.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.synthetization-server.instances.0.URL: http://cinnamon-synthetization:5000
+            CINNAMON.EXTERNAL-SERVER.synthetization-server.INSTANCES.0.HOST-NAME: synthetization-host
             # Evaluation
             CINNAMON.EXTERNAL-SERVER.technical-evaluation-server.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.technical-evaluation-server.instances.0.URL: http://cinnamon-evaluation:5010
-
+            CINNAMON.EXTERNAL-SERVER.technical-evaluation-server.INSTANCES.0.HOST-NAME: technical-evaluation-host
+            # Risk Assessment
             CINNAMON.EXTERNAL-SERVER.risk-assessment-server.CALLBACK-HOST: cinnamon-platform
-            CINNAMON.EXTERNAL-SERVER.risk-assessment-server.instances.0.URL: http://cinnamon-risk-assessment:8000
+            CINNAMON.EXTERNAL-SERVER.risk-assessment-server.INSTANCES.0.HOST-NAME: risk-assessment-host
         depends_on:
             - cinnamon-db
         healthcheck:

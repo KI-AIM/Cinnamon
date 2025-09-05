@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.service;
 
+import de.kiaim.cinnamon.platform.model.configuration.ExternalHost;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServer;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServerInstance;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
@@ -57,21 +58,34 @@ public class ExternalServerInstanceService {
 		instances.sort(Comparator.comparing(Pair::getSecond));
 
 		for (final Pair<ExternalServerInstance, Long> instance : instances) {
-			// Check if capacities are available for this instance
-			if (!ignoreMaxParallelProcess && instance.getFirst().getMaxParallelProcess() >= 0) {
-				if (instance.getSecond() >= instance.getFirst().getMaxParallelProcess()) {
-					continue;
+			final ExternalServerInstance current = instance.getFirst();
+
+			if (!ignoreMaxParallelProcess) {
+				// Check if capacities are available on the host
+				final ExternalHost host = current.getHost();
+				if (host.getMaxParallelProcess() >= 0) {
+					if (instance.getSecond() >= host.getMaxParallelProcess()) {
+						continue;
+					}
+				}
+
+				// Check if capacities are available for this instance
+				if (current.getMaxParallelProcess() >= 0) {
+					var count = backgroundProcessRepository.countByServerInstance(current.getId());
+					if (count >= current.getMaxParallelProcess()) {
+						continue;
+					}
 				}
 			}
 
 			// Check if the instance is available and healthy
 			if (externalServer.getMinUp() != externalServer.getInstances().size()) {
-				if (!isExternalServerInstanceAvailable(instance.getFirst())) {
+				if (!isExternalServerInstanceAvailable(current)) {
 					continue;
 				}
 			}
 
-			target = instance.getFirst();
+			target = current;
 			break;
 		}
 

@@ -146,6 +146,11 @@ public class ExternalServerInstanceServiceTest {
 
 	private ExternalServerInstanceService createService(final long count1, final long count2, final long count3) {
 		BackgroundProcessRepository repo = mock(BackgroundProcessRepository.class);
+
+		when(repo.countByServerInstance(eq(esi1.getId()))).thenReturn(count1);
+		when(repo.countByServerInstance(eq(esi2.getId()))).thenReturn(count2);
+		when(repo.countByServerInstance(eq(esi3.getId()))).thenReturn(count3);
+
 		when(repo.countByServerInstanceIn(eq(Set.of(esi1.getId())))).thenReturn(count1);
 		when(repo.countByServerInstanceIn(eq(Set.of(esi2.getId())))).thenReturn(count2);
 		when(repo.countByServerInstanceIn(eq(Set.of(esi3.getId())))).thenReturn(count3);

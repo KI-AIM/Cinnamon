@@ -10,10 +10,10 @@ import java.util.Set;
 public class ExternalHost {
 
 	/**
-	 * The maximum number of parallel processes by any module on the host.
+	 * Maximum number of processes that are allowed to run in parallel on the host.
 	 * Negative values allow an unlimited number of processes.
 	 * <p>
-	 * Default is -1.
+	 * The default is -1.
 	 */
 	private int maxParallelProcess = -1;
 

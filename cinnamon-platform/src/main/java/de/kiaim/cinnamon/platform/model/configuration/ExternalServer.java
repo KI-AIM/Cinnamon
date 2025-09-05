@@ -50,6 +50,13 @@ public class ExternalServer {
 	private Integer minUp = null;
 
 	/**
+	 * Default host port used for all instances.
+	 * <p>
+	 * The default value is 80.
+	 */
+	private int instanceHostPort = 80;
+
+	/**
 	 * List of instances for the external server.
 	 */
 	private Map<String, ExternalServerInstance> instances = new HashMap<>();

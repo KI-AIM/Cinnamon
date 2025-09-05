@@ -44,8 +44,11 @@ public class ExternalServerInstance {
 
 	/**
 	 * Port of the instance on the host.
+	 * If the value is null, the value of {@link ExternalServer#getInstanceHostPort()} will be used.
+	 * <p>
 	 */
-	private int port;
+	@Nullable
+	private Integer port = null;
 
 	//=========================
 	//--- Automatically set ---
@@ -113,12 +116,22 @@ public class ExternalServerInstance {
 	}
 
 	/**
+	 * Returns the port of the instance on the host.
+	 * If the port of the instance is null, the default value specified in {@link ExternalServer#getInstanceHostPort()} is used.
+	 *
+	 * @return The port of the instance on the host.
+	 */
+	public int getPort() {
+		return port == null ? server.getInstanceHostPort() : port;
+	}
+
+	/**
 	 * URL of this instance.
 	 *
 	 * @return The URL.
 	 */
 	public String getUrl() {
-		return host.getUrl() + ":" + port;
+		return host.getUrl() + ":" + getPort();
 	}
 
 }

@@ -171,9 +171,7 @@ public class ExternalServerInstanceServiceTest {
 			final int mockBackEndPort = TestSocketUtils.findAvailableTcpPort();
 			mockBackEnd.start(mockBackEndPort);
 
-			esi1.setPort(mockBackEndPort);
-			esi2.setPort(mockBackEndPort);
-			esi3.setPort(mockBackEndPort);
+			es.setInstanceHostPort(mockBackEndPort);
 
 			runnable.accept(mockBackEnd);
 		} catch (IOException e) {

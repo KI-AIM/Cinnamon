@@ -11,11 +11,11 @@ import org.springframework.stereotype.Component;
  * @author Daniel Preciado-Marquez
  */
 @Component
-public class KiAimConfigurationPostProcessor {
+public class CinnamonConfigurationPostProcessor {
 
 	private final CinnamonConfiguration config;
 
-	public KiAimConfigurationPostProcessor(final CinnamonConfiguration config) {
+	public CinnamonConfigurationPostProcessor(final CinnamonConfiguration config) {
 		this.config = config;
 	}
 

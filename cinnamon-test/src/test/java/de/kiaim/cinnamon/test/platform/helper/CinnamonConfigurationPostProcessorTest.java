@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class KiAimConfigurationPostProcessorTest extends ContextRequiredTest {
+public class CinnamonConfigurationPostProcessorTest extends ContextRequiredTest {
 
 	@Autowired
 	private CinnamonConfiguration config;

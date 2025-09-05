@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.model.configuration;
 
-import de.kiaim.cinnamon.platform.helper.KiAimConfigurationPostProcessor;
+import de.kiaim.cinnamon.platform.helper.CinnamonConfigurationPostProcessor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.lang.Nullable;
@@ -59,7 +59,7 @@ public class ExternalServer {
 	//=========================
 
 	/**
-	 * Name of the server. Is automatically set at {@link KiAimConfigurationPostProcessor#init()}.
+	 * Name of the server. Is automatically set at {@link CinnamonConfigurationPostProcessor#init()}.
 	 */
 	private String name;
 

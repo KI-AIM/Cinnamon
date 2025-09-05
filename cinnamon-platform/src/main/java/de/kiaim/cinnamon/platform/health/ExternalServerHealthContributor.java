@@ -17,7 +17,7 @@ import java.util.Map;
  * @author Daniel Preciado-Marquez
  */
 @Component
-@DependsOn({"kiAimConfigurationPostProcessor"})
+@DependsOn({"cinnamonConfigurationPostProcessor"})
 public class ExternalServerHealthContributor implements CompositeHealthContributor {
 
 	private final Map<String, HealthContributor> healthContributors = new LinkedHashMap<>();

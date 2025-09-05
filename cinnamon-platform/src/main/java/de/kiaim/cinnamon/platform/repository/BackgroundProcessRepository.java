@@ -14,7 +14,7 @@ import java.util.UUID;
 public interface BackgroundProcessRepository extends CrudRepository<BackgroundProcessEntity, Long> {
 	Optional<BackgroundProcessEntity> findByUuid(UUID uuid);
 
-	long countByServerInstance(String serverInstance);
+	long countByServerInstanceIn(Collection<String> instance);
 
 	List<BackgroundProcessEntity> findByEndpointInAndExternalProcessStatusOrderByScheduledTimeAsc(
 			Collection<Integer> endpoints,

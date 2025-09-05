@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service for everything regarding extern server instances.
@@ -42,9 +43,13 @@ public class ExternalServerInstanceService {
 
 		final List<Pair<ExternalServerInstance, Long>> instances = new ArrayList<>(externalServer.getInstances().size());
 
-		// Get the number of running processes per instance
+		// Get the number of processes running on the host of each instance
 		for (final ExternalServerInstance instance : externalServer.getInstances().values()) {
-			var count = backgroundProcessRepository.countByServerInstance(instance.getId());
+			final Set<String> hostInstances = instance.getHost().getInstances().stream()
+			                                          .map(ExternalServerInstance::getId)
+			                                          .collect(Collectors.toSet());
+
+			var count = backgroundProcessRepository.countByServerInstanceIn(hostInstances);
 			instances.add(Pair.of(instance, count));
 		}
 

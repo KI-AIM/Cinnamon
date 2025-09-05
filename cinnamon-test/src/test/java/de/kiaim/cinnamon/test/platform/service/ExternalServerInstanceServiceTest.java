@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,7 +23,6 @@ import static org.mockito.Mockito.when;
 
 public class ExternalServerInstanceServiceTest {
 
-	ExternalHost host;
 	ExternalServer es;
 	ExternalServerInstance esi1;
 	ExternalServerInstance esi2;
@@ -30,10 +30,6 @@ public class ExternalServerInstanceServiceTest {
 
 	@BeforeEach
 	public void setup() {
-		host = new ExternalHost();
-		host.setName("localhost");
-		host.setUrl("http://localhost");
-
 		es = createConfig();
 		esi1 = es.getInstances().get("esi1");
 		esi2 = es.getInstances().get("esi2");
@@ -142,15 +138,17 @@ public class ExternalServerInstanceServiceTest {
 		esi.setServer(es);
 		es.getInstances().put(esi.getName(), esi);
 
+		var host = new ExternalHost();
+		host.setUrl("http://localhost");
 		esi.setHost(host);
 		host.getInstances().add(esi);
 	}
 
 	private ExternalServerInstanceService createService(final long count1, final long count2, final long count3) {
 		BackgroundProcessRepository repo = mock(BackgroundProcessRepository.class);
-		when(repo.countByServerInstance(eq(esi1.getId()))).thenReturn(count1);
-		when(repo.countByServerInstance(eq(esi2.getId()))).thenReturn(count2);
-		when(repo.countByServerInstance(eq(esi3.getId()))).thenReturn(count3);
+		when(repo.countByServerInstanceIn(eq(Set.of(esi1.getId())))).thenReturn(count1);
+		when(repo.countByServerInstanceIn(eq(Set.of(esi2.getId())))).thenReturn(count2);
+		when(repo.countByServerInstanceIn(eq(Set.of(esi3.getId())))).thenReturn(count3);
 		return new ExternalServerInstanceService(repo);
 	}
 

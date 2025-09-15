@@ -5,7 +5,6 @@ import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.lang.Nullable;
 
 import java.util.List;
 
@@ -19,8 +18,7 @@ public class TransformationResultPage {
 	@Schema(description = "List of all transformation errors.")
 	private final List<DataRowTransformationError> transformationErrors;
 
-	@Schema(description = "Row numbers for the elements of the data field. Null if they can be calculated from the page number.", nullable = true)
-	@Nullable
+	@Schema(description = "Row numbers for the elements of the data field starting at 0.", example = "[20, 21, 22]")
 	private final List<Integer> rowNumbers;
 
 	@Schema(description = "Number of the returned page starting at 1.", example = "3")

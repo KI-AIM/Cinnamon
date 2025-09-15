@@ -31,7 +31,7 @@
             <!-- Position Column -->
             <ng-container matColumnDef="position" sticky>
                 <th mat-header-cell *matHeaderCellDef>No.</th>
-                <td mat-cell *matCellDef="let element">{{element.position + 1 + rowIndexOffset}}</td>
+                <td mat-cell *matCellDef="let element">{{ element.position + 1 }}</td>
             </ng-container>
             <!-- Dynamic columns -->
             <ng-container *ngFor="let column of displayedColumns | slice:1; let columnIndex = index"

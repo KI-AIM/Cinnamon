@@ -45,6 +45,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class DatabaseService {
@@ -643,7 +644,8 @@ public class DatabaseService {
 		final DataSet dataSet = exportDataSet(dataSetEntity, rowSelector, columnNames,
 		                                      loadDataRequest.getHoldOutSelector(), true, startRow, pageSize, calcRowNumbers);
 
-		List<Integer> rowNumbers = null;
+		final List<Integer> rowNumbers;
+
 		final Set<DataTransformationErrorEntity> errors;
 		if (calcRowNumbers) {
 			rowNumbers = dataSet.getData().stream().map(a -> (Integer) a.get(a.size() - 1)).toList();
@@ -651,6 +653,9 @@ public class DatabaseService {
 		} else {
 			var endRow = startRow + dataSet.getDataRows().size();
 			errors = errorRepository.findByDataSetIdAndRowIndexBetween(dataSetEntity.getId(), startRow, endRow - 1);
+			rowNumbers = IntStream.range(startRow, endRow)
+			                      .boxed()
+			                      .collect(java.util.stream.Collectors.toList());
 		}
 
 		List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, rowNumbers, columnIndexMapping,

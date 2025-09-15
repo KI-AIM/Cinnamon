@@ -2,7 +2,7 @@ import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
 import { catchError, map, Observable, of, tap } from "rxjs";
-import { parse, stringify } from "yaml";
+import { parse } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
 import { ImportPipeData } from "../model/import-pipe-data";
@@ -152,6 +152,13 @@ export abstract class AlgorithmService {
         } else {
             return of(this._algorithms);
         }
+    }
+
+    /**
+     * Deleted cached configuration definitions.
+     */
+    public invalidateCachedAlgorithmDefinitions(): void {
+        this.algorithmDefinitions = {};
     }
 
     private loadAlgorithms(): Observable<Algorithm[]> {

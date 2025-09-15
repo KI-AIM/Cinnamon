@@ -2,8 +2,12 @@ import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { NavigationEnd, Router } from "@angular/router";
 import { ProcessStatus } from "@core/enums/process-status";
+import { AnonymizationService } from "@features/anonymization/services/anonymization.service";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
 import { FileService } from "@features/data-upload/services/file.service";
+import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
+import { SynthetizationService } from "@features/synthetization/services/synthetization.service";
+import { TechnicalEvaluationService } from "@features/technical-evaluation/services/technical-evaluation.service";
 import { ExecutionStep, PipelineInformation } from "@shared/model/execution-step";
 import { Status } from "@shared/model/status";
 import { ConfigurationService } from "@shared/services/configuration.service";
@@ -41,13 +45,17 @@ export class StateManagementService {
     private _pipelineSubscription: Subscription | null = null;
 
     constructor(
+        private readonly anonymizationService: AnonymizationService,
         private readonly configurationService: ConfigurationService,
         protected readonly dataSetInfoService: DataSetInfoService,
         private readonly fileService: FileService,
         private readonly http: HttpClient,
+        private readonly riskAssessmentService: RiskAssessmentService,
         private readonly router: Router,
         private readonly userService: UserService,
         private readonly statusService: StatusService,
+        private readonly synthetizationService: SynthetizationService,
+        private readonly technicalEvaluationService: TechnicalEvaluationService,
     ) {
         if (this.userService.isAuthenticated()) {
             this.fetchCurrentStep();
@@ -285,6 +293,12 @@ export class StateManagementService {
                 this.configurationService.invalidateCache();
                 this.fileService.invalidateCache();
                 this.dataSetInfoService.invalidateCache();
+
+                // Delete cached algorithm definitions as they can contain injected parameters
+                this.anonymizationService.invalidateCachedAlgorithmDefinitions();
+                this.riskAssessmentService.invalidateCachedAlgorithmDefinitions();
+                this.synthetizationService.invalidateCachedAlgorithmDefinitions();
+                this.technicalEvaluationService.invalidateCachedAlgorithmDefinitions();
             }),
         );
     }

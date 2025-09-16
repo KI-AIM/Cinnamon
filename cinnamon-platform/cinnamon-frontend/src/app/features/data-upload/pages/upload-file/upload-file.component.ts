@@ -6,6 +6,8 @@ import { Steps } from "@core/enums/steps";
 import { LockedInformation, StateManagementService } from "@core/services/state-management.service";
 import { TitleService } from "@core/services/title-service.service";
 import { FileService } from "@features/data-upload/services/file.service";
+import { ConfigurationInputDefinition } from "@shared/model/configuration-input-definition";
+import { ConfigurationInputType } from "@shared/model/configuration-input-type";
 import { Delimiter, LineEnding, QuoteChar } from "@shared/model/csv-file-configuration";
 import { DataConfigurationEstimation } from "@shared/model/data-configuration";
 import { FileConfiguration, FileType } from "@shared/model/file-configuration";
@@ -249,6 +251,19 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                     },
                 });
         }
+    }
+
+    /**
+     * Creates the input definition for the resource type selector.
+     * @return The input definition.
+     * @protected
+     */
+    protected get fhirResourceTypeDefinition(): ConfigurationInputDefinition {
+        const def = new ConfigurationInputDefinition();
+        def.type = ConfigurationInputType.STRING;
+        def.label = "FHIR Resource Type";
+        def.description = "Select the resource type you want to anonymize. In one project, only a single resource type contained in the bundle can be anonymized. The protected dataset will only contain data of this resource. If you want to anonymize multiple resource types, create one project for each of them.";
+        return def;
     }
 
     /**

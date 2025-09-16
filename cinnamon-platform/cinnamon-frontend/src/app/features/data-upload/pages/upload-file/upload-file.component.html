@@ -188,14 +188,24 @@
             </div>
             <div *ngIf="this.fileConfiguration.fileType === FileType.FHIR">
                 <div>
-                    <mat-form-field>
-                        <mat-label>FHIR Resource Type</mat-label>
-                        <mat-select [(ngModel)]="this.fileConfiguration.fhirFileConfiguration.resourceType" required>
-                            <mat-option *ngFor="let option of fhirResourceTypes" [value]="option">
-                                {{ option }}
-                            </mat-option>
-                        </mat-select>
-                    </mat-form-field>
+                    <div class="config-input-row">
+                        <mat-form-field class="config-input-row-field">
+                            <mat-label>FHIR Resource Type</mat-label>
+                            <mat-select [(ngModel)]="this.fileConfiguration.fhirFileConfiguration.resourceType" required>
+                                <mat-option *ngFor="let option of fhirResourceTypes" [value]="option">
+                                    {{ option }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+
+                        <div class="config-input-row-info">
+                            <span>
+                                <app-configuration-input-info [configurationInputDefinition]="fhirResourceTypeDefinition">
+                                </app-configuration-input-info>
+                            </span>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </mat-dialog-content>

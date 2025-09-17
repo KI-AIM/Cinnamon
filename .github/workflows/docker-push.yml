@@ -31,6 +31,13 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
+      # Add settings.xml
+      - name: Configure Maven
+        run: cp .github/maven/settings.xml ~/.m2/settings.xml
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+
       # Build all images
       - name: Build Docker images
         run: docker compose -f docker-compose-build.yml build

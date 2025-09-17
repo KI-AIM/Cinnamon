@@ -13,7 +13,7 @@ import { StatisticsResponse } from "@shared/model/statistics";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
-import { map, Observable, switchMap } from "rxjs";
+import { combineLatest, map, Observable, switchMap } from "rxjs";
 import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 import { environments } from "src/environments/environment";
 
@@ -43,18 +43,23 @@ export class ReportComponent implements OnInit {
      */
     protected reportDate: string;
 
-    protected appConfig$: Observable<AppConfig>;
-    protected datasetInfoAnonymized$: Observable<DataSetInfo>;
-    protected datasetInfoOriginal$: Observable<DataSetInfo>;
-    protected datasetInfoProtected$: Observable<DataSetInfo>;
-    protected metricConfig$: Observable<ProjectSettings>;
-    protected reportData$: Observable<ReportData>;
-    protected riskAssessmentConfig$: Observable<RiskAssessmentConfig>;
-    protected statistics$: Observable<StatisticsResponse | null>;
+    /**
+     * Asynchronous data for showing the page.
+     * @protected
+     */
+    protected pageData$: Observable<{
+        appConfig: AppConfig,
+        datasetInfoAnonymized: DataSetInfo,
+        datasetInfoOriginal: DataSetInfo,
+        datasetInfoProtected: DataSetInfo,
+        mc: ProjectSettings,
+        reportData: ReportData,
+        riskAssessmentConfig: RiskAssessmentConfig,
+        statistics: StatisticsResponse,
+    }>;
 
     @ViewChildren('chart', {read: ElementRef}) protected chartDivs: QueryList<ElementRef<HTMLElement>>;
     @ViewChildren('chart') protected charts: QueryList<ChartFrequencyComponent>;
-
 
     // TODO take form statistics
     protected utilityScoreO = 1.0;
@@ -76,16 +81,18 @@ export class ReportComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.appConfig$ = this.appConfigService.appConfig$;
-        this.datasetInfoAnonymized$ = this.datasetInfoService.getDataSetInfo("anonymization");
-        this.datasetInfoOriginal$ = this.datasetInfoService.getDataSetInfo("VALIDATION");
-        this.datasetInfoProtected$ = this.datasetInfoService.getDataSetInfo("PROTECTED");
-        this.metricConfig$ = this.projectConfigService.projectSettings$;
-        this.reportData$ = this.fetchReportData();
-        this.riskAssessmentConfig$ = this.riskAssessmentService.fetchConfiguration().pipe(
-            map(value => value.config as RiskAssessmentConfig),
-        )
-        this.statistics$ = this.statisticsService.fetchResult();
+        this.pageData$ = combineLatest({
+            appConfig: this.appConfigService.appConfig$,
+            datasetInfoAnonymized: this.datasetInfoService.getDataSetInfo("anonymization"),
+            datasetInfoOriginal: this.datasetInfoService.getDataSetInfo("VALIDATION"),
+            datasetInfoProtected: this.datasetInfoService.getDataSetInfo("PROTECTED"),
+            mc: this.projectConfigService.projectSettings$,
+            reportData: this.fetchReportData(),
+            riskAssessmentConfig: this.riskAssessmentService.fetchConfiguration().pipe(
+                map(value => value.config as RiskAssessmentConfig),
+            ),
+            statistics: this.statisticsService.fetchResult(),
+        });
     }
 
     /**

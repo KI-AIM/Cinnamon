@@ -25,564 +25,559 @@
 
     </div>
 
-    <ng-container *ngIf="{appConfig: appConfig$ | async,
-                          datasetInfoAnonymized: datasetInfoAnonymized$ | async,
-                          datasetInfoOriginal: datasetInfoOriginal$ | async,
-                          datasetInfoProtected: datasetInfoProtected$ | async,
-                          mc: metricConfig$ | async,
-                          reportData: reportData$ | async,
-                          riskAssessmentConfig: riskAssessmentConfig$ | async,
-                          statistics: statistics$ | async,
-                          } as reportData">
-        <ng-container *ngIf="reportData.appConfig &&
-                             reportData.datasetInfoAnonymized &&
-                             reportData.datasetInfoOriginal &&
-                             reportData.datasetInfoProtected &&
-                             reportData.mc &&
-                             reportData.reportData &&
-                             reportData.riskAssessmentConfig &&
-                             reportData.statistics">
+    <ng-container *ngIf="pageData$ | async as reportData">
 
+        <div class="box" id="report" style="width: fit-content; margin: 0 auto; padding: 0.5in;">
 
-            <div class="box" id="report" style="width: fit-content; margin: 0 auto; padding: 0.5in;">
+            <!-- This div is printed -->
+            <div class="report-root">
 
-                <!-- This div is printed -->
-                <div class="report-root">
+                <div class="report-header">
+                    <h1>Cinnamon Data Report for <q>{{ reportData.mc.projectName }}</q></h1>
+                    <p>Assessment of Resemblance, Utility and Privacy Risks</p>
+                    <p>Report Date: {{ reportDate }}, Creator: {{ reportData.mc.reportCreator ?? 'Unknown' }} </p>
+                </div>
 
-                    <div class="report-header">
-                        <h1>Cinnamon Data Report for <q>{{reportData.mc.projectName}}</q></h1>
-                        <p>Assessment of Resemblance, Utility and Privacy Risks</p>
-                        <p>Report Date: {{reportDate}}, Creator: {{reportData.mc.reportCreator ?? 'Unknown'}} </p>
+                <div class="report-section">
+
+                    <div class="report-intro-box">
+                        <h2>About this Report</h2>
+
+                        <div class="report-text-block">
+                            This report was created with Cinnamon Version {{ reportData.appConfig.version }} and is
+                            intended to provide a comprehensive assessment of how well the protected data maintains
+                            the analytical value of the original data while mitigating privacy risks.
+                        </div>
+
+                        <div class="report-intro-box-list-header">This report provides:</div>
+
+                        <ul>
+                            <li class="report-intro-box-list-item">
+                                <span class="report-intro-box-list-item-header">Overview of the data protection measures: </span>
+                                <span>This report provides information about the configuration and methods used for anonymization and synthetization for the original dataset.</span>
+                            </li>
+                            <li class="report-intro-box-list-item">
+                                <span class="report-intro-box-list-item-header">Data Resemblance: </span>
+                                <span>
+                                    This report contains an analysis of the quality of the data, by using statistical metrics, describing and comparing the origin dataset and the protected dataset.
+                                    A high resemblance indicates that the protected dataset shares the same statistical properties as the original dataset.
+                                </span>
+                            </li>
+                            <li class="report-intro-box-list-item">
+                                <span class="report-intro-box-list-item-header">Data Utility: </span>
+                                <span>
+                                    This report provides an analysis of the machine learning utility for the original and the protected data as part of the data quality assessment.
+                                    Comparing the usefulness of the original data against the protected data by utilising downstream machine learning tasks.
+                                </span>
+                            </li>
+                            <li class="report-intro-box-list-item">
+                                <span class="report-intro-box-list-item-header">Privacy Risks:</span>
+                                <span>
+                                    This report provides insights on potential privacy risks associated with the original, and the protected data.
+                                    Residual risks might still be present, so the residual privacy risks have to be considered carefully.
+                                </span>
+                            </li>
+                        </ul>
                     </div>
 
-                    <div class="report-section">
+                    <div class="report-intro-box">
+                        <h2>Disclaimer</h2>
+                        <div class="report-text-block">
+                            The analysis and the conclusions contained herein reflect the assessment of the privacy
+                            risks and utility of the dataset <strong><q>{{ reportData.mc.projectName }}</q></strong>
+                            as analyzed with the Cinnamon tool on {{ reportDate }}. Although this report aims to
+                            provide an informed assessment of privacy implications, it does not constitute a
+                            guarantee against any form of data privacy breach or residual risks. The decision
+                            regarding the use of the data and the associated risks ultimately lies with the user or
+                            the organization. It is recommended to use this report in the context of further
+                            internal controls and evaluation of data quality. The creator of this report and the
+                            developers of Cinnamon assume no liability for direct or indirect damages arising from
+                            the use or interpretation of the information contained in this report.
+                        </div>
+                        <div *ngIf="reportData.mc.contactMail || reportData.mc.contactUrl" class="report-text-block">
+                            <span>In case of questions, please</span>
+                            <span *ngIf="reportData.mc.contactUrl"> visit <a [href]="reportData.mc.contactUrl"
+                                                                             target="_blank">{{ reportData.mc.contactUrl }}</a></span>
+                            <span *ngIf="reportData.mc.contactMail && reportData.mc.contactUrl"> or</span>
+                            <span *ngIf="reportData.mc.contactMail"> reach out via email to <a
+                                [href]="'mailto:' + reportData.mc.contactMail">{{ reportData.mc.contactMail }}</a></span>
+                            <span>.</span>
+                        </div>
+                    </div>
+                </div>
 
-                        <div class="report-intro-box">
-                            <h2>About this Report</h2>
+                <div class="report-section">
+                    <div class="report-header report-header-s">
+                        Quality Summary: Data Quality and Privacy Risks
+                    </div>
 
+                    <div class="report-header2">Data Protection Strategy</div>
+
+                    <div style="display: flex; gap: 20px;">
+                        <div style="width: 50%;">
                             <div class="report-text-block">
-                                This report was created with Cinnamon Version {{ reportData.appConfig.version }} and is
-                                intended to provide a comprehensive assessment of how well the protected data maintains
-                                the analytical value of the original data while mitigating privacy risks.
+                                <!-- TODO handling for not applied method -->
+                                The Cinnamon Platform applies a two-step data protection by first, anonymizing the
+                                dataset and then synthesizing the anonymized data.
+                                <br>
+                                Overall, <strong>{{ reportData.datasetInfoAnonymized.numberRetainedRows }} of the
+                                data records</strong> could be retained during the anonymization.
+                                Then <strong>{{ reportData.datasetInfoProtected.numberRows }} records were
+                                synthesized.</strong>
                             </div>
-
-                            <div class="report-intro-box-list-header">This report provides:</div>
-
-                            <ul>
-                                <li class="report-intro-box-list-item">
-                                    <span class="report-intro-box-list-item-header">Overview of the data protection measures: </span>
-                                    <span>This report provides information about the configuration and methods used for anonymization and synthetization for the original dataset.</span>
-                                </li>
-                                <li class="report-intro-box-list-item">
-                                    <span class="report-intro-box-list-item-header">Data Resemblance: </span>
-                                    <span>
-                                        This report contains an analysis of the quality of the data, by using statistical metrics, describing and comparing the origin dataset and the protected dataset.
-                                        A high resemblance indicates that the protected dataset shares the same statistical properties as the original dataset.
-                                    </span>
-                                </li>
-                                <li class="report-intro-box-list-item">
-                                    <span class="report-intro-box-list-item-header">Data Utility: </span>
-                                    <span>
-                                        This report provides an analysis of the machine learning utility for the original and the protected data as part of the data quality assessment.
-                                        Comparing the usefulness of the original data against the protected data by utilising downstream machine learning tasks.
-                                    </span>
-                                </li>
-                                <li class="report-intro-box-list-item">
-                                    <span class="report-intro-box-list-item-header">Privacy Risks:</span>
-                                    <span>
-                                        This report provides insights on potential privacy risks associated with the original, and the protected data.
-                                        Residual risks might still be present, so the residual privacy risks have to be considered carefully.
-                                    </span>
-                                </li>
-                            </ul>
                         </div>
-
-                        <div class="report-intro-box">
-                            <h2>Disclaimer</h2>
-                            <div class="report-text-block">
-                                The analysis and the conclusions contained herein reflect the assessment of the privacy
-                                risks and utility of the dataset <strong><q>{{ reportData.mc.projectName }}</q></strong>
-                                as analyzed with the Cinnamon tool on {{ reportDate }}. Although this report aims to
-                                provide an informed assessment of privacy implications, it does not constitute a
-                                guarantee against any form of data privacy breach or residual risks. The decision
-                                regarding the use of the data and the associated risks ultimately lies with the user or
-                                the organization. It is recommended to use this report in the context of further
-                                internal controls and evaluation of data quality. The creator of this report and the
-                                developers of Cinnamon assume no liability for direct or indirect damages arising from
-                                the use or interpretation of the information contained in this report.
-                            </div>
-                            <div *ngIf="reportData.mc.contactMail || reportData.mc.contactUrl" class="report-text-block">
-                                <span>In case of questions, please</span>
-                                <span *ngIf="reportData.mc.contactUrl"> visit <a [href]="reportData.mc.contactUrl" target="_blank">{{ reportData.mc.contactUrl }}</a></span>
-                                <span *ngIf="reportData.mc.contactMail && reportData.mc.contactUrl"> or</span>
-                                <span *ngIf="reportData.mc.contactMail"> reach out via email to <a [href]="'mailto:' + reportData.mc.contactMail">{{reportData.mc.contactMail}}</a></span>
-                                <span>.</span>
-                            </div>
+                        <div style="width: 50%;">
+                            <table class="report-table">
+                                <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Original</th>
+                                    <th>Protected</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td>No. of records (rows)</td>
+                                    <td>{{ reportData.datasetInfoOriginal.numberRows }}</td>
+                                    <td>{{ reportData.datasetInfoProtected.numberRows }}</td>
+                                </tr>
+                                <tr>
+                                    <td>No. of attributes (columns)</td>
+                                    <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberColumns }}</td>
+                                    <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberColumns }}</td>
+                                </tr>
+                                <tr>
+                                    <td>No. of numeric attributes</td>
+                                    <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberNumericColumns }}</td>
+                                    <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberNumericColumns }}</td>
+                                </tr>
+                                <tr>
+                                    <td>No. of nominal attributes</td>
+                                    <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberCategoricalColumns }}</td>
+                                    <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberCategoricalColumns }}</td>
+                                </tr>
+                                <tr>
+                                    <td>No. of date attributes</td>
+                                    <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberDateColumns }}</td>
+                                    <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberDateColumns }}</td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
-                    <div class="report-section">
-                        <div class="report-header report-header-s">
-                            Quality Summary: Data Quality and Privacy Risks
+                    <div>
+                        <div class="report-header4">Anonymization</div>
+                        <div class="report-text-block"
+                             [innerHTML]="reportData.reportData['anonymization'].configDescription">
                         </div>
-
-                        <div class="report-header2">Data Protection Strategy</div>
-
-                        <div style="display: flex; gap: 20px;">
-                            <div style="width: 50%;">
-                                <div class="report-text-block">
-                                    <!-- TODO handling for not applied method -->
-                                    The Cinnamon Platform applies a two-step data protection by first, anonymizing the
-                                    dataset and then synthesizing the anonymized data.
-                                    <br>
-                                    Overall, <strong>{{ reportData.datasetInfoAnonymized.numberRetainedRows }} of the
-                                    data records</strong> could be retained during the anonymization.
-                                    Then <strong>{{ reportData.datasetInfoProtected.numberRows }} records were
-                                    synthesized.</strong>
-                                </div>
-                            </div>
-                            <div style="width: 50%;">
-                                <table class="report-table">
-                                    <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th>Original</th>
-                                        <th>Protected</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr>
-                                        <td>No. of records (rows)</td>
-                                        <td>{{ reportData.datasetInfoOriginal.numberRows }}</td>
-                                        <td>{{ reportData.datasetInfoProtected.numberRows }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>No. of attributes (columns)</td>
-                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberColumns }}</td>
-                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberColumns }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>No. of numeric attributes</td>
-                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberNumericColumns }}</td>
-                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberNumericColumns }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>No. of nominal attributes</td>
-                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberCategoricalColumns }}</td>
-                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberCategoricalColumns }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>No. of date attributes</td>
-                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberDateColumns }}</td>
-                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberDateColumns }}</td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="report-header4" >Anonymization</div>
-                            <div class="report-text-block"
-                                 [innerHTML]="reportData.reportData['anonymization'].configDescription">
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div class="report-section">
-                        <h2 class="report-header2">Executive Summary</h2>
-                        <p>Here are the three dimensions, resemblance, utility, Privacy Risk displayed these values
-                            are aggregated for the whole data set. Detailed analysis can be found in the following
-                            chapters.</p>
-
-                        <div
-                            style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 20px;">
-                            <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
-                                <div style="font-weight: bold;">Data Resemblance Score</div>
-                                <div style="font-size: 24px; color: #3498db;">87%</div>
-                                <div style="font-size: 14px; color: #7f8c8d;">Statistical similarity to original
-                                    data
-                                </div>
-                            </div>
-                            <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
-                                <div style="font-weight: bold;">Utility Preservation</div>
-                                <div style="font-size: 24px; color: #3498db;">92%</div>
-                                <div style="font-size: 14px; color: #7f8c8d;">Analytical accuracy compared to
-                                    original
-                                </div>
-                            </div>
-                            <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 0 10px 0;">
-                                <div style="font-weight: bold;">Privacy Risk Score</div>
-                                <div style="font-size: 24px; color: #3498db;">Low</div>
-                                <div style="font-size: 14px; color: #7f8c8d;">Re-identification risk below 0.01%
-                                </div>
-                            </div>
-                        </div>
-
-                        <svg width="800" height="330" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Gradient definition -->
-                            <defs>
-                                <linearGradient id="colorGradient" x1="100%" y1="0%" x2="0%" y2="0%">
-
-                                    <ng-container *ngIf="getColors(reportData.mc.metricConfiguration.colorScheme) as colorScheme" >
-                                        <ng-container *ngFor="let color of colorScheme; let i = index">
-                                            <stop [attr.offset]="i * (100 / (colorScheme.length - 1)) + '%'"
-                                                  [attr.style]="`stop-color: ${color};`" style="stop-opacity: 1;"/>
-                                        </ng-container>
-                                    </ng-container>
-                                </linearGradient>
-                            </defs>
-
-                            <!-- Utility Score -->
-                            <rect x="20" y="65" width="740" height="30" fill="url(#colorGradient)"/>
-                            <text x="10" y="25" font-size="18" font-family="Arial">Utility Score:</text>
-                            <text x="0" y="85" font-size="14" font-family="Arial">0.0</text>
-                            <text x="760" y="85" font-size="14" font-family="Arial">1.0</text>
-
-	                        <polygon [attr.points]="`${utilityScoreOX - 5},55 ${utilityScoreOX + 5},55 ${utilityScoreOX},65`" fill="gray"/>
-	                        <text [attr.x]="offsetText(utilityScoreO)" y="47" font-size="14" font-family="Arial">Original Dataset ({{ utilityScoreO }})</text>
-
-	                        <polygon [attr.points]="`${utilityScorePX - 5},105 ${utilityScorePX + 5},105 ${utilityScorePX},95`" fill="black"/>
-                            <text [attr.x]="offsetText(utilityScoreP)" y="120" font-size="14" font-family="Arial">Protected Dataset ({{ utilityScoreP }})</text>
-
-                            <!-- Privacy Risk Score -->
-                            <rect x="20" y="190" width="740" height="30" fill="url(#colorGradient)"/>
-                            <text x="10" y="150" font-size="18" font-family="Arial">Privacy Score:</text>
-                            <text x="0" y="210" font-size="14" font-family="Arial">0.0</text>
-                            <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
-
-                            <polygon [attr.points]="`${riskScoreOX - 5},180 ${riskScoreOX + 5},180 ${riskScoreOX},190`" fill="gray"/>
-                            <text [attr.x]="offsetText(riskScoreO)" x="40" y="175" font-size="14" font-family="Arial">Original Dataset ({{riskScoreO}})</text>
-
-                            <polygon [attr.points]="`${riskScorePX - 5},230 ${riskScorePX + 5},230 ${riskScorePX},220`" fill="black"/>
-                            <text [attr.x]="offsetText(riskScoreP)" y="245" font-size="14" font-family="Arial">Protected Dataset ({{riskScoreP}})</text>
-                        </svg>
-
-                    </div>
-
-                    <div class="report-section">
-                        <h2 class="report-header2">1. Overview</h2>
-
-                        <p>This anonymized Dataset contains 1000 records. And has 11 Attributes over all. More
-                            details about the data set can be found in the table below.</p>
-
-                        <table class="report-table report-keep-together">
-                            <caption>
-                                <span class="report-table-title">Table 1. Overview</span>
-                                <span class="report-table-description"> This is an overview.</span>
-                            </caption>
-                            <tr class="report-table-header">
-                                <th class="report-th">Characteristic</th>
-                                <th class="report-th">Original Dataset</th>
-                                <th class="report-th">Anonymized Dataset</th>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Records</td>
-                                <td class="report-td">1000</td>
-                                <td class="report-td">1000</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Attributes</td>
-                                <td class="report-td">11</td>
-                                <td class="report-td">10</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Numeric Attributes</td>
-                                <td class="report-td">4</td>
-                                <td class="report-td">3</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Nominal Attributes</td>
-                                <td class="report-td">6</td>
-                                <td class="report-td">5</td>
-                            </tr>
-                            <tr class="report-table-row">
-                                <td class="report-td">Number of Date Attributes</td>
-                                <td class="report-td">1</td>
-                                <td class="report-td">1</td>
-                            </tr>
-                        </table>
-
-                        <h3 class="report-header3">Anonymization Methods</h3>
-                        <p>In this section the applied privacy-preserving transformations are displayed. Therefore,
-                            first the used privacy model is shown and then which attribute is transformed.</p>
-
-                        <h4>Privacy Model:</h4>
-                        <table class="report-table report-keep-together">
-                            <tr>
-                                <th class="report-th">Parameter</th>
-                                <th class="report-th">Value</th>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Risk Threshold Type</td>
-                                <td class="report-td">Max</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Risk Threshold Value</td>
-                                <td class="report-td">0.1</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Generalization Setting</td>
-                                <td class="report-td">Global</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Suppression Limit</td>
-                                <td class="report-td">0.7</td>
-                            </tr>
-                        </table>
-
-                        <h4>Attribute Transformation:</h4>
-                        <table class="report-table report-keep-together">
-                            <tr>
-                                <th class="report-th">Attribute</th>
-                                <th class="report-th">Transformation Function</th>
-                                <th class="report-th">Parameter</th>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Age</td>
-                                <td class="report-td">MICRO_AGGREGATION</td>
-                                <td class="report-td">Aggregation Interval: 10</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Gender</td>
-                                <td class="report-td">NONE</td>
-                                <td class="report-td">NONE</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Income</td>
-                                <td class="report-td">MICRO_AGGREGATION</td>
-                                <td class="report-td">Aggregation Interval: 1000</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">…</td>
-                                <td class="report-td">…</td>
-                                <td class="report-td">…</td>
-                            </tr>
-                        </table>
-
-                        <h3 class="report-header3">Synthetization Methods</h3>
-                        <p>CTGAN was applied to create synthetic versions of attributes while preserving statistical
-                            properties and relationships. The following Parameters are used for the
-                            synthetization:</p>
-                        <table class="report-table report-keep-together">
-                            <tr>
-                                <th class="report-th">Parameter</th>
-                                <th class="report-th">Value</th>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Epochs</td>
-                                <td class="report-td">100</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Batch Size</td>
-                                <td class="report-td">100</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">…</td>
-                                <td class="report-td">…</td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <div class="report-section">
-                        <h2 class="report-header2">2. Resemblance Analysis</h2>
-
-                        <p>The resemblance analysis evaluates how closely the synthetic/anonymized data preserves
-                            the statistical properties of the original data. Overall, the dataset achieves high
-                            fidelity with 87% resemblance score. Distribution analysis shows 71% of attributes
-                            maintain excellent resemblance (>90%), 22% show good resemblance (75-90%), and 7%
-                            require improvement (&lt;75%). All of the used metrics and their individual assessment
-                            can be seen in Section 5.</p>
-
-                        <h3 class="report-header3">Attribute Level Resemblance</h3>
-                        <p>The table below presents the aggregated resemblance metrics for each attribute, with
-                            lower scores meaning better resemblance:</p>
-                        <table class="report-table report-keep-together">
-                            <tr>
-                                <th class="report-th">Attribute</th>
-                                <th class="report-th">Aggregated Resemblance Score</th>
-                                <th class="report-th">Assessment</th>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Age</td>
-                                <td class="report-td">0.05</td>
-                                <td class="report-risk-low report-td">Excellent</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Gender</td>
-                                <td class="report-td">0.17</td>
-                                <td class="report-risk-low report-td">Good</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Income</td>
-                                <td class="report-td">0.29</td>
-                                <td class="report-risk-medium report-td">Medium</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">…</td>
-                                <td class="report-td">…</td>
-                                <td class="report-td">…</td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <div class="report-section">
-                        <h2 class="report-header2">3. Utility Analysis</h2>
-
-                        <p>Utility analysis evaluates how well the anonymized data performs in actual analytical
-                            tasks compared to the original data. We trained identical machine learning models on
-                            both the original and anonymized datasets, then compared their performance on a separate
-                            validation set. The anonymized data achieved 92% overall utility preservation, with 75%
-                            of models showing high utility retention (>90%), 23% with acceptable utility (75-90%),
-                            and only 2% with significant degradation (&lt;75%). The used models as well as a
-                            Detailed overview of the metrics can be seen in Section 5.</p>
-
-                        <h3 class="report-header3">Discriminator-based Analysis</h3>
-                        <p>This analysis tries to train a machine learning model that is able to distinguish between
-                            real and anonymized data values in the range of 0.5 are preferable that means the model
-                            cannot distinguish between real and anonymized data.</p>
-                        <table class="report-table report-keep-together">
-                            <tr>
-                                <th class="report-th">Metric</th>
-                                <th class="report-th">Identification Score</th>
-                                <th class="report-th">Assessment</th>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Accuracy</td>
-                                <td class="report-td">0.5</td>
-                                <td class="report-risk-low report-td report-td">Excellent</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">F1 Score</td>
-                                <td class="report-td">0.45</td>
-                                <td class="report-risk-low report-td report-td">Excellent</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Recall</td>
-                                <td class="report-td">0.5</td>
-                                <td class="report-risk-low report-td report-td">Excellent</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Precision</td>
-                                <td class="report-td">0.47</td>
-                                <td class="report-risk-medium report-td report-td">Medium</td>
-                            </tr>
-                        </table>
-
-                        <h3 class="report-header3">Machine Learning Utility</h3>
-                        <p>This analysis shows how usable is the anonymized data compared to the real data in terms
-                            of machine learning tasks. Therefore the anonymized data is used to train models that
-                            are tested on the real data.</p>
-                        <table class="report-table report-keep-together">
-                            <tr>
-                                <th class="report-th">Metric</th>
-                                <th class="report-th">Original Data</th>
-                                <th class="report-th">Anonymized Data</th>
-                                <th class="report-th">Difference</th>
-                                <th class="report-th">Assessment</th>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Accuracy</td>
-                                <td class="report-td">0.9</td>
-                                <td class="report-td">0.85</td>
-                                <td class="report-td">0.05</td>
-                                <td class="report-risk-low report-td">Excellent</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">F1 Score</td>
-                                <td class="report-td">0.8</td>
-                                <td class="report-td">0.75</td>
-                                <td class="report-td">0.05</td>
-                                <td class="report-risk-low report-td">Excellent</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Recall</td>
-                                <td class="report-td">0.7</td>
-                                <td class="report-td">0.75</td>
-                                <td class="report-td">0.05</td>
-                                <td class="report-risk-low report-td">Excellent</td>
-                            </tr>
-                            <tr>
-                                <td class="report-td">Precision</td>
-                                <td class="report-td">0.7</td>
-                                <td class="report-td">0.5</td>
-                                <td class="report-td">0.25</td>
-                                <td class="report-risk-medium report-td">Medium</td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <div class="report-section">
-                        <h2 class="report-header2">4. Risk Analysis</h2>
-
-                        <p>Privacy risk analysis evaluates the likelihood that individuals in the dataset could be
-                            re-identified through various attacks. The anonymized dataset demonstrates strong
-                            overall privacy protection with 98.9% of records classified as low risk. The small
-                            proportion of records with elevated risk (1.1% combined medium and high risk) remains
-                            below acceptable thresholds for most regulatory frameworks. All attack vectors assessed
-                            show risk probabilities below 1.5%, with the exception of attribute disclosure which
-                            shows slightly elevated risk (1.24%) but still within acceptable parameters.</p>
-
-                        <table class="report-table report-keep-together">
-                            <tr>
-                                <th class="report-th">Risk Level</th>
-                                <th class="report-th">Number of Attributes</th>
-                                <th class="report-th">Risk Score</th>
-                            </tr>
-                            <tr>
-                                <td class="report-risk-high report-td">High</td>
-                                <td class="report-td">5</td>
-                                <td class="report-td">0.05</td>
-                            </tr>
-                            <tr>
-                                <td class="report-risk-medium report-td">Medium</td>
-                                <td class="report-td">3</td>
-                                <td class="report-td">0.75</td>
-                            </tr>
-                            <tr>
-                                <td class="report-risk-low report-td">Low</td>
-                                <td class="report-td">2</td>
-                                <td class="report-td">0.75</td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <a id="a_chart"></a>
-
-                    <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes" style="width: 100%;">
-                        <div>
-                            Attribute: {{ attributeStatistics.attribute_information.name }}
-                        </div>
-
-                        <ng-container *ngIf="attributeStatistics.plot.histogram">
-                            <app-chart-frequency #chart
-                                                 [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
-                                                 [data]="attributeStatistics.plot.histogram!" [limit]="null"
-                                                 [simple]="false" originalSeriesLabel="Original"
-                                                 syntheticSeriesLabel="Protected">
-                            </app-chart-frequency>
-                        </ng-container>
-                        <ng-container *ngIf="attributeStatistics.plot.frequency_plot">
-                            <app-chart-frequency #chart
-                                                 [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
-                                                 [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
-                                                 [simple]="false" originalSeriesLabel="Original"
-                                                 syntheticSeriesLabel="Protected">
-                            </app-chart-frequency>
-                        </ng-container>
-                    </div>
-
-                    <div
-                        style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; color: #7f8c8d; font-size: 14px;">
-                        <p>Privacy Report | Prepared: 01.01.2025</p>
-                        <p>Confidential - For Internal Use Only</p>
                     </div>
 
                 </div>
 
+                <div class="report-section">
+                    <h2 class="report-header2">Executive Summary</h2>
+                    <p>Here are the three dimensions, resemblance, utility, Privacy Risk displayed these values
+                        are aggregated for the whole data set. Detailed analysis can be found in the following
+                        chapters.</p>
+
+                    <div
+                        style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 20px;">
+                        <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
+                            <div style="font-weight: bold;">Data Resemblance Score</div>
+                            <div style="font-size: 24px; color: #3498db;">87%</div>
+                            <div style="font-size: 14px; color: #7f8c8d;">Statistical similarity to original data</div>
+                        </div>
+                        <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
+                            <div style="font-weight: bold;">Utility Preservation</div>
+                            <div style="font-size: 24px; color: #3498db;">92%</div>
+                            <div style="font-size: 14px; color: #7f8c8d;">Analytical accuracy compared to original</div>
+                        </div>
+                        <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 0 10px 0;">
+                            <div style="font-weight: bold;">Privacy Risk Score</div>
+                            <div style="font-size: 24px; color: #3498db;">Low</div>
+                            <div style="font-size: 14px; color: #7f8c8d;">Re-identification risk below 0.01%</div>
+                        </div>
+                    </div>
+
+                    <svg width="800" height="330" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Gradient definition -->
+                        <defs>
+                            <linearGradient id="colorGradient" x1="100%" y1="0%" x2="0%" y2="0%">
+
+                                <ng-container
+                                    *ngIf="getColors(reportData.mc.metricConfiguration.colorScheme) as colorScheme">
+                                    <ng-container *ngFor="let color of colorScheme; let i = index">
+                                        <stop [attr.offset]="i * (100 / (colorScheme.length - 1)) + '%'"
+                                              [attr.style]="`stop-color: ${color};`" style="stop-opacity: 1;"/>
+                                    </ng-container>
+                                </ng-container>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Utility Score -->
+                        <rect x="20" y="65" width="740" height="30" fill="url(#colorGradient)"/>
+                        <text x="10" y="25" font-size="18" font-family="Arial">Utility Score:</text>
+                        <text x="0" y="85" font-size="14" font-family="Arial">0.0</text>
+                        <text x="760" y="85" font-size="14" font-family="Arial">1.0</text>
+
+                        <polygon
+                            [attr.points]="`${utilityScoreOX - 5},55 ${utilityScoreOX + 5},55 ${utilityScoreOX},65`"
+                            fill="gray"/>
+                        <text [attr.x]="offsetText(utilityScoreO)" y="47" font-size="14" font-family="Arial">Original
+                            Dataset ({{ utilityScoreO }})
+                        </text>
+
+                        <polygon
+                            [attr.points]="`${utilityScorePX - 5},105 ${utilityScorePX + 5},105 ${utilityScorePX},95`"
+                            fill="black"/>
+                        <text [attr.x]="offsetText(utilityScoreP)" y="120" font-size="14" font-family="Arial">Protected
+                            Dataset ({{ utilityScoreP }})
+                        </text>
+
+                        <!-- Privacy Risk Score -->
+                        <rect x="20" y="190" width="740" height="30" fill="url(#colorGradient)"/>
+                        <text x="10" y="150" font-size="18" font-family="Arial">Privacy Score:</text>
+                        <text x="0" y="210" font-size="14" font-family="Arial">0.0</text>
+                        <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
+
+                        <polygon [attr.points]="`${riskScoreOX - 5},180 ${riskScoreOX + 5},180 ${riskScoreOX},190`"
+                                 fill="gray"/>
+                        <text [attr.x]="offsetText(riskScoreO)" x="40" y="175" font-size="14" font-family="Arial">
+                            Original Dataset ({{ riskScoreO }})
+                        </text>
+
+                        <polygon [attr.points]="`${riskScorePX - 5},230 ${riskScorePX + 5},230 ${riskScorePX},220`"
+                                 fill="black"/>
+                        <text [attr.x]="offsetText(riskScoreP)" y="245" font-size="14" font-family="Arial">Protected
+                            Dataset ({{ riskScoreP }})
+                        </text>
+                    </svg>
+
+                </div>
+
+                <div class="report-section">
+                    <h2 class="report-header2">1. Overview</h2>
+
+                    <p>This anonymized Dataset contains 1000 records. And has 11 Attributes over all. More
+                        details about the data set can be found in the table below.</p>
+
+                    <table class="report-table report-keep-together">
+                        <caption>
+                            <span class="report-table-title">Table 1. Overview</span>
+                            <span class="report-table-description"> This is an overview.</span>
+                        </caption>
+                        <tr class="report-table-header">
+                            <th class="report-th">Characteristic</th>
+                            <th class="report-th">Original Dataset</th>
+                            <th class="report-th">Anonymized Dataset</th>
+                        </tr>
+                        <tr class="report-table-row">
+                            <td class="report-td">Number of Records</td>
+                            <td class="report-td">1000</td>
+                            <td class="report-td">1000</td>
+                        </tr>
+                        <tr class="report-table-row">
+                            <td class="report-td">Number of Attributes</td>
+                            <td class="report-td">11</td>
+                            <td class="report-td">10</td>
+                        </tr>
+                        <tr class="report-table-row">
+                            <td class="report-td">Number of Numeric Attributes</td>
+                            <td class="report-td">4</td>
+                            <td class="report-td">3</td>
+                        </tr>
+                        <tr class="report-table-row">
+                            <td class="report-td">Number of Nominal Attributes</td>
+                            <td class="report-td">6</td>
+                            <td class="report-td">5</td>
+                        </tr>
+                        <tr class="report-table-row">
+                            <td class="report-td">Number of Date Attributes</td>
+                            <td class="report-td">1</td>
+                            <td class="report-td">1</td>
+                        </tr>
+                    </table>
+
+                    <h3 class="report-header3">Anonymization Methods</h3>
+                    <p>In this section the applied privacy-preserving transformations are displayed. Therefore,
+                        first the used privacy model is shown and then which attribute is transformed.</p>
+
+                    <h4>Privacy Model:</h4>
+                    <table class="report-table report-keep-together">
+                        <tr>
+                            <th class="report-th">Parameter</th>
+                            <th class="report-th">Value</th>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Risk Threshold Type</td>
+                            <td class="report-td">Max</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Risk Threshold Value</td>
+                            <td class="report-td">0.1</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Generalization Setting</td>
+                            <td class="report-td">Global</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Suppression Limit</td>
+                            <td class="report-td">0.7</td>
+                        </tr>
+                    </table>
+
+                    <h4>Attribute Transformation:</h4>
+                    <table class="report-table report-keep-together">
+                        <tr>
+                            <th class="report-th">Attribute</th>
+                            <th class="report-th">Transformation Function</th>
+                            <th class="report-th">Parameter</th>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Age</td>
+                            <td class="report-td">MICRO_AGGREGATION</td>
+                            <td class="report-td">Aggregation Interval: 10</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Gender</td>
+                            <td class="report-td">NONE</td>
+                            <td class="report-td">NONE</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Income</td>
+                            <td class="report-td">MICRO_AGGREGATION</td>
+                            <td class="report-td">Aggregation Interval: 1000</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">…</td>
+                            <td class="report-td">…</td>
+                            <td class="report-td">…</td>
+                        </tr>
+                    </table>
+
+                    <h3 class="report-header3">Synthetization Methods</h3>
+                    <p>CTGAN was applied to create synthetic versions of attributes while preserving statistical
+                        properties and relationships. The following Parameters are used for the
+                        synthetization:</p>
+                    <table class="report-table report-keep-together">
+                        <tr>
+                            <th class="report-th">Parameter</th>
+                            <th class="report-th">Value</th>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Epochs</td>
+                            <td class="report-td">100</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Batch Size</td>
+                            <td class="report-td">100</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">…</td>
+                            <td class="report-td">…</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="report-section">
+                    <h2 class="report-header2">2. Resemblance Analysis</h2>
+
+                    <p>The resemblance analysis evaluates how closely the synthetic/anonymized data preserves
+                        the statistical properties of the original data. Overall, the dataset achieves high
+                        fidelity with 87% resemblance score. Distribution analysis shows 71% of attributes
+                        maintain excellent resemblance (>90%), 22% show good resemblance (75-90%), and 7%
+                        require improvement (&lt;75%). All of the used metrics and their individual assessment
+                        can be seen in Section 5.</p>
+
+                    <h3 class="report-header3">Attribute Level Resemblance</h3>
+                    <p>The table below presents the aggregated resemblance metrics for each attribute, with
+                        lower scores meaning better resemblance:</p>
+                    <table class="report-table report-keep-together">
+                        <tr>
+                            <th class="report-th">Attribute</th>
+                            <th class="report-th">Aggregated Resemblance Score</th>
+                            <th class="report-th">Assessment</th>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Age</td>
+                            <td class="report-td">0.05</td>
+                            <td class="report-risk-low report-td">Excellent</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Gender</td>
+                            <td class="report-td">0.17</td>
+                            <td class="report-risk-low report-td">Good</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Income</td>
+                            <td class="report-td">0.29</td>
+                            <td class="report-risk-medium report-td">Medium</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">…</td>
+                            <td class="report-td">…</td>
+                            <td class="report-td">…</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="report-section">
+                    <h2 class="report-header2">3. Utility Analysis</h2>
+
+                    <p>Utility analysis evaluates how well the anonymized data performs in actual analytical
+                        tasks compared to the original data. We trained identical machine learning models on
+                        both the original and anonymized datasets, then compared their performance on a separate
+                        validation set. The anonymized data achieved 92% overall utility preservation, with 75%
+                        of models showing high utility retention (>90%), 23% with acceptable utility (75-90%),
+                        and only 2% with significant degradation (&lt;75%). The used models as well as a
+                        Detailed overview of the metrics can be seen in Section 5.</p>
+
+                    <h3 class="report-header3">Discriminator-based Analysis</h3>
+                    <p>This analysis tries to train a machine learning model that is able to distinguish between
+                        real and anonymized data values in the range of 0.5 are preferable that means the model
+                        cannot distinguish between real and anonymized data.</p>
+                    <table class="report-table report-keep-together">
+                        <tr>
+                            <th class="report-th">Metric</th>
+                            <th class="report-th">Identification Score</th>
+                            <th class="report-th">Assessment</th>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Accuracy</td>
+                            <td class="report-td">0.5</td>
+                            <td class="report-risk-low report-td report-td">Excellent</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">F1 Score</td>
+                            <td class="report-td">0.45</td>
+                            <td class="report-risk-low report-td report-td">Excellent</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Recall</td>
+                            <td class="report-td">0.5</td>
+                            <td class="report-risk-low report-td report-td">Excellent</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Precision</td>
+                            <td class="report-td">0.47</td>
+                            <td class="report-risk-medium report-td report-td">Medium</td>
+                        </tr>
+                    </table>
+
+                    <h3 class="report-header3">Machine Learning Utility</h3>
+                    <p>This analysis shows how usable is the anonymized data compared to the real data in terms
+                        of machine learning tasks. Therefore the anonymized data is used to train models that
+                        are tested on the real data.</p>
+                    <table class="report-table report-keep-together">
+                        <tr>
+                            <th class="report-th">Metric</th>
+                            <th class="report-th">Original Data</th>
+                            <th class="report-th">Anonymized Data</th>
+                            <th class="report-th">Difference</th>
+                            <th class="report-th">Assessment</th>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Accuracy</td>
+                            <td class="report-td">0.9</td>
+                            <td class="report-td">0.85</td>
+                            <td class="report-td">0.05</td>
+                            <td class="report-risk-low report-td">Excellent</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">F1 Score</td>
+                            <td class="report-td">0.8</td>
+                            <td class="report-td">0.75</td>
+                            <td class="report-td">0.05</td>
+                            <td class="report-risk-low report-td">Excellent</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Recall</td>
+                            <td class="report-td">0.7</td>
+                            <td class="report-td">0.75</td>
+                            <td class="report-td">0.05</td>
+                            <td class="report-risk-low report-td">Excellent</td>
+                        </tr>
+                        <tr>
+                            <td class="report-td">Precision</td>
+                            <td class="report-td">0.7</td>
+                            <td class="report-td">0.5</td>
+                            <td class="report-td">0.25</td>
+                            <td class="report-risk-medium report-td">Medium</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="report-section">
+                    <h2 class="report-header2">4. Risk Analysis</h2>
+
+                    <p>Privacy risk analysis evaluates the likelihood that individuals in the dataset could be
+                        re-identified through various attacks. The anonymized dataset demonstrates strong
+                        overall privacy protection with 98.9% of records classified as low risk. The small
+                        proportion of records with elevated risk (1.1% combined medium and high risk) remains
+                        below acceptable thresholds for most regulatory frameworks. All attack vectors assessed
+                        show risk probabilities below 1.5%, with the exception of attribute disclosure which
+                        shows slightly elevated risk (1.24%) but still within acceptable parameters.</p>
+
+                    <table class="report-table report-keep-together">
+                        <tr>
+                            <th class="report-th">Risk Level</th>
+                            <th class="report-th">Number of Attributes</th>
+                            <th class="report-th">Risk Score</th>
+                        </tr>
+                        <tr>
+                            <td class="report-risk-high report-td">High</td>
+                            <td class="report-td">5</td>
+                            <td class="report-td">0.05</td>
+                        </tr>
+                        <tr>
+                            <td class="report-risk-medium report-td">Medium</td>
+                            <td class="report-td">3</td>
+                            <td class="report-td">0.75</td>
+                        </tr>
+                        <tr>
+                            <td class="report-risk-low report-td">Low</td>
+                            <td class="report-td">2</td>
+                            <td class="report-td">0.75</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <a id="a_chart"></a>
+
+                <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes"
+                     style="width: 100%;">
+                    <div>
+                        Attribute: {{ attributeStatistics.attribute_information.name }}
+                    </div>
+
+                    <ng-container *ngIf="attributeStatistics.plot.histogram">
+                        <app-chart-frequency #chart
+                                             [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                             [data]="attributeStatistics.plot.histogram!" [limit]="null"
+                                             [simple]="false" originalSeriesLabel="Original"
+                                             syntheticSeriesLabel="Protected">
+                        </app-chart-frequency>
+                    </ng-container>
+                    <ng-container *ngIf="attributeStatistics.plot.frequency_plot">
+                        <app-chart-frequency #chart
+                                             [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                             [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
+                                             [simple]="false" originalSeriesLabel="Original"
+                                             syntheticSeriesLabel="Protected">
+                        </app-chart-frequency>
+                    </ng-container>
+                </div>
+
+                <div
+                    style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; color: #7f8c8d; font-size: 14px;">
+                    <p>Privacy Report | Prepared: 01.01.2025</p>
+                    <p>Confidential - For Internal Use Only</p>
+                </div>
+
             </div>
 
-        </ng-container>
+        </div>
+
     </ng-container>
 </div>

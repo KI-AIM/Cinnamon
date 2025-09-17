@@ -53,9 +53,21 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          server-id: github
-          server-username: GITHUB_ACTOR
-          server-password: ${{ secrets.GH_PACKAGES_TOKEN }}
+
+      - name: Configure Maven
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<EOF
+          <settings>
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GH_PACKAGES_TOKEN }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
 
       - name: Install External JAR into Maven Repository
         run: |

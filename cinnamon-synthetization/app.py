@@ -242,7 +242,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'session_key': session_key,
                 'status_code': 500
             }
-        
+
         # Step 9: Post-process sampled data
         try:
             print('Starting Post-processing')
@@ -542,6 +542,23 @@ def send_callback_error(callback_url, session_key, message, status_code):
         print(f"Failed to send error to callback URL: {str(e)}")
 
 
+@app.route('/report', methods=['POST'])
+def report():
+    # TODO create text base on the given config
+    configuration = request.form.get('configuration')
+    description = ('<p>'
+                   'The used generative model was <strong>Conditional Tabular GAN (CTGAN)</strong> with a <strong>batch size of 128</strong>.'
+                   'The model was trained with <strong>10 epochs</strong>.'
+                   '</p>'
+                   '<p>'
+                   '<strong>Conditional Tabular GAN (CTGAN)</strong> are a specialized type of generative model designed to create realistic synthetic tabular data, mimicking the statistical properties of original datasets. Leveraging a generator-discriminator framework, CTGANs learn the relationships within your data and generate new rows conditioned on specified parameters, enabling the creation of synthetic datasets that preserve privacy while retaining key analytical insights. This approach is particularly valuable for scenarios requiring data augmentation or secure model development.'
+                   '</p>'
+                   '<p>'
+                   'For further details, look into the dedicated synthetization section of this report.'
+                   '</p>')
+    return jsonify({'configDescription': description})
+
+
 @app.route('/actuator/health', methods=['GET'])
 def health_check():
     """
@@ -556,4 +573,3 @@ def health_check():
 
 if __name__ == '__main__':
     app.run(debug=True)
-

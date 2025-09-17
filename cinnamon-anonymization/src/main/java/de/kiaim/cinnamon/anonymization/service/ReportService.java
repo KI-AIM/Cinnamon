@@ -48,27 +48,28 @@ public class ReportService {
 			protection.append(applyNumerus(p.getValue().size(), " one attribute, that was ", " " + writeNumber(p.getValue().size()) + " attributes, that were "));
 			protection.append("protected via <strong>").append(p.getKey()).append("</strong>, ");
 			protection.append(applyNumerus(p.getValue().size(), "was ", "were "));
+			protection.append("<strong>");
 
 			if (p.getValue().size() == 1) {
 				protection.append(p.getValue().get(0));
 			} else {
 				protection.append(String.join(", ", p.getValue().subList(0, p.getValue().size() - 1)));
-				protection.append("and ").append(p.getValue().get(p.getValue().size() - 1));
+				protection.append(" and ").append(p.getValue().get(p.getValue().size() - 1));
 			}
 
-			protection.append(".</p>");
+			protection.append("</strong>.</p>");
 		}
 
 		String configDescription =
 				"""
 				<p>
-				The used privacy model optimized the dataset to reach a <strong>%s residual risk of %s</strong> based on %s %s (%s).
+				The used privacy model optimized the dataset to reach a <strong>%s residual risk of %s</strong> based <strong>on %s %s (%s)</strong>.
 				This means that all records are indistinguishable to one other record in these attributes.
 				The generalization was set to be <strong>%s</strong>, meaning that all values in a column have the same underlying generalization interval.
 				</p>
 				%s
 				<p>
-				No other protection mechanism were applied.
+				No other protection mechanism was applied.
 				</p>
 				<p>
 				For further details, look into the dedicated anonymization section of this report.

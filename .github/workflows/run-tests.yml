@@ -55,7 +55,7 @@ jobs:
           distribution: 'temurin'
           server-id: github
           server-username: GITHUB_ACTOR
-          server-password: ${{ secrets.GITHUB_TOKEN }}
+          server-password: ${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Install External JAR into Maven Repository
         run: |

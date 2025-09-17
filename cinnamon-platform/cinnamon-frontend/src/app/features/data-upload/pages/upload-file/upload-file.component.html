@@ -3,7 +3,7 @@
     <ng-container *ngIf="pageData.status.mode === Mode.STANDARD">
 
         <app-workstep-list confirmLabel="Confirm file and start configuration" [locked]="pageData.locked.isLocked"
-                           [invalid]="isInvalid"
+                           [invalid]="isInvalid || loadingEstimation"
                            [numberSteps]="2" resetSteps [step]="Steps.UPLOAD" (confirm)="uploadFile()">
 
             <app-workstep-item header="Select your dataset" [locked]="pageData.locked.isLocked"
@@ -34,7 +34,11 @@
             </div>
 
             <div class="mt-4">
-                <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="isInvalid">
+                <div *ngIf="isFileConfigurationInvalid()" class="cinnamon-error">
+                    Please correct the errors in the file configuration.
+                </div>
+                <button mat-raised-button color="primary" (click)="uploadFile()"
+                        [disabled]="isInvalid || loadingEstimation">
                     Confirm file and start configuration
                 </button>
             </div>
@@ -57,13 +61,25 @@
 
         <div class="mt-2">
             <div class="d-flex align-items-center w-100">
-                <app-file-upload accept=".csv,.xlsx" [disabled]="pageData.locked.isLocked" (input)="onFileInput($event)"
-                                 class="flex-grow-1"></app-file-upload>
+                <app-file-upload accept=".csv,.json,.xlsx" [disabled]="pageData.locked.isLocked"
+                                 (input)="onFileInput($event)" class="flex-grow-1"></app-file-upload>
 
-                <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
-                   [hidden]="isDataFileInvalid" class="icon-enabled ms-1">
-                    <mat-icon fontIcon="settings"></mat-icon>
-                </a>
+                <div *ngIf="loadingEstimation" class="ms-1">
+                    <mat-spinner [diameter]="24"></mat-spinner>
+                </div>
+                <div *ngIf="!loadingEstimation" class="ms-1">
+                    <a *ngIf="!isDataFileInvalid" title="Additional Settings"
+                       (click)="openDialog(fileConfigurationDialog)" class="icon icon-enabled"
+                       [class.icon-error]="isFileConfigurationInvalid()">
+                        <mat-icon fontIcon="settings"></mat-icon>
+                        <div class="icon-error-background"></div>
+                        <mat-icon fontIcon="error" class="icon-error-foreground"></mat-icon>
+                    </a>
+                    <span *ngIf="isDataFileInvalid" title="Additional Settings" class="icon-disabled">
+                        <mat-icon fontIcon="settings"></mat-icon>
+                    </span>
+                </div>
+
             </div>
         </div>
     </ng-template>
@@ -90,6 +106,7 @@
             <ul>
                 <li>CSV Files</li>
                 <li>XLSX Files</li>
+                <li>FHIR Bundles</li>
             </ul>
             FHIR support is under development and will be available soon.<br/><br/>
 
@@ -167,6 +184,28 @@
                     <mat-checkbox [(ngModel)]="this.fileConfiguration.xlsxFileConfiguration.hasHeader" color="primary">
                         Use first row as header
                     </mat-checkbox>
+                </div>
+            </div>
+            <div *ngIf="this.fileConfiguration.fileType === FileType.FHIR">
+                <div>
+                    <div class="config-input-row">
+                        <mat-form-field class="config-input-row-field">
+                            <mat-label>FHIR Resource Type</mat-label>
+                            <mat-select [(ngModel)]="this.fileConfiguration.fhirFileConfiguration.resourceType" required>
+                                <mat-option *ngFor="let option of fhirResourceTypes" [value]="option">
+                                    {{ option }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+
+                        <div class="config-input-row-info">
+                            <span>
+                                <app-configuration-input-info [configurationInputDefinition]="fhirResourceTypeDefinition">
+                                </app-configuration-input-info>
+                            </span>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </mat-dialog-content>

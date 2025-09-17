@@ -45,6 +45,16 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String XLSX_CREATION = "8";
 
+	/**
+	 * Exception code for failed FHIR bundle reading.
+	 */
+	public static final String FHIR_READING = "9";
+
+	/**
+	 * Exception code for failed CSV file reading.
+	 */
+	public static final String CSV_READING = "10";
+
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

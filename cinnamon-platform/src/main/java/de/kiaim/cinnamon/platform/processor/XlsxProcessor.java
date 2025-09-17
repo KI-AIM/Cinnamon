@@ -7,10 +7,13 @@ import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
+import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
 
 import java.io.OutputStream;
@@ -18,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import de.kiaim.cinnamon.platform.model.file.XlsxFileConfiguration;
 import org.dhatim.fastexcel.Workbook;
 import org.dhatim.fastexcel.Worksheet;
 import org.dhatim.fastexcel.reader.Cell;
@@ -46,7 +50,24 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         return FileType.XLSX;
     }
 
-    @Override
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Returns the default XLSX file configuration (see {@link XlsxFileConfiguration} without looking at the data.
+	 */
+	@Override
+	public FileConfigurationEstimation estimateFileConfiguration(final InputStream data) {
+		// TODO implement estimation
+		final var xlsxFileConfiguration = new XlsxFileConfiguration();
+		final var fileConfiguration =  new FileConfiguration();
+
+		fileConfiguration.setFileType(FileType.XLSX);
+		fileConfiguration.setXlsxFileConfiguration(xlsxFileConfiguration);
+
+		return new FileConfigurationEstimation(fileConfiguration);
+	}
+
+	@Override
     public int getNumberColumns(InputStream data, FileConfigurationEntity fileConfiguration) {
         final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
         List<List<String>> rows;

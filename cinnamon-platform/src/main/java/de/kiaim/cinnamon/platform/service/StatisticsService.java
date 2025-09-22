@@ -61,16 +61,8 @@ public class StatisticsService {
 			    statisticsProcess.getExternalProcessStatus() == ProcessStatus.CANCELED ||
 			    statisticsProcess.getExternalProcessStatus() == ProcessStatus.OUTDATED) {
 
-				try {
-					statisticsProcess.setEndpoint(cinnamonConfiguration.getStatisticsEndpoint());
-					processService.startOrScheduleBackendProcess(statisticsProcess);
-				} catch (Exception e) {
-					processService.setProcessError(statisticsProcess, e.getMessage());
-					throw e;
-				} finally {
-					projectService.saveProject(project);
-				}
-
+				statisticsProcess.setEndpoint(cinnamonConfiguration.getStatisticsEndpoint());
+				processService.tryStartOrScheduleBackendProcess(statisticsProcess);
 			}
 			return new StatisticsResponse(statisticsProcess.getExternalProcessStatus(), null);
 		}

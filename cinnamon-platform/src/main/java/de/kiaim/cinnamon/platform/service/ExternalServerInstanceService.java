@@ -9,6 +9,7 @@ import org.springframework.data.util.Pair;
 import org.springframework.http.HttpMethod;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
@@ -38,6 +39,7 @@ public class ExternalServerInstanceService {
 	 * @return The instance.
 	 */
 	@Nullable
+	@Transactional(readOnly = true)
 	public ExternalServerInstance findAvailableExternalServerInstance(final ExternalServer externalServer,
 	                                                                  final boolean ignoreMaxParallelProcess) {
 		ExternalServerInstance target = null;

@@ -7,8 +7,9 @@
                            [numberSteps]="2" resetSteps [step]="Steps.UPLOAD" (confirm)="uploadFile()">
 
             <app-workstep-item header="Select your dataset" [locked]="pageData.locked.isLocked"
-                               [invalid]="isDataFileInvalid" [stepIndex]="0">
-                <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
+                               [invalid]="isDataFileInvalid || isFileConfigurationInvalid() || loadingEstimation"
+                               [stepIndex]="0">
+            <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
                 <ng-container *ngTemplateOutlet="info"></ng-container>
             </app-workstep-item>
 

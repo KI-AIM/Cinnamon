@@ -673,7 +673,6 @@ public class ProcessService {
 		}
 	}
 
-
 	/**
 	 * Cancels the given process.
 	 *
@@ -687,40 +686,45 @@ public class ProcessService {
 			return;
 		}
 
-		// Get configuration
-		final ExternalEndpoint ese = stepService.getExternalServerEndpointConfiguration(backgroundProcess);
-		final ExternalServerInstance esi = stepService.getExternalServerInstanceConfiguration(backgroundProcess.getServerInstance());
-
 		if (backgroundProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED) {
 			backgroundProcess.setScheduledTime(null);
-		} else if (!ese.getCancelEndpoint().isBlank()) {
+		} else {
+			// Get configuration
+			final ExternalEndpoint ese = stepService.getExternalServerEndpointConfiguration(backgroundProcess);
+			final ExternalServerInstance esi = stepService.getExternalServerInstanceConfiguration(
+					backgroundProcess.getServerInstance());
 
-			final String serverUrl = esi.getUrl();
-			final String cancelEndpoint = injectUrlParameter(ese.getCancelEndpoint(), backgroundProcess);
+			if (!ese.getCancelEndpoint().isBlank()) {
+				// Send a cancel request if the server supports it
+				final String serverUrl = esi.getUrl();
+				final String cancelEndpoint = injectUrlParameter(ese.getCancelEndpoint(), backgroundProcess);
 
-			final MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-			formData.add("session_key", backgroundProcess.getUuid().toString());
-			formData.add("pid", backgroundProcess.getExternalId());
+				final MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+				formData.add("session_key", backgroundProcess.getUuid().toString());
+				formData.add("pid", backgroundProcess.getExternalId());
 
-			// Do the request
-			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
-			webClient.method(ese.getCancelHttpMethod().asHttpMethod())
-			         .uri(cancelEndpoint)
-			         .body(BodyInserters.fromFormData(formData))
-			         .retrieve()
-			         .onStatus(HttpStatusCode::isError,
-			                   b -> {
-				                   log.warn("Failed to cancel the process! Got status of {}", b.statusCode());
-				                   return null;
-			                   })
-			         .toBodilessEntity()
-			         .onErrorComplete()
-			         .block();
+				// Do the request
+				final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
+				webClient.method(ese.getCancelHttpMethod().asHttpMethod())
+				         .uri(cancelEndpoint)
+				         .body(BodyInserters.fromFormData(formData))
+				         .retrieve()
+				         .onStatus(HttpStatusCode::isError,
+				                   b -> {
+					                   log.warn("Failed to cancel the process! Got status of {}", b.statusCode());
+					                   return null;
+				                   })
+				         .toBodilessEntity()
+				         .onErrorComplete()
+				         .block();
+			}
+
+			// Start the next scheduled process
+			startScheduledProcess(ese, esi);
 		}
 
 		backgroundProcess.setExternalProcessStatus(ProcessStatus.CANCELED);
 		backgroundProcess.setServerInstance(null);
-		startScheduledProcess(ese, esi);
 
 		backgroundProcessRepository.save(backgroundProcess);
 	}

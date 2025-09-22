@@ -23,10 +23,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @WithMockWebServer
 public class ProcessServiceTest extends ContextRequiredTest {
@@ -42,11 +45,13 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	private ObjectMapper jsonMapper = null;
 	private MockWebServer mockBackEnd;
 
+	private BackgroundProcessRepository backgroundProcessRepository;
+
 	private ProcessService processService;
 
 	@BeforeEach
 	void setUpMockWebServer() {
-		BackgroundProcessRepository backgroundProcessRepository = mock(BackgroundProcessRepository.class);
+		backgroundProcessRepository = mock(BackgroundProcessRepository.class);
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
@@ -111,6 +116,51 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	}
 
 	@Test
+	public void cancelProcessRunning() {
+		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final ProjectEntity project = createProject(stage, ProcessStatus.RUNNING);
+
+		final ExecutionStepEntity executionStep = project.getPipelines().get(0).getStageByStep(stage);
+		final BackgroundProcessEntity process = executionStep.getProcess(0);
+
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .build());
+
+		assertDoesNotThrow(() -> processService.cancelProcess(process));
+
+		// Test status of the process
+		assertNull(process.getServerInstance(), "Server instance should be null!");
+		assertNull(process.getScheduledTime(), "Scheduled time should be null!");
+		assertEquals(ProcessStatus.CANCELED, process.getExternalProcessStatus(), "Status should be CANCELED!");
+
+		// Test application state
+		verify(backgroundProcessRepository, times(1))
+				.findByEndpointInAndExternalProcessStatusOrderByScheduledTimeAsc(any(), any());
+	}
+
+	@Test
+	public void cancelProcessScheduled() {
+		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final ProjectEntity project = createProject(stage, ProcessStatus.SCHEDULED);
+
+		final ExecutionStepEntity executionStep = project.getPipelines().get(0).getStageByStep(stage);
+		final BackgroundProcessEntity process = executionStep.getProcess(0);
+
+		assertDoesNotThrow(() -> processService.cancelProcess(process));
+
+		// Test status of the process
+		assertNull(process.getServerInstance(), "Server instance should be null!");
+		assertNull(process.getScheduledTime(), "Scheduled time should be null!");
+		assertEquals(ProcessStatus.CANCELED, process.getExternalProcessStatus(), "Status should be CANCELED!");
+
+		// Test application state
+		verify(backgroundProcessRepository, never())
+				.findByEndpointInAndExternalProcessStatusOrderByScheduledTimeAsc(any(), any());
+	}
+
+	@Test
 	public void deleteStage() {
 		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 		final ProjectEntity project = createProject(stage, ProcessStatus.FINISHED);
@@ -150,7 +200,9 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
 		pipeline.addStage(stage, executionStep);
 
-		if (status == ProcessStatus.RUNNING) {
+		if (status == ProcessStatus.SCHEDULED) {
+			externalProcess.setScheduledTime(Timestamp.valueOf(LocalDateTime.of(2023, 11, 20, 12, 0)));
+		} else if (status == ProcessStatus.RUNNING) {
 			executionStep.setCurrentProcessIndex(0);
 			externalProcess.setServerInstance("anonymization-server.0");
 		} else if (status == ProcessStatus.FINISHED) {

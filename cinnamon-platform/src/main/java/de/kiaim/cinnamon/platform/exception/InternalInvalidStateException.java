@@ -38,6 +38,11 @@ public class InternalInvalidStateException extends InternalException {
 	 */
 	public static final String NO_SERVER_INSTANCE_SET = "6";
 
+	/**
+	 * Exception code for invalid DataSetSelector.
+	 */
+	public static final String INVALID_DATA_SET_SELECTOR = "7";
+
 	public InternalInvalidStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

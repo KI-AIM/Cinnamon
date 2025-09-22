@@ -309,16 +309,16 @@ public class DataSetService {
 				if (process instanceof ExternalProcessEntity externalProcess) {
 					result = getLastOrOriginalDataSet(externalProcess);
 				} else {
-					// TODO
-					throw new InternalInvalidStateException("", "");
+					throw new InternalInvalidStateException(InternalInvalidStateException.INVALID_DATA_SET_SELECTOR,
+					                                        "DataSetSelector LAST_OR_ORIGINAL is not supported because the owner is not a process!");
 				}
 			}
 			case OWNER -> {
 				if (process.getOwner() instanceof DataSetEntity dataSetEntity) {
 					result = dataSetEntity;
 				} else {
-					// TODO
-					throw new InternalInvalidStateException("", "");
+					throw new InternalInvalidStateException(InternalInvalidStateException.INVALID_DATA_SET_SELECTOR,
+					                                        "DataSetSelector OWNER is not supported because the owner is not a DataSetEntity!");
 				}
 			}
 			default -> {

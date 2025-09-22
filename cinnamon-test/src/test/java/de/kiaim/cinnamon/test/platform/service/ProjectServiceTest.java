@@ -85,7 +85,7 @@ public class ProjectServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, BadFileException, InternalApplicationConfigurationException, BadConfigurationNameException {
+	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalApplicationConfigurationException, BadConfigurationNameException, InternalIOException {
 		// Preparation
 		final var project = projectService.createProject(System.currentTimeMillis());
 		final var stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
@@ -95,9 +95,9 @@ public class ProjectServiceTest extends DatabaseTest {
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
 
 		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(csvFileConfiguration.getFileType());
-		final TransformationResult transformationResult = dataProcessor.read(file.getInputStream(), csvFileConfiguration,
-		                                                                     configuration);
-		databaseService.storeFile(project, file, fileConfiguration);
+		final TransformationResult transformationResult = assertDoesNotThrow(
+				() -> dataProcessor.read(file.getInputStream(), csvFileConfiguration, configuration));
+		assertDoesNotThrow(() -> databaseService.storeFile(project, file, fileConfiguration));
 		databaseService.storeOriginalTransformationResult(transformationResult, project);
 		databaseService.storeConfiguration("anonymization", null, "key = value", project);
 
@@ -116,9 +116,8 @@ public class ProjectServiceTest extends DatabaseTest {
 		execution = projectService.saveProject(project).getPipelines().get(0).getStages().get(0);
 
 		var otherFile = ResourceHelper.loadCsvFileWithErrors();
-		final TransformationResult otherTransformationResult = dataProcessor.read(otherFile.getInputStream(),
-		                                                                     csvFileConfiguration,
-		                                                                     configuration);
+		final TransformationResult otherTransformationResult = assertDoesNotThrow(
+				() -> dataProcessor.read(otherFile.getInputStream(), csvFileConfiguration, configuration));
 		databaseService.storeTransformationResult(otherTransformationResult,
 		                                          (DataProcessingEntity) execution.getProcesses().get(0),
 		                                          List.of(stage.getJobList().get(0)));

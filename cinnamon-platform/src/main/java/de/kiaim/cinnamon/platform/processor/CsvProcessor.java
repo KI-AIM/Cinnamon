@@ -6,10 +6,13 @@ import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
+import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -19,7 +22,6 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.zip.ZipEntry;
 
 @Service
 public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
@@ -34,21 +36,28 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * Returns the default CSV file configuration (see {@link CsvFileConfiguration} without looking at the data.
 	 */
 	@Override
-	public int getNumberColumns(final InputStream data, final FileConfigurationEntity fileConfiguration) {
-		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
-		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
+	public FileConfigurationEstimation estimateFileConfiguration(final InputStream data) {
+		// TODO implement estimation
+		final var csvFileConfiguration = new CsvFileConfiguration();
+		final var fileConfiguration =  new FileConfiguration();
 
-		final Iterable<CSVRecord> records;
-		try {
-			records = csvFormat.parse(new InputStreamReader(data));
-		} catch (IOException e) {
-			// TODO catch Error
-			throw new RuntimeException(e);
-		}
+		fileConfiguration.setFileType(FileType.CSV);
+		fileConfiguration.setCsvFileConfiguration(csvFileConfiguration);
 
-		return records.iterator().next().size();
+		return new FileConfigurationEstimation(fileConfiguration);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getNumberColumns(final InputStream data,
+	                            final FileConfigurationEntity fileConfiguration) throws InternalIOException {
+		return getFirstRow(data, fileConfiguration).size();
 	}
 
 	/**
@@ -56,19 +65,10 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 */
 	@Override
 	public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
-	                                 DataConfiguration configuration) {
+	                                 DataConfiguration configuration) throws InternalIOException {
 		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
-		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
-		final Iterable<CSVRecord> records;
-		try {
-			records = csvFormat.parse(new InputStreamReader(data));
-		} catch (IOException e) {
-			// TODO catch Error
-			throw new RuntimeException(e);
-		}
-
-		final Iterator<CSVRecord> recordIterator = records.iterator();
+		final Iterator<CSVRecord> recordIterator = getRecords(data, fileConfiguration);
 		if (recordIterator.hasNext() && csvFileConfiguration.getHasHeader()) {
 			recordIterator.next();
 		}
@@ -90,19 +90,10 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	@Override
 	public DataConfigurationEstimation estimateDataConfiguration(InputStream data,
 	                                                             FileConfigurationEntity fileConfiguration,
-	                                                             final DatatypeEstimationAlgorithm algorithm) {
+	                                                             final DatatypeEstimationAlgorithm algorithm) throws InternalIOException {
 		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
-		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
 
-		final Iterable<CSVRecord> records;
-		try {
-			records = csvFormat.parse(new InputStreamReader(data));
-		} catch (IOException e) {
-			// TODO catch Error
-			throw new RuntimeException(e);
-		}
-
-		final Iterator<CSVRecord> recordIterator = records.iterator();
+		final Iterator<CSVRecord> recordIterator = getRecords(data, fileConfiguration);
 		if (!recordIterator.hasNext()) {
 			return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
 		}
@@ -157,6 +148,20 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	}
 
 	/**
+	 * Returns the first row of the CSV file.
+	 *
+	 * @param data The CSV file.
+	 * @param fileConfiguration The file configuration describing the format of the CSV file.
+	 * @return The first row of the file.
+	 * @throws InternalIOException If reading the CSV file failed.
+	 */
+	public List<String> getFirstRow(final InputStream data,
+	                                final FileConfigurationEntity fileConfiguration) throws InternalIOException {
+		final Iterator<CSVRecord> recordIterator = getRecords(data, fileConfiguration);
+		return recordIterator.next().toList();
+	}
+
+	/**
 	 * Builds a CSVFormat form Apache Commons CSV based on the passed configurations of the CsvFileConfiguration.
 	 *
 	 * @param csvFileConfiguration Configuration to configure the CSVFormt
@@ -168,5 +173,28 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		                        .setRecordSeparator(csvFileConfiguration.getLineSeparator())
 		                        .setQuote(csvFileConfiguration.getQuoteChar())
 		                        .build();
+	}
+
+	/**
+	 * Creates an CSVRecord iterator for the given CSV file.
+	 *
+	 * @param data The CSV file.
+	 * @param fileConfiguration The file configuration describing the format of the CSV file.
+	 * @return Record iterator.
+	 * @throws InternalIOException If reading the CSV file failed.
+	 */
+	private Iterator<CSVRecord> getRecords(final InputStream data,
+	                                       final FileConfigurationEntity fileConfiguration) throws InternalIOException {
+		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
+		final CSVFormat csvFormat = buildCsvFormat(csvFileConfiguration);
+
+		final Iterable<CSVRecord> records;
+		try {
+			records = csvFormat.parse(new InputStreamReader(data));
+		} catch (IOException e) {
+			throw new InternalIOException(InternalIOException.CSV_READING, "Failed to parse CSV file", e);
+		}
+
+		return records.iterator();
 	}
 }

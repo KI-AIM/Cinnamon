@@ -54,6 +54,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # Add settings.xml
+      - name: Configure Maven
+        run: cp .github/maven/settings.xml ~/.m2/settings.xml
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+
       - name: Install External JAR into Maven Repository
         run: |
           mvn install:install-file \

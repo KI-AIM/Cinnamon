@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.*;
+import de.kiaim.cinnamon.platform.model.file.FileType;
 import de.kiaim.cinnamon.platform.service.*;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
@@ -35,8 +36,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,6 +89,47 @@ public class DataController {
 		final ProjectEntity projectEntity =  projectService.getProject(user);
 		final var fileInformation = databaseService.getFileInformation(projectEntity);
 		return ResponseEntity.ok(fileInformation);
+	}
+
+	@Operation(summary = "Estimates the file configuration for the given file.",
+	           description = "Estimates the file configuration for the given file.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Returns the estimated file configuration.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = FileConfigurationEstimation.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = FileConfigurationEstimation.class))}),
+			@ApiResponse(responseCode = "400",
+			             description = "The file is not supported or could not be read.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500",
+			             description = "An internal error occurred during the estimation.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)),
+			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))})
+	})
+	@PostMapping(value = "/file/estimation",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public FileConfigurationEstimation estimateFileConfiguration(
+			final MultipartFile file
+	) throws BadFileException, InternalIOException, InternalMissingHandlingException {
+		// TODO should we store the file here already?
+		final FileType fileType = dataProcessorService.getFileType(file);
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileType);
+
+		try {
+			return dataProcessor.estimateFileConfiguration(file.getInputStream());
+		} catch (final IOException e) {
+			throw new InternalIOException(InternalIOException.MULTIPART_READING,
+			                              "Failed to read the multipart file while estimating the file configuration!",
+			                              e);
+		}
 	}
 
 	@Operation(summary = "Stores the given file and file configuration.",

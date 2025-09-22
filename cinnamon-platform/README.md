@@ -9,9 +9,23 @@ It is responsible for:
 
 ## Build & Run
 
+Cinnamon Platform uses maven packages hosted on GitHub, so you have to set up authentication for GitHub's package registry first.
+This can be done by adding a server entry with ID `github` to your `~/.m2/settings.xml`.
+The personal access token needs at least the `read:packages` scope.
+
+```xml
+<servers>
+    <server>
+        <id>github</id>
+        <username>USERNAME</username>
+        <password>PERSONAL_ACCESS_TOKEN</password>
+    </server>
+</servers>
+```
+
 ### Docker
 
-It is recommended to use the [docker-compose-build.yml](../docker-compose-build.yml) for building [docker-compose.yml](../docker-compose.yml) for running the platform with Docker.
+It is recommended to use the [docker-compose-build.yml](../docker-compose-build.yml) for building and [docker-compose.yml](../docker-compose.yml) for running the platform with Docker.
 
 Run the following command in the root directory to build Cinnamon Platform:
 ```sh
@@ -31,15 +45,16 @@ For the installation as a `.war` file, the following software has been verified 
 - Tomcat 10.1.15 (LTS)
 - PostgreSql
 
-To build this project as a WAR file simply run
+To build this project as a WAR file, run
 
 ```bash
-mvn clean install
+mvn clean package
 ```
 
 The project will automatically build the angular web application for deployment and serve it as a static resource. 
 The build process will generate a `.war` archive that is deployable with a tomcat server.
 
+Setting up the database can be done running the [create.sql](./src/main/resources/create.sql).
 
 ## Development
 The following setup has been tested for developing the project:

@@ -28,49 +28,50 @@
         You can go back to this page and change your decision at any time during the workflow.
     </p>
 
-    <div class="d-flex justify-content-between">
-        <mat-card class="me-2 w-50" [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD"
-                  [class.cinnamon-unselected-mode]="status.mode !== Mode.STANDARD"
-                  (click)="selectMode(Mode.STANDARD);"
-        >
-            <mat-card-header>
-                <mat-card-title>Extensive Guidance</mat-card-title>
-            </mat-card-header>
-            <mat-divider></mat-divider>
-            <mat-card-content>
-                <p>
-                    Extensive guidance is designed for inexperienced users that are new to Cinnamon.
-                    It will provide a guided setup and more detailed descriptions for every step.
-                </p>
-                <div class="d-flex justify-content-center align-items-center">
-                    <img ngSrc="./app/assets/guided.png" width="1243" height="718" priority class="cinnamon-dynamic-img"
-                         alt="Schematic illustration of the guided mode."/>
-                </div>
-            </mat-card-content>
-            <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-            </mat-card-actions>
-        </mat-card>
+    <div class="d-flex justify-content-between gap-2">
+        <a class="cinnamon-mode-area" tabindex="0" (click)="selectMode(Mode.STANDARD);">
+            <mat-card [class.cinnamon-selected-mode]="status.mode === Mode.STANDARD"
+                      [class.cinnamon-unselected-mode]="status.mode !== Mode.STANDARD">
+                <mat-card-header>
+                    <mat-card-title>Extensive Guidance</mat-card-title>
+                </mat-card-header>
+                <mat-divider></mat-divider>
+                <mat-card-content>
+                    <p>
+                        Extensive guidance is designed for inexperienced users that are new to Cinnamon.
+                        It will provide a guided setup and more detailed descriptions for every step.
+                    </p>
+                    <div class="d-flex justify-content-center align-items-center">
+                        <img ngSrc="./app/assets/guided.png" width="1243" height="718" priority
+                             class="cinnamon-dynamic-img" alt="Schematic illustration of the guided mode."/>
+                    </div>
+                </mat-card-content>
+                <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
+                </mat-card-actions>
+            </mat-card>
+        </a>
 
-        <mat-card class="ms-2 w-50" [class.cinnamon-selected-mode]="status.mode === Mode.EXPERT"
-                  [class.cinnamon-unselected-mode]="status.mode !== Mode.EXPERT"
-                  (click)="selectMode(Mode.EXPERT);"
-        >
-            <mat-card-header>
-                <mat-card-title>Minimal Guidance</mat-card-title>
-            </mat-card-header>
-            <mat-divider></mat-divider>
-            <mat-card-content>
-                <p>
-                    Minimal guidance is designed for experienced users that are knowledgeable in anonymization and synthetization methods.
-                    This mode offers less guidance but allows a faster workflow.
-                </p>
-                <div class="d-flex justify-content-center align-items-center">
-                    <img ngSrc="./app/assets/normal.png" width="1243" height="718" priority class="cinnamon-dynamic-img"
-                         alt="Schematic illustration of the minimally guided mode."/>
-                </div>
-            </mat-card-content>
-            <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
-            </mat-card-actions>
-        </mat-card>
+        <a class="cinnamon-mode-area" tabindex="0" (click)="selectMode(Mode.EXPERT);">
+            <mat-card [class.cinnamon-selected-mode]="status.mode === Mode.EXPERT"
+                      [class.cinnamon-unselected-mode]="status.mode !== Mode.EXPERT">
+                <mat-card-header>
+                    <mat-card-title>Minimal Guidance</mat-card-title>
+                </mat-card-header>
+                <mat-divider></mat-divider>
+                <mat-card-content>
+                    <p>
+                        Minimal guidance is designed for experienced users that are knowledgeable in anonymization and
+                        synthetization methods.
+                        This mode offers less guidance but allows a faster workflow.
+                    </p>
+                    <div class="d-flex justify-content-center align-items-center">
+                        <img ngSrc="./app/assets/normal.png" width="1243" height="718" priority
+                             class="cinnamon-dynamic-img" alt="Schematic illustration of the minimally guided mode."/>
+                    </div>
+                </mat-card-content>
+                <mat-card-actions class="d-flex justify-content-center align-items-end h-100">
+                </mat-card-actions>
+            </mat-card>
+        </a>
     </div>
 </app-workstep-box>

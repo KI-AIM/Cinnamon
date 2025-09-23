@@ -3,8 +3,9 @@ import os
 import sys
 import time
 from multiprocessing import Process
-from threading import Event
+from threading import Event, Lock, Thread
 
+import gc
 import pandas as pd
 import requests
 import yaml
@@ -22,7 +23,67 @@ from data_processing.pre_process import pre_process_dataframe
 app = Flask(__name__)
 tasks = {}
 task_locks = {}
+tasks_lock = Lock()
 CORS(app)
+
+
+def _release_process_payload(process):
+    """Drop heavy references held by multiprocessing.Process instances."""
+    if process is None:
+        return
+    try:
+        process._args = ()
+    except AttributeError:
+        pass
+    try:
+        process._kwargs = {}
+    except AttributeError:
+        pass
+    try:
+        process._target = None
+    except AttributeError:
+        pass
+
+
+def _finalize_process(process):
+    if process is None:
+        return
+    _release_process_payload(process)
+    if process.is_alive():
+        try:
+            process.join(timeout=5)
+        except Exception:
+            pass
+    if process.is_alive():
+        return
+    try:
+        process.close()
+    except (AttributeError, ValueError, OSError):
+        pass
+    gc.collect()
+
+
+def _remove_task(task_id):
+    process = None
+    with tasks_lock:
+        process = tasks.pop(task_id, None)
+        task_locks.pop(task_id, None)
+    if process is None:
+        return
+    _finalize_process(process)
+
+
+def _task_reaper(poll_interval=5):
+    while True:
+        time.sleep(poll_interval)
+        with tasks_lock:
+            finished_ids = [task_id for task_id, proc in tasks.items() if not proc.is_alive()]
+        for task_id in finished_ids:
+            _remove_task(task_id)
+
+
+reaper_thread = Thread(target=_task_reaper, name='task-reaper', daemon=True)
+reaper_thread.start()
 
 
 def initialize_input_data(synthesizer_name):
@@ -315,7 +376,8 @@ def start_synthetization_process(synthesizer_name):
     # Initialize Task
     task_id = request.form['session_key']
     stop_event = Event()
-    task_locks[task_id] = stop_event
+    with tasks_lock:
+        task_locks[task_id] = stop_event
 
     try:
         # Initialize input data
@@ -327,12 +389,18 @@ def start_synthetization_process(synthesizer_name):
         task_process = Process(
             target=synthesize_data,
             args=(synthesizer_name, file_path_status, attribute_config, algorithm_config,
-                  data.copy(), callback_url, session_key)  # Note the data.copy()
+                  data, callback_url, session_key)
         )
 
-        tasks[task_id] = task_process
         task_process.start()
         pid = task_process.pid
+        _release_process_payload(task_process)
+        attribute_config = None
+        algorithm_config = None
+        data = None
+        gc.collect()
+        with tasks_lock:
+            tasks[task_id] = task_process
 
         return jsonify({
             'message': 'Synthetization Started',
@@ -341,8 +409,7 @@ def start_synthetization_process(synthesizer_name):
         }), 202
 
     except Exception as e:
-        if task_id in task_locks:
-            del task_locks[task_id]
+        _remove_task(task_id)
         return jsonify({
             'message': 'Exception occurred during Synthetization',
             'error': str(e),
@@ -459,8 +526,17 @@ def cancel_synthetization():
     task_id = request.form.get('session_key')
     task_pid = request.form.get('pid')
 
+    with tasks_lock:
+        process = tasks.get(task_id)
+
     try:
         os.kill(int(task_pid), 9)
+        if process:
+            try:
+                process.join(timeout=5)
+            except Exception:
+                pass
+        _remove_task(task_id)
 
         return jsonify({'message': 'Task canceled', 'session_id': task_id, "pid": task_pid}), 200
 
@@ -478,30 +554,32 @@ def test_callback():
         JSON: A success message containing the session key and details about received files.
     """
     try:
-        # Parse JSON data
-        if request.is_json:
-            data = request.get_json()
-            session_key = data.get('session_key', None)
-            message = data.get('message', None)
-            status_code = data.get('status_code', None)
+        files = request.files or {}
 
+        if request.is_json:
+            payload = request.get_json() or {}
+            session_key = payload.get('session_key')
+            message = payload.get('message')
+            status_code = payload.get('status_code')
         else:
-            raise ValueError("Request must be in JSON format")
+            form_data = request.form or {}
+            session_key = form_data.get('session_key')
+            message = form_data.get('message')
+            status_code = form_data.get('status_code')
+            if not any((session_key, message, status_code, files)):
+                raise ValueError('Request must contain JSON body or form data')
 
         print('Callback function called with session key:', session_key)
         print('Message:', message)
         print('Status Code:', status_code)
 
-        # Handle file uploads (if any)
-        files = request.files
-        for file_key in files:
-            file = files[file_key]
+        for file_key, file in files.items():
             print(f"File received: {file_key}, filename: {file.filename}")
 
         return jsonify({
             'message': 'Callback function called successfully',
             'session_key': session_key,
-            'received_files': list(files.keys())  # List all received file keys
+            'received_files': list(files.keys())
         }), 200
 
     except Exception as e:

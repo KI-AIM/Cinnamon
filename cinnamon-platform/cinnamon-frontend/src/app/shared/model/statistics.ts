@@ -7,7 +7,7 @@ export class StatisticsResponse {
     status: ProcessStatus;
 
     @Transform(params => plainToInstance(Statistics, JSON.parse(params.value)), {toClassOnly: true})
-    statistics: Statistics | null;
+    statistics: Statistics;
 
     constructor(status?: ProcessStatus) {
         if (status != null) {
@@ -17,6 +17,9 @@ export class StatisticsResponse {
 }
 
 export class Statistics {
+    @Type(() => OverviewStatistics)
+    Overview: OverviewStatistics;
+
     @Type(() => ResemblanceStatistics)
     resemblance: ResemblanceStatistics;
 
@@ -183,6 +186,26 @@ export class UtilityStatistics {
     description: string;
     @Transform(transformUtilityMetricData, { toClassOnly: true })
     methods: UtilityMetricDataObject;
+}
+
+export class OverviewStatistics {
+    display_name: string;
+    description: string;
+
+    @Type(() => AggregatedMetrics)
+    aggregated_metrics: AggregatedMetrics[];
+}
+
+export class AggregatedMetrics {
+    overall_resemblance: AggregatedMetric;
+    overall_utility: AggregatedMetric;
+}
+
+export class AggregatedMetric {
+    description: string;
+
+    @Type(() => StatisticsData<number>)
+    values: StatisticsData<number>;
 }
 
 export type UtilityMetricDataObject = { [key: string]: UtilityMetricData2 | UtilityMetricData3 };

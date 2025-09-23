@@ -1,4 +1,4 @@
-import { AsyncPipe, NgForOf, NgIf } from "@angular/common";
+import { AsyncPipe, DecimalPipe, NgForOf, NgIf } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatButton } from "@angular/material/button";
@@ -9,7 +9,7 @@ import { ChartFrequencyComponent } from "@shared/components/chart-frequency/char
 import { DataSetInfo } from "@shared/model/data-set-info";
 import { ProjectSettings } from "@shared/model/project-settings";
 import { RiskAssessmentConfig } from "@shared/model/risk-assessment-config";
-import { StatisticsResponse } from "@shared/model/statistics";
+import { Statistics, StatisticsResponse } from "@shared/model/statistics";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
@@ -25,6 +25,7 @@ import { environments } from "src/environments/environment";
         AsyncPipe,
         NgIf,
         NgForOf,
+        DecimalPipe,
     ],
     templateUrl: './report.component.html',
     styleUrl: './report.component.less'
@@ -62,8 +63,6 @@ export class ReportComponent implements OnInit {
     @ViewChildren('chart') protected charts: QueryList<ChartFrequencyComponent>;
 
     // TODO take form statistics
-    protected utilityScoreO = 1.0;
-    protected utilityScoreP = 0.7;
     protected riskScoreO = 0.1;
     protected riskScoreP = 0.7;
 
@@ -93,6 +92,30 @@ export class ReportComponent implements OnInit {
             ),
             statistics: this.statisticsService.fetchResult(),
         });
+    }
+
+    /**
+     * Calculates the utility score of the original dataset.
+     *
+     * @param statistics The statistics of the technical evaluation.
+     * @protected
+     */
+    protected getUtilityScoreOriginal(statistics: Statistics): number {
+        const resemblance = statistics.Overview.aggregated_metrics[0].overall_resemblance.values.real
+        const utility = statistics.Overview.aggregated_metrics[0].overall_utility.values.real
+        return (resemblance + utility) / 2;
+    }
+
+    /**
+     * Calculates the utility score of the protected dataset.
+     *
+     * @param statistics The statistics of the technical evaluation.
+     * @protected
+     */
+    protected getUtilityScoreProtected(statistics: Statistics): number {
+        const resemblance = statistics.Overview.aggregated_metrics[0].overall_resemblance.values.synthetic
+        const utility = statistics.Overview.aggregated_metrics[0].overall_utility.values.synthetic
+        return (resemblance + utility) / 2;
     }
 
     /**
@@ -283,14 +306,6 @@ export class ReportComponent implements OnInit {
         }
     }
 
-    protected get utilityScoreOX(): number {
-        return this.calculatePos(this.utilityScoreO);
-    }
-
-    protected get utilityScorePX(): number {
-        return this.calculatePos(this.utilityScoreP);
-    }
-
     protected get riskScoreOX(): number {
         return this.calculatePos(this.riskScoreO);
     }
@@ -303,7 +318,7 @@ export class ReportComponent implements OnInit {
         return this.clamp(this.calculatePos(value) - 60, 10, 640);
     }
 
-    private calculatePos(percentage: number) {
+    protected calculatePos(percentage: number) {
         return (percentage * 740) + 20;
     }
 

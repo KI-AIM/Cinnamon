@@ -236,14 +236,71 @@
                     </text>
                 </svg>
 
+                <div>
+                    <div class="report-header2">Data Quality</div>
+
+                    <div class="report-text-block">
+                        The data quality is derived from the resemblance of the statistical properties and the utility
+                        of a down-stream machine learning task. Resemblance describes the structural similarity of the
+                        protected dataset to the original dataset. Whereas the utility quantifies the overall analytical
+                        value of the protected dataset. Scores approaching 1.0 indicate high quality, while scores near
+                        0.0 signify low quality.
+                    </div>
+
+                    <div class="d-flex">
+                        <div>
+                            <div class="report-text-block">
+                                The protected dataset showed over all a <strong>TODO quality</strong>, with a <strong>Resemblance
+                                Score
+                                of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_resemblance.values.synthetic }}</strong>,
+                                and a <strong>Machine Learning Utility Score
+                                of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_utility.values.synthetic }}</strong>.
+                            </div>
+                            <div class="report-text-block">
+                                <!-- TODO Set resemblance dynamically -->
+                                The resemblance analysis showed overall <strong>TODO differences</strong> in the correlation
+                                patterns, and <strong>TODO statistical similarities</strong>.
+                            </div>
+                            <div class="report-text-block">
+                                The statistical similarities showed a <strong>difference of -5.60%</strong> overall for
+                                the 9 numerical attributes.
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div>
+                    <div class="report-header2">Data Privacy Risks</div>
+
+                    <div class="report-text-block">
+                        Scores approaching 1.0 indicate high privacy, while scores near 0.0 signify low privacy and
+                        therefore high potential reidentification risks. The probability of the likelihood of a risk is
+                        inverse to the privacy score.
+                    </div>
+
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 20px;">
+                        <div class="report-metric-card" style="width: 50%; flex: 1; margin: 0 10px 10px 0;">
+                            <div style="font-weight: bold;">Identified High Privacy Risk</div>
+                            <div style="font-size: 24px; color: #3498db;">87%</div>
+                            <div style="font-size: 14px; color: #7f8c8d;">Statistical similarity to original data</div>
+                        </div>
+                        <div class="report-metric-card" style="width: 50%; flex: 1; margin: 0 10px 10px 0;">
+                            <div style="font-weight: bold;">Identified Low Privacy Risk</div>
+                            <div style="font-size: 24px; color: #3498db;">92%</div>
+                            <div style="font-size: 14px; color: #7f8c8d;">Analytical accuracy compared to original</div>
+                        </div>
+                    </div>
+
+                </div>
+
                 <div class="report-section">
                     <h2 class="report-header2">Executive Summary</h2>
                     <p>Here are the three dimensions, resemblance, utility, Privacy Risk displayed these values
                         are aggregated for the whole data set. Detailed analysis can be found in the following
                         chapters.</p>
 
-                    <div
-                        style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 20px;">
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 20px;">
                         <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
                             <div style="font-weight: bold;">Data Resemblance Score</div>
                             <div style="font-size: 24px; color: #3498db;">87%</div>

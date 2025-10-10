@@ -18,6 +18,8 @@ export class AttributeConfigurationComponent implements AfterViewInit {
 
     @Output() onInput = new EventEmitter<any>();
 
+    protected readonly DataType = DataType;
+
     private oldName: string = "";
 
     constructor() { }

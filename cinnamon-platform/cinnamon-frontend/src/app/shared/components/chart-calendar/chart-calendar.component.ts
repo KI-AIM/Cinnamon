@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { ColumnConfiguration } from "@shared/model/column-configuration";
 import { ChartComponent, Entries } from "../chart/chart.component";
 import { DensityPlotData, StatisticsData } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
@@ -12,6 +13,7 @@ import { EChartsCoreOption } from "echarts/core";
     standalone: false
 })
 export class ChartCalendarComponent extends ChartComponent {
+    @Input() columnConfiguration!: ColumnConfiguration;
     @Input() data!: StatisticsData<DensityPlotData>;
     @Input() simple: boolean = false;
     @Input() syntheticSeriesLabel: string = "Synthetic";
@@ -121,8 +123,10 @@ export class ChartCalendarComponent extends ChartComponent {
             });
         }
 
+        const chartName = this.createChartName("Calendar", this.data, this.columnConfiguration, dataSetLabels);
+
         const options: EChartsCoreOption = {
-            ...this.graphOptions(this.simple),
+            ...this.graphOptions(this.simple, chartName),
             visualMap: {
                 show: false,
                 min: 0,

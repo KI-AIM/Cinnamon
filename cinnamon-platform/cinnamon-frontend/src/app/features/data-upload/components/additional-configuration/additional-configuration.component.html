@@ -11,17 +11,18 @@
                     <mat-label>Configuration</mat-label>
                     <mat-select [id]="'additionalSettingsConfigurations_' + attrNumber"
                         (selectionChange)="changeConfigurationSelection($event)"
-                        [disabled]="disabled || !areConfigurationAvailable(getType())"
+                        [disabled]="disabled || !areConfigurationAvailable()"
                         [(value)]="selected">
-                        <mat-option disabled *ngIf="!areConfigurationAvailable(getType())"
-                            value="standardSelection">No
-                            configurations available</mat-option>
-                        <mat-option disabled *ngIf="areConfigurationAvailable(getType())"
-                            value="standardSelection">Select a
-                            configuration to add...</mat-option>
-                        <mat-option
-                            *ngFor="let configurationType of getConfigurationsForDatatype(getType()).getAll()"
-                            [value]="configurationType">{{configurationType}}</mat-option>
+                        <mat-option disabled *ngIf="!areConfigurationAvailable()" value="standardSelection">
+                            No configurations available
+                        </mat-option>
+                        <mat-option disabled *ngIf="areConfigurationAvailable()" value="standardSelection">
+                            Select a configuration to add...
+                        </mat-option>
+
+                        <mat-option *ngFor="let type of getConfigurationsForDatatype() " [value]="type">
+                            {{ ConfigurationTypeMetadata[type].displayName }}
+                        </mat-option>
                     </mat-select>
                 </mat-form-field>
             </div>

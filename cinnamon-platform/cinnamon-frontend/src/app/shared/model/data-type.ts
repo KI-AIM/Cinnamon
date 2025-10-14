@@ -1,3 +1,5 @@
+import { ConfigurationType } from "@shared/model/configuration-types";
+
 export enum DataType {
     BOOLEAN = "BOOLEAN",
 	DATE_TIME = "DATE_TIME",
@@ -13,6 +15,10 @@ export enum DataType {
  */
 interface DataTypeAttributes {
     /**
+     * List of additional configurations available for this data type.
+     */
+    availableConfigurationTypes: ConfigurationType[];
+    /**
      * Name for displaying the type in the UI.
      */
     displayName: string;
@@ -27,30 +33,37 @@ interface DataTypeAttributes {
  */
 export const DataTypeMetadata: Record<DataType, DataTypeAttributes> = {
     [DataType.BOOLEAN]: {
+        availableConfigurationTypes: [],
         displayName: "Boolean",
         selectable: true,
     },
     [DataType.DATE_TIME]: {
+        availableConfigurationTypes: [ConfigurationType.DATETIMEFORMAT, ConfigurationType.RANGE],
         displayName: "Date & Time",
         selectable: true,
     },
     [DataType.DECIMAL]: {
+        availableConfigurationTypes: [ConfigurationType.RANGE],
         displayName: "Decimal",
         selectable: true,
     },
     [DataType.INTEGER]: {
+        availableConfigurationTypes: [ConfigurationType.RANGE],
         displayName: "Integer",
         selectable: true,
     },
     [DataType.STRING]: {
+        availableConfigurationTypes: [ConfigurationType.STRINGPATTERN],
         displayName: "String",
         selectable: true,
     },
     [DataType.DATE]: {
+        availableConfigurationTypes: [ConfigurationType.DATEFORMAT, ConfigurationType.RANGE],
         displayName: "Date",
         selectable: true,
     },
     [DataType.UNDEFINED]: {
+        availableConfigurationTypes: [],
         displayName: "Undefined",
         selectable: false,
     }

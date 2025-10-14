@@ -1,8 +1,9 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
+import { MatDialog } from "@angular/material/dialog";
 import { List } from 'src/app/core/utils/list';
-import { DataScale } from 'src/app/shared/model/data-scale';
-import { DataType } from 'src/app/shared/model/data-type';
+import { DataScale, DataScaleMetadata } from 'src/app/shared/model/data-scale';
+import { DataTypeMetadata } from 'src/app/shared/model/data-type';
 
 @Component({
     selector: 'app-attribute-configuration',
@@ -20,7 +21,12 @@ export class AttributeConfigurationComponent implements AfterViewInit {
 
     private oldName: string = "";
 
-    constructor() { }
+    protected readonly DataScaleMetadata = DataScaleMetadata;
+    protected readonly DataTypeMetadata = DataTypeMetadata;
+
+    constructor(
+        protected dialog: MatDialog
+    ) { }
 
     ngAfterViewInit(): void {
         this.columnConfigurationForm.controls['name'].valueChanges.subscribe((newValue) => {
@@ -31,10 +37,6 @@ export class AttributeConfigurationComponent implements AfterViewInit {
                 this.columnConfigurationForm.controls['name'].markAsTouched();
             }
         });
-    }
-
-    getDataTypes(): List<String> {
-        return new List<String>(Object.keys(DataType));
     }
 
     getDataScales(): List<String> {
@@ -54,4 +56,5 @@ export class AttributeConfigurationComponent implements AfterViewInit {
             this.columnConfigurationForm.controls[field].patchValue(trimmedValue);
         }
     }
+
 }

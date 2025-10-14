@@ -130,13 +130,14 @@ input[type="file"]:disabled::-webkit-file-upload-button {
     box-shadow: none;
 }
 
+.icon-enabled.mat-icon,
 .icon-enabled .mat-icon {
     color: @color-primary-icon;
     vertical-align: middle;
-}
 
-.icon-enabled .mat-icon:hover {
-    cursor: pointer;
+    &:hover {
+        cursor: pointer;
+    }
 }
 
 .icon-disabled .mat-icon {

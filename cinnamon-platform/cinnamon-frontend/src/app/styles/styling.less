@@ -134,13 +134,14 @@ input[type="file"]:disabled::-webkit-file-upload-button {
     position: relative;
 }
 
+.icon-enabled.mat-icon:first-child,
 .icon-enabled > .mat-icon:first-child {
     color: @color-primary-icon;
     vertical-align: middle;
-}
 
-.icon-enabled > .mat-icon:hover {
-    cursor: pointer;
+    &:hover {
+        cursor: pointer;
+    }
 }
 
 .icon-disabled > .mat-icon {

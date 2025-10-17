@@ -1,36 +1,34 @@
 <ng-container *ngIf="pageData$ | async as pageData">
 
-    <ng-container *ngTemplateOutlet="metricSearch; context: {filterData: tableData.filter}"></ng-container>
+    <ng-container *ngIf="tableData">
+        <ng-container *ngTemplateOutlet="metricSearch; context: {filterData: tableData.filter}"></ng-container>
+    </ng-container>
 
     <table *ngIf="tableType === MetricTableType.SINGLE" class="metric-table metric-table-single">
         <tr class="no-select">
-            <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', sortData: tableData.sort, type: 'metric'}"></ng-container>
+            <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', type: 'metric'}"></ng-container>
             <th>Value</th>
             <th></th>
         </tr>
-        <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:tableData.filter.filterText:tableData.filter.importance | metricSorter:tableData.sort.direction:tableData.sort.column">
-        <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
+        <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:tableData?.filter?.filterText:tableData?.filter?.importance | metricSorter:tableData?.sort?.direction:tableData?.sort?.column">
+            <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
             </ng-container>
         </ng-container>
     </table>
 
     <table *ngIf="tableType === MetricTableType.COMPARISON" class="metric-table metric-table-comparison">
         <tr class="no-select">
-            <ng-container
-                *ngTemplateOutlet="sortColumn; context: {name: 'Status', sortData: tableData.sort, type: 'colorIndex', item: statusLegend}"></ng-container>
-            <ng-container
-                *ngTemplateOutlet="sortColumn; context: {name: 'Metric', sortData: tableData.sort, type: 'metric'}"></ng-container>
+            <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', type: 'colorIndex', item: statusLegend}"></ng-container>
+            <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', type: 'metric'}"></ng-container>
             <th>Original</th>
             <th>{{ datasetDisplayName }}</th>
-            <ng-container
-                *ngTemplateOutlet="sortColumn; context: {name: 'Diff (#)', sortData: tableData.sort, type: 'absolute'}"></ng-container>
-            <ng-container
-                *ngTemplateOutlet="sortColumn; context: {name: 'Diff (%)', sortData: tableData.sort, type: 'percentage'}"></ng-container>
+            <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (#)', type: 'absolute'}"></ng-container>
+            <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (%)', type: 'percentage'}"></ng-container>
             <th></th>
         </tr>
 
-        <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:tableData.filter.filterText:tableData.filter.importance | metricSorter:tableData.sort.direction:tableData.sort.column">
-        <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData, mc: pageData.projectSettings.metricConfiguration}">
+        <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:tableData?.filter?.filterText:tableData?.filter?.importance | metricSorter:tableData?.sort?.direction:tableData?.sort?.column">
+            <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData, mc: pageData.projectSettings.metricConfiguration}">
             </ng-container>
         </ng-container>
     </table>
@@ -48,9 +46,17 @@
     <ng-template #metric let-data='data'>
         <tr>
             <td>{{ data[1].display_name }}</td>
-            <td>{{ statisticsService.formatNumber(getValue(data[1].values, mainData), {max: 3, min: 3, dataType: attributeStatistics.attribute_information.type}) }}</td>
+            <td>{{
+                    statisticsService.formatNumber(getValue(data[1].values, mainData), {
+                        max: 3,
+                        min: 3,
+                        dataType: attributeStatistics.attribute_information.type
+                    })
+                }}
+            </td>
             <td class="information-column">
-                <a title="Show information" style="vertical-align: middle;" (click)="metricInfoTableComponent.open(data[1])">
+                <a title="Show information" style="vertical-align: middle;"
+                   (click)="metricInfoTableComponent.open(data[1])">
                     <mat-icon fontIcon="info"></mat-icon>
                 </a>
             </td>
@@ -67,8 +73,22 @@
             <td>
                 {{ data[1].display_name }}
             </td>
-            <td>{{ statisticsService.formatNumber(getValue(data[1].values, 'real'), {max: 3, min: 3, dataType: attributeStatistics.attribute_information.type}) }}</td>
-            <td>{{ statisticsService.formatNumber(getValue(data[1].values, 'synthetic'), {max: 3, min: 3, dataType: attributeStatistics.attribute_information.type}) }}</td>
+            <td>{{
+                    statisticsService.formatNumber(getValue(data[1].values, 'real'), {
+                        max: 3,
+                        min: 3,
+                        dataType: attributeStatistics.attribute_information.type
+                    })
+                }}
+            </td>
+            <td>{{
+                    statisticsService.formatNumber(getValue(data[1].values, 'synthetic'), {
+                        max: 3,
+                        min: 3,
+                        dataType: attributeStatistics.attribute_information.type
+                    })
+                }}
+            </td>
             <td>{{ statisticsService.formatNumber(getDifference(data[1], 'absolute'), {dataType: attributeStatistics.attribute_information.type}) }}</td>
             <td>{{ statisticsService.formatNumber(getDifference(data[1], 'percentage'), {max: 3, min: 3}) }}</td>
             <td class="information-column">
@@ -79,25 +99,23 @@
         </tr>
     </ng-template>
 
-    <ng-template #sortColumn let-name="name" let-data="sortData" let-type="type" let-item="item">
-        <ng-container *ngIf="data | instanceOf:MetricTableSortData as sortData">
-            <th (click)="sort(sortData, type)" style="min-width: 6rem;">
-                <div style="display: flex">
-                    <span>{{ name }}</span>
-                    <span *ngIf="item">
-                <ng-container *ngTemplateOutlet="item"></ng-container>
-            </span>
-                    <span *ngIf="sortData.column === type" style="margin-left: auto; margin-bottom: -7px;">
-                <mat-icon *ngIf="sortData.direction === 'asc'">arrow_drop_up</mat-icon>
-                <mat-icon *ngIf="sortData.direction === 'desc'">arrow_drop_down</mat-icon>
-            </span>
-                </div>
-            </th>
-        </ng-container>
+    <ng-template #sortColumn let-name="name" let-type="type" let-item="item">
+        <th (click)="sort(tableData?.sort, type)" style="min-width: 6rem;">
+            <div style="display: flex">
+                <span>{{ name }}</span>
+                <span *ngIf="item"><ng-container *ngTemplateOutlet="item"></ng-container></span>
+                <span *ngIf="tableData && tableData.sort.column === type"
+                      style="margin-left: auto; margin-bottom: -7px;">
+                    <mat-icon *ngIf="tableData.sort.direction === 'asc'">arrow_drop_up</mat-icon>
+                    <mat-icon *ngIf="tableData.sort.direction === 'desc'">arrow_drop_down</mat-icon>
+                </span>
+            </div>
+        </th>
     </ng-template>
 
     <ng-template #statusLegend>
-    <span title="Show information" [matMenuTriggerFor]="colorLegend" (click)="$event.stopPropagation();" class="icon-enabled">
+    <span title="Show information" [matMenuTriggerFor]="colorLegend" (click)="$event.stopPropagation();"
+          class="icon-enabled">
         <mat-icon fontIcon="info"></mat-icon>
     </span>
     </ng-template>

@@ -354,10 +354,45 @@
                         Details for each attribute
                     </div>
 
-                    <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes"
-                         >
+                    <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes">
                         <div class="report-header2">
                             Attribute: {{ attributeStatistics.attribute_information.name }}
+                        </div>
+
+                        <div>
+                            <div class="report-header4">Attribute Information</div>
+
+                            <div class="d-flex w-100 gap-3">
+                                <div>
+                                    <span class="fw-bold">Index:</span>
+                                    <span> {{ attributeStatistics.attribute_information.index }}</span>
+                                </div>
+                                <div>
+                                    <span class="fw-bold">Name:</span>
+                                    <span> {{ attributeStatistics.attribute_information.name }}</span>
+                                </div>
+                                <div>
+                                    <span class="fw-bold">Type:</span>
+                                    <span> {{ attributeStatistics.attribute_information.type }}</span>
+                                </div>
+                                <div>
+                                    <span class="fw-bold">Scale:</span>
+                                    <span> {{ attributeStatistics.attribute_information.scale }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="report-header4">Resemblance Analysis</div>
+
+                            <div class="report-keep-together">
+                                <app-data-inspection-metric-table [attributeStatistics]="attributeStatistics"
+                                                                  datasetDisplayName="Protected"
+                                                                  [tableType]="MetricTableType.COMPARISON">
+                                </app-data-inspection-metric-table>
+                            </div>
+
+
                         </div>
 
                         <ng-container *ngIf="attributeStatistics.plot.histogram">
@@ -378,11 +413,12 @@
                         </ng-container>
                     </div>
 
-                    <div style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; color: #7f8c8d; font-size: 14px;">
-                        <p>Privacy Report | Prepared: 01.01.2025</p>
-                        <p>Confidential - For Internal Use Only</p>
-                    </div>
+                </div>
 
+                <div
+                    style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; color: #7f8c8d; font-size: 14px;">
+                    <p>Privacy Report | Prepared: 01.01.2025</p>
+                    <p>Confidential - For Internal Use Only</p>
                 </div>
 
             </div>

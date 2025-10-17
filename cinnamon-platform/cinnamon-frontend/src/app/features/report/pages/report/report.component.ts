@@ -6,6 +6,9 @@ import { TitleService } from "@core/services/title-service.service";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
 import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
 import { ChartFrequencyComponent } from "@shared/components/chart-frequency/chart-frequency.component";
+import {
+    MetricTableType
+} from "@shared/components/data-inspection-metric-table/data-inspection-metric-table.component";
 import { DataScale } from "@shared/model/data-scale";
 import { DataSetInfo } from "@shared/model/data-set-info";
 import { ProjectSettings } from "@shared/model/project-settings";
@@ -37,6 +40,7 @@ export class ReportComponent implements OnInit {
     private readonly PAGE_HEIGHT = 1122;
 
     protected readonly Object = Object;
+    protected readonly MetricTableType = MetricTableType;
     protected readonly StatisticsService = StatisticsService;
 
     /**

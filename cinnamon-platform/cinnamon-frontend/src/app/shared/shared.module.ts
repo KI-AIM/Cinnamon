@@ -147,6 +147,7 @@ import { InjectMetricImportancePipe } from './pipes/inject-metric-importance.pip
         ConfigurationPageComponent,
         DataInspectionComponent,
         DataInspectionAttributeComponent,
+        DataInspectionMetricTableComponent,
         DataTableComponent,
         FileUploadComponent,
         InfoCardComponent,

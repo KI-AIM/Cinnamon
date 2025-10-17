@@ -4,7 +4,7 @@ import { ProjectSettings } from "@shared/model/project-settings";
 import { AttributeStatistics, StatisticsData, StatisticsValues, StatisticsValueTypes } from "@shared/model/statistics";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { StatisticsService } from "@shared/services/statistics.service";
-import { combineLatest, Observable, of } from "rxjs";
+import { combineLatest, Observable } from "rxjs";
 
 /**
  * Table showing metrics for a specific attribute.
@@ -35,8 +35,9 @@ export class DataInspectionMetricTableComponent implements OnInit {
 
     /**
      * The context data of the search and filter.
+     * If null, the table has no filter nor sort function.
      */
-    @Input() public tableData!: MetricTableData;
+    @Input() public tableData: MetricTableData | null = null;
 
     /**
      * Type of the table to be displayed.
@@ -51,7 +52,6 @@ export class DataInspectionMetricTableComponent implements OnInit {
     }>;
 
     protected readonly MetricTableFilterData = MetricTableFilterData;
-    protected readonly MetricTableSortData = MetricTableSortData;
     protected readonly MetricTableType = MetricTableType;
 
     public constructor(
@@ -74,7 +74,11 @@ export class DataInspectionMetricTableComponent implements OnInit {
      * @param type The type of the columns which has been clicked.
      * @protected
      */
-    protected sort(sortData: MetricTableSortData, type: SortType): void {
+    protected sort(sortData: MetricTableSortData | null | undefined, type: SortType): void {
+        if (!sortData) {
+            return;
+        }
+
         if (sortData.column === type) {
             if (sortData.direction === 'asc') {
                 sortData.direction = 'desc';

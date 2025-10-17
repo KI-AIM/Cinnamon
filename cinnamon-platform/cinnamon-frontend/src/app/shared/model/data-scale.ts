@@ -1,7 +1,7 @@
 export enum DataScale {
-    DATE,
-    NOMINAL,
-    ORDINAL,
-    INTERVAL,
-    RATIO,
+    DATE = "DATE",
+    NOMINAL = "NOMINAL",
+    ORDINAL = "ORDINAL",
+    INTERVAL = "INTERVAL",
+    RATIO = "RATIO",
 }

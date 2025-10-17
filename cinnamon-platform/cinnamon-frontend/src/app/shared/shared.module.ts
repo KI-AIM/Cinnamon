@@ -140,6 +140,8 @@ import { InjectMetricImportancePipe } from './pipes/inject-metric-importance.pip
     ],
     exports: [
         // Components
+        ChartCorrelationComponent,
+        ChartDensityComponent,
         ChartFrequencyComponent,
         ColorLegendComponent,
         ConfigurationFormComponent,

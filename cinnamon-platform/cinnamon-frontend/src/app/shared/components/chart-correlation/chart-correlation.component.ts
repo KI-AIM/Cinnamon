@@ -15,6 +15,7 @@ export class ChartCorrelationComponent extends ChartComponent {
     @Input() public columnConfiguration!: ColumnConfiguration;
     @Input() public data!: StatisticsData<CorrelationPlotData>;
     @Input() public originalSeriesLabel: string = "Original";
+    @Input() public showVisualMap: boolean | null = null;
     @Input() public simple: boolean = false;
     @Input() public syntheticSeriesLabel: string = "Synthetic";
 
@@ -75,7 +76,7 @@ export class ChartCorrelationComponent extends ChartComponent {
                 orient: 'horizontal',
                 left: 'center',
                 top: -5,
-                show: !this.simple,
+                show: this.showVisualMap ?? !this.simple,
                 inRange: {
                     color: this.statisticsService.getColorScheme(this.colorScheme).slice(1),
                 },

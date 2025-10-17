@@ -396,6 +396,9 @@
                         </div>
 
                         <ng-container *ngIf="attributeStatistics.plot.histogram">
+                            <div class="report-header4">
+                                Histogram
+                            </div>
                             <app-chart-frequency #chart
                                                  [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
                                                  [data]="attributeStatistics.plot.histogram!" [limit]="null"
@@ -403,13 +406,37 @@
                                                  syntheticSeriesLabel="Protected">
                             </app-chart-frequency>
                         </ng-container>
+                        <ng-container *ngIf="attributeStatistics.plot.visualize_columnwise_correlations">
+                            <div class="report-header4">
+                                Correlation
+                            </div>
+                            <app-chart-correlation #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                   [columnConfiguration]="attributeStatistics.attribute_information"
+                                                   [data]="attributeStatistics.plot.visualize_columnwise_correlations!"
+                                                   originalSeriesLabel="Original" [showVisualMap]="false"
+                                                   [simple]="false" syntheticSeriesLabel="Protected">
+                            </app-chart-correlation>
+                        </ng-container>
                         <ng-container *ngIf="attributeStatistics.plot.frequency_plot">
+                            <div class="report-header4">
+                                Frequency
+                            </div>
                             <app-chart-frequency #chart
                                                  [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
                                                  [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
                                                  [simple]="false" originalSeriesLabel="Original"
                                                  syntheticSeriesLabel="Protected">
                             </app-chart-frequency>
+                        </ng-container>
+                        <ng-container *ngIf="attributeStatistics.plot.density">
+                            <div class="report-header4">
+                                Density
+                            </div>
+                            <app-chart-density #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                               [columnConfiguration]="attributeStatistics.attribute_information"
+                                               [data]="attributeStatistics.plot.density!" originalSeriesLabel="Original"
+                                               [simple]="false" syntheticSeriesLabel="Protected">
+                            </app-chart-density>
                         </ng-container>
                     </div>
 

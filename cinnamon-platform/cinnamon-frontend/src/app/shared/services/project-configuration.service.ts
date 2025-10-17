@@ -63,43 +63,8 @@ export class ProjectConfigurationService {
         return this.putProjectSettings(value);
     }
 
-    public getImportantMetrics(attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
-        return Object.entries(attributeStatistics.important_metrics);
-    }
-
-    public getDetailMetrics(attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
-        return Object.entries(attributeStatistics.details);
-    }
-
     public getAllMetrics(attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
         return Object.entries(attributeStatistics.important_metrics).concat(Object.entries(attributeStatistics.details));
-    }
-
-    /**
-     * Returns all metrics from the given attribute statistics where the configured importance matches the given importance.
-     * @param config The metric settings defining the importance of each metric.
-     * @param imp The importance of the metrics to filter.
-     * @param attributeStatistics The attribute statistics containing the metrics.
-     */
-    public filterMetrics(config: MetricSettings, imp: MetricImportance | null, attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
-        if (!imp) {
-            return this.getAllMetrics(attributeStatistics);
-        }
-
-        if (!config.useUserDefinedImportance) {
-            switch (imp) {
-                case MetricImportance.IMPORTANT:
-                    return this.getImportantMetrics(attributeStatistics);
-                case MetricImportance.ADDITIONAL:
-                    return this.getDetailMetrics(attributeStatistics);
-                case MetricImportance.NOT_RELEVANT:
-                    return [];
-            }
-        }
-
-        return this.getAllMetrics(attributeStatistics).filter(val => {
-            return config.userDefinedImportance[val[0]] === imp;
-        });
     }
 
     private fetchProjectSettings(): Observable<ProjectSettings> {

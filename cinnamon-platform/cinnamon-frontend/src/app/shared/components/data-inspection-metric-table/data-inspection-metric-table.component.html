@@ -8,9 +8,8 @@
             <th>Value</th>
             <th></th>
         </tr>
-        <ng-container
-            *ngFor="let metricData of  injectImportance(projectConfigService.filterMetrics(pageData.projectSettings.metricConfiguration, tableData.filter.importance, attributeStatistics), pageData.projectSettings.metricConfiguration) | metricFilter:tableData.filter.filterText:null | metricSorter:tableData.sort.direction:tableData.sort.column">
-            <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
+        <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:tableData.filter.filterText:tableData.filter.importance | metricSorter:tableData.sort.direction:tableData.sort.column">
+        <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
             </ng-container>
         </ng-container>
     </table>
@@ -30,7 +29,7 @@
             <th></th>
         </tr>
 
-        <ng-container *ngFor="let metricData of injectImportance(projectConfigService.filterMetrics(pageData.projectSettings.metricConfiguration, tableData.filter.importance, attributeStatistics), pageData.projectSettings.metricConfiguration) | metricFilter:tableData.filter.filterText:null | metricSorter:tableData.sort.direction:tableData.sort.column">
+        <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:tableData.filter.filterText:tableData.filter.importance | metricSorter:tableData.sort.direction:tableData.sort.column">
         <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData, mc: pageData.projectSettings.metricConfiguration}">
             </ng-container>
         </ng-container>

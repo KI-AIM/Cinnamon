@@ -1,10 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { MetricTableData, MetricTableFilterData, MetricTableSortData, SortType } from "@shared/model/metric-table-data";
-import { MetricImportanceData, MetricSettings, ProjectSettings } from "@shared/model/project-settings";
+import { ProjectSettings } from "@shared/model/project-settings";
 import { AttributeStatistics, StatisticsData, StatisticsValues, StatisticsValueTypes } from "@shared/model/statistics";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { StatisticsService } from "@shared/services/statistics.service";
-import { combineLatest, Observable } from "rxjs";
+import { combineLatest, Observable, of } from "rxjs";
 
 /**
  * Table showing metrics for a specific attribute.
@@ -44,6 +44,8 @@ export class DataInspectionMetricTableComponent implements OnInit {
      */
     @Input() public tableType!: MetricTableType;
 
+    protected metrics: Array<[string, StatisticsValueTypes]>;
+
     protected pageData$: Observable<{
         projectSettings: ProjectSettings,
     }>;
@@ -59,6 +61,7 @@ export class DataInspectionMetricTableComponent implements OnInit {
     }
 
     public ngOnInit(): void {
+        this.metrics = this.projectConfigService.getAllMetrics(this.attributeStatistics);
         this.pageData$ = combineLatest({
             projectSettings: this.projectConfigService.projectSettings$,
         });
@@ -83,19 +86,6 @@ export class DataInspectionMetricTableComponent implements OnInit {
             sortData.column = type;
             sortData.direction = 'asc';
         }
-    }
-
-    /**
-     * Injects the metric importance as configured in the project settings to the given statistics.
-     *
-     * @param input The statistic for the table.
-     * @param config The metric settings.
-     * @protected
-     */
-    protected injectImportance(input: Array<[string, StatisticsValueTypes]>, config: MetricSettings): Array<[string, StatisticsValueTypes, number]> {
-        return input.map(value => {
-            return [value[0], value[1], MetricImportanceData[config.userDefinedImportance[value[0]]].value];
-        });
     }
 
     /**

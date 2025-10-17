@@ -61,6 +61,7 @@ import { WorkstepItemComponent } from './components/workstep-item/workstep-item.
 import { ProjectExportComponent } from './components/project-export/project-export.component';
 import { TooltipComponent } from './components/tooltip/tooltip.component';
 import { DataInspectionMetricTableComponent } from './components/data-inspection-metric-table/data-inspection-metric-table.component';
+import { InjectMetricImportancePipe } from './pipes/inject-metric-importance.pipe';
 
 @NgModule({
     declarations: [
@@ -109,6 +110,7 @@ import { DataInspectionMetricTableComponent } from './components/data-inspection
         NumberToTextPipe,
         StatisticsFilterPipe,
         DataInspectionMetricTableComponent,
+        InjectMetricImportancePipe,
     ],
     imports: [
         CommonModule,

@@ -180,517 +180,212 @@
                         </div>
                     </div>
 
-                </div>
+                    <div class="report-header2">Data Protection Results</div>
 
-                <div class="report-header2">Data Protection Results</div>
+                    <svg
+                        *ngIf="{utilityScoreO: getUtilityScoreOriginal(reportData.statistics.statistics), utilityScoreP: getUtilityScoreProtected(reportData.statistics.statistics)} as graphData"
+                        width="800" height="330" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Gradient definition -->
+                        <defs>
+                            <linearGradient id="colorGradient" x1="100%" y1="0%" x2="0%" y2="0%">
 
-                <svg *ngIf="{utilityScoreO: getUtilityScoreOriginal(reportData.statistics.statistics), utilityScoreP: getUtilityScoreProtected(reportData.statistics.statistics)} as graphData"
-                     width="800" height="330" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Gradient definition -->
-                    <defs>
-                        <linearGradient id="colorGradient" x1="100%" y1="0%" x2="0%" y2="0%">
-
-                            <ng-container *ngIf="getColors(reportData.mc.metricConfiguration.colorScheme) as colorScheme">
-                                <ng-container *ngFor="let color of colorScheme; let i = index">
-                                    <stop [attr.offset]="i * (100 / (colorScheme.length - 1)) + '%'"
-                                          [attr.style]="`stop-color: ${color};`" style="stop-opacity: 1;"/>
+                                <ng-container
+                                    *ngIf="getColors(reportData.mc.metricConfiguration.colorScheme) as colorScheme">
+                                    <ng-container *ngFor="let color of colorScheme; let i = index">
+                                        <stop [attr.offset]="i * (100 / (colorScheme.length - 1)) + '%'"
+                                              [attr.style]="`stop-color: ${color};`" style="stop-opacity: 1;"/>
+                                    </ng-container>
                                 </ng-container>
-                            </ng-container>
-                        </linearGradient>
-                    </defs>
+                            </linearGradient>
+                        </defs>
 
-                    <!-- Utility Score -->
-                    <rect x="20" y="65" width="740" height="30" fill="url(#colorGradient)"/>
-                    <text x="10" y="25" font-size="18" font-family="Arial" font-weight="bold">Utility Score:</text>
-                    <text x="0" y="85" font-size="14" font-family="Arial">0.0</text>
-                    <text x="760" y="85" font-size="14" font-family="Arial">1.0</text>
+                        <!-- Utility Score -->
+                        <rect x="20" y="65" width="740" height="30" fill="url(#colorGradient)"/>
+                        <text x="10" y="25" font-size="18" font-family="Arial" font-weight="bold">Utility Score:</text>
+                        <text x="0" y="85" font-size="14" font-family="Arial">0.0</text>
+                        <text x="760" y="85" font-size="14" font-family="Arial">1.0</text>
 
-                    <polygon [attr.points]="`${calculatePos(graphData.utilityScoreO) - 5},55 ${calculatePos(graphData.utilityScoreO) + 5},55 ${calculatePos(graphData.utilityScoreO)},65`"
-                             fill="gray"/>
-                    <text [attr.x]="offsetText(graphData.utilityScoreO)" y="47" font-size="14" font-family="Arial">
-                        Original Dataset ({{ graphData.utilityScoreO | number: '1.0-1' }})
-                    </text>
+                        <polygon fill="gray"
+                                 [attr.points]="`${calculatePos(graphData.utilityScoreO) - 5},55 ${calculatePos(graphData.utilityScoreO) + 5},55 ${calculatePos(graphData.utilityScoreO)},65`"/>
+                        <text [attr.x]="offsetText(graphData.utilityScoreO)" y="47" font-size="14" font-family="Arial">
+                            Original Dataset ({{ graphData.utilityScoreO | number: '1.0-1' }})
+                        </text>
 
-                    <polygon [attr.points]="`${calculatePos(graphData.utilityScoreP) - 5},105 ${calculatePos(graphData.utilityScoreP) + 5},105 ${calculatePos(graphData.utilityScoreP)},95`"
-                             fill="black"/>
-                    <text [attr.x]="offsetText(graphData.utilityScoreP)" y="120" font-size="14" font-family="Arial">
-                        Protected Dataset ({{ graphData.utilityScoreP | number: '1.0-1'  }})
-                    </text>
+                        <polygon fill="black"
+                                 [attr.points]="`${calculatePos(graphData.utilityScoreP) - 5},105 ${calculatePos(graphData.utilityScoreP) + 5},105 ${calculatePos(graphData.utilityScoreP)},95`"/>
+                        <text [attr.x]="offsetText(graphData.utilityScoreP)" y="120" font-size="14" font-family="Arial">
+                            Protected Dataset ({{ graphData.utilityScoreP | number: '1.0-1' }})
+                        </text>
 
-                    <!-- Privacy Risk Score -->
-                    <rect x="20" y="190" width="740" height="30" fill="url(#colorGradient)"/>
-                    <text x="10" y="150" font-size="18" font-family="Arial" font-weight="bold">Privacy Score:</text>
-                    <text x="0" y="210" font-size="14" font-family="Arial">0.0</text>
-                    <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
+                        <!-- Privacy Risk Score -->
+                        <rect x="20" y="190" width="740" height="30" fill="url(#colorGradient)"/>
+                        <text x="10" y="150" font-size="18" font-family="Arial" font-weight="bold">Privacy Score:</text>
+                        <text x="0" y="210" font-size="14" font-family="Arial">0.0</text>
+                        <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
 
-                    <polygon [attr.points]="`${riskScoreOX - 5},180 ${riskScoreOX + 5},180 ${riskScoreOX},190`"
-                             fill="gray"/>
-                    <text [attr.x]="offsetText(riskScoreO)" x="40" y="175" font-size="14" font-family="Arial">
-                        Original Dataset ({{ riskScoreO }})
-                    </text>
+                        <polygon [attr.points]="`${riskScoreOX - 5},180 ${riskScoreOX + 5},180 ${riskScoreOX},190`"
+                                 fill="gray"/>
+                        <text [attr.x]="offsetText(riskScoreO)" x="40" y="175" font-size="14" font-family="Arial">
+                            Original Dataset ({{ riskScoreO }})
+                        </text>
 
-                    <polygon [attr.points]="`${riskScorePX - 5},230 ${riskScorePX + 5},230 ${riskScorePX},220`"
-                             fill="black"/>
-                    <text [attr.x]="offsetText(riskScoreP)" y="245" font-size="14" font-family="Arial">Protected
-                        Dataset ({{ riskScoreP }})
-                    </text>
-                </svg>
-
-                <div>
-                    <div class="report-header2">Data Quality</div>
-
-                    <div class="report-text-block">
-                        The data quality is derived from the resemblance of the statistical properties and the utility
-                        of a down-stream machine learning task. Resemblance describes the structural similarity of the
-                        protected dataset to the original dataset. Whereas the utility quantifies the overall analytical
-                        value of the protected dataset. Scores approaching 1.0 indicate high quality, while scores near
-                        0.0 signify low quality.
-                    </div>
-
-                    <div class="d-flex gap-3">
-                        <div style="width: 33%;">
-                            <div class="report-text-block">
-                                The protected dataset showed over all a <strong>TODO quality</strong>, with a <strong>Resemblance
-                                Score
-                                of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_resemblance.values.synthetic | number: '1.0-2' }}</strong>,
-                                and a <strong>Machine Learning Utility Score
-                                of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_utility.values.synthetic | number: '1.0-2' }}</strong>.
-                            </div>
-                            <div class="report-text-block">
-                                <!-- TODO Set resemblance dynamically -->
-                                The resemblance analysis showed overall <strong>TODO differences</strong> in the correlation
-                                patterns, and <strong>TODO statistical similarities</strong>.
-                            </div>
-                            <div class="report-text-block">
-                                The statistical similarities showed a <strong>difference
-                                of {{ reportData.numericalAttributes.prop_diff_mean_all | number: '1.0-2' }}%</strong>
-                                overall for the {{ reportData.numericalAttributes.number_all }} numerical attributes.
-                            </div>
-                        </div>
-                        <div style="width: 67%;">
-                            <div class="d-flex">
-                                <div class="m-auto fw-bold">Correlation Patterns</div>
-                            </div>
-                        </div>
-                    </div>
+                        <polygon [attr.points]="`${riskScorePX - 5},230 ${riskScorePX + 5},230 ${riskScorePX},220`"
+                                 fill="black"/>
+                        <text [attr.x]="offsetText(riskScoreP)" y="245" font-size="14" font-family="Arial">Protected
+                            Dataset ({{ riskScoreP }})
+                        </text>
+                    </svg>
 
                     <div>
-                        <div class="d-flex">
-                            <div class="m-auto fw-bold">Statistical Similarities</div>
+                        <div class="report-header2">Data Quality</div>
+
+                        <div class="report-text-block">
+                            The data quality is derived from the resemblance of the statistical properties and the
+                            utility of a down-stream machine learning task. Resemblance describes the structural
+                            similarity of the protected dataset to the original dataset. Whereas the utility quantifies
+                            the overall analytical value of the protected dataset. Scores approaching 1.0 indicate high
+                            quality, while scores near 0.0 signify low quality.
                         </div>
+
+                        <div class="d-flex gap-3">
+                            <div style="width: 33%;">
+                                <div class="report-text-block">
+                                    The protected dataset showed over all a <strong>TODO quality</strong>, with a
+                                    <strong>Resemblance Score
+                                        of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_resemblance.values.synthetic | number: '1.0-2' }}</strong>,
+                                    and a <strong>Machine Learning Utility Score
+                                    of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_utility.values.synthetic | number: '1.0-2' }}</strong>.
+                                </div>
+                                <div class="report-text-block">
+                                    <!-- TODO Set resemblance dynamically -->
+                                    The resemblance analysis showed overall <strong>TODO differences</strong> in the
+                                    correlation patterns, and <strong>TODO statistical similarities</strong>.
+                                </div>
+                                <div class="report-text-block">
+                                    The statistical similarities showed a <strong>difference of
+                                    {{ reportData.numericalAttributes.prop_diff_mean_all | number: '1.0-2' }}%</strong>
+                                    overall for the {{ reportData.numericalAttributes.number_all }} numerical
+                                    attributes.
+                                </div>
+                            </div>
+                            <div style="width: 67%;">
+                                <div class="d-flex">
+                                    <div class="m-auto fw-bold">Correlation Patterns</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div>
-                            <table class="report-table">
-                                <caption>
-                                    Statistical properties of mean (standard deviation), absolute difference and
-                                    proportional difference of the
-                                    first {{ reportData.numericalAttributes.first_attributes.length | numberToText }}
-                                    numerical attributes in the dataset.
-                                </caption>
-                                <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>Original</th>
-                                    <th>Protected</th>
-                                    <th>Abs. Diff.</th>
-                                    <th>Prop. Diff.</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr *ngFor="let numericAttr of reportData.numericalAttributes.first_attributes">
-                                    <td>{{ numericAttr.name }}</td>
-                                    <td>{{ numericAttr.original_mean | number: '1.0-2' }}
-                                        ({{ numericAttr.original_std | number: '1.0-2' }})
-                                    </td>
-                                    <td>{{ numericAttr.protected_mean | number: '1.0-2' }}
-                                        ({{ numericAttr.protected_std | number: '1.0-2' }})
-                                    </td>
-                                    <td>{{ numericAttr.abs_diff | number: '1.0-2' }}</td>
-                                    <td>{{ numericAttr.prop_diff | number: '1.0-2' }}%</td>
-                                </tr>
-                                <tr class="fw-bold">
-                                    <td>Total</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>{{ reportData.numericalAttributes.prop_diff_mean_all | number: '1.0-2' }}%</td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="report-header2">Data Privacy Risks</div>
-
-                    <div class="report-text-block">
-                        Scores approaching 1.0 indicate high privacy, while scores near 0.0 signify low privacy and
-                        therefore high potential reidentification risks. The probability of the likelihood of a risk is
-                        inverse to the privacy score.
-                    </div>
-
-                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 20px;">
-                        <div class="report-metric-card" style="width: 50%; flex: 1; margin: 0 10px 10px 0;">
-                            <div style="font-weight: bold;">Identified High Privacy Risk</div>
-                            <div style="font-size: 24px; color: #3498db;">87%</div>
-                            <div style="font-size: 14px; color: #7f8c8d;">Statistical similarity to original data</div>
-                        </div>
-                        <div class="report-metric-card" style="width: 50%; flex: 1; margin: 0 10px 10px 0;">
-                            <div style="font-weight: bold;">Identified Low Privacy Risk</div>
-                            <div style="font-size: 24px; color: #3498db;">92%</div>
-                            <div style="font-size: 14px; color: #7f8c8d;">Analytical accuracy compared to original</div>
+                            <div class="d-flex">
+                                <div class="m-auto fw-bold">Statistical Similarities</div>
+                            </div>
+                            <div>
+                                <table class="report-table">
+                                    <caption>
+                                        Statistical properties of mean (standard deviation), absolute difference and
+                                        proportional difference of the
+                                        first {{ reportData.numericalAttributes.first_attributes.length | numberToText }}
+                                        numerical attributes in the dataset.
+                                    </caption>
+                                    <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Original</th>
+                                        <th>Protected</th>
+                                        <th>Abs. Diff.</th>
+                                        <th>Prop. Diff.</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr *ngFor="let numericAttr of reportData.numericalAttributes.first_attributes">
+                                        <td>{{ numericAttr.name }}</td>
+                                        <td>{{ numericAttr.original_mean | number: '1.0-2' }}
+                                            ({{ numericAttr.original_std | number: '1.0-2' }})
+                                        </td>
+                                        <td>{{ numericAttr.protected_mean | number: '1.0-2' }}
+                                            ({{ numericAttr.protected_std | number: '1.0-2' }})
+                                        </td>
+                                        <td>{{ numericAttr.abs_diff | number: '1.0-2' }}</td>
+                                        <td>{{ numericAttr.prop_diff | number: '1.0-2' }}%</td>
+                                    </tr>
+                                    <tr class="fw-bold">
+                                        <td>Total</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>{{ reportData.numericalAttributes.prop_diff_mean_all | number: '1.0-2' }}%
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
-                </div>
-
-                <div class="report-section">
-                    <h2 class="report-header2">Executive Summary</h2>
-                    <p>Here are the three dimensions, resemblance, utility, Privacy Risk displayed these values
-                        are aggregated for the whole data set. Detailed analysis can be found in the following
-                        chapters.</p>
-
-                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 20px;">
-                        <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
-                            <div style="font-weight: bold;">Data Resemblance Score</div>
-                            <div style="font-size: 24px; color: #3498db;">87%</div>
-                            <div style="font-size: 14px; color: #7f8c8d;">Statistical similarity to original data</div>
-                        </div>
-                        <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 10px 10px 0;">
-                            <div style="font-weight: bold;">Utility Preservation</div>
-                            <div style="font-size: 24px; color: #3498db;">92%</div>
-                            <div style="font-size: 14px; color: #7f8c8d;">Analytical accuracy compared to original</div>
-                        </div>
-                        <div class="report-metric-card" style="flex: 1; min-width: 200px; margin: 0 0 10px 0;">
-                            <div style="font-weight: bold;">Privacy Risk Score</div>
-                            <div style="font-size: 24px; color: #3498db;">Low</div>
-                            <div style="font-size: 14px; color: #7f8c8d;">Re-identification risk below 0.01%</div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="report-section">
-                    <h2 class="report-header2">1. Overview</h2>
-
-                    <p>This anonymized Dataset contains 1000 records. And has 11 Attributes over all. More
-                        details about the data set can be found in the table below.</p>
-
-                    <table class="report-table report-keep-together">
-                        <caption>
-                            <span class="report-table-title">Table 1. Overview</span>
-                            <span class="report-table-description"> This is an overview.</span>
-                        </caption>
-                        <tr class="report-table-header">
-                            <th class="report-th">Characteristic</th>
-                            <th class="report-th">Original Dataset</th>
-                            <th class="report-th">Anonymized Dataset</th>
-                        </tr>
-                        <tr class="report-table-row">
-                            <td class="report-td">Number of Records</td>
-                            <td class="report-td">1000</td>
-                            <td class="report-td">1000</td>
-                        </tr>
-                        <tr class="report-table-row">
-                            <td class="report-td">Number of Attributes</td>
-                            <td class="report-td">11</td>
-                            <td class="report-td">10</td>
-                        </tr>
-                        <tr class="report-table-row">
-                            <td class="report-td">Number of Numeric Attributes</td>
-                            <td class="report-td">4</td>
-                            <td class="report-td">3</td>
-                        </tr>
-                        <tr class="report-table-row">
-                            <td class="report-td">Number of Nominal Attributes</td>
-                            <td class="report-td">6</td>
-                            <td class="report-td">5</td>
-                        </tr>
-                        <tr class="report-table-row">
-                            <td class="report-td">Number of Date Attributes</td>
-                            <td class="report-td">1</td>
-                            <td class="report-td">1</td>
-                        </tr>
-                    </table>
-
-                    <h3 class="report-header3">Anonymization Methods</h3>
-                    <p>In this section the applied privacy-preserving transformations are displayed. Therefore,
-                        first the used privacy model is shown and then which attribute is transformed.</p>
-
-                    <h4>Privacy Model:</h4>
-                    <table class="report-table report-keep-together">
-                        <tr>
-                            <th class="report-th">Parameter</th>
-                            <th class="report-th">Value</th>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Risk Threshold Type</td>
-                            <td class="report-td">Max</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Risk Threshold Value</td>
-                            <td class="report-td">0.1</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Generalization Setting</td>
-                            <td class="report-td">Global</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Suppression Limit</td>
-                            <td class="report-td">0.7</td>
-                        </tr>
-                    </table>
-
-                    <h4>Attribute Transformation:</h4>
-                    <table class="report-table report-keep-together">
-                        <tr>
-                            <th class="report-th">Attribute</th>
-                            <th class="report-th">Transformation Function</th>
-                            <th class="report-th">Parameter</th>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Age</td>
-                            <td class="report-td">MICRO_AGGREGATION</td>
-                            <td class="report-td">Aggregation Interval: 10</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Gender</td>
-                            <td class="report-td">NONE</td>
-                            <td class="report-td">NONE</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Income</td>
-                            <td class="report-td">MICRO_AGGREGATION</td>
-                            <td class="report-td">Aggregation Interval: 1000</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">…</td>
-                            <td class="report-td">…</td>
-                            <td class="report-td">…</td>
-                        </tr>
-                    </table>
-
-                    <h3 class="report-header3">Synthetization Methods</h3>
-                    <p>CTGAN was applied to create synthetic versions of attributes while preserving statistical
-                        properties and relationships. The following Parameters are used for the
-                        synthetization:</p>
-                    <table class="report-table report-keep-together">
-                        <tr>
-                            <th class="report-th">Parameter</th>
-                            <th class="report-th">Value</th>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Epochs</td>
-                            <td class="report-td">100</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Batch Size</td>
-                            <td class="report-td">100</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">…</td>
-                            <td class="report-td">…</td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div class="report-section">
-                    <h2 class="report-header2">2. Resemblance Analysis</h2>
-
-                    <p>The resemblance analysis evaluates how closely the synthetic/anonymized data preserves
-                        the statistical properties of the original data. Overall, the dataset achieves high
-                        fidelity with 87% resemblance score. Distribution analysis shows 71% of attributes
-                        maintain excellent resemblance (>90%), 22% show good resemblance (75-90%), and 7%
-                        require improvement (&lt;75%). All of the used metrics and their individual assessment
-                        can be seen in Section 5.</p>
-
-                    <h3 class="report-header3">Attribute Level Resemblance</h3>
-                    <p>The table below presents the aggregated resemblance metrics for each attribute, with
-                        lower scores meaning better resemblance:</p>
-                    <table class="report-table report-keep-together">
-                        <tr>
-                            <th class="report-th">Attribute</th>
-                            <th class="report-th">Aggregated Resemblance Score</th>
-                            <th class="report-th">Assessment</th>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Age</td>
-                            <td class="report-td">0.05</td>
-                            <td class="report-risk-low report-td">Excellent</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Gender</td>
-                            <td class="report-td">0.17</td>
-                            <td class="report-risk-low report-td">Good</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Income</td>
-                            <td class="report-td">0.29</td>
-                            <td class="report-risk-medium report-td">Medium</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">…</td>
-                            <td class="report-td">…</td>
-                            <td class="report-td">…</td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div class="report-section">
-                    <h2 class="report-header2">3. Utility Analysis</h2>
-
-                    <p>Utility analysis evaluates how well the anonymized data performs in actual analytical
-                        tasks compared to the original data. We trained identical machine learning models on
-                        both the original and anonymized datasets, then compared their performance on a separate
-                        validation set. The anonymized data achieved 92% overall utility preservation, with 75%
-                        of models showing high utility retention (>90%), 23% with acceptable utility (75-90%),
-                        and only 2% with significant degradation (&lt;75%). The used models as well as a
-                        Detailed overview of the metrics can be seen in Section 5.</p>
-
-                    <h3 class="report-header3">Discriminator-based Analysis</h3>
-                    <p>This analysis tries to train a machine learning model that is able to distinguish between
-                        real and anonymized data values in the range of 0.5 are preferable that means the model
-                        cannot distinguish between real and anonymized data.</p>
-                    <table class="report-table report-keep-together">
-                        <tr>
-                            <th class="report-th">Metric</th>
-                            <th class="report-th">Identification Score</th>
-                            <th class="report-th">Assessment</th>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Accuracy</td>
-                            <td class="report-td">0.5</td>
-                            <td class="report-risk-low report-td report-td">Excellent</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">F1 Score</td>
-                            <td class="report-td">0.45</td>
-                            <td class="report-risk-low report-td report-td">Excellent</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Recall</td>
-                            <td class="report-td">0.5</td>
-                            <td class="report-risk-low report-td report-td">Excellent</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Precision</td>
-                            <td class="report-td">0.47</td>
-                            <td class="report-risk-medium report-td report-td">Medium</td>
-                        </tr>
-                    </table>
-
-                    <h3 class="report-header3">Machine Learning Utility</h3>
-                    <p>This analysis shows how usable is the anonymized data compared to the real data in terms
-                        of machine learning tasks. Therefore the anonymized data is used to train models that
-                        are tested on the real data.</p>
-                    <table class="report-table report-keep-together">
-                        <tr>
-                            <th class="report-th">Metric</th>
-                            <th class="report-th">Original Data</th>
-                            <th class="report-th">Anonymized Data</th>
-                            <th class="report-th">Difference</th>
-                            <th class="report-th">Assessment</th>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Accuracy</td>
-                            <td class="report-td">0.9</td>
-                            <td class="report-td">0.85</td>
-                            <td class="report-td">0.05</td>
-                            <td class="report-risk-low report-td">Excellent</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">F1 Score</td>
-                            <td class="report-td">0.8</td>
-                            <td class="report-td">0.75</td>
-                            <td class="report-td">0.05</td>
-                            <td class="report-risk-low report-td">Excellent</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Recall</td>
-                            <td class="report-td">0.7</td>
-                            <td class="report-td">0.75</td>
-                            <td class="report-td">0.05</td>
-                            <td class="report-risk-low report-td">Excellent</td>
-                        </tr>
-                        <tr>
-                            <td class="report-td">Precision</td>
-                            <td class="report-td">0.7</td>
-                            <td class="report-td">0.5</td>
-                            <td class="report-td">0.25</td>
-                            <td class="report-risk-medium report-td">Medium</td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div class="report-section">
-                    <h2 class="report-header2">4. Risk Analysis</h2>
-
-                    <p>Privacy risk analysis evaluates the likelihood that individuals in the dataset could be
-                        re-identified through various attacks. The anonymized dataset demonstrates strong
-                        overall privacy protection with 98.9% of records classified as low risk. The small
-                        proportion of records with elevated risk (1.1% combined medium and high risk) remains
-                        below acceptable thresholds for most regulatory frameworks. All attack vectors assessed
-                        show risk probabilities below 1.5%, with the exception of attribute disclosure which
-                        shows slightly elevated risk (1.24%) but still within acceptable parameters.</p>
-
-                    <table class="report-table report-keep-together">
-                        <tr>
-                            <th class="report-th">Risk Level</th>
-                            <th class="report-th">Number of Attributes</th>
-                            <th class="report-th">Risk Score</th>
-                        </tr>
-                        <tr>
-                            <td class="report-risk-high report-td">High</td>
-                            <td class="report-td">5</td>
-                            <td class="report-td">0.05</td>
-                        </tr>
-                        <tr>
-                            <td class="report-risk-medium report-td">Medium</td>
-                            <td class="report-td">3</td>
-                            <td class="report-td">0.75</td>
-                        </tr>
-                        <tr>
-                            <td class="report-risk-low report-td">Low</td>
-                            <td class="report-td">2</td>
-                            <td class="report-td">0.75</td>
-                        </tr>
-                    </table>
-                </div>
-
-                <a id="a_chart"></a>
-
-                <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes"
-                     style="width: 100%;">
                     <div>
-                        Attribute: {{ attributeStatistics.attribute_information.name }}
-                    </div>
+                        <div class="report-header2">Data Privacy Risks</div>
 
-                    <ng-container *ngIf="attributeStatistics.plot.histogram">
-                        <app-chart-frequency #chart
-                                             [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
-                                             [data]="attributeStatistics.plot.histogram!" [limit]="null"
-                                             [simple]="false" originalSeriesLabel="Original"
-                                             syntheticSeriesLabel="Protected">
-                        </app-chart-frequency>
-                    </ng-container>
-                    <ng-container *ngIf="attributeStatistics.plot.frequency_plot">
-                        <app-chart-frequency #chart
-                                             [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
-                                             [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
-                                             [simple]="false" originalSeriesLabel="Original"
-                                             syntheticSeriesLabel="Protected">
-                        </app-chart-frequency>
-                    </ng-container>
+                        <div class="report-text-block">
+                            Scores approaching 1.0 indicate high privacy, while scores near 0.0 signify low privacy and
+                            therefore high potential reidentification risks. The probability of the likelihood of a risk
+                            is inverse to the privacy score.
+                        </div>
+
+                        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 20px;">
+                            <div class="report-metric-card" style="width: 50%; flex: 1; margin: 0 10px 10px 0;">
+                                <div style="font-weight: bold;">Identified High Privacy Risk</div>
+                                <div style="font-size: 24px; color: #3498db;">87%</div>
+                                <div style="font-size: 14px; color: #7f8c8d;">Statistical similarity to original data
+                                </div>
+                            </div>
+                            <div class="report-metric-card" style="width: 50%; flex: 1; margin: 0 10px 10px 0;">
+                                <div style="font-weight: bold;">Identified Low Privacy Risk</div>
+                                <div style="font-size: 24px; color: #3498db;">92%</div>
+                                <div style="font-size: 14px; color: #7f8c8d;">Analytical accuracy compared to original
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
 
-                <div
-                    style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; color: #7f8c8d; font-size: 14px;">
-                    <p>Privacy Report | Prepared: 01.01.2025</p>
-                    <p>Confidential - For Internal Use Only</p>
+                <div class="report-section">
+                    <div class="report-header report-header-s">
+                        Details for each attribute
+                    </div>
+
+                    <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes"
+                         >
+                        <div class="report-header2">
+                            Attribute: {{ attributeStatistics.attribute_information.name }}
+                        </div>
+
+                        <ng-container *ngIf="attributeStatistics.plot.histogram">
+                            <app-chart-frequency #chart
+                                                 [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                 [data]="attributeStatistics.plot.histogram!" [limit]="null"
+                                                 [simple]="false" originalSeriesLabel="Original"
+                                                 syntheticSeriesLabel="Protected">
+                            </app-chart-frequency>
+                        </ng-container>
+                        <ng-container *ngIf="attributeStatistics.plot.frequency_plot">
+                            <app-chart-frequency #chart
+                                                 [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                 [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
+                                                 [simple]="false" originalSeriesLabel="Original"
+                                                 syntheticSeriesLabel="Protected">
+                            </app-chart-frequency>
+                        </ng-container>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; color: #7f8c8d; font-size: 14px;">
+                        <p>Privacy Report | Prepared: 01.01.2025</p>
+                        <p>Confidential - For Internal Use Only</p>
+                    </div>
+
                 </div>
 
             </div>
-
         </div>
 
     </ng-container>

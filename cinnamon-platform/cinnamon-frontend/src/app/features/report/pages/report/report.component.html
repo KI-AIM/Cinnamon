@@ -247,14 +247,14 @@
                         0.0 signify low quality.
                     </div>
 
-                    <div class="d-flex">
-                        <div>
+                    <div class="d-flex gap-3">
+                        <div style="width: 33%;">
                             <div class="report-text-block">
                                 The protected dataset showed over all a <strong>TODO quality</strong>, with a <strong>Resemblance
                                 Score
-                                of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_resemblance.values.synthetic }}</strong>,
+                                of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_resemblance.values.synthetic | number: '1.0-2' }}</strong>,
                                 and a <strong>Machine Learning Utility Score
-                                of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_utility.values.synthetic }}</strong>.
+                                of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_utility.values.synthetic | number: '1.0-2' }}</strong>.
                             </div>
                             <div class="report-text-block">
                                 <!-- TODO Set resemblance dynamically -->
@@ -262,11 +262,61 @@
                                 patterns, and <strong>TODO statistical similarities</strong>.
                             </div>
                             <div class="report-text-block">
-                                The statistical similarities showed a <strong>difference of -5.60%</strong> overall for
-                                the 9 numerical attributes.
+                                The statistical similarities showed a <strong>difference
+                                of {{ reportData.numericalAttributes.prop_diff_mean_all | number: '1.0-2' }}%</strong>
+                                overall for the {{ reportData.numericalAttributes.number_all }} numerical attributes.
                             </div>
                         </div>
+                        <div style="width: 67%;">
+                            <div class="d-flex">
+                                <div class="m-auto fw-bold">Correlation Patterns</div>
+                            </div>
+                        </div>
+                    </div>
 
+                    <div>
+                        <div class="d-flex">
+                            <div class="m-auto fw-bold">Statistical Similarities</div>
+                        </div>
+                        <div>
+                            <table class="report-table">
+                                <caption>
+                                    Statistical properties of mean (standard deviation), absolute difference and
+                                    proportional difference of the
+                                    first {{ reportData.numericalAttributes.first_attributes.length | numberToText }}
+                                    numerical attributes in the dataset.
+                                </caption>
+                                <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Original</th>
+                                    <th>Protected</th>
+                                    <th>Abs. Diff.</th>
+                                    <th>Prop. Diff.</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr *ngFor="let numericAttr of reportData.numericalAttributes.first_attributes">
+                                    <td>{{ numericAttr.name }}</td>
+                                    <td>{{ numericAttr.original_mean | number: '1.0-2' }}
+                                        ({{ numericAttr.original_std | number: '1.0-2' }})
+                                    </td>
+                                    <td>{{ numericAttr.protected_mean | number: '1.0-2' }}
+                                        ({{ numericAttr.protected_std | number: '1.0-2' }})
+                                    </td>
+                                    <td>{{ numericAttr.abs_diff | number: '1.0-2' }}</td>
+                                    <td>{{ numericAttr.prop_diff | number: '1.0-2' }}%</td>
+                                </tr>
+                                <tr class="fw-bold">
+                                    <td>Total</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>{{ reportData.numericalAttributes.prop_diff_mean_all | number: '1.0-2' }}%</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 

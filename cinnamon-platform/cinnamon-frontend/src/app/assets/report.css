@@ -161,6 +161,12 @@
 .report-table-description-continued {
     font-style: italic;
 }
+.report-table > caption {
+    font-size: 0.9rem;
+    line-height: 1.2;
+    padding: .2rem 1.5rem;
+    text-align: center;
+}
 .report-table > thead > tr {
     background-color: var(--report-color-primary);
     color: var(--report-color-foreground);

@@ -6,10 +6,11 @@ import { TitleService } from "@core/services/title-service.service";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
 import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
 import { ChartFrequencyComponent } from "@shared/components/chart-frequency/chart-frequency.component";
+import { DataScale } from "@shared/model/data-scale";
 import { DataSetInfo } from "@shared/model/data-set-info";
 import { ProjectSettings } from "@shared/model/project-settings";
 import { RiskAssessmentConfig } from "@shared/model/risk-assessment-config";
-import { Statistics, StatisticsResponse } from "@shared/model/statistics";
+import { Statistics, StatisticsResponse, StatisticsValues } from "@shared/model/statistics";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
@@ -53,6 +54,7 @@ export class ReportComponent implements OnInit {
         datasetInfoAnonymized: DataSetInfo,
         datasetInfoOriginal: DataSetInfo,
         datasetInfoProtected: DataSetInfo,
+        numericalAttributes: NumericAttributes,
         mc: ProjectSettings,
         reportData: ReportData,
         riskAssessmentConfig: RiskAssessmentConfig,
@@ -91,7 +93,14 @@ export class ReportComponent implements OnInit {
                 map(value => value.config as RiskAssessmentConfig),
             ),
             statistics: this.statisticsService.fetchResult(),
-        });
+        }).pipe(
+            map(value => {
+               return {
+                    ...value,
+                   numericalAttributes: this.createNumericAttribute(value.statistics.statistics),
+               };
+            }),
+        );
     }
 
     /**
@@ -333,6 +342,66 @@ export class ReportComponent implements OnInit {
     private fetchReportData(): Observable<ReportData> {
         return this.http.get<ReportData>(this.baseUrl);
     }
+
+    /**
+     * Creates data about the first 4 numerical attributes in the dataset.
+     *
+     * @param statistics Calculated statistics.
+     * @private
+     */
+    private createNumericAttribute(statistics: Statistics): NumericAttributes {
+        const firstNumericalAttributes = {
+            first_attributes: [],
+            prop_diff_mean: 0.0,
+
+            number_all: 0,
+            prop_diff_mean_all: 0.0,
+        } as NumericAttributes;
+
+        for (const attr of statistics.resemblance.attributes) {
+            // Ignore non numerical attributes
+            const type = attr.attribute_information?.scale;
+            if (type !== DataScale.INTERVAL && type !== DataScale.RATIO) {
+                continue;
+            }
+
+            // Ignore attributes with missing statistics
+            const meanObj = attr.important_metrics['mean'];
+            const stdObj = attr.important_metrics['standard_deviation'];
+
+            if (!(meanObj instanceof StatisticsValues) || !(stdObj instanceof StatisticsValues)) {
+                continue;
+            }
+
+            const mean = meanObj as StatisticsValues;
+            const std = stdObj as StatisticsValues;
+
+            // Add proportional difference for total calculation
+            firstNumericalAttributes.number_all += 1;
+            firstNumericalAttributes.prop_diff_mean_all += mean.difference.percentage;
+
+            // Continue if 4 numerical attributes are found for the table
+            if (firstNumericalAttributes.first_attributes.length == 4) {
+                continue;
+            }
+
+            // Add the data of the attribute for the table
+            firstNumericalAttributes.first_attributes.push({
+                name: attr.attribute_information.name,
+                original_mean: mean.values.real,
+                original_std: std.values.real,
+                protected_mean: mean.values.synthetic,
+                protected_std: std.values.synthetic,
+                abs_diff: mean.difference.absolute,
+                prop_diff: mean.difference.percentage,
+            });
+        }
+
+        // Calculate the mean proportional difference
+        firstNumericalAttributes.prop_diff_mean_all /= firstNumericalAttributes.number_all;
+
+        return firstNumericalAttributes;
+    }
 }
 
 interface ReportData {
@@ -342,4 +411,27 @@ interface ReportData {
 interface ModuleReportContent {
     configDescription: string;
     glossar: string | null;
+}
+
+/**
+ * Data for one row in the table of numerical attributes.
+ */
+interface NumericAttribute {
+    name: string;
+    original_mean: number;
+    original_std: number;
+    protected_mean: number;
+    protected_std: number;
+    abs_diff: number;
+    prop_diff: number;
+}
+
+/**
+ * Data for the table of numerical attributes.
+ */
+interface NumericAttributes {
+    first_attributes: NumericAttribute[],
+
+    number_all: number,
+    prop_diff_mean_all: number
 }

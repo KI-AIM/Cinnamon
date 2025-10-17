@@ -1,6 +1,7 @@
 import { NgModule } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ExpansionPanelOverflowDirective } from "@shared/directives/expansion-panel-overflow.directive";
+import { NumberToTextPipe } from "@shared/pipes/number-to-text.pipe";
 import { ChartCorrelationComponent } from "src/app/shared/components/chart-correlation/chart-correlation.component";
 import { StatisticsSorterPipe } from "src/app/shared/pipes/statistics-sorter.pipe";
 import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
@@ -104,6 +105,7 @@ import { TooltipComponent } from './components/tooltip/tooltip.component';
         InstanceOfPipe,
         MetricFilterPipe,
         MetricSorterPipe,
+        NumberToTextPipe,
         StatisticsFilterPipe,
     ],
     imports: [
@@ -160,6 +162,7 @@ import { TooltipComponent } from './components/tooltip/tooltip.component';
         // Pipes
         InstanceOfPipe,
         TooltipComponent,
+        NumberToTextPipe,
     ],
 })
 export class SharedModule {}

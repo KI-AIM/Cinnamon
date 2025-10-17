@@ -1,17 +1,14 @@
 import { Component, Input, OnInit } from '@angular/core';
 import {
-    AttributeStatistics,
-    GraphType,
-    StatisticsData,
-    StatisticsValues,
-    StatisticsValueTypes
-} from "../../model/statistics";
+    MetricTableType
+} from "@shared/components/data-inspection-metric-table/data-inspection-metric-table.component";
+import { AttributeStatistics, GraphType, } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
-import { MetricImportance, MetricImportanceData, MetricSettings } from "../../model/project-settings";
+import { MetricImportance, MetricSettings } from "../../model/project-settings";
 import { ProjectConfigurationService } from "../../services/project-configuration.service";
 import { map, Observable } from "rxjs";
-import { MetricTableData, MetricTableFilterData, MetricTableSortData, SortType } from "../../model/metric-table-data";
+import { MetricTableData } from "../../model/metric-table-data";
 
 @Component({
     selector: 'app-data-inspection-attribute-details',
@@ -21,9 +18,7 @@ import { MetricTableData, MetricTableFilterData, MetricTableSortData, SortType }
 })
 export class DataInspectionAttributeDetailsComponent implements OnInit {
     protected readonly DataType = DataType;
-    protected readonly MetricTableData = MetricTableData
-    protected readonly MetricTableFilterData = MetricTableFilterData;
-    protected readonly MetricTableSortData = MetricTableSortData;
+    protected readonly MetricTableType = MetricTableType;
 
     @Input() public attributeStatistics!: AttributeStatistics;
     @Input() public sourceDataset: string | null = null;
@@ -67,46 +62,6 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         this.metricConfig$ = this.projectConfigService.projectSettings$.pipe(
             map(val => val.metricConfiguration)
         );
-    }
-
-    protected sort(sortData: MetricTableSortData, type: SortType): void {
-        if (sortData.column === type) {
-            if (sortData.direction === 'asc') {
-                sortData.direction = 'desc';
-            } else if (sortData.direction === 'desc') {
-                sortData.column = null;
-                sortData.direction = null;
-            }
-        } else {
-            sortData.column = type;
-            sortData.direction = 'asc';
-        }
-    }
-
-    protected getColorIndex(data: StatisticsValueTypes): number {
-        if (data instanceof StatisticsValues) {
-            return data.difference.color_index;
-        } else {
-            return Math.max(data.values.real.color_index, data.values.synthetic.color_index);
-        }
-    }
-
-    protected getDifference(data: StatisticsValueTypes, which: 'absolute' | 'percentage'): number | string  {
-        if (data instanceof StatisticsValues) {
-            return data.difference[which];
-        } else {
-            return "N/A";
-        }
-    }
-
-    protected getValue(data: StatisticsData<any>, which : 'real' | 'synthetic'): number | string {
-        return this.statisticsService.getValue(data, which);
-    }
-
-    protected injectImportance(input: Array<[string, StatisticsValueTypes]>, config: MetricSettings): Array<[string, StatisticsValueTypes, number]> {
-        return input.map(value => {
-            return [value[0], value[1], MetricImportanceData[config.userDefinedImportance[value[0]]].value];
-        });
     }
 
     protected isContinuous(): boolean {

@@ -60,6 +60,7 @@ import { FileUploadComponent } from "./components/file-upload/file-upload.compon
 import { WorkstepItemComponent } from './components/workstep-item/workstep-item.component';
 import { ProjectExportComponent } from './components/project-export/project-export.component';
 import { TooltipComponent } from './components/tooltip/tooltip.component';
+import { DataInspectionMetricTableComponent } from './components/data-inspection-metric-table/data-inspection-metric-table.component';
 
 @NgModule({
     declarations: [
@@ -107,6 +108,7 @@ import { TooltipComponent } from './components/tooltip/tooltip.component';
         MetricSorterPipe,
         NumberToTextPipe,
         StatisticsFilterPipe,
+        DataInspectionMetricTableComponent,
     ],
     imports: [
         CommonModule,

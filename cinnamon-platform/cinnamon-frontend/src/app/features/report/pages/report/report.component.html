@@ -351,7 +351,7 @@
 
                 <div class="report-section">
                     <div class="report-header report-header-s">
-                        Details for each attribute
+                        Attribute Details and Resemblance
                     </div>
 
                     <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes">
@@ -439,6 +439,16 @@
                             </app-chart-density>
                         </ng-container>
                     </div>
+
+                </div>
+
+                <div class="report-section">
+                    <div class="report-header report-header-s">
+                        Machine Learning Utility
+                    </div>
+
+                    <app-data-inspection-utility [metrics]="reportData.statistics.statistics.utility.methods">
+                    </app-data-inspection-utility>
 
                 </div>
 

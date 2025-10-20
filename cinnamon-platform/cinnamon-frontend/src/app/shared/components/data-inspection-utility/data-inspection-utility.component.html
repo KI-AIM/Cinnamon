@@ -1,0 +1,59 @@
+<div>
+    <ng-container *ngIf="!(metrics | keyvalue)?.length">
+        No Metrics Available
+    </ng-container>
+    <div *ngFor="let metric of metrics | keyvalue"
+         class="mb-2 pt-2 border-top border-1">
+
+        <div style="display: flex;">
+            <span style="font-size: 1.2rem; margin-right: 0.2rem;">
+                {{ metric.value.display_name }}
+            </span>
+
+            <a title="Show Metric Information"
+               style="vertical-align: middle;"
+               (click)="metricInfoTableComponent.open(metric.value)">
+                <mat-icon fontIcon="info"></mat-icon>
+            </a>
+
+            <button mat-flat-button [matMenuTriggerFor]="colorLegend"
+                    class="flat-mat-form-button ms-auto">
+                Legend
+            </button>
+        </div>
+
+        <div *ngIf="(metric.value | instanceOf:UtilityMetricData2) as data2">
+            <div class="predictions">
+                <div>
+                    <div>Real</div>
+                </div>
+                <app-data-inspection-utility-table [predictions]="data2.real.predictions">
+                </app-data-inspection-utility-table>
+            </div>
+            <div class="predictions">
+                <div>
+                    <div>Synthetic</div>
+                </div>
+                <app-data-inspection-utility-table [predictions]="data2.synthetic.predictions">
+                </app-data-inspection-utility-table>
+            </div>
+            <div class="predictions">
+                <div>
+                    <div>Difference</div>
+                </div>
+                <app-data-inspection-utility-table [predictions]="data2.difference.predictions">
+                </app-data-inspection-utility-table>
+            </div>
+        </div>
+        <div *ngIf="(metric.value | instanceOf:UtilityMetricData3) as data3">
+            <app-data-inspection-utility-table [predictions]="data3.predictions">
+            </app-data-inspection-utility-table>
+        </div>
+    </div>
+</div>
+
+<app-metric-info-table #metricInfoTableComponent></app-metric-info-table>
+
+<mat-menu #colorLegend="matMenu" xPosition="before" yPosition="below">
+    <app-color-legend></app-color-legend>
+</mat-menu>

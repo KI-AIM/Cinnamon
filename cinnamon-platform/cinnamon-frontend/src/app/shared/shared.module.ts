@@ -62,6 +62,7 @@ import { ProjectExportComponent } from './components/project-export/project-expo
 import { TooltipComponent } from './components/tooltip/tooltip.component';
 import { DataInspectionMetricTableComponent } from './components/data-inspection-metric-table/data-inspection-metric-table.component';
 import { InjectMetricImportancePipe } from './pipes/inject-metric-importance.pipe';
+import { DataInspectionUtilityComponent } from './components/data-inspection-utility/data-inspection-utility.component';
 import { DataInspectionUtilityTableComponent } from './components/data-inspection-utility-table/data-inspection-utility-table.component';
 import { FormatNumberPipe } from './pipes/format-number.pipe';
 
@@ -86,6 +87,7 @@ import { FormatNumberPipe } from './pipes/format-number.pipe';
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataInspectionAttributeDetailsComponent,
+        DataInspectionUtilityComponent,
         DataInspectionUtilityTableComponent,
         DataTableComponent,
         FileUploadComponent,
@@ -175,6 +177,7 @@ import { FormatNumberPipe } from './pipes/format-number.pipe';
         InstanceOfPipe,
         TooltipComponent,
         NumberToTextPipe,
+        DataInspectionUtilityComponent,
     ],
 })
 export class SharedModule {}

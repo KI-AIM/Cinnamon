@@ -62,6 +62,7 @@ import { ProjectExportComponent } from './components/project-export/project-expo
 import { TooltipComponent } from './components/tooltip/tooltip.component';
 import { DataInspectionMetricTableComponent } from './components/data-inspection-metric-table/data-inspection-metric-table.component';
 import { InjectMetricImportancePipe } from './pipes/inject-metric-importance.pipe';
+import { DataInspectionUtilityTableComponent } from './components/data-inspection-utility-table/data-inspection-utility-table.component';
 import { FormatNumberPipe } from './pipes/format-number.pipe';
 
 @NgModule({
@@ -85,6 +86,7 @@ import { FormatNumberPipe } from './pipes/format-number.pipe';
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataInspectionAttributeDetailsComponent,
+        DataInspectionUtilityTableComponent,
         DataTableComponent,
         FileUploadComponent,
         InfoCardComponent,
@@ -152,6 +154,7 @@ import { FormatNumberPipe } from './pipes/format-number.pipe';
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataInspectionMetricTableComponent,
+        DataInspectionUtilityTableComponent,
         DataTableComponent,
         FileUploadComponent,
         InfoCardComponent,

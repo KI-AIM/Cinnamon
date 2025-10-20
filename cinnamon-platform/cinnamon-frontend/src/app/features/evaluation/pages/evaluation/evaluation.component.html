@@ -159,31 +159,27 @@
                                                             <div>
                                                                 <div>Real</div>
                                                             </div>
-                                                            <ng-container
-                                                                *ngTemplateOutlet="utilityMetricTable; context: {predictions: data2.real.predictions}">
-                                                            </ng-container>
+                                                            <app-data-inspection-utility-table [predictions]="data2.real.predictions">
+                                                            </app-data-inspection-utility-table>
                                                         </div>
                                                         <div class="predictions">
                                                             <div>
                                                                 <div>Synthetic</div>
                                                             </div>
-                                                            <ng-container
-                                                                *ngTemplateOutlet="utilityMetricTable; context: {predictions: data2.synthetic.predictions}">
-                                                            </ng-container>
+                                                            <app-data-inspection-utility-table [predictions]="data2.synthetic.predictions">
+                                                            </app-data-inspection-utility-table>
                                                         </div>
                                                         <div class="predictions">
                                                             <div>
                                                                 <div>Difference</div>
                                                             </div>
-                                                            <ng-container
-                                                                *ngTemplateOutlet="utilityMetricTable; context: {predictions: data2.difference.predictions}">
-                                                            </ng-container>
+                                                            <app-data-inspection-utility-table [predictions]="data2.difference.predictions">
+                                                            </app-data-inspection-utility-table>
                                                         </div>
                                                     </div>
                                                     <div *ngIf="(abc.value | instanceOf:UtilityMetricData3) as data3">
-                                                        <ng-container
-                                                            *ngTemplateOutlet="utilityMetricTable; context: {predictions: data3.predictions}">
-                                                        </ng-container>
+                                                        <app-data-inspection-utility-table [predictions]="data3.predictions">
+                                                        </app-data-inspection-utility-table>
                                                     </div>
                                                 </div>
                                             </div>
@@ -539,30 +535,6 @@
             Continue
         </button>
     </div>
-
-    <ng-template #utilityMetricTable let-predictions="predictions">
-        <div *ngIf="(predictions | instanceOf:UtilityData) as p"
-             style="display: flex; flex-direction: row; width: 100%; justify-content: space-between;">
-            <div>
-                <div class="classifier-cell classifier-head">Classifier</div>
-                <ng-container *ngFor="let firstClassifier of getFirstElement(p)">
-                    <div class="classifier-cell">{{ firstClassifier.classifier }}</div>
-                </ng-container>
-            </div>
-
-            <div *ngFor="let classifiers of p | keyvalue">
-                <div class="classifier-cell classifier-head">{{ classifiers.key }}</div>
-                <div *ngFor="let classifier of classifiers.value" class="classifier-cell">
-
-                <span class="metric-similarity"
-                      [style.background-color]="statisticsService.getColorScheme(pageData.metricConfiguration.colorScheme)[classifier.color_index]">
-                </span>
-                    <span>{{ statisticsService.formatNumber(classifier.score) }}</span>
-                </div>
-
-            </div>
-        </div>
-    </ng-template>
 
     <app-metric-info-table #metricInfoTableComponent></app-metric-info-table>
 

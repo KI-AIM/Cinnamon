@@ -62,6 +62,7 @@ import { ProjectExportComponent } from './components/project-export/project-expo
 import { TooltipComponent } from './components/tooltip/tooltip.component';
 import { DataInspectionMetricTableComponent } from './components/data-inspection-metric-table/data-inspection-metric-table.component';
 import { InjectMetricImportancePipe } from './pipes/inject-metric-importance.pipe';
+import { FormatNumberPipe } from './pipes/format-number.pipe';
 
 @NgModule({
     declarations: [
@@ -104,6 +105,7 @@ import { InjectMetricImportancePipe } from './pipes/inject-metric-importance.pip
         NoSpaceValidatorDirective,
         // Pipes
         ColumnConfigurationNameFilterPipe,
+        FormatNumberPipe,
         InstanceOfPipe,
         MetricFilterPipe,
         MetricSorterPipe,

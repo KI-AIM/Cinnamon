@@ -1,0 +1,86 @@
+name: ddpm
+version: "0.1"
+type: cross-sectional
+display_name: TabDDPM (Denoising Diffusion)
+description: Diffusion model for synthesizing tabular data (synthcity TabDDPM).
+URL: /start_synthetization_process/ddpm
+configurations:
+  model_parameter:
+    display_name: Model Parameters
+    description: Configure the diffusion model and training hyperparameters.
+    parameters:
+      - name: is_classification
+        type: boolean
+        label: Classification Task
+        description: Treat the task as classification or regression.
+        default_value: false
+      - name: n_iter
+        type: integer
+        label: Training Iterations
+        description: Number of training iterations. Higher values can improve fidelity but increase training time.
+        default_value: 1000
+        min_value: 1
+        max_value: 100000
+      - name: lr
+        type: float
+        label: Learning Rate
+        description: Learning rate for optimizer. Typical values range from 1e-5 to 1e-2.
+        default_value: 0.002
+        min_value: 0.00001
+        max_value: 0.1
+      - name: batch_size
+        type: integer
+        label: Batch Size
+        description: Samples per training step. Larger batches are faster but may reduce diversity.
+        default_value: 256
+        min_value: 1
+        max_value: 4096
+      - name: num_timesteps
+        type: integer
+        label: Diffusion Timesteps
+        description: Number of timesteps for the diffusion process.
+        default_value: 300
+        min_value: 10
+        max_value: 1000
+      - name: scheduler
+        type: string
+        label: Beta Scheduler
+        description: Forward-process beta scheduler. Options "cosine", "linear".
+        default_value: cosine
+      - name: dim_embed
+        type: integer
+        label: Embedding Dimension
+        description: Size of diffusion time embedding.
+        default_value: 128
+        min_value: 8
+        max_value: 4096
+      - name: sampling_patience
+        type: integer
+        label: Sampling Patience
+        description: Maximum number of attempts to match training schema during generation.
+        default_value: 500
+        min_value: 1
+        max_value: 10000
+  model_fitting:
+    display_name: Validation
+    description: Configure validation related settings.
+    parameters:
+      - name: validation_size
+        type: float
+        label: Validation Size
+        description: Fraction of data used for validation.
+        default_value: 0.0
+        min_value: 0.0
+        max_value: 0.5
+  sampling:
+    display_name: Sampling
+    description: Define the sampling parameters for generating synthetic data.
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Samples
+        description: Number of rows to generate.
+        default_value: 1000
+        min_value: 1
+        max_value: 1000000
+

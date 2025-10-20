@@ -44,5 +44,13 @@ synthesizer_classes = {
         'display_name': 'Adversarial Random Forest',
         'description': 'A model that combines random forests with adversarial learning to improve data synthesis.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/arf.yaml'
+    },
+        'ddpm': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': DdpmSynthesizer,
+        'display_name': 'TabDDPM (Denoising Diffusion Probablistic Models)',
+        'description': 'A diffusion-based model for high-fidelity tabular data generation (synthcity TabDDPM).',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/ddpm.yaml'
     }
 }

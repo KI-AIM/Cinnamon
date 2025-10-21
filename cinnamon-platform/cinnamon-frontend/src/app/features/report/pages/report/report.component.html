@@ -308,6 +308,13 @@
                                         <td>{{ numericAttr.abs_diff | number: '1.0-2' }}</td>
                                         <td>{{ numericAttr.prop_diff | number: '1.0-2' }}%</td>
                                     </tr>
+                                    <tr *ngIf="reportData.numericalAttributes.first_attributes.length < reportData.numericalAttributes.number_all">
+                                        <td>&middot;&middot;&middot;</td>
+                                        <td>&middot;&middot;&middot;</td>
+                                        <td>&middot;&middot;&middot;</td>
+                                        <td>&middot;&middot;&middot;</td>
+                                        <td>&middot;&middot;&middot;</td>
+                                    </tr>
                                     <tr class="fw-bold">
                                         <td>Total</td>
                                         <td>-</td>

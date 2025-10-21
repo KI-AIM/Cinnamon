@@ -18,13 +18,13 @@
 
     <table *ngIf="tableType === MetricTableType.COMPARISON" class="metric-table metric-table-comparison">
         <tr class="no-select">
-            <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', type: 'colorIndex', item: statusLegend}"></ng-container>
+            <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Status', type: 'colorIndex', item: showInfo ? statusLegend : null}"></ng-container>
             <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Metric', type: 'metric'}"></ng-container>
             <th>Original</th>
             <th>{{ datasetDisplayName }}</th>
             <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (#)', type: 'absolute'}"></ng-container>
             <ng-container *ngTemplateOutlet="sortColumn; context: {name: 'Diff (%)', type: 'percentage'}"></ng-container>
-            <th></th>
+            <th *ngIf="showInfo"></th>
         </tr>
 
         <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:tableData?.filter?.filterText:tableData?.filter?.importance | metricSorter:tableData?.sort?.direction:tableData?.sort?.column">
@@ -54,7 +54,7 @@
                     })
                 }}
             </td>
-            <td class="information-column">
+            <td *ngIf="showInfo" class="information-column">
                 <a title="Show information" style="vertical-align: middle;"
                    (click)="metricInfoTableComponent.open(data[1])">
                     <mat-icon fontIcon="info"></mat-icon>
@@ -91,7 +91,7 @@
             </td>
             <td>{{ statisticsService.formatNumber(getDifference(data[1], 'absolute'), {dataType: attributeStatistics.attribute_information.type}) }}</td>
             <td>{{ statisticsService.formatNumber(getDifference(data[1], 'percentage'), {max: 3, min: 3}) }}</td>
-            <td class="information-column">
+            <td *ngIf="showInfo" class="information-column">
                 <a title="Show information" (click)="metricInfoTableComponent.open(data[1])" class="icon-enabled">
                     <mat-icon fontIcon="info"></mat-icon>
                 </a>

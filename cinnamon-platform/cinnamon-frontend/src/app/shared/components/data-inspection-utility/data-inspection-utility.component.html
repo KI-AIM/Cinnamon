@@ -10,13 +10,13 @@
                 {{ metric.value.display_name }}
             </span>
 
-            <a title="Show Metric Information"
+            <a *ngIf="showInfo" title="Show Metric Information"
                style="vertical-align: middle;"
                (click)="metricInfoTableComponent.open(metric.value)">
                 <mat-icon fontIcon="info"></mat-icon>
             </a>
 
-            <button mat-flat-button [matMenuTriggerFor]="colorLegend"
+            <button *ngIf="showInfo" mat-flat-button [matMenuTriggerFor]="colorLegend"
                     class="flat-mat-form-button ms-auto">
                 Legend
             </button>

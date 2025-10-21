@@ -24,6 +24,11 @@ export class DataInspectionRisksComponent implements OnInit {
      */
     @Input() public risks!: RiskEvaluation;
 
+    /**
+     * If info elements like info icons or legend buttons should be shown.
+     */
+    @Input() public showInfo: boolean = true;
+
     protected readonly ProcessStatus = ProcessStatus;
 
     protected summary: {name: string, results: RiskResults}[];

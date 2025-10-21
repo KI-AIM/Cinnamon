@@ -394,7 +394,7 @@
 
                             <div class="report-keep-together">
                                 <app-data-inspection-metric-table [attributeStatistics]="attributeStatistics"
-                                                                  datasetDisplayName="Protected"
+                                                                  datasetDisplayName="Protected" [showInfo]="false"
                                                                   [tableType]="MetricTableType.COMPARISON">
                                 </app-data-inspection-metric-table>
                             </div>
@@ -454,7 +454,8 @@
                         Machine Learning Utility
                     </div>
 
-                    <app-data-inspection-utility [metrics]="reportData.statistics.statistics.utility.methods">
+                    <app-data-inspection-utility [metrics]="reportData.statistics.statistics.utility.methods"
+                                                 [showInfo]="false">
                     </app-data-inspection-utility>
                 </div>
 
@@ -463,7 +464,8 @@
                         Risk Evaluation
                     </div>
 
-                    <app-data-inspection-risks [risks]="reportData.risks"></app-data-inspection-risks>
+                    <app-data-inspection-risks [risks]="reportData.risks" [showInfo]="false">
+                    </app-data-inspection-risks>
                 </div>
 
                 <div

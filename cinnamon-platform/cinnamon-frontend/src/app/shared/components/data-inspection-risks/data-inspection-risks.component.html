@@ -3,7 +3,8 @@
     <div style="display: flex;" class="mb-2 pt-2 border-top border-1">
         <span style="font-size: 1.2rem; margin-right: 0.2rem;">Privacy Risk Summary</span>
 
-        <button mat-flat-button [matMenuTriggerFor]="riskColorLegend" class="flat-mat-form-button ms-auto">
+        <button *ngIf="showInfo" mat-flat-button [matMenuTriggerFor]="riskColorLegend"
+                class="flat-mat-form-button ms-auto">
             Legend
         </button>
     </div>

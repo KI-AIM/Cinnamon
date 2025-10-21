@@ -19,6 +19,11 @@ export class DataInspectionUtilityComponent {
      */
     @Input() public metrics: UtilityMetricDataObject;
 
+    /**
+     * If info elements like info icons or legend buttons should be shown.
+     */
+    @Input() public showInfo: boolean = true;
+
     protected readonly UtilityMetricData2 = UtilityMetricData2;
     protected readonly UtilityMetricData3 = UtilityMetricData3;
 }

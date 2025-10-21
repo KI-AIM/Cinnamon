@@ -34,6 +34,11 @@ export class DataInspectionMetricTableComponent implements OnInit {
     @Input() public mainData: 'real' | 'synthetic' = 'real';
 
     /**
+     * If info elements like info icons or legend buttons should be shown.
+     */
+    @Input() public showInfo: boolean = true;
+
+    /**
      * The context data of the search and filter.
      * If null, the table has no filter nor sort function.
      */

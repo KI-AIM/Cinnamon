@@ -65,6 +65,9 @@ import { InjectMetricImportancePipe } from './pipes/inject-metric-importance.pip
 import { DataInspectionUtilityComponent } from './components/data-inspection-utility/data-inspection-utility.component';
 import { DataInspectionUtilityTableComponent } from './components/data-inspection-utility-table/data-inspection-utility-table.component';
 import { FormatNumberPipe } from './pipes/format-number.pipe';
+import { DataInspectionRisksComponent } from './components/data-inspection-risks/data-inspection-risks.component';
+import { RiskColorIndexPipe } from './pipes/risk-color-index.pipe';
+import { RiskConfidenceIntervalPipe } from './pipes/risk-confidence-interval.pipe';
 
 @NgModule({
     declarations: [
@@ -87,6 +90,8 @@ import { FormatNumberPipe } from './pipes/format-number.pipe';
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataInspectionAttributeDetailsComponent,
+        DataInspectionMetricTableComponent,
+        DataInspectionRisksComponent,
         DataInspectionUtilityComponent,
         DataInspectionUtilityTableComponent,
         DataTableComponent,
@@ -110,13 +115,14 @@ import { FormatNumberPipe } from './pipes/format-number.pipe';
         // Pipes
         ColumnConfigurationNameFilterPipe,
         FormatNumberPipe,
+        InjectMetricImportancePipe,
         InstanceOfPipe,
         MetricFilterPipe,
         MetricSorterPipe,
         NumberToTextPipe,
+        RiskColorIndexPipe,
+        RiskConfidenceIntervalPipe,
         StatisticsFilterPipe,
-        DataInspectionMetricTableComponent,
-        InjectMetricImportancePipe,
     ],
     imports: [
         CommonModule,
@@ -177,6 +183,7 @@ import { FormatNumberPipe } from './pipes/format-number.pipe';
         InstanceOfPipe,
         TooltipComponent,
         NumberToTextPipe,
+        DataInspectionRisksComponent,
         DataInspectionUtilityComponent,
     ],
 })

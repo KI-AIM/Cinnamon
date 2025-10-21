@@ -306,7 +306,7 @@
     /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }
 
-/* CSS for utility metrics */
+/* CSS for utility and risks metrics */
 .classifier-cell {
     display: flex;
     flex-direction: row;

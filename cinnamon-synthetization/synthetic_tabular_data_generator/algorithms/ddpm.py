@@ -63,13 +63,18 @@ class DdpmSynthesizer(TabularDataSynthesizer):
             'lr': float(training_params.get('lr', 0.002)),
             'batch_size': int(training_params.get('batch_size', 1024)),
             'num_timesteps': int(training_params.get('num_timesteps', 1000)),
-            #'gaussian_loss_type': training_params.get('gaussian_loss_type', 'mse'),
-            #'scheduler': training_params.get('scheduler', 'cosine'),
+            'gaussian_loss_type': synth_params.get('gaussian_loss_type', 'mse'),
+            'scheduler': synth_params.get('scheduler', 'cosine'),
 
             # model definition
             'is_classification': bool(synth_params.get('is_classification', False)), # true = regression
-            #'model_type': synth_params.get('model_type', 'mlp'),
+            'model_type': synth_params.get('model_type', 'mlp'),
             'dim_embed': int(synth_params.get('dim_embed', 128)),
+            'model_params': {
+                'n_layers_hidden': int(synth_params.get('n_layers_hidden', 3)),
+                'n_units_hidden': int(synth_params.get('n_units_hidden', 256)),
+                'dropout': float(synth_params.get('dropout', 0.0)),
+            },
 
             # continuous feature handling
             #'continuous_encoder': synth_params.get('continuous_encoder'),

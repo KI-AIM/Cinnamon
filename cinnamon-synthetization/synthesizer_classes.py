@@ -1,5 +1,6 @@
 from synthetic_tabular_data_generator.algorithms.ctgan import CtganSynthesizer
 from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
+from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
 #from synthetic_longitudinal_data_generator.algorithms.par import ParSynthesizer
 from synthetic_tabular_data_generator.algorithms.bayesian_network import BayesianNetworkSynthesizer
 from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomForestsSynthesizer
@@ -45,7 +46,7 @@ synthesizer_classes = {
         'description': 'A model that combines random forests with adversarial learning to improve data synthesis.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/arf.yaml'
     },
-        'ddpm': {
+    'ddpm': {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': DdpmSynthesizer,

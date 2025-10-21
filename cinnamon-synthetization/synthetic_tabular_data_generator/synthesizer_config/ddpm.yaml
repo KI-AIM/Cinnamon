@@ -7,46 +7,47 @@ URL: /start_synthetization_process/ddpm
 configurations:
   model_parameter:
     display_name: Model Parameters
-    description: Configure the diffusion model and training hyperparameters.
+    description: Configure how the diffusion model interprets the task and represents time steps.
     parameters:
-      - name: is_classification
-        type: boolean
-        label: Classification Task
-        description: Treat the task as classification or regression.
-        default_value: false
-      - name: n_iter
-        type: integer
-        label: Training Iterations
-        description: Number of training iterations. Higher values can improve fidelity but increase training time.
-        default_value: 1000
-        min_value: 1
-        max_value: 100000
-      - name: lr
-        type: float
-        label: Learning Rate
-        description: Learning rate for optimizer. Typical values range from 1e-5 to 1e-2.
-        default_value: 0.002
-        min_value: 0.00001
-        max_value: 0.1
-      - name: batch_size
-        type: integer
-        label: Batch Size
-        description: Samples per training step. Larger batches are faster but may reduce diversity.
-        default_value: 256
-        min_value: 1
-        max_value: 4096
-      - name: num_timesteps
-        type: integer
-        label: Diffusion Timesteps
-        description: Number of timesteps for the diffusion process.
-        default_value: 300
-        min_value: 10
-        max_value: 1000
       - name: scheduler
         type: string
         label: Beta Scheduler
         description: Forward-process beta scheduler. Options "cosine", "linear".
         default_value: cosine
+        options:
+          - cosine
+          - linear
+      - name: gaussian_loss_type
+        type: string
+        label: Gaussian Loss Type
+        description: Diffusion loss for the Gaussian process. Choose between "mse" and "kl".
+        default_value: mse
+        options:
+          - mse
+          - kl
+      - name: model_type
+        type: string
+        label: Diffusion Backbone
+        description: Backbone architecture for the diffusion model. Options "mlp", "resnet", "tabnet".
+        default_value: mlp
+        options:
+          - mlp
+          - resnet
+          - tabnet
+      - name: n_layers_hidden
+        type: integer
+        label: Hidden Layers
+        description: Number of hidden layers in the diffusion backbone. Increase to capture more complex patterns.
+        default_value: 3
+        min_value: 1
+        max_value: 10
+      - name: n_units_hidden
+        type: integer
+        label: Hidden Units
+        description: Width of each hidden layer. Larger values increase capacity but also training cost.
+        default_value: 256
+        min_value: 16
+        max_value: 4096
       - name: dim_embed
         type: integer
         label: Embedding Dimension
@@ -54,24 +55,31 @@ configurations:
         default_value: 128
         min_value: 8
         max_value: 4096
-      - name: sampling_patience
-        type: integer
-        label: Sampling Patience
-        description: Maximum number of attempts to match training schema during generation.
-        default_value: 500
-        min_value: 1
-        max_value: 10000
   model_fitting:
-    display_name: Validation
-    description: Configure validation related settings.
+    display_name: Training Parameters
+    description: Define the parameters, that are used for training the model.
     parameters:
-      - name: validation_size
-        type: float
-        label: Validation Size
-        description: Fraction of data used for validation.
-        default_value: 0.0
-        min_value: 0.0
-        max_value: 0.5
+      - name: batch_size
+        type: integer
+        label: Batch Size
+        description: Samples per training step. Larger batches are faster but may reduce diversity.
+        default_value: 256
+        min_value: 1
+        max_value: 4096
+      - name: max_iters
+        type: integer
+        label: Training Iterations
+        description: Number of training iterations. Higher values can improve fidelity but increase training time.
+        default_value: 1000
+        min_value: 1
+        max_value: 100000
+      - name: num_timesteps
+        type: integer
+        label: Diffusion Timesteps
+        description: Number of steps in the forward diffusion process; larger values increase quality and runtime.
+        default_value: 300
+        min_value: 10
+        max_value: 1000
   sampling:
     display_name: Sampling
     description: Define the sampling parameters for generating synthetic data.
@@ -83,4 +91,10 @@ configurations:
         default_value: 1000
         min_value: 1
         max_value: 1000000
-
+      - name: sampling_patience
+        type: integer
+        label: Sampling Patience
+        description: Maximum number of attempts to match training schema during generation.
+        default_value: 500
+        min_value: 1
+        max_value: 10000

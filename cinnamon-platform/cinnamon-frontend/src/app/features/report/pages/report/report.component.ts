@@ -13,6 +13,7 @@ import { DataScale } from "@shared/model/data-scale";
 import { DataSetInfo } from "@shared/model/data-set-info";
 import { ProjectSettings } from "@shared/model/project-settings";
 import { RiskAssessmentConfig } from "@shared/model/risk-assessment-config";
+import { RiskEvaluation } from "@shared/model/risk-evaluation";
 import { Statistics, StatisticsResponse, StatisticsValues } from "@shared/model/statistics";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
@@ -61,6 +62,7 @@ export class ReportComponent implements OnInit {
         numericalAttributes: NumericAttributes,
         mc: ProjectSettings,
         reportData: ReportData,
+        risks: RiskEvaluation,
         riskAssessmentConfig: RiskAssessmentConfig,
         statistics: StatisticsResponse,
     }>;
@@ -96,6 +98,7 @@ export class ReportComponent implements OnInit {
             riskAssessmentConfig: this.riskAssessmentService.fetchConfiguration().pipe(
                 map(value => value.config as RiskAssessmentConfig),
             ),
+            risks: this.statisticsService.fetchRisks(),
             statistics: this.statisticsService.fetchResult(),
         }).pipe(
             map(value => {

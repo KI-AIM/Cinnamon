@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ProcessStatus } from "@core/enums/process-status";
 import { ProjectSettings } from "@shared/model/project-settings";
-import { RiskEvaluation } from "@shared/model/risk-evaluation";
+import { RiskEvaluation, RiskResults } from "@shared/model/risk-evaluation";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { combineLatest, map, Observable } from "rxjs";
@@ -26,6 +26,8 @@ export class DataInspectionRisksComponent implements OnInit {
 
     protected readonly ProcessStatus = ProcessStatus;
 
+    protected summary: {name: string, results: RiskResults}[];
+
     protected pageData$: Observable<{
         colorScheme: Color[],
         projectSettings: ProjectSettings,
@@ -38,6 +40,26 @@ export class DataInspectionRisksComponent implements OnInit {
     }
 
     public ngOnInit(): void {
+        this.summary = [];
+        if (this.risks.linkage_health_risk) {
+            this.summary.push({
+                name: "Linkage",
+                results: this.risks.linkage_health_risk,
+            });
+        }
+        if (this.risks.univariate_singling_out_risk) {
+            this.summary.push({
+                name: "Singling-out univariate",
+                results: this.risks.univariate_singling_out_risk,
+            });
+        }
+        if (this.risks.multivariate_singling_out_risk) {
+            this.summary.push({
+                name: "Singling-out multivariate",
+                results: this.risks.multivariate_singling_out_risk,
+            });
+        }
+
         this.pageData$ = combineLatest({
             projectSettings: this.projectConfigService.projectSettings$,
         }).pipe(

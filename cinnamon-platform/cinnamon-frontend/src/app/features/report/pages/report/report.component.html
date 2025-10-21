@@ -449,7 +449,14 @@
 
                     <app-data-inspection-utility [metrics]="reportData.statistics.statistics.utility.methods">
                     </app-data-inspection-utility>
+                </div>
 
+                <div class="report-section">
+                    <div class="report-header report-header-s">
+                        Risk Evaluation
+                    </div>
+
+                    <app-data-inspection-risks [risks]="reportData.risks"></app-data-inspection-risks>
                 </div>
 
                 <div

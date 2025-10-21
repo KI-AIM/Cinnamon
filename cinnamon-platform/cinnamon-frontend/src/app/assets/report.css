@@ -268,16 +268,19 @@
     width: 100%;
 }
 
+.metric-table > * > tr > th,
 .metric-table > tr > th,
 .metric-table > tr > td {
     height: 2rem;
     padding: 0.3rem !important;
 }
 
+.metric-table > tbody > tr:hover,
 .metric-table > tr:not(.no-select):hover {
     background-color: var(--report-color-background);
 }
 
+.metric-table > * > tr,
 .metric-table > tr {
     width: 100%;
 }
@@ -308,6 +311,7 @@
 
 /* CSS for utility and risks metrics */
 .classifier-cell {
+    align-items: center;
     display: flex;
     flex-direction: row;
     gap: 0.2rem;

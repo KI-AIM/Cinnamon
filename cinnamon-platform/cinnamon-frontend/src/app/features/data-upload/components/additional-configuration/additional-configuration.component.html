@@ -24,6 +24,9 @@
                             {{ ConfigurationTypeMetadata[type].displayName }}
                         </mat-option>
                     </mat-select>
+                    <mat-icon matSuffix class="icon-enabled"
+                              (click)="dialog.open(configurationInfoDialog, { width: '60%' }); $event.stopPropagation()">info
+                    </mat-icon>
                 </mat-form-field>
             </div>
 
@@ -58,5 +61,80 @@
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close type="button" color="primary" (click)="cancel()">Cancel</button>
         <button mat-raised-button mat-dialog-close type="button" color="primary" [disabled]="disabled">Confirm</button>
+    </mat-dialog-actions>
+</ng-template>
+
+<ng-template #configurationInfoDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Configuration - Information</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <div class="vertical-boxes">
+            <div class="box">
+                <div class="box-name">
+                    Explanation
+                </div>
+                <p>
+                    You can add additional configurations and constraints to your attribute.
+                    They provide further information about the attribute, which is used for parsing and validating values.
+                    Values that do not match these configurations will be removed from the dataset.
+                    Depending on the type of the attribute, different configurations are available.
+                    You can find an overview of the available configurations below.
+                </p>
+
+                <div class="box-name">
+                    Available Configurations
+                </div>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Applicable to</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>String Pattern</td>
+                        <td><span [class.current-type]="dataType === DataType.STRING">String</span></td>
+                        <td>
+                            Defines the expected structure or format of a text value.
+                            This prevents typos and ensures uniform formats for attributes like patient IDs, diagnosis codes, or postal codes.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Date Format</td>
+                        <td><span [class.current-type]="dataType === DataType.DATE">Date</span></td>
+                        <td>
+                            Specifies how dates are written and interpreted.
+                            This configuration is mandatory for date attributes.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Date & Time Format</td>
+                        <td><span [class.current-type]="dataType === DataType.DATE_TIME">Date & Time</span></td>
+                        <td>
+                            Specifies how date & times are written and interpreted.
+                            This configuration is mandatory for date & time attributes.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Range</td>
+                        <td>
+                            <span [class.current-type]="dataType === DataType.DATE">Date</span>,
+                            <span [class.current-type]="dataType === DataType.DATE_TIME">Date & Time</span>,
+                            <span [class.current-type]="dataType === DataType.DECIMAL">Decimal</span>,
+                            <span [class.current-type]="dataType === DataType.INTEGER">Integer</span>
+                        </td>
+                        <td>
+                            Defines the lowest and highest valid number or date/time allowed for a data field.
+                            Prevents impossible or unrealistic values, for example negative ages or future birthdates.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
     </mat-dialog-actions>
 </ng-template>

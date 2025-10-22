@@ -10,23 +10,6 @@ export enum ConfigurationType {
 	STRINGPATTERN = "STRINGPATTERN",
 }
 
-export function getConfigurationTypeForString(
-	value: String
-): ConfigurationType | undefined {
-	switch (value) {
-		case "DATEFORMAT":
-			return ConfigurationType.DATEFORMAT;
-		case "DATETIMEFORMAT":
-			return ConfigurationType.DATETIMEFORMAT;
-		case "RANGE":
-			return ConfigurationType.RANGE;
-		case "STRINGPATTERN":
-			return ConfigurationType.STRINGPATTERN;
-		default:
-			return undefined;
-	}
-}
-
 /**
  * Returns the configuration type for the given configuration name.
  * @param configurationName The name of the configuration.

@@ -33,6 +33,7 @@ export class AdditionalConfigurationComponent implements OnInit {
     protected dataType: DataType;
 
     protected readonly ConfigurationTypeMetadata = ConfigurationTypeMetadata;
+    protected readonly DataType = DataType;
 
     private cache: Array<{ name: string }> = [];
 

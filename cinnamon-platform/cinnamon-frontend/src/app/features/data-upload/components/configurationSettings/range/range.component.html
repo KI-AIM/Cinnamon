@@ -2,9 +2,58 @@
     <mat-form-field>
         <mat-label>Minimum Value</mat-label>
         <input matInput [type]="getInputType()" formControlName="minValue"/>
+        <mat-icon matSuffix class="icon-enabled"
+                  (click)="dialog.open(minimumInfoDialog, { width: '60%' }); $event.stopPropagation()">
+            info
+        </mat-icon>
     </mat-form-field>
     <mat-form-field>
         <mat-label>Maximum Value</mat-label>
         <input matInput [type]="getInputType()" #range formControlName="maxValue"/>
+        <mat-icon matSuffix class="icon-enabled"
+                  (click)="dialog.open(maximumInfoDialog, { width: '60%' }); $event.stopPropagation()">
+            info
+        </mat-icon>
     </mat-form-field>
 </div>
+
+<ng-template #minimumInfoDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Range Minimum - Information</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <div class="vertical-boxes">
+            <div class="box">
+                <div class="box-name">
+                    Explanation
+                </div>
+                <p>
+                    The lowest value allowed for this attribute, smaller values are considered invalid and will be
+                    removed from the dataset. Prevents impossible or unrealistic values, for example negative ages.
+                </p>
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>
+
+<ng-template #maximumInfoDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Range Maximum - Information</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <div class="vertical-boxes">
+            <div class="box">
+                <div class="box-name">
+                    Explanation
+                </div>
+                <p>
+                    The highest value allowed for this attribute, bigger values are considered invalid and will be
+                    removed from the dataset. Prevents impossible or unrealistic values, for example future birthdates
+                    or percentages.
+                </p>
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

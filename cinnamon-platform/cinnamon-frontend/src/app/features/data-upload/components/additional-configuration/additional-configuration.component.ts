@@ -1,4 +1,5 @@
 import { Component, Input, OnInit, TemplateRef, ViewChild } from "@angular/core";
+import { MatSelect } from "@angular/material/select";
 import {
     ConfigurationType, ConfigurationTypeMetadata,
     getConfigurationForConfigurationType,
@@ -27,6 +28,7 @@ export class AdditionalConfigurationComponent implements OnInit {
     @ViewChild("dateFormat") dateFormatComponent: DateformatComponent;
     @ViewChild("dateTimeFormat") dateTimeFormatComponent: DatetimeformatComponent;
     @ViewChild("range") rangeComponent: RangeComponent;
+    @ViewChild("select") selectComponent: MatSelect;
     @ViewChild("stringPattern") stringPatternComponent: StringpatternComponent;
 
     selected = "standardSelection";
@@ -78,6 +80,7 @@ export class AdditionalConfigurationComponent implements OnInit {
 
     changeConfigurationSelection(event: any) {
         this.addConfiguration(event.value);
+        this.selectComponent.value = "standardSelection";
     }
 
     areConfigurationAvailable(): boolean {

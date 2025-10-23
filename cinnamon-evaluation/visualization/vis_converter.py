@@ -1,4 +1,8 @@
-from data_processing.post_process import transform_in_iso_datetime, transform_in_time_distance
+from data_processing.post_process import (
+    transform_in_iso_datetime,
+    transform_in_time_distance,
+    transform_variance_in_time_distance,
+)
 from typing import Dict, Any, List, Union, Optional
 
 
@@ -347,7 +351,8 @@ def convert_important_metrics_to_date(metric, transformation_map, attr_type):
     """
     for metric_name, metric_data in metric.get('important_metrics', {}).items():
         if metric_name in transformation_map:
-            transform_func = globals()[transformation_map[metric_name]]
+            transform_name = transformation_map[metric_name]
+            transform_func = globals()[transform_name]
             if isinstance(metric_data, dict):
                 if 'values' in metric_data:
                     if 'real' in metric_data['values']:
@@ -364,8 +369,13 @@ def convert_important_metrics_to_date(metric, transformation_map, attr_type):
                             metric_data['values']['synthetic'] = transform_func(current_value, attr_type)
                 if 'difference' in metric_data and isinstance(metric_data['difference'], dict):
                     if 'absolute' in metric_data['difference'] and metric_data['difference']['absolute'] is not None:
-                        metric_data['difference']['absolute'] = transform_in_time_distance(
-                            metric_data['difference']['absolute'])
+                        diff_transform = (
+                            transform_variance_in_time_distance
+                            if transform_name == 'transform_variance_in_time_distance'
+                            else transform_in_time_distance
+                        )
+                        metric_data['difference']['absolute'] = diff_transform(
+                            metric_data['difference']['absolute'], attr_type)
     return metric
 
 
@@ -384,7 +394,8 @@ def convert_details_to_date(metric, transformation_map, attr_type):
     if 'details' in metric:
         for detail_name, detail_data in metric['details'].items():
             if detail_name in transformation_map:
-                transform_func = globals()[transformation_map[detail_name]]
+                transform_name = transformation_map[detail_name]
+                transform_func = globals()[transform_name]
                 if isinstance(detail_data, dict):
                     if 'values' in detail_data:
                         if 'real' in detail_data['values']:
@@ -401,8 +412,13 @@ def convert_details_to_date(metric, transformation_map, attr_type):
                                 detail_data['values']['synthetic'] = transform_func(current_value, attr_type)
                     if 'difference' in detail_data and isinstance(detail_data['difference'], dict):
                         if 'absolute' in detail_data['difference'] and detail_data['difference']['absolute'] is not None:
-                            detail_data['difference']['absolute'] = transform_in_time_distance(
-                                detail_data['difference']['absolute'])
+                            diff_transform = (
+                                transform_variance_in_time_distance
+                                if transform_name == 'transform_variance_in_time_distance'
+                                else transform_in_time_distance
+                            )
+                            detail_data['difference']['absolute'] = diff_transform(
+                                detail_data['difference']['absolute'], attr_type)
     return metric
 
 

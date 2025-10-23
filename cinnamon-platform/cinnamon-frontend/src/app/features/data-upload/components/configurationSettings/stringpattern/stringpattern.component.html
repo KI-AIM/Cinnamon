@@ -1,6 +1,95 @@
 <div class="d-flex flex-column w-100" [formGroup]="form">
     <mat-form-field>
-        <mat-label>String pattern</mat-label>
+        <mat-label>String Pattern</mat-label>
         <input matInput formControlName="pattern"/>
+        <mat-icon matSuffix class="icon-enabled"
+                  (click)="dialog.open(stringPatternInfoDialog, { width: '60%' }); $event.stopPropagation()">info
+        </mat-icon>
     </mat-form-field>
 </div>
+
+<ng-template #stringPatternInfoDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">String Pattern - Information</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <div class="vertical-boxes">
+            <div class="box">
+                <div class="box-name">
+                    Explanation
+                </div>
+                <p>
+                    The string pattern defines the expected structure or format of a text value.
+                    Providing this information prevents typos and ensures uniform formats for attributes like patient IDs, diagnosis codes, or postal codes.
+                    A value is considered valid if the entire string matches the pattern.
+                    Below you can find some examples for common regular expressions that should give you a good idea of what you can do with regular expressions.
+                    For more information about regular expressions, please see this page: <a href="https://www.regular-expressions.info/quickstart.html" target="_blank">https://www.regular-expressions.info/</a>
+                </p>
+
+                <div class="box-name">
+                    Examples
+                </div>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Pattern</th>
+                        <th>Explanation</th>
+                        <th>Elements</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>.*</td>
+                        <td>Matches any textual value of any length</td>
+                        <td>
+                            <table>
+                                <tr>
+                                    <td class="pe-2 align-text-top">.</td>
+                                    <td>Matches any character</td>
+                                </tr>
+                                <tr>
+                                    <td class="align-text-top pe-2">*</td>
+                                    <td>The preceding expression may occur zero or more times</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>\d&#123;5&#125;</td>
+                        <td>Matches a number with 5 digits</td>
+                        <td>
+                            <table>
+                                <tr>
+                                    <td class="align-text-top pe-2">\d</td>
+                                    <td>Matches one digit</td>
+                                </tr>
+                                <tr>
+                                    <td class="align-text-top pe-2">&#123;n&#125;</td>
+                                    <td>The preceding expression may occur exactly <i>n</i> times</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>(A|B|AB|O)</td>
+                        <td>Matches the blood types</td>
+                        <td>
+                            <table>
+                                <tr>
+                                    <td class="align-text-top pe-2">A</td>
+                                    <td>Matches the character "A"</td>
+                                </tr>
+                                <tr>
+                                    <td class="align-text-top pe-2 text-nowrap">( | )</td>
+                                    <td>Represents an "or" and matches one of the values seperated by "|" inside the brackets.</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

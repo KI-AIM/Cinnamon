@@ -9,10 +9,9 @@
             <div class="d-flex flex-column">
                 <mat-form-field>
                     <mat-label>Configuration</mat-label>
-                    <mat-select [id]="'additionalSettingsConfigurations_' + attrNumber"
-                        (selectionChange)="changeConfigurationSelection($event)"
-                        [disabled]="disabled || !areConfigurationAvailable()"
-                        [(value)]="selected">
+                    <mat-select #select [id]="'additionalSettingsConfigurations_' + attrNumber"
+                                (selectionChange)="changeConfigurationSelection($event)"
+                                [disabled]="disabled || !areConfigurationAvailable()" [(value)]="selected">
                         <mat-option disabled *ngIf="!areConfigurationAvailable()" value="standardSelection">
                             No configurations available
                         </mat-option>
@@ -20,7 +19,7 @@
                             Select a configuration to add...
                         </mat-option>
 
-                        <mat-option *ngFor="let type of getConfigurationsForDatatype() " [value]="type">
+                        <mat-option *ngFor="let type of getConfigurationsForDatatype()" [value]="type">
                             {{ ConfigurationTypeMetadata[type].displayName }}
                         </mat-option>
                     </mat-select>

@@ -1,5 +1,6 @@
 import { Component, Input } from "@angular/core";
 import { FormGroup } from "@angular/forms";
+import { MatDialog } from "@angular/material/dialog";
 
 @Component({
     selector: "app-stringpattern",
@@ -9,4 +10,9 @@ import { FormGroup } from "@angular/forms";
 })
 export class StringpatternComponent {
     @Input() form: FormGroup;
+
+    public constructor(
+        protected readonly dialog: MatDialog,
+    ) {
+    }
 }

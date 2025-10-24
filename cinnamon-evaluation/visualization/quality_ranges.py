@@ -41,6 +41,26 @@ QUALITY_RANGES: Dict[str, List[Dict[str, Union[str, float]]]] = {
             "range_high": 0.7,
         },
     ],
+    "overall_correlation": [
+        {
+            "quality": "High",
+            "range_label": "High correlation alignment",
+            "range_low": 0.85,
+            "range_high": 1.0,
+        },
+        {
+            "quality": "Medium",
+            "range_label": "Moderate correlation alignment",
+            "range_low": 0.7,
+            "range_high": 0.85,
+        },
+        {
+            "quality": "Low",
+            "range_label": "Low correlation alignment",
+            "range_low": 0.0,
+            "range_high": 0.7,
+        },
+    ],
     "default": [
         {
             "quality": "High",
@@ -130,5 +150,4 @@ def determine_quality_range(
         }
 
     return UNKNOWN_QUALITY_RANGE.copy()
-
 

@@ -25,6 +25,7 @@ from evaluation_metrics import (
 from data_processing.pre_process import preprocess_datasets
 from data_processing.utils import validate_and_extract_metrics
 from dispatcher import dispatch_metrics
+from resemblance.tabular.metrics import calculate_full_correlation_matrix
 from visualization.vis_converter import (
     group_metrics_by_visualization_type,
     create_empty_config,
@@ -791,7 +792,24 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
 
     # Add overview to Config
     try:
-        enriched_metrics = add_overview_to_config(enriched_metrics)
+        correlation_matrix_data = None
+        try:
+            correlation_matrix_data = calculate_full_correlation_matrix(processed_real_data, processed_synthetic_data)
+        except Exception as inner_e:
+            print(f"Warning: Unable to compute full correlation matrix: {inner_e}")
+
+        labels = correlation_matrix_data.get("labels") if correlation_matrix_data else None
+        real_matrix = correlation_matrix_data.get("real") if correlation_matrix_data else None
+        synthetic_matrix = correlation_matrix_data.get("synthetic") if correlation_matrix_data else None
+        correlation_distance = correlation_matrix_data.get("distance") if correlation_matrix_data else None
+
+        enriched_metrics = add_overview_to_config(
+            enriched_metrics,
+            labels,
+            real_matrix,
+            synthetic_matrix,
+            correlation_distance
+        )
     except Exception as e:
         error_message = f"Error adding overview to config: {e}"
         send_callback_error(callback_url, session_key, error_message, 500)

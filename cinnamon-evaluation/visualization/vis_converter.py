@@ -1,6 +1,8 @@
 from data_processing.post_process import transform_in_iso_datetime, transform_in_time_distance
 from typing import Dict, Any, List, Union, Optional
 
+from .quality_ranges import determine_quality_range
+
 
 def group_metrics_by_visualization_type(overview_metrics):
     """
@@ -599,8 +601,8 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
         if overview:
             modified_config["resemblance"]["attributes"][i]["overview"] = overview
     
-    real_utility_score = 0.0
-    synthetic_utility_score = 0.0
+    real_utility_score: Optional[float] = None
+    synthetic_utility_score: Optional[float] = None
     
     if "utility" in modified_config and "methods" in modified_config["utility"]:
         for method in modified_config["utility"]["methods"]:
@@ -639,8 +641,21 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
     
     if all_attribute_scores:
         overall_resemblance_score = sum(all_attribute_scores) / len(all_attribute_scores)
-        overall_resemblance_score = overall_resemblance_score
-        
+        overall_resemblance_value = 1.0 - overall_resemblance_score
+        overall_resemblance_value = max(0.0, min(1.0, overall_resemblance_value))
+
+        resemblance_values: Dict[str, Union[float, str, None]] = {
+            "real": 1.0,
+            "synthetic": overall_resemblance_value
+        }
+        resemblance_values.update(determine_quality_range("overall_resemblance", overall_resemblance_value))
+
+        utility_values: Dict[str, Union[float, str, None]] = {
+            "real": real_utility_score,
+            "synthetic": synthetic_utility_score
+        }
+        utility_values.update(determine_quality_range("overall_utility", synthetic_utility_score))
+
         modified_config["Overview"] = {
             "display_name": "Summary Overview",
             "description": "This aggregated overview provides a high-level assessment of the similarity between real and synthetic data across resemblance and utility. The metrics presented here serve as general indicators and should be supplemented with detailed evaluation results for comprehensive analysis.",
@@ -648,17 +663,11 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
                 {
                     "overall_resemblance": {
                         "description": "This metric quantifies the statistical similarity between synthetic and real data by calculating the normalized differences across all attributes and statistical measures. The aggregated score may not fully capture specific distributional anomalies or outliers in individual metrics. It is strongly recommended to examine the detailed statistical comparisons for a complete understanding of data resemblance.",
-                        "values": {
-                            "real": 1.0,  
-                            "synthetic": (1.0 - overall_resemblance_score)
-                        }
+                        "values": resemblance_values
                     },
                     "overall_utility": {
                         "description": "This measurement evaluates how effectively synthetic data can substitute real data in machine learning applications using a train-on-synthetic test-on-real approach. For classification tasks this represents the Balanced Accuracy averaged across all classifiers while regression problems use the adjusted R-squared aggregated across all regressors. This consolidated metric provides a general approximation that should be supplemented with individual model performance evaluation.",
-                        "values": {
-                            "real": real_utility_score,
-                            "synthetic": synthetic_utility_score
-                        }
+                        "values": utility_values
                     }
                 }
             ]

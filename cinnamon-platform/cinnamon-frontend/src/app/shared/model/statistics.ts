@@ -197,8 +197,14 @@ export class OverviewStatistics {
 }
 
 export class AggregatedMetrics {
+    @Type(() => AggregatedMetric)
     overall_resemblance: AggregatedMetric;
+
+    @Type(() => AggregatedMetric)
     overall_utility: AggregatedMetric;
+
+    @Type(() => AggregatedCorrelation)
+    overall_correlation: AggregatedCorrelation;
 }
 
 export class AggregatedMetric {
@@ -206,6 +212,23 @@ export class AggregatedMetric {
 
     @Type(() => StatisticsData<number>)
     values: StatisticsData<number>;
+}
+
+export class AggregatedCorrelation {
+    description: string;
+
+    @Type(() => OverallCorrelation)
+    values: OverallCorrelation;
+}
+
+export class OverallCorrelation extends StatisticsData<Array<Array<number>>> {
+    distance: number;
+    labels: string[];
+    quality: string;
+    range_high: number;
+    range_label: string;
+    range_low: number;
+    similarity: number;
 }
 
 export type UtilityMetricDataObject = { [key: string]: UtilityMetricData2 | UtilityMetricData3 };

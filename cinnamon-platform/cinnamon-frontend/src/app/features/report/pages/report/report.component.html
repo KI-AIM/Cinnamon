@@ -250,16 +250,12 @@
                         <div class="d-flex gap-3">
                             <div style="width: 33%;">
                                 <div class="report-text-block">
-                                    The protected dataset showed over all a <strong>TODO quality</strong>, with a
-                                    <strong>Resemblance Score
-                                        of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_resemblance.values.synthetic | number: '1.0-2' }}</strong>,
+                                    The protected dataset showed over all a
+                                    <strong>{{ reportData.statistics.statistics.Overview.aggregated_metrics[1].overall_correlation.values.quality | lowercase }}
+                                        quality</strong>, with a <strong>Resemblance Score
+                                    of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_resemblance.values.synthetic | number: '1.0-2' }}</strong>,
                                     and a <strong>Machine Learning Utility Score
                                     of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_utility.values.synthetic | number: '1.0-2' }}</strong>.
-                                </div>
-                                <div class="report-text-block">
-                                    <!-- TODO Set resemblance dynamically -->
-                                    The resemblance analysis showed overall <strong>TODO differences</strong> in the
-                                    correlation patterns, and <strong>TODO statistical similarities</strong>.
                                 </div>
                                 <div class="report-text-block">
                                     The statistical similarities showed a <strong>difference of

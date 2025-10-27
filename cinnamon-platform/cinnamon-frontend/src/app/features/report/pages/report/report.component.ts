@@ -1,4 +1,4 @@
-import { AsyncPipe, DecimalPipe, NgForOf, NgIf } from "@angular/common";
+import { AsyncPipe, DecimalPipe, LowerCasePipe, NgForOf, NgIf } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatButton } from "@angular/material/button";
@@ -31,6 +31,7 @@ import { environments } from "src/environments/environment";
         NgIf,
         NgForOf,
         DecimalPipe,
+        LowerCasePipe,
     ],
     templateUrl: './report.component.html',
     styleUrl: './report.component.less'

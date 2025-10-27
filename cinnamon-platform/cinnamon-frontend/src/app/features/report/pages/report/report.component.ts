@@ -9,12 +9,18 @@ import { ChartFrequencyComponent } from "@shared/components/chart-frequency/char
 import {
     MetricTableType
 } from "@shared/components/data-inspection-metric-table/data-inspection-metric-table.component";
+import { DataConfiguration } from "@shared/model/data-configuration";
 import { DataScale } from "@shared/model/data-scale";
 import { DataSetInfo } from "@shared/model/data-set-info";
+import { DateFormatConfiguration } from "@shared/model/date-format-configuration";
+import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-configuration";
 import { ProjectSettings } from "@shared/model/project-settings";
+import { RangeConfiguration } from "@shared/model/range-configuration";
 import { RiskAssessmentConfig } from "@shared/model/risk-assessment-config";
 import { RiskEvaluation } from "@shared/model/risk-evaluation";
 import { Statistics, StatisticsResponse, StatisticsValues } from "@shared/model/statistics";
+import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
+import { DataConfigurationService } from "@shared/services/data-configuration.service";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
@@ -41,9 +47,13 @@ export class ReportComponent implements OnInit {
     private readonly baseUrl: string = environments.apiUrl + "/api/report";
     private readonly PAGE_HEIGHT = 1122;
 
-    protected readonly Object = Object;
+    protected readonly DateFormatConfiguration = DateFormatConfiguration;
+    protected readonly DateTimeFormatConfiguration = DateTimeFormatConfiguration;
     protected readonly MetricTableType = MetricTableType;
+    protected readonly Object = Object;
+    protected readonly RangeConfiguration = RangeConfiguration;
     protected readonly StatisticsService = StatisticsService;
+    protected readonly StringPatternConfiguration = StringPatternConfiguration;
 
     /**
      * Date of the report creation.
@@ -57,6 +67,7 @@ export class ReportComponent implements OnInit {
      */
     protected pageData$: Observable<{
         appConfig: AppConfig,
+        dataConfiguration: DataConfiguration,
         datasetInfoAnonymized: DataSetInfo,
         datasetInfoOriginal: DataSetInfo,
         datasetInfoProtected: DataSetInfo,
@@ -77,6 +88,7 @@ export class ReportComponent implements OnInit {
 
     constructor(
         private readonly appConfigService: AppConfigService,
+        private readonly dataConfigurationService: DataConfigurationService,
         private readonly datasetInfoService: DataSetInfoService,
         private readonly http: HttpClient,
         private projectConfigService: ProjectConfigurationService,
@@ -91,6 +103,7 @@ export class ReportComponent implements OnInit {
     ngOnInit() {
         this.pageData$ = combineLatest({
             appConfig: this.appConfigService.appConfig$,
+            dataConfiguration: this.dataConfigurationService.dataConfiguration$,
             datasetInfoAnonymized: this.datasetInfoService.getDataSetInfo("anonymization"),
             datasetInfoOriginal: this.datasetInfoService.getDataSetInfo("VALIDATION"),
             datasetInfoProtected: this.datasetInfoService.getDataSetInfo("PROTECTED"),

@@ -354,35 +354,89 @@
 
                 <div class="report-section">
                     <div class="report-header report-header-s">
-                        Attribute Details and Resemblance
+                        Attribute Details
+                    </div>
+
+                    <div>
+                        <table class="report-table">
+                            <thead>
+                            <tr>
+                                <th>Index</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Scale</th>
+                                <th>Format</th>
+                                <th>Range</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr *ngFor="let attribute of reportData.dataConfiguration.configurations">
+                                <td>{{attribute.index}}</td>
+                                <td>{{attribute.name}}</td>
+                                <td>{{attribute.type}}</td>
+                                <td>{{attribute.scale}}</td>
+                                <td>
+                                    <ng-container *ngFor="let additional of attribute.configurations">
+                                        <ng-container *ngIf="additional | instanceOf:DateFormatConfiguration as dfc">
+                                            {{ dfc.dateFormatter }}
+                                        </ng-container>
+                                        <ng-container *ngIf="additional | instanceOf:DateTimeFormatConfiguration as dtfc">
+                                            {{ dtfc.dateTimeFormatter }}
+                                        </ng-container>
+                                        <ng-container *ngIf="additional | instanceOf:StringPatternConfiguration as spc">
+                                            {{ spc.pattern }}
+                                        </ng-container>
+                                    </ng-container>
+                                </td>
+                                <td>
+                                    <ng-container *ngFor="let additional of attribute.configurations">
+                                        <ng-container *ngIf="additional | instanceOf:RangeConfiguration as rc">
+                                            {{ rc.minValue }} - {{ rc.maxValue }}
+                                        </ng-container>
+                                    </ng-container>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div>
+                        <p>
+                            The original dataset contained {{ reportData.datasetInfoOriginal.numberRows }} records, of
+                            which {{ reportData.datasetInfoOriginal.numberInvalidRows | numberToText }} records
+                            contained at least one invalid value.
+                        </p>
+                        <ng-container *ngIf="reportData.datasetInfoOriginal.hasHoldOutSplit">
+                            <p>
+                                During the import, the dataset was split into an anonymization
+                                split containing {{ reportData.datasetInfoOriginal.numberNotHoldOutRows }} records of
+                                which {{ reportData.datasetInfoOriginal.numberInvalidNotHoldOutRows }} records contained at
+                                least one invalid value and a hold-out split
+                                containing {{ reportData.datasetInfoOriginal.numberHoldOutRows }} records of
+                                which {{ reportData.datasetInfoOriginal.numberInvalidHoldOutRows }} records contained at
+                                least one invalid value.
+                            </p>
+                        </ng-container>
+                        <ng-container *ngIf="!reportData.datasetInfoOriginal.hasHoldOutSplit">
+                            <p>
+                                During the import, the dataset was not split and all records were used for the
+                                anonymization.
+                            </p>
+                        </ng-container>
+                        <p>
+                            Invalid values are removed from the dataset, but the rest of the record remains.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-header report-header-s">
+                        Resemblance
                     </div>
 
                     <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes">
                         <div class="report-header2">
                             Attribute: {{ attributeStatistics.attribute_information.name }}
-                        </div>
-
-                        <div>
-                            <div class="report-header4">Attribute Information</div>
-
-                            <div class="d-flex w-100 gap-3">
-                                <div>
-                                    <span class="fw-bold">Index:</span>
-                                    <span> {{ attributeStatistics.attribute_information.index }}</span>
-                                </div>
-                                <div>
-                                    <span class="fw-bold">Name:</span>
-                                    <span> {{ attributeStatistics.attribute_information.name }}</span>
-                                </div>
-                                <div>
-                                    <span class="fw-bold">Type:</span>
-                                    <span> {{ attributeStatistics.attribute_information.type }}</span>
-                                </div>
-                                <div>
-                                    <span class="fw-bold">Scale:</span>
-                                    <span> {{ attributeStatistics.attribute_information.scale }}</span>
-                                </div>
-                            </div>
                         </div>
 
                         <div>

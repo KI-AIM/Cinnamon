@@ -12,7 +12,6 @@ import { CorrelationPlotData, StatisticsData } from "src/app/shared/model/statis
 })
 export class ChartCorrelationComponent extends ChartComponent {
     @Input() public colorScheme!: string;
-    @Input() public columnConfiguration!: ColumnConfiguration;
     @Input() public data!: StatisticsData<CorrelationPlotData>;
     @Input() public originalSeriesLabel: string = "Original";
     @Input() public showVisualMap: boolean | null = null;
@@ -89,7 +88,7 @@ export class ChartCorrelationComponent extends ChartComponent {
                     label: {
                         show: !this.simple,
                         // @ts-ignore
-                        formatter: (param) => this.formatNumber(param.value[2], this.columnConfiguration.type),
+                        formatter: (param) => this.formatNumber(param.value[2], null),
                     },
                     emphasis: {
                         itemStyle: {

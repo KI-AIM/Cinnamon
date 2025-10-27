@@ -649,7 +649,7 @@ def add_overview_to_config(
                                 synthetic_utility_score = classifier["score"]
                                 break
     
-    overview_entries: List[Dict[str, Any]] = []
+    overview_items: Dict[str, Any] = {}
 
     if all_attribute_scores:
         overall_resemblance_score = sum(all_attribute_scores) / len(all_attribute_scores)
@@ -668,18 +668,14 @@ def add_overview_to_config(
         }
         utility_values.update(determine_quality_range("overall_utility", synthetic_utility_score))
 
-        overview_entries.append(
-            {
-                "overall_resemblance": {
-                    "description": "This metric quantifies the statistical similarity between synthetic and real data by calculating the normalized differences across all attributes and statistical measures. The aggregated score may not fully capture specific distributional anomalies or outliers in individual metrics. It is strongly recommended to examine the detailed statistical comparisons for a complete understanding of data resemblance.",
-                    "values": resemblance_values
-                },
-                "overall_utility": {
-                    "description": "This measurement evaluates how effectively synthetic data can substitute real data in machine learning applications using a train-on-synthetic test-on-real approach. For classification tasks this represents the Balanced Accuracy averaged across all classifiers while regression problems use the adjusted R-squared aggregated across all regressors. This consolidated metric provides a general approximation that should be supplemented with individual model performance evaluation.",
-                    "values": utility_values
-                }
-            }
-        )
+        overview_items["overall_resemblance"] = {
+            "description": "This metric quantifies the statistical similarity between synthetic and real data by calculating the normalized differences across all attributes and statistical measures. The aggregated score may not fully capture specific distributional anomalies or outliers in individual metrics. It is strongly recommended to examine the detailed statistical comparisons for a complete understanding of data resemblance.",
+            "values": resemblance_values
+        }
+        overview_items["overall_utility"] = {
+            "description": "This measurement evaluates how effectively synthetic data can substitute real data in machine learning applications using a train-on-synthetic test-on-real approach. For classification tasks this represents the Balanced Accuracy averaged across all classifiers while regression problems use the adjusted R-squared aggregated across all regressors. This consolidated metric provides a general approximation that should be supplemented with individual model performance evaluation.",
+            "values": utility_values
+        }
 
     matrix_available = (
         correlation_labels is not None
@@ -724,20 +720,16 @@ def add_overview_to_config(
         else:
             correlation_values.update(determine_quality_range("overall_correlation", None))
 
-        overview_entries.append(
-            {
-                "overall_correlation": {
-                    "description": "This heatmap compares the complete Phi-K correlation matrices for the real and synthetic datasets. The more closely the color patterns and values align, the more similar the multivariate relationships between attributes.",
-                    "values": correlation_values
-                }
-            }
-        )
+        overview_items["overall_correlation"] = {
+            "description": "This heatmap compares the complete Phi-K correlation matrices for the real and synthetic datasets. The more closely the color patterns and values align, the more similar the multivariate relationships between attributes.",
+            "values": correlation_values
+        }
 
-    if overview_entries:
+    if overview_items:
         modified_config["Overview"] = {
             "display_name": "Summary Overview",
             "description": "This aggregated overview provides a high-level assessment of the similarity between real and synthetic data across resemblance and utility. The metrics presented here serve as general indicators and should be supplemented with detailed evaluation results for comprehensive analysis.",
-            "aggregated_metrics": overview_entries
+            "aggregated_metrics": overview_items
         }
-    
+
     return modified_config

@@ -19,34 +19,17 @@ configurations:
       - name: number_of_layers
         type: integer
         label: Number of hidden layers for the En- and Decoder
-        description: 
+        description: Deeper architectures can capture more complex feature interactions but increase training time and overfitting risk.
         default_value: 3
         min_value: 1
         max_value: 5
       - name: number_of_units_in_layers
         type: integer
         label: Number of Units in the Layers (Encoder/Decoder)
-        description: 
+        description: Wider layers provide additional modelling capacity at the cost of longer training times.
         default_value: 200
         min_value: 50
         max_value: 500
-      - name: coder_nonlin
-        type: string
-        label: Nonlinearity (Encoder/Decoder)
-        description: Nonlinearity used for both encoder and decoder. Options elu, relu, selu, leaky_relu.
-        default_value: leaky_relu
-        options:
-          - elu
-          - relu
-          - selu
-          - leaky_relu
-      - name: coder_dropout
-        type: float
-        label: Dropout (Encoder/Decoder)
-        description: Dropout probability applied to both encoder and decoder. If 0, dropout is disabled.
-        default_value: 0.1
-        min_value: 0.0
-        max_value: 1.0
       - name: n_units_embedding
         type: integer
         label: Embedding Dimensions
@@ -55,7 +38,7 @@ configurations:
         min_value: 10
         max_value: 2000
   model_fitting:
-    display_name: Model Fitting
+    display_name: Training Parameters
     description: Define the parameters used for training the model.
     parameters:
       - name: batch_size
@@ -68,38 +51,10 @@ configurations:
       - name: n_iter
         type: integer
         label: Training Iterations
-        description: The number of times the model will try to learn the best network structure. More iterations can help improve the structure.
+        description: Each iteration updates both encoder and decoder. More iterations improve data fidelity but prolong training.
         default_value: 100
         min_value: 1
         max_value: 500
-      - name: learning_rate
-        type: float
-        label: Learning Rate
-        description: Optimizer learning rate. Smaller values provide stabler convergence.
-        default_value: 0.001
-        min_value: 0.000001
-        max_value: 1.0
-      - name: weight_decay
-        type: float
-        label: Weight Decay
-        description: L2 regularization applied to the optimizer.
-        default_value: 0.00001
-        min_value: 0.0
-        max_value: 1.0
-      - name: robust_divergence_beta
-        type: integer
-        label: Robust Divergence Beta
-        description: Beta parameter used for the robust divergence loss function.
-        default_value: 2
-        min_value: 1
-        max_value: 10
-      - name: random_state
-        type: integer
-        label: Random Seed
-        description: Random seed used for model initialization and sampling.
-        default_value: 0
-        min_value: 0
-        max_value: 2147483647
   sampling:
     display_name: Sampling
     description: Define the sampling parameters, that are used for generating the synthetic data. 

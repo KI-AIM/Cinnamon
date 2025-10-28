@@ -12,6 +12,13 @@ class RtvaeSynthesizer(TabularDataSynthesizer):
     Model wrapping `(Outlier) Robust Variational Autoencoder for Tabular Data` model for synthetic data generation.
     """
 
+    DEFAULT_NONLIN = "leaky_relu"
+    DEFAULT_DROPOUT = 0.1
+    DEFAULT_LEARNING_RATE = 1e-3
+    DEFAULT_WEIGHT_DECAY = 1e-5
+    DEFAULT_ROBUST_BETA = 2
+    DEFAULT_RANDOM_STATE = 0
+
     def __init__(
         self,
         attribute_configuration: Optional[Dict[str, Any]] = None,
@@ -40,24 +47,23 @@ class RtvaeSynthesizer(TabularDataSynthesizer):
         training_params = config['synthetization_configuration']['algorithm']['model_fitting']
 
         self._model_kwargs = {
-            
             'data_encoder_max_clusters': int(synth_params['data_encoder_max_clusters']),
             'decoder_n_layers_hidden': int(synth_params['number_of_layers']),
             'encoder_n_layers_hidden': int(synth_params['number_of_layers']),
             'decoder_n_units_hidden': int(synth_params['number_of_units_in_layers']),
             'encoder_n_units_hidden': int(synth_params['number_of_units_in_layers']),
-            'decoder_nonlin': str(synth_params['coder_nonlin']),
-            'encoder_nonlin': str(synth_params['coder_nonlin']),
-            'decoder_dropout': float(synth_params['coder_dropout']),
-            'encoder_dropout': float(synth_params['coder_dropout']),
+            'decoder_nonlin': self.DEFAULT_NONLIN,
+            'encoder_nonlin': self.DEFAULT_NONLIN,
+            'decoder_dropout': float(self.DEFAULT_DROPOUT),
+            'encoder_dropout': float(self.DEFAULT_DROPOUT),
             'n_units_embedding': int(synth_params['n_units_embedding']),
 
             'batch_size': int(training_params['batch_size']),
-            'n_iter': int(training_params.get('max_iters', 1000)),
-            'lr': float(training_params['learning_rate']),
-            'weight_decay': float(training_params['weight_decay']),
-            'robust_divergence_beta': int(training_params['robust_divergence_beta']),
-            'random_state': int(training_params['random_state'])
+            'n_iter': int(training_params['n_iter']),
+            'lr': float(self.DEFAULT_LEARNING_RATE),
+            'weight_decay': float(self.DEFAULT_WEIGHT_DECAY),
+            'robust_divergence_beta': int(self.DEFAULT_ROBUST_BETA),
+            'random_state': int(self.DEFAULT_RANDOM_STATE)
 
         }
         self._sampling = config['synthetization_configuration']['algorithm']['sampling']

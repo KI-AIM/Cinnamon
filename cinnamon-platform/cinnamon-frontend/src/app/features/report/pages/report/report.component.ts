@@ -1,10 +1,14 @@
-import { AsyncPipe, DecimalPipe, LowerCasePipe, NgForOf, NgIf } from "@angular/common";
+import { AsyncPipe, DecimalPipe, KeyValuePipe, LowerCasePipe, NgForOf, NgIf } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatButton } from "@angular/material/button";
+import { ProcessStatus } from "@core/enums/process-status";
+import { StateManagementService } from "@core/services/state-management.service";
 import { TitleService } from "@core/services/title-service.service";
+import { AnonymizationService } from "@features/anonymization/services/anonymization.service";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
 import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
+import { SynthetizationService } from "@features/synthetization/services/synthetization.service";
 import { ChartFrequencyComponent } from "@shared/components/chart-frequency/chart-frequency.component";
 import {
     MetricTableType
@@ -14,12 +18,14 @@ import { DataScale } from "@shared/model/data-scale";
 import { DataSetInfo } from "@shared/model/data-set-info";
 import { DateFormatConfiguration } from "@shared/model/date-format-configuration";
 import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-configuration";
+import { PipelineInformation } from "@shared/model/execution-step";
 import { ProjectSettings } from "@shared/model/project-settings";
 import { RangeConfiguration } from "@shared/model/range-configuration";
 import { RiskAssessmentConfig } from "@shared/model/risk-assessment-config";
 import { RiskEvaluation } from "@shared/model/risk-evaluation";
 import { Statistics, StatisticsResponse, StatisticsValues } from "@shared/model/statistics";
 import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
+import { AlgorithmData } from "@shared/services/algorithm.service";
 import { DataConfigurationService } from "@shared/services/data-configuration.service";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
@@ -28,6 +34,11 @@ import { combineLatest, map, Observable, switchMap } from "rxjs";
 import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 import { environments } from "src/environments/environment";
 
+/**
+ * Component for generating and displaying the report.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Component({
     selector: 'app-report',
     imports: [
@@ -38,6 +49,7 @@ import { environments } from "src/environments/environment";
         NgForOf,
         DecimalPipe,
         LowerCasePipe,
+        KeyValuePipe,
     ],
     templateUrl: './report.component.html',
     styleUrl: './report.component.less'
@@ -51,6 +63,7 @@ export class ReportComponent implements OnInit {
     protected readonly DateTimeFormatConfiguration = DateTimeFormatConfiguration;
     protected readonly MetricTableType = MetricTableType;
     protected readonly Object = Object;
+    protected readonly ProcessStatus = ProcessStatus;
     protected readonly RangeConfiguration = RangeConfiguration;
     protected readonly StatisticsService = StatisticsService;
     protected readonly StringPatternConfiguration = StringPatternConfiguration;
@@ -66,6 +79,7 @@ export class ReportComponent implements OnInit {
      * @protected
      */
     protected pageData$: Observable<{
+        anonymizationConfig: AlgorithmData,
         appConfig: AppConfig,
         dataConfiguration: DataConfiguration,
         datasetInfoAnonymized: DataSetInfo,
@@ -73,10 +87,12 @@ export class ReportComponent implements OnInit {
         datasetInfoProtected: DataSetInfo,
         numericalAttributes: NumericAttributes,
         mc: ProjectSettings,
+        pipeline: PipelineInformation,
         reportData: ReportData,
         risks: RiskEvaluation,
         riskAssessmentConfig: RiskAssessmentConfig,
         statistics: StatisticsResponse,
+        synthetizationConfig: AlgorithmData,
     }>;
 
     @ViewChildren('chart', {read: ElementRef}) protected chartDivs: QueryList<ElementRef<HTMLElement>>;
@@ -87,13 +103,16 @@ export class ReportComponent implements OnInit {
     protected riskScoreP = 0.7;
 
     constructor(
+        private readonly anonymizationService: AnonymizationService,
         private readonly appConfigService: AppConfigService,
         private readonly dataConfigurationService: DataConfigurationService,
         private readonly datasetInfoService: DataSetInfoService,
         private readonly http: HttpClient,
         private projectConfigService: ProjectConfigurationService,
         private readonly riskAssessmentService: RiskAssessmentService,
+        private readonly stateManagementService: StateManagementService,
         private statisticsService: StatisticsService,
+        private readonly synthetizationService: SynthetizationService,
         titleService: TitleService,
     ) {
         titleService.setPageTitle("Report");
@@ -102,18 +121,21 @@ export class ReportComponent implements OnInit {
 
     ngOnInit() {
         this.pageData$ = combineLatest({
+            anonymizationConfig: this.anonymizationService.getAlgorithmData$(),
             appConfig: this.appConfigService.appConfig$,
             dataConfiguration: this.dataConfigurationService.dataConfiguration$,
             datasetInfoAnonymized: this.datasetInfoService.getDataSetInfo("anonymization"),
             datasetInfoOriginal: this.datasetInfoService.getDataSetInfo("VALIDATION"),
             datasetInfoProtected: this.datasetInfoService.getDataSetInfo("PROTECTED"),
             mc: this.projectConfigService.projectSettings$,
+            pipeline: this.stateManagementService.pipelineInformation$,
             reportData: this.fetchReportData(),
             riskAssessmentConfig: this.riskAssessmentService.fetchConfiguration().pipe(
                 map(value => (value.config as any) as RiskAssessmentConfig),
             ),
             risks: this.statisticsService.fetchRisks(),
             statistics: this.statisticsService.fetchResult(),
+            synthetizationConfig: this.synthetizationService.getAlgorithmData$(),
         }).pipe(
             map(value => {
                return {
@@ -154,8 +176,6 @@ export class ReportComponent implements OnInit {
      * Everything that is wider than 670 px will not be visible in the PDF.
      * Links must have a `href` in the form `report#<anchor-id>` and must have the class `report-anchor-link`.
      * All charts in the report a converted to image and must have the `#chart` tag and must have a unique ID.
-     *
-     * @author Daniel Preciado-Marquez
      */
     protected printReport(): void {
         // Preprocess the report

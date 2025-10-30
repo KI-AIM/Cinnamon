@@ -11,6 +11,7 @@
     --report-color-text: #333f55;
 
     --size-header-footer: 12px;
+    --margin-elements: 15px;
     --margin-text: 0.5rem;
 
     --report-color-header-border: var(--report-color-primary-dark);
@@ -116,7 +117,7 @@
     border-radius: 2px;
     font-size: 1.4em;
     font-weight: bold;
-    margin-bottom: 15px;
+    margin-bottom: var(--margin-elements);
     padding: 7px 15px;
     text-align: left;
 }
@@ -146,10 +147,11 @@
     background-color: var(--report-color-background);
     border-radius: 5px;
     padding: 15px;
-    margin-bottom: 15px;
+    margin-bottom: var(--margin-elements);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 .report-table {
+    margin-bottom: var(--margin-elements);
     width: 100%;
     border-collapse: collapse;
 }

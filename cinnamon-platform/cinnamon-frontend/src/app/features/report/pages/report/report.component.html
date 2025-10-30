@@ -431,6 +431,91 @@
 
                 <div class="report-section">
                     <div class="report-header report-header-s">
+                        Anonymization
+                    </div>
+
+                    <div *ngIf="reportData.pipeline.stages[0].processes[0].externalProcessStatus === ProcessStatus.FINISHED; else noAnonymizationDetails">
+
+                        <p>
+                            The anonymization was performed using the following configuration:
+                        </p>
+
+                        <table class="report-table">
+                            <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>Algorithm</td>
+                                <td>{{ reportData.anonymizationConfig.selectedAlgorithm?.display_name }}</td>
+                            </tr>
+                            <ng-container *ngFor="let group of reportData.anonymizationConfig.algorithmDefinition!.configurations | keyvalue">
+                                <tr *ngFor="let param of group.value.parameters">
+                                    <td> {{ param.label }}</td>
+                                    <td *ngIf="reportData.anonymizationConfig.config[group.key] | isObject as abc" >
+                                        {{ abc[param.name] }}
+                                    </td>
+                                </tr>
+                            </ng-container>
+
+                            <tr *ngFor="let param of reportData.anonymizationConfig.algorithmDefinition?.parameters">
+                                <td> {{ param.label }}</td>
+                                <td></td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <ng-template #noAnonymizationDetails>
+                        No anonymization was performed.
+                    </ng-template>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-header report-header-s">
+                        Synthetization
+                    </div>
+
+                    <p>
+                        The synthetization was performed using the following configuration:
+                    </p>
+
+                    <div *ngIf="reportData.pipeline.stages[0].processes[1].externalProcessStatus === ProcessStatus.FINISHED; else noAnonymizationDetails">
+
+                        <table class="report-table">
+                            <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>Algorithm</td>
+                                <td>{{ reportData.synthetizationConfig.selectedAlgorithm?.display_name }}</td>
+                            </tr>
+                            <ng-container *ngFor="let group of reportData.synthetizationConfig.algorithmDefinition!.configurations | keyvalue">
+                                <tr *ngFor="let param of group.value.parameters">
+                                    <td> {{ param.label }}</td>
+                                    <td *ngIf="reportData.synthetizationConfig.config[group.key] | isObject as nestedGroup">
+                                        {{ nestedGroup[param.name] }}
+                                    </td>
+                                </tr>
+                            </ng-container>
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <ng-template #noAnonymizationDetails>
+                        No synthesis was performed.
+                    </ng-template>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-header report-header-s">
                         Resemblance
                     </div>
 

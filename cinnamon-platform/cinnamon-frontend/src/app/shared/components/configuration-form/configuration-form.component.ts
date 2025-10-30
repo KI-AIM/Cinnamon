@@ -15,7 +15,7 @@ import { DataConfigurationService } from "@shared/services/data-configuration.se
 import { catchError, first, Observable, of, switchMap, tap } from "rxjs";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
-import { AlgorithmService } from "../../services/algorithm.service";
+import { AlgorithmService, ConfigurationObject } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
 import {
     ConfigurationGroupDefinition,
@@ -133,7 +133,7 @@ export class ConfigurationFormComponent implements OnInit {
      * Gets the raw JSON of the form.
      * Removes option groups that are not selected.
      */
-    public get formData(): Object {
+    public get formData(): ConfigurationObject {
         return this.removeUncheckedGroups(this.form.getRawValue());
     }
 

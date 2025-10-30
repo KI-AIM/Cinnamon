@@ -68,6 +68,7 @@ import { FormatNumberPipe } from './pipes/format-number.pipe';
 import { DataInspectionRisksComponent } from './components/data-inspection-risks/data-inspection-risks.component';
 import { RiskColorIndexPipe } from './pipes/risk-color-index.pipe';
 import { RiskConfidenceIntervalPipe } from './pipes/risk-confidence-interval.pipe';
+import { IsObjectPipe } from './pipes/is-object.pipe';
 
 @NgModule({
     declarations: [
@@ -117,6 +118,7 @@ import { RiskConfidenceIntervalPipe } from './pipes/risk-confidence-interval.pip
         FormatNumberPipe,
         InjectMetricImportancePipe,
         InstanceOfPipe,
+        IsObjectPipe,
         MetricFilterPipe,
         MetricSorterPipe,
         NumberToTextPipe,
@@ -162,6 +164,8 @@ import { RiskConfidenceIntervalPipe } from './pipes/risk-confidence-interval.pip
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataInspectionMetricTableComponent,
+        DataInspectionRisksComponent,
+        DataInspectionUtilityComponent,
         DataInspectionUtilityTableComponent,
         DataTableComponent,
         FileUploadComponent,
@@ -181,10 +185,9 @@ import { RiskConfidenceIntervalPipe } from './pipes/risk-confidence-interval.pip
         NoSpaceValidatorDirective,
         // Pipes
         InstanceOfPipe,
+        IsObjectPipe,
         TooltipComponent,
         NumberToTextPipe,
-        DataInspectionRisksComponent,
-        DataInspectionUtilityComponent,
     ],
 })
 export class SharedModule {}

@@ -110,7 +110,7 @@ export class ReportComponent implements OnInit {
             mc: this.projectConfigService.projectSettings$,
             reportData: this.fetchReportData(),
             riskAssessmentConfig: this.riskAssessmentService.fetchConfiguration().pipe(
-                map(value => value.config as RiskAssessmentConfig),
+                map(value => (value.config as any) as RiskAssessmentConfig),
             ),
             risks: this.statisticsService.fetchRisks(),
             statistics: this.statisticsService.fetchResult(),

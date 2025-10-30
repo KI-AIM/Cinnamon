@@ -1,3 +1,4 @@
+import { Configuration } from "@shared/model/configuration";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
@@ -71,6 +72,35 @@ export abstract class AlgorithmService {
             catchError(() => {
                 return of({config: {}, selectedAlgorithm: null});
             })
+        );
+    }
+
+    /**
+     * Returns the selected algorithm, its definition and the configuration object for the process.
+     * @returns Observable for the selected algorithm and configuration.
+     */
+    public getAlgorithmData$(): Observable<AlgorithmData> {
+        return this.fetchConfiguration().pipe(
+            switchMap(value => {
+                if (value.selectedAlgorithm === null) {
+                    return of({
+                        config: value.config,
+                        selectedAlgorithm: null,
+                        algorithmDefinition: null,
+                    });
+                } else {
+                    return this.getAlgorithmDefinition(value.selectedAlgorithm).pipe(
+                        map(def => {
+                            return {
+                                config: value.config,
+                                selectedAlgorithm: value.selectedAlgorithm,
+                                algorithmDefinition: def
+                            }
+                        })
+                    );
+                }
+
+            }),
         );
     }
 
@@ -229,12 +259,25 @@ export interface ProcessInfo {
     holdOutFulfilled: boolean
 }
 
+
+export type ConfigurationObjectType = string | number | boolean | ConfigurationObject;
+
+export type ConfigurationObject = {
+    [parameterName: string]: ConfigurationObjectType;
+};
+
 export interface ConfigData {
-    config: Object,
+    config: ConfigurationObject,
     selectedAlgorithm: Algorithm | null
 }
 
 export interface ReadConfigResult {
-    config: Object,
+    config: ConfigurationObject,
     selectedAlgorithm: Algorithm
+}
+
+export interface AlgorithmData {
+    config: ConfigurationObject,
+    selectedAlgorithm: Algorithm | null
+    algorithmDefinition: AlgorithmDefinition | null
 }

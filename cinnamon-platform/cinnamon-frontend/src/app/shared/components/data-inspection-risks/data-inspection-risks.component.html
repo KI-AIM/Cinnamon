@@ -152,7 +152,7 @@
                                 <span class="metric-similarity"
                                       [style.background-color]="pageData.colorScheme[result.attack_rate.value | riskColorIndex]">
                                 </span>
-                                <span>{{ result.attack_rate?.value  | number:'1.2-2' }}</span>
+                                <span>{{ result.attack_rate.value  | number:'1.2-2' }}</span>
                             </div>
                         </td>
                         <td>
@@ -160,7 +160,7 @@
                                 <span class="metric-similarity"
                                       [style.background-color]="pageData.colorScheme[result.attack_rate.error | riskColorIndex]">
                                 </span>
-                                <span>{{ result.attack_rate?.error  | number:'1.2-2' }}</span>
+                                <span>{{ result.attack_rate.error  | number:'1.2-2' }}</span>
                             </div>
                         </td>
                         <td>

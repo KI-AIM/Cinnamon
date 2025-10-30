@@ -158,8 +158,8 @@ export class ReportComponent implements OnInit {
      * @protected
      */
     protected getUtilityScoreOriginal(statistics: Statistics): number {
-        const resemblance = statistics.Overview.aggregated_metrics[0].overall_resemblance.values.real
-        const utility = statistics.Overview.aggregated_metrics[0].overall_utility.values.real
+        const resemblance = statistics.Overview.aggregated_metrics.overall_resemblance.values.real
+        const utility = statistics.Overview.aggregated_metrics.overall_utility.values.real
         return (resemblance + utility) / 2;
     }
 
@@ -170,8 +170,8 @@ export class ReportComponent implements OnInit {
      * @protected
      */
     protected getUtilityScoreProtected(statistics: Statistics): number {
-        const resemblance = statistics.Overview.aggregated_metrics[0].overall_resemblance.values.synthetic
-        const utility = statistics.Overview.aggregated_metrics[0].overall_utility.values.synthetic
+        const resemblance = statistics.Overview.aggregated_metrics.overall_resemblance.values.synthetic
+        const utility = statistics.Overview.aggregated_metrics.overall_utility.values.synthetic
         return (resemblance + utility) / 2;
     }
 

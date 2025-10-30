@@ -251,11 +251,11 @@
                             <div style="width: 33%;">
                                 <div class="report-text-block">
                                     The protected dataset showed over all a
-                                    <strong>{{ reportData.statistics.statistics.Overview.aggregated_metrics[1].overall_correlation.values.quality | lowercase }}
+                                    <strong>{{ reportData.statistics.statistics.Overview.aggregated_metrics.overall_correlation.values.quality | lowercase }}
                                         quality</strong>, with a <strong>Resemblance Score
-                                    of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_resemblance.values.synthetic | number: '1.0-2' }}</strong>,
+                                    of {{ reportData.statistics.statistics.Overview.aggregated_metrics.overall_resemblance.values.synthetic | number: '1.0-2' }}</strong>,
                                     and a <strong>Machine Learning Utility Score
-                                    of {{ reportData.statistics.statistics.Overview.aggregated_metrics[0].overall_utility.values.synthetic | number: '1.0-2' }}</strong>.
+                                    of {{ reportData.statistics.statistics.Overview.aggregated_metrics.overall_utility.values.synthetic | number: '1.0-2' }}</strong>.
                                 </div>
                                 <div class="report-text-block">
                                     The statistical similarities showed a <strong>difference of

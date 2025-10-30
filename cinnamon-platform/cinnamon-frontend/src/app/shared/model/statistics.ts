@@ -193,7 +193,7 @@ export class OverviewStatistics {
     description: string;
 
     @Type(() => AggregatedMetrics)
-    aggregated_metrics: AggregatedMetrics[];
+    aggregated_metrics: AggregatedMetrics;
 }
 
 export class AggregatedMetrics {

@@ -34,7 +34,7 @@ import { DataConfigurationService } from "@shared/services/data-configuration.se
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
-import { combineLatest, map, Observable, switchMap } from "rxjs";
+import { combineLatest, map, Observable, of, switchMap } from "rxjs";
 import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 import { environments } from "src/environments/environment";
 
@@ -87,7 +87,7 @@ export class ReportComponent implements OnInit {
         anonymizationConfig: AnonymizationAlgorithmData,
         appConfig: AppConfig,
         dataConfiguration: DataConfiguration,
-        datasetInfoAnonymized: DataSetInfo,
+        datasetInfoAnonymized: DataSetInfo | null,
         datasetInfoOriginal: DataSetInfo,
         datasetInfoProtected: DataSetInfo,
         numericalAttributes: NumericAttributes,
@@ -129,7 +129,6 @@ export class ReportComponent implements OnInit {
             anonymizationConfig: this.anonymizationService.getAlgorithmData$(),
             appConfig: this.appConfigService.appConfig$,
             dataConfiguration: this.dataConfigurationService.dataConfiguration$,
-            datasetInfoAnonymized: this.datasetInfoService.getDataSetInfo("anonymization"),
             datasetInfoOriginal: this.datasetInfoService.getDataSetInfo("VALIDATION"),
             datasetInfoProtected: this.datasetInfoService.getDataSetInfo("PROTECTED"),
             mc: this.projectConfigService.projectSettings$,
@@ -142,7 +141,24 @@ export class ReportComponent implements OnInit {
             statistics: this.statisticsService.fetchResult(),
             synthetizationConfig: this.synthetizationService.getAlgorithmData$(),
         }).pipe(
+            switchMap(value => {
+                // Fetch information about the anonymized dataset if anonymization was applied
+                if (value.pipeline.stages[0].processes[0].externalProcessStatus === ProcessStatus.FINISHED) {
+                    return this.datasetInfoService.getDataSetInfo("anonymization").pipe(
+                        map(datasetInfoAnonymized => ({
+                            ...value,
+                            datasetInfoAnonymized: datasetInfoAnonymized,
+                        })),
+                    );
+                } else {
+                    return of({
+                        ...value,
+                        datasetInfoAnonymized: null,
+                    })
+                }
+            }),
             map(value => {
+                // Create the data for the table about the numerical attributes
                return {
                     ...value,
                    numericalAttributes: this.createNumericAttribute(value.statistics.statistics),
@@ -451,7 +467,7 @@ export class ReportComponent implements OnInit {
 }
 
 interface ReportData {
-    [key: string]: ModuleReportContent;
+    [key: string]: ModuleReportContent | null;
 }
 
 interface ModuleReportContent {

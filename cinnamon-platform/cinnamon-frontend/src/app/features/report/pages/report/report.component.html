@@ -115,8 +115,8 @@
 
                     <div style="display: flex; gap: 20px;">
                         <div style="width: 50%;">
-                            <div class="report-text-block">
-                                <!-- TODO handling for not applied method -->
+                            <div *ngIf="reportData.datasetInfoAnonymized != null && reportData.pipeline.stages[0].processes[0].externalProcessStatus === ProcessStatus.FINISHED"
+                                class="report-text-block">
                                 The Cinnamon Platform applies a two-step data protection by first, anonymizing the
                                 dataset and then synthesizing the anonymized data.
                                 <br>
@@ -124,6 +124,18 @@
                                 data records</strong> could be retained during the anonymization.
                                 Then <strong>{{ reportData.datasetInfoProtected.numberRows }} records were
                                 synthesized.</strong>
+                            </div>
+                            <div *ngIf="reportData.datasetInfoAnonymized != null">
+                                The Cinnamon Platform applies a two-step data protection by first, anonymizing the
+                                dataset and then synthesizing the anonymized data.
+                                <br>
+                                Overall, <strong>{{ reportData.datasetInfoAnonymized.numberRetainedRows }} of the
+                                data records</strong> could be retained during the anonymization.
+                            </div>
+                            <div *ngIf="reportData.pipeline.stages[0].processes[1].externalProcessStatus === ProcessStatus.FINISHED">
+                                The Cinnamon Platform applies a one-step data protection by synthesizing the data.
+                                <br>
+                                Overall, <strong>{{ reportData.datasetInfoProtected.numberRows }} records were synthesized.</strong>
                             </div>
                         </div>
                         <div style="width: 50%;">
@@ -168,16 +180,28 @@
 
                     <div>
                         <div class="report-header4">Anonymization</div>
-                        <div class="report-text-block"
+                        <div *ngIf="reportData.reportData['anonymization'] != null; else noAnonymizationOverview"
+                             class="report-text-block"
                              [innerHTML]="reportData.reportData['anonymization'].configDescription">
                         </div>
+                        <ng-template #noAnonymizationOverview>
+                            <div class="report-text-block">
+                                No anonymization was performed.
+                            </div>
+                        </ng-template>
                     </div>
 
                     <div>
                         <div class="report-header4">Synthetization</div>
-                        <div class="report-text-block"
+                        <div *ngIf="reportData.reportData['synthetization'] != null; else noSynthetizationOverview"
+                             class="report-text-block"
                              [innerHTML]="reportData.reportData['synthetization'].configDescription">
                         </div>
+                        <ng-template #noSynthetizationOverview>
+                            <div class="report-text-block">
+                                No synthetization was performed.
+                            </div>
+                        </ng-template>
                     </div>
 
                     <div class="report-header2">Data Protection Results</div>

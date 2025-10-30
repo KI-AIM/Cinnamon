@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { ConfigurationObject, ConfigurationObjectType } from "@shared/services/algorithm.service";
+import { ConfigurationObject, ConfigurationObjectType } from "@shared/model/anonymization-attribute-config";
 
 /**
  * Checks if the given value in a configuration object is a nested group or a parameter with a primitive value.
@@ -7,8 +7,8 @@ import { ConfigurationObject, ConfigurationObjectType } from "@shared/services/a
  * @author Daniel Preciado-Marquez
  */
 @Pipe({
-  name: 'isObject',
-  standalone: false
+    name: 'isObject',
+    standalone: false
 })
 export class IsObjectPipe implements PipeTransform {
 

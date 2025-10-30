@@ -5,7 +5,10 @@ import { MatButton } from "@angular/material/button";
 import { ProcessStatus } from "@core/enums/process-status";
 import { StateManagementService } from "@core/services/state-management.service";
 import { TitleService } from "@core/services/title-service.service";
-import { AnonymizationService } from "@features/anonymization/services/anonymization.service";
+import {
+    AnonymizationAlgorithmData,
+    AnonymizationService
+} from "@features/anonymization/services/anonymization.service";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
 import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
 import { SynthetizationService } from "@features/synthetization/services/synthetization.service";
@@ -13,6 +16,7 @@ import { ChartFrequencyComponent } from "@shared/components/chart-frequency/char
 import {
     MetricTableType
 } from "@shared/components/data-inspection-metric-table/data-inspection-metric-table.component";
+import { AttributeProtectionMetadata } from "@shared/model/anonymization-attribute-config";
 import { DataConfiguration } from "@shared/model/data-configuration";
 import { DataScale } from "@shared/model/data-scale";
 import { DataSetInfo } from "@shared/model/data-set-info";
@@ -59,6 +63,7 @@ export class ReportComponent implements OnInit {
     private readonly baseUrl: string = environments.apiUrl + "/api/report";
     private readonly PAGE_HEIGHT = 1122;
 
+    protected readonly AttributeProtectionMetadata = AttributeProtectionMetadata;
     protected readonly DateFormatConfiguration = DateFormatConfiguration;
     protected readonly DateTimeFormatConfiguration = DateTimeFormatConfiguration;
     protected readonly MetricTableType = MetricTableType;
@@ -79,7 +84,7 @@ export class ReportComponent implements OnInit {
      * @protected
      */
     protected pageData$: Observable<{
-        anonymizationConfig: AlgorithmData,
+        anonymizationConfig: AnonymizationAlgorithmData,
         appConfig: AppConfig,
         dataConfiguration: DataConfiguration,
         datasetInfoAnonymized: DataSetInfo,

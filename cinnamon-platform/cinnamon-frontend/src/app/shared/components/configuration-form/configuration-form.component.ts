@@ -10,12 +10,13 @@ import {
     ViewChildren
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
+import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
 import { DataConfiguration } from "@shared/model/data-configuration";
 import { DataConfigurationService } from "@shared/services/data-configuration.service";
 import { catchError, first, Observable, of, switchMap, tap } from "rxjs";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
-import { AlgorithmService, ConfigurationObject } from "../../services/algorithm.service";
+import { AlgorithmService } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
 import {
     ConfigurationGroupDefinition,

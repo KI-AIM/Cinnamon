@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { ConfigurationObject } from "@shared/services/algorithm.service";
+import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
 import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, throwError, toArray } from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { parse, stringify } from 'yaml';

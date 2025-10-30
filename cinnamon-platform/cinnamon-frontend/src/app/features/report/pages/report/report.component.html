@@ -468,6 +468,27 @@
                             </tbody>
                         </table>
 
+                        <p>
+                            The following attributes were protected during the anonymization:
+                        </p>
+
+                        <table class="report-table">
+                            <thead>
+                            <tr>
+                                <th>Attribute</th>
+                                <th>Protection</th>
+                                <th>Parameter</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr *ngFor="let attr of reportData.anonymizationConfig.config.attributeConfiguration">
+                                <td> {{ attr.name }}</td>
+                                <td> {{ AttributeProtectionMetadata[attr.attributeProtection!].displayName }}</td>
+                                <td> {{ attr.intervalSize }} </td>
+                            </tr>
+                            </tbody>
+                        </table>
+
                     </div>
                     <ng-template #noAnonymizationDetails>
                         No anonymization was performed.

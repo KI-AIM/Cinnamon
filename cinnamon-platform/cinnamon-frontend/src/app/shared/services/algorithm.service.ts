@@ -1,4 +1,4 @@
-import { Configuration } from "@shared/model/configuration";
+import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
@@ -259,13 +259,6 @@ export interface ProcessInfo {
     holdOutFulfilled: boolean
 }
 
-
-export type ConfigurationObjectType = string | number | boolean | ConfigurationObject;
-
-export type ConfigurationObject = {
-    [parameterName: string]: ConfigurationObjectType;
-};
-
 export interface ConfigData {
     config: ConfigurationObject,
     selectedAlgorithm: Algorithm | null
@@ -276,6 +269,10 @@ export interface ReadConfigResult {
     selectedAlgorithm: Algorithm
 }
 
+/**
+ * Contains all information about the selected algorithm and the applied configuration.
+ * Other classes can extend this interface and overwrite the config field with a specialized configuration object.
+ */
 export interface AlgorithmData {
     config: ConfigurationObject,
     selectedAlgorithm: Algorithm | null

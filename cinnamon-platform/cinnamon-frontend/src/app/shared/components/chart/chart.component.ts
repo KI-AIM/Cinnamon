@@ -73,19 +73,18 @@ export class ChartComponent implements OnInit, OnChanges {
         a.click();
     }
 
-    protected graphOptions(simple: boolean): EChartsCoreOption {
+    protected graphOptions(simple: boolean, margins: boolean = true): EChartsCoreOption {
         return {
             grid: {
-                left: simple ? 25 : 70,
-                top: 33,
-                right: 30,
-                bottom: simple ? 20 : 50,
+                left: margins ? (simple ? 25 : 70) : 0,
+                top: margins ? 33 : 0,
+                right: margins ? 30 : 0,
+                bottom: margins ? (simple ? 20 : 50) : 0,
                 borderWidth: 1,
                 borderColor: '#ccc',
                 show: true
             },
         };
-
     }
 
     protected formatNumber(value: number | string, dataType: DataType | null): string {

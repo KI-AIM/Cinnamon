@@ -292,6 +292,28 @@
                                 <div class="d-flex">
                                     <div class="m-auto fw-bold">Correlation Patterns</div>
                                 </div>
+                                <div class="d-flex gap-3">
+                                    <div class="w-50">
+                                        <div class="text-center" style="font-size: 0.9rem;">Correlations: Original</div>
+                                        <app-chart-correlation #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                               [data]="reportData.statistics.statistics.Overview.aggregated_metrics.overall_correlation.values"
+                                                               originalSeriesLabel="Original"
+                                                               overallCorrelationTarget="real" [showMargins]="false"
+                                                               [showVisualMap]="false" [simple]="true"
+                                                               syntheticSeriesLabel="Protected">
+                                        </app-chart-correlation>
+                                    </div>
+                                    <div class="w-50">
+                                        <div class="text-center" style="font-size: 0.9rem;">Correlations: Protected</div>
+                                        <app-chart-correlation #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                               [data]="reportData.statistics.statistics.Overview.aggregated_metrics.overall_correlation.values"
+                                                               originalSeriesLabel="Original"
+                                                               overallCorrelationTarget="synthetic"
+                                                               [showMargins]="false" [showVisualMap]="false"
+                                                               [simple]="true" syntheticSeriesLabel="Protected">
+                                        </app-chart-correlation>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

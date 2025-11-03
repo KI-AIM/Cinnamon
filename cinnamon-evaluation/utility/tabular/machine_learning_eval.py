@@ -132,26 +132,30 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     real_processed = real_processed.dropna()
     synthetic_processed = synthetic_processed.dropna()
     
-    # Set up train (synthetic) and test (real) data
+    # Set up train (synthetic) and real data (to be split)
     X_train = synthetic_processed.drop(columns=[target_variable])
     y_train = synthetic_processed[target_variable]
-    
-    X_test = real_processed.drop(columns=[target_variable])
-    y_test = real_processed[target_variable]
-    
+
+    X_real = real_processed.drop(columns=[target_variable])
+    y_real = real_processed[target_variable]
+
     # For the real model (train and test on real data)
-    # Create a split of real data for comparison
+    # Create a split of real data for comparison and shared evaluation holdout
     X_train_real, X_test_real, y_train_real, y_test_real = train_test_split(
-        X_test, y_test, test_size=test_size, random_state=random_state
+        X_real, y_real, test_size=test_size, random_state=random_state
     )
+
+    # Use the same real holdout for evaluating the synthetic-trained models
+    X_test = X_test_real
+    y_test = y_test_real
     
     if pd.api.types.is_numeric_dtype(y_test):
         print('Regression Activated')
         
         # Scale target variables CONSISTENTLY using the same scaler
         # This avoids distortion when comparing real vs synthetic models
-        y_min = min(y_train.min(), y_test.min())
-        y_max = max(y_train.max(), y_test.max())
+        y_min = min(y_train.min(), y_train_real.min(), y_test.min())
+        y_max = max(y_train.max(), y_train_real.max(), y_test.max())
         
         # Avoid division by zero
         if y_max > y_min:
@@ -197,7 +201,7 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
         print('Classification Activated')
         # Encode labels consistently
         le = LabelEncoder()
-        all_labels = pd.concat([y_train, y_test])
+        all_labels = pd.concat([y_train, y_train_real, y_test])
         le.fit(all_labels)
         
         y_train_encoded = le.transform(y_train)
@@ -277,8 +281,8 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
     categorical_cols_synthetic = synthetic.select_dtypes(include=['object', 'category']).columns
     for col_synth in categorical_cols_synthetic:
         if col_synth not in cols_to_drop:
-            if synthetic[col].nunique(dropna=False) == len(real): # dropna=False to consider NAs as a unique value if present
-                cols_to_drop.append(col)
+            if synthetic[col_synth].nunique(dropna=False) == len(synthetic): # dropna=False to consider NAs as a unique value if present
+                cols_to_drop.append(col_synth)
 
     for col_synth in synthetic.columns:
         if col_synth not in cols_to_drop:

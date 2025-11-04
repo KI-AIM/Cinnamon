@@ -109,13 +109,7 @@ public class HttpService {
 			throws InternalIOException, InternalMissingHandlingException {
 		switch (encoding) {
 			case FILE -> {
-				bodyBuilder.part(partName,
-				                 new ByteArrayResource(configuration.getBytes()) {
-					                 @Override
-					                 public String getFilename() {
-						                 return "synthesizer_config.yaml";
-					                 }
-				                 });
+				addFile(configuration.getBytes(), "synthesizer_config.yaml", partName, bodyBuilder);
 			}
 			case JSON -> {
 				//Convert yaml config to json for anonymization controller
@@ -133,6 +127,25 @@ public class HttpService {
 						"No handling for adding data set of type '" + encoding + "'!");
 			}
 		}
+	}
+
+	/**
+	 * Adds the given file to the body builder.
+	 *
+	 * @param file        Content of the file.
+	 * @param fileName     Name of the file.
+	 * @param partName    The name of the request part.
+	 * @param bodyBuilder The body builder for the request body.
+	 */
+	public void addFile(final byte[] file, final String fileName, final String partName,
+	                    final MultipartBodyBuilder bodyBuilder) {
+		bodyBuilder.part(partName,
+		                 new ByteArrayResource(file) {
+			                 @Override
+			                 public String getFilename() {
+				                 return fileName;
+			                 }
+		                 });
 	}
 
 }

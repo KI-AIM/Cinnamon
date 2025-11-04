@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
@@ -31,13 +32,16 @@ public class ReportService {
 
 	private final CinnamonConfiguration cinnamonConfiguration;
 
+	private final DataProcessorService dataProcessorService;
 	private final ExternalServerInstanceService externalServerInstanceService;
 	private final HttpService httpService;
 
 	public ReportService(final CinnamonConfiguration cinnamonConfiguration,
+	                     final DataProcessorService dataProcessorService,
 	                     final ExternalServerInstanceService externalServerInstanceService,
 	                     final HttpService httpService) {
 		this.cinnamonConfiguration = cinnamonConfiguration;
+		this.dataProcessorService = dataProcessorService;
 		this.externalServerInstanceService = externalServerInstanceService;
 		this.httpService = httpService;
 	}
@@ -52,6 +56,7 @@ public class ReportService {
 	 * @throws InternalMissingHandlingException If generating the request content failed.
 	 * @throws InternalRequestException         If making the request failed.
 	 */
+	@Transactional
 	public Map<String, ModuleReportContent> fetchReportData(final ProjectEntity project)
 			throws InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		final Map<String, ModuleReportContent> reportData = new HashMap<>();
@@ -79,7 +84,7 @@ public class ReportService {
 	 * @throws InternalRequestException         If making the request failed.
 	 */
 	@Nullable
-	public ModuleReportContent fetchReportData(final ExternalProcessEntity externalProcess)
+	private ModuleReportContent fetchReportData(final ExternalProcessEntity externalProcess)
 			throws InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		final ExternalEndpoint endpoint = cinnamonConfiguration.getExternalServerEndpoints()
 		                                                       .get(externalProcess.getEndpoint());
@@ -107,6 +112,13 @@ public class ReportService {
 		final String configuration = externalProcess.getConfigurationString();
 		if (configuration != null) {
 			httpService.addConfig(configuration, StepInputEncoding.JSON, "configuration", bodyBuilder);
+		}
+
+		// Add results
+		final var results = externalProcess.getResultFiles().entrySet();
+		for (final var result : results) {
+			final String partName = dataProcessorService.getFileNameWithoutExtension(result.getKey());
+			httpService.addFile(result.getValue().getLob(), result.getKey(), partName, bodyBuilder);
 		}
 
 		try {

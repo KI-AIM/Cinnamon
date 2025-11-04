@@ -1,4 +1,5 @@
 import errno
+import json
 import multiprocessing
 import os
 import io
@@ -202,6 +203,49 @@ async def load_attribute_config(attribute_config):
 @app.delete("/base_assessments/{process_id}")
 async def cancel_base_assessment(process_id: str = Path()):
     return kill_process(process_id)
+
+
+@app.post("/report")
+async def get_report(
+        risks: UploadFile = File(...),
+):
+    risks_data = json.load(risks.file)
+
+    low_reasons = []
+    high_reasons = []
+
+    linkage = risks_data['linkage_health_risk']['risk_value']
+    if linkage < 0.5:
+        low_reasons.append('Overall low risk that the protected dataset can be used for data linkage')
+    else:
+        high_reasons.append('Overall high risk that the protected dataset can be used for data linkage')
+
+    inference = risks_data['inference_average_risk']['priv_risk']
+    if inference < 0.5:
+        low_reasons.append('Overall low risk that the protected dataset can be used for attribute inference attacks')
+    else:
+        high_reasons.append('Overall high risk that the protected dataset can be used for attribute inference attacks')
+
+    singling_out = risks_data['univariate_singling_out_risk']['risk_value']
+    if singling_out < 0.5:
+        low_reasons.append('Overall low risk that records in the protected data could be clearly separated from other records')
+    else:
+        high_reasons.append('Overall high risk that records in the protected data could be clearly separated from other records')
+
+    overview = '<div class="report-text-block">Scores approaching 1.0 indicate high privacy, while scores near 0.0 signify low privacy and therefore high potential reidentification risks. The probability of the likelihood of a risk is inverse to the privacy score.</div>'
+    overview += f'<div class="report-split"><div class="report-metric-card"><div><strong>Identified High Privacy Risk</strong></div><div><ul>'
+    for reason in high_reasons:
+        overview += f'<li>{reason}</li>'
+
+    overview += '</ul></div></div><div class="report-metric-card"><div><strong>Identified Low Privacy Risk</strong></div><div><ul>'
+
+    for reason in low_reasons:
+        overview += f'<li>{reason}</li>'
+
+    overview += '</ul></div></div></div>'
+
+    report_data = {"configDescription": overview}
+    return JSONResponse(content=report_data, status_code=200)
 
 
 @app.get("/actuator/health")

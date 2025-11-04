@@ -113,9 +113,9 @@
 
                     <div class="report-header2">Data Protection Strategy</div>
 
-                    <div style="display: flex; gap: 20px;">
-                        <div style="width: 50%;">
-                            <div *ngIf="reportData.datasetInfoAnonymized != null && reportData.pipeline.stages[0].processes[0].externalProcessStatus === ProcessStatus.FINISHED"
+                    <div class="report-split">
+                        <div>
+                            <div *ngIf="reportData.datasetInfoAnonymized != null && reportData.pipeline.stages[0].processes[1].externalProcessStatus === ProcessStatus.FINISHED"
                                 class="report-text-block">
                                 The Cinnamon Platform applies a two-step data protection by first, anonymizing the
                                 dataset and then synthesizing the anonymized data.
@@ -125,20 +125,22 @@
                                 Then <strong>{{ reportData.datasetInfoProtected.numberRows }} records were
                                 synthesized.</strong>
                             </div>
-                            <div *ngIf="reportData.datasetInfoAnonymized != null">
-                                The Cinnamon Platform applies a two-step data protection by first, anonymizing the
-                                dataset and then synthesizing the anonymized data.
+                            <div *ngIf="reportData.datasetInfoAnonymized != null && reportData.pipeline.stages[0].processes[1].externalProcessStatus !== ProcessStatus.FINISHED">
+                                The Cinnamon Platform applies a one-step data protection by anonymizing the dataset.
                                 <br>
                                 Overall, <strong>{{ reportData.datasetInfoAnonymized.numberRetainedRows }} of the
                                 data records</strong> could be retained during the anonymization.
                             </div>
-                            <div *ngIf="reportData.pipeline.stages[0].processes[1].externalProcessStatus === ProcessStatus.FINISHED">
+                            <div *ngIf="reportData.datasetInfoAnonymized == null && reportData.pipeline.stages[0].processes[1].externalProcessStatus === ProcessStatus.FINISHED">
                                 The Cinnamon Platform applies a one-step data protection by synthesizing the data.
                                 <br>
                                 Overall, <strong>{{ reportData.datasetInfoProtected.numberRows }} records were synthesized.</strong>
                             </div>
+                            <div *ngIf="reportData.datasetInfoAnonymized == null && reportData.pipeline.stages[0].processes[1].externalProcessStatus !== ProcessStatus.FINISHED">
+                                The Cinnamon Platform applies no data protection.
+                            </div>
                         </div>
-                        <div style="width: 50%;">
+                        <div>
                             <table class="report-table">
                                 <thead>
                                 <tr>
@@ -374,27 +376,14 @@
                     <div>
                         <div class="report-header2">Data Privacy Risks</div>
 
-                        <div class="report-text-block">
-                            Scores approaching 1.0 indicate high privacy, while scores near 0.0 signify low privacy and
-                            therefore high potential reidentification risks. The probability of the likelihood of a risk
-                            is inverse to the privacy score.
+                        <div *ngIf="reportData.reportData['risk_evaluation'] != null; else noRiskOverview"
+                             [innerHTML]="reportData.reportData['risk_evaluation'].configDescription">
                         </div>
-
-                        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 20px;">
-                            <div class="report-metric-card" style="width: 50%; flex: 1; margin: 0 10px 10px 0;">
-                                <div style="font-weight: bold;">Identified High Privacy Risk</div>
-                                <div style="font-size: 24px; color: #3498db;">87%</div>
-                                <div style="font-size: 14px; color: #7f8c8d;">Statistical similarity to original data
-                                </div>
+                        <ng-template #noRiskOverview>
+                            <div class="report-text-block">
+                                No risk assessment was performed.
                             </div>
-                            <div class="report-metric-card" style="width: 50%; flex: 1; margin: 0 10px 10px 0;">
-                                <div style="font-weight: bold;">Identified Low Privacy Risk</div>
-                                <div style="font-size: 24px; color: #3498db;">92%</div>
-                                <div style="font-size: 14px; color: #7f8c8d;">Analytical accuracy compared to original
-                                </div>
-                            </div>
-                        </div>
-
+                        </ng-template>
                     </div>
                 </div>
 

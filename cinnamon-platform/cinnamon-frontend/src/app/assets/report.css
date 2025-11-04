@@ -257,6 +257,14 @@
     page-break-after: always;
     break-after: page;
 }
+.report-split {
+    display: flex;
+    gap: 20px;
+}
+
+.report-split > div {
+    width: 50%;
+}
 
 /* CSS for metric tables */
 

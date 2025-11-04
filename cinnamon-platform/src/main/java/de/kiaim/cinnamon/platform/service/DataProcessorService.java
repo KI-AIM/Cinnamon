@@ -42,6 +42,16 @@ public class DataProcessorService {
 	}
 
 	/**
+	 * Extracts the part before the file extension from the file name.
+	 *
+	 * @param fileName The entire file name with extension.
+	 * @return The file name without extension.
+	 */
+	public String getFileNameWithoutExtension(final String fileName) {
+		return fileName.substring(0, fileName.lastIndexOf('.'));
+	}
+
+	/**
 	 * Validates the given file.
 	 * @param file File to be validated.
 	 * @throws BadFileException If the file is not valid.

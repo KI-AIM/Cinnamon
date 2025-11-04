@@ -31,10 +31,11 @@ import { Statistics, StatisticsResponse, StatisticsValues } from "@shared/model/
 import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
 import { AlgorithmData } from "@shared/services/algorithm.service";
 import { DataConfigurationService } from "@shared/services/data-configuration.service";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
-import { combineLatest, map, Observable, of, switchMap } from "rxjs";
+import { catchError, combineLatest, map, Observable, of, switchMap } from "rxjs";
 import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 import { environments } from "src/environments/environment";
 
@@ -98,7 +99,7 @@ export class ReportComponent implements OnInit {
         riskAssessmentConfig: RiskAssessmentConfig,
         statistics: StatisticsResponse,
         synthetizationConfig: AlgorithmData,
-    }>;
+    } | null>;
 
     @ViewChildren('chart', {read: ElementRef}) protected chartDivs: QueryList<ElementRef<HTMLElement>>;
     @ViewChildren('chart') protected charts: QueryList<ChartFrequencyComponent>;
@@ -112,6 +113,7 @@ export class ReportComponent implements OnInit {
         private readonly appConfigService: AppConfigService,
         private readonly dataConfigurationService: DataConfigurationService,
         private readonly datasetInfoService: DataSetInfoService,
+        private readonly errorHanldingService: ErrorHandlingService,
         private readonly http: HttpClient,
         private projectConfigService: ProjectConfigurationService,
         private readonly riskAssessmentService: RiskAssessmentService,
@@ -163,6 +165,10 @@ export class ReportComponent implements OnInit {
                     ...value,
                    numericalAttributes: this.createNumericAttribute(value.statistics.statistics),
                };
+            }),
+            catchError(error => {
+                this.errorHanldingService.addError(error, "Failed to load report data");
+                return of(null);
             }),
         );
     }

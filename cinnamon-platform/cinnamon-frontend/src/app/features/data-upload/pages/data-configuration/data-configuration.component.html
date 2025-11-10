@@ -61,7 +61,7 @@
                         <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()"
                                                      [columnConfigurationForm]="columnConfig"
                                                      [confidence]="getConfidence(i)" [disabled]="data.locked.isLocked"
-                                                     (onInput)="checkUniqueColumnNames()">
+                                                     [fileType]="data.fileType" (onInput)="checkUniqueColumnNames()">
                         </app-attribute-configuration>
                     </div>
                 </div>

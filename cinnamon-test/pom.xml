@@ -13,6 +13,16 @@
     <name>cinnamon-test</name>
     <description>Project for tests.</description>
 
+    <repositories>
+        <repository>
+            <id>github</id>
+            <name>GitHub FhirExtinguisher</name>
+            <url>https://maven.pkg.github.com/JohannesOehm/FhirExtinguisher</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>de.ki-aim</groupId>

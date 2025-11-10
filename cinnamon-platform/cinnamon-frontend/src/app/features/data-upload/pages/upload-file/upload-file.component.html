@@ -61,7 +61,7 @@
         </ng-template>
 
         <div class="mt-2">
-            <div class="d-flex align-items-center w-100">
+            <div class="config-input-row align-items-center">
                 <app-file-upload accept=".csv,.json,.xlsx" [disabled]="pageData.locked.isLocked"
                                  (input)="onFileInput($event)" class="flex-grow-1"></app-file-upload>
 
@@ -69,20 +69,42 @@
                     <mat-spinner [diameter]="24"></mat-spinner>
                 </div>
                 <div *ngIf="!loadingEstimation" class="ms-1">
-                    <a *ngIf="!isDataFileInvalid" title="Additional Settings"
+                    <a *ngIf="!isDataFileInvalid && fileConfiguration.fileType !== FileType.FHIR" title="Additional Settings"
                        (click)="openDialog(fileConfigurationDialog)" class="icon icon-enabled"
                        [class.icon-error]="isFileConfigurationInvalid()">
                         <mat-icon fontIcon="settings"></mat-icon>
                         <div class="icon-error-background"></div>
                         <mat-icon fontIcon="error" class="icon-error-foreground"></mat-icon>
                     </a>
-                    <span *ngIf="isDataFileInvalid" title="Additional Settings" class="icon-disabled">
+                    <span *ngIf="isDataFileInvalid || fileConfiguration.fileType === FileType.FHIR"
+                          title="Additional Settings" class="icon-disabled">
                         <mat-icon fontIcon="settings"></mat-icon>
                     </span>
                 </div>
 
             </div>
         </div>
+
+        <div *ngIf="!isDataFileInvalid && fileConfiguration.fileType === FileType.FHIR" class="config-input-row mt-4">
+            <mat-form-field class="config-input-row-field">
+                <mat-label>FHIR Resource Type</mat-label>
+                <mat-select [(ngModel)]="this.fileConfiguration.fhirFileConfiguration.resourceType" required>
+                    <mat-option *ngFor="let option of fhirResourceTypes" [value]="option">
+                        {{ option }}
+                    </mat-option>
+                </mat-select>
+                <mat-error>Resource type must be selected</mat-error>
+            </mat-form-field>
+
+            <div class="config-input-row-info">
+                <span>
+                    <app-configuration-input-info [configurationInputDefinition]="fhirResourceTypeDefinition">
+                    </app-configuration-input-info>
+                </span>
+            </div>
+
+        </div>
+
     </ng-template>
 
     <ng-template #configFileUpload>
@@ -97,7 +119,7 @@
     </ng-template>
 
     <ng-template #info>
-        <div>
+        <div class="mt-4">
             <p>
                 <b>Supported File Types:</b>
                 <br/>
@@ -203,6 +225,7 @@
                                     {{ option }}
                                 </mat-option>
                             </mat-select>
+                            <mat-error>Resource type must be selected</mat-error>
                         </mat-form-field>
 
                         <div class="config-input-row-info">

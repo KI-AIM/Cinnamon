@@ -107,9 +107,15 @@
             <ul>
                 <li>CSV Files</li>
                 <li>XLSX Files</li>
-                <li>FHIR Bundles</li>
+                <li>FHIR Bundles (with limitations)</li>
             </ul>
-            FHIR support is under development and will be available soon.<br/><br/>
+            <p>
+                The support for FHIR bundles is still in development and has some limitations.
+                Currently, only one resource contained in the bundle can be imported and anonymized at a time.
+                If the bundle contains multiple resources, each one must be anonymized in a separate project.
+                Furthermore, FHIR bundles can only be exported in tabular form as CSV or XLSX files.
+                The column names correspond to the values' FHIR path and cannot be changed.
+            </p>
 
             <p>
                 <b>File Size Limit:</b>

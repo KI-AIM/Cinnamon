@@ -60,6 +60,11 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String FILE_READING = "11";
 
+	/**
+	 * Exception code for a failed XLSX file reading.
+	 */
+	public static final String XLSX_READING = "12";
+
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

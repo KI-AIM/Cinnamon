@@ -54,42 +54,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Add settings.xml
-#      - name: Configure Maven
-#        run: |
-#          mkdir -p ~/.m2
-#          cat > ~/.m2/settings.xml <<EOF
-#          <settings>
-#            <servers>
-#              <server>
-#                <id>github</id>
-#                <username>${{ github.actor }}</username>
-#                <password>${{ secrets.GH_PACKAGES_TOKEN }}</password>
-#              </server>
-#            </servers>
-#          </settings>
-#          EOF
-
-#      - name: Configure Maven
-#        run: |
-#          mkdir -p ~/.m2
-#          sed -e "s/\${GITHUB_ACTOR}/${{ github.actor }}/g" \
-#              -e "s/\${GH_PACKAGES_TOKEN}/${{ secrets.GH_PACKAGES_TOKEN }}/g" \
-#              .github/maven/settings.xml > ~/.m2/settings.xml'
-
       - name: Configure Maven
         run: |
           mkdir -p ~/.m2
           envsubst < .github/maven/settings.xml > ~/.m2/settings.xml
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
           GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-
-      #      - name: Configure Maven
-#        run: cp .github/maven/settings.xml ~/.m2/settings.xml
-#        env:
-#          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-#          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_ACTOR: ${{ github.actor }}
 
       - name: Install External JAR into Maven Repository
         run: |

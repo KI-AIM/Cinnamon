@@ -55,6 +55,11 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String CSV_READING = "10";
 
+	/**
+	 * Exception code for a failed file reading as bytes.
+	 */
+	public static final String FILE_READING = "11";
+
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

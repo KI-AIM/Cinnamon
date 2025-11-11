@@ -39,6 +39,194 @@ public class CSVProcessingTests {
 	@Autowired
 	CsvProcessor csvProcessor;
 
+	@Test
+	void estimateFileConfigurationRecordSeparatorCR() {
+		String csvData = "id,name,deathdate,smoker,price\r650390,Tonisha Swift,1975-05-08,no,303.23 €";
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertEquals("\r", csvConfig.getLineSeparator());
+	}
+
+	@Test
+	void estimateFileConfigurationRecordSeparatorCRLF() {
+		String csvData = "id,name,deathdate,smoker,price\r\n650390,Tonisha Swift,1975-05-08,no,303.23 €";
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertEquals("\r\n", csvConfig.getLineSeparator());
+	}
+
+	@Test
+	void estimateFileConfigurationRecordSeparatorLF() {
+		String csvData = "id,name,deathdate,smoker,price\n650390,Tonisha Swift,1975-05-08,no,303.23 €";
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertEquals("\n", csvConfig.getLineSeparator());
+	}
+
+	@Test
+	void estimateFileConfigurationColumnSeparatorComma() {
+		String csvData =
+				"""
+				650390,Tonisha Swift,1975-05-08,no,303.23 €
+				208589,Wilson Maggio,1994-02-28,no,23623.18 €
+				452159,Bill Hintz,1987-05-17,no,38.41 €
+				730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
+				614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
+				""";
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertEquals(",", csvConfig.getColumnSeparator());
+	}
+
+	@Test
+	void estimateFileConfigurationColumnSeparatorSemicolon() {
+		String csvData =
+				"""
+				650390;Tonisha Swift;1975-05-08;no;303.23 €
+				208589;Wilson Maggio;1994-02-28;no;23623.18 €
+				452159;Bill Hintz;1987-05-17;no;38.41 €
+				730160;"Heathcote; Nelia";1959-02-03;yes;21.01 €
+				614164;Ms. Chester Keebler;1982-02-20;no;158.79 €
+				""";
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertEquals(";", csvConfig.getColumnSeparator());
+	}
+
+	@Test
+	void estimateFileConfigurationQuoteCharNone() {
+		String csvData =
+				"""
+				650390,Tonisha Swift,1975-05-08,no,303.23 €
+				208589,Wilson Maggio,1994-02-28,no,23623.18 €
+				452159,Bill Hintz,1987-05-17,no,38.41 €
+				730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
+				614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
+				""";
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertEquals('"', csvConfig.getQuoteChar());
+	}
+
+	@Test
+	void estimateFileConfigurationQuoteCharDoubleQuote() {
+		String csvData =
+				"""
+				"650390","Tonisha Swift","1975-05-08","no","303.23 €"
+				"208589","Wilson Maggio","1994-02-28","no","23623.18 €"
+				"452159","Bill Hintz","1987-05-17","no","38.41 €"
+				"730160","Heathcote, Nelia","1959-02-03","yes","21.01 €"
+				"614164","Ms. Chester Keebler","1982-02-20","no","158.79 €"
+				""";
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertEquals('"', csvConfig.getQuoteChar());
+	}
+
+	@Test
+	void estimateFileConfigurationQuoteCharSingleQuote() {
+		String csvData =
+				"""
+				'650390','Tonisha Swift','1975-05-08','no','303.23 €'
+				'208589','Wilson Maggio','1994-02-28','no','23623.18 €'
+				'452159','Bill Hintz','1987-05-17','no','38.41 €'
+				'730160','Heathcote, Nelia','1959-02-03','yes','21.01 €'
+				'614164','Ms. Chester Keebler','1982-02-20','no','158.79 €'
+				""";
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertEquals('\'', csvConfig.getQuoteChar());
+	}
+
+	@Test
+	void estimateFileConfigurationHasHeaderNot() {
+		String csvData =
+				"""
+				650390,Tonisha Swift,1975-05-08,no,303.23 €
+				208589,Wilson Maggio,1994-02-28,no,23623.18 €
+				""".trim();
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertFalse(csvConfig.getHasHeader());
+	}
+
+	@Test
+	void estimateFileConfigurationHasHeaderByAttributeNames() {
+		String csvData =
+				"""
+				id,name,birthdate,smoker,price
+				650390,Tonisha Swift,yesterday,,303.23 €
+				""";
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertTrue(csvConfig.getHasHeader());
+	}
+
+	@Test
+	void estimateFileConfigurationHasHeaderByAttributeTypes() {
+		String csvData =
+				"""
+				id,name,deathdate,smoker,price
+				650390,Tonisha Swift,1975-05-08,no,303.23 €
+				""";
+		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+
+		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
+		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
+		assertNotNull(csvConfig);
+		assertTrue(csvConfig.getHasHeader());
+	}
 
 	@Test
 	void testReadMethodOfCsvProcessor() {

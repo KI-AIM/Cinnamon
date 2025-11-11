@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, TemplateRef } from "@angular/core";
+import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
@@ -46,6 +46,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         locked: LockedInformation;
         status: Status;
     }>;
+
+    @ViewChild("fileConfigurationDialog") private fileConfigurationDialog!: TemplateRef<MatDialog>;
 
     public lineEndings = Object.values(LineEnding);
     public lineEndingLabels: Record<LineEnding, string> = {
@@ -165,6 +167,10 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                     }
 
                     this.loadingEstimation = false;
+
+                    if (value.estimation.fileType === FileType.FHIR) {
+                        this.openDialog(this.fileConfigurationDialog);
+                    }
                 },
                 error: (e) => {
                     this.handleError(e, "Failed to estimate the file configuration");

@@ -85,26 +85,6 @@
             </div>
         </div>
 
-        <div *ngIf="!isDataFileInvalid && fileConfiguration.fileType === FileType.FHIR" class="config-input-row mt-4">
-            <mat-form-field class="config-input-row-field">
-                <mat-label>FHIR Resource Type</mat-label>
-                <mat-select [(ngModel)]="this.fileConfiguration.fhirFileConfiguration.resourceType" required>
-                    <mat-option *ngFor="let option of fhirResourceTypes" [value]="option">
-                        {{ option }}
-                    </mat-option>
-                </mat-select>
-                <mat-error>Resource type must be selected</mat-error>
-            </mat-form-field>
-
-            <div class="config-input-row-info">
-                <span>
-                    <app-configuration-input-info [configurationInputDefinition]="fhirResourceTypeDefinition">
-                    </app-configuration-input-info>
-                </span>
-            </div>
-
-        </div>
-
     </ng-template>
 
     <ng-template #configFileUpload>

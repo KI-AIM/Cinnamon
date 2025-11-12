@@ -21,6 +21,7 @@ export class AttributeConfigurationComponent implements AfterViewInit {
     @Output() onInput = new EventEmitter<any>();
 
     protected readonly FileType = FileType;
+    protected readonly DataType = DataType;
 
     private oldName: string = "";
 

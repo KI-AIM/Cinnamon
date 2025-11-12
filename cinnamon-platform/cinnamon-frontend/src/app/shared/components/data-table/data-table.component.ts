@@ -29,7 +29,6 @@ export class DataTableComponent implements OnInit, AfterViewInit {
 	dataSource = new MatTableDataSource<TableElement>();
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	displayedColumns: string[] = ['position'];
-    protected rowIndexOffset: number = 0;
 	protected errorFilter = "ALL";
     protected holdOutFilter: HoldOutSelector = HoldOutSelector.NOT_HOLD_OUT;
 
@@ -87,7 +86,6 @@ export class DataTableComponent implements OnInit, AfterViewInit {
                             if (value == null) {
                                 return null;
                             }
-                            this.rowIndexOffset = (value.page - 1) * value.perPage;
                             this.isLoading = false;
                             this.total = value.total;
                             return value;
@@ -113,12 +111,11 @@ export class DataTableComponent implements OnInit, AfterViewInit {
      * @param rowNumbers Mapping of row numbers
 	 * @returns Array<TableElement>
 	 */
-	transformDataSet(dataSet: DataSet, rowNumbers: number[] | null) : TableElement[] {
+	transformDataSet(dataSet: DataSet, rowNumbers: number[]) : TableElement[] {
 		const transformedData: TableElement[] = [];
 
 		dataSet.data.forEach((dataRow, index) => {
-            const position = rowNumbers === null ? index : rowNumbers[index]
-			const transformedRow: TableElement = {position: position, errorsInRow: []};
+			const transformedRow: TableElement = {position: rowNumbers[index], errorsInRow: []};
 			dataRow.forEach((dataItem, index) => {
 				const columnName =
 					dataSet.dataConfiguration.configurations[index].name;
@@ -245,7 +242,7 @@ interface TableElement {
 interface DataSetPage {
     data: Array<Array<any>>;
     transformationErrors: DataRowTransformationError[];
-    rowNumbers: number[] | null;
+    rowNumbers: number[];
 
     page: number;
     perPage: number;

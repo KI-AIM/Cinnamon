@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { Observable, tap } from "rxjs";
+import { Observable } from "rxjs";
 import { DataConfiguration } from "../../model/data-configuration";
 import { DataConfigurationService } from "../../services/data-configuration.service";
 import { FormArray, FormControl, FormGroup } from "@angular/forms";
@@ -22,11 +22,7 @@ export class ConfigurationInputAttributeListComponent implements OnInit {
     }
 
     public ngOnInit() {
-        this.dataConfiguration$ = this.dataConfigService.dataConfiguration$.pipe(
-            tap(dataConfiguration => {
-                this.initInverted(dataConfiguration);
-            })
-        );
+        this.dataConfiguration$ = this.dataConfigService.dataConfiguration$;
     }
 
     protected get formArray(): FormArray {
@@ -62,23 +58,6 @@ export class ConfigurationInputAttributeListComponent implements OnInit {
             if (formArrayInverted !== null) {
                 formArrayInverted.push(new FormControl(attributeName));
             }
-        }
-    }
-
-    /**
-     * Fills the array of not selected columns with all attributes.
-     * @param dataConfiguration The data configuration.
-     * @private
-     */
-    private initInverted(dataConfiguration: DataConfiguration) {
-        const formArrayInverted = this.formArrayInverted;
-
-        if (formArrayInverted === null) {
-            return;
-        }
-
-        for (const attribute of dataConfiguration.configurations) {
-            formArrayInverted.push(new FormControl(attribute.name));
         }
     }
 }

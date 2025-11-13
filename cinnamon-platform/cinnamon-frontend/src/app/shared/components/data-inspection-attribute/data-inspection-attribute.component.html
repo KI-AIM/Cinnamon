@@ -30,7 +30,7 @@
         </div>
 
         <!-- Important metrics on the bottom -->
-        <div class="mt-2">
+        <div *ngIf="!hasSynthetic" class="mt-2">
             <div class="fw-bold">
                 Important Statistical Metrics
             </div>
@@ -38,49 +38,116 @@
                 <table>
                     <tr *ngFor="let metricData of projectConfigService.filterMetrics(mc.metricConfiguration, MetricImportance.IMPORTANT, attributeStatistics)">
                         <th>{{ metricData[1].display_name }}:</th>
-                        <td>{{ statisticsService.formatNumber(statisticsService.getValue(metricData[1].values, mainData), {max: 3, min: 3}) }}</td>
+                        <td>{{ statisticsService.formatNumber(statisticsService.getValue(metricData[1].values, mainData), {max: 3, min: 3, dataType: attributeStatistics.attribute_information.type}) }}</td>
                     </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Resemblance overview on the bottom  -->
+        <div *ngIf="hasSynthetic && (metricConfig$ | async) as mc" class="mt-2">
+            <div class="fw-bold">
+               Resemblance Overview
+            </div>
+            <div>
+                <table>
+                    <tr>
+                        <th>Resemblance Score:</th>
+                        <td [ngStyle]="{'color': statisticsService.getColorScheme(mc.metricConfiguration.colorScheme)[attributeStatistics.overview!.resemblance_score.color_index]}">
+                            {{ statisticsService.formatNumber(attributeStatistics.overview!.resemblance_score.value) }}
+                        </td>
+                    </tr>
+
+                    <ng-container *ngIf="!areEnumValuesEqual(DataScale, attributeStatistics.attribute_information.scale, DataScale.NOMINAL)">
+                        <tr>
+                            <th>Mean:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.mean, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Standard Deviation:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.standard_deviation, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Minimum:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.minimum, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Maximum:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.maximum, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Missing Values Count:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.missing_values_count, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                    </ng-container>
+                    <ng-container *ngIf="areEnumValuesEqual(DataScale, attributeStatistics.attribute_information.scale, DataScale.NOMINAL)">
+                        <tr>
+                            <th>Mode:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.mode, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Missing Values Count:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.missing_values_count, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Distinct Values:</th>
+                            <td>{{ statisticsService.formatNumber(attributeStatistics.overview!.distinct_values, { maximumFractionDigits: 0, unit: '%' }) }}</td>
+                        </tr>
+                    </ng-container>
                 </table>
             </div>
         </div>
     </div>
 
     <!-- Graph in the middle -->
-    <div class="" style="flex : 1 1 auto; min-width: 300px;">
+    <div class="" style="flex : 1 1 auto; min-width: 480px;">
 
         <div class="w-100 h-100" *ngIf="metricConfig$ | async as mc;">
-            <ng-container *ngIf="attributeStatistics.plot.density; else frequency">
-                <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="flat-mat-form-button" style="margin-bottom: -32px;">Legend</button>
-                <app-chart-select [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType" [simple]="true"></app-chart-select>
+            <div class="d-flex" style="margin-left: 25px; margin-right: 30px; margin-bottom: -32px; height: 32px;">
+                <button *ngIf="hasSynthetic && graphType !== 'correlation'" mat-flat-button
+                        [matMenuTriggerFor]="colorLegend" class="flat-mat-form-button">
+                    Legend
+                </button>
+                <app-chart-select [comparison]="hasSynthetic" [continuous]="isContinuous()"
+                                  [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType"
+                                  [simple]="true" style="margin-left: auto">
+                </app-chart-select>
+            </div>
 
-                <ng-container *ngIf="graphType === 'density'">
-                    <app-chart-density [colorScheme]="mc.metricConfiguration.colorScheme"
+            <ng-container *ngIf="graphType === 'correlation' && hasSynthetic">
+                <app-chart-correlation [colorScheme]="mc.metricConfiguration.colorScheme"
                                        [columnConfiguration]="attributeStatistics.attribute_information"
-                                       [data]="attributeStatistics.plot.density"
-                                       [originalSeriesLabel]="originalDisplayName" [simple]="true"
-                                       [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-density>
-                </ng-container>
-                <ng-container *ngIf="graphType === 'histogram'">
-                    <app-chart-frequency [colorScheme]="mc.metricConfiguration.colorScheme"
-                                         [data]="attributeStatistics.plot.histogram!" [limit]="null"
-                                         [originalSeriesLabel]="originalDisplayName" [simple]="true"
-                                         [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
-                </ng-container>
-                <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
-                    <app-chart-calendar [data]="attributeStatistics.plot.density" [simple]="true"></app-chart-calendar>
-                </ng-container>
+                                       [data]="attributeStatistics.plot.visualize_columnwise_correlations!"
+                                       [originalSeriesLabel]="originalDisplayName"
+                                       [simple]="true"
+                                       [syntheticSeriesLabel]="syntheticDisplayName">
+                </app-chart-correlation>
             </ng-container>
-            <ng-template #frequency>
-                <button *ngIf="hasSynthetic" mat-flat-button [matMenuTriggerFor]="colorLegend" class="flat-mat-form-button" style="margin-bottom: 2px;">Legend</button>
-                <ng-container *ngIf="attributeStatistics.plot.frequency_plot; else noChart">
-                    <app-chart-frequency [colorScheme]="mc.metricConfiguration.colorScheme"
-                                         [data]="attributeStatistics.plot.frequency_plot" [limit]="null"
-                                         [originalSeriesLabel]="originalDisplayName" [simple]="true"
-                                         [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
-                </ng-container>
-            </ng-template>
-            <ng-template #noChart>
-            </ng-template>
+            <ng-container *ngIf="graphType === 'density' && isContinuous()">
+                <app-chart-density [colorScheme]="mc.metricConfiguration.colorScheme"
+                                   [columnConfiguration]="attributeStatistics.attribute_information"
+                                   [data]="attributeStatistics.plot.density!"
+                                   [originalSeriesLabel]="originalDisplayName" [simple]="true"
+                                   [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-density>
+            </ng-container>
+            <ng-container *ngIf="graphType === 'histogram' && isContinuous()">
+                <app-chart-frequency [colorScheme]="mc.metricConfiguration.colorScheme"
+                                     [columnConfiguration]="attributeStatistics.attribute_information"
+                                     [data]="attributeStatistics.plot.histogram!" [limit]="null"
+                                     [originalSeriesLabel]="originalDisplayName" [simple]="true"
+                                     [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
+            </ng-container>
+            <ng-container *ngIf="graphType === 'frequency' && !isContinuous()">
+                <app-chart-frequency [colorScheme]="mc.metricConfiguration.colorScheme"
+                                     [columnConfiguration]="attributeStatistics.attribute_information"
+                                     [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
+                                     [originalSeriesLabel]="originalDisplayName" [simple]="true"
+                                     [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
+            </ng-container>
+            <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
+                <app-chart-calendar [columnConfiguration]="attributeStatistics.attribute_information"
+                                    [data]="attributeStatistics.plot.density!" [simple]="true"></app-chart-calendar>
+            </ng-container>
         </div>
     </div>
 

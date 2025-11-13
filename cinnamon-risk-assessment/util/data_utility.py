@@ -6,6 +6,13 @@ from models.AttributeConfig import AttributeConfigList
 
 def prepare_dataset(data: pd.DataFrame,
                     attribute_config: AttributeConfigList) -> pd.DataFrame:
+    # Convert string columns to actual strings, as pandas creates object columns.
+    # Having only numbers in an object column can lead to implicit conversions into numeric columns,
+    # which can cause inconsistencies between the different datasets/ splits.
+    for attr in attribute_config.configurations:
+        if attr.type == "STRING":
+            data[attr.name] = data[attr.name].astype("string")
+
     return data
 
 

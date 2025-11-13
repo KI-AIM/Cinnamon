@@ -33,6 +33,11 @@ public class InternalInvalidStateException extends InternalException {
 	 */
 	public static final String MISSING_STAGE = "5";
 
+	/**
+	 * Exception code for unset server instances.
+	 */
+	public static final String NO_SERVER_INSTANCE_SET = "6";
+
 	public InternalInvalidStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

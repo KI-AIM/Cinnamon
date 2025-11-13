@@ -30,6 +30,11 @@ public class CinnamonConfiguration {
 
 	private Map<String, ExternalConfiguration> externalConfiguration = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
+	/**
+	 * Hosts that are running external server instances.
+	 */
+	private Map<String, ExternalHost> externalHost = new HashMap<>();
+
 	private Map<String, ExternalServer> externalServer = new HashMap<>();
 
 	private Map<Integer, ExternalEndpoint> externalServerEndpoints = new HashMap<>();

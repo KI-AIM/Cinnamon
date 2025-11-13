@@ -27,8 +27,8 @@ class RiskAssessmentConfig(BaseModel):
     n_outlier_targets: int
     n_iterations: int
     columns_excluded: List[str]
-    linkage: Optional[LinkageConfig]
-    singlingout_uni: Optional[SinglingOutConfig] = Field(alias="singlingout-uni")
-    singlingout_multi: Optional[SinglingOutConfig] = Field(alias="singlingout-multi")
-    attribute_inference: Optional[AttributeInferenceConfig]
-    metrics: Optional[MetricsConfig]
+    linkage: Optional[LinkageConfig] = None
+    singlingout_uni: Optional[SinglingOutConfig] = None
+    singlingout_multi: Optional[SinglingOutConfig] = None
+    attribute_inference: Optional[AttributeInferenceConfig] = None
+    metrics: Optional[MetricsConfig] = None

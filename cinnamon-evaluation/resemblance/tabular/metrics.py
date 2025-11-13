@@ -1,8 +1,12 @@
+from typing import Dict, Union, Optional, Any, List
+
 import numpy as np
 import pandas as pd
 from scipy import stats
 from scipy.spatial import distance
 from scipy.stats import gaussian_kde
+import phik 
+import math
 
 
 def validate_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> tuple:
@@ -174,28 +178,38 @@ def calculate_variance(real, synthetic):
         raise Exception(f"Error calculating variances: {str(e)}")
 
 
-def calculate_fifth_percentile(real, synthetic):
+def calculate_fifth_percentile(real: pd.DataFrame, synthetic: pd.DataFrame) -> Dict[str, Dict[str, float]]:
     """
-    Calculate 5th percentile for each numeric attribute of the two tables. Returns a dictionary with the 5th percentile
-    values for each attribute.
+    Calculate 5th percentile for each numeric attribute of the two tables.
+    Marks columns that are entirely missing with 'NA'.
 
     Args:
         real (pandas.DataFrame): The real data.
         synthetic (pandas.DataFrame): The synthetic data.
 
     Returns:
-        dict: A dictionary with the 5th percentile values for each attribute.
+        dict: A dictionary with the 5th percentile values for each attribute,
+              which can be a float or the string 'NA'.
     """
     fifth_percentile_dict = {'real': {}, 'synthetic': {}}
     try:
         real_numeric, synthetic_numeric = validate_numeric_dataframes(real, synthetic)
         for column in real_numeric.columns:
-            fifth_percentile_dict['real'][column] = float(real_numeric[column].quantile(0.05))
-            fifth_percentile_dict['synthetic'][column] = float(synthetic_numeric[column].quantile(0.05))
-            return fifth_percentile_dict
-    except Exception as e:
-        raise Exception(f"Error calculating variances: {str(e)}")
+            real_col_data = real_numeric[column]
+            if real_col_data.isna().all():
+                fifth_percentile_dict['real'][column] = 'NA'
+            else:
+                fifth_percentile_dict['real'][column] = float(real_col_data.quantile(0.05))
 
+            synthetic_col_data = synthetic_numeric[column]
+            if synthetic_col_data.isna().all():
+                fifth_percentile_dict['synthetic'][column] = 'NA'
+            else:
+                fifth_percentile_dict['synthetic'][column] = float(synthetic_col_data.quantile(0.05))
+
+        return fifth_percentile_dict
+    except Exception as e:
+        raise Exception(f"Error calculating 5th percentile: {str(e)}")
 
 def calculate_q1(real, synthetic):
     """
@@ -479,7 +493,7 @@ def calculate_kolmogorov_smirnov(real, synthetic):
         raise Exception(f"Error calculating Kolmogorov-Smirnov test: {str(e)}")
 
 
-def calculate_density(real, synthetic, num_points=50):
+def calculate_density(real: pd.DataFrame, synthetic: pd.DataFrame, num_points: int = 50) -> Dict[str, Dict[str, Union[str, List[float]]]]:
     """
     Calculates the density function for each numeric attribute with error handling and validation.
 
@@ -500,75 +514,75 @@ def calculate_density(real, synthetic, num_points=50):
             real_col_data = real_numeric[column].dropna()
             synthetic_col_data = synthetic_numeric[column].dropna()
 
-            if len(real_col_data) < 2 or len(synthetic_col_data) < 2:
-                density_results['real'][column] = {
-                    'x_values': 'NA',
-                    'density': 'NA',
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 0
-                }
-                density_results['synthetic'][column] = {
-                    'x_values': 'NA',
-                    'density': 'NA',
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 1
-                }
-                continue
+            len_real = len(real_col_data)
+            len_synthetic = len(synthetic_col_data)
 
-            try:
+            # Determine the range for x_values based on available data
+            min_val = None
+            max_val = None
+            use_real_range = len_real >= 2
+            use_synthetic_range = len_synthetic >= 2
+
+            if use_real_range and use_synthetic_range:
                 min_val = min(real_col_data.min(), synthetic_col_data.min())
                 max_val = max(real_col_data.max(), synthetic_col_data.max())
+            elif use_real_range:
+                min_val = real_col_data.min()
+                max_val = real_col_data.max()
+            elif use_synthetic_range:
+                min_val = synthetic_col_data.min()
+                max_val = synthetic_col_data.max()
+            else:
+                # Neither has sufficient data, use a default range
+                min_val = 0.0
+                max_val = 1.0
 
-                if min_val == max_val:
-                    min_val -= 0.5
-                    max_val += 0.5
+            # Add a buffer if min and max are identical to avoid issues with linspace/KDE
+            if min_val == max_val:
+                buffer = 0.5 if min_val == 0 else abs(min_val) * 0.1 + 0.5 # Small buffer relative to value or default
+                min_val -= buffer
+                max_val += buffer
 
-                x_values = np.linspace(min_val, max_val, num_points)
 
+            x_values = np.linspace(min_val, max_val, num_points).tolist()
+
+            # Calculate real density or assign zeros
+            if len_real < 2:
+                density_real = np.zeros(num_points).tolist()
+            else:
                 try:
                     kde_real = gaussian_kde(real_col_data)
-                    density_real = kde_real(x_values)
+                    density_real = kde_real(x_values).tolist()
                 except Exception:
-                    density_real = np.zeros(num_points)
+                    # KDE calculation failed even with >= 2 points (e.g., all same value)
+                    density_real = np.zeros(num_points).tolist()
 
+            # Calculate synthetic density or assign zeros
+            if len_synthetic < 2:
+                density_synthetic = np.zeros(num_points).tolist()
+            else:
                 try:
                     kde_synthetic = gaussian_kde(synthetic_col_data)
-                    density_synthetic = kde_synthetic(x_values)
+                    density_synthetic = kde_synthetic(x_values).tolist()
                 except Exception:
-                    density_synthetic = np.zeros(num_points)
+                    # KDE calculation failed even with >= 2 points
+                    density_synthetic = np.zeros(num_points).tolist()
 
-                density_results['real'][column] = {
-                    'x_values': x_values.tolist(),
-                    'density': density_real.tolist(),
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 0
-                }
-                density_results['synthetic'][column] = {
-                    'x_values': x_values.tolist(),
-                    'density': density_synthetic.tolist(),
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 1
-                }
-
-            except Exception as e:
-                density_results['real'][column] = {
-                    'x_values': 'Error',
-                    'density': f'Error calculating density: {str(e)}',
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 0
-                }
-                density_results['synthetic'][column] = {
-                    'x_values': 'Error',
-                    'density': f'Error calculating density: {str(e)}',
-                    'x_axis': column,
-                    'y_axis': "Frequency",
-                    'color_index': 1
-                }
+            # Assign results for the column
+            density_results['real'][column] = {
+                'x_values': x_values,
+                'density': density_real,
+                'x_axis': column,
+                'y_axis': "Frequency",
+                'color_index': 0
+            }
+            density_results['synthetic'][column] = {
+                'x_values': x_values,
+                'density': density_synthetic,
+                'x_axis': column,
+                'y_axis': "Frequency",
+                'color_index': 1
+            }
 
         return density_results
 
@@ -576,27 +590,67 @@ def calculate_density(real, synthetic, num_points=50):
         raise Exception(f"Error calculating density functions: {str(e)}")
 
 
-def calculate_histogram(real, synthetic, method='auto', max_bins=25):
+def calculate_histogram(real: pd.DataFrame, synthetic: pd.DataFrame, method: str = 'auto', max_bins: int = 15) -> dict:
     """
     Calculates histogram configurations for numeric columns with error handling, using percentages instead of counts.
+    Uses adaptive bin formatting based on data range and scientific notation for extreme values.
 
     Args:
-        real (pandas.DataFrame): The real dataframe.
-        synthetic (pandas.DataFrame): The synthetic dataframe.
-        method (str, optional): The method to use for calculating the histogram. Defaults to 'auto'.
+        real: The real dataframe
+        synthetic: The synthetic dataframe
+        method: The method to use for calculating the histogram
+        max_bins: Maximum number of bins to use
 
     Returns:
-        dict: A dictionary containing the histogram configurations for each column in the real and synthetic dataframes.
+        A dictionary containing the histogram configurations for each column in the real and synthetic dataframes
     """
 
-    def get_color_index(perc_difference):
+    def get_color_index(perc_difference: float) -> int:
         capped_diff = min(100, max(0, perc_difference))
         return min(10, max(1, int(capped_diff / 10) + 1))
 
-    def calculate_percentage_diff(orig_value, syn_value):
+    def calculate_percentage_diff(orig_value: float, syn_value: float) -> float:
         if orig_value == 0:
             return 100 if syn_value > 0 else 0
         return abs((syn_value - orig_value) / orig_value * 100)
+    
+    def get_optimal_format(min_val: float, max_val: int, num_bins: int) -> callable:
+        range_span = max_val - min_val
+        bin_width = range_span / num_bins if num_bins > 0 else range_span
+
+        if bin_width == 0 or not np.isfinite(bin_width):
+            decimal_places_for_all = 2
+        else:
+            if abs(bin_width) < 0.0001 and abs(bin_width) > 0:
+                decimal_places_for_all = max(0, int(-math.log10(bin_width) + 2))
+                if decimal_places_for_all > 6:
+                    decimal_places_for_all = 6
+            elif range_span < 10:
+                decimal_places_for_all = 2
+            elif range_span < 50:
+                decimal_places_for_all = 1
+            elif range_span < 1000:
+                decimal_places_for_all = 0
+            else:
+                decimal_places_for_all = 0
+
+        use_scientific_notation = range_span > 10000 or abs(min_val) > 100000 or abs(max_val) > 100000
+
+        def format_value(value: float) -> str:
+            if not np.isfinite(value):
+                if np.isposinf(value):
+                    return "Infinity"
+                elif np.isneginf(value):
+                    return "-Infinity"
+                else:
+                    return "NaN"
+
+            if use_scientific_notation or (abs(value) > 0 and abs(value) < 0.0001) or abs(value) >= 1000000:
+                return f"{value:.2e}"
+
+            return f"{value:.{decimal_places_for_all}f}"
+
+        return format_value
 
     histogram_results = {'real': {}, 'synthetic': {}}
 
@@ -608,8 +662,19 @@ def calculate_histogram(real, synthetic, method='auto', max_bins=25):
                 real_data = real_numeric[column].dropna()
                 synthetic_data = synthetic_numeric[column].dropna()
 
-                # Skip if not enough data points
-                if len(real_data) == 0 or len(synthetic_data) == 0:
+                real_finite = real_data[np.isfinite(real_data)]
+                synthetic_finite = synthetic_data[np.isfinite(synthetic_data)]
+
+                len_real_finite = len(real_finite)
+                len_synthetic_finite = len(synthetic_finite)
+
+                bins = None
+                data_min = None
+                data_max = None
+
+                if len_real_finite == 0:
+                    # Real data is missing or all non-finite, cannot determine bins from real.
+                    # Assign empty result for both.
                     empty_result = {
                         'frequencies': [],
                         'x_axis': column,
@@ -617,75 +682,133 @@ def calculate_histogram(real, synthetic, method='auto', max_bins=25):
                     }
                     histogram_results['real'][column] = empty_result
                     histogram_results['synthetic'][column] = empty_result
-                    continue
+                    continue # Move to the next column
 
-                combined_data = np.concatenate([real_data, synthetic_data])
-                try:
-                    initial_bins = np.histogram_bin_edges(combined_data, bins=method)
-                except Exception:
-                    # Fallback to linear bins if auto method fails
-                    initial_bins = np.linspace(combined_data.min(), combined_data.max(),
-                                               min(max_bins, len(np.unique(combined_data))) + 1)
+                elif len_synthetic_finite == 0:
+                    # Real data is available and finite, synthetic is missing or all non-finite.
+                    # Calculate bins from real data only.
+                    data_min = real_finite.min()
+                    data_max = real_finite.max()
 
-                bins = initial_bins if len(initial_bins) - 1 <= max_bins else \
-                    np.linspace(combined_data.min(), combined_data.max(), max_bins + 1)
+                    try:
+                        initial_bins = np.histogram_bin_edges(real_finite, bins=method)
+                    except Exception:
+                         initial_bins = np.linspace(data_min, data_max, min(max_bins, len(np.unique(real_finite))) + 1)
 
-                bin_labels = [f"{bins[i]:.2f} | {bins[i + 1]:.2f}"
-                              for i in range(len(bins) - 1)]
+                    bins = initial_bins if len(initial_bins) - 1 <= max_bins else \
+                         np.linspace(data_min, data_max, max_bins + 1)
 
-                real_hist, _ = np.histogram(real_data, bins=bins)
-                synthetic_hist, _ = np.histogram(synthetic_data, bins=bins)
+                    # Calculate real histogram
+                    real_hist, _ = np.histogram(real_finite, bins=bins)
+                    real_percentages = (real_hist / len_real_finite * 100) if len_real_finite > 0 else real_hist * 0
 
-                real_total = len(real_data)
-                synthetic_total = len(synthetic_data)
-                real_percentages = (real_hist / real_total * 100) if real_total > 0 else real_hist * 0
-                synthetic_percentages = (
-                        synthetic_hist / synthetic_total * 100) if synthetic_total > 0 else synthetic_hist * 0
+                    # Synthetic histogram is all zeros using the same bins
+                    synthetic_hist = np.zeros_like(real_hist)
+                    synthetic_percentages = np.zeros_like(real_percentages) # Will be zeros
 
-                color_indices = {
-                    bin_labels[i]: get_color_index(
-                        calculate_percentage_diff(real_perc, syn_perc)
-                    )
-                    for i, (real_perc, syn_perc) in enumerate(zip(real_percentages, synthetic_percentages))
-                }
 
-                real_frequencies = [
-                    {
-                        'label': str(bin_label),
-                        'value': float(percentage),
-                        'color_index': 0
+                else:
+                    # Both real and synthetic have finite data.
+                    # Calculate bins from combined finite data.
+                    combined_finite = np.concatenate([real_finite, synthetic_finite])
+
+                    if len(combined_finite) == 0:
+                         empty_result = {
+                            'frequencies': [],
+                            'x_axis': column,
+                            'y_axis': "Percentage"
+                        }
+                         histogram_results['real'][column] = empty_result
+                         histogram_results['synthetic'][column] = empty_result
+                         continue # Move to the next column
+
+
+                    data_min = combined_finite.min()
+                    data_max = combined_finite.max()
+
+                    try:
+                        initial_bins = np.histogram_bin_edges(combined_finite, bins=method)
+                    except Exception:
+                        initial_bins = np.linspace(data_min, data_max, min(max_bins, len(np.unique(combined_finite))) + 1)
+
+
+                    bins = initial_bins if len(initial_bins) - 1 <= max_bins else \
+                        np.linspace(data_min, data_max, max_bins + 1)
+
+                    # Calculate both real and synthetic histograms using combined bins
+                    real_hist, _ = np.histogram(real_finite, bins=bins)
+                    synthetic_hist, _ = np.histogram(synthetic_finite, bins=bins)
+
+                    real_percentages = (real_hist / len_real_finite * 100) if len_real_finite > 0 else real_hist * 0
+                    synthetic_percentages = (
+                        synthetic_hist / len_synthetic_finite * 100) if len_synthetic_finite > 0 else synthetic_hist * 0
+
+                # If bins were calculated (i.e., not the len_real_finite == 0 case)
+                if bins is not None:
+                    num_bins = len(bins) - 1
+
+                    # Get the adaptive formatter function based on the data range used for bins
+                    format_value = get_optimal_format(data_min, data_max, num_bins)
+
+                    # Create bin labels with adaptive formatting
+                    bin_labels = [f"{format_value(bins[i])} | {format_value(bins[i + 1])}"
+                                  for i in range(len(bins) - 1)]
+
+                    color_indices = {
+                        bin_labels[i]: get_color_index(
+                            calculate_percentage_diff(real_perc, syn_perc)
+                        )
+                        for i, (real_perc, syn_perc) in enumerate(zip(real_percentages, synthetic_percentages))
                     }
-                    for bin_label, percentage in zip(bin_labels, real_percentages)
-                ]
 
-                synthetic_frequencies = [
-                    {
-                        'label': str(bin_label),
-                        'value': float(percentage),
-                        'color_index': color_indices[bin_label]
+                    real_frequencies = [
+                        {
+                            'label': str(bin_label),
+                            'value': float(percentage),
+                            'color_index': 0
+                        }
+                        for bin_label, percentage in zip(bin_labels, real_percentages)
+                    ]
+
+                    synthetic_frequencies = [
+                        {
+                            'label': str(bin_label),
+                            'value': float(percentage),
+                            'color_index': color_indices[bin_label]
+                        }
+                        for bin_label, percentage in zip(bin_labels, synthetic_percentages)
+                    ]
+
+                    histogram_results['real'][column] = {
+                        'frequencies': real_frequencies,
+                        'x_axis': column,
+                        'y_axis': "Percentage"
                     }
-                    for bin_label, percentage in zip(bin_labels, synthetic_percentages)
-                ]
 
-                histogram_results['real'][column] = {
-                    'frequencies': real_frequencies,
-                    'x_axis': column,
-                    'y_axis': "Percentage"
-                }
-
-                histogram_results['synthetic'][column] = {
-                    'frequencies': synthetic_frequencies,
-                    'x_axis': column,
-                    'y_axis': "Percentage"
-                }
+                    histogram_results['synthetic'][column] = {
+                        'frequencies': synthetic_frequencies,
+                        'x_axis': column,
+                        'y_axis': "Percentage"
+                    }
 
             except Exception as e:
-                raise Exception(f"Error calculating histograms: {str(e)}")
+                 # Assign empty result for both on per-column error
+                 print(f"Warning: Error calculating histograms for column {column}: {str(e)}. Skipping column.")
+                 empty_result = {
+                    'frequencies': [],
+                    'x_axis': column,
+                    'y_axis': "Percentage"
+                }
+                 histogram_results['real'][column] = empty_result
+                 histogram_results['synthetic'][column] = empty_result
+
 
         return histogram_results
 
     except Exception as e:
-        raise Exception(f"Error calculating histograms: {str(e)}")
+        # Handle errors that occur outside the per-column calculation loop (e.g. in validate_numeric_dataframes)
+        print(f"Error calculating histograms: {str(e)}. Returning empty results.")
+        return {'real': {}, 'synthetic': {}}
 
 
 def calculate_frequencies(real, synthetic):
@@ -894,35 +1017,340 @@ def calculate_distinct_values(real, synthetic):
         raise ValueError(f"Error calculating distinct values: {str(e)}")
 
 
-def pairwise_correlation(real, synthetic):
+def calculate_columnwise_correlations(
+    real: pd.DataFrame, synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, float]]:
     """
-    Calculates the pairwise correlation between categorical columns in a dataframe.
+    Calculate a single correlation value for each attribute that represents its
+    correlation with all other attributes combined.
+
+    Handles columns with constant values by assigning them a correlation of 0.0,
+    properly managing both numerical and categorical data types.
 
     Args:
-        real (pandas.DataFrame): The real dataframe.
-        synthetic (pandas.DataFrame): The synthetic dataframe.
+        real (pd.DataFrame): The real data table.
+        synthetic (pd.DataFrame): The synthetic data table.
 
     Returns:
-        dict: A dictionary containing the pairwise correlation between each categorical column in the dataframes.
+        Dict: A nested dictionary with 'real' and 'synthetic' as top-level keys,
+              column names as second-level keys, and a single correlation value for each column.
     """
+    column_correlations = {"real": {}, "synthetic": {}}
+
     try:
-        real_categorical, synthetic_categorical = validate_categorical_dataframes(real, synthetic)
+        for df, df_name in [(real, "real"), (synthetic, "synthetic")]:
+            constant_cols = [
+                col for col in df.columns if df[col].nunique(dropna=False) <= 1
+            ]
+            # Identify columns that are NOT constant
+            varying_cols = [col for col in df.columns if col not in constant_cols]
 
-        real_encoded = pd.get_dummies(real_categorical)
-        synthetic_encoded = pd.get_dummies(synthetic_categorical)
-        real_encoded, synthetic_encoded = real_encoded.align(synthetic_encoded, join='outer', axis=1, fill_value=0)
+            # Calculate the full phik matrix once for all varying columns
+            # This is the primary optimization for speed
+            full_phik_matrix = pd.DataFrame()
+            if len(varying_cols) > 1:
+                try:
+                    full_phik_matrix = df[varying_cols].phik_matrix()
+                except Exception as e:
+                    print(
+                        f"Warning: Error calculating full phik_matrix for {df_name} data: {e}. "
+                        "Falling back to pairwise calculation where possible."
+                    )
+                    full_phik_matrix = pd.DataFrame() # Reset to empty if full matrix calculation fails
 
-        correlation_real = real_encoded.corr()
-        correlation_synthetic = synthetic_encoded.corr()
-        correlation_diff = correlation_real - correlation_synthetic
+            for current_col in df.columns:
+                if current_col in constant_cols:
+                    column_correlations[df_name][current_col] = 0.0
+                else:
+                    correlation_values = []
+                    for other_col in df.columns:
+                        if current_col == other_col:
+                            continue # Skip self-correlation
 
-        return {
-            'correlation_real': correlation_real,
-            'correlation_synthetic': correlation_synthetic,
-            'correlation_difference': correlation_diff
-        }
+                        if other_col in constant_cols:
+                            correlation_values.append(0.0)
+                            continue
+
+                        # Prioritize fetching from the pre-calculated full matrix
+                        if (
+                            not full_phik_matrix.empty
+                            and current_col in full_phik_matrix.index
+                            and other_col in full_phik_matrix.columns
+                        ):
+                            try:
+                                corr_val = float(
+                                    full_phik_matrix.loc[current_col, other_col]
+                                )
+                                correlation_values.append(corr_val)
+                            except Exception as inner_e:
+                                # This block handles cases where value might be missing from matrix,
+                                # even if index/columns are present (e.g., NaN internal to matrix)
+                                print(
+                                    f"Warning: Could not get correlation for {current_col}-{other_col} "
+                                    f"from pre-calculated matrix in {df_name}: {inner_e}. Falling back."
+                                )
+                                # Fallback to direct pairwise calculation
+                                try:
+                                    temp_df = df[[current_col, other_col]]
+                                    pair_corr_matrix = temp_df.phik_matrix()
+                                    pair_corr_val = float(
+                                        pair_corr_matrix.loc[current_col, other_col]
+                                    )
+                                    correlation_values.append(pair_corr_val)
+                                except Exception as fallback_e:
+                                    print(
+                                        f"Warning: Fallback pairwise calculation failed for {current_col}-{other_col} "
+                                        f"in {df_name}: {fallback_e}. Setting to NaN."
+                                    )
+                                    correlation_values.append('NA')
+                        else:
+                            try:
+                                temp_df = df[[current_col, other_col]]
+                                pair_corr_matrix = temp_df.phik_matrix()
+                                pair_corr_val = float(
+                                    pair_corr_matrix.loc[current_col, other_col]
+                                )
+                                correlation_values.append(pair_corr_val)
+                            except Exception as fallback_e:
+                                print(
+                                    f"Warning: Direct pairwise calculation failed for {current_col}-{other_col} "
+                                    f"in {df_name}: {fallback_e}. Setting to NaN."
+                                )
+                                correlation_values.append('NA')
+
+                    # Calculate the mean, ignoring NaNs introduced by problematic correlations
+                    if correlation_values:
+                        mean_val = float(np.mean(correlation_values))
+                        if np.isnan(mean_val):
+                            column_correlations[df_name][current_col] = 0.0
+                        else:
+                            column_correlations[df_name][current_col] = mean_val
+                    else:
+                        column_correlations[df_name][current_col] = 0.0
+
+        return column_correlations
+
     except Exception as e:
-        raise ValueError(f"Error calculating correlations: {str(e)}")
+        print(
+            f"Warning: Critical error during correlation calculation: {str(e)}. Setting all correlations to 'NA'."
+        )
+        for df_name, df_data in [("real", real), ("synthetic", synthetic)]:
+            for column in df_data.columns:
+                column_correlations[df_name][column] = "NA"
+        return column_correlations
+
+def calculate_columnwise_correlations_distance(
+    real: pd.DataFrame, synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, float]]:
+    """
+    Calculate the mean absolute difference in pairwise correlations for each attribute
+    between the real and synthetic datasets, structured for frontend consumption.
+
+    For each attribute (column), the value under the 'synthetic' key represents
+    the average of the absolute differences between its pairwise correlations
+    (with all other attributes) in the real dataset versus in the synthetic dataset.
+    The 'real' key will contain 0.0 for all attributes.
+
+    Handles columns with constant values by assigning them a correlation of 0.0.
+    If a pairwise correlation cannot be calculated (e.g., due to constant columns
+    or other Phik issues), its difference is treated as 0 for averaging purposes.
+
+    Args:
+        real (pd.DataFrame): The real data table.
+        synthetic (pd.DataFrame): The synthetic data table.
+
+    Returns:
+        Dict[str, Dict[str, float]]: A nested dictionary with 'real' (all 0.0)
+                                     and 'synthetic' (mean absolute differences)
+                                     as top-level keys, and column names as
+                                     second-level keys.
+    """
+    real_phik_matrix = pd.DataFrame()
+    synthetic_phik_matrix = pd.DataFrame()
+
+    real_varying_cols = [col for col in real.columns if real[col].nunique(dropna=False) > 1]
+    synthetic_varying_cols = [col for col in synthetic.columns if synthetic[col].nunique(dropna=False) > 1]
+
+    if len(real_varying_cols) > 1:
+        try:
+            real_phik_matrix = real[real_varying_cols].phik_matrix()
+        except Exception as e:
+            print(f"Warning: Error calculating full phik_matrix for real data: {e}.")
+            real_phik_matrix = pd.DataFrame()
+
+    if len(synthetic_varying_cols) > 1:
+        try:
+            synthetic_phik_matrix = synthetic[synthetic_varying_cols].phik_matrix()
+        except Exception as e:
+            print(f"Warning: Error calculating full phik_matrix for synthetic data: {e}.")
+            synthetic_phik_matrix = pd.DataFrame()
+
+    final_correlations = {"real": {}, "synthetic": {}}
+    all_columns = sorted(list(set(real.columns) | set(synthetic.columns)))
+
+    for current_col in all_columns:
+        final_correlations["real"][current_col] = 0.0
+
+        pairwise_differences = []
+
+        for other_col in all_columns:
+            if current_col == other_col:
+                continue # Skip self-correlation
+
+            real_corr_val = 0.0 # Default if column is constant or not present in real
+            synthetic_corr_val = 0.0 # Default if column is constant or not present in synthetic
+
+            if current_col in real.columns and other_col in real.columns:
+                if real[current_col].nunique(dropna=False) <= 1 or real[other_col].nunique(dropna=False) <= 1:
+                    real_corr_val = 0.0
+                elif not real_phik_matrix.empty and current_col in real_phik_matrix.index and other_col in real_phik_matrix.columns:
+                    try:
+                        real_corr_val = float(real_phik_matrix.loc[current_col, other_col])
+                    except ValueError: # phik might return NaN or non-numeric if calculation failed
+                        real_corr_val = 0.0 # Treat failed correlation as 0 for difference
+                else: # Fallback if full matrix not used or failed
+                    try:
+                        temp_df = real[[current_col, other_col]]
+                        pair_corr_matrix = temp_df.phik_matrix()
+                        real_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
+                    except Exception:
+                        real_corr_val = 0.0 # Treat failed correlation as 0 for difference
+
+            if current_col in synthetic.columns and other_col in synthetic.columns:
+                if synthetic[current_col].nunique(dropna=False) <= 1 or synthetic[other_col].nunique(dropna=False) <= 1:
+                    synthetic_corr_val = 0.0
+                elif not synthetic_phik_matrix.empty and current_col in synthetic_phik_matrix.index and other_col in synthetic_phik_matrix.columns:
+                    try:
+                        synthetic_corr_val = float(synthetic_phik_matrix.loc[current_col, other_col])
+                    except ValueError:
+                        synthetic_corr_val = 0.0 
+                else: 
+                    try:
+                        temp_df = synthetic[[current_col, other_col]]
+                        pair_corr_matrix = temp_df.phik_matrix()
+                        synthetic_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
+                    except Exception:
+                        synthetic_corr_val = 0.0 
+
+            pairwise_differences.append(abs(real_corr_val - synthetic_corr_val))
+
+        if pairwise_differences:
+            valid_diffs = [d for d in pairwise_differences if not np.isnan(d)]
+            if valid_diffs:
+                mean_abs_difference = float(np.mean(valid_diffs))
+            else:
+                mean_abs_difference = 0.0 
+        else:
+            mean_abs_difference = 0.0 
+
+        final_correlations["synthetic"][current_col] = mean_abs_difference
+
+    return final_correlations
+
+
+def visualize_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFrame) -> dict:
+    """
+    Creates a visualization format for column-wise correlations that can be interpreted
+    as a heat map in the frontend.
+
+    Args:
+        real (pd.DataFrame): The real data table.
+        synthetic (pd.DataFrame): The synthetic data table.
+
+    Returns:
+        dict: A dictionary containing visualization data for real and synthetic correlations.
+            Each dataset has x_values (column names) and correlation_values.
+    """
+    # Initialize result dictionary
+    visualization_data = {'real': {}, 'synthetic': {}}
+
+    try:
+        for df, df_name in [(real, "real"), (synthetic, "synthetic")]:
+            # Identify constant columns for the current DataFrame
+            constant_cols = [
+                col for col in df.columns if df[col].nunique(dropna=False) <= 1
+            ]
+            varying_cols = [col for col in df.columns if col not in constant_cols]
+
+            full_phik_matrix = pd.DataFrame()
+            if len(varying_cols) > 1:
+                try:
+                    full_phik_matrix = df[varying_cols].phik_matrix()
+                except Exception as e:
+                    print(
+                        f"Warning: Error calculating phik_matrix for all varying columns in {df_name} data: {e}. "
+                        "Individual column correlations will be calculated or set to 0.0/NaN."
+                    )
+                    full_phik_matrix = pd.DataFrame() # Reset to empty if calculation fails
+
+            for current_col in df.columns:
+                x_values: List[str] = []
+                correlation_values: List[float] = []
+
+                for other_col in df.columns:
+                    x_values.append(other_col)
+
+                    if current_col == other_col:
+                        # Self-correlation: phik typically gives 1.0
+                        correlation_values.append(1.0)
+                    elif current_col in constant_cols or other_col in constant_cols:
+                        # Correlation with a constant column is often considered 0
+                        correlation_values.append(0.0)
+                    elif not full_phik_matrix.empty and current_col in full_phik_matrix.index and other_col in full_phik_matrix.columns:
+                        try:
+                            corr_val = float(full_phik_matrix.loc[current_col, other_col])
+                            correlation_values.append(corr_val)
+                        except Exception as inner_e:
+                            print(
+                                f"Warning: Could not get correlation for {current_col}-{other_col} in {df_name} "
+                                f"from pre-calculated matrix: {inner_e}. Attempting pairwise calculation."
+                            )
+                            try:
+                                temp_df_pair = df[[current_col, other_col]]
+                                pair_corr_matrix = temp_df_pair.phik_matrix()
+                                pair_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
+                                correlation_values.append(pair_corr_val)
+                            except Exception as fallback_e:
+                                print(
+                                    f"Warning: Fallback pairwise correlation calculation failed for {current_col}-{other_col} in {df_name}: {fallback_e}. Setting to NaN."
+                                )
+                                correlation_values.append('NA')
+                    else:
+                        try:
+                            temp_df_pair = df[[current_col, other_col]]
+                            pair_corr_matrix = temp_df_pair.phik_matrix()
+                            pair_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
+                            correlation_values.append(pair_corr_val)
+                        except Exception as fallback_e:
+                            print(
+                                f"Warning: Direct pairwise correlation calculation failed for {current_col}-{other_col} in {df_name}: {fallback_e}. Setting to NaN."
+                            )
+                            correlation_values.append('NA')
+
+                final_correlation_values = [0.0 if np.isnan(val) else val for val in correlation_values]
+
+                visualization_data[df_name][current_col] = {
+                    "x_values": x_values,
+                    "correlation_values": final_correlation_values,
+                    "x_axis": "Attributes",
+                    "y_axis": "Correlation Strength",
+                }
+
+        return visualization_data
+
+    except Exception as e:
+        print(f"Warning: Critical error during visualization data generation: {str(e)}. "
+              "Returning fallback empty data structure with all correlations as 0.0.")
+        for df_data, df_name_key in [(real, 'real'), (synthetic, 'synthetic')]:
+            for column in df_data.columns:
+                all_columns = list(df_data.columns)
+                visualization_data[df_name_key][column] = {
+                    'x_values': all_columns,
+                    'correlation_values': [0.0] * len(all_columns), # Set all to 0.0 on error
+                    'x_axis': 'Attributes',
+                    'y_axis': 'Correlation Strength',
+                }
+        return visualization_data
 
 
 def missing_values_count(real, synthetic):

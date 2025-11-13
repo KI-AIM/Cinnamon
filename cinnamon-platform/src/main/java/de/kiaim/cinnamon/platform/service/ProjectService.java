@@ -44,18 +44,20 @@ public class ProjectService {
 	private final UserRepository userRepository;
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
+	private final ProcessService processService;
 	private final StepService stepService;
 
 	public ProjectService(final ObjectMapper yamlMapper, final CinnamonConfiguration cinnamonConfiguration,
 	                      final ProjectRepository projectRepository, final UserRepository userRepository,
 	                      final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final StepService stepService) {
+	                      final ProcessService processService, final StepService stepService) {
 		this.yamlMapper = yamlMapper;
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.projectRepository = projectRepository;
 		this.userRepository = userRepository;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
+		this.processService = processService;
 		this.stepService = stepService;
 	}
 
@@ -182,13 +184,63 @@ public class ProjectService {
 		return user2.getProject();
 	}
 
+	/**
+	 * Deletes the project of the given user.
+	 *
+	 * @param user The user.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 */
 	@Transactional
-	public void deleteProject(final UserEntity user) throws InternalDataSetPersistenceException, BadDataSetIdException {
+	public void deleteProject(final UserEntity user)
+			throws BadStateException, InternalDataSetPersistenceException {
 		if (hasProject(user)) {
 			final ProjectEntity p = getProject(user);
-			databaseService.delete(p);
+			resetEntireProject(p);
 			projectRepository.deleteById(p.getId());
 		}
+	}
+
+	/**
+	 * Restes the data in the project to the given target.
+	 * The target can be 'original' to make the data configuration modifiable
+	 * or in the form 'pipeline.{stage}' to reset the data of a stage.
+	 *
+	 * @param project The project.
+	 * @param target  The target.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws BadStepNameException                If no configuration could be found.
+	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 */
+	@Transactional
+	public void resetProject(final ProjectEntity project, @Nullable final String target)
+			throws BadStateException, BadStepNameException, InternalDataSetPersistenceException, BadArgumentException {
+
+		if (target == null || target.isBlank()) {
+			resetEntireProject(project);
+		} else {
+
+			final String[] parts = target.split("\\.");
+
+			if (parts[0].equals("original")) {
+				processService.deletePipeline(project);
+
+				if (project.getOriginalData().getDataSet() != null) {
+					project.getOriginalData().getDataSet().setConfirmedData(false);
+				}
+
+				project.getConfigurations().clear();
+			} else if (parts[0].equals("pipeline")) {
+				final Stage stage = stepService.getStageConfiguration(parts[1]);
+				processService.deleteStage(project, stage);
+			} else {
+				throw new BadArgumentException(BadArgumentException.INVALID_RESOURCE_KEY,
+				                               "The first part of the resource selector '" + target +
+				                               "' is not a valid key!");
+			}
+		}
+
+		projectRepository.save(project);
 	}
 
 	@Transactional
@@ -422,4 +474,16 @@ public class ProjectService {
 		}
 	}
 
+	/**
+	 * Resets all data inside the given project.
+	 *
+	 * @param project The project to reset.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 */
+	private void resetEntireProject(final ProjectEntity project)
+			throws BadStateException, InternalDataSetPersistenceException {
+		databaseService.deleteOriginalData(project);
+		processService.deletePipeline(project);
+	}
 }

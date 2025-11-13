@@ -1,4 +1,9 @@
-from data_processing.post_process import transform_in_iso_datetime, transform_in_time_distance
+from data_processing.post_process import (
+    transform_in_iso_datetime,
+    transform_in_time_distance,
+    transform_variance_in_time_distance,
+)
+from typing import Dict, Any, List, Union, Optional
 
 
 def group_metrics_by_visualization_type(overview_metrics):
@@ -180,25 +185,46 @@ def add_value_differences(metrics_dict):
         return index
 
     def calculate_differences(real, synthetic):
-        """Calculate absolute and percentage differences between real and synthetic values."""
-        if isinstance(real, (int, float)) and isinstance(synthetic, (int, float)):
+        MISSING_REPRESENTATION_STRINGS = ["NA", "NaN", "N/A", "<NA>", "", "None"]
+
+        if isinstance(real, str) and isinstance(synthetic, str):
+            is_real_missing_str = real in MISSING_REPRESENTATION_STRINGS
+            is_synthetic_missing_str = synthetic in MISSING_REPRESENTATION_STRINGS
+
+            if not is_real_missing_str and not is_synthetic_missing_str:
+                if real == synthetic:
+                    return {
+                        'absolute': 0,
+                        'percentage': 0,
+                        'color_index': 1
+                    }
+                else:
+                    return {
+                        'absolute': 1,
+                        'percentage': 100,
+                        'color_index': 10
+                    }
+
+        elif isinstance(real, (int, float)) and isinstance(synthetic, (int, float)):
             abs_diff = abs(real - synthetic)
-            
-            is_distance_metric = abs(real) == 0 and 0 <= synthetic <= 1
+            is_distance_metric = (real == 0 or real == 0.0) and (0 <= synthetic <= 1)
             
             if is_distance_metric:
                 normalized_diff = synthetic
             else:
-                if real == 0 and synthetic == 0:
-                    normalized_diff = 0
+                if (real == 0 or real == 0.0) and (synthetic == 0 or synthetic == 0.0):
+                    normalized_diff = 0.0
                 elif (real > 0 and synthetic < 0) or (real < 0 and synthetic > 0):
-                    normalized_diff = abs_diff / (abs(real) + abs(synthetic))
+                    denominator = abs(real) + abs(synthetic)
+                    normalized_diff = abs_diff / denominator if denominator != 0 else 0.0
                 elif real < 0 and synthetic < 0:
                     abs_real = abs(real)
                     abs_synthetic = abs(synthetic)
-                    normalized_diff = abs(abs_real - abs_synthetic) / (abs_real + abs_synthetic)
+                    denominator = abs_real + abs_synthetic
+                    normalized_diff = abs(abs_real - abs_synthetic) / denominator if denominator != 0 else 0.0
                 else:
-                    normalized_diff = abs_diff / (abs(real) + abs(synthetic))
+                    denominator = abs(real) + abs(synthetic)
+                    normalized_diff = abs_diff / denominator if denominator != 0 else 0.0
             
             pct_diff = normalized_diff * 100
                 
@@ -210,8 +236,8 @@ def add_value_differences(metrics_dict):
         else:
             return {
                 'absolute': 'NA',
-                'percentage': 'NA',
-                'color_index': 'NA'
+                'percentage': 100,
+                'color_index': 10
             }
         
     def process_metric(metric_data):
@@ -325,18 +351,31 @@ def convert_important_metrics_to_date(metric, transformation_map, attr_type):
     """
     for metric_name, metric_data in metric.get('important_metrics', {}).items():
         if metric_name in transformation_map:
-            transform_func = globals()[transformation_map[metric_name]]
+            transform_name = transformation_map[metric_name]
+            transform_func = globals()[transform_name]
             if isinstance(metric_data, dict):
                 if 'values' in metric_data:
                     if 'real' in metric_data['values']:
-                        metric_data['values']['real'] = transform_func(metric_data['values']['real'], attr_type)
+                        current_value = metric_data['values']['real']
+                        if isinstance(current_value, list):
+                            metric_data['values']['real'] = [transform_func(v, attr_type) if v is not None else None for v in current_value]
+                        elif current_value is not None:
+                            metric_data['values']['real'] = transform_func(current_value, attr_type)
                     if 'synthetic' in metric_data['values']:
-                        metric_data['values']['synthetic'] = transform_func(
-                            metric_data['values']['synthetic'], attr_type)
+                        current_value = metric_data['values']['synthetic']
+                        if isinstance(current_value, list):
+                            metric_data['values']['synthetic'] = [transform_func(v, attr_type) if v is not None else None for v in current_value]
+                        elif current_value is not None:
+                            metric_data['values']['synthetic'] = transform_func(current_value, attr_type)
                 if 'difference' in metric_data and isinstance(metric_data['difference'], dict):
-                    if 'absolute' in metric_data['difference']:
-                        metric_data['difference']['absolute'] = transform_in_time_distance(
-                            metric_data['difference']['absolute'])
+                    if 'absolute' in metric_data['difference'] and metric_data['difference']['absolute'] is not None:
+                        diff_transform = (
+                            transform_variance_in_time_distance
+                            if transform_name == 'transform_variance_in_time_distance'
+                            else transform_in_time_distance
+                        )
+                        metric_data['difference']['absolute'] = diff_transform(
+                            metric_data['difference']['absolute'], attr_type)
     return metric
 
 
@@ -355,18 +394,31 @@ def convert_details_to_date(metric, transformation_map, attr_type):
     if 'details' in metric:
         for detail_name, detail_data in metric['details'].items():
             if detail_name in transformation_map:
-                transform_func = globals()[transformation_map[detail_name]]
+                transform_name = transformation_map[detail_name]
+                transform_func = globals()[transform_name]
                 if isinstance(detail_data, dict):
                     if 'values' in detail_data:
                         if 'real' in detail_data['values']:
-                            detail_data['values']['real'] = transform_func(detail_data['values']['real'], attr_type)
+                            current_value = detail_data['values']['real']
+                            if isinstance(current_value, list):
+                                detail_data['values']['real'] = [transform_func(v, attr_type) if v is not None else None for v in current_value]
+                            elif current_value is not None:
+                                detail_data['values']['real'] = transform_func(current_value, attr_type)
                         if 'synthetic' in detail_data['values']:
-                            detail_data['values']['synthetic'] = transform_func(
-                                detail_data['values']['synthetic'], attr_type)
+                            current_value = detail_data['values']['synthetic']
+                            if isinstance(current_value, list):
+                                detail_data['values']['synthetic'] = [transform_func(v, attr_type) if v is not None else None for v in current_value]
+                            elif current_value is not None:
+                                detail_data['values']['synthetic'] = transform_func(current_value, attr_type)
                     if 'difference' in detail_data and isinstance(detail_data['difference'], dict):
-                        if 'absolute' in detail_data['difference']:
-                            detail_data['difference']['absolute'] = transform_in_time_distance(
-                                detail_data['difference']['absolute'])
+                        if 'absolute' in detail_data['difference'] and detail_data['difference']['absolute'] is not None:
+                            diff_transform = (
+                                transform_variance_in_time_distance
+                                if transform_name == 'transform_variance_in_time_distance'
+                                else transform_in_time_distance
+                            )
+                            detail_data['difference']['absolute'] = diff_transform(
+                                detail_data['difference']['absolute'], attr_type)
     return metric
 
 
@@ -505,3 +557,127 @@ def add_resembance_description(enriched_dict, yaml_config):
     }
 
     return enriched_dict
+
+
+
+def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Processes the config data to add an overview section with resemblance scores
+    and utility scores at the same level as "resemblance" in the dictionary.
+    
+    Args:
+        config_data: The configuration data containing metrics information
+        
+    Returns:
+        dict: The modified config data with added Overview section with aggregated_metrics
+    """
+    def get_color_index(percentage_diff: float) -> int:
+        capped_diff = min(100, max(0, percentage_diff))
+        index = min(10, max(1, int(capped_diff / 10) + 1))
+        return index
+    
+    modified_config = config_data.copy()
+    
+    if "resemblance" not in modified_config or "attributes" not in modified_config["resemblance"]:
+        return modified_config
+        
+    attributes = modified_config["resemblance"]["attributes"]
+    all_attribute_scores: List[float] = []
+    
+    for i, attr in enumerate(attributes):
+        overview = {}
+        all_percentages = []
+        
+        if "important_metrics" in attr:
+            for metric_name, metric_data in attr["important_metrics"].items():
+                if "difference" in metric_data and "percentage" in metric_data["difference"]:
+                    pct = metric_data["difference"]["percentage"]
+                    all_percentages.append(abs(pct))
+                    overview[metric_name] = pct
+        
+        if "details" in attr:
+            for metric_name, metric_data in attr["details"].items():
+                if "difference" in metric_data and "percentage" in metric_data["difference"]:
+                    pct = metric_data["difference"]["percentage"]
+                    all_percentages.append(abs(pct))
+                    overview[metric_name] = pct
+        
+        if all_percentages:
+            avg_difference = sum(all_percentages) / len(all_percentages)
+            avg_difference = max(0.0, min(100.0, avg_difference))
+            color_index = get_color_index(avg_difference)
+            overview["resemblance_score"] = {
+                "value": 1 - (avg_difference / 100.0),
+                "color_index": color_index
+            }
+            all_attribute_scores.append(avg_difference / 100.0)
+        
+        if overview:
+            modified_config["resemblance"]["attributes"][i]["overview"] = overview
+    
+    real_utility_score = 0.0
+    synthetic_utility_score = 0.0
+    
+    if "utility" in modified_config and "methods" in modified_config["utility"]:
+        for method in modified_config["utility"]["methods"]:
+            if "machine_learning" in method:
+                ml_method = method["machine_learning"]
+                
+                if "real" in ml_method and "predictions" in ml_method["real"]:
+                    predictions = ml_method["real"]["predictions"]
+                    
+                    if "Balanced Accuracy" in predictions:
+                        for classifier in predictions["Balanced Accuracy"]:
+                            if classifier["classifier"] == "Summary":
+                                real_utility_score = classifier["score"]
+                                break
+                    
+                    elif "Adjusted R-Squared" in predictions:
+                        for classifier in predictions["Adjusted R-Squared"]:
+                            if classifier["classifier"] == "Summary":
+                                real_utility_score = classifier["score"]
+                                break
+                
+                if "synthetic" in ml_method and "predictions" in ml_method["synthetic"]:
+                    predictions = ml_method["synthetic"]["predictions"]
+                    
+                    if "Balanced Accuracy" in predictions:
+                        for classifier in predictions["Balanced Accuracy"]:
+                            if classifier["classifier"] == "Summary":
+                                synthetic_utility_score = classifier["score"]
+                                break
+                    
+                    elif "Adjusted R-Squared" in predictions:
+                        for classifier in predictions["Adjusted R-Squared"]:
+                            if classifier["classifier"] == "Summary":
+                                synthetic_utility_score = classifier["score"]
+                                break
+    
+    if all_attribute_scores:
+        overall_resemblance_score = sum(all_attribute_scores) / len(all_attribute_scores)
+        overall_resemblance_score = overall_resemblance_score
+        
+        modified_config["Overview"] = {
+            "display_name": "Summary Overview",
+            "description": "This aggregated overview provides a high-level assessment of the similarity between real and synthetic data across resemblance and utility. The metrics presented here serve as general indicators and should be supplemented with detailed evaluation results for comprehensive analysis.",
+            "aggregated_metrics": [
+                {
+                    "overall_resemblance": {
+                        "description": "This metric quantifies the statistical similarity between synthetic and real data by calculating the normalized differences across all attributes and statistical measures. The aggregated score may not fully capture specific distributional anomalies or outliers in individual metrics. It is strongly recommended to examine the detailed statistical comparisons for a complete understanding of data resemblance.",
+                        "values": {
+                            "real": 1.0,  
+                            "synthetic": (1.0 - overall_resemblance_score)
+                        }
+                    },
+                    "overall_utility": {
+                        "description": "This measurement evaluates how effectively synthetic data can substitute real data in machine learning applications using a train-on-synthetic test-on-real approach. For classification tasks this represents the Balanced Accuracy averaged across all classifiers while regression problems use the adjusted R-squared aggregated across all regressors. This consolidated metric provides a general approximation that should be supplemented with individual model performance evaluation.",
+                        "values": {
+                            "real": real_utility_score,
+                            "synthetic": synthetic_utility_score
+                        }
+                    }
+                }
+            ]
+        }
+    
+    return modified_config

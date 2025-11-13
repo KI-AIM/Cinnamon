@@ -3,7 +3,7 @@ evaluation_configuration:
   resemblance:
     mean: transform_in_iso_datetime
     standard_deviation: transform_in_time_distance
-    variance: transform_in_time_distance
+    variance: transform_variance_in_time_distance
     fifth_percentile: transform_in_iso_datetime
     q1: transform_in_iso_datetime
     median: transform_in_iso_datetime

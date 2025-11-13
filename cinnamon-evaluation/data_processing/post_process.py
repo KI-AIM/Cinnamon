@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 from datetime import datetime, timedelta
 import locale
@@ -87,6 +88,51 @@ def transform_in_time_distance(number, format_type="DATETIME"):
     else:
         years = number / SECONDS_IN_YEAR
         return f"{years:.0f} Years"
+
+def transform_variance_in_time_distance(number, format_type="DATETIME"):
+    """
+    Transforms a variance value (expressed in squared seconds) into a human readable
+    squared time distance string by selecting the unit that matches the implied
+    standard deviation scale.
+
+    Args:
+        number (int or float): Variance in squared seconds.
+        format_type (str, optional): Unused but kept for compatibility.
+
+    Returns:
+        str: Formatted variance with squared time units.
+    """
+    SECONDS_IN_MINUTE = 60
+    SECONDS_IN_HOUR = 3600
+    SECONDS_IN_DAY = 86400
+    SECONDS_IN_YEAR = 31536000
+
+    if not isinstance(number, (int, float)):
+        return number
+
+    if number < 0:
+        # Fallback to base transform for unexpected negative variance.
+        return transform_in_time_distance(number, format_type)
+
+    std_seconds = math.sqrt(number)
+
+    if std_seconds < SECONDS_IN_MINUTE:
+        value = number
+        unit = "Seconds"
+    elif std_seconds < SECONDS_IN_HOUR:
+        value = number / (SECONDS_IN_MINUTE ** 2)
+        unit = "Minutes"
+    elif std_seconds < SECONDS_IN_DAY:
+        value = number / (SECONDS_IN_HOUR ** 2)
+        unit = "Hours"
+    elif std_seconds < SECONDS_IN_YEAR:
+        value = number / (SECONDS_IN_DAY ** 2)
+        unit = "Days"
+    else:
+        value = number / (SECONDS_IN_YEAR ** 2)
+        unit = "Years"
+
+    return f"{value:.0f} {unit}"
 
 
 def transform_in_iso_datetime(number, format_type="DATETIME"):

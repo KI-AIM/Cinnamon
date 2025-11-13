@@ -18,8 +18,7 @@ export class AttributeConfigurationComponent implements AfterViewInit {
 
     @Output() onInput = new EventEmitter<any>();
 
-    @ViewChild('tooltip') private tooltip!: ElementRef;
-    @ViewChild('tooltipArrow') private tooltipArrow!: ElementRef;
+    protected readonly DataType = DataType;
 
     private oldName: string = "";
 
@@ -56,37 +55,5 @@ export class AttributeConfigurationComponent implements AfterViewInit {
         if (originalValue !== trimmedValue) {
             this.columnConfigurationForm.controls[field].patchValue(trimmedValue);
         }
-    }
-
-    /**
-     * Opens the confidence tooltip.
-     * Modifies the position to ensure the tooltip is in view.
-     * @protected
-     */
-    protected openTooltip(): void {
-        this.tooltip.nativeElement.classList.add("shown");
-
-        const rect = this.tooltip.nativeElement.getBoundingClientRect();
-        const maxArrowOffset = (rect.height - 17) / 2;
-        const topOffset = 65 - rect.top;
-        const bottomOffset = (window.outerHeight - 125) - rect.bottom;
-
-        if (topOffset > 0) {
-            this.tooltip.nativeElement.style.transform = `translateY(-50%) translateY(${topOffset}px)`;
-            this.tooltipArrow.nativeElement.style.transform = `translateY(-${Math.min(maxArrowOffset, topOffset)}px)`;
-        } else if (bottomOffset < 0) {
-            this.tooltip.nativeElement.style.transform = `translateY(-50%) translateY(${bottomOffset}px)`;
-            this.tooltipArrow.nativeElement.style.transform = `translateY(${Math.min(maxArrowOffset, -bottomOffset)}px)`;
-        }
-    }
-
-    /**
-     * Closes the tooltip and resets its position, so the translation can be calculated correctly when opening it again.
-     * @protected
-     */
-    protected closeTooltip(): void {
-        this.tooltip.nativeElement.classList.remove("shown");
-        this.tooltip.nativeElement.style.transform = `translateY(-50%)`;
-        this.tooltipArrow.nativeElement.style.transform = "";
     }
 }

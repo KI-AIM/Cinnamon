@@ -1,4 +1,5 @@
 @import "../../../../styles/colors.less";
+@import "../../../../styles/variables.less";
 
 .cinnamon-selected-mode {
     border: 2px solid @color-primary;
@@ -6,4 +7,29 @@
 
 .cinnamon-unselected-mode {
     border: 2px solid transparent;
+}
+
+.cinnamon-dynamic-img {
+    height: auto;
+    max-width: 100%;
+    width: auto;
+}
+
+.cinnamon-mode-area {
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    text-decoration: inherit;
+    width: 50%;
+}
+
+.cinnamon-mode-area:hover {
+    box-shadow: @box-shadow-material-lg;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.cinnamon-mode-area:focus {
+    box-shadow: @box-shadow-material-lg;
+    transition: box-shadow 0.2s ease-in-out;
+    outline-color: @color-secondary;
 }

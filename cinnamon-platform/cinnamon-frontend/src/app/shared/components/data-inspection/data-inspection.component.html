@@ -16,11 +16,30 @@
                 <input type="text" matInput [(ngModel)]="filterText"/>
             </mat-form-field>
 
+            <div class="d-flex" style="gap: 22px;">
+                <mat-form-field style="width: 200px;">
+                    <mat-label>Sort by</mat-label>
+                    <mat-select [(ngModel)]="statisticsSortType">
+                        <mat-option value="index">Index</mat-option>
+                        <mat-option value="name">Name</mat-option>
+                        <mat-option *ngIf="mainData === 'synthetic'" value="score">Resemblance Score</mat-option>
+                    </mat-select>
+                </mat-form-field>
+                <mat-form-field style="width: 150px;">
+                    <mat-label>Order</mat-label>
+                    <mat-select [(ngModel)]="statisticsSortDirection">
+                        <mat-option value="asc">Ascending</mat-option>
+                        <mat-option value="desc">Descending</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
             <div *ngIf="(statistics.statistics!.resemblance.attributes | statisticsFilter:filterText) as filteredAttributes">
                 <div class="mb-2">Showing {{ filteredAttributes.filteredCount }} / {{ filteredAttributes.originalCount }}
                 </div>
 
-                <div *ngFor="let attribute of filteredAttributes.filteredList" class="mb-2 border-top border-1">
+                <div *ngFor="let attribute of (filteredAttributes.filteredList | statisticsSorter:statisticsSortDirection:statisticsSortType)"
+                     class="mb-2 border-top border-1">
                     <div class="mt-2">
                         <app-data-inspection-attribute [attributeStatistics]="attribute" [sourceDataset]="sourceDataset"
                                                        [sourceProcess]="sourceProcess" [mainData]="mainData"

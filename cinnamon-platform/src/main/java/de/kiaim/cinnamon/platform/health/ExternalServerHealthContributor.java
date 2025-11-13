@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import org.springframework.boot.actuate.health.CompositeHealthContributor;
 import org.springframework.boot.actuate.health.HealthContributor;
 import org.springframework.boot.actuate.health.NamedContributor;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import java.util.Iterator;
@@ -16,6 +17,7 @@ import java.util.Map;
  * @author Daniel Preciado-Marquez
  */
 @Component
+@DependsOn({"cinnamonConfigurationPostProcessor"})
 public class ExternalServerHealthContributor implements CompositeHealthContributor {
 
 	private final Map<String, HealthContributor> healthContributors = new LinkedHashMap<>();
@@ -23,7 +25,7 @@ public class ExternalServerHealthContributor implements CompositeHealthContribut
 	public ExternalServerHealthContributor(final CinnamonConfiguration cinnamonConfiguration) {
 		for (final var externalServer : cinnamonConfiguration.getExternalServer().entrySet()) {
 			final var healthIndicator = new ExternalServerHealthIndicator(externalServer.getValue());
-			healthContributors.put(externalServer.getKey().toString(), healthIndicator);
+			healthContributors.put(externalServer.getKey(), healthIndicator);
 		}
 	}
 

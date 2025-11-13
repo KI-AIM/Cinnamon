@@ -1,4 +1,5 @@
 import {Component, Input} from '@angular/core';
+import { ColumnConfiguration } from "@shared/model/column-configuration";
 import {HistogramPlotData, StatisticsData} from "../../model/statistics";
 import {ChartComponent, Entries} from "../chart/chart.component";
 import { EChartsCoreOption } from "echarts/core";
@@ -11,6 +12,7 @@ import { EChartsCoreOption } from "echarts/core";
 })
 export class ChartFrequencyComponent extends ChartComponent {
     @Input() public colorScheme!: string;
+    @Input() columnConfiguration!: ColumnConfiguration;
     @Input() public data!: StatisticsData<HistogramPlotData>;
     @Input() public simple: boolean = false;
     @Input() public limit: number | null = 10;
@@ -88,8 +90,10 @@ export class ChartFrequencyComponent extends ChartComponent {
             displayedKeys = keys!;
         }
 
+        const chartName = this.createChartName("Frequency", this.data, this.columnConfiguration, dataSetLabels);
+
         const options: EChartsCoreOption = {
-            ...this.graphOptions(this.simple),
+            ...this.graphOptions(this.simple, chartName),
             tooltip: {
                 trigger: 'axis',
                 axisPointer: {

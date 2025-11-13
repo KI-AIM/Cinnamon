@@ -76,4 +76,6 @@ export class RiskEvaluation {
 
     @Type(() => RiskResults)
     multivariate_singling_out_risk?: RiskResults;
+
+    total_risk_score: number;
 }

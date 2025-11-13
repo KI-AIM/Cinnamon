@@ -106,7 +106,6 @@ export class ReportComponent implements OnInit {
 
     // TODO take form statistics
     protected riskScoreO = 0.1;
-    protected riskScoreP = 0.7;
 
     constructor(
         private readonly anonymizationService: AnonymizationService,
@@ -385,10 +384,6 @@ export class ReportComponent implements OnInit {
 
     protected get riskScoreOX(): number {
         return this.calculatePos(this.riskScoreO);
-    }
-
-    protected get riskScorePX(): number {
-        return this.calculatePos(this.riskScoreP);
     }
 
     protected offsetText(value: number): number {

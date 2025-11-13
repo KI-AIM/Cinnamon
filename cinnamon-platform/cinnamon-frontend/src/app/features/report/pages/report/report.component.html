@@ -255,10 +255,11 @@
                             Original Dataset ({{ riskScoreO }})
                         </text>
 
-                        <polygon [attr.points]="`${riskScorePX - 5},230 ${riskScorePX + 5},230 ${riskScorePX},220`"
+                        <polygon [attr.points]="`${calculatePos(reportData.risks.total_risk_score) - 5},230 ${calculatePos(reportData.risks.total_risk_score) + 5},230 ${calculatePos(reportData.risks.total_risk_score)},220`"
                                  fill="black"/>
-                        <text [attr.x]="offsetText(riskScoreP)" y="245" font-size="14" font-family="Arial">Protected
-                            Dataset ({{ riskScoreP }})
+                        <text [attr.x]="offsetText(reportData.risks.total_risk_score)" y="245" font-size="14"
+                              font-family="Arial">
+                            Protected Dataset ({{ reportData.risks.total_risk_score }})
                         </text>
                     </svg>
 

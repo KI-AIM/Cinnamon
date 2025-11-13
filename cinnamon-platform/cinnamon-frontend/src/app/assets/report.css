@@ -164,6 +164,9 @@
     font-style: italic;
 }
 .report-table > caption {
+    /* Bootstrap's _reboot.scss sets some of these properties so they have to be defined here for consistency */
+    caption-side: bottom;
+    color: var(--report-color-text);
     font-size: 0.9rem;
     line-height: 1.2;
     padding: .2rem 1.5rem;

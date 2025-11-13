@@ -1,6 +1,6 @@
 <ng-container *ngIf="pageData$ | async as data">
 
-    <div class="mb-3 alert alert-warning" role="alert" *ngIf="data.isFileTypeXLSX">
+    <div class="mb-3 alert alert-warning" role="alert" *ngIf="data.fileType === FileType.XLSX">
         <b>WARNING:</b> For XLSX files, Dates can not be estimated correctly, because Excel stores them as numbers
         internally. They will instead be configured as INTEGER. <br/>
         Please make sure, that you configure every column that contains dates manually.
@@ -61,7 +61,7 @@
                         <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()"
                                                      [columnConfigurationForm]="columnConfig"
                                                      [confidence]="getConfidence(i)" [disabled]="data.locked.isLocked"
-                                                     (onInput)="checkUniqueColumnNames()">
+                                                     [fileType]="data.fileType" (onInput)="checkUniqueColumnNames()">
                         </app-attribute-configuration>
                     </div>
                 </div>

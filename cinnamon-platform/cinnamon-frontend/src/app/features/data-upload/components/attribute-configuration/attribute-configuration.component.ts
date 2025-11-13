@@ -1,5 +1,6 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
+import { FileType } from "@shared/model/file-configuration";
 import { List } from 'src/app/core/utils/list';
 import { DataScale } from 'src/app/shared/model/data-scale';
 import { DataType } from 'src/app/shared/model/data-type';
@@ -15,9 +16,11 @@ export class AttributeConfigurationComponent implements AfterViewInit {
     @Input() disabled: boolean = false;
     @Input() public columnConfigurationForm!: FormGroup;
     @Input() public confidence : number | null = null;
+    @Input() public fileType!: FileType | null;
 
     @Output() onInput = new EventEmitter<any>();
 
+    protected readonly FileType = FileType;
     protected readonly DataType = DataType;
 
     private oldName: string = "";

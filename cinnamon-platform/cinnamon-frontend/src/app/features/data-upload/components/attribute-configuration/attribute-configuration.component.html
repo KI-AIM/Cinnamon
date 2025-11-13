@@ -20,6 +20,11 @@
             <input type="text" matInput [id]="'name_' + attrNumber" (blur)="trimValue('name');"
                    formControlName="name"/>
 
+            <!-- TODO(DPM) Only a temporary solution. Disclaimer will be added to the data config popup -->
+            <mat-hint *ngIf="fileType === FileType.FHIR" style="color: orange;">
+                Disabled for FHIR bundles
+            </mat-hint>
+
             <mat-error *ngIf="columnConfigurationForm.controls['name'].hasError('noSpace')">
                 Name must not contain spaces
             </mat-error>

@@ -6,6 +6,7 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.csv.CSVFormat;
 import org.springframework.lang.Nullable;
 
 /**
@@ -49,6 +50,19 @@ public class CsvFileConfigurationEntity extends FileConfigurationEntity {
 		this.lineSeparator = configuration.getLineSeparator();
 		this.quoteChar = configuration.getQuoteChar();
 		this.hasHeader = configuration.getHasHeader();
+		this.fileType = FileType.CSV;
+	}
+
+	/**
+	 * Creates a new instance based on the given CSVFormat.
+	 *
+	 * @param format The CSVFormat.
+	 */
+	public CsvFileConfigurationEntity(final CSVFormat format) {
+		this.columnSeparator = format.getDelimiterString();
+		this.lineSeparator = format.getRecordSeparator();
+		this.quoteChar = format.getQuoteCharacter();
+		this.hasHeader = format.getHeader() != null;
 		this.fileType = FileType.CSV;
 	}
 }

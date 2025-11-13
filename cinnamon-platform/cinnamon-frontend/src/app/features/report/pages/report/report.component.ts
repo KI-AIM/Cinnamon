@@ -272,7 +272,7 @@ export class ReportComponent implements OnInit {
 
             const image = document.createElement("img");
             image.src = chart.dataUrl!;
-            image.width = 670;
+            image.width = chartDiv.nativeElement.getBoundingClientRect().width;
 
             const id = chartDiv.nativeElement.id;
             const newChart = mywindow.document.getElementById(id);

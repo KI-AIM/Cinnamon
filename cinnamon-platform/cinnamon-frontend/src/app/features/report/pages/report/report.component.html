@@ -27,7 +27,7 @@
 
     <ng-container *ngIf="pageData$ | async as reportData">
 
-        <div class="box" id="report" style="width: fit-content; margin: 0 auto; padding: 0.5in;">
+        <div class="box" id="report" style="width: fit-content; margin: 0 auto; padding: 0.33in 0.5in 0.34in 0.5in;">
 
             <!-- This div is printed -->
             <div class="report-root">
@@ -208,60 +208,69 @@
 
                     <div class="report-header2">Data Protection Results</div>
 
-                    <svg
-                        *ngIf="{utilityScoreO: getUtilityScoreOriginal(reportData.statistics.statistics), utilityScoreP: getUtilityScoreProtected(reportData.statistics.statistics)} as graphData"
-                        width="800" height="330" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Gradient definition -->
-                        <defs>
-                            <linearGradient id="colorGradient" x1="100%" y1="0%" x2="0%" y2="0%">
+                    <div style="text-align: center;">
 
-                                <ng-container
-                                    *ngIf="getColors(reportData.mc.metricConfiguration.colorScheme) as colorScheme">
-                                    <ng-container *ngFor="let color of colorScheme; let i = index">
-                                        <stop [attr.offset]="i * (100 / (colorScheme.length - 1)) + '%'"
-                                              [attr.style]="`stop-color: ${color};`" style="stop-opacity: 1;"/>
+                        <svg
+                            *ngIf="{utilityScoreO: getUtilityScoreOriginal(reportData.statistics.statistics), utilityScoreP: getUtilityScoreProtected(reportData.statistics.statistics)} as graphData"
+                            width="780" height="330" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Gradient definition -->
+                            <defs>
+                                <linearGradient id="colorGradient" x1="100%" y1="0%" x2="0%" y2="0%">
+
+                                    <ng-container
+                                        *ngIf="getColors(reportData.mc.metricConfiguration.colorScheme) as colorScheme">
+                                        <ng-container *ngFor="let color of colorScheme; let i = index">
+                                            <stop [attr.offset]="i * (100 / (colorScheme.length - 1)) + '%'"
+                                                  [attr.style]="`stop-color: ${color};`" style="stop-opacity: 1;"/>
+                                        </ng-container>
                                     </ng-container>
-                                </ng-container>
-                            </linearGradient>
-                        </defs>
+                                </linearGradient>
+                            </defs>
 
-                        <!-- Utility Score -->
-                        <rect x="20" y="65" width="740" height="30" fill="url(#colorGradient)"/>
-                        <text x="10" y="25" font-size="18" font-family="Arial" font-weight="bold">Utility Score:</text>
-                        <text x="0" y="85" font-size="14" font-family="Arial">0.0</text>
-                        <text x="760" y="85" font-size="14" font-family="Arial">1.0</text>
+                            <!-- Utility Score -->
+                            <rect x="20" y="65" width="740" height="30" fill="url(#colorGradient)"/>
+                            <text x="10" y="25" font-size="18" font-family="Arial" font-weight="bold">
+                                Utility Score:
+                            </text>
+                            <text x="0" y="85" font-size="14" font-family="Arial">0.0</text>
+                            <text x="760" y="85" font-size="14" font-family="Arial">1.0</text>
 
-                        <polygon fill="gray"
-                                 [attr.points]="`${calculatePos(graphData.utilityScoreO) - 5},55 ${calculatePos(graphData.utilityScoreO) + 5},55 ${calculatePos(graphData.utilityScoreO)},65`"/>
-                        <text [attr.x]="offsetText(graphData.utilityScoreO)" y="47" font-size="14" font-family="Arial">
-                            Original Dataset ({{ graphData.utilityScoreO | number: '1.0-1' }})
-                        </text>
+                            <polygon fill="gray"
+                                     [attr.points]="`${calculatePos(graphData.utilityScoreO) - 5},55 ${calculatePos(graphData.utilityScoreO) + 5},55 ${calculatePos(graphData.utilityScoreO)},65`"/>
+                            <text [attr.x]="offsetText(graphData.utilityScoreO)" y="47" font-size="14"
+                                  font-family="Arial">
+                                Original Dataset ({{ graphData.utilityScoreO | number: '1.0-1' }})
+                            </text>
 
-                        <polygon fill="black"
-                                 [attr.points]="`${calculatePos(graphData.utilityScoreP) - 5},105 ${calculatePos(graphData.utilityScoreP) + 5},105 ${calculatePos(graphData.utilityScoreP)},95`"/>
-                        <text [attr.x]="offsetText(graphData.utilityScoreP)" y="120" font-size="14" font-family="Arial">
-                            Protected Dataset ({{ graphData.utilityScoreP | number: '1.0-1' }})
-                        </text>
+                            <polygon fill="black"
+                                     [attr.points]="`${calculatePos(graphData.utilityScoreP) - 5},105 ${calculatePos(graphData.utilityScoreP) + 5},105 ${calculatePos(graphData.utilityScoreP)},95`"/>
+                            <text [attr.x]="offsetText(graphData.utilityScoreP)" y="120" font-size="14"
+                                  font-family="Arial">
+                                Protected Dataset ({{ graphData.utilityScoreP | number: '1.0-1' }})
+                            </text>
 
-                        <!-- Privacy Risk Score -->
-                        <rect x="20" y="190" width="740" height="30" fill="url(#colorGradient)"/>
-                        <text x="10" y="150" font-size="18" font-family="Arial" font-weight="bold">Privacy Score:</text>
-                        <text x="0" y="210" font-size="14" font-family="Arial">0.0</text>
-                        <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
+                            <!-- Privacy Risk Score -->
+                            <rect x="20" y="190" width="740" height="30" fill="url(#colorGradient)"/>
+                            <text x="10" y="150" font-size="18" font-family="Arial" font-weight="bold">
+                                Privacy Score:
+                            </text>
+                            <text x="0" y="210" font-size="14" font-family="Arial">0.0</text>
+                            <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
 
-                        <polygon [attr.points]="`${riskScoreOX - 5},180 ${riskScoreOX + 5},180 ${riskScoreOX},190`"
-                                 fill="gray"/>
-                        <text [attr.x]="offsetText(riskScoreO)" x="40" y="175" font-size="14" font-family="Arial">
-                            Original Dataset ({{ riskScoreO }})
-                        </text>
+                            <polygon [attr.points]="`${riskScoreOX - 5},180 ${riskScoreOX + 5},180 ${riskScoreOX},190`"
+                                     fill="gray"/>
+                            <text [attr.x]="offsetText(riskScoreO)" x="40" y="175" font-size="14" font-family="Arial">
+                                Original Dataset ({{ riskScoreO }})
+                            </text>
 
-                        <polygon [attr.points]="`${calculatePos(reportData.risks.total_risk_score) - 5},230 ${calculatePos(reportData.risks.total_risk_score) + 5},230 ${calculatePos(reportData.risks.total_risk_score)},220`"
-                                 fill="black"/>
-                        <text [attr.x]="offsetText(reportData.risks.total_risk_score)" y="245" font-size="14"
-                              font-family="Arial">
-                            Protected Dataset ({{ reportData.risks.total_risk_score }})
-                        </text>
-                    </svg>
+                            <polygon [attr.points]="`${calculatePos(reportData.risks.total_risk_score) - 5},230 ${calculatePos(reportData.risks.total_risk_score) + 5},230 ${calculatePos(reportData.risks.total_risk_score)},220`"
+                                fill="black"/>
+                            <text [attr.x]="offsetText(reportData.risks.total_risk_score)" y="245" font-size="14"
+                                  font-family="Arial">
+                                Protected Dataset ({{ reportData.risks.total_risk_score }})
+                            </text>
+                        </svg>
+                    </div>
 
                     <div>
                         <div class="report-header2">Data Quality</div>

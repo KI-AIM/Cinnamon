@@ -1,3 +1,4 @@
+import { Platform } from "@angular/cdk/platform";
 import { AsyncPipe, DecimalPipe, KeyValuePipe, LowerCasePipe, NgForOf, NgIf } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
@@ -114,6 +115,7 @@ export class ReportComponent implements OnInit {
         private readonly datasetInfoService: DataSetInfoService,
         private readonly errorHanldingService: ErrorHandlingService,
         private readonly http: HttpClient,
+        protected readonly platform: Platform,
         private projectConfigService: ProjectConfigurationService,
         private readonly riskAssessmentService: RiskAssessmentService,
         private readonly stateManagementService: StateManagementService,

@@ -96,7 +96,7 @@ export class ReportComponent implements OnInit {
         mc: ProjectSettings,
         pipeline: PipelineInformation,
         reportData: ReportData,
-        risks: RiskEvaluation,
+        risks: RiskEvaluation | null,
         riskAssessmentConfig: RiskAssessmentConfig,
         statistics: StatisticsResponse,
         synthetizationConfig: AlgorithmData,
@@ -140,7 +140,11 @@ export class ReportComponent implements OnInit {
             riskAssessmentConfig: this.riskAssessmentService.fetchConfiguration().pipe(
                 map(value => (value.config as any) as RiskAssessmentConfig),
             ),
-            risks: this.statisticsService.fetchRisks(),
+            risks: this.statisticsService.fetchRisks().pipe(
+                catchError(_ => {
+                    return of(null);
+                }),
+            ),
             statistics: this.statisticsService.fetchResult(),
             synthetizationConfig: this.synthetizationService.getAlgorithmData$(),
         }).pipe(

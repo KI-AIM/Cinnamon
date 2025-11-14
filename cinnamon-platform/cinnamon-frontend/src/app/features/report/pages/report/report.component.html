@@ -275,7 +275,8 @@
 
                         <svg
                             *ngIf="{utilityScoreO: getUtilityScoreOriginal(reportData.statistics.statistics), utilityScoreP: getUtilityScoreProtected(reportData.statistics.statistics)} as graphData"
-                            width="780" height="330" xmlns="http://www.w3.org/2000/svg">
+                            width="780" [attr.height]="reportData.risks != null ? 255 : 130"
+                            xmlns="http://www.w3.org/2000/svg">
                             <!-- Gradient definition -->
                             <defs>
                                 <linearGradient id="colorGradient" x1="100%" y1="0%" x2="0%" y2="0%">
@@ -313,25 +314,32 @@
                             </text>
 
                             <!-- Privacy Risk Score -->
-                            <rect x="20" y="190" width="740" height="30" fill="url(#colorGradient)"/>
-                            <text x="10" y="150" font-size="18" font-family="Arial" font-weight="bold">
-                                Privacy Score:
-                            </text>
-                            <text x="0" y="210" font-size="14" font-family="Arial">0.0</text>
-                            <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
+                            <ng-container *ngIf="reportData.risks != null">
 
-                            <polygon [attr.points]="`${riskScoreOX - 5},180 ${riskScoreOX + 5},180 ${riskScoreOX},190`"
-                                     fill="gray"/>
-                            <text [attr.x]="offsetText(riskScoreO)" x="40" y="175" font-size="14" font-family="Arial">
-                                Original Dataset ({{ riskScoreO }})
-                            </text>
+                                <rect x="20" y="190" width="740" height="30" fill="url(#colorGradient)"/>
+                                <text x="10" y="150" font-size="18" font-family="Arial" font-weight="bold">
+                                    Privacy Score:
+                                </text>
+                                <text x="0" y="210" font-size="14" font-family="Arial">0.0</text>
+                                <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
 
-                            <polygon [attr.points]="`${calculatePos(reportData.risks.total_risk_score) - 5},230 ${calculatePos(reportData.risks.total_risk_score) + 5},230 ${calculatePos(reportData.risks.total_risk_score)},220`"
-                                fill="black"/>
-                            <text [attr.x]="offsetText(reportData.risks.total_risk_score)" y="245" font-size="14"
-                                  font-family="Arial">
-                                Protected Dataset ({{ reportData.risks.total_risk_score }})
-                            </text>
+                                <polygon
+                                    [attr.points]="`${riskScoreOX - 5},180 ${riskScoreOX + 5},180 ${riskScoreOX},190`"
+                                    fill="gray"/>
+                                <text [attr.x]="offsetText(riskScoreO)" x="40" y="175" font-size="14"
+                                      font-family="Arial">
+                                    Original Dataset ({{ riskScoreO }})
+                                </text>
+
+                                <polygon
+                                    [attr.points]="`${calculatePos(reportData.risks.total_risk_score) - 5},230 ${calculatePos(reportData.risks.total_risk_score) + 5},230 ${calculatePos(reportData.risks.total_risk_score)},220`"
+                                    fill="black"/>
+                                <text [attr.x]="offsetText(reportData.risks.total_risk_score)" y="245" font-size="14"
+                                      font-family="Arial">
+                                    Protected Dataset ({{ reportData.risks.total_risk_score }})
+                                </text>
+
+                            </ng-container>
                         </svg>
                     </div>
 
@@ -452,7 +460,7 @@
                         </div>
                         <ng-template #noRiskOverview>
                             <div class="report-text-block">
-                                No risk assessment was performed.
+                                No risk evaluation was performed.
                             </div>
                         </ng-template>
                     </div>
@@ -725,8 +733,14 @@
                         Risk Evaluation
                     </div>
 
-                    <app-data-inspection-risks [risks]="reportData.risks" [showInfo]="false">
+                    <app-data-inspection-risks *ngIf="reportData.risks != null; else noRiskAssessmentDetails"
+                                               [risks]="reportData.risks" [showInfo]="false">
                     </app-data-inspection-risks>
+                    <ng-template #noRiskAssessmentDetails>
+                        <div class="report-text-block">
+                            No risk evaluation was performed.
+                        </div>
+                    </ng-template>
                 </div>
 
                 <div

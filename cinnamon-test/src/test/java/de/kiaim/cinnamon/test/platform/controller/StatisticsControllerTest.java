@@ -1,12 +1,14 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
@@ -22,6 +24,9 @@ public class StatisticsControllerTest extends ControllerTest {
 
 	private MockWebServer mockBackEnd;
 
+	@Autowired
+	private CinnamonConfiguration cinnamonConfiguration;
+
 	@Test
 	public void getStatisticsNoData() throws Exception {
 		mockMvc.perform(get("/api/statistics")
@@ -31,6 +36,8 @@ public class StatisticsControllerTest extends ControllerTest {
 
 	@Test
 	public void getStatistics() throws Exception {
+		var datasetStatistics = cinnamonConfiguration.getDatasetStatistics().get(0);
+
 		// Preparation
 		postData(false);
 
@@ -44,7 +51,8 @@ public class StatisticsControllerTest extends ControllerTest {
 				                    .build());
 
 		mockMvc.perform(get("/api/statistics")
-				                .param("selector", "original"))
+				                .param("selector", "original")
+				                .param("key", datasetStatistics.getKey()))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{status: 'RUNNING', statistics: null}"));
 
@@ -55,14 +63,16 @@ public class StatisticsControllerTest extends ControllerTest {
 
 		var updateTestProject = getTestProject();
 		assertNotNull(updateTestProject.getOriginalData().getDataSet());
-		var process = updateTestProject.getOriginalData().getDataSet().getStatisticsProcess();
+		var process = updateTestProject.getOriginalData().getDataSet()
+		                               .getStatisticsProcess(datasetStatistics.getEndpoint());
 		assertEquals(ProcessStatus.RUNNING, process.getExternalProcessStatus(), "Unexpected status!");
 		assertEquals("technical-evaluation-server.0", process.getServerInstance(), "Unexpected server instance!");
 		assertNotNull(process.getUuid());
 		String id = process.getUuid().toString();
 
 		// Finish
-		final MockMultipartFile resultAdditional = new MockMultipartFile("metrics.json", "metrics.json",
+		final MockMultipartFile resultAdditional = new MockMultipartFile(datasetStatistics.getFileName(),
+		                                                                 datasetStatistics.getFileName(),
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
 		                                                                 "statistics".getBytes());
 
@@ -78,7 +88,8 @@ public class StatisticsControllerTest extends ControllerTest {
 				                    .build());
 
 		mockMvc.perform(get("/api/statistics")
-				                .param("selector", "original"))
+				                .param("selector", "original")
+				                .param("key", datasetStatistics.getKey()))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{status: 'FINISHED', statistics: 'statistics'}"));
 
@@ -86,7 +97,7 @@ public class StatisticsControllerTest extends ControllerTest {
 
 		updateTestProject = getTestProject();
 		assertNotNull(updateTestProject.getOriginalData().getDataSet());
-		process = updateTestProject.getOriginalData().getDataSet().getStatisticsProcess();
+		process = updateTestProject.getOriginalData().getDataSet().getStatisticsProcess(datasetStatistics.getEndpoint());
 		assertEquals(ProcessStatus.FINISHED, process.getExternalProcessStatus(), "Unexpected status!");
 		assertNull(process.getServerInstance(), "Unexpected server instance!");
 	}

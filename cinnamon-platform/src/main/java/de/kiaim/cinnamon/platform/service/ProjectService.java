@@ -5,10 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.*;
-import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
-import de.kiaim.cinnamon.platform.model.configuration.ExternalConfiguration;
-import de.kiaim.cinnamon.platform.model.configuration.Stage;
-import de.kiaim.cinnamon.platform.model.configuration.Job;
+import de.kiaim.cinnamon.platform.model.configuration.*;
 import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
@@ -305,14 +302,7 @@ public class ProjectService {
 							}
 
 						} else if (parts[1].equals("statistics")) {
-
-							final LobWrapperEntity statistics = project.getOriginalData().getDataSet().getStatistics();
-							if (statistics != null) {
-								final ZipEntry statisticsEntry = new ZipEntry("original-statistics.yaml");
-								zipOut.putNextEntry(statisticsEntry);
-								zipOut.write(statistics.getLob());
-								zipOut.closeEntry();
-							}
+							addStatisticsToZip(zipOut, dataSetEntity);
 						}
 					}
 
@@ -338,17 +328,7 @@ public class ProjectService {
 								}
 
 							} else if (parts[3].equals("statistics")) {
-								final var resultFiles = dataProcessing.getDataSet().getStatisticsProcess()
-								                                      .getResultFiles();
-
-								// TODO calculate statistics if not present?
-								if (resultFiles.containsKey("metrics.json")) {
-									final var statisticsLob = resultFiles.get("metrics.json");
-									final ZipEntry configZipEntry = new ZipEntry(name + "-statistics.json");
-									zipOut.putNextEntry(configZipEntry);
-									zipOut.write(statisticsLob.getLob());
-									zipOut.closeEntry();
-								}
+								addStatisticsToZip(zipOut, dataProcessing.getDataSet());
 							}
 						}
 					}
@@ -450,6 +430,26 @@ public class ProjectService {
 		dataProcessor.write(zipOut, dataSet);
 
 		zipOut.closeEntry();
+	}
+
+	/**
+	 * Adds the result files of the dataset statistics for the given dataset to the zip file.
+	 *
+	 * @param zipOut  The output stream for the zip file
+	 * @param dataSet The dataset.
+	 * @throws IOException If adding the file to the zip failed.
+	 */
+	private void addStatisticsToZip(final ZipOutputStream zipOut, final DataSetEntity dataSet) throws IOException {
+		for (var datasetStatistic : cinnamonConfiguration.getDatasetStatistics()) {
+			final var process = dataSet.getStatisticsProcess(datasetStatistic.getEndpoint());
+			if (process != null && process.getResultFiles().containsKey(datasetStatistic.getFileName())) {
+				final LobWrapperEntity statistics = process.getResultFiles().get(datasetStatistic.getFileName());
+				final ZipEntry statisticsEntry = new ZipEntry("original-statistics.yaml");
+				zipOut.putNextEntry(statisticsEntry);
+				zipOut.write(statistics.getLob());
+				zipOut.closeEntry();
+			}
+		}
 	}
 
 	@Nullable

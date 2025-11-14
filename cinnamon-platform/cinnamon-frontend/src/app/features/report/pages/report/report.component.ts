@@ -36,7 +36,7 @@ import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
-import { catchError, combineLatest, map, Observable, of, switchMap } from "rxjs";
+import { catchError, combineLatest, map, Observable, of, switchMap, tap } from "rxjs";
 import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 import { environments } from "src/environments/environment";
 
@@ -97,6 +97,7 @@ export class ReportComponent implements OnInit {
         pipeline: PipelineInformation,
         reportData: ReportData,
         risks: RiskEvaluation | null,
+        risksOriginal: RiskEvaluation | null,
         riskAssessmentConfig: RiskAssessmentConfig,
         statistics: StatisticsResponse,
         synthetizationConfig: AlgorithmData,
@@ -144,6 +145,10 @@ export class ReportComponent implements OnInit {
                 catchError(_ => {
                     return of(null);
                 }),
+            ),
+            risksOriginal: this.statisticsService.fetchRisksOriginal().pipe(
+                tap(value => console.log(value)),
+                map(value => value.statistics),
             ),
             statistics: this.statisticsService.fetchResult(),
             synthetizationConfig: this.synthetizationService.getAlgorithmData$(),
@@ -386,10 +391,6 @@ export class ReportComponent implements OnInit {
         if (newTable != null && newTable.clientHeight > this.PAGE_HEIGHT) {
             this.breakTable(newTable);
         }
-    }
-
-    protected get riskScoreOX(): number {
-        return this.calculatePos(this.riskScoreO);
     }
 
     protected offsetText(value: number): number {

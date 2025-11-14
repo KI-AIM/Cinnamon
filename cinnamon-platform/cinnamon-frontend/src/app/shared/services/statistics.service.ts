@@ -5,7 +5,7 @@ import { HttpClient } from "@angular/common/http";
 import { Statistics, StatisticsData, StatisticsResponse } from "../model/statistics";
 import { plainToInstance } from "class-transformer";
 import { DataType } from "../model/data-type";
-import { RiskEvaluation } from '../model/risk-evaluation';
+import { RiskEvaluation, RiskResponse } from '../model/risk-evaluation';
 import { ProcessStatus } from "../../core/enums/process-status";
 
 @Injectable({
@@ -411,6 +411,7 @@ export class StatisticsService {
         const params = {
             selector: stepName.toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
             jobName: stepName.toLowerCase(),
+            key: 'descriptive',
         }
 
         return this.httpClient.get<StatisticsResponse>(this.baseUrl, {params: params}).pipe(
@@ -418,6 +419,20 @@ export class StatisticsService {
                 return plainToInstance(StatisticsResponse, value);
             }),
         );
+    }
+
+    public fetchRisksOriginal(): Observable<RiskResponse> {
+        const params = {
+            selector: "ORIGINAL",
+            key: 'risks',
+        }
+
+        return this.httpClient.get<RiskResponse>(this.baseUrl, {params: params}).pipe(
+            map(value => {
+                return plainToInstance(RiskResponse, value);
+            }),
+        );
+
     }
 
     /**

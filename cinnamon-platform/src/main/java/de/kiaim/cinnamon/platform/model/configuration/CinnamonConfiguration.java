@@ -6,9 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Model for the steps defined in the application properties.
@@ -40,6 +38,8 @@ public class CinnamonConfiguration {
 	private Map<Integer, ExternalEndpoint> externalServerEndpoints = new HashMap<>();
 
 	private Integer statisticsEndpoint;
+
+	private List<DatasetStatistics> datasetStatistics = new ArrayList<>();
 
 	@NestedConfigurationProperty
 	private PipelineConfiguration pipeline = new PipelineConfiguration();

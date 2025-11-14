@@ -56,20 +56,22 @@ public class StatisticsController {
 	@GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
 	public StatisticsResponse getStatistics(
 			@ParameterObject @Valid final DataSetSource dataSetSource,
+			@Schema(description = "Key defined in the application.properties identifying of the statistics.")
+			@RequestParam(name = "key") final String statisticsKey,
 			@Schema(allowableValues = {"cancel"},
 			        description = "If the value is 'cancel', the process calculating the statistics will be cancelled.")
 			@RequestParam(name = "action", required = false) final String action,
 			@AuthenticationPrincipal final UserEntity requestUser
 	)
-			throws InternalIOException, InternalDataSetPersistenceException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException, BadDataSetIdException, BadStepNameException, InternalApplicationConfigurationException {
+			throws BadDatasetStatisticsKeyException, InternalIOException, InternalDataSetPersistenceException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException, BadDataSetIdException, BadStepNameException, InternalApplicationConfigurationException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity =  projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user);
 
 		if ("cancel".equals(action)) {
-			return statisticsService.cancelStatistics(projectEntity, dataSetSource);
+			return statisticsService.cancelStatistics(projectEntity, dataSetSource, statisticsKey);
 		}
 
-		return statisticsService.getStatistics(projectEntity, dataSetSource);
+		return statisticsService.getStatistics(projectEntity, dataSetSource, statisticsKey);
 	}
 
 }

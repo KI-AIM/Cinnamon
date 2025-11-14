@@ -1,3 +1,5 @@
+import { ProcessStatus } from "@core/enums/process-status";
+import { Statistics } from "@shared/model/statistics";
 import { Type, plainToInstance, Transform } from "class-transformer";
 
 export class RiskInference {
@@ -78,4 +80,11 @@ export class RiskEvaluation {
     multivariate_singling_out_risk?: RiskResults;
 
     total_risk_score: number;
+}
+
+export class RiskResponse {
+    status: ProcessStatus;
+
+    @Type(() => RiskEvaluation)
+    statistics: RiskEvaluation;
 }

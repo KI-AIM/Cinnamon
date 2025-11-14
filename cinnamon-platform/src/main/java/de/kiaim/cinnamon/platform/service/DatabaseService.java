@@ -775,7 +775,7 @@ public class DatabaseService {
 		dataSet.getDataTransformationErrors().clear();
 		dataSet.setStoredData(false);
 		dataSet.setConfirmedData(false);
-		dataSet.getStatisticsProcess().reset();
+		dataSet.getStatisticsProcesses().forEach(BackgroundProcessEntity::reset);
 
 		final OriginalDataEntity original = dataSet.getOriginalData();
 		if (original != null) {

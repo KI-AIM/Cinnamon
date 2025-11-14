@@ -106,7 +106,8 @@ public class BackgroundProcessEntity {
 	 *
 	 * @param owner The owner of the process.
 	 */
-	public BackgroundProcessEntity(final ProcessOwner owner) {
+	public BackgroundProcessEntity(final ProcessOwner owner, final int endpoint) {
+		this.endpoint = endpoint;
 		this.owner = owner;
 	}
 

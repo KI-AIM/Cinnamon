@@ -3,6 +3,8 @@ package de.kiaim.cinnamon.platform.model.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.platform.converter.StepListAttributeConverter;
+import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
+import de.kiaim.cinnamon.platform.model.configuration.DatasetStatistics;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.annotation.PreDestroy;
@@ -65,11 +67,12 @@ public class DataSetEntity extends ProcessOwner {
 	private List<Job> processed = new ArrayList<>();
 
 	/**
-	 * Process for calculating the statistics.
+	 * Processes for calculating statistics about the dataset.
+	 * The statistic is defined by the endpoint that corresponds to the endpoint defined in {@link DatasetStatistics#getEndpoint()}.
 	 */
-	@OneToOne(mappedBy = "owner", optional = false, orphanRemoval = true, cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "owner", orphanRemoval = true, cascade = CascadeType.ALL)
 	@Getter
-	private final BackgroundProcessEntity statisticsProcess = new BackgroundProcessEntity(this);
+	private final Set<BackgroundProcessEntity> statisticsProcesses = new HashSet<>();
 
 	/**
 	 * The corresponding original data.
@@ -186,15 +189,30 @@ public class DataSetEntity extends ProcessOwner {
 	}
 
 	/**
-	 * Returns the statistics of the data set.
-	 * @return The statistics.
+	 * Adds a new statistic process.
+	 *
+	 * @param statisticsProcess The statistic process.
+	 */
+	public void addStatisticsProcess(final BackgroundProcessEntity statisticsProcess) {
+		if (!statisticsProcesses.contains(statisticsProcess)) {
+			statisticsProcess.setOwner(this);
+			this.statisticsProcesses.add(statisticsProcess);
+		}
+	}
+
+	/**
+	 * Returns the statistics process which uses the given endpoint.
+	 *
+	 * @param endpoint The index of the endpoint as defined in {@link CinnamonConfiguration#getExternalServerEndpoints()}.
+	 * @return The process.
 	 */
 	@Nullable
-	public LobWrapperEntity getStatistics() {
-		if (!this.statisticsProcess.getResultFiles().containsKey( "metrics.yml")) {
-			return null;
+	public BackgroundProcessEntity getStatisticsProcess(final int endpoint) {
+		for (final var process : statisticsProcesses) {
+			if (process.getEndpoint() == endpoint) {
+				return process;
+			}
 		}
-		// TODO move name in application.properties
-		return this.statisticsProcess.getResultFiles().get("metrics.yml");
+		return null;
 	}
 }

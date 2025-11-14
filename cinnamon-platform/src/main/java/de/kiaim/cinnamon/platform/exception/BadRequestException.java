@@ -68,6 +68,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String USER_CONFIRMATION = "12";
 
+	/**
+	 * Error class code for {@link BadDatasetStatisticsKeyException}.
+	 */
+	public static final String DATASET_STATISTICS_KEY = "13";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

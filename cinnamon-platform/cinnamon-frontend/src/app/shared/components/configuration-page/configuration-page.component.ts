@@ -35,7 +35,8 @@ export class ConfigurationPageComponent implements OnInit {
         anonymization: "Anonymization",
         synthetization: "Synthetization",
         technical_evaluation: "Technical Evaluation",
-        risk_evaluation: "Risk Evaluation",
+        risk_evaluation: "Risk Evaluation of the synthesized dataset",
+        risk_evaluation_o: "Privacy score of the original dataset",
     };
     private readonly baseUrl: string = environments.apiUrl + "/api/process";
 

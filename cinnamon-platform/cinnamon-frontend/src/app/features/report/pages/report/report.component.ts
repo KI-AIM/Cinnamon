@@ -97,6 +97,7 @@ export class ReportComponent implements OnInit {
         pipeline: PipelineInformation,
         reportData: ReportData,
         risks: RiskEvaluation | null,
+        risksOriginal: RiskEvaluation | null,
         riskAssessmentConfig: RiskAssessmentConfig,
         statistics: StatisticsResponse,
         synthetizationConfig: AlgorithmData,
@@ -104,9 +105,6 @@ export class ReportComponent implements OnInit {
 
     @ViewChildren('chart', {read: ElementRef}) protected chartDivs: QueryList<ElementRef<HTMLElement>>;
     @ViewChildren('chart') protected charts: QueryList<ChartFrequencyComponent>;
-
-    // TODO take form statistics
-    protected riskScoreO = 0.1;
 
     constructor(
         private readonly anonymizationService: AnonymizationService,
@@ -140,7 +138,12 @@ export class ReportComponent implements OnInit {
             riskAssessmentConfig: this.riskAssessmentService.fetchConfiguration().pipe(
                 map(value => (value.config as any) as RiskAssessmentConfig),
             ),
-            risks: this.statisticsService.fetchRisks().pipe(
+            risks: this.statisticsService.fetchRisks('RISK_EVALUATION').pipe(
+                catchError(_ => {
+                    return of(null);
+                }),
+            ),
+            risksOriginal: this.statisticsService.fetchRisks('RISK_EVALUATION_O').pipe(
                 catchError(_ => {
                     return of(null);
                 }),
@@ -386,10 +389,6 @@ export class ReportComponent implements OnInit {
         if (newTable != null && newTable.clientHeight > this.PAGE_HEIGHT) {
             this.breakTable(newTable);
         }
-    }
-
-    protected get riskScoreOX(): number {
-        return this.calculatePos(this.riskScoreO);
     }
 
     protected offsetText(value: number): number {

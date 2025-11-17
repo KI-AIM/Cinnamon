@@ -306,12 +306,12 @@ export class StatisticsService {
         );
     }
 
-    public fetchRisks(): Observable<RiskEvaluation> {
+    public fetchRisks(process: 'RISK_EVALUATION' | 'RISK_EVALUATION_O'): Observable<RiskEvaluation> {
         return this.httpClient.get<any>(environments.apiUrl + `/api/project/resultFile`,
             {
                 params: {
                     executionStepName: 'EVALUATION',
-                    processStepName: 'RISK_EVALUATION',
+                    processStepName: process,
                     name: 'risks.json',
                 }
             }).pipe(

@@ -275,7 +275,7 @@
 
                         <svg
                             *ngIf="{utilityScoreO: getUtilityScoreOriginal(reportData.statistics.statistics), utilityScoreP: getUtilityScoreProtected(reportData.statistics.statistics)} as graphData"
-                            width="780" [attr.height]="reportData.risks != null ? 255 : 130"
+                            width="780" [attr.height]="(reportData.risks != null && reportData.risksOriginal != null) ? 255 : 130"
                             xmlns="http://www.w3.org/2000/svg">
                             <!-- Gradient definition -->
                             <defs>
@@ -314,7 +314,7 @@
                             </text>
 
                             <!-- Privacy Risk Score -->
-                            <ng-container *ngIf="reportData.risks != null">
+                            <ng-container *ngIf="reportData.risks != null && reportData.risksOriginal != null">
 
                                 <rect x="20" y="190" width="740" height="30" fill="url(#colorGradient)"/>
                                 <text x="10" y="150" font-size="18" font-family="Arial" font-weight="bold">
@@ -324,11 +324,11 @@
                                 <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
 
                                 <polygon
-                                    [attr.points]="`${riskScoreOX - 5},180 ${riskScoreOX + 5},180 ${riskScoreOX},190`"
+                                    [attr.points]="`${calculatePos(reportData.risksOriginal.total_risk_score) - 5},180 ${calculatePos(reportData.risksOriginal.total_risk_score) + 5},180 ${calculatePos(reportData.risksOriginal.total_risk_score)},190`"
                                     fill="gray"/>
-                                <text [attr.x]="offsetText(riskScoreO)" x="40" y="175" font-size="14"
+                                <text [attr.x]="offsetText(reportData.risksOriginal.total_risk_score)" x="40" y="175" font-size="14"
                                       font-family="Arial">
-                                    Original Dataset ({{ riskScoreO }})
+                                    Original Dataset ({{ reportData.risksOriginal.total_risk_score }})
                                 </text>
 
                                 <polygon

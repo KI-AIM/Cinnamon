@@ -293,6 +293,8 @@ class DatabaseServiceTest extends DatabaseTest {
 		process21.setExternalProcessStatus(ProcessStatus.SKIPPED);
 		var process22 = stage2.getProcess(1);
 		process22.setExternalProcessStatus(ProcessStatus.FINISHED);
+		var process23 = stage2.getProcess(2);
+		process23.setExternalProcessStatus(ProcessStatus.FINISHED);
 
 		assertDoesNotThrow(() -> databaseService.markProcessOutdated(process12));
 

@@ -155,6 +155,16 @@
                                     </mat-expansion-panel>
                                 </ng-container>
 
+                                <ng-container *ngIf="job === 'risk_evaluation_o'">
+                                    <mat-expansion-panel>
+                                        <mat-expansion-panel-header>
+                                            <mat-panel-title>Risks</mat-panel-title>
+                                            <mat-panel-description>Risk assessment</mat-panel-description>
+                                        </mat-expansion-panel-header>
+                                        The privacy score can be viewed in the report.
+                                    </mat-expansion-panel>
+                                </ng-container>
+
                                 <ng-container *ngIf="job === 'base_evaluation'">
                                     <mat-expansion-panel>
                                         <mat-expansion-panel-header>

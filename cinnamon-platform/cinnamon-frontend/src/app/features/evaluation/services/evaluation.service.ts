@@ -31,7 +31,8 @@ export class EvaluationService extends ExecutionStepService {
     public getJobName(name: string): string {
         const jobNames: Record<string, string> = {
             'technical_evaluation': 'Technical Evaluation',
-            'risk_evaluation': 'Risk Evaluation',
+            'risk_evaluation': 'Risk Evaluation of the synthesized dataset',
+            'risk_evaluation_o': 'Privacy score of the original dataset',
             'base_evaluation': 'Base Evaluation',
         };
 

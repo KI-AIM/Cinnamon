@@ -13,7 +13,8 @@ COPY ../cinnamon-model/src cinnamon-model/src
 COPY ../cinnamon-platform/src cinnamon-platform/src
 COPY ../cinnamon-platform/cinnamon-frontend cinnamon-platform/cinnamon-frontend
 
-RUN mvn clean package -pl cinnamon-platform -am -DskipTests
+RUN --mount=type=secret,id=mvn_settings,dst=/root/.m2/settings.xml \
+    mvn clean package -pl cinnamon-platform -am -DskipTests
 
 # package
 FROM tomcat:10-jdk17-temurin

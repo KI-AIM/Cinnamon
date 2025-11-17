@@ -1,25 +1,27 @@
-import { Component, OnDestroy, OnInit, TemplateRef } from "@angular/core";
-import { LockedInformation, StateManagementService } from "@core/services/state-management.service";
-import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
-import { Steps } from "src/app/core/enums/steps";
-import { TitleService } from "src/app/core/services/title-service.service";
-import { DataService } from "src/app/shared/services/data.service";
-import { DataConfigurationEstimation } from "@shared/model/data-configuration";
-import { DataConfigurationService } from "src/app/shared/services/data-configuration.service";
-import { Router } from "@angular/router";
-import { FileService } from "../../services/file.service";
+import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
-import { FileConfiguration, FileType } from "src/app/shared/model/file-configuration";
-import { Delimiter, LineEnding, QuoteChar } from "src/app/shared/model/csv-file-configuration";
-import { LoadingService } from "src/app/shared/services/loading.service";
+import { Router } from "@angular/router";
+import { Mode } from "@core/enums/mode";
+import { Steps } from "@core/enums/steps";
+import { LockedInformation, StateManagementService } from "@core/services/state-management.service";
+import { TitleService } from "@core/services/title-service.service";
+import { FileService } from "@features/data-upload/services/file.service";
+import { ConfigurationInputDefinition } from "@shared/model/configuration-input-definition";
+import { ConfigurationInputType } from "@shared/model/configuration-input-type";
+import { Delimiter, LineEnding, QuoteChar } from "@shared/model/csv-file-configuration";
+import { DataConfigurationEstimation } from "@shared/model/data-configuration";
+import { FileConfiguration, FileType } from "@shared/model/file-configuration";
+import { FileInformation } from "@shared/model/file-information";
+import { ImportPipeData } from "@shared/model/import-pipe-data";
+import { Status } from "@shared/model/status";
+import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
-import { ImportPipeData } from "src/app/shared/model/import-pipe-data";
+import { DataConfigurationService } from "@shared/services/data-configuration.service";
+import { DataService } from "@shared/services/data.service";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { LoadingService } from "@shared/services/loading.service";
 import { StatusService } from "@shared/services/status.service";
 import { combineLatest, Observable } from "rxjs";
-import { FileInformation } from "@shared/model/file-information";
-import { ErrorHandlingService } from "@shared/services/error-handling.service";
-import { Status } from "@shared/model/status";
-import { Mode } from "@core/enums/mode";
 
 @Component({
     selector: "app-upload-file",
@@ -35,6 +37,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     protected configurationFile: File | null = null;
     protected dataFile: File | null = null;
     public fileConfiguration: FileConfiguration;
+    protected fhirResourceTypes: string[] = [];
+    protected loadingEstimation: boolean = false;
 
     protected pageData$: Observable<{
         appConfig: AppConfig;
@@ -42,6 +46,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         locked: LockedInformation;
         status: Status;
     }>;
+
+    @ViewChild("fileConfigurationDialog") private fileConfigurationDialog!: TemplateRef<MatDialog>;
 
     public lineEndings = Object.values(LineEnding);
     public lineEndingLabels: Record<LineEnding, string> = {
@@ -103,6 +109,21 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Checks if the current file configuration {@link #fileConfiguration} is invalid.
+     * @return true if the file configuration is invalid.
+     * @private
+     */
+    protected isFileConfigurationInvalid(): boolean {
+        if (this.fileConfiguration.fileType === FileType.FHIR) {
+            if (this.fileConfiguration.fhirFileConfiguration.resourceType == null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Checks if the configuration file input is invalid.
      * @return If the configuration file input is invalid.
      * @protected
@@ -119,17 +140,49 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     protected get isInvalid(): boolean {
         const stepCompleted = this.statusService.isStepCompleted(Steps.UPLOAD);
         if (stepCompleted) {
-            return this.isDataFileInvalid && this.isConfigFileInvalid;
+            return (this.isDataFileInvalid || this.isFileConfigurationInvalid()) && this.isConfigFileInvalid;
         } else {
-            return this.isDataFileInvalid;
+            return this.isDataFileInvalid || this.isFileConfigurationInvalid();
         }
     }
 
-    protected onFileInput(files: FileList | null) {
+    /**
+     * Callback for file inputs.
+     * Estimates the file configuration for the new file.
+     *
+     * @param files File list from the input event.
+     * @protected
+     */
+    protected onFileInput(files: FileList | null): void {
         if (files) {
-            const fileExtension = this.getFileExtension(files[0])!;
-            this.dataFile = files[0];
-            this.setFileType(fileExtension);
+            const file = files[0];
+            this.dataFile = file;
+
+            this.loadingEstimation = true;
+            this.fileService.estimateFileConfiguration(file).subscribe({
+                next: (value) => {
+                    this.fileConfiguration = value.estimation;
+                    if (value.fhirResourceTypes != null) {
+                        this.fhirResourceTypes = value.fhirResourceTypes;
+                    }
+
+                    this.loadingEstimation = false;
+
+                    if (value.estimation.fileType === FileType.FHIR) {
+                        this.openDialog(this.fileConfigurationDialog);
+                    }
+                },
+                error: (e) => {
+                    this.handleError(e, "Failed to estimate the file configuration");
+
+                    const fileExtension = this.getFileExtension(file);
+                    if (fileExtension != null) {
+                        this.setFileType(fileExtension);
+                    }
+
+                    this.loadingEstimation = false;
+                },
+            });
         }
     }
 
@@ -207,6 +260,19 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Creates the input definition for the resource type selector.
+     * @return The input definition.
+     * @protected
+     */
+    protected get fhirResourceTypeDefinition(): ConfigurationInputDefinition {
+        const def = new ConfigurationInputDefinition();
+        def.type = ConfigurationInputType.STRING;
+        def.label = "FHIR Resource Type";
+        def.description = "Select the resource type you want to anonymize. In one project, only a single resource type contained in the bundle can be anonymized. The protected dataset will only contain data of this resource. If you want to anonymize multiple resource types, create one project for each of them.";
+        return def;
+    }
+
+    /**
      * Handles the result of the configuration upload.
      * Redirects to the next step if the upload was successful, handles the errors otherwise.
      * @param result The result.
@@ -227,6 +293,9 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         switch (fileExtension) {
             case "csv":
                 this.fileConfiguration.fileType = FileType.CSV;
+                break;
+            case "json":
+                this.fileConfiguration.fileType = FileType.FHIR;
                 break;
             case "xlsx":
                 this.fileConfiguration.fileType = FileType.XLSX;

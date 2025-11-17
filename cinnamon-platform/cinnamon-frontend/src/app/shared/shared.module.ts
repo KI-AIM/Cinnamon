@@ -137,6 +137,7 @@ import { TooltipComponent } from './components/tooltip/tooltip.component';
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,
+        ConfigurationInputInfoComponent,
         ConfigurationPageComponent,
         DataInspectionComponent,
         DataInspectionAttributeComponent,

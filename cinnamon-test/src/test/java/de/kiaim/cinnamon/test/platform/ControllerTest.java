@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
+import de.kiaim.cinnamon.platform.model.file.FileType;
 import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
 import de.kiaim.cinnamon.test.util.FileConfigurationTestHelper;
 import de.kiaim.cinnamon.test.util.ResourceHelper;
@@ -20,8 +21,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -147,6 +147,23 @@ public class ControllerTest extends DatabaseTest {
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+	}
+
+	protected void postFhirFile() throws Exception {
+		final MockMultipartFile file = ResourceHelper.loadFhirBundle();
+		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.FHIR);
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.json', type: 'FHIR', numberOfAttributes: 13}"));
+	}
+
+	protected void estimateDataConfiguration() throws Exception {
+		mockMvc.perform(get("/api/data/estimation"))
+		       .andExpect(status().isOk());
 	}
 
 	protected void createHoldOut(final float holdOutPercentage) throws Exception {

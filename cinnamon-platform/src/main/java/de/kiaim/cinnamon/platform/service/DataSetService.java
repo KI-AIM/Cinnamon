@@ -307,6 +307,11 @@ public class DataSetService {
 		switch (dataSetSelector) {
 			case HOLD_OUT, ORIGINAL -> {
 				result = process.getProject().getOriginalData().getDataSet();
+				if (result == null) {
+					throw new BadStateException(BadStateException.NO_DATA_SET,
+					                            "The project '" + process.getProject().getId() +
+					                            "' does not contain an original data set!");
+				}
 			}
 			case LAST_OR_ORIGINAL -> {
 				if (process instanceof ExternalProcessEntity externalProcess) {

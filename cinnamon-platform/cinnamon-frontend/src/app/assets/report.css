@@ -269,6 +269,19 @@
     width: 50%;
 }
 
+.report-glossary-term {
+    margin-bottom: var(--margin-elements);
+}
+.report-glossary-term-title {
+    font-weight: bold;
+}
+.report-glossary-term-warning {
+    color: var(--report-color-warning);
+}
+.report-glossary-term-definition {
+    font-style: italic;
+}
+
 /* CSS for metric tables */
 
 .metric-similarity {

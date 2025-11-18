@@ -1,11 +1,16 @@
 package de.kiaim.cinnamon.anonymization.service;
 
+import de.kiaim.cinnamon.anonymization.exception.ReportException;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAttributeConfig;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendModelConfig;
 import de.kiaim.cinnamon.model.dto.ModuleReportContent;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,12 +27,25 @@ import java.util.stream.Collectors;
 public class ReportService {
 
 	/**
-	 * Generates a textual description of the given configuration.
+	 * Generates the content for the report.
+	 *
+	 * @param configuration The anonymization configuration.
+	 * @return The report content.
+	 */
+	public ModuleReportContent getReportContent(final FrontendAnonConfigWrapper configuration) {
+		final String configDescription = getConfigDescription(configuration);
+		final String glossary = loadReportGlossary();
+
+		return new ModuleReportContent(configDescription, glossary);
+	}
+
+	/**
+	 * Generates a textual description of the given anonymization configuration.
 	 *
 	 * @param configuration The configuration.
 	 * @return The description.
 	 */
-	public ModuleReportContent getReportContent(final FrontendAnonConfigWrapper configuration) {
+	private String getConfigDescription(final FrontendAnonConfigWrapper configuration) {
 		final FrontendModelConfig model = configuration.getAnonymization().getPrivacyModels().get(0).getModelConfiguration();
 		final String riskThresholdType = Objects.equals(model.getRiskThresholdType(), "Max")
 		                                 ? "maximum"
@@ -60,24 +78,21 @@ public class ReportService {
 			protection.append("</strong>.</p>");
 		}
 
-		String configDescription =
-				"""
-				<p>
-				The used privacy model optimized the dataset to reach a <strong>%s residual risk of %s</strong> based <strong>on %s %s (%s)</strong>.
-				This means that all records are indistinguishable to one other record in these attributes.
-				The generalization was set to be <strong>%s</strong>, meaning that all values in a column have the same underlying generalization interval.
-				</p>
-				%s
-				<p>
-				No other protection mechanism was applied.
-				</p>
-				<p>
-				For further details, look into the dedicated anonymization section of this report.
-				</p>
-				""".formatted(riskThresholdType, riskThresholdValue, numberOfAttributes, attributes, namesOfAttributes,
-				              generalization, protection.toString());
-
-		return new ModuleReportContent(configDescription, null);
+		return """
+		       <p>
+		       The used privacy model optimized the dataset to reach a <strong>%s residual risk of %s</strong> based <strong>on %s %s (%s)</strong>.
+		       This means that all records are indistinguishable to one other record in these attributes.
+		       The generalization was set to be <strong>%s</strong>, meaning that all values in a column have the same underlying generalization interval.
+		       </p>
+		       %s
+		       <p>
+		       No other protection mechanism was applied.
+		       </p>
+		       <p>
+		       For further details, look into the dedicated anonymization section of this report.
+		       </p>
+		       """.formatted(riskThresholdType, riskThresholdValue, numberOfAttributes, attributes, namesOfAttributes,
+		                     generalization, protection.toString());
 	}
 
 	/**
@@ -110,7 +125,7 @@ public class ReportService {
 	 * Values between 1 and 9 are written out.
 	 *
 	 * @param number The number.
-	 * @return The textual representation of the  number.
+	 * @return The textual representation of the number.
 	 */
 	private String writeNumber(final int number) {
 		return switch (number) {
@@ -137,6 +152,20 @@ public class ReportService {
 	 */
 	private String applyNumerus(final int number, final String singular, final String plural) {
 		return number == 1 ? singular : plural;
+	}
+
+	/**
+	 * Loads the glossary from the classpath.
+	 *
+	 * @return The glossary's HTML content as a string.
+	 */
+	private String loadReportGlossary() {
+		final Resource resource = new ClassPathResource("report/glossary.html");
+		try {
+			return resource.getContentAsString(Charset.defaultCharset());
+		} catch (final IOException e) {
+			throw new ReportException("Error loading the report glossary.", e);
+		}
 	}
 
 }

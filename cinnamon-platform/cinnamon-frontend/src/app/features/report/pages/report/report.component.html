@@ -743,6 +743,19 @@
                     </ng-template>
                 </div>
 
+                <div class="report-section">
+                    <div class="report-header report-header-s">
+                        Glossary
+                    </div>
+
+                    <div *ngFor="let entry of reportData.reportData | keyvalue">
+                        <div *ngIf="entry.value != null && entry.value.glossar != null"
+                             [innerHTML]="entry.value.glossar">
+                        </div>
+                    </div>
+
+                </div>
+
                 <div
                     style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; color: #7f8c8d; font-size: 14px;">
                     <p>Privacy Report | Prepared: 01.01.2025</p>

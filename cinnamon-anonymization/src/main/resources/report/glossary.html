@@ -1,0 +1,109 @@
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Anonymization</div>
+	<div class="report-glossary-term-definition">Definition:</div>
+	<div>
+		Anonymization is the application of techniques that prevent identification of individuals in a dataset and
+		protect against privacy attacks such as singling out, linkability, and inference.
+		<br>
+		In standards like the ISO 20889, anonymization is implemented through combinations of de-identification
+		techniques including generalization, suppression, masking, micro-aggregation, sampling, and randomization.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Generalization</div>
+	<div class="report-glossary-term-definition">Definition:</div>
+	<div>
+		Generalization is a de-identification technique where attribute values are replaced with broader, less-specific
+		categories to reduce identifiability.
+		<br>
+		Examples include:
+		<ul>
+			<li>Exact age &rarr; age range</li>
+			<li>Full ZIP code &rarr; 3-digit ZIP code</li>
+		</ul>
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Micro-Aggregation</div>
+	<div class="report-glossary-term-definition">Definition:</div>
+	<div>
+		Micro-aggregation groups similar records into clusters (of size &ge; k) and replaces individual values with
+		aggregated values, such as cluster means or medians.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Record Deletion / Record Suppression</div>
+	<div class="report-glossary-term-definition">Definition:</div>
+	<div>
+		Record deletion (suppression) removes entire records from a dataset when they are too unique or pose high
+		re-identification risks. This typically removes outlier datasets, and eliminates records with rare categories.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Attribute Deletion</div>
+	<div class="report-glossary-term-definition">Definition:</div>
+	<div>
+		Attribute deletion (Column Suppression) removes an entire attribute (column) from a dataset because it is too
+		identifying or too sensitive and cannot be adequately protected by transformations such as generalization or
+		masking.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Masking</div>
+	<div class="report-glossary-term-definition">Definition:</div>
+	<div>
+		Masking refers to techniques that alter or replace specific attribute values to prevent disclosure of the
+		original information.
+		<br>
+		Common methods include:
+		<ul>
+			<li>Replacing values with pseudorandom values</li>
+			<li>Noise addition</li>
+			<li>Tokenization</li>
+			<li>Pattern masking (e.g., showing only last 4 digits)</li>
+		</ul>
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Maximum Privacy Risk Model</div>
+	<div class="report-glossary-term-warning">
+		!This model should be used with caution and not for public data sharing!
+	</div>
+	<div class="report-glossary-term-definition">Definition:</div>
+	<div>
+		The Maximum Privacy Risk Model is a dataset-level privacy assurance model where the overall privacy risk is
+		determined by the worst-case (highest) individual risk across all records in the dataset.
+		<br>
+		Under this model, the dataset is considered sufficiently protected only if the record with the highest risk
+		still satisfies the required privacy protection threshold. For example, if the Maximum Privacy Risk of a dataset
+		is set to 0.5, all records are indistinguishable for to at least one other record, so an attacker has a 50%
+		chance to identify an individual correctly. The maximum Privacy Risk Model in Cinnamon uses k-Anonymity to
+		enforce these thresholds.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">K-Anonymity</div>
+	<div class="report-glossary-term-definition">Definition:</div>
+	<div>
+		A formal privacy model ensuring that each record in a released dataset is indistinguishable from at least k&minus;1
+		other records based on a set of quasi-identifiers.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Average Privacy Risk Model</div>
+	<div class="report-glossary-term-definition">Definition:</div>
+	<div>
+		The Average Privacy Risk Model is a dataset-level privacy assessment method in which the overall risk is the
+		mean of the individual privacy risks measured across all records (or across all valid attacks). It reflects the
+		typical privacy exposure of individuals rather than the worst case. When used for Anonymization, it means that
+		only the average risk is adjusted for, leaving some individuals potentially more vulnerable.
+	</div>
+</div>

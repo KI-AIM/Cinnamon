@@ -244,7 +244,10 @@ async def get_report(
 
     overview += '</ul></div></div></div>'
 
-    report_data = {"configDescription": overview}
+    with open('report/glossary.html', "r") as glossary_file:
+        glossary = glossary_file.read()
+
+    report_data = {"configDescription": overview, "glossar": glossary}
     return JSONResponse(content=report_data, status_code=200)
 
 

@@ -272,14 +272,27 @@
 .report-glossary-term {
     margin-bottom: var(--margin-elements);
 }
+.report-glossary-term ol {
+    margin-bottom: 0;
+}
 .report-glossary-term-title {
     font-weight: bold;
 }
 .report-glossary-term-warning {
     color: var(--report-color-warning);
 }
-.report-glossary-term-definition {
+.report-glossary-term-definition:before {
+    content: "Definition:";
     font-style: italic;
+    display: block;
+}
+.report-glossary-term-interpretation:before {
+    content: "Interpretation:";
+    font-style: italic;
+    display: block;
+}
+.report-glossary-term-definition, .report-glossary-term-interpretation {
+    margin-bottom: var(--margin-text);
 }
 
 /* CSS for metric tables */

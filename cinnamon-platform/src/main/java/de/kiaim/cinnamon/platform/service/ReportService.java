@@ -63,10 +63,15 @@ public class ReportService {
 
 		for (final ExecutionStepEntity executionStep : project.getPipelines().get(0).getStages()) {
 			for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {
+				final Job job = externalProcess.getJob();
+				if (!job.isHasReportContent()) {
+					continue;
+				}
+
 				if (externalProcess.isSkip()) {
-					reportData.put(externalProcess.getJob().getName(), null);
+					reportData.put(job.getName(), null);
 				} else {
-					reportData.put(externalProcess.getJob().getName(), fetchReportData(externalProcess));
+					reportData.put(job.getName(), fetchReportData(externalProcess));
 				}
 			}
 		}

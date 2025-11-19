@@ -22,11 +22,21 @@
 
 <div class="vertical-boxes">
     <div class="box">
+        <div class="mb-3">
+            <div class="mb-2">
+                The workflow is finished. The report below describes the applied workflow and displays the results.
+                If the privacy or utility is not satisfactory, you can adjust the configurations and rerun the workflow.
+                Otherwise you can export the project results and the report.
+            </div>
+            <div>
+                <button mat-button mat-raised-button color="primary" (click)="projectExport.open()">Export Project</button>
+            </div>
+        </div>
 
         <div>
             In order to save the report as a PDF file, please follow these steps:
             <div *ngIf="platform.ANDROID; else noAndroidInstructions">
-                <ol>
+                <ol class="mb-2">
                     <li>
                         Click on the <q>Save Report</q> button below. A new browser window with a print dialog should
                         open.
@@ -41,7 +51,7 @@
             </div>
             <ng-template #noAndroidInstructions>
                 <ng-container *ngIf="platform.BLINK">
-                    <ol>
+                    <ol class="mb-2">
                         <li>
                             Click on the <q>Save Report</q> button below. A new browser window with a print dialog
                             should open.
@@ -58,7 +68,7 @@
                     </ol>
                 </ng-container>
                 <ng-container *ngIf="platform.FIREFOX">
-                    <ol>
+                    <ol class="mb-2">
                         <li>
                             Click on the <q>Save Report</q> button below. A new browser window with a print dialog
                             should open.
@@ -79,9 +89,11 @@
                     </ol>
                 </ng-container>
                 <ng-container *ngIf="!platform.BLINK && !platform.FIREFOX">
-                    <li>
-                        Click on the <q>Save Report</q> button below.
-                    </li>
+                    <ol class="mb-2">
+                        <li>
+                            Click on the <q>Save Report</q> button below.
+                        </li>
+                    </ol>
                 </ng-container>
 
             </ng-template>
@@ -779,3 +791,5 @@
 
     </ng-container>
 </div>
+
+<app-project-export #projectExport></app-project-export>

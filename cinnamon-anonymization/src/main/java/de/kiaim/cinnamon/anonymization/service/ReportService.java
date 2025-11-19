@@ -80,7 +80,7 @@ public class ReportService {
 
 		return """
 		       <p>
-		       The used privacy model optimized the dataset to reach a <strong>%s residual risk of %s</strong> based <strong>on %s %s (%s)</strong>.
+		       The used privacy model optimized the dataset to reach a <strong>%s residual risk of %s</strong> based on <strong>%s %s (%s)</strong>.
 		       This means that all records are indistinguishable to one other record in these attributes.
 		       The generalization was set to be <strong>%s</strong>, meaning that all values in a column have the same underlying generalization interval.
 		       </p>

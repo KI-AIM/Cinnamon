@@ -392,7 +392,7 @@ export class ReportComponent implements OnInit {
     }
 
     protected offsetText(value: number): number {
-        return this.clamp(this.calculatePos(value) - 60, 10, 640);
+        return this.clamp(this.calculatePos(value) - 60, 10, 630);
     }
 
     protected calculatePos(percentage: number) {

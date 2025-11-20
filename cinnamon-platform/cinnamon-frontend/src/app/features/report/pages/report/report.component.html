@@ -113,9 +113,14 @@
             <div class="report-root">
 
                 <div class="report-header">
-                    <h1>Cinnamon Data Report for <q>{{ reportData.mc.projectName }}</q></h1>
-                    <p>Assessment of Resemblance, Utility and Privacy Risks</p>
-                    <p>Report Date: {{ reportDate }}, Creator: {{ reportData.mc.reportCreator ?? 'Unknown' }} </p>
+                    <div>
+                        <img ngSrc="./app/assets/cinnamon-logo.png" alt="logo" width="120" height="132">
+                    </div>
+                    <div style="display: flex; flex-direction: column; margin: auto">
+                        <h1>Cinnamon Data Report for <q>{{ reportData.mc.projectName }}</q></h1>
+                        <p>Assessment of Resemblance, Utility and Privacy Risks</p>
+                        <p>Report Date: {{ reportDate }}, Creator: {{ reportData.mc.reportCreator ?? 'Unknown' }} </p>
+                    </div>
                 </div>
 
                 <div class="report-chapter">

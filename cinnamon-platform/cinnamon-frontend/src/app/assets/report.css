@@ -88,8 +88,10 @@
 
 .report-header {
     position: relative;
+    align-items: center;
     background: linear-gradient(to right, var(--report-color-primary-dark), var(--report-color-primary));
     color: var(--report-color-foreground);
+    display: flex;
     padding: 30px;
     border-radius: 5px;
     margin-bottom: var(--report-margin-title-page);

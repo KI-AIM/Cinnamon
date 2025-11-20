@@ -1,5 +1,5 @@
 import { Platform } from "@angular/cdk/platform";
-import { AsyncPipe, DecimalPipe, KeyValuePipe, LowerCasePipe, NgForOf, NgIf } from "@angular/common";
+import { AsyncPipe, DecimalPipe, KeyValuePipe, LowerCasePipe, NgForOf, NgIf, NgOptimizedImage } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatButton } from "@angular/material/button";
@@ -56,6 +56,7 @@ import { environments } from "src/environments/environment";
         DecimalPipe,
         LowerCasePipe,
         KeyValuePipe,
+        NgOptimizedImage,
     ],
     templateUrl: './report.component.html',
     styleUrl: './report.component.less'

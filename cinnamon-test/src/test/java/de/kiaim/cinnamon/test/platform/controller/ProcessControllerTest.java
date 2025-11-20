@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -213,7 +214,8 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals("anonymization-server.0", process.getServerInstance(), "Unexpected server instance has been set!");
 
 		// Test request
-		RecordedRequest recordedRequest = mockBackEnd.takeRequest();
+		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
+		assertNotNull(recordedRequest, "No request has been sent to the server!");
 		assertEquals("POST", recordedRequest.getMethod());
 		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
 
@@ -272,7 +274,8 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("stages[0].processes[1].processSteps").value(nullValue()));
 
 
-		var recordedRequest = mockBackEnd.takeRequest();
+		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
+		assertNotNull(recordedRequest, "No request has been sent to the server!");
 		assertEquals("GET", recordedRequest.getMethod());
 		assertEquals("/api/anonymization/process/" + id + "/status", recordedRequest.getPath());
 	}
@@ -305,7 +308,9 @@ public class ProcessControllerTest extends ControllerTest {
 				                .file(resultAdditional)
 		       )
 		       .andExpect(status().isOk());
-		var recordedRequest = mockBackEnd.takeRequest();
+
+		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
+		assertNotNull(recordedRequest, "No request has been sent to the server!");
 		assertEquals("POST", recordedRequest.getMethod());
 		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
 

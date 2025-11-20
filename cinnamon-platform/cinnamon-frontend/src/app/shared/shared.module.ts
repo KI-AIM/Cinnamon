@@ -188,6 +188,7 @@ import { IsObjectPipe } from './pipes/is-object.pipe';
         IsObjectPipe,
         TooltipComponent,
         NumberToTextPipe,
+        FormatNumberPipe,
     ],
 })
 export class SharedModule {}

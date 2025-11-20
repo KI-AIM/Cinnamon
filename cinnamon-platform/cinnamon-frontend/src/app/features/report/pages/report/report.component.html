@@ -351,19 +351,19 @@
                                     <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
 
                                     <polygon
-                                        [attr.points]="`${calculatePos(reportData.risksOriginal.total_risk_score) - 5},180 ${calculatePos(reportData.risksOriginal.total_risk_score) + 5},180 ${calculatePos(reportData.risksOriginal.total_risk_score)},190`"
+                                        [attr.points]="`${calculatePos(1 - reportData.risksOriginal.total_risk_score) - 5},180 ${calculatePos(1 - reportData.risksOriginal.total_risk_score) + 5},180 ${calculatePos(1 - reportData.risksOriginal.total_risk_score)},190`"
                                         fill="gray"/>
-                                    <text [attr.x]="offsetText(reportData.risksOriginal.total_risk_score)" x="40"
+                                    <text [attr.x]="offsetText(1 - reportData.risksOriginal.total_risk_score)" x="40"
                                           y="175" font-size="14" font-family="Arial">
-                                        Original Dataset ({{ reportData.risksOriginal.total_risk_score }})
+                                        Original Dataset ({{ 1 - reportData.risksOriginal.total_risk_score | formatNumber }})
                                     </text>
 
                                     <polygon
-                                        [attr.points]="`${calculatePos(reportData.risks.total_risk_score) - 5},230 ${calculatePos(reportData.risks.total_risk_score) + 5},230 ${calculatePos(reportData.risks.total_risk_score)},220`"
+                                        [attr.points]="`${calculatePos(1 - reportData.risks.total_risk_score) - 5},230 ${calculatePos(1 - reportData.risks.total_risk_score) + 5},230 ${calculatePos(1 - reportData.risks.total_risk_score)},220`"
                                         fill="black"/>
-                                    <text [attr.x]="offsetText(reportData.risks.total_risk_score)" y="245"
+                                    <text [attr.x]="offsetText(1 - reportData.risks.total_risk_score)" y="245"
                                           font-size="14" font-family="Arial">
-                                        Protected Dataset ({{ reportData.risks.total_risk_score }})
+                                        Protected Dataset ({{ 1 - reportData.risks.total_risk_score | formatNumber }})
                                     </text>
 
                                 </ng-container>

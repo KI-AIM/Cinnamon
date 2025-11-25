@@ -331,6 +331,11 @@ public class ProcessControllerTest extends ControllerTest {
 		var secondProcess = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(1);
 		assertEquals(ProcessStatus.RUNNING, secondProcess.getExternalProcessStatus(), "Unexpected status of second process!");
 		assertEquals("synthetization-server.0", secondProcess.getServerInstance(), "Unexpected server instance of second process!");
+
+		// Test the protected selector
+		final DataSetEntity protectedDataset = dataSetService.getDataSetEntityOrThrow(updateTestProject,
+		                                                                              DataSetSource.Protected());
+		assertEquals(dataSetEntity.getId(), protectedDataset.getId());
 	}
 
 	private void getStatus2() throws Exception {
@@ -380,6 +385,11 @@ public class ProcessControllerTest extends ControllerTest {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(updateTestProject, DataSetSource.Job(
 				firstStage.getJobs().get(1)));
 		assertEquals(firstStage.getJobList(), dataSetEntity.getProcessed(), "Unexpected previous processes!");
+
+		// Test the protected selector
+		final DataSetEntity protectedDataset = dataSetService.getDataSetEntityOrThrow(updateTestProject,
+		                                                                              DataSetSource.Protected());
+		assertEquals(dataSetEntity.getId(), protectedDataset.getId());
 	}
 
 	private void getStatus3() throws Exception {

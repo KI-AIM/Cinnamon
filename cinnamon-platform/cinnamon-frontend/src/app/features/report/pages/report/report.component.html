@@ -308,7 +308,7 @@
 
                             <svg
                                 *ngIf="{utilityScoreO: getUtilityScoreOriginal(reportData.statistics.statistics), utilityScoreP: getUtilityScoreProtected(reportData.statistics.statistics)} as graphData"
-                                width="780" xmlns="http://www.w3.org/2000/svg"
+                                [attr.width]="CHART_BAR + (2 * CHART_MARGIN)" xmlns="http://www.w3.org/2000/svg"
                                 [attr.height]="(reportData.risks != null && reportData.risksOriginal != null) ? 255 : 130">
                                 <!-- Gradient definition -->
                                 <defs>
@@ -324,12 +324,14 @@
                                 </defs>
 
                                 <!-- Utility Score -->
-                                <rect x="20" y="65" width="740" height="30" fill="url(#colorGradient)"/>
+                                <rect [attr.x]="CHART_MARGIN" y="65" [attr.width]="CHART_BAR" height="30" fill="url(#colorGradient)"/>
                                 <text x="10" y="25" font-size="18" font-family="Arial" font-weight="bold">
                                     Utility Score:
                                 </text>
                                 <text x="0" y="85" font-size="14" font-family="Arial">0.0</text>
-                                <text x="760" y="85" font-size="14" font-family="Arial">1.0</text>
+                                <text [attr.x]="CHART_MARGIN + CHART_BAR + 5" y="85" font-size="14" font-family="Arial">
+                                    1.0
+                                </text>
 
                                 <polygon fill="gray"
                                          [attr.points]="`${calculatePos(graphData.utilityScoreO) - 5},55 ${calculatePos(graphData.utilityScoreO) + 5},55 ${calculatePos(graphData.utilityScoreO)},65`"/>
@@ -348,12 +350,16 @@
                                 <!-- Privacy Risk Score -->
                                 <ng-container *ngIf="reportData.risks != null && reportData.risksOriginal != null">
 
-                                    <rect x="20" y="190" width="740" height="30" fill="url(#colorGradient)"/>
+                                    <rect [attr.x]="CHART_MARGIN" y="190" width="740" height="30"
+                                          fill="url(#colorGradient)"/>
                                     <text x="10" y="150" font-size="18" font-family="Arial" font-weight="bold">
                                         Privacy Score:
                                     </text>
                                     <text x="0" y="210" font-size="14" font-family="Arial">0.0</text>
-                                    <text x="760" y="210" font-size="14" font-family="Arial">1.0</text>
+                                    <text [attr.x]="CHART_MARGIN + CHART_BAR + 5" y="210" font-size="14"
+                                          font-family="Arial">
+                                        1.0
+                                    </text>
 
                                     <polygon
                                         [attr.points]="`${calculatePos(1 - reportData.risksOriginal.total_risk_score) - 5},180 ${calculatePos(1 - reportData.risksOriginal.total_risk_score) + 5},180 ${calculatePos(1 - reportData.risksOriginal.total_risk_score)},190`"

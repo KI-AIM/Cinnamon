@@ -66,6 +66,9 @@ export class ReportComponent implements OnInit {
     private readonly baseUrl: string = environments.apiUrl + "/api/report";
     private readonly PAGE_HEIGHT = 1122;
 
+    protected readonly CHART_BAR = 740;
+    protected readonly CHART_MARGIN = 25;
+
     protected readonly AttributeProtectionMetadata = AttributeProtectionMetadata;
     protected readonly DateFormatConfiguration = DateFormatConfiguration;
     protected readonly DateTimeFormatConfiguration = DateTimeFormatConfiguration;
@@ -397,7 +400,7 @@ export class ReportComponent implements OnInit {
     }
 
     protected calculatePos(percentage: number) {
-        return (percentage * 740) + 20;
+        return (percentage * this.CHART_BAR) + this.CHART_MARGIN;
     }
 
     private clamp(value: number, min: number, max: number): number {

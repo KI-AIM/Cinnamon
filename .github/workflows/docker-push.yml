@@ -39,7 +39,7 @@ jobs:
           envsubst < .github/maven/settings.xml > ~/.m2/settings.xml
         env:
           GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_ACTOR: ${{ secrets.GH_PACKAGES_USER }}
 
       # Build all images
       - name: Build Docker images

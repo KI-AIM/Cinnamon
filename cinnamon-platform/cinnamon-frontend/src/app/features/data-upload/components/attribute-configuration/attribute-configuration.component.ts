@@ -12,7 +12,7 @@ import { DataTypeMetadata } from 'src/app/shared/model/data-type';
     standalone: false
 })
 export class AttributeConfigurationComponent implements AfterViewInit {
-    @Input() attrNumber: String;
+    @Input() attrNumber!: number;
     @Input() disabled: boolean = false;
     @Input() public columnConfigurationForm!: FormGroup;
     @Input() public confidence : number | null = null;
@@ -40,10 +40,6 @@ export class AttributeConfigurationComponent implements AfterViewInit {
                 this.columnConfigurationForm.controls['name'].markAsTouched();
             }
         });
-    }
-
-    protected parseInt(value: String): Number {
-        return Number(value);
     }
 
     protected trimValue(field: string) {

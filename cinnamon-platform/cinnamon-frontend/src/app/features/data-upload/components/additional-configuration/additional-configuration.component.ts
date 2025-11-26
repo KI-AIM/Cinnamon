@@ -47,6 +47,9 @@ export class AdditionalConfigurationComponent implements OnInit {
 
     public ngOnInit(): void {
         this.dataType = this.getType();
+        this.form.controls['type'].valueChanges.subscribe(() => {
+            this.dataType = this.getType();
+        });
     }
 
     protected getType(): DataType {

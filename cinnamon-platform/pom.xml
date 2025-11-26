@@ -27,7 +27,18 @@
 	<properties>
 		<org.dhatim.fastexcel.version>0.19.0</org.dhatim.fastexcel.version>
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
+        <skip.frontend>false</skip.frontend>
 	</properties>
+
+    <profiles>
+        <!-- Does not build the frontend, can be used when running the tests in cinnamon-test. -->
+        <profile>
+            <id>no-frontend</id>
+            <properties>
+                <skip.frontend>true</skip.frontend>
+            </properties>
+        </profile>
+    </profiles>
 
 	<dependencies>
 		<dependency>
@@ -222,6 +233,7 @@
 					<workingDirectory>cinnamon-frontend</workingDirectory>
 					<nodeVersion>v22.14.0</nodeVersion>
 					<npmVersion>10.9.2</npmVersion>
+                    <skip>${skip.frontend}</skip>
 				</configuration>
 			</plugin>
 

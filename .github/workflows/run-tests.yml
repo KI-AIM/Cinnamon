@@ -60,7 +60,7 @@ jobs:
           envsubst < .github/maven/settings.xml > ~/.m2/settings.xml
         env:
           GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_ACTOR: ${{ secrets.GH_PACKAGES_USER }}
 
       - name: Install External JAR into Maven Repository
         run: |
@@ -72,10 +72,10 @@ jobs:
             -Dpackaging=jar
 
       - name: Install with Maven
-        run: mvn -B clean install -DskipTests=true
+        run: mvn -B -pl ${{ matrix.module }} -am clean install -DskipTests=true
 
       - name: Run tests for modules
-        run: mvn -B clean test --file ${{ matrix.module }}/
+        run: mvn -B -pl ${{ matrix.module }} test
         continue-on-error: true
 
       - name: Upload Surefire test reports

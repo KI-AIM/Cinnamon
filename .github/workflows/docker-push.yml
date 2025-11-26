@@ -16,6 +16,7 @@ jobs:
       pull-requests: write
 
     uses: ./.github/workflows/run-tests.yml
+    secrets: inherit
 
   build-and-push:
     runs-on: ubuntu-latest

@@ -36,4 +36,17 @@ public class ResourceHelper {
 		return value.replaceAll("\r\n", "\n")
 		            .replaceAll("\n", "\r\n");
 	}
+
+	public static MockMultipartFile loadFhirBundle() throws IOException {
+		return new MockMultipartFile("file", "file.json", null, loadFhirBundleAsString().getBytes());
+	}
+
+	public static String loadFhirBundleAsString() throws IOException {
+		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
+
+		try (var inputStream = classLoader.getResourceAsStream("fhir-bundle.json")) {
+			assert inputStream != null;
+			return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		}
+	}
 }

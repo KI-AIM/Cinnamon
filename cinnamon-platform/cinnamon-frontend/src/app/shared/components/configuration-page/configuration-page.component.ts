@@ -45,7 +45,7 @@ export class ConfigurationPageComponent implements OnInit {
     @Input() public hasAlgorithmSelection: boolean = true;
 
     protected pageData$: Observable<{
-        configurationData: ConfigData,
+        configurationData: ConfigData | null,
         locked: boolean,
         status: Status,
     }>
@@ -124,10 +124,15 @@ export class ConfigurationPageComponent implements OnInit {
                     }
                 }),
                 catchError(err => {
+                    // Disable all processes
+                    this.oneEnabled = false;
+                    for (const process of this.configurationInfo.processes) {
+                        this.processEnabled[process.job] = false;
+                    }
+
                     this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
                     return of(null);
                 }),
-                filter(value => value != null),
             ),
             locked: this.stateManagementService.currentStepLocked$.pipe(
                 map(value => value.isLocked),

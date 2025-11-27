@@ -24,7 +24,7 @@
                                [stepIndex]="2" [invalid]="selectedAlgorithm == null">
                 <app-configuration-selection #selection [algorithms]="algorithms"
                                              [disabled]="data.locked || !oneEnabled"
-                                             [initialValue]="data.configurationData.selectedAlgorithm"
+                                             [initialValue]="data.configurationData?.selectedAlgorithm"
                                              (change)="onSelectionChange($event)">
                 </app-configuration-selection>
             </app-workstep-item>
@@ -70,7 +70,7 @@
 
         <app-workstep-box header="Algorithm Selection" [class.d-none]="!hasAlgorithmSelection">
             <app-configuration-selection #selection [algorithms]="algorithms"
-                                         [initialValue]="data.configurationData.selectedAlgorithm"
+                                         [initialValue]="data.configurationData?.selectedAlgorithm"
                                          [disabled]="data.locked || !oneEnabled"
                                          (change)="onSelectionChange($event)">
             </app-configuration-selection>
@@ -110,7 +110,7 @@
         <ng-container *ngFor="let process of configurationInfo.processes;">
             <div class="d-flex">
                 <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]"
-                              [disabled]="data.locked || !process.holdOutFulfilled"
+                              [disabled]="data.locked || !process.holdOutFulfilled || data.configurationData == null"
                               (input)="updateOneEnabled()">
                     Run {{ jobLabels[process.job] }}
                 </mat-checkbox>

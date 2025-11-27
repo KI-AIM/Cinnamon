@@ -112,7 +112,7 @@
             <div class="d-flex">
                 <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]"
                               [disabled]="data.locked || !process.holdOutFulfilled || data.configurationData == null"
-                              (input)="updateOneEnabled()">
+                              (input)="onProcessToggle(process.job)">
                     Run {{ jobLabels[process.job] }}
                 </mat-checkbox>
                 <ng-container *ngIf="!process.holdOutFulfilled">

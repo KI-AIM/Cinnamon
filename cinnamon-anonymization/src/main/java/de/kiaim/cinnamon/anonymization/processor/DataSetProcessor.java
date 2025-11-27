@@ -4,6 +4,8 @@ import de.kiaim.cinnamon.anonymization.exception.processor.JALDataGenerationExce
 import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.enumeration.DataScale;
+import de.kiaim.cinnamon.model.enumeration.DataType;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,7 +29,12 @@ public class DataSetProcessor {
                 for (ColumnConfiguration column : dataSet.getDataConfiguration().getConfigurations()) {
                     Object content = row.getData().get(column.getIndex()).getValue();
                     if (content == null) {
-                        content = "NULL";
+                        if ((column.getScale() == DataScale.NOMINAL) || (column.getScale() == DataScale.ORDINAL)) {
+                            content = "*";
+                        }
+                        else {
+                            content = "NULL";
+                        }
                     }
                     rowList.add(content.toString());
                 }

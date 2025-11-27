@@ -443,8 +443,8 @@ public class DatabaseService {
 			holdOutPercentage = originalData.getHoldOutPercentage();
 
 			if (hasHoldOutSplit) {
-				numberHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ALL);
-				numberInvalidHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ERRORS);
+				numberHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ALL, null);
+				numberInvalidHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ERRORS, null);
 			}
 		}
 
@@ -680,7 +680,8 @@ public class DatabaseService {
 			data = data.stream().map(a -> a.subList(0, a.size() - 1)).toList();
 		}
 
-		final int numberRows = countEntries(dataSetEntity.getId(), loadDataRequest.getHoldOutSelector(), rowSelector);
+		final int numberRows = countEntries(dataSetEntity.getId(), loadDataRequest.getHoldOutSelector(), rowSelector,
+		                                    columnIndexMapping.keySet());
 		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
@@ -789,22 +790,25 @@ public class DatabaseService {
 	 * @throws InternalDataSetPersistenceException If the Number could not be retrieved.
 	 */
 	public int countEntries(final long dataSetId) throws InternalDataSetPersistenceException {
-		return countEntries(dataSetId, HoldOutSelector.ALL, RowSelector.ALL);
+		return countEntries(dataSetId, HoldOutSelector.ALL, RowSelector.ALL, null);
 	}
 
 	/**
-	 * Counts the number of entries in the data set that comply the given selectors.
+	 * Counts the number of entries in the dataset that comply with the given selectors.
 	 *
 	 * @param dataSetId       The ID of the data set.
-	 * @param holdOutSelector Which hold-out rows should be selected.
+	 * @param holdOutSelector If hold-out rows should be selected.
 	 * @param rowSelector     Selector specifying which rows should be included regarding on the hold-out split.
+	 * @param columnIndices   Columns the row selector condition should be applied to.
+	 *                        If null, the condition is applied to all columns.
 	 * @return The number of entries.
 	 * @throws InternalDataSetPersistenceException If the number could not be retrieved.
 	 */
-	public int countEntries(final long dataSetId, final HoldOutSelector holdOutSelector, final RowSelector rowSelector) throws InternalDataSetPersistenceException {
+	public int countEntries(final long dataSetId, final HoldOutSelector holdOutSelector, final RowSelector rowSelector,
+	                        @Nullable final Collection<Integer> columnIndices) throws InternalDataSetPersistenceException {
 		String countQuery = "SELECT count(*) FROM " + getTableName(dataSetId) + " as d ";
 		countQuery = appendHoldOutCondition(countQuery, holdOutSelector);
-		countQuery = appendRowSelectorCondition(countQuery, rowSelector, dataSetId);
+		countQuery = appendRowSelectorCondition(countQuery, rowSelector, columnIndices, dataSetId);
 		countQuery += ";";
 
 		try (final Statement countStatement = connection.createStatement()) {
@@ -1096,10 +1100,21 @@ public class DatabaseService {
 			throws BadColumnNameException, InternalDataSetPersistenceException, InternalIOException {
 		DataConfiguration dataConfiguration = getDetachedDataConfiguration(dataSetEntity);
 
+		List<Integer> columnIndices;
+
 		if (columnNames.isEmpty()) {
 			columnNames = dataConfiguration.getColumnNames();
+			columnIndices = null;
 		} else {
 			existColumnsOrThrow(dataConfiguration, columnNames);
+
+			final List<String> finalColumnNames = columnNames;
+			columnIndices = dataConfiguration.getConfigurations()
+			                                 .stream()
+			                                 .filter(it -> finalColumnNames.contains(it.getName()))
+			                                 .map(ColumnConfiguration::getIndex)
+			                                 .toList();
+
 			dataConfiguration = extractColumns(dataConfiguration, columnNames);
 		}
 
@@ -1108,7 +1123,7 @@ public class DatabaseService {
 
 		try (final Statement exportStatement = connection.createStatement()) {
 
-			final String exportQuery = createSelectQuery(dataSetEntity.getId(), rowSelector, columnNames,
+			final String exportQuery = createSelectQuery(dataSetEntity.getId(), rowSelector, columnNames, columnIndices,
 			                                             holdOutSelector, pagination, startRow, pageSize,
 			                                             exportRowIndexColumn);
 
@@ -1164,7 +1179,8 @@ public class DatabaseService {
 		}
 	}
 
-	private String createSelectQuery(final Long dataSetId, final RowSelector rowSelector, final List<String> columnNames,
+	private String createSelectQuery(final Long dataSetId, final RowSelector rowSelector,
+	                                 final List<String> columnNames, final Collection<Integer> columnIndices,
 	                                 final HoldOutSelector holdOutSelector, final boolean pagination,
 	                                 final int startRow, final int pageSize, final boolean exportRowIndexColumn) {
 		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"")
@@ -1175,7 +1191,7 @@ public class DatabaseService {
 
 		String query = "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId) + " d";
 		query = appendHoldOutCondition(query, holdOutSelector);
-		query = appendRowSelectorCondition(query, rowSelector, dataSetId);
+		query = appendRowSelectorCondition(query, rowSelector, columnIndices, dataSetId);
 
 		query += " ORDER BY " + DataschemeGenerator.ROW_INDEX_NAME + " ASC";
 		if (pagination) {
@@ -1204,7 +1220,6 @@ public class DatabaseService {
 					return new DecimalData(floatValue);
 				}
 				case INTEGER -> {
-					var a = resultSet.getObject(columnIndex);
 					return new IntegerData((Integer) resultSet.getObject(columnIndex));
 				}
 				case STRING -> {
@@ -1321,16 +1336,28 @@ public class DatabaseService {
 		return query;
 	}
 
-	private String appendRowSelectorCondition(String query, final RowSelector rowSelector, final Long dataSetId) {
+	/**
+	 * Appends the where condition for filtering by the existence of errors in the given columns.
+	 *
+	 * @param query         The existing query to be appended.
+	 * @param rowSelector   The row selector.
+	 * @param columnIndices Indices of the columns which should contain errors. If null, all columns are considered.
+	 * @param dataSetId     The ID of the dataset.
+	 * @return The appended query.
+	 */
+	private String appendRowSelectorCondition(String query, final RowSelector rowSelector,
+	                                          @Nullable final Collection<Integer> columnIndices, final Long dataSetId) {
 		switch (rowSelector) {
 			case ALL -> {}
 			case VALID -> {
 				query = appendWhere(query);
-				query += "NOT EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
+				query += "NOT EXISTS ";
+				query = appendTransformationErrorCondition(query, columnIndices, dataSetId);
 			}
 			case ERRORS -> {
 				query = appendWhere(query);
-				query += "EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
+				query += "EXISTS ";
+				query = appendTransformationErrorCondition(query, columnIndices, dataSetId);
 			}
 		}
 
@@ -1343,6 +1370,29 @@ public class DatabaseService {
 		} else {
 			return query + " WHERE ";
 		}
+	}
+
+	/**
+	 * Appends a query checking the existing for transformation errors in the given columns of the dataset with the given ID.
+	 *
+	 * @param query         The query to be appended.
+	 * @param columnIndices Indices of the columns to be considered. If null, all columns are considered.
+	 * @param dataSetId     The dataset ID.
+	 * @return The appended query.
+	 */
+	private String appendTransformationErrorCondition(String query, @Nullable final Collection<Integer> columnIndices,
+	                                                  final long dataSetId) {
+		query += "(SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId +
+		         " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME;
+
+		if (columnIndices != null) {
+			query += " AND e.column_index IN (" +
+			         String.join(",", columnIndices.stream().map(Object::toString).toList()) + ")";
+		}
+
+		query += ")";
+
+		return query;
 	}
 
 }

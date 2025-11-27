@@ -241,6 +241,7 @@
                     <tr>
                         <th>Type</th>
                         <th>Description</th>
+                        <th style="min-width: 110px;">Column Types</th>
                         <th style="min-width: 290px;">Examples</th>
                     </tr>
                     </thead>
@@ -253,6 +254,12 @@
                             You can count or group them, but not calculate averages or differences.
                         </td>
                         <td>
+                            <div *ngFor="let type of DataScaleMetadata[DataScale.NOMINAL].applicableTo"
+                                 [class.current-type]="columnConfigurationForm.controls['type'].value === type">
+                                {{ DataTypeMetadata[type].displayName }}
+                            </div>
+                        </td>
+                        <td>
                             <div>A, B, AB, O</div>
                             <div>Male, Female, Other</div>
                             <div>E11.9, I10, C34.1</div>
@@ -263,6 +270,12 @@
                         <td>
                             Represents ordered categories, where the order matters, but the distance between categories
                             is not consistent. You can rank values, but cannot assume equal gaps between them.
+                        </td>
+                        <td>
+                            <div *ngFor="let type of DataScaleMetadata[DataScale.ORDINAL].applicableTo"
+                                 [class.current-type]="columnConfigurationForm.controls['type'].value === type">
+                                {{ DataTypeMetadata[type].displayName }}
+                            </div>
                         </td>
                         <td>
                             <div>None, Mild, Moderate, Severe</div>
@@ -278,6 +291,12 @@
                             as hot</q>) don’t make sense.
                         </td>
                         <td>
+                            <div *ngFor="let type of DataScaleMetadata[DataScale.INTERVAL].applicableTo"
+                                 [class.current-type]="columnConfigurationForm.controls['type'].value === type">
+                                {{ DataTypeMetadata[type].displayName }}
+                            </div>
+                        </td>
+                        <td>
                             <div>36.5, 37.0, 38.0</div>
                         </td>
                     </tr>
@@ -290,6 +309,12 @@
                             division.
                         </td>
                         <td>
+                            <div *ngFor="let type of DataScaleMetadata[DataScale.RATIO].applicableTo"
+                                 [class.current-type]="columnConfigurationForm.controls['type'].value === type">
+                                {{ DataTypeMetadata[type].displayName }}
+                            </div>
+                        </td>
+                        <td>
                             <div>0 - 180</div>
                         </td>
                     </tr>
@@ -299,7 +324,13 @@
                             Represents attributes of type <q>Date</q> or <q>Date & Time</q>.
                             Although dates are usually interpreted as intervals, they require special handling during
                             the anonymization and a are therefore represented by a separate scale.
-                            You should always select this for
+                            You should always select this scale for attributes <q>Date</q> or <q>Date & Time</q>.
+                        </td>
+                        <td>
+                            <div *ngFor="let type of DataScaleMetadata[DataScale.DATE].applicableTo"
+                                 [class.current-type]="columnConfigurationForm.controls['type'].value === type">
+                                {{ DataTypeMetadata[type].displayName }}
+                            </div>
                         </td>
                         <td>
                             <div>1985-04-12</div>

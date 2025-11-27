@@ -2,8 +2,8 @@ import { AfterViewInit, Component, EventEmitter, Input, Output } from '@angular/
 import { FormGroup } from '@angular/forms';
 import { MatDialog } from "@angular/material/dialog";
 import { FileType } from "@shared/model/file-configuration";
-import { DataScaleMetadata } from 'src/app/shared/model/data-scale';
-import { DataTypeMetadata } from 'src/app/shared/model/data-type';
+import { DataScale, DataScaleMetadata } from 'src/app/shared/model/data-scale';
+import { DataType, DataTypeMetadata } from 'src/app/shared/model/data-type';
 
 @Component({
     selector: 'app-attribute-configuration',
@@ -20,6 +20,8 @@ export class AttributeConfigurationComponent implements AfterViewInit {
 
     @Output() onInput = new EventEmitter<any>();
 
+    protected readonly DataScale = DataScale;
+    protected readonly DataType = DataType;
     protected readonly FileType = FileType;
 
     private oldName: string = "";

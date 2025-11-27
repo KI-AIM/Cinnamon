@@ -5,7 +5,7 @@ import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
 import { StateManagementService } from "@core/services/state-management.service";
 import { Status } from "@shared/model/status";
-import { catchError, combineLatest, filter, from, map, mergeMap, Observable, of, switchMap, tap } from "rxjs";
+import { catchError, combineLatest, from, map, mergeMap, Observable, of, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
 import { Algorithm } from "../../model/algorithm";
@@ -99,10 +99,11 @@ export class ConfigurationPageComponent implements OnInit {
 
     ngOnInit() {
         for (const process of this.configurationInfo.processes) {
-            this.processEnabled[process.job] = !process.skip;
-            if (!process.skip) {
-                this.oneEnabled = true;
-            }
+            const cachedStatus = this.configurationService.getProcessStatus(this.algorithmService.getConfigurationName(), process.job);
+            const active = cachedStatus != null ? cachedStatus : !process.skip;
+
+            this.processEnabled[process.job] = active;
+            this.oneEnabled ||= active;
         }
 
         this.pageData$ = combineLatest({
@@ -145,10 +146,14 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     /**
-     * Checks if at least one process is enabled.
+     * Callback triggered when toggling a process.
+     * Update if at least one job is enabled and updates the cache.
+     *
+     * @param job The name of the job that was toggled.
      * @protected
      */
-    protected updateOneEnabled() {
+    protected onProcessToggle(job: string) {
+        // Checks if at least one process is enabled.
         let _oneEnabled = false;
         for (const enabled of Object.values(this.processEnabled)) {
             if (enabled) {
@@ -161,6 +166,9 @@ export class ConfigurationPageComponent implements OnInit {
             this.oneEnabled = _oneEnabled;
             this.changeDetectorRef.detectChanges();
         }
+
+        // Cache the value change
+        this.configurationService.setProcessStatus(this.algorithmService.getConfigurationName(), job, this.processEnabled[job]);
     }
 
     /**

@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.service.ResponseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -57,6 +59,30 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	//===================================
 	//-- Overwritten exception handler --
 	//===================================
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * In case the value causing the issue is a multipart file,
+	 * the reason for the failed conversion is that a file was provided instead of a value.
+	 */
+	@Override
+	protected ResponseEntity<Object> handleConversionNotSupported(final ConversionNotSupportedException ex,
+	                                                              final HttpHeaders headers,
+	                                                              final HttpStatusCode status,
+	                                                              final WebRequest request) {
+		final Object value = ex.getValue();
+
+		if (value instanceof MultipartFile) {
+			final String errorCode = ApiException.assembleErrorCode(ApiException.VALIDATION, REQUEST_STRUCTURE_ERROR,
+			                                                        "4");
+			return responseService.prepareErrorResponseEntity(headers, request, HttpStatus.BAD_REQUEST,
+			                                                  errorCode, "Parameter '" + ex.getPropertyName() +
+			                                                             "' must not be a file!", null);
+		}
+
+		return super.handleConversionNotSupported(ex, headers, status, request);
+	}
 
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,

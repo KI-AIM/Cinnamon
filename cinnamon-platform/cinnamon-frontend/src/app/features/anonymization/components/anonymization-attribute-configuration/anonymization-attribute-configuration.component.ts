@@ -152,12 +152,17 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
 
     private addAttributeConfigurationRow(selectedRow: ColumnConfiguration) {
         const defaultAttributeProtection = this.attributeConfigurationService.getDefaultAttributeProtection(selectedRow.scale, selectedRow.type);
+        const defaultIntervalSize = this.attributeConfigurationService.getDefaultIntervalSize(defaultAttributeProtection, selectedRow.scale);
+        const defaultIntervalDisabled = this.attributeConfigurationService.getDefaultIntervalDisabled(defaultAttributeProtection);
 
         const group = this.formBuilder.group({
             attributeProtection: [{value: defaultAttributeProtection, disabled: this.disabled}, [Validators.required]],
             dataType: [{value: selectedRow.type, disabled: true}, [Validators.required]],
             index: [selectedRow.index, [Validators.required]],
-            intervalSize: [{value: 10, disabled: this.disabled}, [Validators.required]], // Interval size is set in the row component
+            intervalSize: [{
+                value: defaultIntervalSize,
+                disabled: this.disabled || defaultIntervalDisabled
+            }, [Validators.required]],
             name: [{value: selectedRow.name, disabled: true}, [Validators.required]],
             scale: [{value: selectedRow.scale, disabled: true}, [Validators.required]],
         });

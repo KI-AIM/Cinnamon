@@ -37,8 +37,8 @@ export class AnonymizationAttributeRowComponent implements OnInit, OnChanges {
     }
 
     ngOnInit() {
-        //Initialize the interval input field
-        this.setIntervalConditions();
+        // Initialize the interval input field
+        this.intervalIsSelect = this.getTransformationType() === AttributeProtection.DATE_GENERALIZATION;
     }
 
     public ngOnChanges(changes: SimpleChanges): void {

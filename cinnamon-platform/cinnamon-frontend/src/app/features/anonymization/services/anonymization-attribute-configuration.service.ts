@@ -65,4 +65,41 @@ export class AnonymizationAttributeConfigurationService {
             return AttributeProtection.ATTRIBUTE_DELETION;
         }
     }
+
+    /**
+     * Defines the default interval size for the given combination of protection and data scale.
+     *
+     * @param protection The protection type.
+     * @param scale The scale of the attribute.
+     */
+    public getDefaultIntervalSize(protection: AttributeProtection, scale: DataScale): number | string | null {
+        if (protection === AttributeProtection.MASKING) {
+            return 3;
+        } else if (protection === AttributeProtection.DATE_GENERALIZATION) {
+            return 'year';
+        } else if (protection === AttributeProtection.GENERALIZATION || protection === AttributeProtection.MICRO_AGGREGATION) {
+            if (scale === DataScale.ORDINAL) {
+                return 5;
+            } else if (scale === DataScale.INTERVAL) {
+                return 10;
+            } else if (scale === DataScale.RATIO) {
+                return 1;
+            }
+            return 10;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Defines for which protection types the interval input is disabled.
+     *
+     * @param protection The attribute protection.
+     */
+    public getDefaultIntervalDisabled(protection: AttributeProtection): boolean {
+        return protection === AttributeProtection.NO_PROTECTION ||
+            protection === AttributeProtection.ATTRIBUTE_DELETION ||
+            protection === AttributeProtection.VALUE_DELETION ||
+            protection === AttributeProtection.RECORD_DELETION;
+    }
 }

@@ -15,7 +15,7 @@ import { DataConfigurationService } from "@shared/services/data-configuration.se
 import { catchError, first, Observable, of, switchMap, tap } from "rxjs";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
-import { AlgorithmService } from "../../services/algorithm.service";
+import { AlgorithmService, ConfigData } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
 import {
     ConfigurationGroupDefinition,
@@ -44,6 +44,11 @@ export class ConfigurationFormComponent implements OnInit {
      * The algorithm that is configured with this form.
      */
     @Input() public algorithm!: Algorithm;
+
+    /**
+     * The initial configuration to be displayed.
+     */
+    @Input() public initialConfigurationData!: ConfigData;
 
     /**
      * If this form is disabled.
@@ -93,15 +98,12 @@ export class ConfigurationFormComponent implements OnInit {
             tap(value => {
                 this.algorithmDefinition = value
             }),
-            switchMap(_ => {
-               return this.anonService.fetchConfiguration();
-            }),
             switchMap(value => {
                 return this.dataConfiguration$.pipe(
                     tap(dataConfiguration => {
-                        this.form = this.createForm(this.algorithmDefinition!, value.config, dataConfiguration);
+                        this.form = this.createForm(value, this.initialConfigurationData.config, dataConfiguration);
 
-                        this.doSetConfiguration(this.algorithmDefinition!, this.form, value.config);
+                        this.doSetConfiguration(value, this.form, this.initialConfigurationData.config);
                         this.updateForm();
 
                         this.form.valueChanges.pipe().subscribe(_ => {

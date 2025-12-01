@@ -25,7 +25,7 @@
                                [stepIndex]="2" [invalid]="selectedAlgorithm == null">
                 <app-configuration-selection #selection [algorithms]="algorithms"
                                              [disabled]="data.locked || !oneEnabled"
-                                             [initialValue]="data.configurationData?.selectedAlgorithm"
+                                             [initialValue]="data.configurationData.selectedAlgorithm"
                                              (change)="onSelectionChange($event)">
                 </app-configuration-selection>
             </app-workstep-item>
@@ -46,7 +46,8 @@
                             <app-configuration-form #form [algorithm]="item"
                                                     [disabled]="data.locked || !oneEnabled"
                                                     (onChange)="onFormChange($event)"
-                                                    [additionalConfigs]="additionalConfigs">
+                                                    [additionalConfigs]="additionalConfigs"
+                                                    [initialConfigurationData]="data.configurationData">
                             </app-configuration-form>
                         </ng-container>
                     </div>
@@ -71,7 +72,7 @@
 
         <app-workstep-box header="Algorithm Selection" [class.d-none]="!hasAlgorithmSelection">
             <app-configuration-selection #selection [algorithms]="algorithms"
-                                         [initialValue]="data.configurationData?.selectedAlgorithm"
+                                         [initialValue]="data.configurationData.selectedAlgorithm"
                                          [disabled]="data.locked || !oneEnabled"
                                          (change)="onSelectionChange($event)">
             </app-configuration-selection>
@@ -89,7 +90,7 @@
                         <p>{{ item.description }}</p>
 
                         <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
-                                                [disabled]="data.locked || !oneEnabled"
+                                                [disabled]="data.locked || !oneEnabled" [initialConfigurationData]="data.configurationData"
                                                 (onChange)="onFormChange($event)"
                         >
                         </app-configuration-form>

@@ -45,7 +45,7 @@ export class ConfigurationPageComponent implements OnInit {
     @Input() public hasAlgorithmSelection: boolean = true;
 
     protected pageData$: Observable<{
-        configurationData: ConfigData | null,
+        configurationData: ConfigData,
         locked: boolean,
         status: Status,
     }>
@@ -132,7 +132,7 @@ export class ConfigurationPageComponent implements OnInit {
                     }
 
                     this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
-                    return of(null);
+                    return of({config: {}, selectedAlgorithm: null});
                 }),
             ),
             locked: this.stateManagementService.currentStepLocked$.pipe(

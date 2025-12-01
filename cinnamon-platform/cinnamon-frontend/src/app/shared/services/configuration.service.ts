@@ -262,14 +262,10 @@ export class ConfigurationService {
                         }
                     }),
                     toArray(),
-                    catchError((error) => {
-                        console.log('Error during configuration import:', error);
-                        return of(null);
-                    }),
                 );
             }),
             switchMap(result => {
-                if (includedConfigurations !== null && result) {
+                if (includedConfigurations !== null) {
                     // Look if all configurations are present
                     const missing: string[] = [];
                     for (const config of includedConfigurations) {

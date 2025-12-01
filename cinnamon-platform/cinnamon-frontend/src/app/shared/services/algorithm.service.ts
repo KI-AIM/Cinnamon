@@ -112,10 +112,17 @@ export abstract class AlgorithmService {
 
     /**
      * Returns the algorithm with the given name.
+     *
      * @param algorithmName The name of the algorithm.
+     * @return The algorithm object.
+     * @throws Error if no algorithm with the name can be found.
      */
     public getAlgorithmByName(algorithmName: string): Algorithm {
-        return this._algorithms?.find((value) => value.name === algorithmName)!;
+        const algorithm = this._algorithms?.find((value) => value.name === algorithmName);
+        if (algorithm == null) {
+            throw new Error("No algorithm with name '" + algorithmName + "' available.");
+        }
+        return algorithm;
     }
 
     /**

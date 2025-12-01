@@ -44,7 +44,7 @@ export class ErrorHandlingService {
      * @param error The new error.
      * @param message Additional message.
      */
-    public addError(error: ErrorResponse | HttpErrorResponse | string | any, message?: string) {
+    public addError(error: ErrorResponse | HttpErrorResponse | Error | string | any, message?: string) {
         if (error == null) {
             console.error("Error is null!");
             return;
@@ -52,7 +52,10 @@ export class ErrorHandlingService {
 
         let errorMessage = null;
 
-        if (typeof error === 'string') {
+        if (error instanceof Error) {
+            console.error(error);
+            errorMessage = error.message;
+        } else if (typeof error === 'string') {
             errorMessage = error;
         } else if (error instanceof HttpErrorResponse) {
             errorMessage = this.handleHttpErrorResponse(error, message);

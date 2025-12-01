@@ -55,6 +55,100 @@ export class AnonymizationAttributeConfigurationService {
         return new List<String>(transformations);
     }
 
+    /**
+     * Returns the default interval settings for the given parameters.
+     *
+     * @param transformationType The attribute protection type.
+     * @param scale The attribute scale.
+     * @param type The attribute type.
+     */
+    public getIntervalSettings(transformationType: AttributeProtection | null, scale: DataScale, type: DataType): DefaultIntervalSettings {
+        const fallback = {
+            intervalMin: null,
+            intervalMax: null,
+            intervalInitialValue: null,
+            intervallsSelect: false,
+            deactivateInterval: false
+        };
+
+        let result: DefaultIntervalSettings | null = null;
+
+        if (transformationType == null) {
+            console.log("No transformation type set");
+            return fallback;
+        }
+
+        if (transformationType === AttributeProtection.MASKING &&
+            (scale === DataScale.DATE || scale === DataScale.NOMINAL || scale === DataScale.ORDINAL ||
+                scale === DataScale.INTERVAL || scale === DataScale.RATIO)) {
+            // MASKING -> [ 'DATE', 'NOMINAL', 'ORDINAL', 'INTERVAL', 'RATIO' ]
+            result = {
+                intervalMin: 2,
+                intervalMax: 1000,
+                intervalInitialValue: 3,
+                intervallsSelect: false,
+                deactivateInterval: false
+            };
+        } else if (transformationType === AttributeProtection.DATE_GENERALIZATION && scale === DataScale.DATE) {
+            // DATE_GENERALIZATION -> DATE
+            result = {
+                intervalMin: null,
+                intervalMax: null,
+                intervalInitialValue: 'year',
+                intervallsSelect: true,
+                deactivateInterval: false
+            };
+        } else if (transformationType === AttributeProtection.GENERALIZATION ||
+            transformationType === AttributeProtection.MICRO_AGGREGATION) {
+            //[ 'GENERALIZATION', 'MICRO_AGGREGATION' ]
+            if (scale === DataScale.ORDINAL) {
+                // ORDINAL
+                result = {
+                    intervalMin: 1,
+                    intervalMax: 100,
+                    intervalInitialValue: 5,
+                    intervallsSelect: false,
+                    deactivateInterval: false
+                };
+            } else if (type === DataType.INTEGER && scale === DataScale.INTERVAL) {
+                // INTEGER -> INTERVAL
+                result = {
+                    intervalMin: 1,
+                    intervalMax: 1000,
+                    intervalInitialValue: 10,
+                    intervallsSelect: false,
+                    deactivateInterval: false
+                };
+            } else if (type === DataType.DECIMAL && scale === DataScale.RATIO) {
+                // DECIMAL -> RATIO
+                result = {
+                    intervalMin: 0.001,
+                    intervalMax: 1000.0,
+                    intervalInitialValue: 1,
+                    intervallsSelect: false,
+                    deactivateInterval: false
+                };
+            }
+        } else if (transformationType === AttributeProtection.NO_PROTECTION ||
+            transformationType === AttributeProtection.ATTRIBUTE_DELETION ||
+            transformationType === AttributeProtection.VALUE_DELETION ||
+            transformationType === AttributeProtection.RECORD_DELETION) {
+            // [ 'ATTRIBUTE_DELETION', 'VALUE_DELETION']
+            result = {
+                intervalMin: null,
+                intervalMax: null,
+                intervalInitialValue: null,
+                intervallsSelect: false,
+                deactivateInterval: true
+            };
+        }
+
+        if (result == null) {
+            console.error("No handling for transformation type: " + transformationType + " and scale: " + scale + " and type: " + type + "");
+        }
+        return result ?? fallback;
+    }
+
     public getDefaultAttributeProtection(scale: DataScale, dataType: DataType): AttributeProtection {
         const transformations = this.getValidTransformationsForAttribute(scale, dataType);
         if (transformations.contains(AttributeProtection.DATE_GENERALIZATION)) {
@@ -66,40 +160,12 @@ export class AnonymizationAttributeConfigurationService {
         }
     }
 
-    /**
-     * Defines the default interval size for the given combination of protection and data scale.
-     *
-     * @param protection The protection type.
-     * @param scale The scale of the attribute.
-     */
-    public getDefaultIntervalSize(protection: AttributeProtection, scale: DataScale): number | string | null {
-        if (protection === AttributeProtection.MASKING) {
-            return 3;
-        } else if (protection === AttributeProtection.DATE_GENERALIZATION) {
-            return 'year';
-        } else if (protection === AttributeProtection.GENERALIZATION || protection === AttributeProtection.MICRO_AGGREGATION) {
-            if (scale === DataScale.ORDINAL) {
-                return 5;
-            } else if (scale === DataScale.INTERVAL) {
-                return 10;
-            } else if (scale === DataScale.RATIO) {
-                return 1;
-            }
-            return 10;
-        } else {
-            return null;
-        }
-    }
+}
 
-    /**
-     * Defines for which protection types the interval input is disabled.
-     *
-     * @param protection The attribute protection.
-     */
-    public getDefaultIntervalDisabled(protection: AttributeProtection): boolean {
-        return protection === AttributeProtection.NO_PROTECTION ||
-            protection === AttributeProtection.ATTRIBUTE_DELETION ||
-            protection === AttributeProtection.VALUE_DELETION ||
-            protection === AttributeProtection.RECORD_DELETION;
-    }
+export interface DefaultIntervalSettings {
+    intervalMin: number | null,
+    intervalMax: number | null,
+    intervalInitialValue: number | string | null,
+    intervallsSelect: boolean,
+    deactivateInterval: boolean
 }

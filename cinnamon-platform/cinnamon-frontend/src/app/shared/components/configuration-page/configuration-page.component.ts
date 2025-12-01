@@ -4,7 +4,9 @@ import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
 import { StateManagementService } from "@core/services/state-management.service";
+import { DataConfiguration } from "@shared/model/data-configuration";
 import { Status } from "@shared/model/status";
+import { DataConfigurationService } from "@shared/services/data-configuration.service";
 import { catchError, combineLatest, from, map, mergeMap, Observable, of, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
@@ -46,6 +48,7 @@ export class ConfigurationPageComponent implements OnInit {
 
     protected pageData$: Observable<{
         configurationData: ConfigData,
+        dataConfiguration: DataConfiguration,
         locked: boolean,
         status: Status,
     }>
@@ -89,6 +92,7 @@ export class ConfigurationPageComponent implements OnInit {
         protected readonly algorithmService: AlgorithmService,
         protected readonly changeDetectorRef: ChangeDetectorRef,
         private readonly configurationService: ConfigurationService,
+        private readonly dataConfigService: DataConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
         private httpClient: HttpClient,
         private readonly router: Router,
@@ -135,6 +139,7 @@ export class ConfigurationPageComponent implements OnInit {
                     return of({config: {}, selectedAlgorithm: null});
                 }),
             ),
+            dataConfiguration: this.dataConfigService.dataConfiguration$,
             locked: this.stateManagementService.currentStepLocked$.pipe(
                 map(value => value.isLocked),
             ),

@@ -44,6 +44,7 @@
                             <p>{{ item.description }}</p>
 
                             <app-configuration-form #form [algorithm]="item"
+                                                    [dataConfiguration]="data.dataConfiguration"
                                                     [disabled]="data.locked || !oneEnabled"
                                                     (onChange)="onFormChange($event)"
                                                     [additionalConfigs]="additionalConfigs"
@@ -90,7 +91,9 @@
                         <p>{{ item.description }}</p>
 
                         <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
-                                                [disabled]="data.locked || !oneEnabled" [initialConfigurationData]="data.configurationData"
+                                                [dataConfiguration]="data.dataConfiguration"
+                                                [disabled]="data.locked || !oneEnabled"
+                                                [initialConfigurationData]="data.configurationData"
                                                 (onChange)="onFormChange($event)"
                         >
                         </app-configuration-form>

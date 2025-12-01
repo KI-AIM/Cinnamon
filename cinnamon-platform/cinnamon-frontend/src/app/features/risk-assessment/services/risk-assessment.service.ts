@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
-import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
-import { Steps } from "../../../core/enums/steps";
-import { ConfigurationService } from "../../../shared/services/configuration.service";
-import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
-import { Algorithm } from "../../../shared/model/algorithm";
+import { Injectable } from '@angular/core';
+import { Steps } from "@core/enums/steps";
+import { Algorithm } from "@shared/model/algorithm";
+import { ConfigurationRegisterData } from "@shared/model/configuration-register-data";
+import { AlgorithmService, ReadConfigResult } from "@shared/services/algorithm.service";
+import { ConfigurationService } from "@shared/services/configuration.service";
 
 @Injectable({
   providedIn: 'root'
@@ -22,7 +22,7 @@ export class RiskAssessmentService extends AlgorithmService {
         return "risk_assessment_configuration";
     }
 
-    public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
+    public override createConfiguration(arg: Object, _: Algorithm): Object {
         return {
             risk_assessment_configuration: {
                 ...arg,
@@ -44,7 +44,7 @@ export class RiskAssessmentService extends AlgorithmService {
     }
 
     public override readConfiguration(arg: Object, configurationName: string): ReadConfigResult {
-        const selectedAlgorithm = this.getAlgorithmByName("evaluation");
+        const selectedAlgorithm = this.getAlgorithmByName("risk_assessment");
         // @ts-ignore
         const config = arg[configurationName];
         delete config["data_format"];

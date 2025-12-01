@@ -1,7 +1,7 @@
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { catchError, map, Observable, of, tap } from "rxjs";
+import { map, Observable, of, switchMap, tap } from "rxjs";
 import { parse } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
@@ -59,13 +59,15 @@ export abstract class AlgorithmService {
             return of({config: cachedConfig, selectedAlgorithm: cachedAlgorithm});
         }
 
-        return this.configurationService.loadConfig(this.getConfigurationName()).pipe(
-            map(value => {
-                return this.readConfiguration(parse(value), this.getConfigurationName());
+        return this.fetchInfo().pipe(
+            switchMap(value => {
+                // Either all processes are configured or none, so look up if the first is configured
+                if (value.processes[0].configured) {
+                    return this.doFetchConfiguration();
+                } else {
+                    return of({config: {}, selectedAlgorithm: null});
+                }
             }),
-            catchError(() => {
-                return of({config: {}, selectedAlgorithm: null});
-            })
         );
     }
 
@@ -208,6 +210,20 @@ export abstract class AlgorithmService {
             responseType: 'text' as 'json'
         });
     }
+
+    /**
+     * Fetches the selected algorithm and configuration defined by {@link getConfigurationName}.
+     * Prepares the configuration to be used in a form by removing additional meta-information.
+     *
+     * @return The algorithm and configuration.
+     */
+    private doFetchConfiguration(): Observable<ConfigData> {
+        return this.configurationService.loadConfig(this.getConfigurationName()).pipe(
+            map(value => {
+                return this.readConfiguration(parse(value), this.getConfigurationName());
+            }),
+        );
+    }
 }
 
 /**
@@ -236,6 +252,10 @@ export interface ProcessInfo {
      * If the job does not need a hol-out split or the hold-out split is present.
      */
     holdOutFulfilled: boolean
+    /**
+     * If the process is configured.
+     */
+    configured: boolean
 }
 
 export interface ConfigData {

@@ -133,27 +133,16 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
                     try {
                         LocalDateTime date = r.getCellAsDate(index).orElse(null);
                         if (date != null) {
-                            List<Configuration> dateFormatConfigurations =
-                                columnConfiguration.getConfigurations().stream().filter(
-                                    configuration -> configuration.getClass().equals(
-                                        DateFormatConfiguration.class
-                                    )
-                                ).toList();
+                            DateFormatConfiguration dateFormatConfiguration = columnConfiguration.getConfiguration(DateFormatConfiguration.class);
 
-                            DateFormatConfiguration dateFormatConfiguration;
-                            if (!dateFormatConfigurations.isEmpty()) {
-                                dateFormatConfiguration =
-                                    (DateFormatConfiguration) dateFormatConfigurations.get(0);
-                            } else {
-                                dateFormatConfiguration = null;
-                            }
-
+							final DateTimeFormatter formatter;
                             if (dateFormatConfiguration != null) {
-                                return date.format(DateTimeFormatter.ofPattern(
-                                    dateFormatConfiguration.getDateFormatter()));
+	                            formatter = new DateData.DateDataBuilder().buildFormatter(
+			                            dateFormatConfiguration.getDateFormatter());
                             } else {
-                                return date.format(DateTimeFormatter.ISO_DATE);
+								formatter = DateTimeFormatter.ISO_DATE;
                             }
+							return date.format(formatter);
                         }
                     } catch (Exception ignored) {}
                 }
@@ -161,27 +150,17 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
                     try {
                         LocalDateTime date = r.getCellAsDate(index).orElse(null);
                         if (date != null) {
-                            List<Configuration> dateTimeFormatConfigurations =
-                                columnConfiguration.getConfigurations().stream().filter(
-                                    configuration -> configuration.getClass().equals(
-                                        DateTimeFormatConfiguration.class
-                                    )
-                                ).toList();
+	                        final var dateTimeFormatConfiguration = columnConfiguration.getConfiguration(
+			                        DateTimeFormatConfiguration.class);
 
-                            DateTimeFormatConfiguration dateTimeFormatConfiguration;
-                            if (!dateTimeFormatConfigurations.isEmpty()) {
-                                dateTimeFormatConfiguration =
-                                    (DateTimeFormatConfiguration) dateTimeFormatConfigurations.get(0);
-                            } else {
-                                dateTimeFormatConfiguration = null;
-                            }
-
-                            if (dateTimeFormatConfiguration != null) {
-                                return date.format(DateTimeFormatter.ofPattern(
-                                    dateTimeFormatConfiguration.getDateTimeFormatter()));
-                            } else {
-                                return date.format(DateTimeFormatter.ISO_DATE);
-                            }
+	                        final DateTimeFormatter formatter;
+	                        if (dateTimeFormatConfiguration != null) {
+		                        formatter = new DateTimeData.DateTimeDataBuilder().buildFormatter(
+				                        dateTimeFormatConfiguration.getDateTimeFormatter());
+	                        } else {
+		                        formatter = DateTimeFormatter.ISO_DATE;
+	                        }
+	                        return date.format(formatter);
                         }
                     } catch (Exception ignored) {}
                 }

@@ -1,7 +1,11 @@
 package de.kiaim.cinnamon.platform.service;
 
+import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
-import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.configuration.data.DateFormatConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.DateTimeFormatConfiguration;
+import de.kiaim.cinnamon.model.data.*;
+import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalEndpoint;
@@ -22,6 +26,9 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -99,6 +106,18 @@ public class DataSetService {
 	}
 
 	/**
+	 * Encodes the given dataset.
+	 * All columns are included, and transformation errors are not injected.
+	 *
+	 * @param dataSet The dataset to encode.
+	 * @return Encoded native values of the dataset
+	 */
+	public List<List<Object>> encodeDataRowsSimple(final DataSet dataSet) {
+		final Map<Integer, Integer> columnIndexMapping = getColumnIndexMapping(dataSet.getDataConfiguration());
+		return encodeDataRows(dataSet, new HashSet<>(), columnIndexMapping, new LoadDataRequest());
+	}
+
+	/**
 	 * Encodes the given data set using the given DataConfiguration and the given encoding configuration.
 	 * Replaces all null values with the configured encoding.
 	 *
@@ -133,7 +152,8 @@ public class DataSetService {
 	                                         @Nullable final List<Integer> indexMapping,
 	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
-		final List<List<Object>> data = dataSet.getData();
+
+		final List<List<Object>> data = printDataRows(dataSet);
 
 		String defaultNullEncoding = loadDataRequest.getDefaultNullEncoding();
 		String missingValueEncoding = loadDataRequest.getMissingValueEncoding() == null
@@ -171,6 +191,78 @@ public class DataSetService {
 		}
 
 		return data;
+	}
+
+	/**
+	 * Prepares the values of the dataset to be printed.
+	 * Converts the dataset into a row-major list of the underlying values.
+	 * The values are converted into their original values before parsing.
+	 *
+	 * @param dataSet The dataset
+	 * @return The converted dataset.
+	 */
+	private List<List<Object>> printDataRows(final DataSet dataSet) {
+		final List<List<Object>> result = new ArrayList<>(dataSet.getData().size());
+
+		for (final DataRow row : dataSet.getDataRows()) {
+			result.add(printDataRow(row, dataSet.getDataConfiguration()));
+		}
+
+		return result;
+	}
+
+	/**
+	 * Prepares the values of a row to be printed.
+	 * See {@link #printDataRows(DataSet)} for more information.
+	 *
+	 * @param row               The row.
+	 * @param dataConfiguration The data configuration defining the attributes and their format.
+	 * @return The converted dataset.
+	 */
+	private List<Object> printDataRow(final DataRow row, final DataConfiguration dataConfiguration) {
+		final List<Object> result = new ArrayList<>(row.getData().size());
+
+		for (int i = 0; i < row.getData().size(); i++) {
+			final Data value = row.getData().get(i);
+
+			// Dataset contains meta-attributes like the index
+			if (i >= dataConfiguration.getConfigurations().size()) {
+				result.add(value.getValue());
+				continue;
+			}
+
+			final ColumnConfiguration columnConfiguration = dataConfiguration.getConfigurations().get(i);
+
+			if (columnConfiguration.getType() == DataType.DATE) {
+				final LocalDate dateValue = value.asDate();
+				final DateFormatConfiguration config = columnConfiguration.getConfiguration(
+						DateFormatConfiguration.class);
+
+				if (config == null || dateValue == null) {
+					result.add(value.getValue());
+				} else {
+					final String format = config.getDateFormatter();
+					final DateTimeFormatter formatter = new DateData.DateDataBuilder().buildFormatter(format);
+					result.add(formatter.format(dateValue));
+				}
+			} else if (columnConfiguration.getType() == DataType.DATE_TIME) {
+				final LocalDateTime dateTimeValue = value.asDateTime();
+				final DateTimeFormatConfiguration config = columnConfiguration.getConfiguration(
+						DateTimeFormatConfiguration.class);
+
+				if (config == null || dateTimeValue == null) {
+					result.add(value.getValue());
+				} else {
+					final String format = config.getDateTimeFormatter();
+					final DateTimeFormatter formatter = new DateTimeData.DateTimeDataBuilder().buildFormatter(format);
+					result.add(formatter.format(dateTimeValue));
+				}
+			} else {
+				result.add(value.getValue());
+			}
+		}
+
+		return result;
 	}
 
 	/**
@@ -224,6 +316,21 @@ public class DataSetService {
 	}
 
 	/**
+	 * Create a column index mapping for all columns.
+	 *
+	 * @param dataConfiguration The DataConfiguration defining the columns.
+	 * @return The mapping.
+	 */
+	public Map<Integer, Integer> getColumnIndexMapping(final DataConfiguration dataConfiguration) {
+		final Map<Integer, Integer> columnIndexMapping = new HashMap<>();
+		for (int i = 0; i < dataConfiguration.getConfigurations().size(); i++) {
+			final ColumnConfiguration columnConfiguration = dataConfiguration.getConfigurations().get(i);
+			columnIndexMapping.put(columnConfiguration.getIndex(), i);
+		}
+		return columnIndexMapping;
+	}
+
+	/**
 	 * Maps the original index of the columns with the given names to their position in the list.
 	 * If the list is empty, all columns will be added with their original index.
 	 *
@@ -234,15 +341,13 @@ public class DataSetService {
 	 */
 	public Map<Integer, Integer> getColumnIndexMapping(final DataConfiguration dataConfiguration,
 	                                                   final List<String> columnNames) throws BadColumnNameException {
-		final Map<Integer, Integer> columnIndexMapping = new HashMap<>();
+		final Map<Integer, Integer> columnIndexMapping;
 
 		if (columnNames.isEmpty()) {
 			// If empty, all columns should be exported.
-			for (int i = 0; i < dataConfiguration.getConfigurations().size(); i++) {
-				final var columnConfiguration = dataConfiguration.getConfigurations().get(i);
-				columnIndexMapping.put(columnConfiguration.getIndex(), i);
-			}
+			columnIndexMapping = getColumnIndexMapping(dataConfiguration);
 		} else {
+			columnIndexMapping = new HashMap<>();
 
 			for (int i = 0; i < columnNames.size(); i++) {
 				final String columnName = columnNames.get(i);

@@ -22,7 +22,7 @@
 
             <!-- Algorithm Selection -->
             <app-workstep-item header="Select the algorithm to be executed" [locked]="data.locked"
-                               [stepIndex]="2" [invalid]="selectedAlgorithm == null">
+                               [skip]="!hasAlgorithmSelection" [stepIndex]="2" [invalid]="selectedAlgorithm == null">
                 <app-configuration-selection #selection [algorithms]="algorithms"
                                              [disabled]="data.locked || !oneEnabled"
                                              [initialValue]="data.configurationData.selectedAlgorithm"
@@ -31,7 +31,7 @@
             </app-workstep-item>
 
             <!-- Algorithm Configuration -->
-            <app-workstep-item header="Configure the selected algorithm" [locked]="data.locked"
+            <app-workstep-item header="Configure the algorithm" [locked]="data.locked"
                                [stepIndex]="3" [invalid]="!formValid">
                 <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                     <div class="ms-auto me-auto" style="width: fit-content">

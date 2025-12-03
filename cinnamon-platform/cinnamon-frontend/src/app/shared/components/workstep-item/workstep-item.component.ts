@@ -18,6 +18,12 @@ export class WorkstepItemComponent {
     @Input() public altConfirmValid: boolean = true;
     @Input() public altConfirmAll: boolean = false;
 
+    /**
+     * If this workstep should be skipped.
+     * Meaning it will not be displayed and directly goes to the next step if opened.
+     */
+    @Input() public skip: boolean = false;
+
     @Output() public confirm = new EventEmitter<void>();
     @Output() public confirmAlt = new EventEmitter<void>();
 

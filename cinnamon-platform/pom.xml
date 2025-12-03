@@ -14,6 +14,16 @@
 	<name>cinnamon-platform</name>
 	<description>The base project for Cinnamon, that includes the web app for data management, anonymization and evaluation.</description>
 
+	<repositories>
+		<repository>
+			<id>github</id>
+			<name>GitHub FhirExtinguisher</name>
+			<url>https://maven.pkg.github.com/JohannesOehm/FhirExtinguisher</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
+		</repository>
+	</repositories>
+
 	<properties>
 		<org.dhatim.fastexcel.version>0.19.0</org.dhatim.fastexcel.version>
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
@@ -76,6 +86,29 @@
 			<artifactId>cinnamon-model</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+
+		<dependency>
+		  <groupId>de.unimuenster.imi.fhir</groupId>
+		  <artifactId>columns-parser-jvm</artifactId>
+		  <version>1.8.0-DEV4</version>
+		</dependency>
+		<dependency>
+		  <groupId>de.unimuenster.imi.fhir</groupId>
+		  <artifactId>transform-fhir</artifactId>
+		  <version>1.8.0-DEV4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-base</artifactId>
+			<version>7.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-structures-r4</artifactId>
+			<version>7.6.1</version>
+		</dependency>
+
 
 		<dependency>
 			<groupId>org.projectlombok</groupId>

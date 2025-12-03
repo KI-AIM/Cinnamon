@@ -14,7 +14,9 @@ import org.springframework.lang.Nullable;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
 import java.util.List;
 
 @Getter
@@ -40,6 +42,9 @@ public class DateData extends Data {
 	public static class DateDataBuilder implements DataBuilder {
 		/**
 		 * List of date formats used for the estimation of the column configuration.
+		 * <p>
+		 * The formats 'yyyy' and 'yyyy-MM', which are valid FHIR formats, are not considered in the estimation,
+		 * as they are too general and would lead to false positives.
 		 */
 		private static final List<String> FORMATS = List.of(
 				"EEEE, MMMM d, yyyy",
@@ -126,11 +131,12 @@ public class DateData extends Data {
 
 			for (final String format : FORMATS) {
 				try {
-					LocalDate.parse(value, DateTimeFormatter.ofPattern(format));
+					LocalDate.parse(value, buildFormatter(format));
 					columnConfiguration.addConfiguration(new DateFormatConfiguration(format));
 					columnConfiguration.setType(DataType.DATE);
 					break;
 				} catch (final DateTimeParseException ignored) {
+					var i = 1;
 				}
 			}
 
@@ -159,12 +165,26 @@ public class DateData extends Data {
 		 * @param configuration The DateFormatConfiguration object
 		 */
 		private void processDateFormatConfiguration(DateFormatConfiguration configuration) {
-			this.formatter = DateTimeFormatter.ofPattern(configuration.getDateFormatter());
+			this.formatter = buildFormatter(configuration.getDateFormatter());
 		}
 
 		private void processRangeConfiguration(RangeConfiguration rangeConfiguration) {
 			this.minValue = rangeConfiguration.getMinValue().asDate();
 			this.maxValue = rangeConfiguration.getMaxValue().asDate();
+		}
+
+		/**
+		 * Build a formatter with defaults months to January and days to the first day of the month.
+		 *
+		 * @param format The format.
+		 * @return The formatter.
+		 */
+		private DateTimeFormatter buildFormatter(final String format) {
+			return new DateTimeFormatterBuilder()
+					.appendPattern(format)
+					.parseDefaulting(ChronoField.MONTH_OF_YEAR, 1)
+					.parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
+					.toFormatter();
 		}
 	}
 }

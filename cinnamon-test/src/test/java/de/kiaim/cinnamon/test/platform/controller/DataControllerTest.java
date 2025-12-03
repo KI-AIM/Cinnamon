@@ -12,6 +12,7 @@ import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
+import de.kiaim.cinnamon.platform.model.file.FhirFileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -79,6 +80,62 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(validationError("file", "Data must be present!"));
 	}
 
+	@Test
+	void postFileMissingFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
+	}
+
+	@Test
+	void postFileWrongFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		fileConfiguration.setCsvFileConfiguration(null);
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration.csvFileConfiguration",
+		                                  "CSV file configuration must be set for CSV files!"));
+	}
+
+	@Test
+	void postFileInvalidFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		fileConfiguration.getCsvFileConfiguration().setColumnSeparator(null);
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration.csvFileConfiguration.columnSeparator",
+		                                  "Column separator must be present"));
+	}
+
+	@Test
+	void postFileOtherInvalidFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		fileConfiguration.setFhirFileConfiguration(new FhirFileConfiguration());
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+	}
 
 	@Test
 	void estimateDatatypesMissingFileName() throws Exception {
@@ -106,18 +163,6 @@ class DataControllerTest extends ControllerTest {
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Missing file extension"));
-	}
-
-
-	@Test
-	void postFileMissingFileConfiguration() throws Exception {
-		MockMultipartFile file = ResourceHelper.loadCsvFile();
-
-		mockMvc.perform(multipart("/api/data/file")
-				                .file(file))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Request validation failed"))
-		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
 	}
 
 	@Test
@@ -167,6 +212,23 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")));
+	}
+
+	@Test
+	void storeConfigInvalidFhirColumns() throws Exception {
+		postFhirFile();
+		estimateDataConfiguration();
+
+		var project = getTestProject();
+		var configuration = project.getOriginalData().getDataSet().getDataConfiguration();
+		configuration.getConfigurations().get(3).setName("invalid");
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/data/configuration")
+				                .param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta[0].source[0]'"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "9", "3")));
 	}
 
 	@Test

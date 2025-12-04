@@ -772,6 +772,60 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+	void loadTransformationResultPageSelectColumnValid() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
+				                .param("page", "1")
+				                .param("perPage", "10")
+				                .param("columns", "column4_integer")
+				                .param("rowSelector", RowSelector.VALID.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[42],[24]],'transformationErrors':[],'rowNumbers':[0,1],'page':1,'perPage':10,total:2,'totalPages':1}"));
+	}
+
+	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+	void loadTransformationResultPageSelectColumnError() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
+				                .param("page", "1")
+				                .param("perPage", "10")
+				                .param("columns", "column4_integer")
+				                .param("rowSelector", RowSelector.ERRORS.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[['forty two']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':0,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[2],'page':1,'perPage':10,total:1,'totalPages':1}"));
+	}
+
+	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+	void loadTransformationResultPageSelectColumnAllValid() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
+				                .param("page", "1")
+				                .param("perPage", "10")
+				                .param("columns", "column0_boolean")
+				                .param("rowSelector", RowSelector.VALID.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true],[false],[true]],'transformationErrors':[],'rowNumbers':[0,1,2],'page':1,'perPage':10,total:3,'totalPages':1}"));
+	}
+
+	@Test
 	void loadTransformationResultPageSelectHoldOut() throws Exception {
 		postData();
 		createHoldOut(0.2f);

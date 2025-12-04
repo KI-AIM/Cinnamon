@@ -1,5 +1,4 @@
 import { Component, Input } from '@angular/core';
-import { MatDialog } from "@angular/material/dialog";
 import { DataType } from 'src/app/shared/model/data-type';
 import { FormGroup } from "@angular/forms";
 
@@ -12,11 +11,6 @@ import { FormGroup } from "@angular/forms";
 export class RangeComponent {
     @Input() type: DataType;
     @Input() form: FormGroup;
-
-    public constructor(
-        protected readonly dialog: MatDialog,
-    ) {
-    }
 
     getInputType() : string {
       switch (this.type) {

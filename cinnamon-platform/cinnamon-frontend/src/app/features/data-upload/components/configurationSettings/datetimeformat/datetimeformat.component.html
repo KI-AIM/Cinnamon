@@ -2,170 +2,156 @@
     <mat-form-field>
         <mat-label>Date & Time Format</mat-label>
         <input matInput formControlName="dateTimeFormatter"/>
-        <mat-icon matSuffix class="icon-enabled"
-                  (click)="dialog.open(dateTimeFormatInfoDialog, { width: '60%' }); $event.stopPropagation();">
-            info
-        </mat-icon>
+        <mat-icon matSuffix class="icon-enabled" (click)="dateTimeFormatInfoDialog.handleClick($event)">info</mat-icon>
     </mat-form-field>
 </div>
 
-<ng-template #dateTimeFormatInfoDialog>
-    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Date & Time Format - Information</h2>
-    <mat-dialog-content class="mat-typography dialog-content">
-        <div class="vertical-boxes">
-            <div class="box">
-                <div class="box-name">
-                    Explanation
-                </div>
-                <p>
-                    The date & time format specifies how a date & time value is written in the dataset and must be
-                    provided for date attributes.
-                    This prevents errors when parsing dates like mixing up day and month or hour format.
-                    All values in the dataset must follow this format, otherwise they will be considered invalid.
-                    <br>
-                    The date & time format is specified by pattern letters that consists of literal characters.
-                    Below you can find a selection of the most important patterns and examples for commonly used
-                    formats.
-                    The capitalization of the letters is important, because the lowercase and uppercase variants of a
-                    letter are often used for different patterns.
-                </p>
+<app-information-dialog #dateTimeFormatInfoDialog>
+    <info-explanation>
+        <p>
+            The date & time format specifies how a date & time value is written in the dataset and must be
+            provided for date attributes.
+            This prevents errors when parsing dates like mixing up day and month or hour format.
+            All values in the dataset must follow this format, otherwise they will be considered invalid.
+            <br>
+            The date & time format is specified by pattern letters that consists of literal characters.
+            Below you can find a selection of the most important patterns and examples for commonly used
+            formats.
+            The capitalization of the letters is important, because the lowercase and uppercase variants of a
+            letter are often used for different patterns.
+        </p>
+    </info-explanation>
 
-                <div class="box-name">
-                    Patterns
-                </div>
-                <table class="table">
-                    <thead>
-                    <tr>
-                        <th>Pattern</th>
-                        <th>Explanation</th>
-                        <th>Examples</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>yyyy</td>
-                        <td>A four-digit year.</td>
-                        <td>
-                            <div>2025</div>
-                            <div>1999</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>MM</td>
-                        <td>A two-digit month.</td>
-                        <td>
-                            <div>01</div>
-                            <div>12</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>dd</td>
-                        <td>A two-digit day.</td>
-                        <td>
-                            <div>08</div>
-                            <div>27</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>HH</td>
-                        <td>A two-digit hour from 1 to 24.</td>
-                        <td>
-                            <div>04</div>
-                            <div>14</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>hh</td>
-                        <td>A two-digit hour from 1 to 12.</td>
-                        <td>
-                            <div>04</div>
-                            <div>12</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>a</td>
-                        <td>AM or PM.</td>
-                        <td>
-                            <div>AM</div>
-                            <div>PM</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>mm</td>
-                        <td>A two-digit minute.</td>
-                        <td>
-                            <div>08</div>
-                            <div>27</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>ss</td>
-                        <td>A two-digit second.</td>
-                        <td>
-                            <div>01</div>
-                            <div>59</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>S</td>
-                        <td>A fraction of a second. Can be used 1 to 9 times in order to specify the number of digits.</td>
-                        <td>
-                            <div>593729</div>
-                            <div>492</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><i>Literals</i></td>
-                        <td>
-                            Any non alphabetical character or alphabetical characters escaped by single quotes.
-                            The single quotes are not present in the value.
-                            Literals can be used for separating the patterns or as pre-/ postfixes.
-                        </td>
-                        <td>
-                            <div>-</div>
-                            <div>.</div>
-                            <div>/</div>
-                            <div>:</div>
-                            <div>'T'</div>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-
-
-                <div class="box-name">
-                    Examples
-                </div>
-                <table class="table">
-                    <thead>
-                    <tr>
-                        <th>Pattern</th>
-                        <th>Explanation</th>
-                        <th>Examples</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>yyyy-MM-dd'T'HH:mm:ss</td>
-                        <td>Format defined by ISO 8601.</td>
-                        <td>1998-03-14T14:03:51</td>
-                    </tr>
-                    <tr>
-                        <td>dd.MM.yyyy HH:mm</td>
-                        <td>Format commonly used in Germany up to the minutes.</td>
-                        <td>14.03.1998 14:03</td>
-                    </tr>
-                    <tr>
-                        <td>MM/dd/yyyy hh:mm:ss a</td>
-                        <td>Format commonly used in the US.</td>
-                        <td>03/14/1998 2:03:51 PM</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+    <info-part title="Patterns">
+        <div class="box-name">
+            Patterns
         </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-        <button mat-raised-button mat-dialog-close color="primary">Close</button>
-    </mat-dialog-actions>
-</ng-template>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Pattern</th>
+                <th>Explanation</th>
+                <th>Examples</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>yyyy</td>
+                <td>A four-digit year.</td>
+                <td>
+                    <div>2025</div>
+                    <div>1999</div>
+                </td>
+            </tr>
+            <tr>
+                <td>MM</td>
+                <td>A two-digit month.</td>
+                <td>
+                    <div>01</div>
+                    <div>12</div>
+                </td>
+            </tr>
+            <tr>
+                <td>dd</td>
+                <td>A two-digit day.</td>
+                <td>
+                    <div>08</div>
+                    <div>27</div>
+                </td>
+            </tr>
+            <tr>
+                <td>HH</td>
+                <td>A two-digit hour from 1 to 24.</td>
+                <td>
+                    <div>04</div>
+                    <div>14</div>
+                </td>
+            </tr>
+            <tr>
+                <td>hh</td>
+                <td>A two-digit hour from 1 to 12.</td>
+                <td>
+                    <div>04</div>
+                    <div>12</div>
+                </td>
+            </tr>
+            <tr>
+                <td>a</td>
+                <td>AM or PM.</td>
+                <td>
+                    <div>AM</div>
+                    <div>PM</div>
+                </td>
+            </tr>
+            <tr>
+                <td>mm</td>
+                <td>A two-digit minute.</td>
+                <td>
+                    <div>08</div>
+                    <div>27</div>
+                </td>
+            </tr>
+            <tr>
+                <td>ss</td>
+                <td>A two-digit second.</td>
+                <td>
+                    <div>01</div>
+                    <div>59</div>
+                </td>
+            </tr>
+            <tr>
+                <td>S</td>
+                <td>A fraction of a second. Can be used 1 to 9 times in order to specify the number of digits.</td>
+                <td>
+                    <div>593729</div>
+                    <div>492</div>
+                </td>
+            </tr>
+            <tr>
+                <td><i>Literals</i></td>
+                <td>
+                    Any non alphabetical character or alphabetical characters escaped by single quotes.
+                    The single quotes are not present in the value.
+                    Literals can be used for separating the patterns or as pre-/ postfixes.
+                </td>
+                <td>
+                    <div>-</div>
+                    <div>.</div>
+                    <div>/</div>
+                    <div>:</div>
+                    <div>'T'</div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </info-part>
+
+    <info-examples>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Pattern</th>
+                <th>Explanation</th>
+                <th>Examples</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>yyyy-MM-dd'T'HH:mm:ss</td>
+                <td>Format defined by ISO 8601.</td>
+                <td>1998-03-14T14:03:51</td>
+            </tr>
+            <tr>
+                <td>dd.MM.yyyy HH:mm</td>
+                <td>Format commonly used in Germany up to the minutes.</td>
+                <td>14.03.1998 14:03</td>
+            </tr>
+            <tr>
+                <td>MM/dd/yyyy hh:mm:ss a</td>
+                <td>Format commonly used in the US.</td>
+                <td>03/14/1998 2:03:51 PM</td>
+            </tr>
+            </tbody>
+        </table>
+    </info-examples>
+</app-information-dialog>

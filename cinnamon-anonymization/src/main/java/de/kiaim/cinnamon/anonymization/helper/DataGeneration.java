@@ -46,7 +46,7 @@ public class DataGeneration {
                 case INTEGER -> new IntegerData(null);
                 case DECIMAL -> new DecimalData(null);
                 case BOOLEAN -> new BooleanData(null);
-                case STRING -> new StringData("DELETE");
+                case STRING -> new StringData(null);
                 default -> throw new IllegalArgumentException("Unsupported data type: " + type);
             };
         } else {

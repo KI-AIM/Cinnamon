@@ -40,8 +40,6 @@
                 <ng-template #configurationForms>
                     <div *ngFor="let item of algorithms" [id]="item">
                         <ng-container *ngIf="selectedAlgorithm != null && selectedAlgorithm.name === item.name">
-                            <p>{{ item.description }}</p>
-
                             <app-configuration-form #form [algorithm]="item"
                                                     [disabled]="data.locked || !oneEnabled"
                                                     (onChange)="onFormChange($event)"
@@ -85,12 +83,9 @@
             <ng-template #configurationForms>
                 <div *ngFor="let item of algorithms" [id]="item">
                     <ng-container *ngIf="selectedAlgorithm!.name === item.name">
-                        <p>{{ item.description }}</p>
-
                         <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
                                                 [disabled]="data.locked || !oneEnabled"
-                                                (onChange)="onFormChange($event)"
-                        >
+                                                (onChange)="onFormChange($event)">
                         </app-configuration-form>
                     </ng-container>
                 </div>

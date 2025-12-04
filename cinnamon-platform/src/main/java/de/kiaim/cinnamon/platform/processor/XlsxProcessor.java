@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.model.configuration.data.*;
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
+import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
@@ -80,7 +81,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      */
     @Override
     public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
-                                     DataConfiguration configuration) throws InternalIOException {
+                                     DataConfiguration configuration) throws BadDatasetException, InternalIOException {
 
         final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
 	    List<List<String>> rows = getRecords(data, configuration);

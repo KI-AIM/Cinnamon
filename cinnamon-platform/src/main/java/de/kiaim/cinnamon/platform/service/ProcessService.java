@@ -446,6 +446,7 @@ public class ProcessService {
 	 * @param errorRequest Error sent back in case the process failed.
 	 * @return If the process has been finished.
 	 * @throws BadDataConfigurationException             If the data configuration is not valid.
+	 * @throws BadDatasetException                     If the data set contains a row with too few or too many values.
 	 * @throws BadDataSetIdException                     If the data set could not be exported.
 	 * @throws BadStateException                         If the file for the dataset has not been stored.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
@@ -459,7 +460,7 @@ public class ProcessService {
 	protected boolean doFinishProcess(final BackgroundProcessEntity process,
 	                                  @Nullable final Set<Map.Entry<String, MultipartFile>> resultFiles,
 	                                  @Nullable final ErrorRequest errorRequest
-	) throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
+	) throws BadDataConfigurationException, BadDatasetException, BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 
 		final var endpoint = cinnamonConfiguration.getExternalServerEndpoints().get(process.getEndpoint());
 

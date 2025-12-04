@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.processor;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
@@ -77,7 +78,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 */
 	@Override
 	public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
-	                                 DataConfiguration configuration) throws InternalIOException {
+	                                 DataConfiguration configuration) throws BadDatasetException, InternalIOException {
 		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 
 		final Iterator<CSVRecord> recordIterator = getRecords(data, fileConfiguration);

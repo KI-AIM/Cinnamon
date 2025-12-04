@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.data.StringData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
@@ -44,6 +45,36 @@ class DatabaseServiceTest extends DatabaseTest {
 		projectService.setMode(testProject, Mode.EXPERT);
 		databaseService.storeFile(testProject, ResourceHelper.loadCsvFile(),
 		                          FileConfigurationTestHelper.generateFileConfiguration());
+	}
+
+	@Test
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+	void storeOriginalTransformationResultTooManyRows() {
+		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
+		transformationResult.getDataSet().getDataRows().get(0).getData().add(new StringData("+1"));
+		transformationResult.getDataSet().getDataRows().get(1).getData().add(new StringData("+1"));
+		transformationResult.getDataSet().getDataRows().get(1).getData().add(new StringData("+2"));
+		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
+
+		long datasetId = assertDoesNotThrow(
+				() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
+		assertTrue(existsTable(datasetId), "Table could not be found!");
+	}
+
+	@Test
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+	void storeOriginalTransformationResultTooFewRows() {
+		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
+		transformationResult.getDataSet().getDataRows().get(0).getData().remove(5);
+		transformationResult.getDataSet().getDataRows().get(1).getData().remove(5);
+		transformationResult.getDataSet().getDataRows().get(1).getData().remove(4);
+		final UserEntity user = getTestUser();
+		final ProjectEntity project = projectService.getProject(user);
+
+		long datasetId = assertDoesNotThrow(
+				() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
+		assertTrue(existsTable(datasetId), "Table could not be found!");
 	}
 
 	@Test

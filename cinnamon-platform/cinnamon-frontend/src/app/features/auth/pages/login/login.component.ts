@@ -1,5 +1,6 @@
 import { Component, OnInit } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
+import { Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { StateManagementService } from "@core/services/state-management.service";
 import { TitleService } from "@core/services/title-service.service";
@@ -26,24 +27,31 @@ export class LoginComponent implements OnInit {
 
 	constructor(
         private readonly notificationService: NotificationService,
+        private readonly router: Router,
 		private readonly titleService: TitleService,
 		private readonly userService: UserService,
         private readonly stateManagementService: StateManagementService,
 	) {
-		this.loginForm = new FormGroup<LoginForm>({
-			email: new FormControl<string>("", {
-				nonNullable: true,
-				validators: [Validators.required],
-			}),
-			password: new FormControl<string>("", {
-				nonNullable: true,
-				validators: [Validators.required],
-			}),
-		});
 		this.titleService.setPageTitle("Open project");
 	}
 
 	ngOnInit() {
+        this.loginForm = new FormGroup<LoginForm>({
+            email: new FormControl<string>(this.userService.cachedEmailInput ?? "", {
+                nonNullable: true,
+                validators: [Validators.required],
+            }),
+            password: new FormControl<string>(this.userService.cachedPasswordInput ?? "", {
+                nonNullable: true,
+                validators: [Validators.required],
+            }),
+        });
+
+        // Reset the cached login inputs
+        this.userService.cachedEmailInput = null;
+        this.userService.cachedPasswordInput = null;
+
+
         if (this.userService.isAuthenticated()) {
             this.stateManagementService.fetchAndRouteToCurrentStep();
         }
@@ -61,5 +69,15 @@ export class LoginComponent implements OnInit {
                 );
             },
         });
+    }
+
+    /**
+     * Navigates to the register page.
+     * Caches the current email and password inputs.
+     */
+    protected navigateToRegister() {
+        this.userService.cachedEmailInput = this.loginForm.value.email ?? null;
+        this.userService.cachedPasswordInput = this.loginForm.value.password ?? null;
+        this.router.navigate(["/create"]);
     }
 }

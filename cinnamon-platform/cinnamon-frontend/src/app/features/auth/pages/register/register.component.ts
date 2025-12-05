@@ -53,11 +53,11 @@ export class RegisterComponent implements OnInit {
         this.appConfig$ = this.appConfigService.appConfig$.pipe(
             tap(appConfig => {
                 this.registerForm = new FormGroup<RegisterForm>({
-                    email: new FormControl<string>("", {
+                    email: new FormControl<string>(this.userService.cachedEmailInput ?? "", {
                         nonNullable: true,
                         validators: [Validators.required],
                     }),
-                    password: new FormControl<string>("", {
+                    password: new FormControl<string>(this.userService.cachedPasswordInput ?? "", {
                         nonNullable: true,
                         validators: [this.passwordRequirementsValidator(appConfig.passwordRequirements)],
                     }),
@@ -66,6 +66,10 @@ export class RegisterComponent implements OnInit {
                         validators: [Validators.required],
                     }),
                 });
+
+                // Reset the cached login inputs
+                this.userService.cachedEmailInput = null;
+                this.userService.cachedPasswordInput = null;
             }),
         );
     }
@@ -130,6 +134,16 @@ export class RegisterComponent implements OnInit {
 
     handleRegisterFailed(error: HttpErrorResponse) {
         this.errorHandlingService.addError(error);
+    }
+
+    /**
+     * Navigates to the login page.
+     * Caches the current email and password inputs.
+     */
+    protected navigateToLogin() {
+        this.userService.cachedEmailInput = this.registerForm.value.email ?? null;
+        this.userService.cachedPasswordInput = this.registerForm.value.password ?? null;
+        this.router.navigate(["/open"]);
     }
 
     /**

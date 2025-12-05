@@ -9,6 +9,15 @@ import { User } from "../model/user";
 	providedIn: "root",
 })
 export class UserService {
+    /**
+     * Cached email for the login and register page.
+     */
+    public cachedEmailInput: string | null = null;
+    /**
+     * Cached password for the login and register page.
+     */
+    public cachedPasswordInput: string | null = null;
+
     private readonly baseURL = environments.apiUrl + "/api/user";
 	private readonly USER_KEY = "user";
 	private user: User;

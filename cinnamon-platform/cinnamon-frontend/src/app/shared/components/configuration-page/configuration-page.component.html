@@ -35,7 +35,12 @@
                                [stepIndex]="3" [invalid]="!formValid">
                 <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                     <div class="ms-auto me-auto" style="width: fit-content">
-                        Please select an algorithm in the previous step first.
+                        <ng-container *ngIf="hasAlgorithmSelection; else noAlgorithmSelection">
+                            Please select an algorithm in the previous step first.
+                        </ng-container>
+                        <ng-template #noAlgorithmSelection>
+                            No algorithms available.
+                        </ng-template>
                     </div>
                 </div>
                 <ng-template #configurationForms>
@@ -82,7 +87,12 @@
         <app-workstep-box header="Algorithm Configuration" [invalid]="selectedAlgorithm !== null && !formValid">
             <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                 <div class="ms-auto me-auto" style="width: fit-content">
-                    Please select an algorithm
+                    <ng-container *ngIf="hasAlgorithmSelection; else noAlgorithmSelection">
+                        Please select an algorithm.
+                    </ng-container>
+                    <ng-template #noAlgorithmSelection>
+                        No algorithms available.
+                    </ng-template>
                 </div>
             </div>
             <ng-template #configurationForms>

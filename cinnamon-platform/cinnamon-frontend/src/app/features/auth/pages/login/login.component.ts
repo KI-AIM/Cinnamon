@@ -1,9 +1,9 @@
 import { Component, OnInit } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
-import { TitleService } from "../../../../core/services/title-service.service";
-import { UserService } from "src/app/shared/services/user.service";
-import { StateManagementService } from "../../../../core/services/state-management.service";
+import { StateManagementService } from "@core/services/state-management.service";
+import { TitleService } from "@core/services/title-service.service";
+import { UserService } from "@shared/services/user.service";
 
 interface LoginForm {
 	email: FormControl<string>;
@@ -45,17 +45,16 @@ export class LoginComponent implements OnInit {
 	}
 
 	onSubmit() {
-		this.userService.login(
-			this.loginForm.value as { email: string; password: string },
-			(error) => {
-				if (error === "") {
-                    this.stateManagementService.fetchAndRouteToCurrentStep();
-				} else {
-                    this.notificationService.addNotification(
-                        new AppNotification("Project name or password wrong", 'failure')
-                    );
-				}
-			}
-		);
-	}
+        const loginData = this.loginForm.value as { email: string; password: string };
+        this.userService.login(loginData).subscribe({
+            next: () => {
+                this.stateManagementService.fetchAndRouteToCurrentStep();
+            },
+            error: () => {
+                this.notificationService.addNotification(
+                    new AppNotification("Project name or password wrong", 'failure')
+                );
+            },
+        });
+    }
 }

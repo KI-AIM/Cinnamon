@@ -16,8 +16,9 @@ export class WorkstepBoxComponent {
 
     /**
      * Title of the workstep.
+     * If no header is provided, the panel header will not be displayed.
      */
-    @Input() public header!: string;
+    @Input() public header: string | null = null;
 
     /**
      * If the workstep is invalid.

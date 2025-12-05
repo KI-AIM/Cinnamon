@@ -1,6 +1,6 @@
 <mat-expansion-panel expanded [hideToggle]="!toggleable" class="workstep-expansion-panel mb-3"
                      [class.workstep-expansion-panel-static]="!toggleable">
-<mat-expansion-panel-header>
+    <mat-expansion-panel-header class="cinnamon-workstep-header" *ngIf="header">
         <mat-panel-title [class.invalid-group]="invalid">
             <h4 style="margin-bottom: 0;">{{ header }}</h4>
         </mat-panel-title>

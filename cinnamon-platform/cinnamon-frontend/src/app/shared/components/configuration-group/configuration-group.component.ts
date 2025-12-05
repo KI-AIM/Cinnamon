@@ -165,7 +165,11 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
      * Deactivates options that are not provided in the given configuration.
      * @param configuration The configuration object.
      */
-    public handleMissingOptions(configuration: any) {
+    public handleMissingOptions(configuration: Record<string, any>) {
+       if (Object.keys(configuration).length === 0)  {
+           return;
+       }
+
         let configGroup;
         if (this.fromGroupName) {
             configGroup = configuration[this.fromGroupName];

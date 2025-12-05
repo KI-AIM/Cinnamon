@@ -73,8 +73,9 @@ public class ExternalConfigurationService {
 			final boolean holdOutFulfilled = !requiresHoldOut || project.getOriginalData().isHasHoldOut();
 
 			final boolean skip = process.get().isSkip() || !holdOutFulfilled;
+			final boolean isConfigured = process.get().getConfiguration() != null;
 
-			final var processInfo = new ProcessInfo(job.getName(), skip, holdOutFulfilled);
+			final var processInfo = new ProcessInfo(job.getName(), skip, holdOutFulfilled, isConfigured);
 			configurationInfo.getProcesses().add(processInfo);
 		}
 

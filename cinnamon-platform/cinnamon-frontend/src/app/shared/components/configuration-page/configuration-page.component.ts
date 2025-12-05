@@ -4,13 +4,16 @@ import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
 import { StateManagementService } from "@core/services/state-management.service";
+import { DataConfiguration } from "@shared/model/data-configuration";
 import { Status } from "@shared/model/status";
-import { catchError, combineLatest, filter, from, map, mergeMap, Observable, of, switchMap, tap } from "rxjs";
+import { DataConfigurationService } from "@shared/services/data-configuration.service";
+import { catchError, combineLatest, from, map, mergeMap, Observable, of, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
 import { Algorithm } from "../../model/algorithm";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { AlgorithmService, ConfigData, ConfigurationInfo } from "../../services/algorithm.service";
+
 import { ConfigurationService } from "../../services/configuration.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
 import { StatusService } from "../../services/status.service";
@@ -42,19 +45,19 @@ export class ConfigurationPageComponent implements OnInit {
     @Input() public configurationInfo!: ConfigurationInfo;
     @Input() public step!: Steps;
     @Input() public additionalConfigs: ConfigurationAdditionalConfigs | null = null
-    @Input() public hasAlgorithmSelection: boolean = true;
 
     protected pageData$: Observable<{
+        algorithms: Algorithm[],
         configurationData: ConfigData,
+        dataConfiguration: DataConfiguration,
         locked: boolean,
         status: Status,
     }>
 
     /**
-     * Available algorithms fetched from the external API.
-     * @protected
+     * If more than one algorithm is available and a selection should be displayed.
      */
-    protected algorithms: Algorithm[] = [];
+    protected hasAlgorithmSelection: boolean = false;
 
     /**
      * If the corresponding process should be executed.
@@ -89,6 +92,7 @@ export class ConfigurationPageComponent implements OnInit {
         protected readonly algorithmService: AlgorithmService,
         protected readonly changeDetectorRef: ChangeDetectorRef,
         private readonly configurationService: ConfigurationService,
+        private readonly dataConfigService: DataConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
         private httpClient: HttpClient,
         private readonly router: Router,
@@ -99,51 +103,76 @@ export class ConfigurationPageComponent implements OnInit {
 
     ngOnInit() {
         for (const process of this.configurationInfo.processes) {
-            this.processEnabled[process.job] = !process.skip;
-            if (!process.skip) {
-                this.oneEnabled = true;
-            }
+            const cachedStatus = this.configurationService.getProcessStatus(this.algorithmService.getConfigurationName(), process.job);
+            const active = cachedStatus != null ? cachedStatus : !process.skip;
+
+            this.processEnabled[process.job] = active;
+            this.oneEnabled ||= active;
         }
 
         this.pageData$ = combineLatest({
-            configurationData: this.algorithmService.algorithms.pipe(
-                tap(value => {
-                    this.algorithms = value;
-                }),
-                switchMap(_ => {
-                    return this.algorithmService.fetchConfiguration();
-                }),
-                tap(value => {
-                    this.selectedAlgorithm = value.selectedAlgorithm
-                    if (value.selectedAlgorithm != null) {
-                        this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
-                    } else if (!this.hasAlgorithmSelection) {
-                        this.selectedAlgorithm = this.algorithms[0];
-                        this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.algorithms[0]);
-                        value.selectedAlgorithm = this.selectedAlgorithm;
-                    }
+            algorithms: this.algorithmService.algorithms.pipe(
+                tap(algorithms => {
+                    this.hasAlgorithmSelection = algorithms.length > 1;
                 }),
                 catchError(err => {
+                    // Disable all processes
+                    this.oneEnabled = false;
+                    for (const process of this.configurationInfo.processes) {
+                        this.processEnabled[process.job] = false;
+                    }
+
                     this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
-                    return of(null);
+                    return of([] as Algorithm[]);
                 }),
-                filter(value => value != null),
             ),
+            dataConfiguration: this.dataConfigService.dataConfiguration$,
             locked: this.stateManagementService.currentStepLocked$.pipe(
                 map(value => value.isLocked),
             ),
             status: this.statusService.status$,
-        });
+        }).pipe(
+            switchMap(pageData => {
+                if (pageData.algorithms.length === 0) {
+                    return of({
+                        ...pageData,
+                        configurationData: {config: {}, selectedAlgorithm: null},
+                    });
+                }
+
+                return this.algorithmService.fetchConfiguration().pipe(
+                    tap(value => {
+
+                        this.selectedAlgorithm = value.selectedAlgorithm
+                        if (value.selectedAlgorithm != null) {
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
+                        } else if (!this.hasAlgorithmSelection && pageData.algorithms.length > 0) {
+                            this.selectedAlgorithm = pageData.algorithms[0];
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), pageData.algorithms[0]);
+                            value.selectedAlgorithm = this.selectedAlgorithm;
+                        }
+                    }),
+                    map(value => ({
+                        ...pageData,
+                        configurationData: value,
+                    })),
+                );
+            }),
+        );
 
         // Set callback functions
         this.algorithmService.setDoSetConfig((error: string | null) => this.setConfig(error));
     }
 
     /**
-     * Checks if at least one process is enabled.
+     * Callback triggered when toggling a process.
+     * Update if at least one job is enabled and updates the cache.
+     *
+     * @param job The name of the job that was toggled.
      * @protected
      */
-    protected updateOneEnabled() {
+    protected onProcessToggle(job: string) {
+        // Checks if at least one process is enabled.
         let _oneEnabled = false;
         for (const enabled of Object.values(this.processEnabled)) {
             if (enabled) {
@@ -156,6 +185,9 @@ export class ConfigurationPageComponent implements OnInit {
             this.oneEnabled = _oneEnabled;
             this.changeDetectorRef.detectChanges();
         }
+
+        // Cache the value change
+        this.configurationService.setProcessStatus(this.algorithmService.getConfigurationName(), job, this.processEnabled[job]);
     }
 
     /**

@@ -60,6 +60,7 @@ public class BackgroundProcessEntity {
 
 	/**
 	 * The configuration used for the process.
+	 * Null if the process is not configured.
 	 */
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "configuration_id")

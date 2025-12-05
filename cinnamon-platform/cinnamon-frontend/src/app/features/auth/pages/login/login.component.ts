@@ -19,6 +19,11 @@ interface LoginForm {
 export class LoginComponent implements OnInit {
 	loginForm: FormGroup<LoginForm>;
 
+    /**
+     * If the password should be hidden by dots.
+     */
+    protected hidePassword: boolean = true;
+
 	constructor(
         private readonly notificationService: NotificationService,
 		private readonly titleService: TitleService,

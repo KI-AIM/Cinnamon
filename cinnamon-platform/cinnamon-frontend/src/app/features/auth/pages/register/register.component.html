@@ -27,11 +27,13 @@
                 <mat-label>Repeat Password</mat-label>
                 <input type="password" formControlName="passwordRepeated" matInput>
             </mat-form-field>
-            <button type="submit" [disabled]="!registerForm.valid" mat-raised-button color="primary">Create</button>
+            <button type="submit" [disabled]="!registerForm.valid" mat-raised-button color="primary">
+                Create and Open new Project
+            </button>
         </form>
         <div style="display: flex; flex-direction: column;">
             <div style="margin: auto;">Already have a Project?</div>
-            <button mat-raised-button color="primary" routerLink="/open">Open existing project</button>
+            <button mat-raised-button color="primary" routerLink="/open">Open existing Project</button>
         </div>
     </div>
 

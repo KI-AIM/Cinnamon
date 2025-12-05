@@ -1,9 +1,9 @@
 import { Component, OnInit } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
-import { TitleService } from "../../../../core/services/title-service.service";
-import { LogoutMode, UserService } from "src/app/shared/services/user.service";
-import { StateManagementService } from "../../../../core/services/state-management.service";
+import { StateManagementService } from "@core/services/state-management.service";
+import { TitleService } from "@core/services/title-service.service";
+import { LogoutMode, UserService } from "@shared/services/user.service";
 
 interface LoginForm {
 	email: FormControl<string>;
@@ -55,15 +55,14 @@ export class LoginComponent implements OnInit {
 	}
 
 	onSubmit() {
-		this.userService.login(
-			this.loginForm.value as { email: string; password: string },
-			(error) => {
-				if (error === "") {
-                    this.stateManagementService.fetchAndRouteToCurrentStep();
-				} else {
-					this.router.navigate(["/open", { mode: "fail" }]);
-				}
-			}
-		);
-	}
+        const loginData = this.loginForm.value as { email: string; password: string };
+        this.userService.login(loginData).subscribe({
+            next: () => {
+                this.stateManagementService.fetchAndRouteToCurrentStep();
+            },
+            error: () => {
+                this.router.navigate(["/open", {mode: "fail"}]);
+            },
+        });
+    }
 }

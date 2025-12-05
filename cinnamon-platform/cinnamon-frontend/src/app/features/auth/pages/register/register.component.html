@@ -34,7 +34,11 @@
                           (click)="hidePasswordRepeated = !hidePasswordRepeated; $event.stopPropagation();" matSuffix>
                     {{ hidePasswordRepeated ? 'visibility_off' : 'visibility' }}
                 </mat-icon>
+                <mat-error *ngIf="registerForm.controls['passwordRepeated'].hasError('passwordMatch')">
+                    Passwords do not match
+                </mat-error>
             </mat-form-field>
+
             <button type="submit" [disabled]="!registerForm.valid" mat-raised-button color="primary">
                 Create and Open new Project
             </button>

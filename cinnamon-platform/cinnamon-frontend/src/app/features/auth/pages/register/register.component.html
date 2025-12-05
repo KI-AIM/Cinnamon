@@ -4,13 +4,14 @@
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
             <mat-form-field>
                 <mat-label>Project Name</mat-label>
-                <input type="text" formControlName="email" matInput>
+                <input type="text" formControlName="email" matInput autocomplete="username">
             </mat-form-field>
 
             <div class="w-100 d-flex" style="gap: 16px;">
                 <mat-form-field class="flex-grow-1">
                     <mat-label>Password</mat-label>
-                    <input [type]="hidePassword ? 'password' : 'text'" formControlName="password" matInput>
+                    <input [type]="hidePassword ? 'password' : 'text'" formControlName="password" matInput
+                           autocomplete="new-password">
                     <mat-icon class="icon-enabled" (click)="hidePassword = !hidePassword; $event.stopPropagation();" matSuffix>
                         {{ hidePassword ? 'visibility_off' : 'visibility' }}
                     </mat-icon>
@@ -29,7 +30,8 @@
 
             <mat-form-field>
                 <mat-label>Repeat Password</mat-label>
-                <input [type]="hidePasswordRepeated ? 'password' : 'text'" formControlName="passwordRepeated" matInput>
+                <input [type]="hidePasswordRepeated ? 'password' : 'text'" formControlName="passwordRepeated" matInput
+                       autocomplete="new-password">
                 <mat-icon class="icon-enabled"
                           (click)="hidePasswordRepeated = !hidePasswordRepeated; $event.stopPropagation();" matSuffix>
                     {{ hidePasswordRepeated ? 'visibility_off' : 'visibility' }}

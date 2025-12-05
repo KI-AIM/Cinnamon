@@ -13,11 +13,12 @@
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
         <mat-form-field>
             <mat-label>Project Name</mat-label>
-            <input type="text" formControlName="email" matInput>
+            <input type="text" formControlName="email" matInput autocomplete="username">
         </mat-form-field>
         <mat-form-field>
             <mat-label>Password</mat-label>
-            <input [type]="hidePassword ? 'password' : 'text'" formControlName="password" matInput>
+            <input [type]="hidePassword ? 'password' : 'text'" formControlName="password" matInput
+                   autocomplete="current-password">
             <mat-icon class="icon-enabled" (click)="hidePassword = !hidePassword; $event.stopPropagation();" matSuffix>
                 {{ hidePassword ? 'visibility_off' : 'visibility' }}
             </mat-icon>

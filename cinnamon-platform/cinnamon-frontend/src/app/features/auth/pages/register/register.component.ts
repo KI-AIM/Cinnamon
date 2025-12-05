@@ -25,7 +25,17 @@ interface RegisterForm {
 export class RegisterComponent implements OnInit {
     registerForm: FormGroup<RegisterForm>;
 
+    /**
+     * If the password should be hidden by dots.
+     */
+    protected hidePassword: boolean = true;
+    /**
+     * If the repeated password should be hidden by dots.
+     */
+    protected hidePasswordRepeated: boolean = true;
+
     protected appConfig$: Observable<AppConfig>;
+
 
     constructor(
         private readonly appConfigService: AppConfigService,

@@ -17,7 +17,10 @@
         </mat-form-field>
         <mat-form-field>
             <mat-label>Password</mat-label>
-            <input type="password" formControlName="password" matInput>
+            <input [type]="hidePassword ? 'password' : 'text'" formControlName="password" matInput>
+            <mat-icon class="icon-enabled" (click)="hidePassword = !hidePassword; $event.stopPropagation();" matSuffix>
+                {{ hidePassword ? 'visibility_off' : 'visibility' }}
+            </mat-icon>
         </mat-form-field>
         <button mat-raised-button color="primary" [disabled]="!loginForm.valid" >Open</button>
     </form>

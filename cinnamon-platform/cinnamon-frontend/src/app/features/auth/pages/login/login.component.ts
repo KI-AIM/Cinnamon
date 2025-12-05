@@ -20,6 +20,11 @@ export class LoginComponent implements OnInit {
 	loginForm: FormGroup<LoginForm>;
 	mode: LogoutMode | null;
 
+    /**
+     * If the password should be hidden by dots.
+     */
+    protected hidePassword: boolean = true;
+
 	constructor(
 		private readonly activateRoute: ActivatedRoute,
 		private readonly router: Router,

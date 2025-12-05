@@ -59,13 +59,13 @@ export class RegisterComponent implements OnInit {
                     }),
                     password: new FormControl<string>(this.userService.cachedPasswordInput ?? "", {
                         nonNullable: true,
-                        validators: [this.passwordRequirementsValidator(appConfig.passwordRequirements)],
+                        validators: [Validators.required, this.passwordRequirementsValidator(appConfig.passwordRequirements)],
                     }),
                     passwordRepeated: new FormControl<string>("", {
                         nonNullable: true,
                         validators: [Validators.required],
                     }),
-                });
+                }, {validators: [this.passwordMatchesValidator()]});
 
                 // Reset the cached login inputs
                 this.userService.cachedEmailInput = null;
@@ -197,6 +197,25 @@ export class RegisterComponent implements OnInit {
             }
 
             return hasLength && hasLowercase && hasDigit && hasSpecialChar && hasUppercase ? null : v;
+        }
+    }
+
+    /**
+     * Validates that the password and passwordRepeated inputs match.
+     */
+    private passwordMatchesValidator(): ValidatorFn {
+        return (control: AbstractControl): ValidationErrors | null => {
+            const passwordRepeatedControl = control.get("passwordRepeated")!;
+
+            const password = control.get("password")!.value;
+            const passwordRepeated = passwordRepeatedControl.value;
+
+            const error = password !== passwordRepeated ? {passwordMatch: true} : null;
+
+            passwordRepeatedControl.setErrors(error);
+            passwordRepeatedControl.markAsTouched({onlySelf: true, emitEvent: false});
+
+            return error;
         }
     }
 

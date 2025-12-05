@@ -36,7 +36,7 @@
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>Column type</mat-label>
-            <mat-select [id]="'type_' + attrNumber" formControlName="type">
+            <mat-select #typeInput [id]="'type_' + attrNumber" formControlName="type">
                 <mat-option *ngFor="let type of DataTypeMetadata | keyvalue" [value]="type.key"
                             [disabled]="!type.value.selectable">
                     {{ type.value.displayName }}
@@ -53,11 +53,15 @@
         <mat-form-field class="w-100">
             <mat-label>Column scale</mat-label>
             <mat-select [id]="'scale' + attrNumber" formControlName="scale">
-                <mat-option *ngFor="let type of DataScaleMetadata | keyvalue" [value]="type.key">
+                <mat-option *ngFor="let type of DataScaleMetadata | keyvalue" [value]="type.key"
+                            [disabled]="!type.value.applicableTo.includes(typeInput.value)">
                     {{ type.value.displayName }}
                 </mat-option>
             </mat-select>
             <mat-icon matSuffix class="icon-enabled" (click)="scaleInfoDialog.handleClick($event)">info</mat-icon>
+            <mat-error *ngIf="columnConfigurationForm.controls['scale'].getError('scale') as scaleError">
+                {{ scaleError.scale }} is not applicable to column type {{ scaleError.type }}
+            </mat-error>
         </mat-form-field>
     </div>
 

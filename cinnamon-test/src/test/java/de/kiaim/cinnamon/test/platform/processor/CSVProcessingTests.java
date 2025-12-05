@@ -481,6 +481,21 @@ public class CSVProcessingTests {
 		assertEquals(ResourceHelper.loadCsvFileAsString(), content);
 	}
 
+	@Test
+	void testWriteAlternateDateFormat() throws IOException {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		DataSet dataset = DataSetTestHelper.generateDataSet();
+		dataset.getDataConfiguration().getConfigurations().get(1)
+		       .getConfiguration(DateFormatConfiguration.class)
+		       .setDateFormatter("dd.MM.yyyy");
+
+		assertDoesNotThrow(() -> csvProcessor.write(stream, dataset));
+
+		String content = stream.toString(StandardCharsets.UTF_8);
+		String expectedContent = ResourceHelper.loadCsvFileAsString().replaceAll(",2023-11-20,", ",20.11.2023,");
+		assertEquals(expectedContent, content);
+	}
+
 	private static DataConfiguration getDataConfiguration() {
 		DataConfiguration config = new DataConfiguration();
 

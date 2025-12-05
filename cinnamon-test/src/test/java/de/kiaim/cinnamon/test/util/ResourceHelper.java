@@ -32,6 +32,12 @@ public class ResourceHelper {
 		return unifyLineEndings(new String(loadCsvFileWithErrors().getBytes(), StandardCharsets.UTF_8));
 	}
 
+	public static MockMultipartFile loadCsvFileAlternative() throws IOException {
+		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
+		return new MockMultipartFile("file", "file.csv", null,
+		                             classLoader.getResourceAsStream("testAlternative.csv"));
+	}
+
 	public static String unifyLineEndings(final String value) {
 		return value.replaceAll("\r\n", "\n")
 		            .replaceAll("\n", "\r\n");

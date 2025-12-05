@@ -1,0 +1,4 @@
+column0_boolean,column1_date,column2_date_time,column3_decimal,column4_integer,column5_string
+true,20.11.2023,20.11.2023 12:50:27,4.2,42,Hello World!
+false,20.11.2023,20.11.2023 12:50:27,2.4,24,Bye World!
+true,2023-11-20,2023-11-20T12:50:27.123456,4.2,forty two,Hello World!

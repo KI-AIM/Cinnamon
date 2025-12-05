@@ -86,9 +86,17 @@ public class ControllerTest extends DatabaseTest {
 	}
 
 	protected Long postData(final boolean withErrors) throws Exception {
-		postFile(withErrors);
+		return postData(withErrors, false);
+	}
 
-		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+	protected void postDataAlternative() throws Exception {
+		postData(false, true);
+	}
+
+	private Long postData(final boolean withErrors, final boolean alternative) throws Exception {
+		postFile(withErrors, alternative);
+
+		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration(alternative);
 		String result = mockMvc.perform(multipart("/api/data")
 				                                .param("configuration",
 				                                       objectMapper.writeValueAsString(configuration)))
@@ -112,12 +120,16 @@ public class ControllerTest extends DatabaseTest {
 		assertDoesNotThrow(() -> Long.parseLong(result.trim()));
 	}
 
-	protected void postFile(final boolean withErrors) throws Exception {
+	protected void postFile(final boolean withErrors, final boolean alternative) throws Exception {
 		MockMultipartFile file;
 		if (withErrors) {
 			file = ResourceHelper.loadCsvFileWithErrors();
 		} else {
-			file = ResourceHelper.loadCsvFile();
+			if (alternative) {
+				file = ResourceHelper.loadCsvFileAlternative();
+			} else {
+				file = ResourceHelper.loadCsvFile();
+			}
 		}
 
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();

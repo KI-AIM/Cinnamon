@@ -13,6 +13,7 @@ import { stringify } from "yaml";
 import { Algorithm } from "../../model/algorithm";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { AlgorithmService, ConfigData, ConfigurationInfo } from "../../services/algorithm.service";
+
 import { ConfigurationService } from "../../services/configuration.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
 import { StatusService } from "../../services/status.service";
@@ -47,17 +48,12 @@ export class ConfigurationPageComponent implements OnInit {
     @Input() public hasAlgorithmSelection: boolean = true;
 
     protected pageData$: Observable<{
+        algorithms: Algorithm[],
         configurationData: ConfigData,
         dataConfiguration: DataConfiguration,
         locked: boolean,
         status: Status,
     }>
-
-    /**
-     * Available algorithms fetched from the external API.
-     * @protected
-     */
-    protected algorithms: Algorithm[] = [];
 
     /**
      * If the corresponding process should be executed.
@@ -111,23 +107,7 @@ export class ConfigurationPageComponent implements OnInit {
         }
 
         this.pageData$ = combineLatest({
-            configurationData: this.algorithmService.algorithms.pipe(
-                tap(value => {
-                    this.algorithms = value;
-                }),
-                switchMap(_ => {
-                    return this.algorithmService.fetchConfiguration();
-                }),
-                tap(value => {
-                    this.selectedAlgorithm = value.selectedAlgorithm
-                    if (value.selectedAlgorithm != null) {
-                        this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
-                    } else if (!this.hasAlgorithmSelection) {
-                        this.selectedAlgorithm = this.algorithms[0];
-                        this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.algorithms[0]);
-                        value.selectedAlgorithm = this.selectedAlgorithm;
-                    }
-                }),
+            algorithms: this.algorithmService.algorithms.pipe(
                 catchError(err => {
                     // Disable all processes
                     this.oneEnabled = false;
@@ -136,7 +116,7 @@ export class ConfigurationPageComponent implements OnInit {
                     }
 
                     this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
-                    return of({config: {}, selectedAlgorithm: null});
+                    return of([] as Algorithm[]);
                 }),
             ),
             dataConfiguration: this.dataConfigService.dataConfiguration$,
@@ -144,7 +124,34 @@ export class ConfigurationPageComponent implements OnInit {
                 map(value => value.isLocked),
             ),
             status: this.statusService.status$,
-        });
+        }).pipe(
+            switchMap(pageData => {
+                if (pageData.algorithms.length === 0) {
+                    return of({
+                        ...pageData,
+                        configurationData: {config: {}, selectedAlgorithm: null},
+                    });
+                }
+
+                return this.algorithmService.fetchConfiguration().pipe(
+                    tap(value => {
+
+                        this.selectedAlgorithm = value.selectedAlgorithm
+                        if (value.selectedAlgorithm != null) {
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
+                        } else if (!this.hasAlgorithmSelection && pageData.algorithms.length > 0) {
+                            this.selectedAlgorithm = pageData.algorithms[0];
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), pageData.algorithms[0]);
+                            value.selectedAlgorithm = this.selectedAlgorithm;
+                        }
+                    }),
+                    map(value => ({
+                        ...pageData,
+                        configurationData: value,
+                    })),
+                );
+            }),
+        );
 
         // Set callback functions
         this.algorithmService.setDoSetConfig((error: string | null) => this.setConfig(error));

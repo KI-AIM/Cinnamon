@@ -45,7 +45,6 @@ export class ConfigurationPageComponent implements OnInit {
     @Input() public configurationInfo!: ConfigurationInfo;
     @Input() public step!: Steps;
     @Input() public additionalConfigs: ConfigurationAdditionalConfigs | null = null
-    @Input() public hasAlgorithmSelection: boolean = true;
 
     protected pageData$: Observable<{
         algorithms: Algorithm[],
@@ -54,6 +53,11 @@ export class ConfigurationPageComponent implements OnInit {
         locked: boolean,
         status: Status,
     }>
+
+    /**
+     * If more than one algorithm is available and a selection should be displayed.
+     */
+    protected hasAlgorithmSelection: boolean = false;
 
     /**
      * If the corresponding process should be executed.
@@ -108,6 +112,9 @@ export class ConfigurationPageComponent implements OnInit {
 
         this.pageData$ = combineLatest({
             algorithms: this.algorithmService.algorithms.pipe(
+                tap(algorithms => {
+                    this.hasAlgorithmSelection = algorithms.length > 1;
+                }),
                 catchError(err => {
                     // Disable all processes
                     this.oneEnabled = false;

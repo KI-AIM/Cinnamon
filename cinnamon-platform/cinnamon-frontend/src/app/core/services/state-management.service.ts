@@ -57,10 +57,6 @@ export class StateManagementService {
         private readonly synthetizationService: SynthetizationService,
         private readonly technicalEvaluationService: TechnicalEvaluationService,
     ) {
-        if (this.userService.isAuthenticated()) {
-            this.fetchCurrentStep();
-        }
-
         this.currentStep$ = this.router.events.pipe(
             filter(event => event instanceof NavigationEnd),
             map(event => {
@@ -80,7 +76,10 @@ export class StateManagementService {
             tap(value => this.updatePipeline(value)),
         );
 
-        this.initPipeline();
+        if (this.userService.isAuthenticated()) {
+            this.fetchCurrentStep();
+            this.initPipeline();
+        }
     }
 
     /**

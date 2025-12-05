@@ -58,7 +58,7 @@
                 <div formArrayName="configurations">
                     <div *ngFor="let columnConfig of getColumnConfigurationForms(attributeConfigurationform); let i = index"
                          [formGroupName]="i">
-                        <app-attribute-configuration #attributeConfiguration [attrNumber]="i.toString()"
+                        <app-attribute-configuration #attributeConfiguration [attrNumber]="i"
                                                      [columnConfigurationForm]="columnConfig"
                                                      [confidence]="getConfidence(i)" [disabled]="data.locked.isLocked"
                                                      [fileType]="data.fileType" (onInput)="checkUniqueColumnNames()">

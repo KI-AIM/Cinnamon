@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.test.model.validation;
 
+import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
 import jakarta.validation.Validation;
@@ -67,6 +68,24 @@ public class DataConfigurationValidatorTest {
 		var violation = iterator.next();
 		assertEquals("The data type must not be 'UNDEFINED'!", violation.getMessage(), "Violation has an unexpected message!");
 		assertEquals("configurations[0].type", violation.getPropertyPath().toString(), "Violation has an unexpected path!");
+
+		assertFalse(iterator.hasNext(), "Should have only one violation!");
+	}
+
+	@Test
+	void scaleNotApplicableToDataType() {
+		var config = DataConfigurationTestHelper.generateDataConfiguration();
+		config.getConfigurations().get(0).setScale(DataScale.DATE);
+
+		var violations = validator.validate(config);
+
+		var iterator = violations.iterator();
+
+		assertTrue(iterator.hasNext(), "Should have violations!");
+
+		var violation = iterator.next();
+		assertEquals("The data scale is not applicable to the specified data type!", violation.getMessage(), "Violation has an unexpected message!");
+		assertEquals("configurations[0]", violation.getPropertyPath().toString(), "Violation has an unexpected path!");
 
 		assertFalse(iterator.hasNext(), "Should have only one violation!");
 	}

@@ -22,7 +22,7 @@
     "@angular/router": "^20.3.15",
     "@fontsource/material-icons": "^5.0.11",
     "@fontsource/roboto": "^5.0.8",
-    "@ng-bootstrap/ng-bootstrap": "^18.0.0",
+    "@ng-bootstrap/ng-bootstrap": "^19.0.1",
     "@popperjs/core": "^2.11.6",
     "bootstrap": "^5.3.2",
     "bootstrap-icons": "^1.11.1",

@@ -27,7 +27,7 @@
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.11.1",
     "class-transformer": "^0.5.1",
-    "echarts": "^5.6.0",
+    "echarts": "^6.0.0",
     "ngx-echarts": "^20.0.2",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~7.8.0",

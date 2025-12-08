@@ -24,7 +24,7 @@
     "@fontsource/roboto": "^5.0.8",
     "@ng-bootstrap/ng-bootstrap": "^19.0.1",
     "@popperjs/core": "^2.11.6",
-    "bootstrap": "^5.3.2",
+    "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.11.1",
     "class-transformer": "^0.5.1",
     "echarts": "^5.6.0",

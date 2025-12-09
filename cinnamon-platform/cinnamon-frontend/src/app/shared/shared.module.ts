@@ -160,6 +160,7 @@ import { IsObjectPipe } from './pipes/is-object.pipe';
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,
+        ConfigurationInputInfoComponent,
         ConfigurationPageComponent,
         DataInspectionComponent,
         DataInspectionAttributeComponent,

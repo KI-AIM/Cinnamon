@@ -1,4 +1,8 @@
-from data_processing.post_process import transform_in_iso_datetime, transform_in_time_distance
+from data_processing.post_process import (
+    transform_in_iso_datetime,
+    transform_in_time_distance,
+    transform_variance_in_time_distance,
+)
 from typing import Dict, Any, List, Union, Optional
 
 from .quality_ranges import determine_quality_range
@@ -206,7 +210,7 @@ def add_value_differences(metrics_dict):
         elif isinstance(real, (int, float)) and isinstance(synthetic, (int, float)):
             abs_diff = abs(real - synthetic)
             is_distance_metric = (real == 0 or real == 0.0) and (0 <= synthetic <= 1)
-            
+
             if is_distance_metric:
                 normalized_diff = synthetic
             else:
@@ -223,9 +227,9 @@ def add_value_differences(metrics_dict):
                 else:
                     denominator = abs(real) + abs(synthetic)
                     normalized_diff = abs_diff / denominator if denominator != 0 else 0.0
-            
+
             pct_diff = normalized_diff * 100
-                
+
             return {
                 'absolute': abs_diff,
                 'percentage': pct_diff,
@@ -237,7 +241,7 @@ def add_value_differences(metrics_dict):
                 'percentage': 100,
                 'color_index': 10
             }
-        
+
     def process_metric(metric_data):
         """Process a single metric."""
         if not isinstance(metric_data, dict):
@@ -349,7 +353,8 @@ def convert_important_metrics_to_date(metric, transformation_map, attr_type):
     """
     for metric_name, metric_data in metric.get('important_metrics', {}).items():
         if metric_name in transformation_map:
-            transform_func = globals()[transformation_map[metric_name]]
+            transform_name = transformation_map[metric_name]
+            transform_func = globals()[transform_name]
             if isinstance(metric_data, dict):
                 if 'values' in metric_data:
                     if 'real' in metric_data['values']:
@@ -366,8 +371,13 @@ def convert_important_metrics_to_date(metric, transformation_map, attr_type):
                             metric_data['values']['synthetic'] = transform_func(current_value, attr_type)
                 if 'difference' in metric_data and isinstance(metric_data['difference'], dict):
                     if 'absolute' in metric_data['difference'] and metric_data['difference']['absolute'] is not None:
-                        metric_data['difference']['absolute'] = transform_in_time_distance(
-                            metric_data['difference']['absolute'])
+                        diff_transform = (
+                            transform_variance_in_time_distance
+                            if transform_name == 'transform_variance_in_time_distance'
+                            else transform_in_time_distance
+                        )
+                        metric_data['difference']['absolute'] = diff_transform(
+                            metric_data['difference']['absolute'], attr_type)
     return metric
 
 
@@ -386,7 +396,8 @@ def convert_details_to_date(metric, transformation_map, attr_type):
     if 'details' in metric:
         for detail_name, detail_data in metric['details'].items():
             if detail_name in transformation_map:
-                transform_func = globals()[transformation_map[detail_name]]
+                transform_name = transformation_map[detail_name]
+                transform_func = globals()[transform_name]
                 if isinstance(detail_data, dict):
                     if 'values' in detail_data:
                         if 'real' in detail_data['values']:
@@ -403,8 +414,13 @@ def convert_details_to_date(metric, transformation_map, attr_type):
                                 detail_data['values']['synthetic'] = transform_func(current_value, attr_type)
                     if 'difference' in detail_data and isinstance(detail_data['difference'], dict):
                         if 'absolute' in detail_data['difference'] and detail_data['difference']['absolute'] is not None:
-                            detail_data['difference']['absolute'] = transform_in_time_distance(
-                                detail_data['difference']['absolute'])
+                            diff_transform = (
+                                transform_variance_in_time_distance
+                                if transform_name == 'transform_variance_in_time_distance'
+                                else transform_in_time_distance
+                            )
+                            detail_data['difference']['absolute'] = diff_transform(
+                                detail_data['difference']['absolute'], attr_type)
     return metric
 
 
@@ -556,14 +572,14 @@ def add_overview_to_config(
     """
     Processes the config data to add an overview section with resemblance scores
     and utility scores at the same level as "resemblance" in the dictionary.
-    
+
     Args:
         config_data: The configuration data containing metrics information
         correlation_labels: Optional attribute labels for the correlation matrix.
         real_correlation_matrix: Optional Phi-K matrix computed on the real dataset.
         synthetic_correlation_matrix: Optional Phi-K matrix computed on the synthetic dataset.
         correlation_distance: Optional normalized distance between the real and synthetic correlation matrices.
-        
+
     Returns:
         dict: The modified config data with added Overview section with aggregated_metrics
     """
@@ -571,33 +587,33 @@ def add_overview_to_config(
         capped_diff = min(100, max(0, percentage_diff))
         index = min(10, max(1, int(capped_diff / 10) + 1))
         return index
-    
+
     modified_config = config_data.copy()
-    
+
     if "resemblance" not in modified_config or "attributes" not in modified_config["resemblance"]:
         return modified_config
-        
+
     attributes = modified_config["resemblance"]["attributes"]
     all_attribute_scores: List[float] = []
-    
+
     for i, attr in enumerate(attributes):
         overview = {}
         all_percentages = []
-        
+
         if "important_metrics" in attr:
             for metric_name, metric_data in attr["important_metrics"].items():
                 if "difference" in metric_data and "percentage" in metric_data["difference"]:
                     pct = metric_data["difference"]["percentage"]
                     all_percentages.append(abs(pct))
                     overview[metric_name] = pct
-        
+
         if "details" in attr:
             for metric_name, metric_data in attr["details"].items():
                 if "difference" in metric_data and "percentage" in metric_data["difference"]:
                     pct = metric_data["difference"]["percentage"]
                     all_percentages.append(abs(pct))
                     overview[metric_name] = pct
-        
+
         if all_percentages:
             avg_difference = sum(all_percentages) / len(all_percentages)
             avg_difference = max(0.0, min(100.0, avg_difference))
@@ -607,48 +623,48 @@ def add_overview_to_config(
                 "color_index": color_index
             }
             all_attribute_scores.append(avg_difference / 100.0)
-        
+
         if overview:
             modified_config["resemblance"]["attributes"][i]["overview"] = overview
-    
+
     real_utility_score: Optional[float] = None
     synthetic_utility_score: Optional[float] = None
-    
+
     if "utility" in modified_config and "methods" in modified_config["utility"]:
         for method in modified_config["utility"]["methods"]:
             if "machine_learning" in method:
                 ml_method = method["machine_learning"]
-                
+
                 if "real" in ml_method and "predictions" in ml_method["real"]:
                     predictions = ml_method["real"]["predictions"]
-                    
+
                     if "Balanced Accuracy" in predictions:
                         for classifier in predictions["Balanced Accuracy"]:
                             if classifier["classifier"] == "Summary":
                                 real_utility_score = classifier["score"]
                                 break
-                    
+
                     elif "Adjusted R-Squared" in predictions:
                         for classifier in predictions["Adjusted R-Squared"]:
                             if classifier["classifier"] == "Summary":
                                 real_utility_score = classifier["score"]
                                 break
-                
+
                 if "synthetic" in ml_method and "predictions" in ml_method["synthetic"]:
                     predictions = ml_method["synthetic"]["predictions"]
-                    
+
                     if "Balanced Accuracy" in predictions:
                         for classifier in predictions["Balanced Accuracy"]:
                             if classifier["classifier"] == "Summary":
                                 synthetic_utility_score = classifier["score"]
                                 break
-                    
+
                     elif "Adjusted R-Squared" in predictions:
                         for classifier in predictions["Adjusted R-Squared"]:
                             if classifier["classifier"] == "Summary":
                                 synthetic_utility_score = classifier["score"]
                                 break
-    
+
     overview_items: Dict[str, Any] = {}
 
     if all_attribute_scores:

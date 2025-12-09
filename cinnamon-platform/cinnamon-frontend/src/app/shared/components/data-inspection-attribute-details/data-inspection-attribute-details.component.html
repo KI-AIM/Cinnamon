@@ -66,7 +66,7 @@
                 </ng-container>
             </div>
             <div class="w-100 h-100" *ngIf="metricConfig$ | async as mc">
-                <div style="margin-top: .5rem;">
+                <div style="margin-top: .5rem; min-width: 525px;">
 
                     <div class="d-flex" style="margin-left: 70px; margin-right: 30px; margin-bottom: -32px; height: 32px;">
                         <button *ngIf="hasSynthetic && graphType !== 'correlation'" mat-flat-button
@@ -95,6 +95,7 @@
                     </ng-container>
                     <ng-container *ngIf="graphType === 'histogram' && isContinuous()">
                         <app-chart-frequency [colorScheme]="mc.colorScheme"
+                                             [columnConfiguration]="attributeStatistics.attribute_information"
                                              [data]="attributeStatistics.plot.histogram!" [limit]="null"
                                              [originalSeriesLabel]="originalDisplayName"
                                              [syntheticSeriesLabel]="datasetDisplayName">
@@ -103,13 +104,15 @@
 
                     <ng-container *ngIf="graphType === 'frequency' && !isContinuous()">
                         <app-chart-frequency [colorScheme]="mc.colorScheme"
+                                             [columnConfiguration]="attributeStatistics.attribute_information"
                                              [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
                                              [originalSeriesLabel]="originalDisplayName"
                                              [syntheticSeriesLabel]="datasetDisplayName"></app-chart-frequency>
                     </ng-container>
 
                     <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
-                        <app-chart-calendar [data]="attributeStatistics.plot.density!"
+                        <app-chart-calendar [columnConfiguration]="attributeStatistics.attribute_information"
+                                            [data]="attributeStatistics.plot.density!"
                                             [syntheticSeriesLabel]="datasetDisplayName">
                         </app-chart-calendar>
                     </ng-container>

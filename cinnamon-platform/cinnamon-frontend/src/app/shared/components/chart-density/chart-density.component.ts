@@ -38,8 +38,10 @@ export class ChartDensityComponent extends ChartComponent {
             reference = value;
         }
 
+        const chartName = this.createChartName("Density", this.data, this.columnConfiguration, dataSetLabels);
+
         const options: EChartsCoreOption = {
-            ...this.graphOptions(this.simple),
+            ...this.graphOptions(this.simple, chartName),
             tooltip: {
                 trigger: 'axis',
                 // @ts-ignore

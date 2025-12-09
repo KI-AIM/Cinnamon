@@ -189,6 +189,13 @@ export abstract class AlgorithmService {
         }
     }
 
+    /**
+     * Deleted cached configuration definitions.
+     */
+    public invalidateCachedAlgorithmDefinitions(): void {
+        this.algorithmDefinitions = {};
+    }
+
     private loadAlgorithms(): Observable<Algorithm[]> {
         return this.fetchAlgorithms().pipe(
             map(value => {

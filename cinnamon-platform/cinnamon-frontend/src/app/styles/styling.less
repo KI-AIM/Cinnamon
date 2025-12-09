@@ -130,22 +130,51 @@ input[type="file"]:disabled::-webkit-file-upload-button {
     box-shadow: none;
 }
 
-.icon-enabled .mat-icon {
+.icon {
+    position: relative;
+}
+
+.icon-enabled > .mat-icon:first-child {
     color: @color-primary-icon;
     vertical-align: middle;
 }
 
-.icon-enabled .mat-icon:hover {
+.icon-enabled > .mat-icon:hover {
     cursor: pointer;
 }
 
-.icon-disabled .mat-icon {
+.icon-disabled > .mat-icon {
     color: @color-secondary-icon;
     vertical-align: middle;
 }
 
-.icon-warning .mat-icon {
+.icon-warning > .mat-icon {
     color: @color-warning;
+}
+
+.icon.icon-error > .icon-error-background,
+.icon.icon-error > .icon-error-foreground {
+    display: block;
+}
+
+.icon > .icon-error-background {
+    background-color: white;
+    border-radius: 100%;
+    display: none;
+    height: 8px;
+    left: 15px;
+    position: absolute;
+    top: 1px;
+    width: 8px;
+}
+
+.icon > .icon-error-foreground {
+    color: @color-error;
+    display: none;
+    left: 7px;
+    position: absolute;
+    top: -7px;
+    transform: scale(0.7);
 }
 
 .mat-mdc-raised-button:disabled {

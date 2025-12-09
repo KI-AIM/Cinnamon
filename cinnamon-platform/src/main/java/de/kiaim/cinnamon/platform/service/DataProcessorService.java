@@ -22,6 +22,20 @@ public class DataProcessorService {
 	}
 
 	/**
+	 * Gets the file type of the given multipart file by analyzing the file extension.
+	 *
+	 * @param file The file.
+	 * @return The file type of the file.
+	 * @throws BadFileException If the file name is not valid.
+	 */
+	public FileType getFileType(final MultipartFile file) throws BadFileException {
+		validateFileOrThrow(file);
+		final String fileName = file.getOriginalFilename();
+		final String fileExtension = getFileExtension(fileName);
+		return getFileType(fileExtension);
+	}
+
+	/**
 	 * Returns the DataProcessor that can handle the given file type.
 	 * @param fileType The file type of the file to process.
 	 * @return The DataProcessor.
@@ -35,10 +49,6 @@ public class DataProcessorService {
 		}
 
 		throw new InternalMissingHandlingException(InternalMissingHandlingException.FILE_TYPE , "Unsupported file type: '" + fileType.name() + "'");
-	}
-
-	public String getFileExtension(final String fileName) {
-		return fileName.substring(fileName.lastIndexOf('.'));
 	}
 
 	/**
@@ -70,6 +80,33 @@ public class DataProcessorService {
 		if (fileExtensionBegin == -1) {
 			throw new BadFileException(BadFileException.MISSING_FILE_EXTENSION, "Missing file extension");
 		}
+	}
+
+	/**
+	 * Returns the file extension of the given file name.
+	 *
+	 * @param fileName The file name.
+	 * @return The file extension.
+	 */
+	private String getFileExtension(final String fileName) {
+		return fileName.substring(fileName.lastIndexOf('.'));
+	}
+
+	/**
+	 * Returns the file type for the given file extension.
+	 *
+	 * @param fileExtension The file extension.
+	 * @return The file type.
+	 * @throws BadFileException If the file extension is not supported.
+	 */
+	private FileType getFileType(final String fileExtension) throws BadFileException {
+		for (final FileType fileType : FileType.values()) {
+			if (fileType.getFileExtensions().contains(fileExtension)) {
+				return fileType;
+			}
+		}
+		throw new BadFileException(BadFileException.UNSUPPORTED,
+		                           "The file extension '" + fileExtension + "' is not supported!");
 	}
 
 }

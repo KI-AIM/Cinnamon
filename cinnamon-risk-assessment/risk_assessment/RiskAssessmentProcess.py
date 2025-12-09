@@ -110,8 +110,9 @@ def risk_assessment(process_id: int,
         send_callback_error(callback_url, error_message, "RISK-ASSESSMENT_1_0_1")
         return results
 
-    if risk_assessment_config.linkage is not None:
+    if risk_assessment_config.linkage:
         try:
+            print("got here! linkage")
             risk_link = linkage_attack(data_origin, synthetic_data, risk_assessment_config.linkage, holdout_data)
             results["linkage_health_risk"] = risk_link
         except Exception as e:
@@ -121,8 +122,9 @@ def risk_assessment(process_id: int,
             send_callback_error(callback_url, error_message, "RISK-ASSESSMENT_1_0_2")
             return results
 
-    if risk_assessment_config.attribute_inference is not None:
+    if risk_assessment_config.attribute_inference:
         try:
+            print("got here! inf")
             risk_inf, result_inf = inference_attack(data_origin, synthetic_data, attribute_config,
                                                     risk_assessment_config.attribute_inference, holdout_data)
             risk_inf_avg = average_attribute_inf(risk_inf, result_inf)
@@ -136,8 +138,9 @@ def risk_assessment(process_id: int,
             send_callback_error(callback_url, error_message, "RISK-ASSESSMENT_1_0_3")
             return results
 
-    if risk_assessment_config.singlingout_uni is not None:
+    if risk_assessment_config.singlingout_uni:
         try:
+            print("got here! sout uni")
             risk_sout_uni = singling_out_attack(data_origin, synthetic_data, risk_assessment_config.singlingout_uni,
                                                 holdout_data, mode="univariate")
             results["univariate_singling_out_risk"] = risk_sout_uni
@@ -148,8 +151,9 @@ def risk_assessment(process_id: int,
             send_callback_error(callback_url, error_message, "RISK-ASSESSMENT_1_0_4")
             return results
 
-    if risk_assessment_config.singlingout_multi is not None:
+    if risk_assessment_config.singlingout_multi:
         try:
+            print("got here! sout multi")
             risk_sout_multi = singling_out_attack(data_origin, synthetic_data, risk_assessment_config.singlingout_multi,
                                                   holdout_data, mode="multivariate")
             results["multivariate_singling_out_risk"] = risk_sout_multi

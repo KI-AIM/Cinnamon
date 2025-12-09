@@ -60,7 +60,8 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
         this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfo("VALIDATION");
         this.fileService.fileInfo$.subscribe({
             next: (fileInformation: FileInformation) => {
-                if (fileInformation.type != null) {
+                // Currently, FHIR export is not supported
+                if (fileInformation.type != null && fileInformation.type !== FileType.FHIR) {
                     this.datasetFileType = fileInformation.type;
                 }
             }

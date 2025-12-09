@@ -12,6 +12,7 @@ import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
+import de.kiaim.cinnamon.platform.model.file.FhirFileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -79,6 +80,62 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(validationError("file", "Data must be present!"));
 	}
 
+	@Test
+	void postFileMissingFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
+	}
+
+	@Test
+	void postFileWrongFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		fileConfiguration.setCsvFileConfiguration(null);
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration.csvFileConfiguration",
+		                                  "CSV file configuration must be set for CSV files!"));
+	}
+
+	@Test
+	void postFileInvalidFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		fileConfiguration.getCsvFileConfiguration().setColumnSeparator(null);
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("fileConfiguration.csvFileConfiguration.columnSeparator",
+		                                  "Column separator must be present"));
+	}
+
+	@Test
+	void postFileOtherInvalidFileConfiguration() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		fileConfiguration.setFhirFileConfiguration(new FhirFileConfiguration());
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+	}
 
 	@Test
 	void estimateDatatypesMissingFileName() throws Exception {
@@ -106,18 +163,6 @@ class DataControllerTest extends ControllerTest {
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Missing file extension"));
-	}
-
-
-	@Test
-	void postFileMissingFileConfiguration() throws Exception {
-		MockMultipartFile file = ResourceHelper.loadCsvFile();
-
-		mockMvc.perform(multipart("/api/data/file")
-				                .file(file))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Request validation failed"))
-		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
 	}
 
 	@Test
@@ -167,6 +212,23 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")));
+	}
+
+	@Test
+	void storeConfigInvalidFhirColumns() throws Exception {
+		postFhirFile();
+		estimateDataConfiguration();
+
+		var project = getTestProject();
+		var configuration = project.getOriginalData().getDataSet().getDataConfiguration();
+		configuration.getConfigurations().get(3).setName("invalid");
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/data/configuration")
+				                .param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta[0].source[0]'"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "9", "3")));
 	}
 
 	@Test
@@ -632,7 +694,7 @@ class DataControllerTest extends ControllerTest {
 				                .param("perPage", "1"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
-				       "{'data':[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':null,'page':2,'perPage':1,total:3,'totalPages':3}"));
+				       "{'data':[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':[1],'page':2,'perPage':1,total:3,'totalPages':3}"));
 	}
 
 	@Test
@@ -645,7 +707,7 @@ class DataControllerTest extends ControllerTest {
 				                .param("perPage", "2"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
-				       "{'data':[[true,'2023-11-20',null,4.2,null,'Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':2,'perPage':2,total:3,'totalPages':2}"));
+				       "{'data':[[true,'2023-11-20',null,4.2,null,'Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[2],'page':2,'perPage':2,total:3,'totalPages':2}"));
 	}
 
 	@Test
@@ -659,7 +721,7 @@ class DataControllerTest extends ControllerTest {
 				                .param("formatErrorEncoding", "$value"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
-				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':3,'perPage':1,total:3,'totalPages':3}"));
+				       "{'data':[[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[2],'page':3,'perPage':1,total:3,'totalPages':3}"));
 	}
 
 	@Test
@@ -709,7 +771,61 @@ class DataControllerTest extends ControllerTest {
 				                .param("formatErrorEncoding", "$value"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
-				       "{'data':[[42],[24],['forty two']],'transformationErrors':[{'index':2,'dataTransformationErrors':[{'index':0,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':null,'page':1,'perPage':10,total:3,'totalPages':1}"));
+				       "{'data':[[42],[24],['forty two']],'transformationErrors':[{'index':2,'dataTransformationErrors':[{'index':0,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[0,1,2],'page':1,'perPage':10,total:3,'totalPages':1}"));
+	}
+
+	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+	void loadTransformationResultPageSelectColumnValid() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
+				                .param("page", "1")
+				                .param("perPage", "10")
+				                .param("columns", "column4_integer")
+				                .param("rowSelector", RowSelector.VALID.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[42],[24]],'transformationErrors':[],'rowNumbers':[0,1],'page':1,'perPage':10,total:2,'totalPages':1}"));
+	}
+
+	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+	void loadTransformationResultPageSelectColumnError() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
+				                .param("page", "1")
+				                .param("perPage", "10")
+				                .param("columns", "column4_integer")
+				                .param("rowSelector", RowSelector.ERRORS.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[['forty two']],'transformationErrors':[{'index':0,'dataTransformationErrors':[{'index':0,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[2],'page':1,'perPage':10,total:1,'totalPages':1}"));
+	}
+
+	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+	void loadTransformationResultPageSelectColumnAllValid() throws Exception {
+		postData();
+
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
+				                .param("page", "1")
+				                .param("perPage", "10")
+				                .param("columns", "column0_boolean")
+				                .param("rowSelector", RowSelector.VALID.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[true],[false],[true]],'transformationErrors':[],'rowNumbers':[0,1,2],'page':1,'perPage':10,total:3,'totalPages':1}"));
 	}
 
 	@Test

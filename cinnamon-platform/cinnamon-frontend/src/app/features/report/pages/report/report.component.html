@@ -420,8 +420,8 @@
                                                                [data]="reportData.statistics.statistics.Overview.aggregated_metrics.overall_correlation.values"
                                                                originalSeriesLabel="Original"
                                                                overallCorrelationTarget="real" [showMargins]="false"
-                                                               [showVisualMap]="false" [simple]="true"
-                                                               syntheticSeriesLabel="Protected">
+                                                               [showToolbox]="false" [showVisualMap]="false"
+                                                               [simple]="true" syntheticSeriesLabel="Protected">
                                         </app-chart-correlation>
                                     </div>
                                     <div>
@@ -431,8 +431,9 @@
                                                                [data]="reportData.statistics.statistics.Overview.aggregated_metrics.overall_correlation.values"
                                                                originalSeriesLabel="Original"
                                                                overallCorrelationTarget="synthetic"
-                                                               [showMargins]="false" [showVisualMap]="false"
-                                                               [simple]="true" syntheticSeriesLabel="Protected">
+                                                               [showMargins]="false" [showToolbox]="false"
+                                                               [showVisualMap]="false" [simple]="true"
+                                                               syntheticSeriesLabel="Protected">
                                         </app-chart-correlation>
                                     </div>
                                 </div>
@@ -720,8 +721,9 @@
                             </div>
                             <app-chart-frequency #chart
                                                  [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                 [columnConfiguration]="attributeStatistics.attribute_information"
                                                  [data]="attributeStatistics.plot.histogram!" [limit]="null"
-                                                 [simple]="false" originalSeriesLabel="Original"
+                                                 [showToolbox]="false" [simple]="false" originalSeriesLabel="Original"
                                                  syntheticSeriesLabel="Protected">
                             </app-chart-frequency>
                         </div>
@@ -730,9 +732,11 @@
                                 Correlation
                             </div>
                             <app-chart-correlation #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                   [columnConfiguration]="attributeStatistics.attribute_information"
                                                    [data]="attributeStatistics.plot.visualize_columnwise_correlations!"
-                                                   originalSeriesLabel="Original" [showVisualMap]="false"
-                                                   [simple]="false" syntheticSeriesLabel="Protected">
+                                                   originalSeriesLabel="Original" [showToolbox]="false"
+                                                   [showVisualMap]="false" [simple]="false"
+                                                   syntheticSeriesLabel="Protected">
                             </app-chart-correlation>
                         </div>
                         <div *ngIf="attributeStatistics.plot.frequency_plot" class="report-subsection">
@@ -741,8 +745,9 @@
                             </div>
                             <app-chart-frequency #chart
                                                  [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                 [columnConfiguration]="attributeStatistics.attribute_information"
                                                  [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
-                                                 [simple]="false" originalSeriesLabel="Original"
+                                                 [showToolbox]="false" [simple]="false" originalSeriesLabel="Original"
                                                  syntheticSeriesLabel="Protected">
                             </app-chart-frequency>
                         </div>
@@ -753,7 +758,7 @@
                             <app-chart-density #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
                                                [columnConfiguration]="attributeStatistics.attribute_information"
                                                [data]="attributeStatistics.plot.density!" originalSeriesLabel="Original"
-                                               [simple]="false" syntheticSeriesLabel="Protected">
+                                               [showToolbox]="false" [simple]="false" syntheticSeriesLabel="Protected">
                             </app-chart-density>
                         </div>
                     </div>

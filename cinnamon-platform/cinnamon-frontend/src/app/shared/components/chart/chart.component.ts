@@ -80,11 +80,13 @@ export class ChartComponent implements OnInit, OnChanges {
      *
      * @param simple If the chart should remove space for the axis.
      * @param name   The name of the cart.
-     * @param margins If the chart should have margins.
+     * @param options Additional options for the chart.
      * @return An object containing the ECharts options.
      * @protected
      */
-    protected graphOptions(simple: boolean, name: string, margins: boolean = true): EChartsCoreOption {
+    protected graphOptions(simple: boolean, name: string, options: ChartOptions = {}): EChartsCoreOption {
+        const margins  = options.showMargins ?? true;
+
         return {
             grid: {
                 left: margins ? (simple ? 25 : 70) : 0,
@@ -96,6 +98,7 @@ export class ChartComponent implements OnInit, OnChanges {
                 show: true
             },
             toolbox: {
+                show: options.showToolbox ?? true,
                 feature: {
                     saveAsImage: {
                         type: 'png',
@@ -131,7 +134,7 @@ export class ChartComponent implements OnInit, OnChanges {
      * @return The chart name.
      * @protected
      */
-    protected createChartName(chart: string, data: StatisticsData<any>, config: ColumnConfiguration, labels: StatisticsData<string>): string {
+    protected createChartName(chart: string, data: StatisticsData<any>, config: ColumnConfiguration | null, labels: StatisticsData<string>): string {
         let chartName = "";
 
         if (data.real) {
@@ -143,9 +146,25 @@ export class ChartComponent implements OnInit, OnChanges {
             }
             chartName += labels.synthetic + " ";
         }
-        chartName += config.name + " " + chart;
+        if (config) {
+            chartName += config.name + " ";
+        }
+        chartName += chart;
         return chartName;
     }
+}
+
+interface ChartOptions {
+    /**
+     * If the chart should have margins.
+     * Default: true
+     */
+    showMargins?: boolean;
+    /**
+     * If a toolbox should be shown. Contains the download button.
+     * Default: true
+     */
+    showToolbox?: boolean;
 }
 
 // Stolen from https://stackoverflow.com/questions/60141960/typescript-key-value-relation-preserving-object-entries-type

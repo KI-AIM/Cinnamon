@@ -116,6 +116,7 @@
 
             <ng-container *ngIf="graphType === 'correlation' && hasSynthetic">
                 <app-chart-correlation [colorScheme]="pageData.projectSettings.metricConfiguration.colorScheme"
+                                       [columnConfiguration]="attributeStatistics.attribute_information"
                                        [data]="attributeStatistics.plot.visualize_columnwise_correlations!"
                                        [originalSeriesLabel]="originalDisplayName"
                                        [simple]="true"

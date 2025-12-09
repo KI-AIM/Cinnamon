@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { ColumnConfiguration } from "@shared/model/column-configuration";
 import { EChartsCoreOption } from "echarts/core";
 import { ChartComponent, Entries } from "src/app/shared/components/chart/chart.component";
 import { CorrelationPlotData, OverallCorrelation, StatisticsData } from "src/app/shared/model/statistics";
@@ -11,6 +12,7 @@ import { CorrelationPlotData, OverallCorrelation, StatisticsData } from "src/app
 })
 export class ChartCorrelationComponent extends ChartComponent {
     @Input() public colorScheme!: string;
+    @Input() columnConfiguration: ColumnConfiguration | null = null;
     @Input() public data!: StatisticsData<CorrelationPlotData> | OverallCorrelation;
     @Input() public originalSeriesLabel: string = "Original";
 
@@ -23,19 +25,20 @@ export class ChartCorrelationComponent extends ChartComponent {
      * If the chart should have margins around the chart.
      */
     @Input() public showMargins: boolean = true;
+    @Input() public showToolbox: boolean = true;
     @Input() public showVisualMap: boolean | null = null;
     @Input() public simple: boolean = false;
     @Input() public syntheticSeriesLabel: string = "Synthetic";
 
     protected override createChartOptions(): EChartsCoreOption {
+        const chartName = this.createChartName("Correlation", this.data, this.columnConfiguration, this.dataSetLabels());
+
         const plotData = (this.data instanceof OverallCorrelation)
             ? this.prepareOverallCorrelation(this.data)
             : this.prepareCorrelationPlotData(this.data);
 
-        const chartName = this.createChartName("Correlation", this.data, this.columnConfiguration, dataSetLabels);
-
         return {
-            ...this.graphOptions(this.simple, chartName, this.showMargins),
+            ...this.graphOptions(this.simple, chartName, {showMargins: this.showMargins, showToolbox: this.showToolbox}),
             tooltip: {
                 // @ts-ignore
                 valueFormatter: (value) => {
@@ -105,10 +108,7 @@ export class ChartCorrelationComponent extends ChartComponent {
      * @return Converted data usable for the chart.
      */
     private prepareCorrelationPlotData(data: StatisticsData<CorrelationPlotData>): PlotData {
-        const dataSetLabels: StatisticsData<string> = {
-            real: this.originalSeriesLabel,
-            synthetic: this.syntheticSeriesLabel,
-        }
+        const dataSetLabels = this.dataSetLabels();
 
         let reference: CorrelationPlotData;
 
@@ -177,6 +177,13 @@ export class ChartCorrelationComponent extends ChartComponent {
         // Layout is stolen from the HTML of a chart
         // This should not be modified so it looks like the original tooltip
         return `<div style="margin: 0 0 0;line-height:1;"><div style="font-size:14px;color:#666;font-weight:400;line-height:1;">${params.seriesName}</div><div style="margin: 10px 0 0;line-height:1;"><div style="margin: 0 0 0;line-height:1;">${params.marker}<span style="font-size:14px;color:#666;font-weight:400;margin-left:2px">${xValue} - ${yValue}</span><span style="float:right;margin-left:20px;font-size:14px;color:#666;font-weight:900">${value}</span><div style="clear:both"></div></div><div style="clear:both"></div></div><div style="clear:both"></div></div>`
+    }
+
+    private dataSetLabels(): StatisticsData<string> {
+        return {
+            real: this.originalSeriesLabel,
+            synthetic: this.syntheticSeriesLabel,
+        }
     }
 }
 

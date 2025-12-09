@@ -15,6 +15,7 @@ export class ChartDensityComponent extends ChartComponent {
     @Input() columnConfiguration!: ColumnConfiguration;
     @Input() data!: StatisticsData<DensityPlotData>;
     @Input() public originalSeriesLabel: string = "Original";
+    @Input() public showToolbox: boolean = true;
     @Input() simple: boolean = false;
     @Input() syntheticSeriesLabel: string = "Synthetic";
 
@@ -41,7 +42,7 @@ export class ChartDensityComponent extends ChartComponent {
         const chartName = this.createChartName("Density", this.data, this.columnConfiguration, dataSetLabels);
 
         const options: EChartsCoreOption = {
-            ...this.graphOptions(this.simple, chartName),
+            ...this.graphOptions(this.simple, chartName, {showToolbox: this.showToolbox}),
             tooltip: {
                 trigger: 'axis',
                 // @ts-ignore

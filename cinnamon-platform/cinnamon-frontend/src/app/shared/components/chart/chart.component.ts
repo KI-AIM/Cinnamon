@@ -102,7 +102,7 @@ export class ChartComponent implements OnInit, OnChanges {
                     },
                 },
                 right: 245,
-                top: 2,
+                top: -8,
             },
         };
 

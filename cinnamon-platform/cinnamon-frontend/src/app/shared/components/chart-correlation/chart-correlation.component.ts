@@ -76,7 +76,7 @@ export class ChartCorrelationComponent extends ChartComponent {
                 calculable: true,
                 orient: 'horizontal',
                 left: 'center',
-                top: -5,
+                top: -10,
                 show: !this.simple,
                 inRange: {
                     color: this.statisticsService.getColorScheme(this.colorScheme).slice(1),

@@ -5,6 +5,7 @@ import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { StateManagementService } from "@core/services/state-management.service";
+import { FileUploadComponent } from "@shared/components/file-upload/file-upload.component";
 import { DataConfiguration } from "@shared/model/data-configuration";
 import { Status } from "@shared/model/status";
 import { DataConfigurationService } from "@shared/services/data-configuration.service";
@@ -89,6 +90,7 @@ export class ConfigurationPageComponent implements OnInit {
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') protected forms: ConfigurationFormComponent;
+    @ViewChild('expertFileUpload') protected expertFileUpload: FileUploadComponent;
 
     constructor(
         protected readonly algorithmService: AlgorithmService,
@@ -311,6 +313,7 @@ export class ConfigurationPageComponent implements OnInit {
         this.configurationService.uploadAllConfigurations(file, included).subscribe({
             next: () => {
                 this.notificationService.addNotification(new AppNotification("Successfully imported the configuration.", "success"));
+                this.expertFileUpload.clearFile();
             },
             error: error => {
                 this.errorHandlingService.addError(error, "Could not upload configuration.");

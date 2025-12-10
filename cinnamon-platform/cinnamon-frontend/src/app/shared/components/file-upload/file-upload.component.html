@@ -8,6 +8,9 @@
         <input hidden (input)="onFileInput($event)" #fileInput type="file" [accept]="accept" [disabled]="disabled">
         <span *ngIf="dataFile === null" [class.drop-text-disabled]="disabled">Choose file or drag and drop</span>
         <span *ngIf="dataFile !== null" [class.drop-text-disabled]="disabled">{{ dataFile.name }}</span>
+        <div *ngIf="dataFile !== null" class="drop-zone-delete icon-enabled" (click)="clearFile();">
+            <mat-icon>delete</mat-icon>
+        </div>
     </div>
 </div>
 <div class="cinnamon-error" *ngIf="errors.large">

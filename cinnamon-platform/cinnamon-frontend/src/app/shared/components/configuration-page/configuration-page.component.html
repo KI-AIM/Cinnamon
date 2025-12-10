@@ -72,7 +72,7 @@
 
         <app-workstep-box header="Configuration Upload">
             Upload an existing configuration:
-            <app-file-upload accept=".yml,.yaml" [disabled]="data.locked || !oneEnabled"
+            <app-file-upload #expertFileUpload accept=".yml,.yaml" [disabled]="data.locked || !oneEnabled"
                              (input)="uploadConfiguration($event)"></app-file-upload>
         </app-workstep-box>
 

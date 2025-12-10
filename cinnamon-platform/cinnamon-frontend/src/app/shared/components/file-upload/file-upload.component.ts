@@ -47,6 +47,13 @@ export class FileUploadComponent implements OnInit {
     }
 
     /**
+     * Clears the file input.
+     */
+    public clearFile(): void {
+        this.dataFile = null;
+    }
+
+    /**
      * Clears the previous value and opens the file select dialog.
      * @protected
      */

@@ -33,6 +33,7 @@ export class AdditionalConfigurationComponent implements OnInit {
 
     selected = "standardSelection";
     protected dataType: DataType;
+    protected isInvalid: boolean = false;
 
     protected readonly ConfigurationTypeMetadata = ConfigurationTypeMetadata;
     protected readonly DataType = DataType;
@@ -49,6 +50,11 @@ export class AdditionalConfigurationComponent implements OnInit {
         this.dataType = this.getType();
         this.form.controls['type'].valueChanges.subscribe(() => {
             this.dataType = this.getType();
+        });
+
+        this.isInvalid = this.getConfigurations().status === "INVALID";
+        this.getConfigurations().statusChanges.subscribe((status) => {
+            this.isInvalid = status === "INVALID";
         });
     }
 

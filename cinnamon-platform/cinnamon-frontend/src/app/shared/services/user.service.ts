@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { HttpClient, HttpErrorResponse, HttpHeaders } from "@angular/common/http";
-import { Observable } from "rxjs";
+import { AppNotification, NotificationService, NotificationType } from "@core/services/notification.service";
+import { Observable, Subject } from "rxjs";
 import { Router } from "@angular/router";
 import { User } from "../model/user";
 import { environments } from "../../../environments/environment";
@@ -17,6 +18,7 @@ export class UserService {
 
 	constructor(
 		private readonly http: HttpClient,
+        private readonly notificationService: NotificationService,
 		private readonly router: Router,
 	) {
 		const storedUser = sessionStorage.getItem(this.USER_KEY);
@@ -98,10 +100,22 @@ export class UserService {
     public logout(mode: LogoutMode) {
         sessionStorage.removeItem(this.USER_KEY)
         this.user = new User(false, "", "");
-        this.router.navigate(['open', { mode: mode }]).then(
-            () => this.logoutSubject.next()
+
+        let message = "";
+        let type: NotificationType = "success";
+        switch (mode) {
+            case "close": message = "Successfully closed project"; break;
+            case "delete": message = "Successfully deleted project"; break;
+            case "expired": message = "Session expired"; type = "failure"; break;
+        }
+
+        this.logoutSubject.next();
+
+        this.router.navigate(['open']).then(() => {
+                this.notificationService.addNotification(new AppNotification(message, type));
+            }
         );
     }
 }
 
-export type LogoutMode = "close" | "create" | "delete" | "expired" | "fail" | "noPermission";
+export type LogoutMode = "close" | "delete" | "expired";

@@ -1,13 +1,3 @@
-<app-info-card [closable]="true" *ngIf="mode != null"
-               [typeClass]="['noPermission', 'expired'].includes(mode) ? 'card-failure' : 'card-success'"
-               (onClose)="mode = null">
-    <div *ngIf="mode === 'close'">Successfully closed project</div>
-    <div *ngIf="mode === 'create'">Successfully created project</div>
-    <div *ngIf="mode === 'noPermission'">You must authenticate before accessing this page</div>
-    <div *ngIf="mode === 'expired'">Session expired</div>
-    <div *ngIf="mode === 'delete'">Successfully deleted project</div>
-</app-info-card>
-
 <div class="bg-white p-5 rounded border">
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
         <mat-form-field>

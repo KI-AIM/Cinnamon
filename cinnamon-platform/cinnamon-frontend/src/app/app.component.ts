@@ -34,7 +34,6 @@ export class AppComponent implements OnInit {
     protected readonly StatusService = StatusService;
 
     protected appConfig$: Observable<AppConfig>;
-    protected errorList$: Observable<string[]>;
     protected latestNotification$: Observable<AppNotification | null>;
     protected locked$: Observable<LockedInformation>;
 
@@ -52,7 +51,6 @@ export class AppComponent implements OnInit {
 
     public ngOnInit(): void {
         this.appConfig$ = this.appConfigService.appConfig$;
-        this.errorList$ = this.errorHandlingService.errorList$;
         this.latestNotification$ = this.notificationService.latestNotification$();
         this.locked$ = this.stateManagementService.currentStepLocked$;
     }

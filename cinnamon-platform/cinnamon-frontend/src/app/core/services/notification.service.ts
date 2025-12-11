@@ -149,13 +149,16 @@ export class NotificationService {
     }
 }
 
+export type NotificationType = 'success' | 'warn' | 'failure';
+
 /**
  * Data for showing a notification in the UI.
  */
 export class AppNotification {
     constructor(
         public message: string,
-        public type: 'success' | 'warn' | 'failure') {
+        public type: NotificationType
+    ) {
     }
 
     public id: number;

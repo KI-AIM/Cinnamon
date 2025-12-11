@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from "rxjs";
+import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ErrorDetails, ErrorResponse } from "../model/error-response";
 import { plainToInstance } from "class-transformer";
@@ -16,30 +16,14 @@ import { UserService } from "./user.service";
 })
 export class ErrorHandlingService {
 
-    /**
-     * List of all unresolved errors.
-     * @private
-     */
-    private errorListSubject: BehaviorSubject<string[]>;
-
     constructor(
+        private readonly notificationService: NotificationService,
         private readonly userService: UserService,
     ) {
-        this.errorListSubject = new BehaviorSubject<string[]>([]);
     }
 
     /**
-     * Observable for listening to unresolved errors.
-     *
-     * @return List of all unresolved Error message.
-     */
-    public get errorList$(): Observable<string[]> {
-        return this.errorListSubject.asObservable();
-    }
-
-    /**
-     * Adds the given error to the list of current errors.
-     * Triggers an update of the {@link errorListSubject}.
+     * Adds a notification for the given error.
      *
      * @param error The new error.
      * @param message Additional message.
@@ -63,18 +47,7 @@ export class ErrorHandlingService {
             errorMessage = "An unexpected error occurred. Please contact the administrator.";
         }
 
-        const current = this.errorListSubject.value;
-        current.push(errorMessage);
-        this.errorListSubject.next(current);
-    }
-
-    /**
-     * Removes the error at the given index from the list of unresolved error.
-     */
-    public clearError(index: number): void {
-        const current = this.errorListSubject.value;
-        current.splice(index, 1);
-        this.errorListSubject.next(current);
+        this.notificationService.addNotification(new AppNotification(errorMessage, "failure"));
     }
 
     private handleHttpErrorResponse(response: HttpErrorResponse, message?: string): string {

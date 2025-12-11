@@ -1,9 +1,8 @@
 import { Component, OnInit } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
-import { ActivatedRoute, Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { TitleService } from "../../../../core/services/title-service.service";
-import { LogoutMode, UserService } from "src/app/shared/services/user.service";
+import { UserService } from "src/app/shared/services/user.service";
 import { StateManagementService } from "../../../../core/services/state-management.service";
 
 interface LoginForm {
@@ -19,12 +18,9 @@ interface LoginForm {
 })
 export class LoginComponent implements OnInit {
 	loginForm: FormGroup<LoginForm>;
-	mode: LogoutMode | null;
 
 	constructor(
-		private readonly activateRoute: ActivatedRoute,
         private readonly notificationService: NotificationService,
-		private readonly router: Router,
 		private readonly titleService: TitleService,
 		private readonly userService: UserService,
         private readonly stateManagementService: StateManagementService,
@@ -46,14 +42,6 @@ export class LoginComponent implements OnInit {
         if (this.userService.isAuthenticated()) {
             this.stateManagementService.fetchAndRouteToCurrentStep();
         }
-
-		this.activateRoute.params.subscribe((params) => {
-			if (params["mode"]) {
-				this.mode = params["mode"];
-			} else {
-				this.mode = null;
-			}
-		});
 	}
 
 	onSubmit() {

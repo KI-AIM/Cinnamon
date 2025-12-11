@@ -70,7 +70,7 @@
             @if (latestNotification$ | async; as notification) {
                 <app-info-card @slideInFromTop [closable]="true" class="notification"
                                [typeClass]="'card-' + notification.type"
-                               (onClose)="notificationService.clearLatestNotification();">
+                               (onClose)="notificationService.markLatestAsRead();">
                     {{ notification.message }}
                 </app-info-card>
             }

@@ -1,9 +1,13 @@
 import { Component, OnInit, TemplateRef } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
-import { FileType } from "@shared/model/file-configuration";
-import { Observable } from "rxjs";
+import { map, Observable } from "rxjs";
 
+/**
+ * Component for the notification center.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Component({
   selector: 'app-notification-center',
   standalone: false,
@@ -13,6 +17,7 @@ import { Observable } from "rxjs";
 export class NotificationCenterComponent implements OnInit {
 
     protected notifications$: Observable<AppNotification[]>;
+    protected numberUnreadNotifications$: Observable<number>;
 
     public constructor(
         protected readonly matDialog: MatDialog,
@@ -20,12 +25,24 @@ export class NotificationCenterComponent implements OnInit {
     ) { }
 
     public ngOnInit(): void {
-        this.notifications$ = this.notificationService.notifications$();
+        this.notifications$ = this.notificationService.notifications$().pipe(
+            map(value => {
+                return value.slice().reverse();
+            }),
+        );
+        this.numberUnreadNotifications$ = this.notificationService.numberUnreadNotifications$();
     }
 
+    /**
+     * Opens the notification center dialog.
+     *
+     * @param dialog The dialog template.
+     * @param trigger The anchor element that triggered the dialog.
+     */
     protected openCenter(dialog: TemplateRef<MatDialog>, trigger: HTMLAnchorElement) {
         const rect = trigger.getBoundingClientRect();
-        this.matDialog.open(dialog, {
+
+        const dialogRef = this.matDialog.open(dialog, {
             width: '300px',
             disableClose: false,
             hasBackdrop: true,
@@ -33,6 +50,11 @@ export class NotificationCenterComponent implements OnInit {
                 top: `${rect.bottom}px`,
                 right: `${window.innerWidth - rect.left}px`,
             }
+        });
+
+        dialogRef.afterClosed().subscribe(() => {
+            // Mark all notifications as read when the dialog is closed.
+            this.notificationService.markAllAsRead();
         });
     }
 

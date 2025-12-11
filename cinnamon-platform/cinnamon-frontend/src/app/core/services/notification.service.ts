@@ -25,6 +25,8 @@ export class NotificationService {
 
     private notifications: BehaviorSubject<AppNotification[]> = new BehaviorSubject<AppNotification[]>([]);
 
+    private unreadNotifications: BehaviorSubject<number> = new BehaviorSubject<number>(0);
+
     private latestNotification: BehaviorSubject<AppNotification | null> = new BehaviorSubject<AppNotification | null>(null);
     private latestNotificationTimeoutId: number | null = null;
     private animationDelayTimeoutId: number | null = null;
@@ -37,6 +39,9 @@ export class NotificationService {
         const currentNotifications = this.notifications.getValue();
         notification.id = currentNotifications.length;
         this.notifications.next([...currentNotifications, notification]);
+
+        const numberUnread = this.unreadNotifications.getValue() + 1;
+        this.unreadNotifications.next(numberUnread);
 
         // Clear any pending timeouts to prevent conflicts
         if (this.latestNotificationTimeoutId) {
@@ -69,19 +74,8 @@ export class NotificationService {
     }
 
     /**
-     * Clears the latest notification.
-     */
-    public clearLatestNotification() {
-        this.latestNotification.next(null);
-
-        if (this.latestNotificationTimeoutId) {
-            clearTimeout(this.latestNotificationTimeoutId);
-            this.latestNotificationTimeoutId = null;
-        }
-    }
-
-    /**
      * Notifies about all notifications.
+     * Latest notifications are at the back.
      */
     public notifications$(): Observable<AppNotification[]> {
         return this.notifications.asObservable();
@@ -94,6 +88,48 @@ export class NotificationService {
     public latestNotification$(): Observable<AppNotification | null> {
         return this.latestNotification.asObservable();
     }
+
+    /**
+     * Notifies about the number of unread notifications.
+     */
+    public numberUnreadNotifications$(): Observable<number> {
+        return this.unreadNotifications.asObservable();
+    }
+
+    public markLatestAsRead() {
+        const notifications = this.notifications.getValue();
+        const lastNotification = notifications[notifications.length - 1];
+        if (lastNotification && !lastNotification.read) {
+            lastNotification.read = true;
+            this.notifications.next(notifications);
+            this.unreadNotifications.next(this.unreadNotifications.getValue() - 1);
+        }
+
+        this.clearLatestNotification();
+    }
+
+    /**
+     * Marks all notification as read.
+     */
+    public markAllAsRead() {
+        const notifications = this.notifications.getValue();
+        notifications.forEach(n => n.read = true);
+        this.notifications.next(notifications);
+
+        this.unreadNotifications.next(0);
+    }
+
+    /**
+     * Clears the latest notification.
+     */
+    private clearLatestNotification() {
+        this.latestNotification.next(null);
+
+        if (this.latestNotificationTimeoutId) {
+            clearTimeout(this.latestNotificationTimeoutId);
+            this.latestNotificationTimeoutId = null;
+        }
+    }
 }
 
 /**
@@ -105,6 +141,7 @@ export class AppNotification {
         public type: 'success' | 'warn' | 'failure') {
     }
 
-    public time: Date = new Date();
     public id: number;
+    public read: boolean = false;
+    public time: Date = new Date();
 }

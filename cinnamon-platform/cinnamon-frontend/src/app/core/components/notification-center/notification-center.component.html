@@ -1,5 +1,9 @@
-<a #trigger title="Notification Center" class="icon-enabled" (click)="openCenter(dialog, trigger);">
+<a #trigger title="Notification Center" class="icon icon-enabled" (click)="openCenter(dialog, trigger);">
     <mat-icon>notifications</mat-icon>
+
+    @if (numberUnreadNotifications$ | async) {
+        <div class="unread-notifications"></div>
+    }
 </a>
 
 <ng-template #dialog>
@@ -19,7 +23,7 @@
                     @for (notification of notifications; track notification.id) {
                         <div class="notification-item">
                             <div class="notification-item-date">
-                                <span [ngClass]="notification.type">
+                                <span [ngClass]="notification.read ? null : notification.type">
                                     @switch (notification.type) {
                                         @case ('success') {
                                             <mat-icon>check_circle</mat-icon>

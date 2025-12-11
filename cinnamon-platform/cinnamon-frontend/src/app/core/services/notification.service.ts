@@ -23,7 +23,7 @@ export class NotificationService {
      */
     private readonly ANIMATION_DELAY = 300;
 
-    protected notifications: AppNotification[] = [];
+    private notifications: BehaviorSubject<AppNotification[]> = new BehaviorSubject<AppNotification[]>([]);
 
     private latestNotification: BehaviorSubject<AppNotification | null> = new BehaviorSubject<AppNotification | null>(null);
     private latestNotificationTimeoutId: number | null = null;
@@ -33,7 +33,10 @@ export class NotificationService {
     }
 
     public addNotification(notification: AppNotification) {
-        this.notifications.push(notification);
+        // Add the new notification to the top of the list
+        const currentNotifications = this.notifications.getValue();
+        notification.id = currentNotifications.length;
+        this.notifications.next([...currentNotifications, notification]);
 
         // Clear any pending timeouts to prevent conflicts
         if (this.latestNotificationTimeoutId) {
@@ -78,6 +81,13 @@ export class NotificationService {
     }
 
     /**
+     * Notifies about all notifications.
+     */
+    public notifications$(): Observable<AppNotification[]> {
+        return this.notifications.asObservable();
+    }
+
+    /**
      * Notifies about the latest notification.
      * Sends null if the latest notification was cleared.
      */
@@ -94,4 +104,7 @@ export class AppNotification {
         public message: string,
         public type: 'success' | 'warn' | 'failure') {
     }
+
+    public time: Date = new Date();
+    public id: number;
 }

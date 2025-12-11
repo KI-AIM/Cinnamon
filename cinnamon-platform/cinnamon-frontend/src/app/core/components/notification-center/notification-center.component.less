@@ -1,0 +1,71 @@
+@import '../../../styles/colors';
+@import '../../../styles/styling';
+
+.notification-center {
+    position: absolute;
+}
+
+.notification-title {
+    font-size: 20px;
+    font-weight: bold;
+    padding: 6px 4px 6px 24px;
+}
+
+.notification-title-close {
+    float: right;
+    height: fit-content;
+    padding: 0;
+}
+
+.notification-title-close mat-icon {
+    vertical-align: text-bottom;
+}
+
+.notification-list {
+    margin: -12px -8px -12px -8px !important;
+    max-height: 30vh;
+}
+
+.notification-item {
+    padding-bottom: 0.5rem;
+}
+
+.notification-item:not(:first-child) {
+    padding-top: 0.5rem;
+}
+
+.notification-item:not(:last-child) {
+    border-bottom: 1px solid @color-border;
+}
+
+.notification-item-empty {
+    font-style: italic;
+}
+
+.notification-item-date {
+    font-size: 0.7rem;
+    margin-bottom: 0.2rem;
+    line-height: 1rem;
+
+    mat-icon {
+        scale: 0.7;
+        vertical-align: middle;
+    }
+}
+
+.notification-item-text {
+    font-size: 0.9rem;
+    line-height: 1rem;
+}
+
+.failure {
+    color: @color-error;
+}
+
+.success {
+    color: @color-success;
+}
+
+.warn {
+    color: @color-warning;
+}

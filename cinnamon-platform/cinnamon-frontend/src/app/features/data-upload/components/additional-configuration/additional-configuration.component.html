@@ -1,5 +1,8 @@
-<a title="Additional Settings" (click)="openDialog(additionalSettings)">
-    <mat-icon class="icon-enabled" fontIcon="settings"></mat-icon>
+<a title="Additional Settings" class="icon icon-enabled" [class.icon-error]="isInvalid"
+   (click)="openDialog(additionalSettings)">
+    <mat-icon>settings</mat-icon>
+    <div class="icon-error-background"></div>
+    <mat-icon class="icon-error-foreground">error</mat-icon>
 </a>
 
 <ng-template #additionalSettings>

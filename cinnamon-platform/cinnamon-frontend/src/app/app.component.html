@@ -64,6 +64,15 @@
                 </app-info-card>
             </ng-container>
 
+            <!-- Latest notification -->
+            @if (latestNotification$ | async; as notification) {
+                <app-info-card @slideInFromTop [closable]="true" class="notification"
+                               [typeClass]="'card-' + notification.type"
+                               (onClose)="notificationService.clearLatestNotification();">
+                    {{ notification.message }}
+                </app-info-card>
+            }
+
             <router-outlet></router-outlet>
         </div>
     </div>

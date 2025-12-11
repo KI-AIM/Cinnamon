@@ -1,6 +1,8 @@
+import { animate, style, transition, trigger } from "@angular/animations";
 import { Component, OnInit, TemplateRef } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { Steps } from "@core/enums/steps";
+import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { StatusService } from "@shared/services/status.service";
 import { TitleService } from './core/services/title-service.service';
 import { AppConfig, AppConfigService } from "./shared/services/app-config.service";
@@ -13,7 +15,18 @@ import { ErrorHandlingService } from "./shared/services/error-handling.service";
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.less'],
     providers: [],
-    standalone: false
+    standalone: false,
+    animations: [
+        trigger('slideInFromTop', [
+            transition(':enter', [
+                style({ transform: 'translateY(-100%)', opacity: 0 }),
+                animate('300ms ease-out', style({ transform: 'translateY(0)', opacity: 1 }))
+            ]),
+            transition(':leave', [
+                animate('300ms ease-in', style({ transform: 'translateY(-100%)', opacity: 0 }))
+            ]),
+        ]),
+    ],
 })
 export class AppComponent implements OnInit {
     title = "cinnamon-frontend"
@@ -22,12 +35,14 @@ export class AppComponent implements OnInit {
 
     protected appConfig$: Observable<AppConfig>;
     protected errorList$: Observable<string[]>;
+    protected latestNotification$: Observable<AppNotification | null>;
     protected locked$: Observable<LockedInformation>;
 
     constructor(
         private readonly appConfigService: AppConfigService,
         protected readonly errorHandlingService: ErrorHandlingService,
         private readonly dialog: MatDialog,
+        protected readonly notificationService: NotificationService,
         // StateManagementService is injected so it gets initialized
         private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
@@ -38,6 +53,7 @@ export class AppComponent implements OnInit {
     public ngOnInit(): void {
         this.appConfig$ = this.appConfigService.appConfig$;
         this.errorList$ = this.errorHandlingService.errorList$;
+        this.latestNotification$ = this.notificationService.latestNotification$();
         this.locked$ = this.stateManagementService.currentStepLocked$;
     }
 

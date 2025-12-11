@@ -20,8 +20,8 @@ export class NotificationCenterComponent implements OnInit {
     protected numberUnreadNotifications$: Observable<number>;
 
     public constructor(
-        protected readonly matDialog: MatDialog,
-        private readonly notificationService: NotificationService,
+        private readonly matDialog: MatDialog,
+        protected readonly notificationService: NotificationService,
     ) { }
 
     public ngOnInit(): void {

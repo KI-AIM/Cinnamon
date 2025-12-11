@@ -22,23 +22,35 @@
                 } @else {
                     @for (notification of notifications; track notification.id) {
                         <div class="notification-item">
-                            <div class="notification-item-date">
-                                <span [ngClass]="notification.read ? null : notification.type">
-                                    @switch (notification.type) {
-                                        @case ('success') {
-                                            <mat-icon>check_circle</mat-icon>
+                            <div class="notification-item-content">
+
+                                <div class="notification-item-date">
+                                    <span [ngClass]="notification.read ? null : notification.type">
+                                        @switch (notification.type) {
+                                            @case ('success') {
+                                                <mat-icon>check_circle</mat-icon>
+                                            }
+                                            @case ('warn') {
+                                                <mat-icon>warning</mat-icon>
+                                            }
+                                            @case ('failure') {
+                                                <mat-icon>error</mat-icon>
+                                            }
                                         }
-                                        @case ('warn') {
-                                            <mat-icon>warning</mat-icon>
-                                        }
-                                        @case ('failure') {
-                                            <mat-icon>error</mat-icon>
-                                        }
-                                    }
-                                </span>
-                                <span>{{ notification.time | date: 'short' }}</span>
+                                    </span>
+                                    <span>{{ notification.time | date: 'short' }}</span>
+                                </div>
+
+                                <div class="notification-item-text">
+                                    {{ notification.message }}
+                                </div>
                             </div>
-                            <div class="notification-item-text">{{ notification.message }}</div>
+                            <div class="notification-item-icon">
+                                <span class="icon-enabled"
+                                      (click)="notificationService.deleteNotification(notification)">
+                                    <mat-icon>delete</mat-icon>
+                                </span>
+                            </div>
                         </div>
                     }
                 }

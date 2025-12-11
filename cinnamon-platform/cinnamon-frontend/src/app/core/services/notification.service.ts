@@ -120,6 +120,23 @@ export class NotificationService {
     }
 
     /**
+     * Deletes the given notification from the list.
+     * If the notification is not read, the unread counter is decreased.
+     */
+    public deleteNotification(notification: AppNotification) {
+        const notifications = this.notifications.getValue();
+        const index = notifications.findIndex(n => n.id === notification.id);
+        if (index >= 0) {
+            notifications.splice(index, 1);
+
+            this.notifications.next(notifications);
+            if (!notification.read) {
+                this.unreadNotifications.next(this.unreadNotifications.getValue() - 1);
+            }
+        }
+    }
+
+    /**
      * Clears the latest notification.
      */
     private clearLatestNotification() {

@@ -28,6 +28,11 @@
 
 .notification-item {
     padding-bottom: 0.5rem;
+    display: flex;
+
+    > :first-child {
+        flex-grow: 1;
+    }
 }
 
 .notification-item:not(:first-child) {
@@ -42,9 +47,13 @@
     font-style: italic;
 }
 
+.notification-item-content {
+    display: flex;
+    flex-direction: column;
+}
+
 .notification-item-date {
     font-size: 0.7rem;
-    margin-bottom: 0.2rem;
     line-height: 1rem;
 
     mat-icon {
@@ -57,6 +66,16 @@
     font-size: 0.9rem;
     line-height: 1rem;
 }
+
+.notification-item-icon {
+    align-self: center;
+    visibility: hidden;
+}
+
+.notification-item:hover .notification-item-icon {
+    visibility: visible;
+}
+
 
 .failure {
     color: @color-error;

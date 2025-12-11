@@ -11,6 +11,7 @@ import { MatExpansionPanel } from "@angular/material/expansion";
 })
 export class WorkstepTitleComponent implements OnInit, OnDestroy {
     @Input() public stepIndex!: number;
+    @Input() public skip!: boolean;
 
     private openedExpansionPanelSubscription: Subscription;
     private openedStepSubscription: Subscription;
@@ -41,7 +42,12 @@ export class WorkstepTitleComponent implements OnInit, OnDestroy {
 
         this.stepSubscription = this.workstepService.step$.subscribe(step => {
             if (this.stepIndex === step) {
-                this.matExpansionPanel.open();
+                if (this.skip) {
+                    // If this step should be skipped, directly open the next one
+                    this.workstepService.confirmStep(this.stepIndex);
+                } else {
+                    this.matExpansionPanel.open();
+                }
             }
         });
     }

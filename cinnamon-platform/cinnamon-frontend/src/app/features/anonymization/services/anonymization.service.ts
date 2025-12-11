@@ -1,13 +1,13 @@
-import { Injectable } from '@angular/core';
-import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
-import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
-import { Steps } from "../../../core/enums/steps";
-import { ConfigurationService } from "../../../shared/services/configuration.service";
-import { Algorithm } from "../../../shared/model/algorithm";
+import { Injectable } from '@angular/core';
+import { Steps } from "@core/enums/steps";
 import {
-    AnonymizationAttributeConfigurationComponent
-} from "../components/anonymization-attribute-configuration/anonymization-attribute-configuration.component";
+    AnonymizationAttributeConfigurationService
+} from "@features/anonymization/services/anonymization-attribute-configuration.service";
+import { Algorithm } from "@shared/model/algorithm";
+import { ConfigurationRegisterData } from "@shared/model/configuration-register-data";
+import { AlgorithmService, ReadConfigResult } from "@shared/services/algorithm.service";
+import { ConfigurationService } from "@shared/services/configuration.service";
 
 interface AnonymizationFormConfig {
     modelConfiguration: any; // Specify the type of `modelConfiguration` as needed.
@@ -20,6 +20,7 @@ interface AnonymizationFormConfig {
 export class AnonymizationService extends AlgorithmService {
 
     constructor(
+        private readonly attributeConfigurationService: AnonymizationAttributeConfigurationService,
         http: HttpClient,
         configurationService: ConfigurationService,
     ) {
@@ -41,18 +42,18 @@ export class AnonymizationService extends AlgorithmService {
                         modelConfiguration: arg["modelConfiguration"]
                     },
                 ],
-                attributeConfiguration: arg[AnonymizationAttributeConfigurationComponent.formGroupName],
+                attributeConfiguration: arg[this.attributeConfigurationService.formGroupName],
             }
-         };
+        };
     }
 
-    public override readConfiguration(arg: any, configurationName: string): ReadConfigResult {
+    public override readConfiguration(arg: any, _: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName(arg["anonymization"]["privacyModels"][0]["name"])
         const config = arg["anonymization"]["privacyModels"][0];
         delete config["name"];
         delete config["type"];
 
-        config[AnonymizationAttributeConfigurationComponent.formGroupName] = arg["anonymization"][AnonymizationAttributeConfigurationComponent.formGroupName];
+        config[this.attributeConfigurationService.formGroupName] = arg["anonymization"][this.attributeConfigurationService.formGroupName];
 
         return {config, selectedAlgorithm};
     }

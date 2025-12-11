@@ -1,21 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import {
-    catchError,
-    concatMap, debounceTime,
-    filter,
-    from,
-    map,
-    mergeMap,
-    Observable,
-    of, scan,
-    switchMap,
-    tap,
-    throwError,
-    toArray
-} from "rxjs";
+import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, throwError, toArray } from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
-import { FileUtilityService } from './file-utility.service';
 import { parse, stringify } from 'yaml';
 import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data";
 import { environments } from "src/environments/environment";
@@ -34,10 +20,10 @@ export class ConfigurationService {
     private configurationCache: Record<string, {
         selectedAlgorithm: Algorithm | null,
         configuration: {[algorithmName: string]: Object},
+        processStatus: {[processName: string]: boolean},
     }> = {};
 
     constructor(
-        private fileUtilityService: FileUtilityService,
         private httpClient: HttpClient,
     ) {
         this.registeredConfigurations = [];
@@ -91,6 +77,32 @@ export class ConfigurationService {
             return null;
         }
         return this.getConfiguration(configurationName, selectedAlgorithm);
+    }
+
+    /**
+     * Caches the activation status for the given process.
+     * @param configurationName The configuration name.
+     * @param processName The process name.
+     * @param status If the process is activated or not.
+     */
+    public setProcessStatus(configurationName: string, processName: string, status: boolean): void {
+        this.initCache(configurationName);
+        this.configurationCache[configurationName].processStatus[processName] = status;
+    }
+
+    /**
+     * Returns the cached activation status for the given process.
+     * If no status is cached returns null.
+     *
+     * @param configurationName The configuration name.
+     * @param processName The process name.
+     */
+    public getProcessStatus(configurationName: string, processName: string): boolean | null {
+        if (this.configurationCache[configurationName] == null ||
+            this.configurationCache[configurationName].processStatus[processName] == null) {
+            return null;
+        }
+        return this.configurationCache[configurationName].processStatus[processName];
     }
 
     /**
@@ -250,14 +262,10 @@ export class ConfigurationService {
                         }
                     }),
                     toArray(),
-                    catchError((error) => {
-                        console.log('Error during configuration import:', error);
-                        return of(null);
-                    }),
                 );
             }),
             switchMap(result => {
-                if (includedConfigurations !== null && result) {
+                if (includedConfigurations !== null) {
                     // Look if all configurations are present
                     const missing: string[] = [];
                     for (const config of includedConfigurations) {
@@ -285,6 +293,7 @@ export class ConfigurationService {
             this.configurationCache[configurationName] = {
                 selectedAlgorithm: null,
                 configuration: {},
+                processStatus: {},
             };
         }
     }

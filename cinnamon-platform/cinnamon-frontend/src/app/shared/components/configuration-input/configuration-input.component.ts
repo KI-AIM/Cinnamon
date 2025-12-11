@@ -93,8 +93,8 @@ export class ConfigurationInputComponent implements OnInit, OnDestroy {
 
                     // Update the default value and re-evaluate validators
                     const control = this.form.controls[this.configurationInputDefinition.name];
-                    control.setValue(this.configurationInputDefinition.default_value);
-                    control.updateValueAndValidity();
+                    control.setValue(this.configurationInputDefinition.default_value, {emitEvent: false});
+                    control.updateValueAndValidity({emitEvent: false, onlySelf: true});
                 });
 
                 // Immediately apply the switch logic for initialization

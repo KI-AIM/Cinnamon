@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * General information about a configuration.
+ * General information about a process for the current project.
  *
  * @author Daniel Preciado-Marquez
  */
@@ -19,6 +19,12 @@ public class ProcessInfo {
 	@Schema(description = "If the corresponding job should be skipped.")
 	private final boolean skip;
 
-	@Schema(description = "If the job does not need a hol-out split or the hold-out split is present.")
+	@Schema(description = "If the job does not need a hold-out split or the hold-out split is present.")
 	private boolean holdOutFulfilled;
+
+	/**
+	 * If the process is configured.
+	 */
+	@Schema(description = "If the process in configured.")
+	private final boolean configured;
 }

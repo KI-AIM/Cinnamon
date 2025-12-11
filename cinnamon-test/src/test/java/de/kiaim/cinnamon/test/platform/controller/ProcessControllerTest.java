@@ -127,12 +127,37 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	@Test
-	public void configureSkip() throws Exception {
+	public void configureSkipWithoutConfiguration() throws Exception {
 		mockMvc.perform(post("/api/process/configure")
 				                .param("jobName", ANON_JOB)
 				                .param("skip", "true")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
+
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		assertTrue(process.isSkip());
+		assertNull(process.getConfiguration());
+	}
+
+	@Test
+	public void configureSkipWithConfiguration() throws Exception {
+		mockMvc.perform(post("/api/config")
+				                .param("configurationName", ANON_JOB)
+				                .param("url", "/start_synthetization_process/ctgan")
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
+		mockMvc.perform(post("/api/process/configure")
+				                .param("jobName", ANON_JOB)
+				                .param("skip", "true")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
+
+		var updateTestProject = getTestProject();
+		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		assertTrue(process.isSkip());
+		assertNotNull(process.getConfiguration());
 	}
 
 	@Test

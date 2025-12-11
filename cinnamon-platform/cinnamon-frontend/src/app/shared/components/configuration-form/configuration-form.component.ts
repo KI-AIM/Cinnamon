@@ -11,11 +11,10 @@ import {
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { DataConfiguration } from "@shared/model/data-configuration";
-import { DataConfigurationService } from "@shared/services/data-configuration.service";
-import { catchError, first, Observable, of, switchMap, tap } from "rxjs";
+import { catchError, Observable, of, tap } from "rxjs";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
-import { AlgorithmService } from "../../services/algorithm.service";
+import { AlgorithmService, ConfigData } from "../../services/algorithm.service";
 import { Algorithm } from "../../model/algorithm";
 import {
     ConfigurationGroupDefinition,
@@ -46,9 +45,19 @@ export class ConfigurationFormComponent implements OnInit {
     @Input() public algorithm!: Algorithm;
 
     /**
+     * The data configuration of the project.
+     */
+    @Input() public dataConfiguration!: DataConfiguration;
+
+    /**
      * If this form is disabled.
      */
     @Input() public disabled!: boolean;
+
+    /**
+     * The initial configuration to be displayed.
+     */
+    @Input() public initialConfigurationData!: ConfigData;
 
     /**
      * The definition of the configuration fetched from the external API.
@@ -66,7 +75,6 @@ export class ConfigurationFormComponent implements OnInit {
      * @protected
      */
     protected configurationData$: Observable<any>;
-    protected dataConfiguration$: Observable<DataConfiguration>;
 
     /**
      * Event that gets triggered on every change.
@@ -81,45 +89,38 @@ export class ConfigurationFormComponent implements OnInit {
         private readonly anonService: AlgorithmService,
         private readonly changeD: ChangeDetectorRef,
         private readonly configurationService: ConfigurationService,
-        private readonly dataConfigService: DataConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
     ) {
         this.form = new FormGroup({});
     }
 
     ngOnInit() {
-
         this.configurationData$ = this.anonService.getAlgorithmDefinition(this.algorithm).pipe(
             tap(value => {
                 this.algorithmDefinition = value
             }),
-            switchMap(_ => {
-               return this.anonService.fetchConfiguration();
-            }),
-            switchMap(value => {
-                return this.dataConfiguration$.pipe(
-                    tap(dataConfiguration => {
-                        this.form = this.createForm(this.algorithmDefinition!, value.config, dataConfiguration);
+            tap(value => {
+                this.form = this.createForm(value, this.initialConfigurationData.config, this.dataConfiguration);
 
-                        this.doSetConfiguration(this.algorithmDefinition!, this.form, value.config);
-                        this.updateForm();
+                this.fixAttributeLists(value, this.initialConfigurationData.config, this.form, this.dataConfiguration);
+                setTimeout(() => {
+                    // Has to be run after the page is initialized
+                    for (const group of this.groups) {
+                        group.handleMissingOptions(this.initialConfigurationData.config);
+                    }
+                });
 
-                        this.form.valueChanges.pipe().subscribe(_ => {
-                            this.onChange.emit(this.valid);
-                        });
+                this.form.valueChanges.pipe().subscribe(_ => {
+                    this.onChange.emit(this.valid);
+                });
 
-                        this.onChange.emit(this.valid);
-                    }),
-                );
+                this.onChange.emit(this.valid);
             }),
             catchError(err => {
                 this.errorHandlingService.addError(err, "Failed to load the configuration page. You can skip this step for now or try again later.");
                 return of(null);
             }),
         );
-
-
-        this.dataConfiguration$ = this.dataConfigService.dataConfiguration$;
     }
 
     /**
@@ -152,22 +153,16 @@ export class ConfigurationFormComponent implements OnInit {
             return;
         }
 
-        this.dataConfiguration$.pipe(
-            first(),
-        ).subscribe({
-            next: (dataConfiguration) => {
-                this.form.patchValue(configuration);
-                this.fixAttributeLists(algorithmDefinition, configuration, form, dataConfiguration);
-                this.form.updateValueAndValidity();
-                setTimeout(() => {
-                    // Has to be run after the page is initialized
-                    for (const group of this.groups) {
-                        group.handleMissingOptions(configuration);
-                    }
-                    this.rootGroup.patchComponents(configuration);
-                    this.changeD.detectChanges();
-                });
+        this.form.patchValue(configuration);
+        this.fixAttributeLists(algorithmDefinition, configuration, form, this.dataConfiguration);
+        this.form.updateValueAndValidity();
+        setTimeout(() => {
+            // Has to be run after the page is initialized
+            for (const group of this.groups) {
+                group.handleMissingOptions(configuration);
             }
+            this.rootGroup.patchComponents(configuration);
+            this.changeD.detectChanges();
         });
     }
 
@@ -181,12 +176,11 @@ export class ConfigurationFormComponent implements OnInit {
      * @param dataConfiguration The data configuration used for the inverted list.
      * @private
      */
-    private fixAttributeLists(cde: ConfigurationGroupDefinition, obj: Object | null, form: FormGroup, dataConfiguration: DataConfiguration) {
+    private fixAttributeLists(cde: ConfigurationGroupDefinition, obj: Record<string, any> | null, form: FormGroup, dataConfiguration: DataConfiguration) {
         if (cde.options) {
             for (const [key, value] of Object.entries(cde.options)) {
-                const groupConfiguration = (obj as Record<string, any>)[key];
-                if (groupConfiguration) {
-                    this.fixAttributeLists(value, (obj as Record<string, any>)[key], form.controls[key] as FormGroup, dataConfiguration);
+                if (obj && obj[key]) {
+                    this.fixAttributeLists(value, obj[key], form.controls[key] as FormGroup, dataConfiguration);
                 } else {
                     // The configuration is not available if the option is not checked
                     this.fixAttributeLists(value, null, form.controls[key] as FormGroup, dataConfiguration);
@@ -195,7 +189,9 @@ export class ConfigurationFormComponent implements OnInit {
         }
         if (cde.configurations) {
             for (const [key, value] of Object.entries(cde.configurations)) {
-                this.fixAttributeLists(value, (obj as Record<string, any>)[key] as Object, form.controls[key] as FormGroup, dataConfiguration);
+                if (obj && obj[key]) {
+                    this.fixAttributeLists(value, obj[key] as Object, form.controls[key] as FormGroup, dataConfiguration);
+                }
             }
         }
         if (cde.parameters) {
@@ -203,7 +199,7 @@ export class ConfigurationFormComponent implements OnInit {
             for (const key of cde.parameters) {
                 if (key.type === ConfigurationInputType.ATTRIBUTE_LIST) {
 
-                    const list = obj == null ? [] : (obj as Record<string, string[]>)[key.name];
+                    const list = obj == null ? [] : obj[key.name];
                     const formSelected = (form.get(key.name) as FormArray);
                     formSelected.clear();
                     for (const item of list) {
@@ -227,18 +223,6 @@ export class ConfigurationFormComponent implements OnInit {
     }
 
     /**
-     * Enables or disables the form based on the current value of {@link disabled}.
-     * @private
-     */
-    private updateForm() {
-        if (this.disabled) {
-            this.form.disable();
-        } else {
-            this.form.enable();
-        }
-    }
-
-    /**
      * Dynamically creates the form object based on the given definition.
      * HTML must be created separately inside the HTML file as well.
      *
@@ -248,7 +232,7 @@ export class ConfigurationFormComponent implements OnInit {
      * @private
      */
     private createForm(algorithmDefinition: AlgorithmDefinition, initialValues: any, dataConfig: DataConfiguration): FormGroup {
-        const form = this.createGroup(algorithmDefinition, dataConfig);
+        const form = this.createGroup(algorithmDefinition, initialValues, dataConfig);
 
         if (this.additionalConfigs) {
             for (const additionalConfig of this.additionalConfigs.configs) {
@@ -260,20 +244,24 @@ export class ConfigurationFormComponent implements OnInit {
         return form;
     }
 
-    private createGroups(formGroup: any, configurations: { [name: string]: ConfigurationGroupDefinition }, dataConfig: DataConfiguration) {
+    private createGroups(formGroup: any, configurations: {
+        [name: string]: ConfigurationGroupDefinition
+    }, initialValues: any, dataConfig: DataConfiguration) {
         Object.entries(configurations).forEach(([name, groupDefinition]) => {
-            formGroup[name] = this.createGroup(groupDefinition, dataConfig);
+            formGroup[name] = this.createGroup(groupDefinition, initialValues[name] ?? {}, dataConfig);
         });
     }
 
-    private createGroup(groupDefinition: ConfigurationGroupDefinition, dataConfig: DataConfiguration): FormGroup {
+    private createGroup(groupDefinition: ConfigurationGroupDefinition, initialValues: any, dataConfig: DataConfiguration): FormGroup {
         const group: any = {};
 
         if (groupDefinition.parameters) {
             groupDefinition.parameters.forEach(inputDefinition => {
                 if (inputDefinition.type === ConfigurationInputType.LIST) {
+                    const initialValue = initialValues[inputDefinition.name] ?? inputDefinition.default_value;
+
                     const controls = [];
-                    for (const defaultValue of inputDefinition.default_value as number[]) {
+                    for (const defaultValue of initialValue as number[]) {
                         controls.push(new FormControl({
                             value: defaultValue,
                             disabled: this.disabled
@@ -299,16 +287,17 @@ export class ConfigurationFormComponent implements OnInit {
                         validators.push(Validators.max(inputDefinition.max_value));
                     }
 
-                    group[inputDefinition.name] = new FormControl({value: inputDefinition.default_value, disabled: this.disabled} , validators)
+                    const initialValue = initialValues[inputDefinition.name] ?? inputDefinition.default_value;
+                    group[inputDefinition.name] = new FormControl({value: initialValue, disabled: this.disabled} , validators)
                 }
             });
         }
 
         if (groupDefinition.configurations) {
-            this.createGroups(group, groupDefinition.configurations, dataConfig);
+            this.createGroups(group, groupDefinition.configurations, initialValues, dataConfig);
         }
         if (groupDefinition.options) {
-            this.createGroups(group, groupDefinition.options, dataConfig);
+            this.createGroups(group, groupDefinition.options, initialValues, dataConfig);
         }
 
         return new FormGroup(group);

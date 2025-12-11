@@ -34,10 +34,12 @@ import { EvaluationModule } from "./features/evaluation/evaluation.module";
 import { RiskAssessmentModule } from "./features/risk-assessment/risk-assessment.module";
 import { NotFoundComponent } from './core/components/not-found/not-found.component';
 import { NotificationCenterComponent } from './core/components/notification-center/notification-center.component';
+import { HomepageComponent } from '@core/components/homepage/homepage.component';
 
 @NgModule({
     declarations: [
         AppComponent,
+        HomepageComponent,
         NavigationComponent,
         NotFoundComponent,
         NotificationCenterComponent,

@@ -16,7 +16,7 @@ export class NotFoundComponent implements OnInit {
 
     public ngOnInit(): void {
         this.errorHandlingService.addError("The page " + this.router.url + " was not found.");
-        this.router.navigateByUrl("/open");
+        this.router.navigateByUrl("/");
     }
 
 }

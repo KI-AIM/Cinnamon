@@ -112,7 +112,7 @@ export class UserService {
 
         this.logoutSubject.next();
 
-        this.router.navigate(['open']).then(() => {
+        this.router.navigate(['/']).then(() => {
             const notification = new AppNotification(message, type);
             notification.project = project;
             this.notificationService.addNotification(notification);

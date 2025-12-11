@@ -29,7 +29,7 @@ export class AuthGuard implements CanActivate {
 		| boolean
 		| UrlTree {
 		if (!this.userService.isAuthenticated()) {
-            this.router.navigate(["open"]).then(() => {
+            this.router.navigate(["/"]).then(() => {
                 const notification = new AppNotification("You must authenticate before accessing this page", "failure");
                 this.notificationService.addNotification(notification);
             });

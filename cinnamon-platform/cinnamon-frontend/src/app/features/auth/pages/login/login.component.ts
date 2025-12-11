@@ -1,6 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
+import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { TitleService } from "../../../../core/services/title-service.service";
 import { LogoutMode, UserService } from "src/app/shared/services/user.service";
 import { StateManagementService } from "../../../../core/services/state-management.service";
@@ -22,6 +23,7 @@ export class LoginComponent implements OnInit {
 
 	constructor(
 		private readonly activateRoute: ActivatedRoute,
+        private readonly notificationService: NotificationService,
 		private readonly router: Router,
 		private readonly titleService: TitleService,
 		private readonly userService: UserService,
@@ -61,7 +63,9 @@ export class LoginComponent implements OnInit {
 				if (error === "") {
                     this.stateManagementService.fetchAndRouteToCurrentStep();
 				} else {
-					this.router.navigate(["/open", { mode: "fail" }]);
+                    this.notificationService.addNotification(
+                        new AppNotification("Project name or password wrong", 'failure')
+                    );
 				}
 			}
 		);

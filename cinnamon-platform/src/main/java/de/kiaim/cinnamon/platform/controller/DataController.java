@@ -226,7 +226,8 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> storeConfig(
-			@Valid final StoreDataConfigurationRequest request,
+			// The configuration is not validated by design, to allow uploading invalid configurations and fix them in the UI in the following step
+			final StoreDataConfigurationRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
 		return handleRequest(RequestType.STORE_CONFIG, request.getConfiguration(), null, null, user);
@@ -367,13 +368,13 @@ public class DataController {
 			                                 array = @ArraySchema(schema = @Schema(implementation = DataRow.class)),
 			                                 examples = {
 					                                 @ExampleObject("""
-							                                 - - true
-							                                   - "2023-12-24"
-							                                   - "2023-12-24T18:30:01.123456"
-							                                   - 4.2
-							                                   - 42
-							                                   - "Hello World!"
-							                                   """)
+					                                                - - true
+					                                                  - "2023-12-24"
+					                                                  - "2023-12-24T18:30:01.123456"
+					                                                  - 4.2
+					                                                  - 42
+					                                                  - "Hello World!"
+					                                                """)
 			                                 })}),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored data.",
@@ -418,13 +419,13 @@ public class DataController {
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@PostMapping(value = "/hold-out",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> generateHoldOutSplit(
 			@ParameterObject @Valid final HoldOutRequest request,
 			@AuthenticationPrincipal UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity =  projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user);
 		databaseService.createHoldOutSplit(projectEntity, request.getHoldOutPercentage());
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
@@ -554,11 +555,11 @@ public class DataController {
 	 *     <li>{@link RequestType#STORE_DATE_SET}: configuration, user</li>
 	 * </ul>
 	 *
-	 * @param requestType       Type of the request.
-	 * @param configuration     Configuration describing the source data.
-	 * @param loadDataRequest   Settings for the data set export.
-	 * @param dataSetSource     Source of the data set.
-	 * @param requestUser       User of the request.
+	 * @param requestType     Type of the request.
+	 * @param configuration   Configuration describing the source data.
+	 * @param loadDataRequest Settings for the data set export.
+	 * @param dataSetSource   Source of the data set.
+	 * @param requestUser     User of the request.
 	 * @return Response entity containing the response based on the request type or an error description.
 	 */
 	private ResponseEntity<Object> handleRequest(
@@ -569,13 +570,14 @@ public class DataController {
 			final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity =  projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user);
 
 		final List<String> columnNames = loadDataRequest != null
 		                                 ? loadDataRequest.getColumnNames()
 		                                 : new ArrayList<>();
 
-		final HoldOutSelector holdOutSelector = loadDataRequest != null ? loadDataRequest.getHoldOutSelector() : HoldOutSelector.ALL;
+		final HoldOutSelector holdOutSelector =
+				loadDataRequest != null ? loadDataRequest.getHoldOutSelector() : HoldOutSelector.ALL;
 
 		final Object result;
 		switch (requestType) {
@@ -586,7 +588,8 @@ public class DataController {
 			case ESTIMATE -> {
 				final var file = projectEntity.getOriginalData().getFile();
 				if (file == null) {
-					throw new BadStateException(BadStateException.NO_DATASET_FILE, "Estimating the data configuration requires the file for the dataset to be selected!");
+					throw new BadStateException(BadStateException.NO_DATASET_FILE,
+					                            "Estimating the data configuration requires the file for the dataset to be selected!");
 				}
 
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
@@ -611,11 +614,13 @@ public class DataController {
 				result = databaseService.exportDataConfiguration(projectEntity, dataSetSource);
 			}
 			case LOAD_DATA -> {
-				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity, dataSetSource);
+				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity,
+				                                                                           dataSetSource);
 				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames, holdOutSelector);
-				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(dataSetEntity.getDataConfiguration(), columnNames);
+				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
+						dataSetEntity.getDataConfiguration(), columnNames);
 				result = dataSetService.encodeDataRows(dataSet, dataSetEntity.getDataTransformationErrors(),
-													   columnIndexMapping, loadDataRequest);
+				                                       columnIndexMapping, loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
 				result = databaseService.exportDataSet(projectEntity, columnNames, holdOutSelector, dataSetSource);
@@ -630,10 +635,13 @@ public class DataController {
 			case STORE_DATE_SET -> {
 				final var file = projectEntity.getOriginalData().getFile();
 				if (file == null) {
-					throw new BadStateException(BadStateException.NO_DATASET_FILE, "Storing the dataset requires the file for the dataset to be selected!");
+					throw new BadStateException(BadStateException.NO_DATASET_FILE,
+					                            "Storing the dataset requires the file for the dataset to be selected!");
 				}
 
 				// Store configuration
+				// It is important to validate and store the configuration,
+				// as configurations stored previously from the upload could be invalid
 				databaseService.storeOriginalDataConfiguration(configuration, projectEntity);
 
 				// Store data set

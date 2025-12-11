@@ -206,12 +206,7 @@ class DataControllerTest extends ControllerTest {
 		var configuration = DataConfigurationTestHelper.generateDataConfiguration();
 		configuration.getConfigurations().get(0).setType(DataType.UNDEFINED);
 		var string = jsonMapper.writeValueAsString(configuration);
-
-		mockMvc.perform(multipart("/api/data/configuration")
-				                .param("configuration", string))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Request validation failed"))
-		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")));
+		testStoreConfig(string);
 	}
 
 	@Test
@@ -229,6 +224,19 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta[0].source[0]'"))
 		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "9", "3")));
+	}
+
+	@Test
+	void storeDataUndefinedDataType() throws Exception {
+		var configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		configuration.getConfigurations().get(0).setType(DataType.UNDEFINED);
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/data")
+				                .param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")));
 	}
 
 	@Test

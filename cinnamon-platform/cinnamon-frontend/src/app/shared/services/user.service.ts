@@ -13,6 +13,8 @@ export class UserService {
 	private readonly USER_KEY = "user";
 	private user: User;
 
+    private logoutSubject: Subject<void> = new Subject<void>();
+
 	constructor(
 		private readonly http: HttpClient,
 		private readonly router: Router,
@@ -32,6 +34,10 @@ export class UserService {
 	isAuthenticated(): boolean {
 		return this.user.authenticated;
 	}
+
+    public logout$(): Observable<void> {
+        return this.logoutSubject.asObservable();
+    }
 
 	login(
 		credentials: { email: string; password: string },
@@ -93,7 +99,7 @@ export class UserService {
         sessionStorage.removeItem(this.USER_KEY)
         this.user = new User(false, "", "");
         this.router.navigate(['open', { mode: mode }]).then(
-            () => window.location.reload()
+            () => this.logoutSubject.next()
         );
     }
 }

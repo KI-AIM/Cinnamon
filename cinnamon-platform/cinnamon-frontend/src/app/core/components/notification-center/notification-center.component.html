@@ -1,0 +1,44 @@
+<a #trigger title="Notification Center" class="icon-enabled" (click)="openCenter(dialog, trigger);">
+    <mat-icon>notifications</mat-icon>
+</a>
+
+<ng-template #dialog>
+    <span class="dialog-title fw-bold notification-title">
+        <span>Notifications</span>
+        <span mat-dialog-close class="icon-enabled notification-title-close">
+            <mat-icon>close</mat-icon>
+        </span>
+    </span>
+    <mat-dialog-content class="mat-typography">
+
+        <div class="notification-list">
+            @if (notifications$ | async; as notifications) {
+                @if (notifications.length == 0) {
+                    <div class="notification-item-empty">No notifications</div>
+                } @else {
+                    @for (notification of notifications; track notification.id) {
+                        <div class="notification-item">
+                            <div class="notification-item-date">
+                                <span [ngClass]="notification.type">
+                                    @switch (notification.type) {
+                                        @case ('success') {
+                                            <mat-icon>check_circle</mat-icon>
+                                        }
+                                        @case ('warn') {
+                                            <mat-icon>warning</mat-icon>
+                                        }
+                                        @case ('failure') {
+                                            <mat-icon>error</mat-icon>
+                                        }
+                                    }
+                                </span>
+                                <span>{{ notification.time | date: 'short' }}</span>
+                            </div>
+                            <div class="notification-item-text">{{ notification.message }}</div>
+                        </div>
+                    }
+                }
+            }
+        </div>
+    </mat-dialog-content>
+</ng-template>

@@ -7,7 +7,8 @@
 
     <div class="content-right">
         <div class="title-wrapper">
-            {{getTitle()}}
+            <span>{{ getTitle() }}</span>
+            <app-notification-center class="notification-center"></app-notification-center>
         </div>
         <div class="page-content">
             <!-- Info for locked step -->
@@ -49,7 +50,8 @@
             <!-- Error -->
             <ng-container *ngIf="errorList$ | async as errorList">
                 <ng-container *ngFor="let error of errorList; let i = index">
-                    <app-info-card typeClass="card-failure" [closable]="true" (onClose)="errorHandlingService.clearError(i)">
+                    <app-info-card typeClass="card-failure" [closable]="true"
+                                   (onClose)="errorHandlingService.clearError(i)">
                         <div style="white-space: pre-line;">{{ error }}</div>
                     </app-info-card>
                 </ng-container>

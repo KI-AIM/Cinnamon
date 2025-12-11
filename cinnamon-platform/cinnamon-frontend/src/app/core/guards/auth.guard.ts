@@ -27,7 +27,7 @@ export class AuthGuard implements CanActivate {
 		| boolean
 		| UrlTree {
 		if (!this.userService.isAuthenticated()) {
-			this.router.navigate(["open", { mode: "noPermission" }]);
+            this.router.navigate(["/"], {queryParams: {mode: "noPermission"}});
 			return false;
 		}
 		return true;

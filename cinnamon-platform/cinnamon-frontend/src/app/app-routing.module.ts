@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NotFoundComponent } from "@core/components/not-found/not-found.component";
+import { HomepageComponent } from "@core/components/homepage/homepage.component";
 import { StartpageComponent } from './features/start/pages/startpage/startpage.component';
 import { UploadFileComponent } from './features/data-upload/pages/upload-file/upload-file.component';
 import { DataConfigurationComponent } from './features/data-upload/pages/data-configuration/data-configuration.component';
@@ -22,7 +23,7 @@ import {
 } from "./features/risk-assessment/pages/risk-assessment-configuration/risk-assessment-configuration.component";
 
 const routes: Routes = [
-    {path: '', redirectTo: 'open', pathMatch: 'full'},
+    {path: '', component: HomepageComponent, pathMatch: 'full'},
     {path: 'open' , component: LoginComponent},
     {path: 'create', component: RegisterComponent},
     {path: 'start', component: StartpageComponent, canActivate: [AuthGuard]},

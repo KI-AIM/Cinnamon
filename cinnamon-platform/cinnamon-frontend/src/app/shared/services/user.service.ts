@@ -91,7 +91,7 @@ export class UserService {
     public logout(mode: LogoutMode) {
         sessionStorage.removeItem(this.USER_KEY)
         this.user = new User(false, "", "");
-        this.router.navigate(['open', { mode: mode }]).then(
+        this.router.navigate(['/'], {queryParams: {mode}}).then(
             () => window.location.reload()
         );
     }

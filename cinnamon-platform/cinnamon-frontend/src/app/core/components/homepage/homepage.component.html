@@ -1,0 +1,55 @@
+@if (mode != null) {
+    <app-info-card [closable]="true"
+                   [typeClass]="['noPermission', 'expired'].includes(mode) ? 'card-failure' : 'card-success'"
+                   (onClose)="mode = null">
+        @if (mode === 'close') {
+            Successfully closed project
+        } @else if (mode === 'create') {
+            Successfully closed project
+        } @else if (mode === 'noPermission') {
+            You must authenticate before accessing this page
+        } @else if (mode === 'expired') {
+            Session expired
+        } @else if (mode === 'delete') {
+            Successfully deleted project
+        }
+    </app-info-card>
+}
+
+<app-workstep-box header="Welcome to Cinnamon">
+
+    <p>Cinnamon is designed to anonymize your data by providing methods both for direct
+        anonymization as well as data generation with synthesis methods.</p>
+
+    <p>The Application is suitable for experts and non-experts as it guides you through the process of protecting your
+        data. Detailed explanations about steps, parameters and statistics are available throughout the application
+        by clicking on the info icons
+        <mat-icon fontIcon="info" class="align-text-top"></mat-icon>
+        .
+    </p>
+    <p>
+        The different steps of the workflow are shown in the navigation bar on left side of the screen.
+        It visualizes the progress of anonymization process and allows to go back to completed steps at any time.
+        The steps can be grouped into four categories:
+    </p>
+
+    <ul>
+        <li>Setup of the project</li>
+        <li>Upload of the data</li>
+        <li>Configuration and execution of the anonymization</li>
+        <li>Evaluation of the anonymized data</li>
+    </ul>
+
+    @if (isAuthenticated) {
+        <button mat-raised-button color="primary" (click)="onLogout();">Close current Project</button>
+    } @else {
+        <p>
+            You can start by creating a new project or open an existing one.
+        </p>
+        <div class="d-flex gap-2">
+            <button mat-raised-button color="primary" routerLink="/create">Create new Project</button>
+            <button mat-raised-button color="primary" routerLink="/open">Open existing Project</button>
+        </div>
+    }
+
+</app-workstep-box>

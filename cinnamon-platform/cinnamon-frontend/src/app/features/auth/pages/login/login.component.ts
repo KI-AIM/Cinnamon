@@ -56,7 +56,7 @@ export class LoginComponent implements OnInit {
             this.stateManagementService.fetchAndRouteToCurrentStep();
         }
 
-		this.activateRoute.params.subscribe((params) => {
+		this.activateRoute.queryParams.subscribe((params) => {
 			if (params["mode"]) {
 				this.mode = params["mode"];
 			} else {
@@ -72,7 +72,7 @@ export class LoginComponent implements OnInit {
                 this.stateManagementService.fetchAndRouteToCurrentStep();
             },
             error: () => {
-                this.router.navigate(["/open", {mode: "fail"}]);
+                this.router.navigate(["/open"], {queryParams: {mode: "fail"}});
             },
         });
     }

@@ -151,6 +151,15 @@ export class NotificationService {
     }
 
     /**
+     * Deletes all notifications from the list.
+     * The unread counter is set to 0.
+     */
+    public deleteAllNotifications() {
+        this.notifications.next([]);
+        this.unreadNotifications.next(0);
+    }
+
+    /**
      * Clears the latest notification.
      */
     private clearLatestNotification() {

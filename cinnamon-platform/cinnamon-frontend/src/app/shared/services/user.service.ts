@@ -98,6 +98,8 @@ export class UserService {
      * @param mode The mode defining the displayed message.
      */
     public logout(mode: LogoutMode) {
+        const project = this.user.email || null;
+
         sessionStorage.removeItem(this.USER_KEY)
         this.user = new User(false, "", "");
 
@@ -112,9 +114,10 @@ export class UserService {
         this.logoutSubject.next();
 
         this.router.navigate(['open']).then(() => {
-                this.notificationService.addNotification(new AppNotification(message, type));
-            }
-        );
+            const notification = new AppNotification(message, type);
+            notification.project = project;
+            this.notificationService.addNotification(notification);
+        });
     }
 }
 

@@ -101,20 +101,24 @@ export class RegisterComponent implements OnInit {
     }
 
     onSubmit(): void {
+        const project = this.registerForm.controls["email"].value;
+
         const result = this.userService.register(
             this.registerForm.value as {
                 email: string; password: string; passwordRepeated: string;
             }
         );
         result.subscribe({
-            next: () => this.handleRegisterSuccess(),
+            next: () => this.handleRegisterSuccess(project),
             error: (e) => this.handleRegisterFailed(e),
         });
     }
 
-    handleRegisterSuccess() {
+    handleRegisterSuccess(projectName: string) {
         this.router.navigate(['/open']).then(_ => {
-            this.notificationService.addNotification(new AppNotification("Successfully created project", 'success'));
+            const notification = new AppNotification("Successfully created project", 'success');
+            notification.project = projectName;
+            this.notificationService.addNotification(notification);
         });
     }
 

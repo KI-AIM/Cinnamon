@@ -24,7 +24,7 @@
                         <div class="notification-item">
                             <div class="notification-item-content">
 
-                                <div class="notification-item-date">
+                                <div class="notification-item-head">
                                     <span [ngClass]="notification.read ? null : notification.type">
                                         @switch (notification.type) {
                                             @case ('success') {
@@ -38,7 +38,13 @@
                                             }
                                         }
                                     </span>
-                                    <span>{{ notification.time | date: 'short' }}</span>
+                                    <span class="notification-item-date">{{ notification.time | date: 'short' }}</span>
+                                    @if (notification.project) {
+                                        <span class="notification-item-project"
+                                              [matTooltip]="'Project: ' + notification.project">
+                                            {{ notification.project }}
+                                        </span>
+                                    }
                                 </div>
 
                                 <div class="notification-item-text">

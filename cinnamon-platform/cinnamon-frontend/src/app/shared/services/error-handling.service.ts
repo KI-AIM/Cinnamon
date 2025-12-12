@@ -47,7 +47,9 @@ export class ErrorHandlingService {
             errorMessage = "An unexpected error occurred. Please contact the administrator.";
         }
 
-        this.notificationService.addNotification(new AppNotification(errorMessage, "failure"));
+        const notification = new AppNotification(errorMessage, "failure");
+        notification.project = this.userService.getUser().email || null;
+        this.notificationService.addNotification(notification);
     }
 
     private handleHttpErrorResponse(response: HttpErrorResponse, message?: string): string {

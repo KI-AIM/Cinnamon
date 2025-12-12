@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
-import { MatDialog } from "@angular/material/dialog";
+import { MatDialog, MatDialogRef } from "@angular/material/dialog";
 import { TechnicalEvaluationService } from "@features/technical-evaluation/services/technical-evaluation.service";
 import { AlgorithmDefinition } from "@shared/model/algorithm-definition";
 import { MetricImportanceDefinition, MetricSettings, ProjectSettings } from "@shared/model/project-settings";
@@ -40,6 +40,8 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
     protected deletionError: string | null = null;
 
     private updateSubscription: Subscription | null = null;
+
+    private dialogRef: MatDialogRef<any> | null = null;
 
     @ViewChild('projectSettingsDialog') private dialogWrap: TemplateRef<any>;
     @ViewChild('main') private main: ElementRef<HTMLDivElement>;
@@ -122,9 +124,17 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
      * Opens the dialog.
      */
     public open(): void {
-        this.matDialog.open(this.dialogWrap, {
+        this.dialogRef = this.matDialog.open(this.dialogWrap, {
             width: '60%'
         });
+    }
+
+    /**
+     * Closes the dialog.
+     * @private
+     */
+    private close(): void {
+        this.dialogRef?.close();
     }
 
     /**
@@ -166,6 +176,7 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
         this.userService.delete(projectName, password).subscribe({
             next: () => {
                 this.userService.logout('delete');
+                this.close();
             },
             error: e => {
                 this.deletionError = e.error.errorMessage;

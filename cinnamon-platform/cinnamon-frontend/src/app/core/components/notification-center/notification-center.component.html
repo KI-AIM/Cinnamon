@@ -20,45 +20,54 @@
                 @if (notifications.length == 0) {
                     <div class="notification-item-empty">No notifications</div>
                 } @else {
-                    @for (notification of notifications; track notification.id) {
-                        <div class="notification-item">
-                            <div class="notification-item-content">
-
-                                <div class="notification-item-head">
-                                    <span [ngClass]="notification.read ? null : notification.type">
-                                        @switch (notification.type) {
-                                            @case ('success') {
-                                                <mat-icon>check_circle</mat-icon>
-                                            }
-                                            @case ('warn') {
-                                                <mat-icon>warning</mat-icon>
-                                            }
-                                            @case ('failure') {
-                                                <mat-icon>error</mat-icon>
-                                            }
-                                        }
-                                    </span>
-                                    <span class="notification-item-date">{{ notification.time | date: 'short' }}</span>
-                                    @if (notification.project) {
-                                        <span class="notification-item-project"
-                                              [matTooltip]="'Project: ' + notification.project">
-                                            {{ notification.project }}
-                                        </span>
-                                    }
-                                </div>
-
-                                <div class="notification-item-text">
-                                    {{ notification.message }}
-                                </div>
-                            </div>
-                            <div class="notification-item-icon">
-                                <span class="icon-enabled"
-                                      (click)="notificationService.deleteNotification(notification)">
-                                    <mat-icon>delete</mat-icon>
-                                </span>
-                            </div>
+                    <div class="notification-actions">
+                        <div (click)="notificationService.deleteAllNotifications()">
+                            Delete All
                         </div>
-                    }
+                    </div>
+                    <div>
+                        @for (notification of notifications; track notification.id) {
+                            <div class="notification-item">
+                                <div class="notification-item-content">
+
+                                    <div class="notification-item-head">
+                                        <span [ngClass]="notification.read ? null : notification.type">
+                                            @switch (notification.type) {
+                                                @case ('success') {
+                                                    <mat-icon>check_circle</mat-icon>
+                                                }
+                                                @case ('warn') {
+                                                    <mat-icon>warning</mat-icon>
+                                                }
+                                                @case ('failure') {
+                                                    <mat-icon>error</mat-icon>
+                                                }
+                                            }
+                                        </span>
+                                        <span class="notification-item-date">
+                                            {{ notification.time | date: 'short' }}
+                                        </span>
+                                        @if (notification.project) {
+                                            <span class="notification-item-project"
+                                                  [matTooltip]="'Project: ' + notification.project">
+                                                {{ notification.project }}
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <div class="notification-item-text">
+                                        {{ notification.message }}
+                                    </div>
+                                </div>
+                                <div class="notification-item-icon">
+                                    <span class="icon-enabled"
+                                          (click)="notificationService.deleteNotification(notification)">
+                                    <mat-icon>delete</mat-icon>
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 }
             }
         </div>

@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { FormsModule } from "@angular/forms";
+import { MatTooltip } from "@angular/material/tooltip";
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -64,6 +65,7 @@ import { NotificationCenterComponent } from './core/components/notification-cent
         MatOptionModule,
         MatSelectModule,
         FormsModule,
+        MatTooltip,
     ],
     providers: [
         TitleService,

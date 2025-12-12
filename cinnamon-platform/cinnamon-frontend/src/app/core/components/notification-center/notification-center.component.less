@@ -52,14 +52,30 @@
     flex-direction: column;
 }
 
-.notification-item-date {
+.notification-item-head {
+    align-items: center;
+    display: flex;
     font-size: 0.7rem;
+    gap: 0.5rem;
     line-height: 1rem;
+    min-width: 0;
 
     mat-icon {
         scale: 0.7;
         vertical-align: middle;
     }
+}
+
+.notification-item-date {
+    flex-shrink: 0;
+}
+
+.notification-item-project {
+    display: inline-block;
+    max-width: 6rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .notification-item-text {

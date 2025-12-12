@@ -157,11 +157,28 @@ export type NotificationType = 'success' | 'warn' | 'failure';
 export class AppNotification {
     constructor(
         public message: string,
-        public type: NotificationType
+        public type: NotificationType,
     ) {
     }
 
+    /**
+     * Unique identifier for the notification.
+     */
     public id: number;
+
+    /**
+     * If the notification was read.
+     */
     public read: boolean = false;
+
+    /**
+     * The time the notification was created.
+     */
     public time: Date = new Date();
+
+    /**
+     * The project the notification belongs to.
+     * Null if the notification does not belong to a project.
+     */
+    public project: string | null = null;
 }

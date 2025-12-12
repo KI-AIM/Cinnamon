@@ -23,6 +23,11 @@ export class NotificationService {
      */
     private readonly ANIMATION_DELAY = 300;
 
+    /**
+     * Key for storing the notifications in local storage.
+     */
+    private readonly LOCAL_STORAGE_KEY = 'cinnamon-notifications';
+
     private notifications: BehaviorSubject<AppNotification[]> = new BehaviorSubject<AppNotification[]>([]);
 
     private unreadNotifications: BehaviorSubject<number> = new BehaviorSubject<number>(0);
@@ -32,6 +37,15 @@ export class NotificationService {
     private animationDelayTimeoutId: number | null = null;
 
     public constructor() {
+        const storedNotifications = localStorage.getItem(this.LOCAL_STORAGE_KEY);
+        if (storedNotifications) {
+            this.notifications.next(JSON.parse(storedNotifications));
+            this.unreadNotifications.next(this.notifications.getValue().filter(n => !n.read).length);
+        }
+
+        this.notifications.subscribe(value => {
+            localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(value));
+        });
     }
 
     public addNotification(notification: AppNotification) {

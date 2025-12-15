@@ -232,8 +232,7 @@ async def get_report(
     else:
         high_reasons.append('Overall high risk that records in the protected data could be clearly separated from other records')
 
-    overview = '<div class="report-text-block">Scores approaching 1.0 indicate high privacy, while scores near 0.0 signify low privacy and therefore high potential reidentification risks. The probability of the likelihood of a risk is inverse to the privacy score.</div>'
-    overview += f'<div class="report-split-1-1"><div class="report-metric-card"><div><strong>Identified High Privacy Risk</strong></div><div><ul>'
+    overview = f'<div class="report-split-1-1"><div class="report-metric-card"><div><strong>Identified High Privacy Risk</strong></div><div><ul>'
     for reason in high_reasons:
         overview += f'<li>{reason}</li>'
 

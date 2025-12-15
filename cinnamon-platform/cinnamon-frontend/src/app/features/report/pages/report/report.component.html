@@ -461,7 +461,7 @@
                                     </thead>
                                     <tbody>
                                     <tr *ngFor="let numericAttr of reportData.numericalAttributes.first_attributes">
-                                        <td>{{ numericAttr.name }}</td>
+                                        <td class="report-word-break">{{ numericAttr.name }}</td>
                                         <td>{{ numericAttr.original_mean | number: '1.0-2' }}
                                             ({{ numericAttr.original_std | number: '1.0-2' }})
                                         </td>
@@ -526,7 +526,7 @@
                             <tbody>
                             <tr *ngFor="let attribute of reportData.dataConfiguration.configurations">
                                 <td>{{ attribute.index }}</td>
-                                <td>{{ attribute.name }}</td>
+                                <td class="report-word-break">{{ attribute.name }}</td>
                                 <td>{{ attribute.type }}</td>
                                 <td>{{ attribute.scale }}</td>
                                 <td>
@@ -639,7 +639,7 @@
                             </thead>
                             <tbody>
                             <tr *ngFor="let attr of reportData.anonymizationConfig.config.attributeConfiguration">
-                                <td> {{ attr.name }}</td>
+                                <td class="report-word-break"> {{ attr.name }}</td>
                                 <td> {{ AttributeProtectionMetadata[attr.attributeProtection!].displayName }}</td>
                                 <td> {{ attr.intervalSize }}</td>
                             </tr>
@@ -700,7 +700,7 @@
                     </div>
 
                     <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes">
-                        <div class="report-header2">
+                        <div class="report-header2 report-word-break">
                             Attribute: {{ attributeStatistics.attribute_information.name }}
                         </div>
 

@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.platform.model.dto;
+package de.kiaim.cinnamon.model.dto;
 
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import io.swagger.v3.oas.annotations.media.Schema;

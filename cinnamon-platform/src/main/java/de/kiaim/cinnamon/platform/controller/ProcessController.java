@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
+import de.kiaim.cinnamon.model.dto.ExecutionStepInformation;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.PipelineInformation;
@@ -14,7 +15,6 @@ import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.dto.ConfigureProcessRequest;
-import de.kiaim.cinnamon.platform.model.dto.ExecutionStepInformation;
 import de.kiaim.cinnamon.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;

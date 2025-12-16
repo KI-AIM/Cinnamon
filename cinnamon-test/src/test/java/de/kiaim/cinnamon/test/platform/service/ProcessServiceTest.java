@@ -2,14 +2,15 @@ package de.kiaim.cinnamon.test.platform.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.exception.BadStateException;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.entity.*;
+import de.kiaim.cinnamon.platform.model.mapper.ExecutionStepMapper;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.service.*;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
@@ -34,6 +35,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@Value("${server.port}") private int port;
 	@Autowired private SerializationConfig serializationConfig;
 	@Autowired private CinnamonConfiguration cinnamonConfiguration;
+	@Autowired private ExecutionStepMapper executionStepMapper;
 	@Autowired private DataProcessorService dataProcessorService;
 	@Autowired private DataSetService dataSetService;
 	@Autowired private HttpService httpService;
@@ -57,8 +59,8 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		                     .get("anonymization-server")
 		                     .setInstanceHostPort(mockBackEnd.getPort());
 		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
-		                                         backgroundProcessRepository, projectRepository, csvProcessor,
-		                                         databaseService, dataProcessorService, dataSetService,
+		                                         backgroundProcessRepository, projectRepository, executionStepMapper,
+		                                         csvProcessor, databaseService, dataProcessorService, dataSetService,
 		                                         externalServerInstanceService, httpService, stepService);
 
 		if (jsonMapper == null) {

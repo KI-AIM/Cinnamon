@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
@@ -14,7 +15,6 @@ import de.kiaim.cinnamon.platform.model.configuration.StepOutputConfiguration;
 import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ExternalProcessEntity;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.model.enumeration.StepOutputEncoding;
 import de.kiaim.cinnamon.platform.service.DataSetService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -670,7 +670,7 @@ public class ProcessControllerTest extends ControllerTest {
 		String id = setupAndStartProcess();
 
 		// Send callback request with error JSON
-		ErrorDetails errorDetails = new ErrorDetails("config", null);
+		ErrorDetails errorDetails = new ErrorDetails("config", null, null);
 		ErrorRequest errorRequest = new ErrorRequest("about:blank", "TEST_123", "Process failed", errorDetails);
 
 		mockMvc.perform(post("/api/process/" + id + "/callback")

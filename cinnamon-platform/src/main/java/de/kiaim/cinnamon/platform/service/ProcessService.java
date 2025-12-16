@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.serialization.mapper.YamlMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
@@ -15,10 +16,10 @@ import de.kiaim.cinnamon.platform.model.configuration.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.platform.model.mapper.ExecutionStepMapper;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
@@ -74,6 +75,8 @@ public class ProcessService {
 	private final BackgroundProcessRepository backgroundProcessRepository;
 	private final ProjectRepository projectRepository;
 
+	private final ExecutionStepMapper executionStepMapper;
+
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
@@ -85,9 +88,9 @@ public class ProcessService {
 	public ProcessService(final SerializationConfig serializationConfig, @Value("${server.port}") final int port,
 	                      final CinnamonConfiguration cinnamonConfiguration,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
-	                      final ProjectRepository projectRepository, final CsvProcessor csvProcessor,
-	                      final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final DataSetService dataSetService,
+	                      final ProjectRepository projectRepository, final ExecutionStepMapper executionStepMapper,
+	                      final CsvProcessor csvProcessor, final DatabaseService databaseService,
+	                      final DataProcessorService dataProcessorService, final DataSetService dataSetService,
 	                      final ExternalServerInstanceService externalServerInstanceService,
 	                      final HttpService httpService, final StepService stepService
 	) {
@@ -98,6 +101,7 @@ public class ProcessService {
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.backgroundProcessRepository = backgroundProcessRepository;
 		this.projectRepository = projectRepository;
+		this.executionStepMapper = executionStepMapper;
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
@@ -274,6 +278,12 @@ public class ProcessService {
 
 				startNext(executionStep);
 			}
+		} catch (final ApiException e) {
+			var stageInfo = executionStepMapper.toDto(executionStep);
+			e.getErrorDetails().setStageInfo(stageInfo);
+
+			setProcessError(executionStep, e.getMessage());
+			throw e;
 		} catch (final Exception e) {
 			setProcessError(executionStep, e.getMessage());
 			throw e;

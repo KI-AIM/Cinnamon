@@ -112,7 +112,6 @@ export class EvaluationComponent implements OnInit {
         this.risks$ = this.statisticsService.fetchRisks();
         this.risks2$ = this.statisticsService.fetchRisks2();
         this.statistics$ = this.statisticsService.fetchResult();
-        this.evaluationService.fetchStatus();
     }
 
     // Method for formatting the confidence interval

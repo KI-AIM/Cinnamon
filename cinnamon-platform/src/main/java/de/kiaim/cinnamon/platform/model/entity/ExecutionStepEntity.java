@@ -1,9 +1,9 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.converter.StageAttributeConverter;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

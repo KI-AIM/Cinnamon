@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.model.mapper;
 
-import de.kiaim.cinnamon.platform.model.dto.ExecutionStepInformation;
+import de.kiaim.cinnamon.model.dto.ExecutionStepInformation;
 import de.kiaim.cinnamon.platform.model.entity.ExecutionStepEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

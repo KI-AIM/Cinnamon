@@ -44,6 +44,11 @@ export class StateManagementService {
     private _pipelineObserver$: Observable<PipelineInformation>;
     private _pipelineSubscription: Subscription | null = null;
 
+    /**
+     * True if the pipeline was initialized or the request is currently running.
+     */
+    private pipelineInitialized: boolean = false;
+
     constructor(
         private readonly anonymizationService: AnonymizationService,
         private readonly configurationService: ConfigurationService,
@@ -194,8 +199,19 @@ export class StateManagementService {
      * Fetches the pipeline status from the backend and updates the subject.
      */
     public initPipeline(): void {
-        this.fetchPipelineInformation().subscribe(value => {
-            this.updatePipeline(value);
+        if (this.pipelineInitialized) {
+            return;
+        }
+
+        // Directly set the initialized flag to prevent calls during the request
+        this.pipelineInitialized = true;
+        this.fetchPipelineInformation().subscribe({
+            next: value => {
+                this.updatePipeline(value);
+            },
+            error: error => {
+                this.pipelineInitialized = false;
+            }
         });
     }
 

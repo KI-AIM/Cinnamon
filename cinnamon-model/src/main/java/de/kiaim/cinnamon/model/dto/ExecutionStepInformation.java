@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;

@@ -14,7 +14,7 @@ configurations:
         label: Beta Scheduler
         description: Forward-process beta scheduler. Options "cosine", "linear".
         default_value: cosine
-        options:
+        values:
           - cosine
           - linear
       - name: gaussian_loss_type
@@ -22,18 +22,16 @@ configurations:
         label: Gaussian Loss Type
         description: Diffusion loss for the Gaussian process. Choose between "mse" and "kl".
         default_value: mse
-        options:
+        values:
           - mse
           - kl
       - name: model_type
         type: string
         label: Diffusion Backbone
-        description: Backbone architecture for the diffusion model. Options "mlp", "resnet", "tabnet".
+        description: Backbone architecture for the diffusion model. At the moment only "mlp" is supported.
         default_value: mlp
-        options:
+        values:
           - mlp
-          - resnet
-          - tabnet
       - name: n_layers_hidden
         type: integer
         label: Hidden Layers

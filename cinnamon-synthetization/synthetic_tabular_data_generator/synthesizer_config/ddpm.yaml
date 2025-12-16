@@ -1,0 +1,98 @@
+name: ddpm
+version: "0.1"
+type: cross-sectional
+display_name: TabDDPM (Denoising Diffusion)
+description: Diffusion model for synthesizing tabular data (synthcity TabDDPM).
+URL: /start_synthetization_process/ddpm
+configurations:
+  model_parameter:
+    display_name: Model Parameters
+    description: Configure how the diffusion model interprets the task and represents time steps.
+    parameters:
+      - name: scheduler
+        type: string
+        label: Beta Scheduler
+        description: Forward-process beta scheduler. Options "cosine", "linear".
+        default_value: cosine
+        values:
+          - cosine
+          - linear
+      - name: gaussian_loss_type
+        type: string
+        label: Gaussian Loss Type
+        description: Diffusion loss for the Gaussian process. Choose between "mse" and "kl".
+        default_value: mse
+        values:
+          - mse
+          - kl
+      - name: model_type
+        type: string
+        label: Diffusion Backbone
+        description: Backbone architecture for the diffusion model. At the moment only "mlp" is supported.
+        default_value: mlp
+        values:
+          - mlp
+      - name: n_layers_hidden
+        type: integer
+        label: Hidden Layers
+        description: Number of hidden layers in the diffusion backbone. Increase to capture more complex patterns.
+        default_value: 3
+        min_value: 1
+        max_value: 10
+      - name: n_units_hidden
+        type: integer
+        label: Hidden Units
+        description: Width of each hidden layer. Larger values increase capacity but also training cost.
+        default_value: 256
+        min_value: 16
+        max_value: 4096
+      - name: dim_embed
+        type: integer
+        label: Embedding Dimension
+        description: Size of diffusion time embedding.
+        default_value: 128
+        min_value: 8
+        max_value: 4096
+  model_fitting:
+    display_name: Training Parameters
+    description: Define the parameters, that are used for training the model.
+    parameters:
+      - name: batch_size
+        type: integer
+        label: Batch Size
+        description: Samples per training step. Larger batches are faster but may reduce diversity.
+        default_value: 256
+        min_value: 1
+        max_value: 4096
+      - name: max_iters
+        type: integer
+        label: Training Iterations
+        description: Number of training iterations. Higher values can improve fidelity but increase training time.
+        default_value: 1000
+        min_value: 1
+        max_value: 100000
+      - name: num_timesteps
+        type: integer
+        label: Diffusion Timesteps
+        description: Number of steps in the forward diffusion process; larger values increase quality and runtime.
+        default_value: 300
+        min_value: 10
+        max_value: 1000
+  sampling:
+    display_name: Sampling
+    description: Define the sampling parameters for generating synthetic data.
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Samples
+        description: Number of rows to generate.
+        default_value: 1000
+        min_value: 1
+        max_value: 1000000
+      - name: sampling_patience
+        type: integer
+        label: Sampling Patience
+        description: Maximum number of attempts to match training schema during generation.
+        default_value: 500
+        min_value: 1
+        max_value: 10000

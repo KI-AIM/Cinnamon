@@ -16,6 +16,7 @@ jobs:
       pull-requests: write
 
     uses: ./.github/workflows/run-tests.yml
+    secrets: inherit
 
   build-and-push:
     runs-on: ubuntu-latest
@@ -30,6 +31,15 @@ jobs:
       # Checkout the code
       - name: Checkout source
         uses: actions/checkout@v3
+
+      # Add settings.xml
+      - name: Configure Maven
+        run: |
+          mkdir -p ~/.m2
+          envsubst < .github/maven/settings.xml > ~/.m2/settings.xml
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+          GITHUB_ACTOR: ${{ secrets.GH_PACKAGES_USER }}
 
       # Build all images
       - name: Build Docker images

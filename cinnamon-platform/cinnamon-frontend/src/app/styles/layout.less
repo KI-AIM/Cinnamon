@@ -37,6 +37,27 @@ app-navigation{
     flex-wrap: nowrap !important;
 }
 
+.config-input-row {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    width: 100%;
+}
+
+.config-input-row-field {
+    display: block;
+    flex: 1 1 auto;
+    width: 80%;
+}
+
+.config-input-row-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .input-height;
+}
+
 .content-left, .content-right {
     display: flex;
     flex-grow: 1;
@@ -62,7 +83,7 @@ app-navigation{
     width: 75vw;
 }
 
-.cinnamon-file-input-error {
+.cinnamon-error {
     color: var(--mat-form-field-error-text-color);
     font-size: 12px;
 }

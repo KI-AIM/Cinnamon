@@ -45,7 +45,9 @@ public class DateTimeData extends Data {
 				"E yyyy.MM.dd 'at' hh:mm:ss a zzz",
 				"yyyy-MM-dd hh:mm:ss",
 				"yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
-				"yyyy-MM-dd'T'HH:mm:ss"
+				"yyyy-MM-dd'T'HH:mm:ss",
+				"yyyy-MM-dd'T'HH:mm:ssXXX",
+				"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
 		);
 
 		private LocalDateTime value;

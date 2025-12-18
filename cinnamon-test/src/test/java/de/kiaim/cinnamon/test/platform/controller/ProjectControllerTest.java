@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.test.platform.ControllerTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,6 +36,20 @@ public class ProjectControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.mode").value("EXPERT"))
 		       .andExpect(jsonPath("$.currentStep").value("WELCOME"));
+	}
+
+	@Test
+	public void createProjectInvalidMode() throws Exception {
+		final MockMultipartFile invalidParam = new MockMultipartFile("mode", "mode",
+		                                                             MediaType.TEXT_PLAIN_VALUE,
+		                                                             "EXPERT".getBytes());
+
+		mockMvc.perform(multipart("/api/project")
+				                .file(invalidParam)
+				                .contentType(MediaType.MULTIPART_FORM_DATA))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_1_4"))
+		       .andExpect(errorMessage("Parameter 'mode' must not be a file!"));
 	}
 
 	@Test

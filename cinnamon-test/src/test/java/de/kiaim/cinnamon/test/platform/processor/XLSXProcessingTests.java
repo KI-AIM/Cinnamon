@@ -43,6 +43,29 @@ public class XLSXProcessingTests {
     @Autowired
     XlsxProcessor xlsxProcessor;
 
+	@Test
+	void estimateFileConfigurationHasHeaderNot() throws FileNotFoundException {
+		InputStream stream = new FileInputStream("src/test/resources/xlsx_test.xlsx");
+
+		var estimation = assertDoesNotThrow(() -> xlsxProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.XLSX, estimation.getEstimation().getFileType());
+		var xlsxConfig = estimation.getEstimation().getXlsxFileConfiguration();
+		assertNotNull(xlsxConfig);
+		assertFalse(xlsxConfig.isHasHeader());
+	}
+
+	@Test
+	void estimateFileConfigurationHasHeaderByAttributeNames() throws FileNotFoundException {
+		InputStream stream = new FileInputStream("src/test/resources/xlsx_test_with_header.xlsx");
+
+		var estimation = assertDoesNotThrow(() -> xlsxProcessor.estimateFileConfiguration(stream));
+
+		assertEquals(FileType.XLSX, estimation.getEstimation().getFileType());
+		var xlsxConfig = estimation.getEstimation().getXlsxFileConfiguration();
+		assertNotNull(xlsxConfig);
+		assertTrue(xlsxConfig.isHasHeader());
+	}
 
     @Test
     void testReadMethodOfXlsxProcessor() throws FileNotFoundException {
@@ -137,8 +160,9 @@ public class XLSXProcessingTests {
 
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
 
-        DataConfigurationEstimation estimation = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                         DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+	    DataConfigurationEstimation estimation = assertDoesNotThrow(
+			    () -> xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+			                                                  DatatypeEstimationAlgorithm.MOST_ESTIMATED));
         DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
@@ -160,8 +184,9 @@ public class XLSXProcessingTests {
 
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
 
-        DataConfigurationEstimation estimation = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                         DatatypeEstimationAlgorithm.MOST_GENERAL);
+	    DataConfigurationEstimation estimation = assertDoesNotThrow(
+			    () -> xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+			                                                  DatatypeEstimationAlgorithm.MOST_GENERAL));
         DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();
@@ -185,8 +210,9 @@ public class XLSXProcessingTests {
 
         FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, true);
 
-        DataConfigurationEstimation estimation = xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
-                                                                                         DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+	    DataConfigurationEstimation estimation = assertDoesNotThrow(
+			    () -> xlsxProcessor.estimateDataConfiguration(stream, fileConfiguration,
+			                                                  DatatypeEstimationAlgorithm.MOST_ESTIMATED));
         DataConfiguration actualConfiguration = estimation.getDataConfiguration();
 
         DataConfiguration expectedConfiguration = getEstimationDataConfiguration();

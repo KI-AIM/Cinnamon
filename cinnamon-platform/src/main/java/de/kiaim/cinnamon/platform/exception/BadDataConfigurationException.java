@@ -17,6 +17,11 @@ public class BadDataConfigurationException extends BadRequestException {
 	 */
 	public static final String UNDEFINED_DATA_TYPE = "2";
 
+	/**
+	 * Exception code for a mismatch of the attribute names.
+	 */
+	public static final String FHIR_ATTRIBUTE_MISMATCH = "3";
+
 	public BadDataConfigurationException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

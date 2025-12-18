@@ -42,8 +42,10 @@ export class ChartCorrelationComponent extends ChartComponent {
             reference = value;
         }
 
+        const chartName = this.createChartName("Correlation", this.data, this.columnConfiguration, dataSetLabels);
+
         return {
-            ...this.graphOptions(this.simple),
+            ...this.graphOptions(this.simple, chartName),
             tooltip: {
                 // @ts-ignore
                 valueFormatter: (value) => this.formatNumber(value, null),

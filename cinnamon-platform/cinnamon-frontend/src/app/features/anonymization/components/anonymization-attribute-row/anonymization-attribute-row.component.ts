@@ -37,8 +37,11 @@ export class AnonymizationAttributeRowComponent implements OnInit, OnChanges {
     }
 
     ngOnInit() {
-        //Initialize the interval input field
-        this.setIntervalConditions();
+        // Initialize the interval input field
+        const defaults = this.anonConfigService.getIntervalSettings(this.getTransformationType(), this.getScale(), this.getDataType());
+        this.intervalMin = defaults.intervalMin;
+        this.intervalMax = defaults.intervalMax;
+        this.intervalIsSelect = defaults.intervallsSelect;
     }
 
     public ngOnChanges(changes: SimpleChanges): void {
@@ -50,7 +53,7 @@ export class AnonymizationAttributeRowComponent implements OnInit, OnChanges {
             } else {
                 this.form.controls["attributeProtection"].enable();
 
-                const intervalSettings = this.getIntervalSettings();
+                const intervalSettings = this.anonConfigService.getIntervalSettings(this.getTransformationType(), this.getScale(), this.getDataType());
                 if (!intervalSettings.deactivateInterval) {
                     this.form.controls["intervalSize"].enable();
                 }
@@ -161,168 +164,8 @@ export class AnonymizationAttributeRowComponent implements OnInit, OnChanges {
      * depending on the current settings in the frontend
      */
     setIntervalConditions() {
-        if (this.getTransformationType() !== null) {
-            // MASKING -> [ 'DATE', 'NOMINAL', 'ORDNIAL', 'INTERVAL', 'RATIO' ]
-            if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.MASKING) &&
-                (areEnumValuesEqual(DataScale, this.getScale(), DataScale.DATE) ||
-                areEnumValuesEqual(DataScale, this.getScale(), DataScale.NOMINAL) ||
-                areEnumValuesEqual(DataScale, this.getScale(), DataScale.ORDINAL) ||
-                areEnumValuesEqual(DataScale, this.getScale(), DataScale.INTERVAL) ||
-                areEnumValuesEqual(DataScale, this.getScale(), DataScale.RATIO))
-            ) {
-                this.changeIntervalSettings(2, 1000, 3, false, false);
-            }
-            // DATE_GENERALIZATION -> DATE
-            else if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.DATE_GENERALIZATION) &&
-                    areEnumValuesEqual(DataScale, this.getScale(), DataScale.DATE)
-            ) {
-                this.changeIntervalSettings(null, null, 'year', true, false);
-            }
-            //[ 'GENERALIZATION', 'MICRO_AGGREGATION' ]
-            else if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.GENERALIZATION) ||
-                    areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.MICRO_AGGREGATION)
-            ) {
-                // ORDINAL
-                if (areEnumValuesEqual(DataScale, this.getTransformationType(), DataScale.ORDINAL)) {
-                    this.changeIntervalSettings(1, 100, 5, false, false);
-                }
-                // INTEGER -> INTEVAL
-                else if (areEnumValuesEqual(DataType, this.getDataType(), DataType.INTEGER) &&
-                        areEnumValuesEqual(DataScale, this.getScale(), DataScale.INTERVAL)
-                ) {
-                    this.changeIntervalSettings(1, 1000, 10, false, false);
-                }
-                // DECIMAL -> RATIO
-                else if (areEnumValuesEqual(DataType, this.getDataType(), DataType.DECIMAL) &&
-                        areEnumValuesEqual(DataScale, this.getScale(), DataScale.RATIO)
-                ) {
-                    this.changeIntervalSettings(0.001, 1000.0, 1, false, false);
-                }
-            }
-            // [ 'ATTRIBUTE_DELETION', 'VALUE_DELETION']
-            else if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.ATTRIBUTE_DELETION) ||
-                    areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.VALUE_DELETION) ||
-                    areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.RECORD_DELETION) ||
-                    areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.NO_PROTECTION)
-            ) {
-                this.changeIntervalSettings(null, null, null, false, true);
-            }
-            // SET FALLBACK VALUES
-            else {
-                this.changeIntervalSettings(null, null, null, false, false);
-            }
-        }
-    }
-
-    private getIntervalSettings(): {
-        intervalMin: number | null,
-        intervalMax: number | null,
-        intervalInitialValue: number | string | null,
-        intervallsSelect: boolean,
-        deactivateInterval: boolean
-    } {
-        if (this.getTransformationType() !== null) {
-            // MASKING -> [ 'DATE', 'NOMINAL', 'ORDNIAL', 'INTERVAL', 'RATIO' ]
-            if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.MASKING) &&
-                (areEnumValuesEqual(DataScale, this.getScale(), DataScale.DATE) ||
-                    areEnumValuesEqual(DataScale, this.getScale(), DataScale.NOMINAL) ||
-                    areEnumValuesEqual(DataScale, this.getScale(), DataScale.ORDINAL) ||
-                    areEnumValuesEqual(DataScale, this.getScale(), DataScale.INTERVAL) ||
-                    areEnumValuesEqual(DataScale, this.getScale(), DataScale.RATIO))
-            ) {
-                return {
-                    intervalMin: 2,
-                    intervalMax: 1000,
-                    intervalInitialValue: 3,
-                    intervallsSelect: false,
-                    deactivateInterval: false
-                };
-            }
-            // DATE_GENERALIZATION -> DATE
-            else if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.DATE_GENERALIZATION) &&
-                areEnumValuesEqual(DataScale, this.getScale(), DataScale.DATE)
-            ) {
-                return {
-                    intervalMin: null,
-                    intervalMax: null,
-                    intervalInitialValue: 'year',
-                    intervallsSelect: true,
-                    deactivateInterval: false
-                };
-            }
-            //[ 'GENERALIZATION', 'MICRO_AGGREGATION' ]
-            else if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.GENERALIZATION) ||
-                areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.MICRO_AGGREGATION)
-            ) {
-                // ORDINAL
-                if (areEnumValuesEqual(DataScale, this.getTransformationType(), DataScale.ORDINAL)) {
-                    return {
-                        intervalMin: 1,
-                        intervalMax: 100,
-                        intervalInitialValue: 5,
-                        intervallsSelect: false,
-                        deactivateInterval: false
-                    };
-                }
-                // INTEGER -> INTEVAL
-                else if (areEnumValuesEqual(DataType, this.getDataType(), DataType.INTEGER) &&
-                    areEnumValuesEqual(DataScale, this.getScale(), DataScale.INTERVAL)
-                ) {
-                    return {
-                        intervalMin: 1,
-                        intervalMax: 1000,
-                        intervalInitialValue: 10,
-                        intervallsSelect: false,
-                        deactivateInterval: false
-                    };
-                }
-                // DECIMAL -> RATIO
-                else if (areEnumValuesEqual(DataType, this.getDataType(), DataType.DECIMAL) &&
-                    areEnumValuesEqual(DataScale, this.getScale(), DataScale.RATIO)
-                ) {
-                    return {
-                        intervalMin: 0.001,
-                        intervalMax: 1000.0,
-                        intervalInitialValue: 1,
-                        intervallsSelect: false,
-                        deactivateInterval: false
-                    };
-                }
-            }
-            // [ 'ATTRIBUTE_DELETION', 'VALUE_DELETION']
-            else if (areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.ATTRIBUTE_DELETION) ||
-                areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.VALUE_DELETION) ||
-                areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.RECORD_DELETION) ||
-                areEnumValuesEqual(AttributeProtection, this.getTransformationType(), AttributeProtection.NO_PROTECTION)
-            ) {
-                return {
-                    intervalMin: null,
-                    intervalMax: null,
-                    intervalInitialValue: null,
-                    intervallsSelect: false,
-                    deactivateInterval: true
-                };
-            }
-            // SET FALLBACK VALUES
-            else {
-                return {
-                    intervalMin: null,
-                    intervalMax: null,
-                    intervalInitialValue: null,
-                    intervallsSelect: false,
-                    deactivateInterval: false
-                };
-            }
-        }
-
-        console.log("No transformation type set");
-        return {
-            intervalMin: null,
-            intervalMax: null,
-            intervalInitialValue: null,
-            intervallsSelect: false,
-            deactivateInterval: false
-        };
+        const intervalSettings = this.anonConfigService.getIntervalSettings(this.getTransformationType(), this.getScale(), this.getDataType());
+        this.changeIntervalSettings(intervalSettings.intervalMin, intervalSettings.intervalMax, intervalSettings.intervalInitialValue, intervalSettings.intervallsSelect, intervalSettings.deactivateInterval);
     }
 
     /**

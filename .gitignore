@@ -52,3 +52,7 @@ __pycache__/
 /**/ENV/
 /**/.env/
 /**/.venv/
+
+# Simulation outputs
+/simulation/experiment_results/
+/simulation/experiments_results/

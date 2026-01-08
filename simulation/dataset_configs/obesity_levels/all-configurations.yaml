@@ -1,63 +1,88 @@
 configurations:
 - index: 0
   name: "Age"
-  type: "INTEGER"
-  scale: "RATIO"
+  type: "DECIMAL"
+  scale: "INTERVAL"
   configurations: []
 - index: 1
-  name: "Sex"
+  name: "Gender"
   type: "STRING"
   scale: "NOMINAL"
   configurations: []
 - index: 2
-  name: "ChestPainType"
-  type: "STRING"
-  scale: "NOMINAL"
+  name: "Height"
+  type: "DECIMAL"
+  scale: "INTERVAL"
   configurations: []
 - index: 3
-  name: "RestingBP"
-  type: "INTEGER"
+  name: "Weight"
+  type: "DECIMAL"
   scale: "INTERVAL"
   configurations: []
 - index: 4
-  name: "Cholesterol"
-  type: "INTEGER"
-  scale: "INTERVAL"
-  configurations: []
-- index: 5
-  name: "FastingBS"
-  type: "INTEGER"
-  scale: "INTERVAL"
-  configurations: []
-- index: 6
-  name: "RestingECG"
+  name: "CALC"
   type: "STRING"
   scale: "NOMINAL"
   configurations: []
+- index: 5
+  name: "FAVC"
+  type: "BOOLEAN"
+  scale: "NOMINAL"
+  configurations: []
+- index: 6
+  name: "FCVC"
+  type: "DECIMAL"
+  scale: "INTERVAL"
+  configurations: []
 - index: 7
-  name: "MaxHR"
-  type: "INTEGER"
+  name: "NCP"
+  type: "DECIMAL"
   scale: "INTERVAL"
   configurations: []
 - index: 8
-  name: "ExerciseAngina"
-  type: "STRING"
+  name: "SCC"
+  type: "BOOLEAN"
   scale: "NOMINAL"
   configurations: []
 - index: 9
-  name: "Oldpeak"
-  type: "DECIMAL"
-  scale: "RATIO"
+  name: "SMOKE"
+  type: "BOOLEAN"
+  scale: "NOMINAL"
   configurations: []
 - index: 10
-  name: "ST_Slope"
+  name: "CH2O"
+  type: "DECIMAL"
+  scale: "INTERVAL"
+  configurations: []
+- index: 11
+  name: "family_history_with_overweight"
+  type: "BOOLEAN"
+  scale: "NOMINAL"
+  configurations: []
+- index: 12
+  name: "FAF"
+  type: "DECIMAL"
+  scale: "INTERVAL"
+  configurations: []
+- index: 13
+  name: "TUE"
+  type: "DECIMAL"
+  scale: "INTERVAL"
+  configurations: []
+- index: 14
+  name: "CAEC"
   type: "STRING"
   scale: "NOMINAL"
   configurations: []
-- index: 11
-  name: "HeartDisease"
-  type: "INTEGER"
-  scale: "INTERVAL"
+- index: 15
+  name: "MTRANS"
+  type: "STRING"
+  scale: "NOMINAL"
+  configurations: []
+- index: 16
+  name: "NObeyesdad"
+  type: "STRING"
+  scale: "NOMINAL"
   configurations: []
 anonymization:
   privacyModels:
@@ -70,29 +95,41 @@ anonymization:
         suppressionLimit: 0.8
   attributeConfiguration:
     - attributeProtection: MICRO_AGGREGATION
-      dataType: INTEGER
+      dataType: DECIMAL
       index: 0
       intervalSize: 10
       name: Age
-      scale: RATIO
+      scale: INTERVAL
+    - attributeProtection: MICRO_AGGREGATION
+      dataType: DECIMAL
+      index: 3
+      intervalSize: 1
+      name: Weight
+      scale: INTERVAL
     - attributeProtection: RECORD_DELETION
       dataType: STRING
       index: 1
       intervalSize: null
-      name: Sex
+      name: Gender
       scale: NOMINAL
+    - attributeProtection: MICRO_AGGREGATION
+      dataType: DECIMAL
+      index: 2
+      intervalSize: 10
+      name: Height
+      scale: INTERVAL
 synthetization_configuration:
   algorithm:
     synthesizer: arf
     type: cross-sectional
     version: "0.1"
     model_parameter:
-      num_trees: 80
-      min_node_size: 12
+      num_trees: 30
+      min_node_size: 5
     model_fitting:
       max_iters: 10
     sampling:
-      num_samples: 918
+      num_samples: 2111
 evaluation_configuration:
   data_format: cross-sectional
   resemblance:
@@ -120,7 +157,7 @@ evaluation_configuration:
   utility:
     machine_learning:
       train_size: 0.8
-      target_variable: HeartDisease
+      target_variable: NObeyesdad
     discriminator_based_evaluation:
       train_size: 0.8
 risk_assessment_configuration:
@@ -131,19 +168,24 @@ risk_assessment_configuration:
   linkage:
     n_attacks: 100
     available_columns:
-      - ChestPainType
-      - RestingBP
-      - Cholesterol
-      - RestingECG
-      - MaxHR
-      - ExerciseAngina
-      - Oldpeak
-      - ST_Slope
+      - CALC
+      - FAVC
+      - FCVC
+      - NCP
+      - SCC
+      - CH2O
+      - FAF
+      - MTRANS
+      - CAEC
+      - TUE
     unavailable_columns:
       - Age
-      - Sex
-      - FastingBS
-      - HeartDisease
+      - Gender
+      - Height
+      - Weight
+      - family_history_with_overweight
+      - NObeyesdad
+      - SMOKE
   data_format: cross-sectional
   train_fraction: 0.8
   targets: []

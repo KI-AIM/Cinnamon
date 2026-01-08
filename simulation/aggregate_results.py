@@ -17,7 +17,7 @@ DEFAULT_SUBFOLDERS = [
     "real_risk",
 ]
 
-DEFAULT_DATASET = "heart_failure"
+DEFAULT_DATASET = "cardiovascular"
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_ROOT = BASE_DIR / "experiment_results" / DEFAULT_DATASET
 

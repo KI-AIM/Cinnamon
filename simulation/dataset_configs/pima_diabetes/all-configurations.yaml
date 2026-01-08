@@ -1,63 +1,48 @@
 configurations:
 - index: 0
-  name: "Age"
+  name: "Pregnancies"
   type: "INTEGER"
-  scale: "RATIO"
+  scale: "INTERVAL"
   configurations: []
 - index: 1
-  name: "Sex"
-  type: "STRING"
-  scale: "NOMINAL"
+  name: "Glucose"
+  type: "INTEGER"
+  scale: "INTERVAL"
   configurations: []
 - index: 2
-  name: "ChestPainType"
-  type: "STRING"
-  scale: "NOMINAL"
+  name: "BloodPressure"
+  type: "INTEGER"
+  scale: "INTERVAL"
   configurations: []
 - index: 3
-  name: "RestingBP"
+  name: "SkinThickness"
   type: "INTEGER"
   scale: "INTERVAL"
   configurations: []
 - index: 4
-  name: "Cholesterol"
+  name: "Insulin"
   type: "INTEGER"
   scale: "INTERVAL"
   configurations: []
 - index: 5
-  name: "FastingBS"
-  type: "INTEGER"
-  scale: "INTERVAL"
+  name: "BMI"
+  type: "DECIMAL"
+  scale: "RATIO"
   configurations: []
 - index: 6
-  name: "RestingECG"
-  type: "STRING"
-  scale: "NOMINAL"
+  name: "DiabetesPedigreeFunction"
+  type: "DECIMAL"
+  scale: "RATIO"
   configurations: []
 - index: 7
-  name: "MaxHR"
+  name: "Age"
   type: "INTEGER"
   scale: "INTERVAL"
   configurations: []
 - index: 8
-  name: "ExerciseAngina"
-  type: "STRING"
+  name: "Outcome"
+  type: "BOOLEAN"
   scale: "NOMINAL"
-  configurations: []
-- index: 9
-  name: "Oldpeak"
-  type: "DECIMAL"
-  scale: "RATIO"
-  configurations: []
-- index: 10
-  name: "ST_Slope"
-  type: "STRING"
-  scale: "NOMINAL"
-  configurations: []
-- index: 11
-  name: "HeartDisease"
-  type: "INTEGER"
-  scale: "INTERVAL"
   configurations: []
 anonymization:
   privacyModels:
@@ -73,26 +58,32 @@ anonymization:
       dataType: INTEGER
       index: 0
       intervalSize: 10
-      name: Age
+      name: Pregnancies
+      scale: INTERVAL
+    - attributeProtection: MICRO_AGGREGATION
+      dataType: DECIMAL
+      index: 5
+      intervalSize: 1
+      name: BMI
       scale: RATIO
-    - attributeProtection: RECORD_DELETION
-      dataType: STRING
-      index: 1
-      intervalSize: null
-      name: Sex
-      scale: NOMINAL
+    - attributeProtection: MICRO_AGGREGATION
+      dataType: INTEGER
+      index: 7
+      intervalSize: 10
+      name: Age
+      scale: INTERVAL
 synthetization_configuration:
   algorithm:
-    synthesizer: arf
+    synthesizer: bayesian_network
     type: cross-sectional
     version: "0.1"
     model_parameter:
-      num_trees: 80
-      min_node_size: 12
+      encoder_max_clusters: 10
+      encoder_noise_scale: 0.01
     model_fitting:
-      max_iters: 10
+      struct_learning_n_iter: 50
     sampling:
-      num_samples: 918
+      num_samples: 768
 evaluation_configuration:
   data_format: cross-sectional
   resemblance:
@@ -120,7 +111,7 @@ evaluation_configuration:
   utility:
     machine_learning:
       train_size: 0.8
-      target_variable: HeartDisease
+      target_variable: Outcome
     discriminator_based_evaluation:
       train_size: 0.8
 risk_assessment_configuration:
@@ -131,19 +122,16 @@ risk_assessment_configuration:
   linkage:
     n_attacks: 100
     available_columns:
-      - ChestPainType
-      - RestingBP
-      - Cholesterol
-      - RestingECG
-      - MaxHR
-      - ExerciseAngina
-      - Oldpeak
-      - ST_Slope
+      - Glucose
+      - BloodPressure
+      - SkinThickness
+      - DiabetesPedigreeFunction
+      - Insulin
     unavailable_columns:
+      - Pregnancies
+      - BMI
       - Age
-      - Sex
-      - FastingBS
-      - HeartDisease
+      - Outcome
   data_format: cross-sectional
   train_fraction: 0.8
   targets: []

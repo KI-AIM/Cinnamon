@@ -11,6 +11,8 @@ import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
+import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.platform.processor.FhirProcessor;
 import de.kiaim.cinnamon.platform.repository.DataProcessingRepository;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.repository.DataTransformationErrorRepository;
@@ -45,6 +47,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class DatabaseService {
@@ -65,6 +68,7 @@ public class DatabaseService {
 
 	private final DataSetService dataSetService;
 	private final DataProcessorService dataProcessorService;
+	private final FhirProcessor fhirProcessor;
 	private final StepService stepService;
 
 	@Autowired
@@ -73,7 +77,7 @@ public class DatabaseService {
 	                       final SerializationConfig serializationConfig, final DataSetRepository dataSetRepository,
 	                       final ProjectRepository projectRepository, final DataschemeGenerator dataschemeGenerator,
 	                       final DataSetService dataSetService, final DataProcessorService dataProcessorService,
-	                       final StepService stepService) {
+	                       final FhirProcessor fhirProcessor, final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		this.dataProcessingRepository = dataProcessingRepository;
 		this.errorRepository = errorRepository;
@@ -83,6 +87,7 @@ public class DatabaseService {
 		this.dataschemeGenerator = dataschemeGenerator;
 		this.dataSetService = dataSetService;
 		this.dataProcessorService = dataProcessorService;
+		this.fhirProcessor = fhirProcessor;
 		this.stepService = stepService;
 	}
 
@@ -107,18 +112,20 @@ public class DatabaseService {
 	 * @throws BadDataSetIdException               If the data set has already been confirmed.
 	 * @throws BadFileException                    If the file could not be read.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
+	 * @throws InternalIOException                 If reading the data failed.
 	 * @throws InternalMissingHandlingException    If no processor for the file type of the file could be found.
 	 */
 	@Transactional
 	public FileInformation storeFile(final ProjectEntity project, final MultipartFile file,
-	                                 final FileConfiguration fileConfiguration) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalMissingHandlingException {
+	                                 final FileConfiguration fileConfiguration
+	) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 
 		dataProcessorService.validateFileOrThrow(file);
 
 		final FileConfigurationEntity fileConfigurationEntity = switch (fileConfiguration.getFileType()) {
 			case CSV -> new CsvFileConfigurationEntity(fileConfiguration.getCsvFileConfiguration());
-			case FHIR -> new FhirFileConfigurationEntity();
+			case FHIR -> new FhirFileConfigurationEntity(fileConfiguration.getFhirFileConfiguration());
 			case XLSX -> new XlsxFileConfigurationEntity(fileConfiguration.getXlsxFileConfiguration());
 		};
 
@@ -166,10 +173,12 @@ public class DatabaseService {
 	 * @throws BadDataSetIdException               If the data has already been confirmed.
 	 * @throws BadStateException                   If the file for the dataset has not been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
+	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
 	 */
 	@Transactional
 	public void storeOriginalDataConfiguration(final DataConfiguration dataConfiguration, final ProjectEntity project)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+		checkFile(project, dataConfiguration);
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 		doStoreOriginalDataConfiguration(project, dataConfiguration);
 	}
@@ -182,22 +191,28 @@ public class DatabaseService {
 	 * Returns an ID to access the data.
 	 *
 	 * @param transformationResult The transformation result to be stored.
-	 * @param project The project.
+	 * @param project              The project.
 	 * @return The ID of the data set.
-	 * @throws BadDataConfigurationException If the number of attributes do not match with the stored data configuration.
-	 * @throws BadDataSetIdException If the data set is already stored.
-	 * @throws BadStateException If no file for the original data has been selected.
+	 * @throws BadDataConfigurationException       If the number of attributes do not match with the stored data configuration.
+	 * @throws BadDataSetIdException               If the data set is already stored.
+	 * @throws BadStateException                   If no file for the original data has been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored.
+	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
 	 */
 	@Transactional
 	public Long storeOriginalTransformationResult(final TransformationResult transformationResult,
 	                                              ProjectEntity project)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+		final DataSet dataSet = transformationResult.getDataSet();
+		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
+
+		// Test configuration
+		checkFile(project, dataConfiguration);
+
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 
 		// Store configuration
-		final DataSet dataSet = transformationResult.getDataSet();
 		DataSetEntity dataSetEntity = doStoreOriginalDataConfiguration(project, dataSet.getDataConfiguration());
 
 		// Store transformation errors
@@ -220,12 +235,13 @@ public class DatabaseService {
 	 * @throws BadDataSetIdException               If the data has already been confirmed.
 	 * @throws BadStateException                   If the file for the dataset has not been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
+	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
 	 */
 	@Transactional
 	public void storeTransformationResult(final TransformationResult transformationResult,
 	                                      final DataProcessingEntity dataProcessingEntity,
 	                                      final List<Job> processed)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(dataProcessingEntity.getDataSet());
 
@@ -427,8 +443,8 @@ public class DatabaseService {
 			holdOutPercentage = originalData.getHoldOutPercentage();
 
 			if (hasHoldOutSplit) {
-				numberHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ALL);
-				numberInvalidHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ERRORS);
+				numberHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ALL, null);
+				numberInvalidHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ERRORS, null);
 			}
 		}
 
@@ -643,7 +659,8 @@ public class DatabaseService {
 		final DataSet dataSet = exportDataSet(dataSetEntity, rowSelector, columnNames,
 		                                      loadDataRequest.getHoldOutSelector(), true, startRow, pageSize, calcRowNumbers);
 
-		List<Integer> rowNumbers = null;
+		final List<Integer> rowNumbers;
+
 		final Set<DataTransformationErrorEntity> errors;
 		if (calcRowNumbers) {
 			rowNumbers = dataSet.getData().stream().map(a -> (Integer) a.get(a.size() - 1)).toList();
@@ -651,6 +668,9 @@ public class DatabaseService {
 		} else {
 			var endRow = startRow + dataSet.getDataRows().size();
 			errors = errorRepository.findByDataSetIdAndRowIndexBetween(dataSetEntity.getId(), startRow, endRow - 1);
+			rowNumbers = IntStream.range(startRow, endRow)
+			                      .boxed()
+			                      .collect(java.util.stream.Collectors.toList());
 		}
 
 		List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, rowNumbers, columnIndexMapping,
@@ -660,7 +680,8 @@ public class DatabaseService {
 			data = data.stream().map(a -> a.subList(0, a.size() - 1)).toList();
 		}
 
-		final int numberRows = countEntries(dataSetEntity.getId(), loadDataRequest.getHoldOutSelector(), rowSelector);
+		final int numberRows = countEntries(dataSetEntity.getId(), loadDataRequest.getHoldOutSelector(), rowSelector,
+		                                    columnIndexMapping.keySet());
 		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
@@ -769,22 +790,25 @@ public class DatabaseService {
 	 * @throws InternalDataSetPersistenceException If the Number could not be retrieved.
 	 */
 	public int countEntries(final long dataSetId) throws InternalDataSetPersistenceException {
-		return countEntries(dataSetId, HoldOutSelector.ALL, RowSelector.ALL);
+		return countEntries(dataSetId, HoldOutSelector.ALL, RowSelector.ALL, null);
 	}
 
 	/**
-	 * Counts the number of entries in the data set that comply the given selectors.
+	 * Counts the number of entries in the dataset that comply with the given selectors.
 	 *
 	 * @param dataSetId       The ID of the data set.
-	 * @param holdOutSelector Which hold-out rows should be selected.
+	 * @param holdOutSelector If hold-out rows should be selected.
 	 * @param rowSelector     Selector specifying which rows should be included regarding on the hold-out split.
+	 * @param columnIndices   Columns the row selector condition should be applied to.
+	 *                        If null, the condition is applied to all columns.
 	 * @return The number of entries.
 	 * @throws InternalDataSetPersistenceException If the number could not be retrieved.
 	 */
-	public int countEntries(final long dataSetId, final HoldOutSelector holdOutSelector, final RowSelector rowSelector) throws InternalDataSetPersistenceException {
+	public int countEntries(final long dataSetId, final HoldOutSelector holdOutSelector, final RowSelector rowSelector,
+	                        @Nullable final Collection<Integer> columnIndices) throws InternalDataSetPersistenceException {
 		String countQuery = "SELECT count(*) FROM " + getTableName(dataSetId) + " as d ";
 		countQuery = appendHoldOutCondition(countQuery, holdOutSelector);
-		countQuery = appendRowSelectorCondition(countQuery, rowSelector, dataSetId);
+		countQuery = appendRowSelectorCondition(countQuery, rowSelector, columnIndices, dataSetId);
 		countQuery += ";";
 
 		try (final Statement countStatement = connection.createStatement()) {
@@ -925,10 +949,7 @@ public class DatabaseService {
 	}
 
 	private DataSetEntity doStoreOriginalDataConfiguration(ProjectEntity project,
-	                                                       final DataConfiguration dataConfiguration)
-			throws BadDataConfigurationException, BadStateException {
-		checkFile(project, dataConfiguration);
-
+	                                                       final DataConfiguration dataConfiguration) {
 		final DataSetEntity dataSetEntity;
 
 		if (project.getOriginalData().getDataSet() == null) {
@@ -948,7 +969,7 @@ public class DatabaseService {
 	                                               final DataConfiguration dataConfiguration,
 	                                               final DataProcessingEntity dataProcessingEntity,
 	                                               final List<Job> processed
-	) throws BadDataConfigurationException, BadStateException {
+	) throws BadDataConfigurationException, BadStateException, InternalIOException {
 		checkFile(project, dataConfiguration);
 
 		final DataSetEntity dataSetEntity;
@@ -966,7 +987,7 @@ public class DatabaseService {
 	}
 
 	private void checkFile(final ProjectEntity project, final DataConfiguration dataConfiguration
-	) throws BadStateException, BadDataConfigurationException {
+	) throws BadStateException, BadDataConfigurationException, InternalIOException {
 		final FileEntity file = project.getOriginalData().getFile();
 		if (file == null) {
 			throw new BadStateException(BadStateException.NO_DATASET_FILE,
@@ -978,6 +999,24 @@ public class DatabaseService {
 			                                        "Dataset contains " + file.getNumberOfAttributes() +
 			                                        " attributes, but the data configuration " +
 			                                        dataConfiguration.getConfigurations().size() + " attributes!");
+		}
+
+		// Validate that column names match the paths of the FHIR bundle
+		final FileType fileType = file.getFileConfiguration().getFileType();
+		if (fileType == FileType.FHIR) {
+			final List<String> expectedColumns = fhirProcessor.getAttributeNames(
+					new ByteArrayInputStream(file.getFile()), file.getFileConfiguration());
+
+			for (int i = 0; i < file.getNumberOfAttributes(); i++) {
+				final String columnName = dataConfiguration.getConfigurations().get(i).getName();
+				final String fhirColumnName = expectedColumns.get(i);
+				if (!columnName.equals(fhirColumnName)) {
+					throw new BadDataConfigurationException(BadDataConfigurationException.FHIR_ATTRIBUTE_MISMATCH,
+					                                        "Attribute number " + (i + 1) + " with name '" + columnName +
+					                                        "' does not match the column name of the FHIR bundle '" +
+					                                        fhirColumnName + "'");
+				}
+			}
 		}
 	}
 
@@ -1061,10 +1100,21 @@ public class DatabaseService {
 			throws BadColumnNameException, InternalDataSetPersistenceException, InternalIOException {
 		DataConfiguration dataConfiguration = getDetachedDataConfiguration(dataSetEntity);
 
+		List<Integer> columnIndices;
+
 		if (columnNames.isEmpty()) {
 			columnNames = dataConfiguration.getColumnNames();
+			columnIndices = null;
 		} else {
 			existColumnsOrThrow(dataConfiguration, columnNames);
+
+			final List<String> finalColumnNames = columnNames;
+			columnIndices = dataConfiguration.getConfigurations()
+			                                 .stream()
+			                                 .filter(it -> finalColumnNames.contains(it.getName()))
+			                                 .map(ColumnConfiguration::getIndex)
+			                                 .toList();
+
 			dataConfiguration = extractColumns(dataConfiguration, columnNames);
 		}
 
@@ -1073,7 +1123,7 @@ public class DatabaseService {
 
 		try (final Statement exportStatement = connection.createStatement()) {
 
-			final String exportQuery = createSelectQuery(dataSetEntity.getId(), rowSelector, columnNames,
+			final String exportQuery = createSelectQuery(dataSetEntity.getId(), rowSelector, columnNames, columnIndices,
 			                                             holdOutSelector, pagination, startRow, pageSize,
 			                                             exportRowIndexColumn);
 
@@ -1129,7 +1179,8 @@ public class DatabaseService {
 		}
 	}
 
-	private String createSelectQuery(final Long dataSetId, final RowSelector rowSelector, final List<String> columnNames,
+	private String createSelectQuery(final Long dataSetId, final RowSelector rowSelector,
+	                                 final List<String> columnNames, final Collection<Integer> columnIndices,
 	                                 final HoldOutSelector holdOutSelector, final boolean pagination,
 	                                 final int startRow, final int pageSize, final boolean exportRowIndexColumn) {
 		final List<String> quotedColumnNames = columnNames.stream().map(it -> "\"" + it + "\"")
@@ -1140,7 +1191,7 @@ public class DatabaseService {
 
 		String query = "SELECT " + String.join(",", quotedColumnNames) + " FROM " + getTableName(dataSetId) + " d";
 		query = appendHoldOutCondition(query, holdOutSelector);
-		query = appendRowSelectorCondition(query, rowSelector, dataSetId);
+		query = appendRowSelectorCondition(query, rowSelector, columnIndices, dataSetId);
 
 		query += " ORDER BY " + DataschemeGenerator.ROW_INDEX_NAME + " ASC";
 		if (pagination) {
@@ -1169,7 +1220,6 @@ public class DatabaseService {
 					return new DecimalData(floatValue);
 				}
 				case INTEGER -> {
-					var a = resultSet.getObject(columnIndex);
 					return new IntegerData((Integer) resultSet.getObject(columnIndex));
 				}
 				case STRING -> {
@@ -1286,16 +1336,28 @@ public class DatabaseService {
 		return query;
 	}
 
-	private String appendRowSelectorCondition(String query, final RowSelector rowSelector, final Long dataSetId) {
+	/**
+	 * Appends the where condition for filtering by the existence of errors in the given columns.
+	 *
+	 * @param query         The existing query to be appended.
+	 * @param rowSelector   The row selector.
+	 * @param columnIndices Indices of the columns which should contain errors. If null, all columns are considered.
+	 * @param dataSetId     The ID of the dataset.
+	 * @return The appended query.
+	 */
+	private String appendRowSelectorCondition(String query, final RowSelector rowSelector,
+	                                          @Nullable final Collection<Integer> columnIndices, final Long dataSetId) {
 		switch (rowSelector) {
 			case ALL -> {}
 			case VALID -> {
 				query = appendWhere(query);
-				query += "NOT EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
+				query += "NOT EXISTS ";
+				query = appendTransformationErrorCondition(query, columnIndices, dataSetId);
 			}
 			case ERRORS -> {
 				query = appendWhere(query);
-				query += "EXISTS (SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId + " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME + ")";
+				query += "EXISTS ";
+				query = appendTransformationErrorCondition(query, columnIndices, dataSetId);
 			}
 		}
 
@@ -1308,6 +1370,29 @@ public class DatabaseService {
 		} else {
 			return query + " WHERE ";
 		}
+	}
+
+	/**
+	 * Appends a query checking the existing for transformation errors in the given columns of the dataset with the given ID.
+	 *
+	 * @param query         The query to be appended.
+	 * @param columnIndices Indices of the columns to be considered. If null, all columns are considered.
+	 * @param dataSetId     The dataset ID.
+	 * @return The appended query.
+	 */
+	private String appendTransformationErrorCondition(String query, @Nullable final Collection<Integer> columnIndices,
+	                                                  final long dataSetId) {
+		query += "(SELECT 1 FROM data_transformation_error_entity e WHERE e.data_set_id = " + dataSetId +
+		         " AND e.row_index = d." + DataschemeGenerator.ROW_INDEX_NAME;
+
+		if (columnIndices != null) {
+			query += " AND e.column_index IN (" +
+			         String.join(",", columnIndices.stream().map(Object::toString).toList()) + ")";
+		}
+
+		query += ")";
+
+		return query;
 	}
 
 }

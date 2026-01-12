@@ -14,10 +14,31 @@
 	<name>cinnamon-platform</name>
 	<description>The base project for Cinnamon, that includes the web app for data management, anonymization and evaluation.</description>
 
+	<repositories>
+		<repository>
+			<id>github</id>
+			<name>GitHub FhirExtinguisher</name>
+			<url>https://maven.pkg.github.com/JohannesOehm/FhirExtinguisher</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
+		</repository>
+	</repositories>
+
 	<properties>
 		<org.dhatim.fastexcel.version>0.19.0</org.dhatim.fastexcel.version>
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
+        <skip.frontend>false</skip.frontend>
 	</properties>
+
+    <profiles>
+        <!-- Does not build the frontend, can be used when running the tests in cinnamon-test. -->
+        <profile>
+            <id>no-frontend</id>
+            <properties>
+                <skip.frontend>true</skip.frontend>
+            </properties>
+        </profile>
+    </profiles>
 
 	<dependencies>
 		<dependency>
@@ -76,6 +97,29 @@
 			<artifactId>cinnamon-model</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+
+		<dependency>
+		  <groupId>de.unimuenster.imi.fhir</groupId>
+		  <artifactId>columns-parser-jvm</artifactId>
+		  <version>1.8.0-DEV4</version>
+		</dependency>
+		<dependency>
+		  <groupId>de.unimuenster.imi.fhir</groupId>
+		  <artifactId>transform-fhir</artifactId>
+		  <version>1.8.0-DEV4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-base</artifactId>
+			<version>7.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-structures-r4</artifactId>
+			<version>7.6.1</version>
+		</dependency>
+
 
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -189,6 +233,7 @@
 					<workingDirectory>cinnamon-frontend</workingDirectory>
 					<nodeVersion>v22.14.0</nodeVersion>
 					<npmVersion>10.9.2</npmVersion>
+                    <skip>${skip.frontend}</skip>
 				</configuration>
 			</plugin>
 

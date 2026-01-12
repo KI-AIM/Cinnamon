@@ -1,4 +1,4 @@
-<div class="d-flex flex-row w-100" style="gap: 16px;">
+<div class="config-input-row">
 
     <div class="d-flex flex-column input-height justify-content-center" style="width: 10%; min-width: 100px;">
         <mat-label [class.invalid-input]="!isValid" style="transition: color .1s linear"
@@ -7,7 +7,7 @@
         </mat-label>
     </div>
 
-    <span style="flex: 1 1 auto; width: 80%;" [formGroup]="form">
+    <span class="config-input-row-field" [formGroup]="form">
         <ng-container [ngSwitch]="configurationInputDefinition.type">
             <!-- Switch cases for all supported configuration types -->
             <ng-container *ngSwitchCase="ConfigurationInputType.ATTRIBUTE">
@@ -129,7 +129,7 @@
         </span>
     </div>
 
-    <div class="d-flex flex-column justify-content-center input-height">
+    <div class="config-input-row-info">
         <span>
             <app-configuration-input-info [configurationInputDefinition]="configurationInputDefinition">
             </app-configuration-input-info>

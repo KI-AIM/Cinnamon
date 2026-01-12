@@ -9,9 +9,11 @@ def prepare_dataset(data: pd.DataFrame,
     # Convert string columns to actual strings, as pandas creates object columns.
     # Having only numbers in an object column can lead to implicit conversions into numeric columns,
     # which can cause inconsistencies between the different datasets/ splits.
+    # But this causes another issue if the column contains NA values, because these are incompatible with string values,
+    # so NA values are replaced with empty strings.
     for attr in attribute_config.configurations:
         if attr.type == "STRING":
-            data[attr.name] = data[attr.name].astype("string")
+            data[attr.name] = data[attr.name].fillna("").astype("string")
 
     return data
 

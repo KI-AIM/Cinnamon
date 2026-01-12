@@ -30,8 +30,24 @@ public class BadFileException extends BadRequestException {
 	 */
 	public static final String MISSING_FILE_EXTENSION = "5";
 
+	/**
+	 * Exception code for files that do not contain a valid FHIR bundle.
+	 */
+	public static final String INVALID_FHIR = "6";
+
 	public BadFileException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
+	}
+
+	/**
+	 * Creates a new instance.
+	 *
+	 * @param exceptionCode The exception code.
+	 * @param message       The error message.
+	 * @param cause         The cause for the error.
+	 */
+	public BadFileException(final String exceptionCode, final String message, final Exception cause) {
+		super(exceptionCode, message, cause);
 	}
 
 	@Override

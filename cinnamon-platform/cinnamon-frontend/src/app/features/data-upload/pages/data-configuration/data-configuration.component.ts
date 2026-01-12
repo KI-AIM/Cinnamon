@@ -55,7 +55,7 @@ export class DataConfigurationComponent implements OnInit {
     protected pageData$: Observable<{
         dataConfiguration: DataConfiguration,
         dataSetInfo: DataSetInfo | null,
-        isFileTypeXLSX: boolean,
+        fileType: FileType | null,
         locked: LockedInformation,
         status: Status,
     }>
@@ -85,20 +85,6 @@ export class DataConfigurationComponent implements OnInit {
     ngOnInit(): void {
 
         this.pageData$ = combineLatest({
-            dataConfiguration: this.configuration.dataConfiguration$.pipe(
-                tap(value => {
-                    if (this.configuration.localDataConfiguration !== null) {
-                        this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration);
-                    } else {
-                        this.setEmptyColumnNames(value);
-                        this.attributeConfigurationform = this.createAttributeConfigurationForm(value);
-                    }
-
-                    this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
-                        this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
-                    });
-                }),
-            ),
             dataSetInfo: this.dataSetInfoService.getDataSetInfoOriginal$().pipe(
                 tap(value => {
                     if (this.configuration.localDataSetConfiguration !== null) {
@@ -112,10 +98,8 @@ export class DataConfigurationComponent implements OnInit {
                     return of(null);
                 }),
             ),
-            isFileTypeXLSX: this.fileService.fileInfo$.pipe(
-                map(value => {
-                    return value.type === FileType.XLSX;
-                }),
+            fileType: this.fileService.fileInfo$.pipe(
+                map(fileInformation => fileInformation.type),
             ),
             locked: this.stateManagementService.currentStepLocked$.pipe(
                 tap(value => {
@@ -124,7 +108,30 @@ export class DataConfigurationComponent implements OnInit {
                 }),
             ),
             status: this.statusService.status$,
-        });
+        }).pipe(
+            switchMap(value => {
+               return this.configuration.dataConfiguration$.pipe(
+                    tap(dataConfiguration => {
+                        if (this.configuration.localDataConfiguration !== null) {
+                            this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration, value.fileType);
+                        } else {
+                            this.setEmptyColumnNames(dataConfiguration);
+                            this.attributeConfigurationform = this.createAttributeConfigurationForm(dataConfiguration, value.fileType);
+                        }
+
+                        this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
+                            this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
+                        });
+                    }),
+                   map(dataConfiguration => {
+                       return {
+                           ...value,
+                           dataConfiguration: dataConfiguration,
+                       }
+                   }),
+                );
+            }),
+        );
     }
 
     protected get createHoldOutSplit(): boolean {
@@ -238,7 +245,7 @@ export class DataConfigurationComponent implements OnInit {
         return (form.controls['configurations'] as FormArray).controls as FormGroup[];
     }
 
-    private createAttributeConfigurationForm(dataConfiguration: DataConfiguration): FormGroup {
+    private createAttributeConfigurationForm(dataConfiguration: DataConfiguration, fileType: FileType | null): FormGroup {
         const formArray: any[] = [];
         dataConfiguration.configurations.forEach(columnConfiguration=> {
             const addConfigs = [];
@@ -296,7 +303,7 @@ export class DataConfigurationComponent implements OnInit {
 
             const columnGroup = this.formBuilder.group({
                 index: [columnConfiguration.index],
-                name: [{value: columnConfiguration.name, disabled: this.locked}, {
+                name: [{value: columnConfiguration.name, disabled: this.locked || fileType === FileType.FHIR}, {
                     validators: [Validators.required, noSpaceValidator()]
                 }],
                 type: [{
@@ -390,6 +397,7 @@ export class DataConfigurationComponent implements OnInit {
         }
     }
 
+    protected readonly FileType = FileType;
     protected readonly Mode = Mode;
     protected readonly Steps = Steps;
 }

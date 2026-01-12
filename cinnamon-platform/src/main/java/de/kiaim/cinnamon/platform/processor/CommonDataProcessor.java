@@ -14,6 +14,7 @@ import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,13 +22,72 @@ import java.util.stream.Collectors;
 @Getter
 public abstract class CommonDataProcessor implements DataProcessor {
 
-    /**
-     * Max number of samples used for the column configuration estimation.
-     */
-    public static final int NUMBER_OF_SAMPLES = 10;
+	/**
+	 * List of potential attribute names in the header used for estimating if a file contains a header row.
+	 */
+	@Value("${cinnamon.estimation.attributes}")
+	protected List<String> suggestedAttributes;
+
+	/**
+	 * Number of values in a row that must fulfill the criteria of a header value for the row to be considered a header.
+	 * Used for estimating if a file contains a header row.
+	 */
+	@Value("${cinnamon.estimation.min-matches}")
+	protected int minMatches;
+
+	/**
+	 * Max number of samples used for the column configuration estimation.
+	 */
+	@Value("${cinnamon.estimation.sample-size}")
+	public int maxSampleSize;
 
     @Autowired
     DataTransformationHelper dataTransformationHelper;
+
+	/**
+	 * Estimates if the given first row is a header row by detecting attribute names and data type differences.
+	 *
+	 * @param first  The first row of the data set.
+	 * @param second The second row of the data set.
+	 * @return Estimation if the first row is a header row.
+	 */
+	protected boolean estimateHasHeader(final List<String> first, final List<String> second) {
+		// Check if the first row contains many attribute names
+		int matchingAttributeNames = 0;
+		for (final var head : first) {
+			for (final var suggestedAttribute : suggestedAttributes) {
+				if (head.equalsIgnoreCase(suggestedAttribute)) {
+					matchingAttributeNames++;
+
+					if (matchingAttributeNames >= minMatches) {
+						return true;
+					}
+
+					break;
+				}
+			}
+		}
+
+		// Check if the data types between the first and second row differ
+		var typeMathes = 0;
+		for (int i = 0; i < first.size(); i++) {
+			final var head = first.get(i);
+			final var sec = second.get(i);
+
+			final var headType = estimateColumnConfigurationFromSample(head).getType();
+			final var secType = estimateColumnConfigurationFromSample(sec).getType();
+
+			if (headType == DataType.STRING && secType != DataType.UNDEFINED && headType != secType) {
+				typeMathes++;
+
+				if (typeMathes>= minMatches) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
 
     /**
      * Transforms a row into a DataRow and appends it to the given list of data rows.
@@ -89,23 +149,6 @@ public abstract class CommonDataProcessor implements DataProcessor {
     }
 
     /**
-     * Check whether every value of a column, stored in an array,
-     * is valid and not empty
-     * @param column Array to be processed
-     * @return true, if column is complete; false otherwise
-     */
-    public boolean isColumnListComplete(String[] column) {
-        boolean columnIsValid = true;
-        for (String columnValue : column) {
-            if (dataTransformationHelper.isValueEmpty(columnValue)) {
-                columnIsValid = false;
-            }
-        }
-
-        return columnIsValid;
-    }
-
-    /**
      * Estimates the DataConfiguration for multiple attributes.
      * The estimation is performed for each sample of each attribute individually.
      * Afterward the different results are counted.
@@ -154,7 +197,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
     /**
      * Extracts samples for each attribute from the given rows.
-     * Outer list of the result contains an entry for each attribute. Inner lists contain at maximum {@link #NUMBER_OF_SAMPLES} values.
+     * Outer list of the result contains an entry for each attribute. Inner lists contain at maximum {@link #maxSampleSize} values.
      *
      * @param rows          Rows of the dataset without header.
      * @param numberColumns Number of attributes in the dataset.
@@ -178,13 +221,13 @@ public abstract class CommonDataProcessor implements DataProcessor {
                 final var value = rowIterator.next();
 
                 // Only look for more values if more samples are needed
-                if (samples.get(currentColumn).size() < NUMBER_OF_SAMPLES) {
+                if (samples.get(currentColumn).size() < maxSampleSize) {
                     // Add value to samples if not empty
                     if (!dataTransformationHelper.isValueEmpty(value)) {
                         samples.get(currentColumn).add(value);
 
                         // Increase counter for finished columns if target amount is reached
-                        if (samples.get(currentColumn).size() == NUMBER_OF_SAMPLES) {
+                        if (samples.get(currentColumn).size() == maxSampleSize) {
                             finishedCount++;
                         }
                     }

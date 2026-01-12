@@ -7,10 +7,12 @@ import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
+import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
 
 import java.io.OutputStream;
@@ -18,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import de.kiaim.cinnamon.platform.model.file.XlsxFileConfiguration;
 import org.dhatim.fastexcel.Workbook;
 import org.dhatim.fastexcel.Worksheet;
 import org.dhatim.fastexcel.reader.Cell;
@@ -25,6 +28,7 @@ import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
 import org.dhatim.fastexcel.reader.Sheet;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -46,18 +50,28 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         return FileType.XLSX;
     }
 
-    @Override
-    public int getNumberColumns(InputStream data, FileConfigurationEntity fileConfiguration) {
-        final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
-        List<List<String>> rows;
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public FileConfigurationEstimation estimateFileConfiguration(final InputStream data) throws InternalIOException {
+		final List<List<String>> records = getRecords(data, null);
 
-        try(InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
-            Sheet sheet = wb.getFirstSheet();
-            rows = transformSheetToRows(sheet, getStringDataConfiguration(sheet));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+		final var xlsxFileConfiguration= estimateXlsxFileConfiguration(records);
+		final var fileConfiguration =  new FileConfiguration();
 
+		fileConfiguration.setFileType(FileType.XLSX);
+		fileConfiguration.setXlsxFileConfiguration(xlsxFileConfiguration);
+
+		return new FileConfigurationEstimation(fileConfiguration);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+    public int getNumberColumns(InputStream data, FileConfigurationEntity fileConfiguration) throws InternalIOException {
+        List<List<String>> rows = getRecords(data, null);
         return rows.size();
     }
 
@@ -66,18 +80,10 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
      */
     @Override
     public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
-                                     DataConfiguration configuration) {
+                                     DataConfiguration configuration) throws InternalIOException {
 
         final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
-        List<List<String>> rows;
-
-        try (InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
-            Sheet sheet = wb.getFirstSheet();
-            rows = transformSheetToRows(sheet, configuration);
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+	    List<List<String>> rows = getRecords(data, configuration);
 
         if (!rows.isEmpty() && xlsxFileConfiguration.getHasHeader()) {
             rows.remove(0);
@@ -210,17 +216,9 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
     @Override
     public DataConfigurationEstimation estimateDataConfiguration(InputStream data,
                                                                  FileConfigurationEntity fileConfiguration,
-                                                                 final DatatypeEstimationAlgorithm algorithm) {
+                                                                 final DatatypeEstimationAlgorithm algorithm) throws InternalIOException {
         final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
-        List<List<String>> rows;
-
-        try (InputStream is = data; ReadableWorkbook wb = new ReadableWorkbook(is)) {
-            Sheet sheet = wb.getFirstSheet();
-            rows = transformSheetToRows(sheet, getStringDataConfiguration(sheet));
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+	    List<List<String>> rows = getRecords(data, null);
 
         if (rows.isEmpty()) {
             return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
@@ -312,6 +310,34 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
         }
     }
 
+	/**
+	 * Reads the XLSX data into a nested list.
+	 * Converts the values based on the given configuration.
+	 * If the configuration is null, parses all values as strings.
+	 *
+	 * @param data          Stream containing the XLSX file.
+	 * @param configuration Configuration for parsing the values to the right data type.
+	 * @return Records of the XLSX file.
+	 * @throws InternalIOException If reading the XLSX file failed.
+	 */
+	private List<List<String>> getRecords(final InputStream data, @Nullable DataConfiguration configuration) throws InternalIOException {
+        final List<List<String>> records;
+
+		try(final InputStream is = data; final ReadableWorkbook wb = new ReadableWorkbook(is)) {
+			final Sheet sheet = wb.getFirstSheet();
+
+			if (configuration == null) {
+				configuration = getStringDataConfiguration(sheet);
+			}
+
+			records = transformSheetToRows(sheet, configuration);
+		} catch (final IOException e) {
+			throw new InternalIOException(InternalIOException.XLSX_READING, "Failed to read the XLSX file", e);
+		}
+
+		return records;
+	}
+
     private DataConfiguration getStringDataConfiguration(Sheet sheet) {
         DataConfiguration configuration = new DataConfiguration();
 
@@ -330,4 +356,19 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
 
         return configuration;
     }
+
+	/**
+	 * Estimates the XLSX-specific configuration.
+	 *
+	 * @param records The XLSX content.
+	 * @return The estimated XLSX configuration.
+	 */
+	private XlsxFileConfiguration estimateXlsxFileConfiguration(final List<List<String>> records) {
+		final var config = new XlsxFileConfiguration();
+
+		final boolean hasHeader = estimateHasHeader(records.get(0), records.get(1));
+		config.setHasHeader(hasHeader);
+
+		return config;
+	}
 }

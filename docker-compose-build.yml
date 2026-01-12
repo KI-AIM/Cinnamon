@@ -4,6 +4,8 @@ services:
         build:
             context: ./
             dockerfile: ./cinnamon-platform/Dockerfile
+            secrets:
+              - mvn_settings
     cinnamon-synthetization:
         image: ghcr.io/ki-aim/cinnamon-synthetization:latest
         build:
@@ -24,3 +26,7 @@ services:
         build:
             context: ./
             dockerfile: ./cinnamon-anonymization/Dockerfile
+
+secrets:
+  mvn_settings:
+    file: ~/.m2/settings.xml

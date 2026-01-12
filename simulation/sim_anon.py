@@ -16,7 +16,7 @@ CINNAMON_URL = "http://localhost:8080/api"
 DEFAULT_DATASET = "cardiovascular"
 DEFAULT_HOLDOUT = 0.3 # Nur für Stroke und cardiovascular auf 0.3 alle anderen 0.2
 POLL_INTERVAL_SECONDS = 5
-RUNS = 4
+RUNS = 10
 DEFAULT_SYNTH_ALGO = "arf"
 
 # Run: python simulation/sim_anon.py

@@ -49,7 +49,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void getFile() throws Exception {
-		postFile(false);
+		postFile(false, false);
 
 		mockMvc.perform(get("/api/data/file"))
 		       .andExpect(status().isOk())
@@ -65,7 +65,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void postFile() throws Exception {
-		postFile(false);
+		postFile(false, false);
 	}
 
 	@Test
@@ -167,7 +167,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void estimateConfiguration() throws Exception {
-		postFile(false);
+		postFile(false, false);
 
 		final String result = mockMvc.perform(get("/api/data/estimation"))
 		                             .andExpect(status().isOk())
@@ -748,6 +748,19 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
 				       "{'data':[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':[1],'page':2,'perPage':1,total:3,'totalPages':3}"));
+	}
+
+	@Test
+	void loadTransformationResultPageAlternateDat() throws Exception {
+		postDataAlternative();
+
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
+				                .param("page", "2")
+				                .param("perPage", "1"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[false,'20.11.2023','20.11.2023 12:50:27',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':[1],'page':2,'perPage':1,total:3,'totalPages':3}"));
 	}
 
 	@Test

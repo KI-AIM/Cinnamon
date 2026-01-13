@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.exception.DataBuildingException;
 import de.kiaim.cinnamon.model.helper.DataTransformationHelper;
+import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.DataTransformationError;
 import de.kiaim.cinnamon.platform.model.Pair;
@@ -103,9 +104,21 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * @param configuration Configuration of the data.
      * @param dataRows List containing valid rows
      * @param errors List of errors
+     * @throws BadDatasetException If the row has too few or too many values.
      */
     public void transformRow(List<String> row, int rowIndex, DataConfiguration configuration,
-                             List<DataRow> dataRows, List<DataRowTransformationError> errors) {
+                             List<DataRow> dataRows, List<DataRowTransformationError> errors) throws BadDatasetException {
+		if (row.size() < configuration.getConfigurations().size()) {
+			throw new BadDatasetException(BadDatasetException.ROW_TOO_FEW_VALUES,
+			                              "The row " + (rowIndex + 1) + " contains too few values: expected " +
+			                              configuration.getConfigurations().size() + ", but got " + row.size() + "!");
+		}
+		if (row.size() > configuration.getConfigurations().size()) {
+			throw new BadDatasetException(BadDatasetException.ROW_TOO_MANY_VALUES,
+			                              "The row " + (rowIndex + 1) + " contains too many values: expected " +
+			                              configuration.getConfigurations().size() + ", but got " + row.size() + "!");
+		}
+
         // Process every row
         boolean errorInRow = false;
 

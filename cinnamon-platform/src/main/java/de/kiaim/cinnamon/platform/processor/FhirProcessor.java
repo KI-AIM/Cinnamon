@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.processor;
 import ca.uhn.fhir.context.FhirContext;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.BadFileException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
@@ -108,7 +109,7 @@ public class FhirProcessor implements DataProcessor {
 	public TransformationResult read(final InputStream data,
 	                                 final FileConfigurationEntity fileConfiguration,
 	                                 final DataConfiguration configuration
-	) throws InternalIOException {
+	) throws BadDatasetException, InternalIOException {
 		final CSVFormat csvFormat = buildCsvFormat();
 		final String csvString = getCsvString(data, (FhirFileConfigurationEntity) fileConfiguration, csvFormat);
 		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);

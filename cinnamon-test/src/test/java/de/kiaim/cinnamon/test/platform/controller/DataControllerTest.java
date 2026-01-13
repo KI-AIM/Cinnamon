@@ -302,6 +302,62 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void storeDataTooManyColumns() throws Exception {
+		// Set up and upload the file
+		final String fileContent = """
+		                           column0_boolean,column1_date,column2_date_time,column3_decimal,column4_integer,column5_string
+		                           true,2023-11-20,2023-11-20T12:50:27.123456,4.2,42,Hello World!,+1
+		                           false,2023-11-20,2023-11-20T12:50:27.123456,2.4,24,Bye World!,+1,+2
+		                           """;
+		final MockMultipartFile file = new MockMultipartFile("file", "file.csv", "text/csv", fileContent.getBytes());
+		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+
+		// Store the file
+		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		mockMvc.perform(multipart("/api/data")
+				                .param("configuration",
+				                       objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_13_2"))
+		       .andExpect(errorMessage("The row 1 contains too many values: expected 6, but got 7!"));
+	}
+
+	@Test
+	void storeDataMissingColumns() throws Exception {
+		// Set up and upload the file
+		final String fileContent = """
+		                           column0_boolean,column1_date,column2_date_time,column3_decimal,column4_integer,column5_string
+		                           true,2023-11-20,2023-11-20T12:50:27.123456,4.2,42
+		                           false,2023-11-20,2023-11-20T12:50:27.123456,2.4
+		                           """;
+		final MockMultipartFile file = new MockMultipartFile("file", "file.csv", "text/csv", fileContent.getBytes());
+		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+
+		// Store the file
+		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		mockMvc.perform(multipart("/api/data")
+				                .param("configuration",
+				                       objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_13_1"))
+		       .andExpect(errorMessage("The row 1 contains too few values: expected 6, but got 5!"));
+	}
+
+	@Test
 	void confirmDataAndDeleteData() throws Exception {
 		final Long dataSetId = postData(false);
 

@@ -1040,9 +1040,19 @@ public class DatabaseService {
 			for (final DataRow dataRow : dataSet.getDataRows()) {
 				final List<String> stringRow = new ArrayList<>();
 
-				// Add values from the data set
-				for (final Data data : dataRow.getData()) {
+				// Add values from the dataset, account for rows containing too many values
+				int columnIndex = 0;
+				final int numberRowsCapped = Math.min(dataRow.getData().size(),
+				                                      dataSet.getDataConfiguration().getConfigurations().size());
+				for (int i = 0; i < numberRowsCapped; i++) {
+					final Data data = dataRow.getData().get(i);
 					stringRow.add(convertDataToString(data));
+					columnIndex++;
+				}
+
+				// Fill missing values with null values to account for rows containing too few values
+				for (int i = columnIndex; i < dataSet.getDataConfiguration().getConfigurations().size(); i++) {
+					stringRow.add("null");
 				}
 
 				// Add initial value for is_hold_out flag

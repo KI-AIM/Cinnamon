@@ -31,7 +31,7 @@
             <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
         </app-workstep-box>
 
-        <app-workstep-box header="Dataset Configuration" toggleable [invalid]="attributeConfigurationform.invalid">
+        <app-workstep-box header="Dataset Configuration" toggleable [invalid]="isDataSetConfigurationFormInvalid">
             <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
         </app-workstep-box>
 

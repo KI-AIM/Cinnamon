@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.processor;
 
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.BadFileException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
@@ -52,10 +53,11 @@ public interface DataProcessor {
 	 * @param data              the raw data InputStream
 	 * @param fileConfiguration Configuration describing the format of the data.
 	 * @return TransformationResult
+	 * @throws BadDatasetException If the row has too few or too many values.
 	 * @throws InternalIOException If reading the data failed.
 	 */
 	TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
-	                          DataConfiguration configuration) throws InternalIOException;
+	                          DataConfiguration configuration) throws BadDatasetException, InternalIOException ;
 
     /**
      * Receives data from frontend, converts it to

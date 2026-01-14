@@ -49,7 +49,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void getFile() throws Exception {
-		postFile(false);
+		postFile(false, false);
 
 		mockMvc.perform(get("/api/data/file"))
 		       .andExpect(status().isOk())
@@ -65,7 +65,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void postFile() throws Exception {
-		postFile(false);
+		postFile(false, false);
 	}
 
 	@Test
@@ -167,7 +167,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void estimateConfiguration() throws Exception {
-		postFile(false);
+		postFile(false, false);
 
 		final String result = mockMvc.perform(get("/api/data/estimation"))
 		                             .andExpect(status().isOk())
@@ -299,6 +299,62 @@ class DataControllerTest extends ControllerTest {
 				                       objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Storing the dataset requires the file for the dataset to be selected!"));
+	}
+
+	@Test
+	void storeDataTooManyColumns() throws Exception {
+		// Set up and upload the file
+		final String fileContent = """
+		                           column0_boolean,column1_date,column2_date_time,column3_decimal,column4_integer,column5_string
+		                           true,2023-11-20,2023-11-20T12:50:27.123456,4.2,42,Hello World!,+1
+		                           false,2023-11-20,2023-11-20T12:50:27.123456,2.4,24,Bye World!,+1,+2
+		                           """;
+		final MockMultipartFile file = new MockMultipartFile("file", "file.csv", "text/csv", fileContent.getBytes());
+		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+
+		// Store the file
+		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		mockMvc.perform(multipart("/api/data")
+				                .param("configuration",
+				                       objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_13_2"))
+		       .andExpect(errorMessage("The row 1 contains too many values: expected 6, but got 7!"));
+	}
+
+	@Test
+	void storeDataMissingColumns() throws Exception {
+		// Set up and upload the file
+		final String fileContent = """
+		                           column0_boolean,column1_date,column2_date_time,column3_decimal,column4_integer,column5_string
+		                           true,2023-11-20,2023-11-20T12:50:27.123456,4.2,42
+		                           false,2023-11-20,2023-11-20T12:50:27.123456,2.4
+		                           """;
+		final MockMultipartFile file = new MockMultipartFile("file", "file.csv", "text/csv", fileContent.getBytes());
+		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file)
+				                .param("fileConfiguration",
+				                       objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+
+		// Store the file
+		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		mockMvc.perform(multipart("/api/data")
+				                .param("configuration",
+				                       objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_13_1"))
+		       .andExpect(errorMessage("The row 1 contains too few values: expected 6, but got 5!"));
 	}
 
 	@Test
@@ -692,6 +748,19 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
 				       "{'data':[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':[1],'page':2,'perPage':1,total:3,'totalPages':3}"));
+	}
+
+	@Test
+	void loadTransformationResultPageAlternateDat() throws Exception {
+		postDataAlternative();
+
+		mockMvc.perform(get("/api/data/transformationResult/page")
+				                .param("selector", "original")
+				                .param("page", "2")
+				                .param("perPage", "1"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{'data':[[false,'20.11.2023','20.11.2023 12:50:27',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':[1],'page':2,'perPage':1,total:3,'totalPages':3}"));
 	}
 
 	@Test

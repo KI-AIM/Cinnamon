@@ -153,12 +153,22 @@ public class DateTimeData extends Data {
 		 * @param configuration The DateTimeFormatConfiguration object
 		 */
 		private void processDateTimeFormatConfiguration(DateTimeFormatConfiguration configuration) {
-			this.formatter = DateTimeFormatter.ofPattern(configuration.getDateTimeFormatter());
+			this.formatter = buildFormatter(configuration.getDateTimeFormatter());
 		}
 
 		private void processRangeConfiguration(RangeConfiguration rangeConfiguration) {
 			this.minValue = rangeConfiguration.getMinValue().asDateTime();
 			this.maxValue = rangeConfiguration.getMaxValue().asDateTime();
+		}
+
+		/**
+		 * Build a formatter from the given format.
+		 *
+		 * @param format The format.
+		 * @return The formatter.
+		 */
+		public DateTimeFormatter buildFormatter(final String format) {
+			return DateTimeFormatter.ofPattern(format);
 		}
 	}
 }

@@ -1,8 +1,8 @@
 <mat-expansion-panel appExpansionPanelOverflow [disabled]="stepIndex > currentStep" class="workstep-expansion-panel"
-                     [class.workstep-complete]="currentStep > stepIndex || stepsCompleted">
-<mat-expansion-panel-header>
+                     [class.workstep-complete]="currentStep > stepIndex || stepsCompleted" [class.workstep-skip]="skip">
+    <mat-expansion-panel-header>
         <mat-panel-title>
-            <app-workstep-title [stepIndex]="stepIndex">
+            <app-workstep-title [stepIndex]="stepIndex" [skip]="skip">
                 {{ header }}
             </app-workstep-title>
         </mat-panel-title>

@@ -2,6 +2,15 @@ import { Injectable } from '@angular/core';
 import { Steps } from "@core/enums/steps";
 import { BehaviorSubject } from "rxjs";
 
+/**
+ * Central service for handling the logic of worksteps.
+ *
+ * The {@link #step$} observable emits the step that should be opened.
+ * The {@link WorkstepTitleComponent} listens to this and opens the workstep if the index matches.
+ * The {@link WorkstepComponent} triggers the next value of the {@link #step$} observable when a user confirms the step.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Injectable({
     providedIn: 'root'
 })

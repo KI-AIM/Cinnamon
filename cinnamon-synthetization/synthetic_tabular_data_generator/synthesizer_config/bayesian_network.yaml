@@ -1,6 +1,6 @@
 name: bayesian_network
 version: "0.1"
-type: generative
+type: cross-sectional
 display_name: Bayesian Network for Generative Modeling
 description: A Bayesian Network model for generating data, implemented using the pgmpy backend.
 URL: /start_synthetization_process/bayesian_network

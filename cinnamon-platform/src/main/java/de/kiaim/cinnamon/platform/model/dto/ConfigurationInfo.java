@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * General information about a configuration.
+ * General information about the external configuration and specific information for the current project.
  *
  * @author Daniel Preciado-Marquez
  */

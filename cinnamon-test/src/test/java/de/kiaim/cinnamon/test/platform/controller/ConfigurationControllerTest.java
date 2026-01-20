@@ -39,7 +39,28 @@ class ConfigurationControllerTest extends ControllerTest {
 				                .param("name", CONFIGURATION_NAME))
 		       .andExpect(status().isOk())
 		       .andExpect(
-				       content().json("{processes: [{job: 'anonymization', skip: false, holdOutFulfilled: true}]}"));
+				       content().json("{processes: [{job: 'anonymization', skip: false, holdOutFulfilled: true, configured: false}]}"));
+	}
+
+	@Test
+	void infoSkippedWithConfiguration() throws Exception {
+		mockMvc.perform(post("/api/config")
+				                .param("configurationName", CONFIGURATION_NAME)
+				                .param("url", "/start_synthetization_process/ctgan")
+				                .param("configuration", "configuration")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
+		mockMvc.perform(post("/api/process/configure")
+				                .param("jobName", CONFIGURATION_NAME)
+				                .param("skip", "true")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
+
+		mockMvc.perform(get("/api/config/info")
+				                .param("name", CONFIGURATION_NAME))
+		       .andExpect(status().isOk())
+		       .andExpect(
+				       content().json("{processes: [{job: 'anonymization', skip: true, holdOutFulfilled: true, configured: true}]}"));
 	}
 
 	@Test

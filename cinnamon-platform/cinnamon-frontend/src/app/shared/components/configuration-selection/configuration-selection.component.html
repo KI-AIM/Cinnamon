@@ -5,11 +5,15 @@
         info
     </mat-icon>
 
-    <mat-select #selectElement [disabled]="disabled" (selectionChange)="onChange($event)" [value]="initialValue">
+    <mat-select #selectElement [disabled]="disabled" (selectionChange)="onChange($event)" [ngModel]="initialValue"
+                required>
         <mat-option *ngFor="let option of algorithms" [value]="option">
             {{ option.display_name }}
         </mat-option>
     </mat-select>
+    <mat-error *ngIf="selectElement.value == null">
+        Please select an algorithm
+    </mat-error>
 </mat-form-field>
 
 <app-information-dialog #infoDialog title="Algorithms">

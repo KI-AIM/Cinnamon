@@ -166,8 +166,9 @@ public class ProcessService {
 	}
 
 	/**
-	 * Configures the job.
+	 * Configures the job by setting the configuration and the skip flag.
 	 * Currently, always uses the first configuration for the job.
+	 * If skip is true, errors for missing configurations are ignored.
 	 * Marks the job as outdated if something changed.
 	 *
 	 * @param project The project.
@@ -195,7 +196,7 @@ public class ProcessService {
 
 		boolean markAsOutdated = false;
 
-		if (!skip) {
+		try {
 			// Set the configuration
 			ConfigurationListEntity configurationList = project.getConfigurationList(job.getEndpoint().getConfiguration());
 			if (configurationList == null || configurationList.getConfigurations().isEmpty()) {
@@ -217,6 +218,10 @@ public class ProcessService {
 			if (externalProcess.getConfiguration() == null) {
 				externalProcess.setConfiguration(config);
 				markAsOutdated = true;
+			}
+		} catch (final ApiException apiException) {
+			if (!skip) {
+				throw apiException;
 			}
 		}
 

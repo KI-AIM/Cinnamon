@@ -2,9 +2,30 @@
     <mat-form-field>
         <mat-label>Minimum Value</mat-label>
         <input matInput [type]="getInputType()" formControlName="minValue"/>
+        <mat-icon matSuffix class="icon-enabled" (click)="minimumInfoDialog.handleClick($event);">info</mat-icon>
     </mat-form-field>
     <mat-form-field>
         <mat-label>Maximum Value</mat-label>
         <input matInput [type]="getInputType()" #range formControlName="maxValue"/>
+        <mat-icon matSuffix class="icon-enabled" (click)="maximumInfoDialog.handleClick($event);">info</mat-icon>
     </mat-form-field>
 </div>
+
+<app-information-dialog #minimumInfoDialog>
+    <info-explanation>
+        <p>
+            The lowest value allowed for this attribute, smaller values are considered invalid and will be
+            removed from the dataset. Prevents impossible or unrealistic values, for example negative ages.
+        </p>
+    </info-explanation>
+</app-information-dialog>
+
+<app-information-dialog #maximumInfoDialog>
+    <info-explanation>
+        <p>
+            The highest value allowed for this attribute, bigger values are considered invalid and will be
+            removed from the dataset. Prevents impossible or unrealistic values, for example future birthdates
+            or percentages.
+        </p>
+    </info-explanation>
+</app-information-dialog>

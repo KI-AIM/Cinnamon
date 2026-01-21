@@ -20,11 +20,7 @@
             <input type="text" matInput [id]="'name_' + attrNumber" (blur)="trimValue('name');"
                    formControlName="name"/>
 
-            <!-- TODO(DPM) Only a temporary solution. Disclaimer will be added to the data config popup -->
-            <mat-hint *ngIf="fileType === FileType.FHIR" style="color: orange;">
-                Disabled for FHIR bundles
-            </mat-hint>
-
+            <mat-icon matSuffix class="icon-enabled" (click)="nameInfoDialog.handleClick($event)">info</mat-icon>
             <mat-error *ngIf="columnConfigurationForm.controls['name'].hasError('noSpace')">
                 Name must not contain spaces
             </mat-error>
@@ -40,30 +36,301 @@
     <div class="d-flex flex-column px-2 w-100">
         <mat-form-field>
             <mat-label>Column type</mat-label>
-            <mat-select [id]="'type_' + attrNumber" formControlName="type">
-                <mat-option *ngFor="let type of getDataTypes().getAll()" [value]="type"
-                            [disabled]="type === DataType.UNDEFINED">{{ type }}
+            <mat-select #typeInput [id]="'type_' + attrNumber" formControlName="type">
+                <mat-option *ngFor="let type of DataTypeMetadata | keyvalue" [value]="type.key"
+                            [disabled]="!type.value.selectable">
+                    {{ type.value.displayName }}
                 </mat-option>
             </mat-select>
+            <mat-icon class="icon-enabled" matSuffix (click)="typeInfoDialog.handleClick($event)">info</mat-icon>
             <mat-error *ngIf="columnConfigurationForm.controls['type'].hasError('undefined')">
                 Type must not be 'UNDEFINED'
             </mat-error>
         </mat-form-field>
     </div>
 
-    <div class="d-flex flex-column px-2 w-100">
-        <mat-form-field>
+    <div class="px-2 w-100">
+        <mat-form-field class="w-100">
             <mat-label>Column scale</mat-label>
             <mat-select [id]="'scale' + attrNumber" formControlName="scale">
-                <mat-option *ngFor="let scale of getDataScales().getAll()" [value]="scale">{{scale}}</mat-option>
+                <mat-option *ngFor="let type of DataScaleMetadata | keyvalue" [value]="type.key"
+                            [disabled]="!type.value.applicableTo.includes(typeInput.value)">
+                    {{ type.value.displayName }}
+                </mat-option>
             </mat-select>
+            <mat-icon matSuffix class="icon-enabled" (click)="scaleInfoDialog.handleClick($event)">info</mat-icon>
+            <mat-error *ngIf="columnConfigurationForm.controls['scale'].getError('scale') as scaleError">
+                {{ scaleError.scale }} is not applicable to column type {{ scaleError.type }}
+            </mat-error>
         </mat-form-field>
     </div>
 
     <div class="d-flex flex-column px-2 input-height">
         <div class="h-100 d-flex justify-content-center align-items-center">
-            <app-additional-configuration [attrNumber]="parseInt(attrNumber)" [disabled]="disabled" [form]="columnConfigurationForm">
+            <app-additional-configuration [attrNumber]="attrNumber" [disabled]="disabled"
+                                          [form]="columnConfigurationForm">
             </app-additional-configuration>
         </div>
     </div>
 </div>
+
+<app-information-dialog #nameInfoDialog title="Column Name">
+    <info-explanation>
+        <p>
+            The column name is used for identifying the attribute inside Cinnamon.
+            It does not need to be the same as the column name in the original dataset.
+            <br>
+            Each name must be unique and must not contain spaces.
+            <br>
+            <span [class.text-warn]="fileType === FileType.FHIR">
+                The attributes of FHIR bundles cannot be renamed, because the name contains the FHIR path to the
+                field which will be required for exporting the dataset as a FHIR bundle.
+            </span>
+        </p>
+    </info-explanation>
+</app-information-dialog>
+
+<app-information-dialog #typeInfoDialog title="Column Type">
+    <info-explanation>
+        <p>
+            The column type describes the kind of information stored in an attribute.
+            It tells what format the information has and how it can be used or interpreted.
+        </p>
+    </info-explanation>
+    <info-options>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Type</th>
+                <th>Description</th>
+                <th style="min-width: 150px;">Examples</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['type'].value === DataType.BOOLEAN">
+                    Boolean
+                </td>
+                <td>
+                    Indicates whether a condition is true or false, such as the presence or absence of a
+                    symptom, diagnosis, or treatment.
+                </td>
+                <td>
+                    <div>true - false</div>
+                    <div>yes - no</div>
+                    <div>Y - N</div>
+                    <div>1 - 0</div>
+                </td>
+            </tr>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['type'].value === DataType.DATE">
+                    Date
+                </td>
+                <td>
+                    Represents a specific day, often used for admission, discharge, birth, or test dates.
+                    The concrete format can be specified in the additional configurations by clicking on the
+                    gearwheel.
+                </td>
+                <td>
+                    <div>1985-04-12</div>
+                    <div>12/04/2023</div>
+                </td>
+            </tr>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['type'].value === DataType.DATE_TIME">
+                    Date & Time
+                </td>
+                <td>
+                    Includes both date and time, often used for recording events with precise timestamps (e.g.,
+                    when a medication was given or vital signs measured).
+                    The concrete format can be specified in the additional configurations by clicking on the
+                    gearwheel.
+                </td>
+                <td>
+                    <div>2025-10-13 17:38:23</div>
+                    <div>2023-04-12T08:35:00Z</div>
+                    <div>12/04/2023 08:35 AM</div>
+                </td>
+            </tr>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['type'].value === DataType.DECIMAL">
+                    Decimal
+                </td>
+                <td>
+                    Represents numbers with decimal points, used for values that require precision, such as
+                    laboratory results, measurements, or dosages.
+                    Integers are also valid decimals, but attributes only containing integers should be
+                    represented as Integer.
+                </td>
+                <td>
+                    <div>36.7</div>
+                    <div>-0.75</div>
+                    <div>0.0</div>
+                </td>
+            </tr>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['type'].value === DataType.INTEGER">
+                    Integer
+                </td>
+                <td>
+                    Represents whole numbers, used for counts, scores, or categorical codes without decimals.
+                    Integers are also valid decimals, but attributes only containing integers should be
+                    represented as Integer.
+                </td>
+                <td>
+                    <div>4923</div>
+                    <div>-47</div>
+                    <div>0</div>
+                </td>
+            </tr>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['type'].value === DataType.STRING">
+                    String
+                </td>
+                <td>Represents text or alphanumeric values, such as names, coded terms, or comments.</td>
+                <td>
+                    <div>Max Mustermann</div>
+                    <div>E11.9</div>
+                    <div><q>Patient reports mild headache in the morning.</q></div>
+                </td>
+            </tr>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['type'].value === DataType.UNDEFINED">
+                    Undefined
+                </td>
+                <td>
+                    If the type of an attribute could not be determined in the automatic estimation the type is
+                    set to <q>Undefined</q>.
+                    This value is not valid for the import and must be changed manually before submitting the
+                    configuration.
+                </td>
+                <td></td>
+            </tr>
+            </tbody>
+        </table>
+    </info-options>
+</app-information-dialog>
+
+<app-information-dialog #scaleInfoDialog title="Column Scale">
+    <info-explanation>
+        <p>
+            The column scale describes the range of values that can be stored in an attribute.
+            It tells what the range of values is and how it can be used or interpreted.
+        </p>
+    </info-explanation>
+    <info-options>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Scale</th>
+                <th>Description</th>
+                <th style="min-width: 110px;">Column Types</th>
+                <th style="min-width: 290px;">Examples</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['scale'].value === DataScale.NOMINAL">
+                    Nominal
+                </td>
+                <td>
+                    Represents categories or labels without any order or numeric meaning.
+                    Categories are different, but not ranked.
+                    You can count or group them, but not calculate averages or differences.
+                </td>
+                <td>
+                    <div *ngFor="let type of DataScaleMetadata[DataScale.NOMINAL].applicableTo"
+                         [class.current-type]="columnConfigurationForm.controls['type'].value === type">
+                        {{ DataTypeMetadata[type].displayName }}
+                    </div>
+                </td>
+                <td>
+                    <div>A, B, AB, O</div>
+                    <div>Male, Female, Other</div>
+                    <div>E11.9, I10, C34.1</div>
+                </td>
+            </tr>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['scale'].value === DataScale.ORDINAL">
+                    Ordinal
+                </td>
+                <td>
+                    Represents ordered categories, where the order matters, but the distance between categories
+                    is not consistent. You can rank values, but cannot assume equal gaps between them.
+                </td>
+                <td>
+                    <div *ngFor="let type of DataScaleMetadata[DataScale.ORDINAL].applicableTo"
+                         [class.current-type]="columnConfigurationForm.controls['type'].value === type">
+                        {{ DataTypeMetadata[type].displayName }}
+                    </div>
+                </td>
+                <td>
+                    <div>None, Mild, Moderate, Severe</div>
+                    <div>I, II, III, IV</div>
+                    <div>Strongly disagree → Strongly agree</div>
+                </td>
+            </tr>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['scale'].value === DataScale.INTERVAL">
+                    Interval
+                </td>
+                <td>
+                    Represents numerical values with equal spacing between numbers, but no true zero point.
+                    You can add or subtract values (e.g., temperature differences), but ratios (e.g., <q>twice
+                    as hot</q>) don’t make sense.
+                </td>
+                <td>
+                    <div *ngFor="let type of DataScaleMetadata[DataScale.INTERVAL].applicableTo"
+                         [class.current-type]="columnConfigurationForm.controls['type'].value === type">
+                        {{ DataTypeMetadata[type].displayName }}
+                    </div>
+                </td>
+                <td>
+                    <div>36.5, 37.0, 38.0</div>
+                </td>
+            </tr>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['scale'].value === DataScale.RATIO">
+                    Ratio
+                </td>
+                <td>
+                    Represents numerical values with equal intervals and a true zero, meaning <q>none</q> or
+                    <q>absence</q>. Both differences and ratios are meaningful.
+                    You can do all mathematical operations, i.e. addition, subtraction, multiplication, and
+                    division.
+                </td>
+                <td>
+                    <div *ngFor="let type of DataScaleMetadata[DataScale.RATIO].applicableTo"
+                         [class.current-type]="columnConfigurationForm.controls['type'].value === type">
+                        {{ DataTypeMetadata[type].displayName }}
+                    </div>
+                </td>
+                <td>
+                    <div>0 - 180</div>
+                </td>
+            </tr>
+            <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['scale'].value === DataScale.DATE">
+                    Date
+                </td>
+                <td>
+                    Represents attributes of type <q>Date</q> or <q>Date & Time</q>.
+                    Although dates are usually interpreted as intervals, they require special handling during
+                    the anonymization and a are therefore represented by a separate scale.
+                    You should always select this scale for attributes <q>Date</q> or <q>Date & Time</q>.
+                </td>
+                <td>
+                    <div *ngFor="let type of DataScaleMetadata[DataScale.DATE].applicableTo"
+                         [class.current-type]="columnConfigurationForm.controls['type'].value === type">
+                        {{ DataTypeMetadata[type].displayName }}
+                    </div>
+                </td>
+                <td>
+                    <div>1985-04-12</div>
+                    <div>2025-10-13 17:38:23</div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </info-options>
+</app-information-dialog>

@@ -1,9 +1,9 @@
 import { AfterViewInit, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
+import { MatDialog } from "@angular/material/dialog";
 import { FileType } from "@shared/model/file-configuration";
-import { List } from 'src/app/core/utils/list';
-import { DataScale } from 'src/app/shared/model/data-scale';
-import { DataType } from 'src/app/shared/model/data-type';
+import { DataScale, DataScaleMetadata } from 'src/app/shared/model/data-scale';
+import { DataType, DataTypeMetadata } from 'src/app/shared/model/data-type';
 
 @Component({
     selector: 'app-attribute-configuration',
@@ -12,7 +12,7 @@ import { DataType } from 'src/app/shared/model/data-type';
     standalone: false
 })
 export class AttributeConfigurationComponent implements AfterViewInit {
-    @Input() attrNumber: String;
+    @Input() attrNumber!: number;
     @Input() disabled: boolean = false;
     @Input() public columnConfigurationForm!: FormGroup;
     @Input() public confidence : number | null = null;
@@ -20,12 +20,18 @@ export class AttributeConfigurationComponent implements AfterViewInit {
 
     @Output() onInput = new EventEmitter<any>();
 
-    protected readonly FileType = FileType;
+    protected readonly DataScale = DataScale;
     protected readonly DataType = DataType;
+    protected readonly FileType = FileType;
 
     private oldName: string = "";
 
-    constructor() { }
+    protected readonly DataScaleMetadata = DataScaleMetadata;
+    protected readonly DataTypeMetadata = DataTypeMetadata;
+
+    constructor(
+        protected dialog: MatDialog
+    ) { }
 
     ngAfterViewInit(): void {
         this.columnConfigurationForm.controls['name'].valueChanges.subscribe((newValue) => {
@@ -38,20 +44,6 @@ export class AttributeConfigurationComponent implements AfterViewInit {
         });
     }
 
-    getDataTypes(): List<String> {
-        return new List<String>(Object.keys(DataType));
-    }
-
-    getDataScales(): List<String> {
-        const scales = Object.keys(DataScale).filter(x => !(parseInt(x) >= 0));
-
-        return new List<String>(scales);
-    }
-
-    protected parseInt(value: String): Number {
-        return Number(value);
-    }
-
     protected trimValue(field: string) {
         const originalValue = this.columnConfigurationForm.controls[field].value;
         const trimmedValue = originalValue.trim();
@@ -59,4 +51,5 @@ export class AttributeConfigurationComponent implements AfterViewInit {
             this.columnConfigurationForm.controls[field].patchValue(trimmedValue);
         }
     }
+
 }

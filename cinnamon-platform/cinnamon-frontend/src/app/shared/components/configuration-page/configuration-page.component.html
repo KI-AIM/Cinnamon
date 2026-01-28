@@ -2,7 +2,7 @@
     <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
         <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="4"
-                           [step]="step" [invalid]="(oneEnabled && !formValid) || selectedAlgorithm == null"
+                           [step]="step" [invalid]="(oneEnabled && (!formValid || selectedAlgorithm == null))"
                            (confirm)="submit()">
             <!-- Activation -->
             <app-workstep-item header="Select steps to execute" [locked]="data.locked" [stepIndex]="0"
@@ -109,7 +109,7 @@
 
         <app-workstep-box header="Confirm your configuration">
             <button type="submit" mat-raised-button color="primary"
-                    [disabled]="data.locked || (oneEnabled && !formValid) || selectedAlgorithm == null" (click)="submit()">
+                    [disabled]="data.locked || (oneEnabled && (!formValid || selectedAlgorithm == null))" (click)="submit()">
                 Continue
             </button>
         </app-workstep-box>

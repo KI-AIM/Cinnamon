@@ -15,7 +15,7 @@ import { FileInformation } from "@shared/model/file-information";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { StatusService } from "@shared/services/status.service";
 import { UserService } from "@shared/services/user.service";
-import { Observable } from "rxjs";
+import { distinctUntilChanged, Observable } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Component({
@@ -34,6 +34,7 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
     protected datasetFileType: FileType = FileType.CSV;
     protected holdOutSelector: HoldOutSelector = HoldOutSelector.ALL;
 
+    protected selectedResources: string[] = [];
     protected numberChecked = 0;
 
     protected dataSetInfo$: Observable<DataSetInfo>;
@@ -67,12 +68,16 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
             }
         });
 
-        this.evaluationInfo$ = this.evaluationService.status$;
-        this.executionInfo$ = this.executionService.status$;
+        this.evaluationInfo$ = this.evaluationService.status$.pipe(
+            distinctUntilChanged((previous, current) => this.areStagesEqual(previous, current)),
+        );
+        this.executionInfo$ = this.executionService.status$.pipe(
+            distinctUntilChanged((previous, current) => this.areStagesEqual(previous, current)),
+        );
     }
 
     public ngAfterViewInit(): void {
-        this.updateNumberChecked();
+        this.updateChecked();
     }
 
     /**
@@ -91,15 +96,16 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
      */
     protected toggleAll(select: boolean): void {
         this.resources.filter(resource => !resource.disabled).forEach(resource => resource.checked = select);
-        this.updateNumberChecked();
+        this.updateChecked();
     }
 
     /**
-     * Updates the number of checked checkboxes.
+     * Updates the selected resources.
      * @protected
      */
-    protected updateNumberChecked(): void {
-        this.numberChecked = this.resources.filter(value => value.checked).length;
+    protected updateChecked(): void {
+        this.selectedResources = this.getResources();
+        this.numberChecked = this.selectedResources.length;
     }
 
     /**
@@ -107,20 +113,13 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
      * @protected
      */
     protected exportProject(): void {
-        const results = [];
-        for (const resultSelector of this.resources.toArray()) {
-            if (resultSelector.checked) {
-                results.push(resultSelector.value);
-            }
-        }
-
         this.http.get(environments.apiUrl + "/api/project/zip", {
             observe: 'response',
             params: {
                 bundleConfigurations: this.bundleConfigurations,
                 datasetFileType: this.datasetFileType,
                 holdOutSelector: this.holdOutSelector,
-                resources: results,
+                resources: this.getResources(),
             },
             responseType: 'arraybuffer'
         }).subscribe({
@@ -145,5 +144,40 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
                 element.click();
             }
         });
+    }
+
+    /**
+     * Collects the selected resources for export.
+     * @returns The selected resources.
+     */
+    private getResources(): string[] {
+        return this.resources
+            .filter(checkbox => !checkbox.disabled && checkbox.checked)
+            .map(checkbox => checkbox.value);
+    }
+
+    /**
+     * Checks if the statuses of both stages are equal.
+     * @param stageA Stage to be compared.
+     * @param stageB Stage to be compared.
+     * @returns True if both stages have the same status, false otherwise.
+     */
+    private areStagesEqual(stageA: ExecutionStep | null, stageB: ExecutionStep | null): boolean {
+        if (stageA == null && stageB == null) {
+            return true;
+        }
+
+        if (stageA == null || stageB == null) {
+            return false;
+        }
+
+        let isEqual = true;
+        for (let job = 0; job < stageA.processes.length; job++) {
+            if (stageA.processes[job].externalProcessStatus !== stageB.processes[job].externalProcessStatus) {
+                isEqual = false;
+                break;
+            }
+        }
+        return isEqual;
     }
 }

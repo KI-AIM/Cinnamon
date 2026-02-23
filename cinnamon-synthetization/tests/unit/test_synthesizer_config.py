@@ -1,8 +1,52 @@
+import ast
 from pathlib import Path
 
 import yaml
 
-from synthesizer_classes import synthesizer_classes
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SYNTHESIZER_CLASSES_FILE = PROJECT_ROOT / "synthesizer_classes.py"
+
+
+def _class_reference_to_name(node: ast.AST) -> str:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    raise AssertionError("class reference must be a name")
+
+
+def _load_synthesizer_classes() -> dict:
+    tree = ast.parse(SYNTHESIZER_CLASSES_FILE.read_text(encoding="utf-8"))
+
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id == "synthesizer_classes":
+                assert isinstance(node.value, ast.Dict)
+                data = {}
+
+                for key_node, value_node in zip(node.value.keys, node.value.values):
+                    name = ast.literal_eval(key_node)
+                    assert isinstance(value_node, ast.Dict)
+
+                    config = {}
+                    for cfg_key_node, cfg_value_node in zip(value_node.keys, value_node.values):
+                        cfg_key = ast.literal_eval(cfg_key_node)
+                        if cfg_key == "class":
+                            config[cfg_key] = _class_reference_to_name(cfg_value_node)
+                        else:
+                            config[cfg_key] = ast.literal_eval(cfg_value_node)
+
+                    data[name] = config
+
+                return data
+
+    raise AssertionError("synthesizer_classes definition not found")
+
+
+synthesizer_classes = _load_synthesizer_classes()
 
 
 CONFIG_DIR = (

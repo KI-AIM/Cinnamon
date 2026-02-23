@@ -79,11 +79,14 @@ def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tup
                         raise ValueError(f"Date format not specified for DATE column '{column_name}'")
                     date_format = iso_to_strftime(date_format)
                     handle_date_column(df, column_name, date_format)
+
+                    # Ensure numeric dtype before fillna to avoid pandas future downcasting warnings
+                    df[column_name] = pd.to_numeric(df[column_name], errors='coerce')
                     
                     # Check if date values are imputed
                     if df[column_name].isna().any():
                         column_mean = df[column_name].mean()
-                        df[column_name].fillna(column_mean, inplace=True)
+                        df[column_name] = df[column_name].fillna(column_mean)
                 except Exception as e:
                     raise ValueError(f"Error processing DATE column '{column_name}': {str(e)}")
                 continue
@@ -94,7 +97,7 @@ def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tup
                     column_mean = df[column_name].mean()
                     if pd.isna(column_mean):
                         raise ValueError(f"Cannot calculate mean for DECIMAL column '{column_name}', all values are non-numeric")
-                    df[column_name].fillna(column_mean, inplace=True)
+                    df[column_name] = df[column_name].fillna(column_mean)
                 except Exception as e:
                     raise TypeError(f"Error converting '{column_name}' to DECIMAL: {str(e)}")
                 continue
@@ -105,7 +108,7 @@ def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tup
                     column_mean = df[column_name].mean()
                     if pd.isna(column_mean):
                         raise ValueError(f"Cannot calculate mean for INTEGER column '{column_name}', all values are non-numeric")
-                    df[column_name].fillna(round(column_mean), inplace=True)
+                    df[column_name] = df[column_name].fillna(round(column_mean))
                     df[column_name] = df[column_name].astype(float).astype(int)  # Use regular int instead of Int64
                 except Exception as e:
                     raise TypeError(f"Error converting '{column_name}' to INTEGER: {str(e)}")

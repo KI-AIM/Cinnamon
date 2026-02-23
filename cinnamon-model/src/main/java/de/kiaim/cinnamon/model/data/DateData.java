@@ -179,7 +179,7 @@ public class DateData extends Data {
 		 * @param format The format.
 		 * @return The formatter.
 		 */
-		private DateTimeFormatter buildFormatter(final String format) {
+		public DateTimeFormatter buildFormatter(final String format) {
 			return new DateTimeFormatterBuilder()
 					.appendPattern(format)
 					.parseDefaulting(ChronoField.MONTH_OF_YEAR, 1)

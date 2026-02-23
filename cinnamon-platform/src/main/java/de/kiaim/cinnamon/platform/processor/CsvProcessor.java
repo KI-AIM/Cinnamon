@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.processor;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
@@ -17,6 +18,7 @@ import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.platform.service.DataSetService;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
@@ -29,6 +31,12 @@ import java.util.stream.Collectors;
 
 @Service
 public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
+
+	private final DataSetService dataSetService;
+
+	public CsvProcessor(final DataSetService dataSetService) {
+		this.dataSetService = dataSetService;
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -77,7 +85,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 */
 	@Override
 	public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
-	                                 DataConfiguration configuration) throws InternalIOException {
+	                                 DataConfiguration configuration) throws BadDatasetException, InternalIOException {
 		final CsvFileConfigurationEntity csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
 
 		final Iterator<CSVRecord> recordIterator = getRecords(data, fileConfiguration);
@@ -150,8 +158,8 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 
 		try {
 			final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
-			for (final DataRow dataRow : dataset.getDataRows()) {
-				csvPrinter.printRecord(dataRow.getRow());
+			for (final List<Object> dataRow : dataSetService.encodeDataRowsSimple(dataset)) {
+				csvPrinter.printRecord(dataRow);
 			}
 			csvPrinter.flush();
 		} catch (IOException e) {

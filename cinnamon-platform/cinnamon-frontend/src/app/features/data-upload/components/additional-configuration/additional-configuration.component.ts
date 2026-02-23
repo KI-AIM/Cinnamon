@@ -1,8 +1,9 @@
-import { Component, Input, TemplateRef, ViewChild } from "@angular/core";
+import { Component, Input, OnInit, TemplateRef, ViewChild } from "@angular/core";
+import { MatSelect } from "@angular/material/select";
 import {
-    ConfigurationType,
+    ConfigurationType, ConfigurationTypeMetadata,
     getConfigurationForConfigurationType,
-    getConfigurationsForDatatype, getConfigurationTypeForConfigurationName,
+    getConfigurationTypeForConfigurationName
 } from "src/app/shared/model/configuration-types";
 import { List } from "src/app/core/utils/list";
 import { DateformatComponent } from "../configurationSettings/dateformat/dateformat.component";
@@ -11,7 +12,7 @@ import { StringpatternComponent } from "../configurationSettings/stringpattern/s
 import { MatDialog } from "@angular/material/dialog";
 import { RangeComponent } from "../configurationSettings/range/range.component";
 import { FormArray, FormBuilder, FormGroup, Validators } from "@angular/forms";
-import { DataType, dataTypeFromString } from "../../../../shared/model/data-type";
+import { DataType, dataTypeFromString, DataTypeMetadata } from "../../../../shared/model/data-type";
 
 @Component({
     selector: "app-additional-configuration",
@@ -19,25 +20,36 @@ import { DataType, dataTypeFromString } from "../../../../shared/model/data-type
     styleUrls: ["./additional-configuration.component.less"],
     standalone: false
 })
-export class AdditionalConfigurationComponent {
-	@Input() attrNumber: Number;
+export class AdditionalConfigurationComponent implements OnInit {
+    @Input() attrNumber: Number;
     @Input() disabled: boolean = false;
     @Input() form!: FormGroup;
 
-	@ViewChild("dateFormat") dateFormatComponent: DateformatComponent;
-	@ViewChild("dateTimeFormat") dateTimeFormatComponent: DatetimeformatComponent;
-	@ViewChild("range") rangeComponent: RangeComponent;
-	@ViewChild("stringPattern") stringPatternComponent: StringpatternComponent;
+    @ViewChild("dateFormat") dateFormatComponent: DateformatComponent;
+    @ViewChild("dateTimeFormat") dateTimeFormatComponent: DatetimeformatComponent;
+    @ViewChild("range") rangeComponent: RangeComponent;
+    @ViewChild("select") selectComponent: MatSelect;
+    @ViewChild("stringPattern") stringPatternComponent: StringpatternComponent;
 
     selected = "standardSelection";
+    protected dataType: DataType;
 
-    private cache: Array<{name: string}> = [];
+    protected readonly ConfigurationTypeMetadata = ConfigurationTypeMetadata;
+    protected readonly DataType = DataType;
+
+    private cache: Array<{ name: string }> = [];
 
     constructor(
         public dialog: MatDialog,
         private readonly formBuilder: FormBuilder,
     ) {
+    }
 
+    public ngOnInit(): void {
+        this.dataType = this.getType();
+        this.form.controls['type'].valueChanges.subscribe(() => {
+            this.dataType = this.getType();
+        });
     }
 
     protected getType(): DataType {
@@ -45,7 +57,7 @@ export class AdditionalConfigurationComponent {
     }
 
     protected getConfigurations(): FormArray<FormGroup> {
-       return this.form.controls['configurations'] as FormArray<FormGroup>;
+        return this.form.controls['configurations'] as FormArray<FormGroup>;
     }
 
     protected getConfigurationGroups(): FormGroup[] {
@@ -69,26 +81,27 @@ export class AdditionalConfigurationComponent {
         });
     }
 
-	changeConfigurationSelection(event: any) {
+    changeConfigurationSelection(event: any) {
         this.addConfiguration(event.value);
-	}
-
-    areConfigurationAvailable(type: DataType): boolean {
-        return this.getConfigurationsForDatatype(type).size() > 0;
+        this.selectComponent.value = "standardSelection";
     }
 
-	getConfigurationsForDatatype(type: DataType): List<ConfigurationType> {
-        var result = new List<ConfigurationType>
-        var configurationTypes = getConfigurationsForDatatype(type);
+    areConfigurationAvailable(): boolean {
+        return this.getConfigurationsForDatatype().length > 0;
+    }
 
-        configurationTypes.getAll().forEach(configurationType => {
+    getConfigurationsForDatatype(): ConfigurationType[] {
+        const result = new List<ConfigurationType>
+        const configurationTypes = DataTypeMetadata[this.dataType].availableConfigurationTypes;
+
+        configurationTypes.forEach(configurationType => {
             if (!this.isConfigurationAlreadyAdded(configurationType)) {
                 result.add(configurationType);
             }
         });
 
-		return result;
-	}
+        return result.getAll();
+    }
 
     isConfigurationAlreadyAdded(configurationType: ConfigurationType): boolean {
         for (const group of Object.values(this.getConfigurations().controls)) {

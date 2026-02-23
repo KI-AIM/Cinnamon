@@ -60,18 +60,15 @@ export abstract class AlgorithmService {
             return of({config: cachedConfig, selectedAlgorithm: cachedAlgorithm});
         }
 
-        return this.configurationService.loadConfig(this.getConfigurationName()).pipe(
+        return this.fetchInfo().pipe(
             switchMap(value => {
-                return this.algorithms.pipe(
-                    map(_ => value),
-                );
+                // Either all processes are configured or none, so look up if the first is configured
+                if (value.processes[0].configured) {
+                    return this.doFetchConfiguration();
+                } else {
+                    return of({config: {}, selectedAlgorithm: null});
+                }
             }),
-            map(value => {
-                return this.readConfiguration(parse(value), this.getConfigurationName());
-            }),
-            catchError(() => {
-                return of({config: {}, selectedAlgorithm: null});
-            })
         );
     }
 
@@ -147,10 +144,17 @@ export abstract class AlgorithmService {
 
     /**
      * Returns the algorithm with the given name.
+     *
      * @param algorithmName The name of the algorithm.
+     * @return The algorithm object.
+     * @throws Error if no algorithm with the name can be found.
      */
     public getAlgorithmByName(algorithmName: string): Algorithm {
-        return this._algorithms?.find((value) => value.name === algorithmName)!;
+        const algorithm = this._algorithms?.find((value) => value.name === algorithmName);
+        if (algorithm == null) {
+            throw new Error("No algorithm with name '" + algorithmName + "' available.");
+        }
+        return algorithm;
     }
 
     /**
@@ -236,6 +240,20 @@ export abstract class AlgorithmService {
             responseType: 'text' as 'json'
         });
     }
+
+    /**
+     * Fetches the selected algorithm and configuration defined by {@link getConfigurationName}.
+     * Prepares the configuration to be used in a form by removing additional meta-information.
+     *
+     * @return The algorithm and configuration.
+     */
+    private doFetchConfiguration(): Observable<ConfigData> {
+        return this.configurationService.loadConfig(this.getConfigurationName()).pipe(
+            map(value => {
+                return this.readConfiguration(parse(value), this.getConfigurationName());
+            }),
+        );
+    }
 }
 
 /**
@@ -264,6 +282,10 @@ export interface ProcessInfo {
      * If the job does not need a hol-out split or the hold-out split is present.
      */
     holdOutFulfilled: boolean
+    /**
+     * If the process is configured.
+     */
+    configured: boolean
 }
 
 export interface ConfigData {

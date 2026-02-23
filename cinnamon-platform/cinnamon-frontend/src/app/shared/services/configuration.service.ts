@@ -21,6 +21,7 @@ export class ConfigurationService {
     private configurationCache: Record<string, {
         selectedAlgorithm: Algorithm | null,
         configuration: {[algorithmName: string]: ConfigurationObject},
+        processStatus: {[processName: string]: boolean},
     }> = {};
 
     constructor(
@@ -77,6 +78,32 @@ export class ConfigurationService {
             return null;
         }
         return this.getConfiguration(configurationName, selectedAlgorithm);
+    }
+
+    /**
+     * Caches the activation status for the given process.
+     * @param configurationName The configuration name.
+     * @param processName The process name.
+     * @param status If the process is activated or not.
+     */
+    public setProcessStatus(configurationName: string, processName: string, status: boolean): void {
+        this.initCache(configurationName);
+        this.configurationCache[configurationName].processStatus[processName] = status;
+    }
+
+    /**
+     * Returns the cached activation status for the given process.
+     * If no status is cached returns null.
+     *
+     * @param configurationName The configuration name.
+     * @param processName The process name.
+     */
+    public getProcessStatus(configurationName: string, processName: string): boolean | null {
+        if (this.configurationCache[configurationName] == null ||
+            this.configurationCache[configurationName].processStatus[processName] == null) {
+            return null;
+        }
+        return this.configurationCache[configurationName].processStatus[processName];
     }
 
     /**
@@ -236,14 +263,10 @@ export class ConfigurationService {
                         }
                     }),
                     toArray(),
-                    catchError((error) => {
-                        console.log('Error during configuration import:', error);
-                        return of(null);
-                    }),
                 );
             }),
             switchMap(result => {
-                if (includedConfigurations !== null && result) {
+                if (includedConfigurations !== null) {
                     // Look if all configurations are present
                     const missing: string[] = [];
                     for (const config of includedConfigurations) {
@@ -271,6 +294,7 @@ export class ConfigurationService {
             this.configurationCache[configurationName] = {
                 selectedAlgorithm: null,
                 configuration: {},
+                processStatus: {},
             };
         }
     }

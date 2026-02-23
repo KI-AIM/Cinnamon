@@ -1,13 +1,23 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from "@angular/forms";
+import {
+    AbstractControl,
+    FormArray,
+    FormBuilder,
+    FormGroup,
+    ValidationErrors,
+    ValidatorFn,
+    Validators
+} from "@angular/forms";
 import { Router } from '@angular/router';
 import { Mode } from "@core/enums/mode";
 import { LockedInformation, StateManagementService } from "@core/services/state-management.service";
 import { noSpaceValidator } from "@shared/directives/no-space-validator.directive";
 import { ConfigurationInputDefinition } from "@shared/model/configuration-input-definition";
 import { ConfigurationInputType } from "@shared/model/configuration-input-type";
+import { DataScale, DataScaleMetadata } from "@shared/model/data-scale";
 import { DataSetInfo } from "@shared/model/data-set-info";
+import { DataType } from "@shared/model/data-type";
 import { DateFormatConfiguration } from "@shared/model/date-format-configuration";
 import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-configuration";
 import { RangeConfiguration } from "@shared/model/range-configuration";
@@ -110,7 +120,7 @@ export class DataConfigurationComponent implements OnInit {
             status: this.statusService.status$,
         }).pipe(
             switchMap(value => {
-               return this.configuration.dataConfiguration$.pipe(
+                return this.configuration.dataConfiguration$.pipe(
                     tap(dataConfiguration => {
                         if (this.configuration.localDataConfiguration !== null) {
                             this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration, value.fileType);
@@ -123,12 +133,12 @@ export class DataConfigurationComponent implements OnInit {
                             this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
                         });
                     }),
-                   map(dataConfiguration => {
-                       return {
-                           ...value,
-                           dataConfiguration: dataConfiguration,
-                       }
-                   }),
+                    map(dataConfiguration => {
+                        return {
+                            ...value,
+                            dataConfiguration: dataConfiguration,
+                        }
+                    }),
                 );
             }),
         );
@@ -247,7 +257,7 @@ export class DataConfigurationComponent implements OnInit {
 
     private createAttributeConfigurationForm(dataConfiguration: DataConfiguration, fileType: FileType | null): FormGroup {
         const formArray: any[] = [];
-        dataConfiguration.configurations.forEach(columnConfiguration=> {
+        dataConfiguration.configurations.forEach(columnConfiguration => {
             const addConfigs = [];
 
             for (const addConfig of columnConfiguration.configurations) {
@@ -316,7 +326,7 @@ export class DataConfigurationComponent implements OnInit {
                     validators: [Validators.required]
                 }],
                 configurations: this.formBuilder.array(addConfigs),
-            });
+            }, {validators: [this.validateScale()]});
 
             formArray.push(columnGroup);
         });
@@ -394,6 +404,30 @@ export class DataConfigurationComponent implements OnInit {
             } else {
                 form.enable();
             }
+        }
+    }
+
+    /**
+     * Validates that the data scale is applicable to the selected data type.
+     * Has to be applied to the parent form group.
+     *
+     * @return The validator function.
+     */
+    private validateScale(): ValidatorFn {
+        return (control: AbstractControl): ValidationErrors | null => {
+            const scaleControl = control.get('scale')!;
+
+            const dataType = control.get('type')!.value as DataType;
+            const dataScale = scaleControl.value as DataScale;
+
+            const error = DataScaleMetadata[dataScale].applicableTo.includes(dataType)
+                ? null
+                : {scale: {scale: dataScale, type: dataType}};
+
+            scaleControl.setErrors(error);
+            scaleControl.markAsTouched();
+
+            return error;
         }
     }
 

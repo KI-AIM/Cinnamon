@@ -1,5 +1,5 @@
 <a title="Additional Settings" (click)="openDialog(additionalSettings)">
-    <mat-icon fontIcon="settings"></mat-icon>
+    <mat-icon class="icon-enabled" fontIcon="settings"></mat-icon>
 </a>
 
 <ng-template #additionalSettings>
@@ -9,20 +9,23 @@
             <div class="d-flex flex-column">
                 <mat-form-field>
                     <mat-label>Configuration</mat-label>
-                    <mat-select [id]="'additionalSettingsConfigurations_' + attrNumber"
-                        (selectionChange)="changeConfigurationSelection($event)"
-                        [disabled]="disabled || !areConfigurationAvailable(getType())"
-                        [(value)]="selected">
-                        <mat-option disabled *ngIf="!areConfigurationAvailable(getType())"
-                            value="standardSelection">No
-                            configurations available</mat-option>
-                        <mat-option disabled *ngIf="areConfigurationAvailable(getType())"
-                            value="standardSelection">Select a
-                            configuration to add...</mat-option>
-                        <mat-option
-                            *ngFor="let configurationType of getConfigurationsForDatatype(getType()).getAll()"
-                            [value]="configurationType">{{configurationType}}</mat-option>
+                    <mat-select #select [id]="'additionalSettingsConfigurations_' + attrNumber"
+                                (selectionChange)="changeConfigurationSelection($event)"
+                                [disabled]="disabled || !areConfigurationAvailable()" [(value)]="selected">
+                        <mat-option disabled *ngIf="!areConfigurationAvailable()" value="standardSelection">
+                            No configurations available
+                        </mat-option>
+                        <mat-option disabled *ngIf="areConfigurationAvailable()" value="standardSelection">
+                            Select a configuration to add...
+                        </mat-option>
+
+                        <mat-option *ngFor="let type of getConfigurationsForDatatype()" [value]="type">
+                            {{ ConfigurationTypeMetadata[type].displayName }}
+                        </mat-option>
                     </mat-select>
+                    <mat-icon matSuffix class="icon-enabled" (click)="configurationInfoDialog.handleClick($event)">
+                        info
+                    </mat-icon>
                 </mat-form-field>
             </div>
 
@@ -59,3 +62,65 @@
         <button mat-raised-button mat-dialog-close type="button" color="primary" [disabled]="disabled">Confirm</button>
     </mat-dialog-actions>
 </ng-template>
+
+<app-information-dialog #configurationInfoDialog title="Type Dependent Configurations">
+    <info-explanation>
+        <p>
+            You can add additional configurations and constraints to your attribute.
+            They provide further information about the attribute, which is used for parsing and validating values.
+            Values that do not match these configurations will be removed from the dataset.
+            Depending on the type of the attribute, different configurations are available.
+            You can find an overview of the available configurations below.
+        </p>
+    </info-explanation>
+    <info-options>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Applicable to</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>String Pattern</td>
+                <td><span [class.current-type]="dataType === DataType.STRING">String</span></td>
+                <td>
+                    Defines the expected structure or format of a text value.
+                    This prevents typos and ensures uniform formats for attributes like patient IDs, diagnosis codes, or postal codes.
+                </td>
+            </tr>
+            <tr>
+                <td>Date Format</td>
+                <td><span [class.current-type]="dataType === DataType.DATE">Date</span></td>
+                <td>
+                    Specifies how dates are written and interpreted.
+                    This configuration is mandatory for date attributes.
+                </td>
+            </tr>
+            <tr>
+                <td>Date & Time Format</td>
+                <td><span [class.current-type]="dataType === DataType.DATE_TIME">Date & Time</span></td>
+                <td>
+                    Specifies how date & times are written and interpreted.
+                    This configuration is mandatory for date & time attributes.
+                </td>
+            </tr>
+            <tr>
+                <td>Range</td>
+                <td>
+                    <span [class.current-type]="dataType === DataType.DATE">Date</span>,
+                    <span [class.current-type]="dataType === DataType.DATE_TIME">Date & Time</span>,
+                    <span [class.current-type]="dataType === DataType.DECIMAL">Decimal</span>,
+                    <span [class.current-type]="dataType === DataType.INTEGER">Integer</span>
+                </td>
+                <td>
+                    Defines the lowest and highest valid number or date/time allowed for a data field.
+                    Prevents impossible or unrealistic values, for example negative ages or future birthdates.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </info-options>
+</app-information-dialog>

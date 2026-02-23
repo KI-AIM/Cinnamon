@@ -4,6 +4,8 @@ import de.kiaim.cinnamon.model.data.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static de.kiaim.cinnamon.test.util.YamlUtil.indentYaml;
@@ -11,30 +13,36 @@ import static de.kiaim.cinnamon.test.util.YamlUtil.indentYaml;
 public class DataSetTestHelper {
 
 	public static List<DataRow> generateDataRows(final boolean withErrors) {
-		final List<Data> data1 = List.of(new BooleanData(true),
-		                                 new DateData(LocalDate.of(2023, 11, 20)),
-		                                 new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456000)),
-		                                 new DecimalData(4.2f),
-		                                 new IntegerData(42),
-		                                 new StringData("Hello World!"));
-		final List<Data> data2 = List.of(new BooleanData(false),
-		                                 new DateData(LocalDate.of(2023, 11, 20)),
-		                                 new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456000)),
-		                                 new DecimalData(2.4f),
-		                                 new IntegerData(24),
-		                                 new StringData("Bye World!"));
+		final List<Data> data1 = new ArrayList<>(Arrays.asList(
+				new BooleanData(true),
+				new DateData(LocalDate.of(2023, 11, 20)),
+				new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456000)),
+				new DecimalData(4.2f),
+				new IntegerData(42),
+				new StringData("Hello World!")
+		));
+		final List<Data> data2 = new ArrayList<>(Arrays.asList(
+				new BooleanData(false),
+				new DateData(LocalDate.of(2023, 11, 20)),
+				new DateTimeData(LocalDateTime.of(2023, 11, 20, 12, 50, 27, 123456000)),
+				new DecimalData(2.4f),
+				new IntegerData(24),
+				new StringData("Bye World!")
+		));
 		final DataRow dataRow1 = new DataRow(data1);
 		final DataRow dataRow2 = new DataRow(data2);
 
 		final List<DataRow> dataRows;
 
 		if (withErrors) {
-			final List<Data> data3 = List.of(new BooleanData(true),
-			                                 new DateData(LocalDate.of(2023, 11, 20)),
-			                                 new DateTimeData(null),
-			                                 new DecimalData(4.2f),
-			                                 new IntegerData(null),
-			                                 new StringData("Hello World!"));
+			final List<Data> data3 = new ArrayList<>(Arrays.asList(
+					new BooleanData(true),
+					new DateData(LocalDate.of(2023, 11, 20)),
+					new DateTimeData(null),
+					new DecimalData(4.2f),
+					new IntegerData(null),
+					new StringData("Hello World!")
+			));
 			final DataRow dataRow3 = new DataRow(data3);
 
 			dataRows = List.of(dataRow1, dataRow2, dataRow3);

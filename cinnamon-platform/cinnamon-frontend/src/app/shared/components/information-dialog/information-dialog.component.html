@@ -1,7 +1,13 @@
-<h2 mat-dialog-title>{{data.title}}</h2>
-<mat-dialog-content class="mat-typography">
-    <div [innerHTML]="data.content"></div>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-    <button mat-raised-button mat-dialog-close color="primary">Close</button>
-</mat-dialog-actions>
+<ng-template #infoDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">{{ title }} - Information</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <div class="vertical-boxes">
+            <div class="box">
+                <ng-content></ng-content>
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Close</button>
+    </mat-dialog-actions>
+</ng-template>

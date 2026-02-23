@@ -191,8 +191,9 @@ public class ProcessService {
 	}
 
 	/**
-	 * Configures the job.
+	 * Configures the job by setting the configuration and the skip flag.
 	 * Currently, always uses the first configuration for the job.
+	 * If skip is true, errors for missing configurations are ignored.
 	 * Marks the job as outdated if something changed.
 	 *
 	 * @param project The project.
@@ -220,7 +221,7 @@ public class ProcessService {
 
 		boolean markAsOutdated = false;
 
-		if (!skip) {
+		try {
 			// Set the configuration
 			ConfigurationListEntity configurationList = project.getConfigurationList(job.getEndpoint().getConfiguration());
 			if (configurationList == null || configurationList.getConfigurations().isEmpty()) {
@@ -242,6 +243,10 @@ public class ProcessService {
 			if (externalProcess.getConfiguration() == null) {
 				externalProcess.setConfiguration(config);
 				markAsOutdated = true;
+			}
+		} catch (final ApiException apiException) {
+			if (!skip) {
+				throw apiException;
 			}
 		}
 
@@ -471,6 +476,7 @@ public class ProcessService {
 	 * @param errorRequest Error sent back in case the process failed.
 	 * @return If the process has been finished.
 	 * @throws BadDataConfigurationException             If the data configuration is not valid.
+	 * @throws BadDatasetException                     If the data set contains a row with too few or too many values.
 	 * @throws BadDataSetIdException                     If the data set could not be exported.
 	 * @throws BadStateException                         If the file for the dataset has not been stored.
 	 * @throws InternalApplicationConfigurationException If the step is not configured.
@@ -484,7 +490,7 @@ public class ProcessService {
 	protected boolean doFinishProcess(final BackgroundProcessEntity process,
 	                                  @Nullable final Set<Map.Entry<String, MultipartFile>> resultFiles,
 	                                  @Nullable final ErrorRequest errorRequest
-	) throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
+	) throws BadDataConfigurationException, BadDatasetException, BadDataSetIdException, BadStateException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
 
 		final var endpoint = cinnamonConfiguration.getExternalServerEndpoints().get(process.getEndpoint());
 

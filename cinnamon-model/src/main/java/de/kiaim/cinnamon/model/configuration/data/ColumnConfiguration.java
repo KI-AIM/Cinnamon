@@ -1,10 +1,12 @@
 package de.kiaim.cinnamon.model.configuration.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.serialization.ColumnConfigurationDeserializer;
 import de.kiaim.cinnamon.model.validation.DataTypeNotUndefined;
+import de.kiaim.cinnamon.model.validation.ScaleApplicableToType;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -13,6 +15,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
+import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +26,7 @@ import java.util.List;
  * configurations
  */
 @Schema(description = "Configuration of a single column in the data set.")
+@ScaleApplicableToType
 @NoArgsConstructor @AllArgsConstructor
 @Getter @Setter
 @EqualsAndHashCode
@@ -80,4 +84,24 @@ public class ColumnConfiguration {
     public void addConfiguration(Configuration configuration) {
         this.configurations.add(configuration);
     }
+
+	/**
+	 * Returns the additional configuration of the given class.
+	 * Returns null if no configuration is available.
+	 *
+	 * @param clazz Class of the configuration to return.
+	 * @param <T> The {@link Configuration} implementation.
+	 * @return The configuration or null.
+	 */
+	@JsonIgnore
+	@Nullable
+	public <T extends Configuration> T getConfiguration(final Class<T> clazz) {
+		for (final Configuration configuration : configurations) {
+			if (clazz.isAssignableFrom(configuration.getClass())) {
+				return clazz.cast(configuration);
+			}
+		}
+
+		return null;
+	}
 }

@@ -1,22 +1,18 @@
+import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
+import { Steps } from "@core/enums/steps";
+import {
+    AnonymizationAttributeConfigurationService
+} from "@features/anonymization/services/anonymization-attribute-configuration.service";
+import { Algorithm } from "@shared/model/algorithm";
 import {
     AnonymizationAttributeRowConfiguration,
     ConfigurationObject
 } from "@shared/model/anonymization-attribute-config";
+import { ConfigurationRegisterData } from "@shared/model/configuration-register-data";
+import { AlgorithmData, AlgorithmService, ReadConfigResult } from "@shared/services/algorithm.service";
+import { ConfigurationService } from "@shared/services/configuration.service";
 import { Observable } from "rxjs";
-import {
-    AlgorithmData,
-    AlgorithmService,
-    ReadConfigResult
-} from "../../../shared/services/algorithm.service";
-import { HttpClient } from "@angular/common/http";
-import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
-import { Steps } from "../../../core/enums/steps";
-import { ConfigurationService } from "../../../shared/services/configuration.service";
-import { Algorithm } from "../../../shared/model/algorithm";
-import {
-    AnonymizationAttributeConfigurationComponent
-} from "../components/anonymization-attribute-configuration/anonymization-attribute-configuration.component";
 
 /**
  * Specialized algorithm data containing the specialized anonymization configuration object.
@@ -39,6 +35,7 @@ export class AnonymizationFormConfig extends ConfigurationObject {
 export class AnonymizationService extends AlgorithmService {
 
     constructor(
+        private readonly attributeConfigurationService: AnonymizationAttributeConfigurationService,
         http: HttpClient,
         configurationService: ConfigurationService,
     ) {
@@ -62,16 +59,16 @@ export class AnonymizationService extends AlgorithmService {
                 ],
                 attributeConfiguration: arg.attributeConfiguration,
             }
-         };
+        };
     }
 
-    public override readConfiguration(arg: any, configurationName: string): ReadConfigResult {
+    public override readConfiguration(arg: any, _: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName(arg["anonymization"]["privacyModels"][0]["name"])
         const config = arg["anonymization"]["privacyModels"][0];
         delete config["name"];
         delete config["type"];
 
-        config[AnonymizationAttributeConfigurationComponent.formGroupName] = arg["anonymization"][AnonymizationAttributeConfigurationComponent.formGroupName];
+        config[this.attributeConfigurationService.formGroupName] = arg["anonymization"][this.attributeConfigurationService.formGroupName];
 
         return {config, selectedAlgorithm};
     }

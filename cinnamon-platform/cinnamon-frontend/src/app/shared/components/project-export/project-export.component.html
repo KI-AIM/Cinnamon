@@ -14,9 +14,10 @@
                     <div *ngFor="let config of configurationService.getRegisteredConfigurations()">
                         <span>
                             <mat-checkbox #resource color="primary"
-                                          [disabled]="!statusService.isStepCompleted(config.availableAfterStep)"
                                           [value]="'configuration.' + config.name"
-                                          (input)="updateNumberChecked()">
+                                          [checked]="selectedResources.includes('configuration.' + config.name)"
+                                          [disabled]="!statusService.isStepCompleted(config.availableAfterStep)"
+                                          (input)="updateChecked()">
                                 {{ config.displayName }}
                             </mat-checkbox>
                         </span>
@@ -43,14 +44,18 @@
                                 Original Dataset
                             </td>
                             <td>
-                                <mat-checkbox #resource color="primary" value="original.dataset" [disabled]="data.datasetInfo == null"
-                                              (input)="updateNumberChecked()">
+                                <mat-checkbox #resource color="primary" value="original.dataset"
+                                              [checked]="selectedResources.includes('original.dataset')"
+                                              [disabled]="data.datasetInfo == null"
+                                              (input)="updateChecked()">
                                     Dataset
                                 </mat-checkbox>
                             </td>
                             <td>
-                                <mat-checkbox #resource color="primary" value="original.statistics" [disabled]="data.datasetInfo == null"
-                                              (input)="updateNumberChecked()">
+                                <mat-checkbox #resource color="primary" value="original.statistics"
+                                              [checked]="selectedResources.includes('original.statistics')"
+                                              [disabled]="data.datasetInfo == null"
+                                              (input)="updateChecked()">
                                     Statistics
                                 </mat-checkbox>
                             </td>
@@ -65,24 +70,27 @@
                                 <td>
                                     <mat-checkbox #resource color="primary"
                                                   [value]="'pipeline.execution.' + process.step + '.dataset'"
+                                                  [checked]="selectedResources.includes('pipeline.execution.' + process.step + '.dataset')"
                                                   [disabled]="process.externalProcessStatus !== ProcessStatus.FINISHED"
-                                                  (input)="updateNumberChecked()">
+                                                  (input)="updateChecked()">
                                         Dataset
                                     </mat-checkbox>
                                 </td>
                                 <td>
                                     <mat-checkbox #resource color="primary"
                                                   [value]="'pipeline.execution.' + process.step + '.statistics'"
+                                                  [checked]="selectedResources.includes('pipeline.execution.' + process.step + '.statistics')"
                                                   [disabled]="process.externalProcessStatus !== ProcessStatus.FINISHED"
-                                                  (input)="updateNumberChecked()">
+                                                  (input)="updateChecked()">
                                         Statistics
                                     </mat-checkbox>
                                 </td>
                                 <td>
                                     <mat-checkbox #resource *ngIf="process.step === 'synthetization'" color="primary"
                                                   value="pipeline.execution.synthetization.other"
+                                                  [checked]="selectedResources.includes('pipeline.execution.synthetization.other')"
                                                   [disabled]="process.externalProcessStatus !== ProcessStatus.FINISHED"
-                                                  (input)="updateNumberChecked()">
+                                                  (input)="updateChecked()">
                                         Model
                                     </mat-checkbox>
                                 </td>
@@ -119,8 +127,9 @@
                     <div *ngFor="let process of evaluationInfo.processes">
                         <mat-checkbox #resource color="primary"
                                       [value]="'pipeline.evaluation.' + process.step + '.other'"
+                                      [checked]="selectedResources.includes('pipeline.evaluation.' + process.step + '.other')"
                                       [disabled]="process.externalProcessStatus !== ProcessStatus.FINISHED"
-                                      (input)="updateNumberChecked()">
+                                      (input)="updateChecked()">
                         {{ evaluationService.getJobName(process.step) }}
                         </mat-checkbox>
                     </div>

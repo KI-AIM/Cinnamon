@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OrdinalEncoder, minmax_scale, LabelEncoder
+from sklearn.preprocessing import OrdinalEncoder, LabelEncoder, MinMaxScaler
 from utility.lazypredict.Supervised import LazyClassifier, LazyRegressor, REGRESSORS, CLASSIFIERS
 from sklearn.utils import shuffle
 
@@ -37,28 +37,26 @@ MACHINE_LEARNING_RANGES = {
 
 MACHINE_LEARNING_DIFFERENCES = {
     1: {'min': 0.0, 'max': 0.1},  # Minimal
-    2: {'min': 0.1, 'max': 0.2},  # Very Small
-    3: {'min': 0.2, 'max': 0.3},  # Small
-    4: {'min': 0.3, 'max': 0.4},  # Moderate
-    5: {'min': 0.4, 'max': 0.5},  # Notable
-    6: {'min': 0.5, 'max': 0.6},  # Significant
-    7: {'min': 0.6, 'max': 0.7},  # Large
-    8: {'min': 0.7, 'max': 0.8},  # Very Large
-    9: {'min': 0.8, 'max': 0.9},  # Extreme
-    10: {'min': 0.9, 'max': 1.0}  # Maximum
+    3: {'min': 0.1, 'max': 0.2},  # Very Small
+    5: {'min': 0.2, 'max': 0.3},  # Small
+    6: {'min': 0.3, 'max': 0.4},  # Moderate
+    7: {'min': 0.4, 'max': 0.5},  # Notable
+    8: {'min': 0.5, 'max': 0.6},  # Significant
+    9: {'min': 0.6, 'max': 0.7},  # Large
+    10: {'min': 0.7, 'max': 1.0},  # Very Large
 }
 
 DISCRIMINATOR_RANGES = {
-    1: {'min': 0.45, 'max': 0.50},  # Ideal
-    2: {'min': 0.50, 'max': 0.55},  # Excellent
-    3: {'min': 0.55, 'max': 0.60},  # Very Good
-    4: {'min': 0.60, 'max': 0.65},  # Good
-    5: {'min': 0.65, 'max': 0.70},  # Above Average
-    6: {'min': 0.70, 'max': 0.75},  # Average
-    7: {'min': 0.75, 'max': 0.80},  # Below Average
-    8: {'min': 0.80, 'max': 0.85},  # Poor
-    9: {'min': 0.85, 'max': 0.90},  # Very Poor
-    10: {'min': 0.90, 'max': 1.00}  # Insufficient
+    1: {'min': 0.00, 'max': 0.05},  # Ideal (≤ ±0.05 away from random guess)
+    2: {'min': 0.05, 'max': 0.10},  # Excellent
+    3: {'min': 0.10, 'max': 0.15},  # Very Good
+    4: {'min': 0.15, 'max': 0.20},  # Good
+    5: {'min': 0.20, 'max': 0.25},  # Above Average
+    6: {'min': 0.25, 'max': 0.30},  # Average
+    7: {'min': 0.30, 'max': 0.35},  # Below Average
+    8: {'min': 0.35, 'max': 0.40},  # Poor
+    9: {'min': 0.40, 'max': 0.45},  # Very Poor
+    10: {'min': 0.45, 'max': float('inf')}  # Insufficient
 }
 
 RMSE_RANGES = {
@@ -75,7 +73,30 @@ RMSE_RANGES = {
 }
 
 
-def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFrame, train_size, target_variable: str):
+def preprocess_features(train_df: pd.DataFrame, test_df: pd.DataFrame):
+    """
+    Fit scaler/encoder on the training split only and apply to both train and test.
+    Unknown categories map to -1 to stay robust when new codes appear.
+    """
+    train_processed = train_df.copy()
+    test_processed = test_df.copy()
+
+    numeric_cols = train_processed.select_dtypes(include=['number']).columns
+    if len(numeric_cols) > 0:
+        scaler = MinMaxScaler()
+        train_processed[numeric_cols] = scaler.fit_transform(train_processed[numeric_cols])
+        test_processed[numeric_cols] = scaler.transform(test_processed[numeric_cols])
+
+    categorical_cols = train_processed.select_dtypes(exclude=['number']).columns
+    if len(categorical_cols) > 0:
+        encoder = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)
+        train_processed[categorical_cols] = encoder.fit_transform(train_processed[categorical_cols])
+        test_processed[categorical_cols] = encoder.transform(test_processed[categorical_cols])
+
+    return train_processed, test_processed
+
+
+def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFrame, train_size: float, target_variable: str, random_state: int = 42):
     """
     Calculates the machine learning utility of a synthetic dataset compared to a real dataset.
     Uses synthetic data for training and real data for testing.
@@ -83,77 +104,57 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     Args:
         real (pandas.DataFrame): The real dataset.
         synthetic (pandas.DataFrame): The synthetic dataset.
-        train_size (float): The proportion of the dataset to include in the train split (not used in this version).
-        random_state (int): The random seed used by the random number generator to ensure reproducibility.
+        train_size (float): The proportion of the real dataset used for training (test_size = 1 - train_size).
         target_variable (str): The target variable (column) in the dataset to predict.
+        random_state (int, optional): Seed for reproducibility. Defaults to 42.
 
     Returns:
         dict: A dictionary containing the machine learning utility of the synthetic dataset compared to the real dataset.
     """
     machine_learning_dict = {'real': {'predictions': {}}, 'synthetic': {'predictions': {}}, 'difference': {}}
 
-    test_size = 1- train_size
-    random_state = 42
+    test_size = 1 - train_size
 
-    # Store original target values before any transformation
-    real_target_original = real[target_variable].copy()
-    synthetic_target_original = synthetic[target_variable].copy()
-
-    # Handle missing values
-    real = impute_missing_values(real, 'MISSING_VALUE')
-    synthetic = impute_missing_values(synthetic, 'MISSING_VALUE')
+    # Handle missing values with DELETE as the only marker
+    real = impute_missing_values(real, 'DELETE')
+    synthetic = impute_missing_values(synthetic, 'DELETE')
 
     # Separate features and targets
-    real_features = real.drop(columns=[target_variable])
-    synthetic_features = synthetic.drop(columns=[target_variable])
-    
-    # Combine feature sets for consistent preprocessing
-    combined_features = pd.concat([real_features, synthetic_features], axis=0)
-    
-    # Apply preprocessing to combined features
-    numeric_cols = combined_features.select_dtypes(include=['number']).columns
-    if len(numeric_cols) > 0:
-        combined_features[numeric_cols] = minmax_scale(combined_features[numeric_cols])
-    
-    categorical_cols = combined_features.select_dtypes(exclude=['number']).columns
-    if len(categorical_cols) > 0:
-        encoder = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)
-        combined_features[categorical_cols] = encoder.fit_transform(combined_features[categorical_cols])
-    
-    # Split back into separate datasets
-    real_processed = combined_features.iloc[:len(real_features)].copy()
-    synthetic_processed = combined_features.iloc[len(real_features):].copy()
-    
-    # Add the target back (use original values)
-    real_processed[target_variable] = real_target_original.values
-    synthetic_processed[target_variable] = synthetic_target_original.values
-    
-    # Remove any rows with NaN values
-    real_processed = real_processed.dropna()
-    synthetic_processed = synthetic_processed.dropna()
-    
-    # Set up train (synthetic) and test (real) data
-    X_train = synthetic_processed.drop(columns=[target_variable])
-    y_train = synthetic_processed[target_variable]
-    
-    X_test = real_processed.drop(columns=[target_variable])
-    y_test = real_processed[target_variable]
-    
-    # For the real model (train and test on real data)
-    # Create a split of real data for comparison
-    X_train_real, X_test_real, y_train_real, y_test_real = train_test_split(
-        X_test, y_test, test_size=test_size, random_state=random_state
+    X_real_full = real.drop(columns=[target_variable])
+    y_real_full = real[target_variable]
+    X_synth_full = synthetic.drop(columns=[target_variable])
+    y_synth_full = synthetic[target_variable]
+
+    # Split real data for baseline and holdout
+    X_train_real_raw, X_test_real_raw, y_train_real, y_test_real = train_test_split(
+        X_real_full, y_real_full, test_size=test_size, random_state=random_state
     )
+
+    # Split synthetic data to mirror the real split (prevents leakage when datasets align)
+    X_train_synth_raw, _, y_train_synth, _ = train_test_split(
+        X_synth_full, y_synth_full, test_size=test_size, random_state=random_state
+    )
+
+    # Preprocess for the synthetic-trained model: fit on synthetic train, apply to real holdout
+    X_train_synth, X_test_synth = preprocess_features(X_train_synth_raw, X_test_real_raw)
+
+    # Preprocess for the real-trained baseline: fit on real train, apply to real test
+    X_train_real, X_test_real = preprocess_features(X_train_real_raw, X_test_real_raw)
+
+    # Set up train (synthetic) and real data (already split)
+    X_train = X_train_synth
+    y_train = y_train_synth
+    X_test = X_test_synth
+    # y_test stays the real holdout labels
+    y_test = y_test_real
     
     if pd.api.types.is_numeric_dtype(y_test):
         print('Regression Activated')
         
-        # Scale target variables CONSISTENTLY using the same scaler
-        # This avoids distortion when comparing real vs synthetic models
-        y_min = min(y_train.min(), y_test.min())
-        y_max = max(y_train.max(), y_test.max())
+        # Scale target variables CONSISTENTLY using the same scaler (no test leakage)
+        y_min = min(y_train.min(), y_train_real.min())
+        y_max = max(y_train.max(), y_train_real.max())
         
-        # Avoid division by zero
         if y_max > y_min:
             y_range = y_max - y_min
             y_train_scaled = y_train.apply(lambda x: (x - y_min) / y_range)
@@ -181,12 +182,16 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
             X_train_real, X_test_real, y_train_real_scaled, y_test_real_scaled
         )
 
-        # Apply the R-squared floor for both real and synthetic models
-        predictions_real['R-Squared'] = predictions_real['R-Squared'].apply(lambda x: max(0.0, x))
-        predictions_synthetic['R-Squared'] = predictions_synthetic['R-Squared'].apply(lambda x: max(0.0, x))
-        predictions_real['Adjusted R-Squared'] = predictions_real['Adjusted R-Squared'].apply(lambda x: max(0.0, x))
-        predictions_synthetic['Adjusted R-Squared'] = predictions_synthetic['Adjusted R-Squared'].apply(lambda x: max(0.0, x))
+        # Convert to dicts for consistent downstream handling
+        predictions_real = predictions_real.to_dict()
+        predictions_synthetic = predictions_synthetic.to_dict()
 
+        # Normalise negative R-squared values to zero so dashboards stay in the configured [0,1] range
+        for col in ('R-Squared', 'Adjusted R-Squared'):
+            if col in predictions_real:
+                predictions_real[col] = {k: max(0.0, v) for k, v in predictions_real[col].items()}
+            if col in predictions_synthetic:
+                predictions_synthetic[col] = {k: max(0.0, v) for k, v in predictions_synthetic[col].items()}
 
         predictions_real = add_summary_classifier(predictions_real)
         predictions_synthetic = add_summary_classifier(predictions_synthetic)
@@ -195,17 +200,16 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
         machine_learning_dict['difference'] = calculate_differences_as_dict(machine_learning_dict)
     else:
         print('Classification Activated')
-        # Encode labels consistently
-        le = LabelEncoder()
-        all_labels = pd.concat([y_train, y_test])
-        le.fit(all_labels)
+        # Encode labels without leaking test labels: fit separately on each training set
+        le_synth = LabelEncoder()
+        le_synth.fit(y_train)
+        y_train_encoded = le_synth.transform(y_train)
+        y_test_encoded = le_synth.transform(y_test)
         
-        y_train_encoded = le.transform(y_train)
-        y_test_encoded = le.transform(y_test)
-        
-        # Also encode real training/testing data
-        y_train_real_encoded = le.transform(y_train_real)
-        y_test_real_encoded = le.transform(y_test_real)
+        le_real = LabelEncoder()
+        le_real.fit(y_train_real)
+        y_train_real_encoded = le_real.transform(y_train_real)
+        y_test_real_encoded = le_real.transform(y_test_real)
         
         # Get filtered classifiers
         filtered_classifiers = [clf for clf in CLASSIFIERS if clf[0] in VALID_CLASSIFIERS]
@@ -241,21 +245,20 @@ def calculate_machine_learning_utility(real: pd.DataFrame, synthetic: pd.DataFra
     return machine_learning_dict
 
 
-def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, train_size: float) -> dict:
+def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, train_size: float, random_state: int = 42) -> dict:
     """
-    Evaluate synthetic data quality using discriminator-based approach with balanced datasets.
+    Evaluate synthetic data quality using a discriminator-based approach with balanced datasets.
 
     Args:
         real (pd.DataFrame): Real dataset
         synthetic (pd.DataFrame): Synthetic dataset
-        train_size (float): Proportion of data to use for training
-        random_state (int): Random seed for reproducibility
+        train_size (float): Proportion of data to use for training (test_size = 1 - train_size)
+        random_state (int, optional): Seed for reproducibility. Defaults to 42.
 
     Returns:
         dict: Dictionary containing evaluation metrics with color coding
     """
     test_size = 1 - train_size
-    random_state = 42
     cols_to_drop = []
 
     # Identify columns with 100% NA in the real dataset
@@ -265,21 +268,29 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
     # Identify categorical columns with 100% unique values in the real dataset
     categorical_cols_real = real.select_dtypes(include=['object', 'category']).columns
     for col in categorical_cols_real:
-        if col not in cols_to_drop: # Avoid re-checking already marked columns
-            if real[col].nunique(dropna=False) == len(real): # dropna=False to consider NAs as a unique value if present
+        if col not in cols_to_drop:
+            if real[col].nunique(dropna=False) == len(real):
                 cols_to_drop.append(col)
 
-    # Identify columns with 100% NA in the real dataset
+    # Identify columns with 100% NA in the synthetic dataset
     na_cols_synthetic = synthetic.columns[synthetic.isna().all()].tolist()
     for col_synth in na_cols_synthetic:
          cols_to_drop.append(col_synth)
 
+    # Identify categorical columns with all unique values in synthetic
     categorical_cols_synthetic = synthetic.select_dtypes(include=['object', 'category']).columns
     for col_synth in categorical_cols_synthetic:
         if col_synth not in cols_to_drop:
-            if synthetic[col].nunique(dropna=False) == len(real): # dropna=False to consider NAs as a unique value if present
-                cols_to_drop.append(col)
+            if synthetic[col_synth].nunique(dropna=False) == len(synthetic):
+                cols_to_drop.append(col_synth)
 
+    # Drop constant columns also in real (symmetry)
+    for col_real in real.columns:
+        if col_real not in cols_to_drop:
+            if real[col_real].nunique(dropna=False) == 1:
+                cols_to_drop.append(col_real)
+
+    # Drop constant columns in synthetic
     for col_synth in synthetic.columns:
         if col_synth not in cols_to_drop:
             if synthetic[col_synth].nunique(dropna=False) == 1:
@@ -290,8 +301,8 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
 
     if cols_to_drop:
         print(f"Dropping columns from real and synthetic datasets: {cols_to_drop}")
-        real = real.drop(columns=cols_to_drop)
-        synthetic = synthetic.drop(columns=[col for col in cols_to_drop if col in synthetic.columns])
+        real = real.drop(columns=[c for c in cols_to_drop if c in real.columns])
+        synthetic = synthetic.drop(columns=[c for c in cols_to_drop if c in synthetic.columns])
 
     # Balance datasets by sampling from the larger one
     min_size = min(len(real), len(synthetic))
@@ -304,8 +315,8 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
     real['Synthetic'] = 0
     synthetic['Synthetic'] = 1
 
-    real = impute_missing_values(real, 'MISSING_VALUE')
-    synthetic = impute_missing_values(synthetic, 'MISSING_VALUE')
+    real = impute_missing_values(real, 'DELETE')
+    synthetic = impute_missing_values(synthetic, 'DELETE')
 
     # Merge and shuffle datasets
     merged_data = pd.concat([real, synthetic], ignore_index=True)
@@ -316,21 +327,14 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
     y = merged_data["Synthetic"]
     merged_data = merged_data.drop(columns=["Synthetic"])
 
-    # Scale numeric features
-    numeric_cols = merged_data.select_dtypes(include=['number']).columns
-    merged_data[numeric_cols] = minmax_scale(merged_data[numeric_cols])
-
-    # Encode categorical features
-    categorical_cols = merged_data.select_dtypes(exclude=['number']).columns
-    merged_data[categorical_cols] = merged_data[categorical_cols].astype(str)
-    encoder = OrdinalEncoder()
-    merged_data[categorical_cols] = encoder.fit_transform(merged_data[categorical_cols])
-
     # Split data
     X = merged_data
-    X_train, X_test, y_train, y_test = train_test_split(
+    X_train_raw, X_test_raw, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state
     )
+
+    # Fit encoder/scaler on train only
+    X_train, X_test = preprocess_features(X_train_raw, X_test_raw)
 
     # Train and evaluate classifiers
     filtered_classifiers = [clf for clf in CLASSIFIERS if clf[0] in VALID_CLASSIFIERS]
@@ -339,7 +343,7 @@ def discriminator_based_evaluation(real: pd.DataFrame, synthetic: pd.DataFrame, 
     predictions = remove_roc_auc(predictions.to_dict())
     predictions = add_summary_classifier(predictions)
 
-    return transform_predictions_with_color_coding(predictions, DISCRIMINATOR_RANGES)
+    return transform_predictions_with_color_coding(predictions, DISCRIMINATOR_RANGES, pivot=0.5)
 
 
 def calculate_differences_as_dict(result_dict):
@@ -432,7 +436,7 @@ def get_color_index_rmse(value, interpretation_ranges):
     return 10
 
 
-def transform_predictions_with_color_coding(predictions, interpretation_ranges):
+def transform_predictions_with_color_coding(predictions, interpretation_ranges, pivot=None):
     """
     Transform predictions dictionary to include color coding for all metrics.
     Time Taken metric will always have color_index=0.
@@ -440,6 +444,7 @@ def transform_predictions_with_color_coding(predictions, interpretation_ranges):
     Args:
         predictions (dict): Dictionary containing metric scores for different classifiers
         interpretation_ranges (dict): Dictionary defining the ranges for color coding
+        pivot (float, optional): Central value for symmetric evaluation (e.g. 0.5 for discriminator scores)
 
     Returns:
         dict: Transformed dictionary with color coding for all metrics
@@ -462,10 +467,11 @@ def transform_predictions_with_color_coding(predictions, interpretation_ranges):
                     'color_index': get_color_index_rmse(score, RMSE_RANGES)
                 }
             else:
+                color_value = abs(score - pivot) if (pivot is not None and score is not None) else score
                 result = {
                     'classifier': classifier,
                     'score': score,
-                    'color_index': get_color_index(score, interpretation_ranges)
+                    'color_index': get_color_index(color_value, interpretation_ranges)
                 }
             results_dict['predictions'][metric].append(result)
 
@@ -478,21 +484,29 @@ def remove_roc_auc(predictions_dict):
 
 
 
-def impute_missing_values(df: pd.DataFrame, missing_value_placeholder: str = "MISSING_VALUE") -> pd.DataFrame:
+def impute_missing_values(df: pd.DataFrame, missing_value_placeholder: str = "DELETE") -> pd.DataFrame:
     """
     Imputes missing values in a DataFrame.
     - Numeric columns are imputed with the mean of the column.
-    - Categorical columns are converted to strings and imputed with a placeholder value.
+    - Categorical columns are imputed with a placeholder value and cast to string.
 
     Args:
         df (pd.DataFrame): The DataFrame to impute.
         missing_value_placeholder (str, optional): The placeholder for missing categorical values.
-            Defaults to "MISSING_VALUE".
+            Defaults to "DELETE".
 
     Returns:
         pd.DataFrame: The imputed DataFrame.
     """
     df_imputed = df.copy()
+
+    categorical_cols = df_imputed.select_dtypes(exclude=['number']).columns
+    placeholder_normalized = missing_value_placeholder.strip().upper()
+    if len(categorical_cols) > 0:
+        for col in categorical_cols:
+            col_series = df_imputed[col]
+            placeholder_mask = col_series.astype(str).str.strip().str.upper() == placeholder_normalized
+            df_imputed.loc[placeholder_mask, col] = pd.NA
     
     numeric_cols = df_imputed.select_dtypes(include=['number']).columns
     for col in numeric_cols:
@@ -500,10 +514,8 @@ def impute_missing_values(df: pd.DataFrame, missing_value_placeholder: str = "MI
         impute_val = 0 if pd.isna(mean_val) else mean_val
         df_imputed[col] = df_imputed[col].fillna(impute_val)
 
-    categorical_cols = df_imputed.select_dtypes(exclude=['number']).columns
     for col in categorical_cols:
-        df_imputed[col] = df_imputed[col].astype(str)  
-        df_imputed[col] = df_imputed[col].fillna(missing_value_placeholder)
+        df_imputed[col] = df_imputed[col].fillna(missing_value_placeholder).astype(str)
     
     return df_imputed
 

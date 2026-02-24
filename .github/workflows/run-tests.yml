@@ -120,12 +120,45 @@ jobs:
           name: unittest-results-cinnamon-risk-assessment
           path: cinnamon-risk-assessment/test-results/
 
+  test-pytest-synthetization:
+    permissions:
+      checks: write
+      pull-requests: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies for synthetization tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install Flask==3.0.0 Flask-Cors==4.0.1 PyYAML==6.0.1 "pandas>=2.1" numpy==1.26.4 requests==2.32.3 pytest==8.3.3
+
+      - name: Run Pytest and Generate JUnit Report
+        run: |
+          mkdir -p cinnamon-synthetization/test-results
+          pytest cinnamon-synthetization/tests --junitxml=cinnamon-synthetization/test-results/TEST-pytest-cinnamon-synthetization.xml
+        continue-on-error: true
+
+      - name: Upload Pytest Results Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results-cinnamon-synthetization
+          path: cinnamon-synthetization/test-results/
+
   report:
     permissions:
       checks: write
       pull-requests: write
 
-    needs: [test-junit, test-unittest]
+    needs: [test-junit, test-unittest, test-pytest-synthetization]
     runs-on: ubuntu-latest
 
     name: Generate JUnit Report
@@ -143,6 +176,7 @@ jobs:
             Cinnamon Test - Test Report
             Cinnamon Anonymization - Test Report
             Cinnamon Risk-Assessment - Test Report
+            Cinnamon Synthetization - Test Report
           comment: true
           fail_on_failure: true
           include_time_in_summary: true
@@ -150,4 +184,5 @@ jobs:
             ./artifacts/surefire-reports-cinnamon-test/TEST-*.xml
             ./artifacts/surefire-reports-cinnamon-anonymization/TEST-*.xml
             ./artifacts/unittest-results-cinnamon-risk-assessment/TEST-*.xml
+            ./artifacts/pytest-results-cinnamon-synthetization/TEST-*.xml
           verbose_summary: false

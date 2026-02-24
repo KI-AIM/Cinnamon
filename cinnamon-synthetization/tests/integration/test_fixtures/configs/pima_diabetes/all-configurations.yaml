@@ -1,0 +1,145 @@
+configurations:
+- index: 0
+  name: Pregnancies
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 1
+  name: Glucose
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 2
+  name: BloodPressure
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 3
+  name: SkinThickness
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 4
+  name: Insulin
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 5
+  name: BMI
+  type: DECIMAL
+  scale: RATIO
+  configurations: []
+- index: 6
+  name: DiabetesPedigreeFunction
+  type: DECIMAL
+  scale: RATIO
+  configurations: []
+- index: 7
+  name: Age
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 8
+  name: Outcome
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+anonymization:
+  privacyModels:
+  - name: anonymization_tabular
+    type: tabular
+    modelConfiguration:
+      riskThresholdType: Max
+      riskThresholdValue: 0.5
+      generalizationSetting: Global
+      suppressionLimit: 0.8
+  attributeConfiguration:
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: INTEGER
+    index: 0
+    intervalSize: 10
+    name: Pregnancies
+    scale: INTERVAL
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: DECIMAL
+    index: 5
+    intervalSize: 1
+    name: BMI
+    scale: RATIO
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: INTEGER
+    index: 7
+    intervalSize: 10
+    name: Age
+    scale: INTERVAL
+synthetization_configuration:
+  algorithm:
+    synthesizer: bayesian_network
+    type: cross-sectional
+    version: '0.1'
+    model_parameter:
+      encoder_max_clusters: 10
+      encoder_noise_scale: 0.01
+    model_fitting:
+      struct_learning_n_iter: 50
+    sampling:
+      num_samples: 768
+evaluation_configuration:
+  data_format: cross-sectional
+  resemblance:
+    mean: {}
+    standard_deviation: {}
+    variance: {}
+    distinct_values: {}
+    mode: {}
+    fifth_percentile: {}
+    median: {}
+    q1: {}
+    q3: {}
+    ninety_fifth_percentile: {}
+    minimum: {}
+    maximum: {}
+    density: {}
+    histogram: {}
+    kolmogorov_smirnov: {}
+    hellinger_distance: {}
+    frequency_plot: {}
+    calculate_columnwise_correlations: {}
+    calculate_columnwise_correlations_distance: {}
+    missing_values_count: {}
+    visualize_columnwise_correlations: {}
+  utility:
+    machine_learning:
+      train_size: 0.8
+      target_variable: Outcome
+    discriminator_based_evaluation:
+      train_size: 0.8
+risk_assessment_configuration:
+  singlingout_uni:
+    n_attacks: 100
+  attribute_inference:
+    n_attacks: 100
+  linkage:
+    n_attacks: 100
+    available_columns:
+    - Glucose
+    - BloodPressure
+    - SkinThickness
+    - DiabetesPedigreeFunction
+    - Insulin
+    unavailable_columns:
+    - Pregnancies
+    - BMI
+    - Age
+    - Outcome
+  data_format: cross-sectional
+  train_fraction: 0.8
+  targets: []
+  n_random_targets: 5
+  n_outlier_targets: 5
+  n_iterations: 1
+  columns_excluded: []
+  singlingout_multi:
+    n_attacks: 100
+  metrics:
+    uniqueness: true

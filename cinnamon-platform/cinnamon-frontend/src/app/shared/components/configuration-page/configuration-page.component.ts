@@ -156,6 +156,21 @@ export class ConfigurationPageComponent implements OnInit {
                         ...pageData,
                         configurationData: value,
                     })),
+                    catchError(error => {
+                        this.errorHandlingService.addError(error);
+                        const value: ConfigData = {config: {}, selectedAlgorithm: null};
+
+                        if (!this.hasAlgorithmSelection && pageData.algorithms.length > 0) {
+                            this.selectedAlgorithm = pageData.algorithms[0];
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), pageData.algorithms[0]);
+                            value.selectedAlgorithm = this.selectedAlgorithm;
+                        }
+
+                        return of({
+                            ...pageData,
+                            configurationData: value,
+                        });
+                    }),
                 );
             }),
         );

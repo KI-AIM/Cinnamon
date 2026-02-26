@@ -2,7 +2,7 @@
     <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
         <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="4"
-                           [step]="step" [invalid]="(oneEnabled && !formValid) || selectedAlgorithm == null"
+                           [step]="step" [invalid]="(oneEnabled && (!formValid || selectedAlgorithm == null))"
                            (confirm)="submit()">
             <!-- Activation -->
             <app-workstep-item header="Select steps to execute" [locked]="data.locked" [stepIndex]="0"
@@ -46,8 +46,6 @@
                 <ng-template #configurationForms>
                     <div *ngFor="let item of data.algorithms" [id]="item">
                         <ng-container *ngIf="selectedAlgorithm != null && selectedAlgorithm.name === item.name">
-                            <p>{{ item.description }}</p>
-
                             <app-configuration-form #form [algorithm]="item"
                                                     [dataConfiguration]="data.dataConfiguration"
                                                     [disabled]="data.locked || !oneEnabled"
@@ -98,14 +96,11 @@
             <ng-template #configurationForms>
                 <div *ngFor="let item of data.algorithms" [id]="item">
                     <ng-container *ngIf="selectedAlgorithm!.name === item.name">
-                        <p>{{ item.description }}</p>
-
                         <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
                                                 [dataConfiguration]="data.dataConfiguration"
                                                 [disabled]="data.locked || !oneEnabled"
                                                 [initialConfigurationData]="data.configurationData"
-                                                (onChange)="onFormChange($event)"
-                        >
+                                                (onChange)="onFormChange($event)">
                         </app-configuration-form>
                     </ng-container>
                 </div>
@@ -114,7 +109,7 @@
 
         <app-workstep-box header="Confirm your configuration">
             <button type="submit" mat-raised-button color="primary"
-                    [disabled]="data.locked || (oneEnabled && !formValid) || selectedAlgorithm == null" (click)="submit()">
+                    [disabled]="data.locked || (oneEnabled && (!formValid || selectedAlgorithm == null))" (click)="submit()">
                 Continue
             </button>
         </app-workstep-box>

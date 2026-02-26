@@ -1,6 +1,10 @@
 <mat-form-field style="width: 100%;">
     <mat-label>Which algorithm do you want to use?</mat-label>
 
+    <mat-icon class="icon-enabled" matSuffix (click)="infoDialog.handleClick($event);">
+        info
+    </mat-icon>
+
     <mat-select #selectElement [disabled]="disabled" (selectionChange)="onChange($event)" [ngModel]="initialValue"
                 required>
         <mat-option *ngFor="let option of algorithms" [value]="option">
@@ -11,3 +15,22 @@
         Please select an algorithm
     </mat-error>
 </mat-form-field>
+
+<app-information-dialog #infoDialog title="Algorithms">
+    <info-options>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Algorithm</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let algorithm of algorithms">
+                <td [class.current-type]="selectedOption === algorithm">{{ algorithm.display_name }}</td>
+                <td>{{ algorithm.description }}</td>
+            </tr>
+            </tbody>
+        </table>
+    </info-options>
+</app-information-dialog>

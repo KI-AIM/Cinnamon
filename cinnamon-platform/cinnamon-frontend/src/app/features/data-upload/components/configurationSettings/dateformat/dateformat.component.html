@@ -1,6 +1,104 @@
 <div class="d-flex flex-column w-100" [formGroup]="form">
     <mat-form-field>
-        <mat-label>Date format</mat-label>
+        <mat-label>Date Format</mat-label>
         <input matInput formControlName="dateFormatter"/>
+        <mat-icon matSuffix class="icon-enabled" (click)="dateFormatInfoDialog.handleClick($event)">info</mat-icon>
     </mat-form-field>
 </div>
+
+<app-information-dialog #dateFormatInfoDialog>
+    <info-explanation>
+        <p>
+            The date format specifies how a date value is written in the dataset and must be provided for date
+            attributes.
+            This prevents errors when parsing dates like mixing up day and month.
+            All values in the dataset must follow this format, otherwise they will be considered invalid.
+            <br>
+            The date format is specified by pattern letters that consists of literal characters.
+            Below you can find a selection of the most important patterns and examples for commonly used
+            formats.
+            The capitalization of the letters is important, because the lowercase and uppercase variants of a
+            letter are often used for different patterns.
+        </p>
+    </info-explanation>
+
+    <info-part title="Patterns">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Pattern</th>
+                <th>Explanation</th>
+                <th>Examples</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>YYYY</td>
+                <td>A four-digit year.</td>
+                <td>
+                    <div>2025</div>
+                    <div>1999</div>
+                </td>
+            </tr>
+            <tr>
+                <td>MM</td>
+                <td>A two-digit month.</td>
+                <td>
+                    <div>01</div>
+                    <div>12</div>
+                </td>
+            </tr>
+            <tr>
+                <td>DD</td>
+                <td>A two-digit day.</td>
+                <td>
+                    <div>08</div>
+                    <div>27</div>
+                </td>
+            </tr>
+            <tr>
+                <td><i>Literals</i></td>
+                <td>
+                    Any non alphabetical character or alphabetical characters escaped by single quotes.
+                    The single quotes are not present in the value.
+                    Literals can be used for separating the patterns or as pre-/ postfixes.
+                </td>
+                <td>
+                    <div>-</div>
+                    <div>.</div>
+                    <div>/</div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </info-part>
+
+    <info-examples>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Pattern</th>
+                <th>Explanation</th>
+                <th>Examples</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>yyyy-MM-dd</td>
+                <td>Format defined by ISO 8601.</td>
+                <td>1998-03-14</td>
+            </tr>
+            <tr>
+                <td>dd.MM.yyyy</td>
+                <td>Format commonly used in Germany.</td>
+                <td>14.03.1998</td>
+            </tr>
+            <tr>
+                <td>MM/dd/yyyy</td>
+                <td>Format commonly used in the US.</td>
+                <td>03/14/1998</td>
+            </tr>
+            </tbody>
+        </table>
+    </info-examples>
+</app-information-dialog>

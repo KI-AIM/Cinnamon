@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.serialization.ColumnConfigurationDeserializer;
 import de.kiaim.cinnamon.model.validation.DataTypeNotUndefined;
+import de.kiaim.cinnamon.model.validation.ScaleApplicableToType;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -25,6 +26,7 @@ import java.util.List;
  * configurations
  */
 @Schema(description = "Configuration of a single column in the data set.")
+@ScaleApplicableToType
 @NoArgsConstructor @AllArgsConstructor
 @Getter @Setter
 @EqualsAndHashCode

@@ -163,6 +163,62 @@ resemblance:
       visualization_type: "important_metrics"
       version: "0.0.1"
 
+    - display_name: "Average Text Length"
+      function_name: average_text_length
+      description: "Calculates the average length of text values in characters for TEXT attributes."
+      interpretation: "A close match indicates that the protected data preserves the typical verbosity of free-text fields."
+      visualization_type: "important_metrics"
+      version: "0.0.1"
+
+    - display_name: "Text Length Fifth Percentile"
+      function_name: text_length_fifth_percentile
+      description: "Represents the text length value separating the shortest 5% of text entries from the rest."
+      interpretation: "A close match indicates that the lower tail of text length distribution is preserved."
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Text Length Q1"
+      function_name: text_length_q1
+      description: "Represents the text length value separating the shortest 25% of text entries from the rest."
+      interpretation: "Similar values indicate preservation of shorter text lengths."
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Text Length Median"
+      function_name: text_length_median
+      description: "Represents the median text length value (50th percentile)."
+      interpretation: "A close match indicates that the typical text length is preserved."
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Text Length Q3"
+      function_name: text_length_q3
+      description: "Represents the text length value separating the shortest 75% of text entries from the rest."
+      interpretation: "Similar values indicate preservation of longer text ranges before outliers."
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Text Length Ninety Fifth Percentile"
+      function_name: text_length_ninety_fifth_percentile
+      description: "Represents the text length value separating the longest 5% of text entries from the rest."
+      interpretation: "A close match indicates that the upper tail of text length distribution is preserved."
+      visualization_type: "details"
+      version: "0.0.1"
+
+    - display_name: "Text Length Distribution"
+      function_name: text_length_distribution
+      description: "Shows how text lengths are distributed across ranges for TEXT attributes."
+      interpretation: "Similar bar patterns indicate that short and long text proportions are preserved."
+      visualization_type: "plot"
+      version: "0.0.1"
+
+    - display_name: "Word Cloud"
+      function_name: wordcloud
+      description: "Compares the most frequent words in TEXT attributes using normalized frequencies."
+      interpretation: "Similar dominant words and frequencies indicate that semantic vocabulary usage is preserved."
+      visualization_type: "plot"
+      version: "0.0.1"
+
     - display_name: "Observation Length Distribution"
       function_name: observation_length_distribution
       description: "Analyzes the distribution of the lengths of recording sequences (e.g., number of events per case ID)."

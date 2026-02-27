@@ -6,7 +6,7 @@ import {
 import { MatDialog } from "@angular/material/dialog";
 import { areEnumValuesEqual } from "src/app/shared/helper/enum-helper";
 import { DataScale } from "src/app/shared/model/data-scale";
-import { AttributeStatistics, GraphType } from "../../model/statistics";
+import { AttributeStatistics, GraphType, HistogramPlotData, StatisticsData } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
 import { Observable } from "rxjs";
@@ -52,6 +52,10 @@ export class DataInspectionAttributeComponent implements OnInit {
 
     protected isContinuous(): boolean {
         return this.attributeStatistics.plot.density != null;
+    }
+
+    protected getFrequencyPlotData(): StatisticsData<HistogramPlotData> | undefined {
+        return this.attributeStatistics.plot.text_length_distribution ?? this.attributeStatistics.plot.frequency_plot;
     }
 
     protected openDetailsDialog(templateRef: TemplateRef<any>) {

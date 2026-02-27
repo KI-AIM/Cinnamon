@@ -137,10 +137,10 @@
                                      [originalSeriesLabel]="originalDisplayName" [simple]="true"
                                      [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
             </ng-container>
-            <ng-container *ngIf="graphType === 'frequency' && !isContinuous()">
+            <ng-container *ngIf="graphType === 'frequency' && !isContinuous() && getFrequencyPlotData()">
                 <app-chart-frequency [colorScheme]="mc.metricConfiguration.colorScheme"
                                      [columnConfiguration]="attributeStatistics.attribute_information"
-                                     [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
+                                     [data]="getFrequencyPlotData()!" [limit]="null"
                                      [originalSeriesLabel]="originalDisplayName" [simple]="true"
                                      [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
             </ng-container>

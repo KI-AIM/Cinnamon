@@ -58,6 +58,12 @@ export class PlotData {
     @Type(() => StatisticsData<HistogramPlotData>)
     frequency_plot?: StatisticsData<HistogramPlotData>;
 
+    @Type(() => StatisticsData<HistogramPlotData>)
+    text_length_distribution?: StatisticsData<HistogramPlotData>;
+
+    @Type(() => StatisticsData<HistogramPlotData>)
+    wordcloud?: StatisticsData<HistogramPlotData>;
+
     @Type(() => StatisticsData<CorrelationPlotData>)
     visualize_columnwise_correlations?: StatisticsData<CorrelationPlotData>;
 }

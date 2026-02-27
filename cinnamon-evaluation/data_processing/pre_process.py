@@ -37,14 +37,15 @@ def preprocess_datasets(real_df: pd.DataFrame,
         if column_name not in combined_df.columns:
             continue
             
-        if column_type in ['STRING', 'BOOLEAN']:
+        if column_type in ['STRING', 'BOOLEAN', 'TEXT']:
             temp_series = pd.Series(combined_df[column_name])
             try:
                 temp_series = temp_series.astype(str)
-                temp_series = temp_series.replace(['nan', 'NaN', 'None', ''], np.nan) 
+                temp_series = temp_series.replace(['nan', 'NaN', 'None', ''], np.nan)
+                temp_series = temp_series.replace(r'^\s*$', np.nan, regex=True)
                 combined_df[column_name] = temp_series 
             except Exception as e:
-                print(f"Warning: Error during specific STRING or BOOLEAN handling for column '{column_name}': {e}.")
+                print(f"Warning: Error during specific STRING, BOOLEAN or TEXT handling for column '{column_name}': {e}.")
                 combined_df[column_name] = np.nan
                 
         if column_type == 'DATE':
@@ -66,6 +67,13 @@ def preprocess_datasets(real_df: pd.DataFrame,
     
     real_df_processed = combined_df.iloc[:split_point].reset_index(drop=True)
     synthetic_df_processed = combined_df.iloc[split_point:].reset_index(drop=True)
+
+    column_types = {
+        column_config['name']: column_config.get('type')
+        for column_config in config
+    }
+    real_df_processed.attrs['column_types'] = column_types
+    synthetic_df_processed.attrs['column_types'] = column_types
     
     if len(real_df_processed.columns) != len(synthetic_df_processed.columns):
         raise ValueError("Processed datasets have different number of columns")

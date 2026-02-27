@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import {
     AttributeStatistics,
     GraphType,
+    HistogramPlotData,
     StatisticsData,
     StatisticsValues,
     StatisticsValueTypes
@@ -111,5 +112,9 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
 
     protected isContinuous(): boolean {
         return this.attributeStatistics.plot.density != null;
+    }
+
+    protected getFrequencyPlotData(): StatisticsData<HistogramPlotData> | undefined {
+        return this.attributeStatistics.plot.text_length_distribution ?? this.attributeStatistics.plot.frequency_plot;
     }
 }

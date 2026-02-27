@@ -5,6 +5,14 @@ evaluation_configuration:
     standard_deviation: {}
     variance: {}
     distinct_values: {}
+    average_text_length: {}
+    text_length_fifth_percentile: {}
+    text_length_q1: {}
+    text_length_median: {}
+    text_length_q3: {}
+    text_length_ninety_fifth_percentile: {}
+    text_length_distribution: {}
+    wordcloud: {}
     mode: {}
     fifth_percentile: {}
     q1: {}

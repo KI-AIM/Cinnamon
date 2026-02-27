@@ -17,7 +17,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 		@JsonSubTypes.Type(RangeConfiguration.class),
 		@JsonSubTypes.Type(StringPatternConfiguration.class),
 		@JsonSubTypes.Type(TextLanguageConfiguration.class),
-		@JsonSubTypes.Type(TextEncodingConfiguration.class),
 })
 public interface Configuration {
 }

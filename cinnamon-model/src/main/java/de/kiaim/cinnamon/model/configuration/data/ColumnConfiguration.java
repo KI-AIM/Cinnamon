@@ -73,8 +73,7 @@ public class ColumnConfiguration {
                     description = "List of different configurations depending on the data type.",
                     example = "[{\"name\": \"DateFormatConfiguration\", \"dataFormatter\": \"yyyy-MM-dd\"}]",
              anyOf = {DateFormatConfiguration.class, DateTimeFormatConfiguration.class, RangeConfiguration.class,
-                     StringPatternConfiguration.class, TextLanguageConfiguration.class,
-                     TextEncodingConfiguration.class}))
+                     StringPatternConfiguration.class, TextLanguageConfiguration.class}))
     @Valid
     List<Configuration> configurations = new ArrayList<>();
 

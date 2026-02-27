@@ -23,7 +23,6 @@ import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-conf
 import { RangeConfiguration } from "@shared/model/range-configuration";
 import { Status } from "@shared/model/status";
 import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
-import { TextEncodingConfiguration } from "@shared/model/text-encoding-configuration";
 import { TextLanguageConfiguration } from "@shared/model/text-language-configuration";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { StatusService } from "@shared/services/status.service";
@@ -317,19 +316,6 @@ export class DataConfigurationComponent implements OnInit {
                             name: ["TextLanguageConfiguration"],
                             language: [{
                                 value: textLanguageConfiguration.language,
-                                disabled: this.locked
-                            }, {
-                                validators: [Validators.required]
-                            }],
-                        })
-                    );
-                } else if (addConfig.getName() === "TextEncodingConfiguration") {
-                    const textEncodingConfiguration = addConfig as TextEncodingConfiguration;
-                    addConfigs.push(
-                        this.formBuilder.group({
-                            name: ["TextEncodingConfiguration"],
-                            encoding: [{
-                                value: textEncodingConfiguration.encoding,
                                 disabled: this.locked
                             }, {
                                 validators: [Validators.required]

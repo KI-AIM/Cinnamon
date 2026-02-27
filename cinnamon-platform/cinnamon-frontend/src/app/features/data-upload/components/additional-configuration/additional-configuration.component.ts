@@ -44,13 +44,6 @@ export class AdditionalConfigurationComponent implements OnInit {
         "ITALIAN",
         "PORTUGUESE",
     ];
-    protected readonly textEncodings = [
-        "UTF-8",
-        "UTF-16",
-        "ISO-8859-1",
-        "WINDOWS-1252",
-        "ASCII",
-    ];
 
     private cache: Array<{ name: string }> = [];
 
@@ -178,16 +171,6 @@ export class AdditionalConfigurationComponent implements OnInit {
                     this.formBuilder.group({
                         name: ["TextLanguageConfiguration"],
                         language: ["ENGLISH", {validators: [Validators.required]}],
-                    })
-                );
-                this.selected = "standardSelection";
-                break;
-            }
-            case ConfigurationType.TEXTENCODING: {
-                this.getConfigurations().push(
-                    this.formBuilder.group({
-                        name: ["TextEncodingConfiguration"],
-                        encoding: ["UTF-8", {validators: [Validators.required]}],
                     })
                 );
                 this.selected = "standardSelection";

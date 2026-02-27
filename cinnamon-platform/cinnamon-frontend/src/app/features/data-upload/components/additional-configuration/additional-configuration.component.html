@@ -61,16 +61,6 @@
                                 </mat-select>
                             </mat-form-field>
                         </div>
-                        <div *ngIf="f.controls['name'].value === 'TextEncodingConfiguration'">
-                            <mat-form-field class="w-100">
-                                <mat-label>Encoding</mat-label>
-                                <mat-select formControlName="encoding">
-                                    <mat-option *ngFor="let encoding of textEncodings" [value]="encoding">
-                                        {{ encoding }}
-                                    </mat-option>
-                                </mat-select>
-                            </mat-form-field>
-                        </div>
 
                     </div>
                 </div>
@@ -117,14 +107,6 @@
                 <td>
                     Declares the primary language of a free-text column (for example ENGLISH or GERMAN),
                     so downstream LLM tools can choose language-aware handling.
-                </td>
-            </tr>
-            <tr>
-                <td>Text Encoding</td>
-                <td><span [class.current-type]="dataType === DataType.TEXT">Text</span></td>
-                <td>
-                    Declares the expected character encoding (for example UTF-8) for interoperability with
-                    text-processing and LLM pipelines.
                 </td>
             </tr>
             <tr>

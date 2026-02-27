@@ -1383,28 +1383,6 @@ def calculate_wordcloud(
                     "color_index": color_index
                 })
 
-            real_other = sum(
-                value for word, value in real_percentages.items()
-                if word not in top_words_list
-            )
-            synthetic_other = sum(
-                value for word, value in synthetic_percentages.items()
-                if word not in top_words_list
-            )
-
-            if real_other > 0 or synthetic_other > 0:
-                other_color_index = get_color_index(calculate_percentage_diff(real_other, synthetic_other))
-                real_frequencies.append({
-                    "label": "Other",
-                    "value": float(real_other),
-                    "color_index": 0
-                })
-                synthetic_frequencies.append({
-                    "label": "Other",
-                    "value": float(synthetic_other),
-                    "color_index": other_color_index
-                })
-
             results["real"][column] = {
                 "frequencies": real_frequencies,
                 "x_axis": "Words",

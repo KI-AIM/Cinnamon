@@ -36,6 +36,21 @@ export class AdditionalConfigurationComponent implements OnInit {
 
     protected readonly ConfigurationTypeMetadata = ConfigurationTypeMetadata;
     protected readonly DataType = DataType;
+    protected readonly textLanguages = [
+        "ENGLISH",
+        "GERMAN",
+        "FRENCH",
+        "SPANISH",
+        "ITALIAN",
+        "PORTUGUESE",
+    ];
+    protected readonly textEncodings = [
+        "UTF-8",
+        "UTF-16",
+        "ISO-8859-1",
+        "WINDOWS-1252",
+        "ASCII",
+    ];
 
     private cache: Array<{ name: string }> = [];
 
@@ -128,7 +143,6 @@ export class AdditionalConfigurationComponent implements OnInit {
                 break;
             }
             case ConfigurationType.DATETIMEFORMAT: {
-                console.log("adding");
                 this.getConfigurations().push(
                     this.formBuilder.group({
                         name: ["DateTimeFormatConfiguration"],
@@ -154,6 +168,26 @@ export class AdditionalConfigurationComponent implements OnInit {
                     this.formBuilder.group({
                         name: ["StringPatternConfiguration"],
                         pattern: ["", {validators: [Validators.required]}],
+                    })
+                );
+                this.selected = "standardSelection";
+                break;
+            }
+            case ConfigurationType.TEXTLANGUAGE: {
+                this.getConfigurations().push(
+                    this.formBuilder.group({
+                        name: ["TextLanguageConfiguration"],
+                        language: ["ENGLISH", {validators: [Validators.required]}],
+                    })
+                );
+                this.selected = "standardSelection";
+                break;
+            }
+            case ConfigurationType.TEXTENCODING: {
+                this.getConfigurations().push(
+                    this.formBuilder.group({
+                        name: ["TextEncodingConfiguration"],
+                        encoding: ["UTF-8", {validators: [Validators.required]}],
                     })
                 );
                 this.selected = "standardSelection";

@@ -54,7 +54,7 @@ export const DataTypeMetadata: Record<DataType, DataTypeAttributes> = {
         selectable: true,
     },
     [DataType.TEXT]: {
-        availableConfigurationTypes: [],
+        availableConfigurationTypes: [ConfigurationType.TEXTLANGUAGE, ConfigurationType.TEXTENCODING],
         displayName: "Text",
         selectable: true,
     },

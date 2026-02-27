@@ -61,6 +61,8 @@ public class TextData extends Data {
 		}
 
 		private void processConfigurations(String value, List<Configuration> configurationList) throws StringPatternException {
+			// TODO: TextEncodingConfiguration is currently metadata-only.
+			// Real charset conversion/re-encoding of text values is not implemented yet.
 			for (Configuration configuration : configurationList) {
 				if (configuration instanceof StringPatternConfiguration) {
 					processStringPatternConfiguration(value, (StringPatternConfiguration) configuration);

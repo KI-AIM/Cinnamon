@@ -5,6 +5,7 @@ export enum DataType {
 	DATE_TIME = "DATE_TIME",
 	DECIMAL = "DECIMAL",
 	INTEGER = "INTEGER",
+	TEXT = "TEXT",
 	STRING = "STRING",
 	DATE = "DATE",
 	UNDEFINED = "UNDEFINED",
@@ -52,6 +53,11 @@ export const DataTypeMetadata: Record<DataType, DataTypeAttributes> = {
         displayName: "Integer",
         selectable: true,
     },
+    [DataType.TEXT]: {
+        availableConfigurationTypes: [],
+        displayName: "Text",
+        selectable: true,
+    },
     [DataType.STRING]: {
         availableConfigurationTypes: [ConfigurationType.STRINGPATTERN],
         displayName: "String",
@@ -75,6 +81,7 @@ export function dataTypeFromString(value: String): DataType {
         case "DATE_TIME": return DataType.DATE_TIME
         case "DECIMAL": return DataType.DECIMAL
         case "INTEGER": return DataType.INTEGER
+        case "TEXT": return DataType.TEXT
         case "STRING": return DataType.STRING
         case "DATE": return DataType.DATE
         default: return DataType.UNDEFINED

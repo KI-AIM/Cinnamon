@@ -50,6 +50,9 @@ public class DataschemeGenerator {
 				case INTEGER -> {
 					columns.add(createColumnString(columnConfiguration.getName(), "integer"));
 				}
+				case TEXT -> {
+					columns.add(createColumnString(columnConfiguration.getName(), "character varying"));
+				}
 				case STRING -> {
 					columns.add(createColumnString(columnConfiguration.getName(), "character varying"));
 				}

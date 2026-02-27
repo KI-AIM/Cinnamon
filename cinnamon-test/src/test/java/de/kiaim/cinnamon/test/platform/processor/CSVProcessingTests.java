@@ -354,6 +354,29 @@ public class CSVProcessingTests {
 	}
 
 	@Test
+	void testEstimationTextTypeForLongStrings() {
+		final String longText = "a".repeat(257);
+		final String csvData =
+				"""
+				short
+				%s
+				%s
+				""".formatted(longText, longText).trim();
+		final FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(
+				FileType.CSV, false);
+
+		final InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final DataConfigurationEstimation estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateDataConfiguration(stream, fileConfiguration,
+				                                             DatatypeEstimationAlgorithm.MOST_ESTIMATED));
+		final DataConfiguration actualConfiguration = estimation.getDataConfiguration();
+
+		assertEquals(1, actualConfiguration.getConfigurations().size());
+		assertEquals(DataType.TEXT, actualConfiguration.getConfigurations().get(0).getType());
+		assertEquals(DataScale.NOMINAL, actualConfiguration.getConfigurations().get(0).getScale());
+	}
+
+	@Test
 	void testEstimationMostGeneral() {
 		String csvData =
 				"""

@@ -35,7 +35,7 @@ public class FrontendAttributeConfig {
     // Validate the interval size based on attribute protection and data type
     private void validateIntervalSize() throws InvalidAttributeConfigException {
         if (attributeProtection == AttributeProtection.MASKING) {
-            if (dataType == DataType.STRING || dataType == DataType.INTEGER) {
+            if (dataType == DataType.STRING || dataType == DataType.TEXT || dataType == DataType.INTEGER) {
                 int interval = 1;
                 if (intervalSize != null && !intervalSize.isEmpty()){
                     interval = Integer.parseInt(intervalSize);

@@ -1094,6 +1094,7 @@ public class DatabaseService {
 					"'" + data.asDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")) + "'";
 			case DECIMAL -> data.getValue().toString();
 			case INTEGER -> data.getValue().toString();
+			case TEXT -> "'" + data.getValue().toString().replace("'", "''") + "'";
 			case STRING -> "'" + data.getValue().toString().replace("'", "''") + "'";
 			case UNDEFINED -> {
 				LOGGER.error("Undefined data type can not be persisted!");
@@ -1231,6 +1232,9 @@ public class DatabaseService {
 				}
 				case INTEGER -> {
 					return new IntegerData((Integer) resultSet.getObject(columnIndex));
+				}
+				case TEXT -> {
+					return new TextData(resultSet.getString(columnIndex));
 				}
 				case STRING -> {
 					return new StringData(resultSet.getString(columnIndex));

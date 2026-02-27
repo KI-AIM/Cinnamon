@@ -15,6 +15,7 @@ public enum DataType {
 	DATE_TIME(DataScale.DATE, Set.of(DataScale.DATE)),
 	DECIMAL(DataScale.RATIO, Set.of(DataScale.NOMINAL, DataScale.ORDINAL, DataScale.INTERVAL, DataScale.RATIO)),
 	INTEGER(DataScale.INTERVAL, Set.of(DataScale.NOMINAL, DataScale.ORDINAL, DataScale.INTERVAL)),
+	TEXT(DataScale.NOMINAL, Set.of(DataScale.NOMINAL)),
 	STRING(DataScale.NOMINAL, Set.of(DataScale.NOMINAL, DataScale.ORDINAL)),
 	DATE(DataScale.DATE, Set.of(DataScale.DATE)),
 	UNDEFINED(DataScale.NOMINAL, Set.of());

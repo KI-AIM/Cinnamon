@@ -78,7 +78,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
 			final var headType = estimateColumnConfigurationFromSample(head).getType();
 			final var secType = estimateColumnConfigurationFromSample(sec).getType();
 
-			if (headType == DataType.STRING && secType != DataType.UNDEFINED && headType != secType) {
+			if (headType == DataType.STRING && secType != DataType.UNDEFINED && secType != DataType.TEXT && headType != secType) {
 				typeMathes++;
 
 				if (typeMathes>= minMatches) {
@@ -434,6 +434,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
         resultMap.put(DataType.DATE_TIME, 0);
         resultMap.put(DataType.DECIMAL, 0);
         resultMap.put(DataType.INTEGER, 0);
+        resultMap.put(DataType.TEXT, 0);
         resultMap.put(DataType.STRING, 0);
         resultMap.put(DataType.UNDEFINED, 0);
 
@@ -491,6 +492,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
                 new Pair<>(DataType.BOOLEAN, new BooleanData.BooleanDataBuilder()),
                 new Pair<>(DataType.DATE, new DateData.DateDataBuilder()),
                 new Pair<>(DataType.DATE_TIME, new DateTimeData.DateTimeDataBuilder()),
+                new Pair<>(DataType.TEXT, new TextData.TextDataBuilder()),
                 new Pair<>(DataType.STRING, new StringData.StringDataBuilder())
         );
     }

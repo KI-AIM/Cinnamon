@@ -37,6 +37,7 @@ import { ChartCalendarComponent } from './components/chart-calendar/chart-calend
 import { ChartDensityComponent } from './components/chart-density/chart-density.component';
 import { ChartFrequencyComponent } from './components/chart-frequency/chart-frequency.component';
 import { ChartSelectComponent } from './components/chart-select/chart-select.component';
+import { ChartWordcloudComponent } from './components/chart-wordcloud/chart-wordcloud.component';
 import { ChartComponent } from './components/chart/chart.component';
 import { ColorLegendComponent } from './components/color-legend/color-legend.component';
 import { ConfigurationFormComponent } from './components/configuration-form/configuration-form.component';
@@ -89,6 +90,7 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         // Components
         ChartDensityComponent,
         ChartFrequencyComponent,
+        ChartWordcloudComponent,
         ChartComponent,
         ChartSelectComponent,
         ChartCalendarComponent,

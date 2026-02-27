@@ -193,7 +193,7 @@ export class UtilityStatistics {
 
 export type UtilityMetricDataObject = { [key: string]: UtilityMetricData2 | UtilityMetricData3 };
 
-export type GraphType = 'correlation' | 'density' | 'frequency' | 'histogram' | 'heatmap';
+export type GraphType = 'correlation' | 'density' | 'frequency' | 'histogram' | 'heatmap' | 'wordcloud';
 
 function transformStatisticsValuesRecord(params: TransformFnParams): Record<string, StatisticsValueTypes> {
     if (!params.value) {

@@ -52,7 +52,10 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.graphType = this.isContinuous() ? 'histogram' : 'frequency';
+        const isTextAttribute = this.attributeStatistics.attribute_information.type === DataType.TEXT;
+        this.graphType = (isTextAttribute && this.getWordcloudPlotData())
+            ? 'wordcloud'
+            : (this.isContinuous() ? 'histogram' : 'frequency');
         this.hasSynthetic = this.mainData == 'synthetic';
 
         if (this.hasSynthetic) {
@@ -116,5 +119,9 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
 
     protected getFrequencyPlotData(): StatisticsData<HistogramPlotData> | undefined {
         return this.attributeStatistics.plot.text_length_distribution ?? this.attributeStatistics.plot.frequency_plot;
+    }
+
+    protected getWordcloudPlotData(): StatisticsData<HistogramPlotData> | undefined {
+        return this.attributeStatistics.plot.wordcloud;
     }
 }

@@ -144,6 +144,13 @@
                                      [originalSeriesLabel]="originalDisplayName" [simple]="true"
                                      [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
             </ng-container>
+            <ng-container *ngIf="graphType === 'wordcloud' && getWordcloudPlotData()">
+                <app-chart-wordcloud [colorScheme]="mc.metricConfiguration.colorScheme"
+                                     [columnConfiguration]="attributeStatistics.attribute_information"
+                                     [data]="getWordcloudPlotData()!"
+                                     [originalSeriesLabel]="originalDisplayName" [simple]="true"
+                                     [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-wordcloud>
+            </ng-container>
             <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
                 <app-chart-calendar [columnConfiguration]="attributeStatistics.attribute_information"
                                     [data]="attributeStatistics.plot.density!" [simple]="true"></app-chart-calendar>

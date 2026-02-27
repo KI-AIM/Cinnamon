@@ -52,8 +52,11 @@
                 <ng-container *ngIf="attributeStatistics.plot.density">
                     Density/Histogram
                 </ng-container>
-                <ng-container *ngIf="attributeStatistics.plot.frequency_plot || attributeStatistics.plot.text_length_distribution">
+                <ng-container *ngIf="(attributeStatistics.plot.frequency_plot || attributeStatistics.plot.text_length_distribution) && graphType !== 'wordcloud'">
                     Frequency
+                </ng-container>
+                <ng-container *ngIf="attributeStatistics.plot.wordcloud && graphType === 'wordcloud'">
+                    Wordcloud
                 </ng-container>
             </div>
             <div class="w-100 h-100" *ngIf="metricConfig$ | async as mc">
@@ -100,6 +103,13 @@
                                              [data]="getFrequencyPlotData()!" [limit]="null"
                                              [originalSeriesLabel]="originalDisplayName"
                                              [syntheticSeriesLabel]="datasetDisplayName"></app-chart-frequency>
+                    </ng-container>
+                    <ng-container *ngIf="graphType === 'wordcloud' && getWordcloudPlotData()">
+                        <app-chart-wordcloud [colorScheme]="mc.colorScheme"
+                                             [columnConfiguration]="attributeStatistics.attribute_information"
+                                             [data]="getWordcloudPlotData()!"
+                                             [originalSeriesLabel]="originalDisplayName"
+                                             [syntheticSeriesLabel]="datasetDisplayName"></app-chart-wordcloud>
                     </ng-container>
 
                     <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">

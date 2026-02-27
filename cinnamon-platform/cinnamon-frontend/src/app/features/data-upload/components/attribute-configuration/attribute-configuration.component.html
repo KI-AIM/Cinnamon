@@ -184,6 +184,19 @@
                 </td>
             </tr>
             <tr>
+                <td [class.current-type]="columnConfigurationForm.controls['type'].value === DataType.TEXT">
+                    Text
+                </td>
+                <td>
+                    Represents longer free-text content such as clinical notes, reports, or narrative descriptions.
+                    In contrast to String, this type is intended for unstructured text passages.
+                </td>
+                <td>
+                    <div><q>Patient reports persistent cough for two weeks and worsening dyspnea.</q></div>
+                    <div><q>Discharge summary: stable condition, follow-up in 14 days recommended.</q></div>
+                </td>
+            </tr>
+            <tr>
                 <td [class.current-type]="columnConfigurationForm.controls['type'].value === DataType.STRING">
                     String
                 </td>

@@ -26,7 +26,7 @@ def process_dataset(dataset, config):
         column_name = column_config['name']
         column_type = column_config['type']
 
-        if column_type in ['STRING', 'BOOLEAN']:
+        if column_type in ['STRING', 'TEXT', 'BOOLEAN']:
             data_types.append(column_name + ":" + 'categorical')
             continue
 

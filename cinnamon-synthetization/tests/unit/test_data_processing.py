@@ -14,6 +14,7 @@ from data_processing.pre_process import pre_process_dataframe
 from data_processing.train_test import split_train_test_cross_sectional
 from data_processing.utils import (
     MISSING_VALUE_STRING,
+    TEXT_PENDING_LLM,
     adjust_date_within_bounds_post,
     iso_to_strftime,
     parse_to_date_format,
@@ -91,6 +92,16 @@ def test_pre_process_dataframe_integer_non_numeric_raises():
     assert "Error processing column 'age'" in str(exc.value)
 
 
+def test_pre_process_dataframe_sets_text_column_to_pending_llm_placeholder():
+    df = pd.DataFrame({"notes": ["Long text", np.nan, "Another value"]})
+    config = [{"name": "notes", "type": "TEXT", "index": 0}]
+
+    processed, dropped = pre_process_dataframe(df, config)
+
+    assert dropped == []
+    assert processed["notes"].tolist() == [TEXT_PENDING_LLM, TEXT_PENDING_LLM, TEXT_PENDING_LLM]
+
+
 def test_post_process_dataframe_recreates_columns_casts_and_orders():
     df = pd.DataFrame(
         {
@@ -116,6 +127,17 @@ def test_post_process_dataframe_recreates_columns_casts_and_orders():
     assert str(result["score"].dtype) == "Float64"
     assert str(result["age"].dtype) == "Int64"
     assert pd.isna(result["extra_missing"]).all()
+
+
+def test_post_process_dataframe_sets_text_column_to_pending_llm_placeholder():
+    df = pd.DataFrame({"notes": ["Generated", pd.NA]})
+    config = [{"name": "notes", "type": "TEXT", "index": 0}]
+
+    result = post_process_dataframe(df, config, all_missing_values_column=[])
+
+    assert result.columns.tolist() == ["notes"]
+    assert str(result["notes"].dtype) == "string"
+    assert result["notes"].tolist() == [TEXT_PENDING_LLM, TEXT_PENDING_LLM]
 
 
 def test_post_process_dataframe_missing_date_format_keeps_column_without_crashing():

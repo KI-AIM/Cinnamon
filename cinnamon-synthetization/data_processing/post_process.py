@@ -2,7 +2,7 @@ import pandas as pd
 from typing import List, Dict, Any
 
 from data_processing.utils import iso_to_strftime, parse_to_date_format, adjust_date_within_bounds_post
-from data_processing.utils import BOOLEAN_MAP, MISSING_VALUE_STRING, MISSING_BOOLEAN
+from data_processing.utils import BOOLEAN_MAP, MISSING_VALUE_STRING, MISSING_BOOLEAN, TEXT_PENDING_LLM
 
 
 def post_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]], all_missing_values_column: List[str]) -> pd.DataFrame:
@@ -19,7 +19,7 @@ def post_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]], all_m
         config (List[Dict[str, Any]]): A list of dictionaries containing column configurations.
             Each dictionary should include:
                 - name (str): The column name.
-                - type (str): The target data type ("STRING", "BOOLEAN", "INTEGER",
+                - type (str): The target data type ("STRING", "TEXT", "BOOLEAN", "INTEGER",
                   "DECIMAL", or "DATE").
                 - configurations (List[Dict[str, Any]], optional): Additional configurations for
                   specific data types, such as date formatting.
@@ -51,6 +51,12 @@ def post_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]], all_m
 
             try:
                 if column_type == 'STRING':
+                    df[column_name] = df[column_name].astype(dtype='string')
+                    continue
+
+                if column_type == 'TEXT':
+                    # TODO: Replace this placeholder fallback once LLM server integration for text generation is available.
+                    df[column_name] = TEXT_PENDING_LLM
                     df[column_name] = df[column_name].astype(dtype='string')
                     continue
 

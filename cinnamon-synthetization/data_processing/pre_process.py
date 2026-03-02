@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Tuple, List, Dict, Any
 
 from data_processing.utils import iso_to_strftime, handle_date_column
-from data_processing.utils import BOOLEAN_MAP, MISSING_VALUE_STRING, MISSING_BOOLEAN
+from data_processing.utils import BOOLEAN_MAP, MISSING_VALUE_STRING, MISSING_BOOLEAN, TEXT_PENDING_LLM
 
 
 def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tuple[pd.DataFrame, List[str]]:
@@ -20,7 +20,7 @@ def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tup
             Each dictionary should include:
                 - name (str): The column name.
                 - type (str): The target data type or category of the column
-                  ("STRING", "BOOLEAN", "ID", "DATE", "DECIMAL", or "INTEGER").
+                  ("STRING", "TEXT", "BOOLEAN", "ID", "DATE", "DECIMAL", or "INTEGER").
                 - configurations (List[Dict[str, Any]], optional): Additional configurations for
                   specific column types, such as date formatting.
 
@@ -62,6 +62,11 @@ def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tup
             if column_type == 'STRING':
                 df[column_name] = df[column_name].astype(str)
                 df[column_name] = df[column_name].replace(['nan', ''], MISSING_VALUE_STRING)
+                continue
+
+            if column_type == 'TEXT':
+                # TODO: Replace this placeholder fallback once LLM server integration for text generation is available.
+                df[column_name] = TEXT_PENDING_LLM
                 continue
 
             if column_type == 'BOOLEAN':

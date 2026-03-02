@@ -63,7 +63,7 @@ class TvaeSynthesizer(TabularDataSynthesizer):
 
         self.discrete_columns = []  
         for column_config in config:  
-            if column_config['type'] in ['STRING', 'BOOLEAN']:
+            if column_config['type'] in ['STRING', 'TEXT', 'BOOLEAN']:
                 self.discrete_columns.append(column_config['name'])
 
         self.dataset = df

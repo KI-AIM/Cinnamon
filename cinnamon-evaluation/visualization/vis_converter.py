@@ -15,6 +15,7 @@ TEXT_ALLOWED_METRICS = {
     "text_length_q3",
     "text_length_ninety_fifth_percentile",
     "text_length_distribution",
+    "text_length_hellinger_distance",
     "wordcloud",
 }
 

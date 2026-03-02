@@ -19,6 +19,7 @@ from resemblance.tabular.metrics import (mean, standard_deviation, calculate_var
                                          calculate_text_length_q3,
                                          calculate_text_length_ninety_fifth_percentile,
                                          calculate_text_length_distribution,
+                                         calculate_text_length_hellinger_distance,
                                          calculate_wordcloud)
 
 from resemblance.longitudinal.metrics import calculate_observation_length_distribution
@@ -41,6 +42,7 @@ metric_functions_descriptive = {
         'text_length_q3': calculate_text_length_q3,
         'text_length_ninety_fifth_percentile': calculate_text_length_ninety_fifth_percentile,
         'text_length_distribution': calculate_text_length_distribution,
+        'text_length_hellinger_distance': calculate_text_length_hellinger_distance,
         'wordcloud': calculate_wordcloud,
         'fifth_percentile': calculate_fifth_percentile,
         'median': calculate_median,
@@ -73,6 +75,7 @@ metric_functions_cross_sectional = {
         'text_length_q3': calculate_text_length_q3,
         'text_length_ninety_fifth_percentile': calculate_text_length_ninety_fifth_percentile,
         'text_length_distribution': calculate_text_length_distribution,
+        'text_length_hellinger_distance': calculate_text_length_hellinger_distance,
         'wordcloud': calculate_wordcloud,
         'mode': calculate_mode,
         'fifth_percentile': calculate_fifth_percentile,
@@ -127,6 +130,7 @@ metric_functions_longitudinal = {
         'text_length_q3': calculate_text_length_q3,
         'text_length_ninety_fifth_percentile': calculate_text_length_ninety_fifth_percentile,
         'text_length_distribution': calculate_text_length_distribution,
+        'text_length_hellinger_distance': calculate_text_length_hellinger_distance,
         'wordcloud': calculate_wordcloud,
     },
     'utility': {}

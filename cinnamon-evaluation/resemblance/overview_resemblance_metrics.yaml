@@ -212,6 +212,13 @@ resemblance:
       visualization_type: "plot"
       version: "0.0.1"
 
+    - display_name: "Text Length Hellinger Distance"
+      function_name: text_length_hellinger_distance
+      description: "Measures the distance between real and synthetic text-length distributions for TEXT attributes."
+      interpretation: "A value near 0 indicates similar text-length distributions, while a value near 1 indicates stronger differences."
+      visualization_type: "details"
+      version: "0.0.1"
+
     - display_name: "Word Cloud"
       function_name: wordcloud
       description: "Compares the most frequent words in TEXT attributes using normalized frequencies."

@@ -1317,6 +1317,53 @@ def calculate_text_length_distribution(
         raise ValueError(f"Error calculating text length distribution: {str(e)}")
 
 
+def calculate_text_length_hellinger_distance(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, float]]:
+    """
+    Calculates the Hellinger distance between text-length distributions for each TEXT attribute.
+    """
+    hellinger_distances = {"real": {}, "synthetic": {}}
+
+    try:
+        for column in get_text_columns(real, synthetic):
+            real_text = prepare_text_series(real[column])
+            synthetic_text = prepare_text_series(synthetic[column])
+
+            real_lengths = real_text.str.len().astype(int)
+            synthetic_lengths = synthetic_text.str.len().astype(int)
+
+            if real_lengths.empty and synthetic_lengths.empty:
+                hellinger_dist = 0.0
+            elif real_lengths.empty or synthetic_lengths.empty:
+                hellinger_dist = 1.0
+            else:
+                real_counts = real_lengths.value_counts()
+                synthetic_counts = synthetic_lengths.value_counts()
+
+                all_lengths = sorted(set(real_counts.index).union(set(synthetic_counts.index)))
+                real_total = float(real_counts.sum())
+                synthetic_total = float(synthetic_counts.sum())
+
+                real_probs = np.array([real_counts.get(length, 0) / real_total for length in all_lengths], dtype=float)
+                synthetic_probs = np.array(
+                    [synthetic_counts.get(length, 0) / synthetic_total for length in all_lengths],
+                    dtype=float
+                )
+
+                hellinger_dist = float(
+                    distance.euclidean(np.sqrt(real_probs), np.sqrt(synthetic_probs)) / np.sqrt(2)
+                )
+
+            hellinger_distances["real"][column] = 0.0
+            hellinger_distances["synthetic"][column] = hellinger_dist
+
+        return hellinger_distances
+    except Exception as e:
+        raise ValueError(f"Error calculating text length Hellinger distance: {str(e)}")
+
+
 def calculate_wordcloud(
     real: pd.DataFrame,
     synthetic: pd.DataFrame,

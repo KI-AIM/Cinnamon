@@ -3,6 +3,7 @@ import { ColumnConfiguration } from "@shared/model/column-configuration";
 import {HistogramPlotData, StatisticsData} from "../../model/statistics";
 import {ChartComponent, Entries} from "../chart/chart.component";
 import { EChartsCoreOption } from "echarts/core";
+import { DataType } from "../../model/data-type";
 
 @Component({
     selector: 'app-chart-frequency',
@@ -90,7 +91,8 @@ export class ChartFrequencyComponent extends ChartComponent {
             displayedKeys = keys!;
         }
 
-        const chartName = this.createChartName("Frequency", this.data, this.columnConfiguration, dataSetLabels);
+        const chartTypeName = this.columnConfiguration.type === DataType.TEXT ? "Text Length" : "Frequency";
+        const chartName = this.createChartName(chartTypeName, this.data, this.columnConfiguration, dataSetLabels);
 
         const options: EChartsCoreOption = {
             ...this.graphOptions(this.simple, chartName),

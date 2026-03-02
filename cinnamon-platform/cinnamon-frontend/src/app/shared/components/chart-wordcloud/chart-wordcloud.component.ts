@@ -27,12 +27,13 @@ export class ChartWordcloudComponent extends ChartComponent {
 
         const hasSynthetic = !!this.data.synthetic;
         const series: any[] = [];
-        const titles: any[] = [];
+        const topPadding = this.simple ? 42 : 38;
+        const cloudHeight = hasSynthetic ? "84%" : "88%";
 
         for (const [key, value] of Object.entries(this.data) as Entries<StatisticsData<HistogramPlotData>>) {
             const index = key === "real" ? 0 : 1;
-            const left = hasSynthetic ? (index === 0 ? "0.5%" : "50.5%") : "1%";
-            const width = hasSynthetic ? "49%" : "98%";
+            const left = hasSynthetic ? (index === 0 ? "2%" : "52%") : "1%";
+            const width = hasSynthetic ? "46%" : "98%";
 
             const words = value.frequencies.map((frequency) => ({
                 name: frequency.label,
@@ -46,14 +47,15 @@ export class ChartWordcloudComponent extends ChartComponent {
                 type: "wordCloud",
                 shape: "square",
                 left,
-                top: hasSynthetic ? 22 : 6,
+                top: topPadding,
                 width,
-                height: hasSynthetic ? "86%" : "94%",
-                sizeRange: this.simple ? [18, 56] : [22, 72],
+                height: cloudHeight,
+                sizeRange: this.simple ? [18, 56] : (hasSynthetic ? [20, 64] : [22, 72]),
                 rotationRange: [-45, 45],
                 rotationStep: 45,
-                gridSize: 7,
+                gridSize: hasSynthetic ? 9 : 7,
                 drawOutOfBound: false,
+                shrinkToFit: true,
                 textStyle: {
                     fontFamily: "sans-serif",
                 },
@@ -65,18 +67,6 @@ export class ChartWordcloudComponent extends ChartComponent {
                 },
                 data: words,
             });
-
-            if (hasSynthetic) {
-                titles.push({
-                    text: dataSetLabels[key],
-                    left,
-                    top: 5,
-                    textStyle: {
-                        fontSize: 12,
-                        fontWeight: "bold",
-                    },
-                });
-            }
         }
 
         const chartName = this.createChartName("Wordcloud", this.data, this.columnConfiguration, dataSetLabels);
@@ -86,7 +76,6 @@ export class ChartWordcloudComponent extends ChartComponent {
             grid: {
                 show: false,
             },
-            title: titles,
             tooltip: {
                 trigger: "item",
                 formatter: (params: any) => {

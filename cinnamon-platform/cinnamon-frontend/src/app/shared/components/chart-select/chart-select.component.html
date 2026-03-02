@@ -1,9 +1,9 @@
 <mat-form-field class="flat-mat-form-field">
     <mat-select [(value)]="graph" (selectionChange)="update($event)">
         <mat-option *ngIf="dataType === DataType.TEXT" value="wordcloud">Wordcloud</mat-option>
-        <mat-option *ngIf="comparison" value="correlation">Correlation</mat-option>
+        <mat-option *ngIf="comparison && dataType !== DataType.TEXT" value="correlation">Correlation</mat-option>
         <mat-option *ngIf="continuous" value="density">Density</mat-option>
-        <mat-option *ngIf="!continuous" value="frequency">Frequency</mat-option>
+        <mat-option *ngIf="!continuous" value="frequency">{{ dataType === DataType.TEXT ? 'Text Length' : 'Frequency' }}</mat-option>
         <!-- TODO Disabled because issues with a wide range of values -->
 <!--        <mat-option *ngIf="dataType === DataType.DATE" value="heatmap">Heatmap</mat-option>-->
         <mat-option *ngIf="continuous" value="histogram">Histogram</mat-option>

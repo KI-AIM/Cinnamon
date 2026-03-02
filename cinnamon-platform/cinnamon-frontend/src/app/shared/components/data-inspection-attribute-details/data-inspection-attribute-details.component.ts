@@ -117,6 +117,10 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         return this.attributeStatistics.plot.density != null;
     }
 
+    protected isTextAttribute(): boolean {
+        return this.attributeStatistics.attribute_information.type === DataType.TEXT;
+    }
+
     protected getFrequencyPlotData(): StatisticsData<HistogramPlotData> | undefined {
         return this.attributeStatistics.plot.text_length_distribution ?? this.attributeStatistics.plot.frequency_plot;
     }

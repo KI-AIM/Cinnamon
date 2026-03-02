@@ -53,7 +53,7 @@
                     Density/Histogram
                 </ng-container>
                 <ng-container *ngIf="(attributeStatistics.plot.frequency_plot || attributeStatistics.plot.text_length_distribution) && graphType !== 'wordcloud'">
-                    Frequency
+                    {{ isTextAttribute() ? 'Text Length' : 'Frequency' }}
                 </ng-container>
                 <ng-container *ngIf="attributeStatistics.plot.wordcloud && graphType === 'wordcloud'">
                     Wordcloud
@@ -72,7 +72,7 @@
                                           [(graph)]="graphType" style="margin-left: auto;"></app-chart-select>
                     </div>
 
-                    <ng-container *ngIf="graphType === 'correlation' && hasSynthetic">
+                    <ng-container *ngIf="graphType === 'correlation' && hasSynthetic && !isTextAttribute()">
                         <app-chart-correlation [colorScheme]="mc.colorScheme"
                                                [columnConfiguration]="attributeStatistics.attribute_information"
                                                [data]="attributeStatistics.plot.visualize_columnwise_correlations!"

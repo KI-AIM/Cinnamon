@@ -114,7 +114,7 @@
                 </app-chart-select>
             </div>
 
-            <ng-container *ngIf="graphType === 'correlation' && hasSynthetic">
+            <ng-container *ngIf="graphType === 'correlation' && hasSynthetic && !isTextAttribute()">
                 <app-chart-correlation [colorScheme]="mc.metricConfiguration.colorScheme"
                                        [columnConfiguration]="attributeStatistics.attribute_information"
                                        [data]="attributeStatistics.plot.visualize_columnwise_correlations!"

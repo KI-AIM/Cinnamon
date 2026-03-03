@@ -2,7 +2,7 @@ import { ConfigurationObject } from "@shared/model/anonymization-attribute-confi
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { catchError, map, Observable, of, switchMap, tap } from "rxjs";
+import { map, Observable, of, switchMap, tap } from "rxjs";
 import { parse } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
@@ -64,7 +64,12 @@ export abstract class AlgorithmService {
             switchMap(value => {
                 // Either all processes are configured or none, so look up if the first is configured
                 if (value.processes[0].configured) {
-                    return this.doFetchConfiguration();
+                    // Ensure algorithms are loaded before fetching the configuration
+                    return this.algorithms.pipe(
+                        switchMap(_ => {
+                            return this.doFetchConfiguration();
+                        }),
+                    );
                 } else {
                     return of({config: {}, selectedAlgorithm: null});
                 }

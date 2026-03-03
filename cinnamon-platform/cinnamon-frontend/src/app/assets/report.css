@@ -64,6 +64,21 @@
             content: "";
         }
     }
+
+    /* Watermark, remove if the report is finished */
+    body::before {
+        content: "IN DEVELOPMENT";
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-size: 80px;
+        font-weight: bold;
+        color: rgba(0, 0, 0, 0.1);
+        z-index: 9999;
+        pointer-events: none;
+        white-space: nowrap;
+    }
 }
 
 .report-root {

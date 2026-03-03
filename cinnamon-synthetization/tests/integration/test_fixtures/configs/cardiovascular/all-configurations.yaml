@@ -1,0 +1,173 @@
+configurations:
+- index: 0
+  name: age
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 1
+  name: gender
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 2
+  name: height
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 3
+  name: weight
+  type: DECIMAL
+  scale: RATIO
+  configurations: []
+- index: 4
+  name: ap_hi
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 5
+  name: ap_lo
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 6
+  name: cholesterol
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 7
+  name: gluc
+  type: INTEGER
+  scale: INTERVAL
+  configurations: []
+- index: 8
+  name: smoke
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+- index: 9
+  name: alco
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+- index: 10
+  name: active
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+- index: 11
+  name: cardio
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+anonymization:
+  privacyModels:
+  - name: anonymization_tabular
+    type: tabular
+    modelConfiguration:
+      riskThresholdType: Max
+      riskThresholdValue: 0.5
+      generalizationSetting: Global
+      suppressionLimit: 0.8
+  attributeConfiguration:
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: INTEGER
+    index: 0
+    intervalSize: 10
+    name: age
+    scale: INTERVAL
+  - attributeProtection: RECORD_DELETION
+    dataType: INTEGER
+    index: 1
+    intervalSize: null
+    name: gender
+    scale: INTERVAL
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: INTEGER
+    index: 2
+    intervalSize: 10
+    name: height
+    scale: INTERVAL
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: DECIMAL
+    index: 3
+    intervalSize: 1
+    name: weight
+    scale: RATIO
+synthetization_configuration:
+  algorithm:
+    synthesizer: tvae
+    type: cross-sectional
+    version: '0.1'
+    model_parameter:
+      embedding_dim: 32
+      compress_dims:
+      - 128
+      - 64
+      decompress_dims:
+      - 64
+      - 128
+    model_fitting:
+      batch_size: 256
+      epochs: 400
+    sampling:
+      num_samples: 1000
+evaluation_configuration:
+  data_format: cross-sectional
+  resemblance:
+    mean: {}
+    standard_deviation: {}
+    variance: {}
+    distinct_values: {}
+    mode: {}
+    fifth_percentile: {}
+    median: {}
+    q1: {}
+    q3: {}
+    ninety_fifth_percentile: {}
+    minimum: {}
+    maximum: {}
+    density: {}
+    histogram: {}
+    kolmogorov_smirnov: {}
+    hellinger_distance: {}
+    frequency_plot: {}
+    calculate_columnwise_correlations: {}
+    calculate_columnwise_correlations_distance: {}
+    missing_values_count: {}
+    visualize_columnwise_correlations: {}
+  utility:
+    machine_learning:
+      train_size: 0.8
+      target_variable: cardio
+risk_assessment_configuration:
+  singlingout_uni:
+    n_attacks: 300
+  attribute_inference:
+    n_attacks: 100
+  linkage:
+    n_attacks: 100
+    available_columns:
+    - ap_hi
+    - ap_lo
+    - cholesterol
+    - gluc
+    - active
+    - alco
+    unavailable_columns:
+    - age
+    - gender
+    - height
+    - weight
+    - smoke
+    - cardio
+  data_format: cross-sectional
+  train_fraction: 0.8
+  targets: []
+  n_random_targets: 5
+  n_outlier_targets: 5
+  n_iterations: 1
+  columns_excluded: []
+  singlingout_multi:
+    n_attacks: 300
+  metrics:
+    uniqueness: true

@@ -1,0 +1,199 @@
+configurations:
+- index: 0
+  name: Age
+  type: DECIMAL
+  scale: INTERVAL
+  configurations: []
+- index: 1
+  name: Gender
+  type: STRING
+  scale: NOMINAL
+  configurations: []
+- index: 2
+  name: Height
+  type: DECIMAL
+  scale: INTERVAL
+  configurations: []
+- index: 3
+  name: Weight
+  type: DECIMAL
+  scale: INTERVAL
+  configurations: []
+- index: 4
+  name: CALC
+  type: STRING
+  scale: NOMINAL
+  configurations: []
+- index: 5
+  name: FAVC
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+- index: 6
+  name: FCVC
+  type: DECIMAL
+  scale: INTERVAL
+  configurations: []
+- index: 7
+  name: NCP
+  type: DECIMAL
+  scale: INTERVAL
+  configurations: []
+- index: 8
+  name: SCC
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+- index: 9
+  name: SMOKE
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+- index: 10
+  name: CH2O
+  type: DECIMAL
+  scale: INTERVAL
+  configurations: []
+- index: 11
+  name: family_history_with_overweight
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+- index: 12
+  name: FAF
+  type: DECIMAL
+  scale: INTERVAL
+  configurations: []
+- index: 13
+  name: TUE
+  type: DECIMAL
+  scale: INTERVAL
+  configurations: []
+- index: 14
+  name: CAEC
+  type: STRING
+  scale: NOMINAL
+  configurations: []
+- index: 15
+  name: MTRANS
+  type: STRING
+  scale: NOMINAL
+  configurations: []
+- index: 16
+  name: NObeyesdad
+  type: STRING
+  scale: NOMINAL
+  configurations: []
+anonymization:
+  privacyModels:
+  - name: anonymization_tabular
+    type: tabular
+    modelConfiguration:
+      riskThresholdType: Max
+      riskThresholdValue: 0.5
+      generalizationSetting: Global
+      suppressionLimit: 0.8
+  attributeConfiguration:
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: DECIMAL
+    index: 0
+    intervalSize: 10
+    name: Age
+    scale: INTERVAL
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: DECIMAL
+    index: 3
+    intervalSize: 1
+    name: Weight
+    scale: INTERVAL
+  - attributeProtection: RECORD_DELETION
+    dataType: STRING
+    index: 1
+    intervalSize: null
+    name: Gender
+    scale: NOMINAL
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: DECIMAL
+    index: 2
+    intervalSize: 10
+    name: Height
+    scale: INTERVAL
+synthetization_configuration:
+  algorithm:
+    synthesizer: arf
+    type: cross-sectional
+    version: '0.1'
+    model_parameter:
+      num_trees: 30
+      min_node_size: 5
+    model_fitting:
+      max_iters: 10
+    sampling:
+      num_samples: 1000
+evaluation_configuration:
+  data_format: cross-sectional
+  resemblance:
+    mean: {}
+    standard_deviation: {}
+    variance: {}
+    distinct_values: {}
+    mode: {}
+    fifth_percentile: {}
+    median: {}
+    q1: {}
+    q3: {}
+    ninety_fifth_percentile: {}
+    minimum: {}
+    maximum: {}
+    density: {}
+    histogram: {}
+    kolmogorov_smirnov: {}
+    hellinger_distance: {}
+    frequency_plot: {}
+    calculate_columnwise_correlations: {}
+    calculate_columnwise_correlations_distance: {}
+    missing_values_count: {}
+    visualize_columnwise_correlations: {}
+  utility:
+    machine_learning:
+      train_size: 0.8
+      target_variable: NObeyesdad
+    discriminator_based_evaluation:
+      train_size: 0.8
+risk_assessment_configuration:
+  singlingout_uni:
+    n_attacks: 100
+  attribute_inference:
+    n_attacks: 100
+  linkage:
+    n_attacks: 100
+    available_columns:
+    - CALC
+    - FAVC
+    - FCVC
+    - NCP
+    - SCC
+    - CH2O
+    - FAF
+    - MTRANS
+    - CAEC
+    - TUE
+    unavailable_columns:
+    - Age
+    - Gender
+    - Height
+    - Weight
+    - family_history_with_overweight
+    - NObeyesdad
+    - SMOKE
+  data_format: cross-sectional
+  train_fraction: 0.8
+  targets: []
+  n_random_targets: 5
+  n_outlier_targets: 5
+  n_iterations: 1
+  columns_excluded: []
+  singlingout_multi:
+    n_attacks: 100
+  metrics:
+    uniqueness: true

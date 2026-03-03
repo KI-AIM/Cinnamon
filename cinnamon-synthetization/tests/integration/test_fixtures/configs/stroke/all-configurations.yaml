@@ -1,0 +1,169 @@
+configurations:
+- index: 0
+  name: gender
+  type: STRING
+  scale: NOMINAL
+  configurations: []
+- index: 1
+  name: age
+  type: INTEGER
+  scale: RATIO
+  configurations: []
+- index: 2
+  name: hypertension
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+- index: 3
+  name: heart_disease
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+- index: 4
+  name: ever_married
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+- index: 5
+  name: work_type
+  type: STRING
+  scale: NOMINAL
+  configurations: []
+- index: 6
+  name: Residence_type
+  type: STRING
+  scale: NOMINAL
+  configurations: []
+- index: 7
+  name: avg_glucose_level
+  type: DECIMAL
+  scale: RATIO
+  configurations: []
+- index: 8
+  name: bmi
+  type: DECIMAL
+  scale: RATIO
+  configurations: []
+- index: 9
+  name: smoking_status
+  type: STRING
+  scale: NOMINAL
+  configurations: []
+- index: 10
+  name: stroke
+  type: BOOLEAN
+  scale: NOMINAL
+  configurations: []
+anonymization:
+  privacyModels:
+  - name: anonymization_tabular
+    type: tabular
+    modelConfiguration:
+      riskThresholdType: Max
+      riskThresholdValue: 0.5
+      generalizationSetting: Global
+      suppressionLimit: 0.8
+  attributeConfiguration:
+  - attributeProtection: RECORD_DELETION
+    dataType: STRING
+    index: 0
+    intervalSize: null
+    name: gender
+    scale: NOMINAL
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: INTEGER
+    index: 1
+    intervalSize: 10
+    name: age
+    scale: RATIO
+  - attributeProtection: RECORD_DELETION
+    dataType: STRING
+    index: 5
+    intervalSize: null
+    name: work_type
+    scale: NOMINAL
+  - attributeProtection: MICRO_AGGREGATION
+    dataType: DECIMAL
+    index: 8
+    intervalSize: 1
+    name: bmi
+    scale: RATIO
+synthetization_configuration:
+  algorithm:
+    synthesizer: ctgan
+    type: cross-sectional
+    version: '0.1'
+    model_parameter:
+      embedding_dim: 64
+      generator_dim:
+      - 64
+      - 64
+      discriminator_dim:
+      - 64
+      - 64
+    model_fitting:
+      batch_size: 128
+      epochs: 150
+    sampling:
+      num_samples: 1000
+evaluation_configuration:
+  data_format: cross-sectional
+  resemblance:
+    mean: {}
+    standard_deviation: {}
+    variance: {}
+    distinct_values: {}
+    mode: {}
+    fifth_percentile: {}
+    median: {}
+    q1: {}
+    q3: {}
+    ninety_fifth_percentile: {}
+    minimum: {}
+    maximum: {}
+    density: {}
+    histogram: {}
+    kolmogorov_smirnov: {}
+    hellinger_distance: {}
+    frequency_plot: {}
+    calculate_columnwise_correlations: {}
+    calculate_columnwise_correlations_distance: {}
+    missing_values_count: {}
+    visualize_columnwise_correlations: {}
+  utility:
+    machine_learning:
+      train_size: 0.8
+      target_variable: stroke
+    discriminator_based_evaluation:
+      train_size: 0.8
+risk_assessment_configuration:
+  singlingout_uni:
+    n_attacks: 300
+  attribute_inference:
+    n_attacks: 100
+  linkage:
+    n_attacks: 100
+    available_columns:
+    - hypertension
+    - ever_married
+    - work_type
+    - avg_glucose_level
+    - Residence_type
+    - smoking_status
+    unavailable_columns:
+    - gender
+    - age
+    - heart_disease
+    - bmi
+    - stroke
+  data_format: cross-sectional
+  train_fraction: 0.8
+  targets: []
+  n_random_targets: 5
+  n_outlier_targets: 5
+  n_iterations: 1
+  columns_excluded: []
+  singlingout_multi:
+    n_attacks: 300
+  metrics:
+    uniqueness: true

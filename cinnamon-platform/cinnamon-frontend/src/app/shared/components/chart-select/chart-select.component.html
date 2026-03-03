@@ -1,6 +1,7 @@
 <mat-form-field class="flat-mat-form-field">
     <mat-select [(value)]="graph" (selectionChange)="update($event)">
-        <mat-option *ngIf="dataType === DataType.TEXT" value="wordcloud">Wordcloud</mat-option>
+        <mat-option *ngIf="dataType === DataType.TEXT" value="wordcloud">Wordcloud Match</mat-option>
+        <mat-option *ngIf="dataType === DataType.TEXT" value="wordcloud_independent">Wordcloud Split</mat-option>
         <mat-option *ngIf="comparison && dataType !== DataType.TEXT" value="correlation">Correlation</mat-option>
         <mat-option *ngIf="continuous" value="density">Density</mat-option>
         <mat-option *ngIf="!continuous" value="frequency">{{ dataType === DataType.TEXT ? 'Text Length' : 'Frequency' }}</mat-option>

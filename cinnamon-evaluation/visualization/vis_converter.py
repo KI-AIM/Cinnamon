@@ -17,6 +17,7 @@ TEXT_ALLOWED_METRICS = {
     "text_length_distribution",
     "text_length_hellinger_distance",
     "wordcloud",
+    "wordcloud_independent",
 }
 
 

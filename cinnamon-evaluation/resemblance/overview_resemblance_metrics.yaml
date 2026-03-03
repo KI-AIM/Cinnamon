@@ -219,10 +219,17 @@ resemblance:
       visualization_type: "details"
       version: "0.0.1"
 
-    - display_name: "Word Cloud"
+    - display_name: "Wordcloud Match"
       function_name: wordcloud
       description: "Compares the most frequent words in TEXT attributes using normalized frequencies."
       interpretation: "Similar dominant words and frequencies indicate that semantic vocabulary usage is preserved."
+      visualization_type: "plot"
+      version: "0.0.1"
+
+    - display_name: "Wordcloud Split"
+      function_name: wordcloud_independent
+      description: "Shows independent top-word frequencies for original and protected TEXT attributes."
+      interpretation: "Use this to compare each dataset's own dominant vocabulary, even when words do not overlap."
       visualization_type: "plot"
       version: "0.0.1"
 

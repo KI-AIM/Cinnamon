@@ -1467,6 +1467,83 @@ def calculate_wordcloud(
         raise ValueError(f"Error calculating wordcloud data: {str(e)}")
 
 
+def calculate_wordcloud_independent(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame,
+    top_words: int = 50
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """
+    Calculates independent top-word frequencies for real and synthetic TEXT attributes.
+    """
+    results = {"real": {}, "synthetic": {}}
+
+    def build_real_frequency_list(counter: Dict[str, int], top_n: int) -> List[Dict[str, Union[str, float, int]]]:
+        total = sum(counter.values())
+        if total <= 0:
+            return []
+
+        top_list = sorted(counter.items(), key=lambda item: item[1], reverse=True)[:top_n]
+        frequencies: List[Dict[str, Union[str, float, int]]] = []
+        for word, count in top_list:
+            frequencies.append({
+                "label": word,
+                "value": float((count / total) * 100),
+                # Left cloud (original) should always be shown in blue.
+                "color_index": 0,
+            })
+        return frequencies
+
+    def build_synthetic_frequency_list(
+        counter: Dict[str, int],
+        real_vocabulary: set[str],
+        top_n: int
+    ) -> List[Dict[str, Union[str, float, int]]]:
+        total = sum(counter.values())
+        if total <= 0:
+            return []
+
+        top_list = sorted(counter.items(), key=lambda item: item[1], reverse=True)[:top_n]
+        frequencies: List[Dict[str, Union[str, float, int]]] = []
+        for word, count in top_list:
+            frequencies.append({
+                "label": word,
+                "value": float((count / total) * 100),
+                # Right cloud: green if word exists in original, red otherwise.
+                "color_index": 1 if word in real_vocabulary else 10,
+            })
+        return frequencies
+
+    try:
+        for column in get_text_columns(real, synthetic):
+            real_text = prepare_text_series(real[column])
+            synthetic_text = prepare_text_series(synthetic[column])
+
+            real_counter = extract_word_frequencies(real_text)
+            synthetic_counter = extract_word_frequencies(synthetic_text)
+
+            real_frequencies = build_real_frequency_list(real_counter, top_words)
+            synthetic_frequencies = build_synthetic_frequency_list(
+                synthetic_counter,
+                set(real_counter.keys()),
+                top_words
+            )
+
+            results["real"][column] = {
+                "frequencies": real_frequencies,
+                "x_axis": "Words",
+                "y_axis": "Relative Frequency (%)"
+            }
+            results["synthetic"][column] = {
+                "frequencies": synthetic_frequencies,
+                "x_axis": "Words",
+                "y_axis": "Relative Frequency (%)"
+            }
+
+        return results
+    except Exception as e:
+        raise ValueError(f"Error calculating independent wordcloud data: {str(e)}")
+
+
 def calculate_mode(real, synthetic):
     """
     Calculates the mode of a categorical column in a dataframe.

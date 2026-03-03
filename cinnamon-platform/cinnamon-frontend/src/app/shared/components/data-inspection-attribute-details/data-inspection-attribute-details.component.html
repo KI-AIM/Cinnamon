@@ -52,11 +52,11 @@
                 <ng-container *ngIf="attributeStatistics.plot.density">
                     Density/Histogram
                 </ng-container>
-                <ng-container *ngIf="(attributeStatistics.plot.frequency_plot || attributeStatistics.plot.text_length_distribution) && graphType !== 'wordcloud'">
+                <ng-container *ngIf="(attributeStatistics.plot.frequency_plot || attributeStatistics.plot.text_length_distribution) && graphType !== 'wordcloud' && graphType !== 'wordcloud_independent'">
                     {{ isTextAttribute() ? 'Text Length' : 'Frequency' }}
                 </ng-container>
-                <ng-container *ngIf="attributeStatistics.plot.wordcloud && graphType === 'wordcloud'">
-                    Wordcloud
+                <ng-container *ngIf="(attributeStatistics.plot.wordcloud || attributeStatistics.plot.wordcloud_independent) && (graphType === 'wordcloud' || graphType === 'wordcloud_independent')">
+                    {{ graphType === 'wordcloud' ? 'Wordcloud Match' : 'Wordcloud Split' }}
                 </ng-container>
             </div>
             <div class="w-100 h-100" *ngIf="metricConfig$ | async as mc">
@@ -108,6 +108,13 @@
                         <app-chart-wordcloud [colorScheme]="mc.colorScheme"
                                              [columnConfiguration]="attributeStatistics.attribute_information"
                                              [data]="getWordcloudPlotData()!"
+                                             [originalSeriesLabel]="originalDisplayName"
+                                             [syntheticSeriesLabel]="datasetDisplayName"></app-chart-wordcloud>
+                    </ng-container>
+                    <ng-container *ngIf="graphType === 'wordcloud_independent' && getWordcloudIndependentPlotData()">
+                        <app-chart-wordcloud [colorScheme]="mc.colorScheme"
+                                             [columnConfiguration]="attributeStatistics.attribute_information"
+                                             [data]="getWordcloudIndependentPlotData()!"
                                              [originalSeriesLabel]="originalDisplayName"
                                              [syntheticSeriesLabel]="datasetDisplayName"></app-chart-wordcloud>
                     </ng-container>

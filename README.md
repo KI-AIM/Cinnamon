@@ -74,3 +74,7 @@ Cinnamon is open source published under the [Apache 2.0 license](https://www.apa
 
 ## Acknowledgement
 Supported by BMFTR grant No. 16KISA115K
+
+Funded by the European Union – NextGenerationEU
+
+<img src="/img/EU.png" height="100px" alt="With funding from the: Federal Ministry of Research, Technology and Space"> <img src="/img/BMFTR.png" height="100px" alt="Funded by the European Union – NextGenerationEU">

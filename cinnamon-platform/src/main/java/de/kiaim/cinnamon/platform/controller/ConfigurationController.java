@@ -1,11 +1,9 @@
 package de.kiaim.cinnamon.platform.controller;
 
+import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.*;
-import de.kiaim.cinnamon.platform.model.dto.AlgorithmDefinitionRequest;
-import de.kiaim.cinnamon.platform.model.dto.AvailableAlgorithmsRequest;
-import de.kiaim.cinnamon.platform.model.dto.ConfigurationInfo;
-import de.kiaim.cinnamon.platform.model.dto.ConfigurationRequest;
+import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -100,6 +98,27 @@ public class ConfigurationController {
 		final ProjectEntity project = projectService.getProject(user);
 		databaseService.storeConfiguration(configurationRequest.getConfigurationName(), configurationRequest.getUrl(),
 		                                   configurationRequest.getConfiguration(), project);
+	}
+
+	@Operation(summary = "Imports all configurations defined in the given file.",
+	           description = "Imports all configurations defined in the given file.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully imported the configurations.",
+			             content = @Content)
+	})
+	@PostMapping(value = "/import",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	public ConfigurationImportSummary importConfigurations(
+			@Valid @ParameterObject ImportConfigurationRequest importConfigurationRequest,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws BadFileException, BadConfigurationFileException {
+		// Load user from the database because lazy loaded fields cannot be read from the injected user
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		return externalConfigurationService.importConfigurations(project, importConfigurationRequest.getConfiguration(),
+		                                                         importConfigurationRequest.getImportParameters());
 	}
 
 	@Operation(summary = "Loads a previously stored configuration with the given name.",

@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
+import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -11,11 +12,14 @@ import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -93,6 +97,200 @@ class ConfigurationControllerTest extends ControllerTest {
 		final ProjectEntity project = user.getProject();
 		assertNotNull(project, "The configuration has not been created!");
 		testConfiguration(project, config);
+	}
+
+	@Test
+	public void importConfigurationsNoYAML() throws Exception {
+		final String configuration = "invalid";
+		var file = new MockMultipartFile("configuration", "file.yaml", "application/yaml", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		                                      .file(file))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_14_2"));
+	}
+
+	@Test
+	public void importConfigurations() throws Exception {
+		final String configuration = """
+		                             anonymization:
+		                                param1: 42
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries:  [
+		                                 		{configurationName: 'anonymization', status: 'SUCCESS', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		testImportedConfiguration("anonymization", "param1: 42\n");
+	}
+
+	@Test
+	public void importConfigurationsJSON() throws Exception {
+		final String configuration = """
+		                             {
+		                                "anonymization": {
+		                                    "param1": 42
+		                                }
+		                             }
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.json", "text/json", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries:  [
+		                                 		{configurationName: 'anonymization', status: 'SUCCESS', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		testImportedConfiguration("anonymization", "param1: 42\n");
+	}
+
+	@Test
+	public void importConfigurationsInvalid() throws Exception {
+		final String configuration = """
+		                             invalid_name:
+		                                param2: 42
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		                                      .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'PARTIAL_ERROR',
+		                                 	configurationImportSummaries: [
+		                                 		{configurationName: 'invalid_name', status:  'ERROR', errorCode: 'PLATFORM_1_2_1'}
+		                                 	]
+		                                 }
+		                                 """));
+
+		testImportedConfiguration("invalid_name", null);
+	}
+
+	@Test
+	public void importConfigurationsInvalidNonPartial() throws Exception {
+		final String configuration = """
+		                             invalid_name:
+		                                param2: 42
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		ConfigurationImportParameters parameters = new ConfigurationImportParameters();
+		parameters.setAllowPartialImport(false);
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		                                      .file(file)
+		                                      .param("importParameters", jsonMapper.writeValueAsString(parameters)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_14_3"))
+		       .andExpect(content().json("""
+		                                 {
+		                                 	errorDetails: {
+		                                 		configurationImportSummary: {
+		                                 			parameters: {
+		                                 				allowPartialImport: false,
+		                                 				configurationsToImport: null
+		                                 			},
+		                                 			status: 'ERROR',
+		                                 			configurationImportSummaries: [
+		                                 				{configurationName: 'invalid_name', status:  'ERROR', errorCode: 'PLATFORM_1_2_1'}
+		                                 			]
+		                                 		}
+		                                 	}
+		                                 }
+		                                 """));
+
+		testImportedConfiguration("invalid_name", null);
+	}
+
+	@Test
+	public void importConfigurationsSomeInvalid() throws Exception {
+		final String configuration = """
+		                             anonymization:
+		                                param1: 42
+		                             invalid_name:
+		                                param2: 42
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'PARTIAL_ERROR',
+		                                 	configurationImportSummaries: [
+		                                 		{configurationName: 'anonymization', status: 'SUCCESS', errorCode: null},
+		                                 		{configurationName: 'invalid_name', status:  'ERROR', errorCode: 'PLATFORM_1_2_1'}
+		                                 	]
+		                                 }
+		                                 """));
+
+		testImportedConfiguration("anonymization", "param1: 42\n");
+		testImportedConfiguration("invalid_name", null);
+	}
+
+	@Test
+	public void importConfigurationsSelected() throws Exception {
+		final String configuration = """
+		                             anonymization:
+		                                param1: 42
+		                             invalid_name:
+		                                param2: 42
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		ConfigurationImportParameters parameters = new ConfigurationImportParameters();
+		parameters.setConfigurationsToImport(Set.of("anonymization"));
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		                                      .file(file)
+		                                      .param("importParameters", jsonMapper.writeValueAsString(parameters)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: ['anonymization']
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries: [
+		                                 		{configurationName: 'anonymization', status: 'SUCCESS', errorCode: null},
+		                                 		{configurationName: 'invalid_name', status:  'IGNORED', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		testImportedConfiguration("anonymization", "param1: 42\n");
+		testImportedConfiguration("invalid_name", null);
 	}
 
 	@Test
@@ -187,5 +385,23 @@ class ConfigurationControllerTest extends ControllerTest {
 		mockMvc.perform(get("/api/config/algorithm"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_3_2_1"));
+	}
+
+	private void testImportedConfiguration(final String configurationName, final String content) {
+		var project = getTestProject();
+		var configList = project.getConfigurations()
+		                        .stream()
+		                        .filter(c -> c.getConfiguration().getConfigurationName().equals(configurationName))
+		                        .findFirst();
+
+		if (content == null) {
+			assertTrue(configList.isEmpty());
+		} else {
+			assertTrue(configList.isPresent());
+			assertEquals(1, configList.get().getConfigurations().size());
+
+			var configObject = configList.get().getConfigurations().get(0);
+			assertEquals(content, configObject.getConfiguration());
+		}
 	}
 }

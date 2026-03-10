@@ -55,8 +55,8 @@ def post_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]], all_m
                     continue
 
                 if column_type == 'TEXT':
-                    # TODO: Replace this placeholder fallback once LLM server integration for text generation is available.
-                    df[column_name] = TEXT_PENDING_LLM
+                    df[column_name] = df[column_name].replace({"": pd.NA, "null": pd.NA, "NULL": pd.NA, "NaN": pd.NA, "nan": pd.NA})
+                    df[column_name] = df[column_name].fillna(TEXT_PENDING_LLM)
                     df[column_name] = df[column_name].astype(dtype='string')
                     continue
 

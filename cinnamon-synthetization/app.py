@@ -17,6 +17,7 @@ from api_utility.status.status_updater import InterceptStdOut
 from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
+from synthetic_tabular_data_generator.text_generation.ollama_text_synthesizer import OllamaTextSynthesizer
 
 
 app = Flask(__name__)
@@ -96,6 +97,46 @@ def prepare_callback_data(samples, synthesizer_model):
     return files
 
 
+def get_text_columns(attribute_config):
+    """
+    Return all TEXT columns defined in the attribute configuration.
+    """
+    return [
+        column_config.get('name')
+        for column_config in attribute_config.get('configurations', [])
+        if str(column_config.get('type', '')).upper() == 'TEXT' and column_config.get('name')
+    ]
+
+
+def get_non_text_columns(attribute_config):
+    """
+    Return all non-TEXT columns defined in the attribute configuration.
+    """
+    return [
+        column_config.get('name')
+        for column_config in attribute_config.get('configurations', [])
+        if str(column_config.get('type', '')).upper() != 'TEXT' and column_config.get('name')
+    ]
+
+
+def generate_text_columns_if_needed(samples, original_data, attribute_config, algorithm_config):
+    """
+    Generate TEXT columns using the internal Ollama text synthesizer if TEXT columns are present.
+    """
+    text_columns = get_text_columns(attribute_config)
+    if not text_columns:
+        return samples
+
+    context_columns = get_non_text_columns(attribute_config)
+
+    text_synthesizer = OllamaTextSynthesizer.from_algorithm_or_env(algorithm_config)
+    text_synthesizer.initialize()
+    text_synthesizer.fit(original_data, text_columns)
+
+    print(f"Generating TEXT columns via LLM: {text_columns}")
+    return text_synthesizer.generate(samples, text_columns=text_columns, context_columns=context_columns)
+
+
 def synthesize_data(synthesizer_name, file_path_status, attribute_config, algorithm_config, data,
                     callback_url, session_key):
     """
@@ -168,6 +209,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
 
         # Step 4: Pre-process sampled data
         try:
+            original_data = data.copy()
             pre_processed_data, all_missing_values_column = pre_process_dataframe(data, attribute_config['configurations'])
             print("Dataset preprocessed.")
         except Exception as e:
@@ -245,6 +287,12 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         
         # Step 9: Post-process sampled data
         try:
+            samples = generate_text_columns_if_needed(
+                samples=samples,
+                original_data=original_data,
+                attribute_config=attribute_config,
+                algorithm_config=algorithm_config,
+            )
             print('Starting Post-processing')
             samples = post_process_dataframe(samples, attribute_config['configurations'], all_missing_values_column)
             print('Data Post-processed')

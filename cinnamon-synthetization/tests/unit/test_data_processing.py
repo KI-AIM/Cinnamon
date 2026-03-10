@@ -137,7 +137,7 @@ def test_post_process_dataframe_sets_text_column_to_pending_llm_placeholder():
 
     assert result.columns.tolist() == ["notes"]
     assert str(result["notes"].dtype) == "string"
-    assert result["notes"].tolist() == [TEXT_PENDING_LLM, TEXT_PENDING_LLM]
+    assert result["notes"].tolist() == ["Generated", TEXT_PENDING_LLM]
 
 
 def test_post_process_dataframe_missing_date_format_keeps_column_without_crashing():

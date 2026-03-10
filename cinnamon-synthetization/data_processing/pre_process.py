@@ -65,7 +65,8 @@ def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tup
                 continue
 
             if column_type == 'TEXT':
-                # TODO: Replace this placeholder fallback once LLM server integration for text generation is available.
+                # TEXT is intentionally replaced in phase 1.
+                # The real text is generated in phase 2 by OllamaTextSynthesizer.
                 df[column_name] = TEXT_PENDING_LLM
                 continue
 

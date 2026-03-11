@@ -1,0 +1,815 @@
+<app-info-card typeClass="card-warn">
+    The report is currently in development and should not be used for assessing privacy risks of the dataset.
+</app-info-card>
+
+<ng-container *ngIf="!platform.BLINK || platform.ANDROID">
+    <app-info-card typeClass="card-warn">
+
+        <ng-container *ngIf="platform.ANDROID; else noAndroidDisclaimer">
+            Background images are not compatible with Android and will not be visible in the exported PDF.
+        </ng-container>
+        <ng-template #noAndroidDisclaimer>
+            <ng-container *ngIf="!platform.FIREFOX">
+                The report generator might not be fully compatible with your browser.
+            </ng-container>
+
+            <ng-container *ngIf="platform.FIREFOX">
+                Custom headers and footers are not compatible with Firefox and will not be visible in the exported PDF.
+            </ng-container>
+        </ng-template>
+
+        Please use a Chromium based browser (e.g. Google Chrome, Microsoft Edge) on a PC to save the report as a PDF
+        file.
+
+    </app-info-card>
+</ng-container>
+
+<div class="vertical-boxes">
+    <div class="box">
+        <div class="mb-3">
+            <div class="mb-2">
+                The workflow is finished. The report below describes the applied workflow and displays the results.
+                If the privacy or utility is not satisfactory, you can adjust the configurations and rerun the workflow.
+                Otherwise you can export the project results and the report.
+            </div>
+            <div>
+                <button mat-button mat-raised-button color="primary" (click)="projectExport.open()">Export Project</button>
+            </div>
+        </div>
+
+        <div>
+            In order to save the report as a PDF file, please follow these steps:
+            <div *ngIf="platform.ANDROID; else noAndroidInstructions">
+                <ol class="mb-2">
+                    <li>
+                        Click on the <q>Save Report</q> button below. A new browser window with a print dialog should
+                        open.
+                    </li>
+                    <li>
+                        Click on the three dots in the top right corner and select <q>Save as PDF</q>.
+                    </li>
+                    <li>
+                        Enter a name, click on <q>Save</q> and close the browser window.
+                    </li>
+                </ol>
+            </div>
+            <ng-template #noAndroidInstructions>
+                <ng-container *ngIf="platform.BLINK">
+                    <ol class="mb-2">
+                        <li>
+                            Click on the <q>Save Report</q> button below. A new browser window with a print dialog
+                            should open.
+                        </li>
+                        <li>
+                            Select the Destination <q>Save as PDF</q>.
+                        </li>
+                        <li>
+                            Check the option <q>Background graphics</q>
+                        </li>
+                        <li>
+                            Click on <q>Save</q> and close the browser window.
+                        </li>
+                    </ol>
+                </ng-container>
+                <ng-container *ngIf="platform.FIREFOX">
+                    <ol class="mb-2">
+                        <li>
+                            Click on the <q>Save Report</q> button below. A new browser window with a print dialog
+                            should open.
+                        </li>
+                        <li>
+                            Select the Destination <q>Save to PDF</q>.
+                        </li>
+                        <li>
+                            Open <q>More settings</q> and check the option <q>Print backgrounds</q>.
+                        </li>
+                        <li>
+                            Optionally, you can also check <q>Print headers and footers</q> for Firefox's default
+                            headers and footers.
+                        </li>
+                        <li>
+                            Click on <q>Save</q> and close the browser window.
+                        </li>
+                    </ol>
+                </ng-container>
+                <ng-container *ngIf="!platform.BLINK && !platform.FIREFOX">
+                    <ol class="mb-2">
+                        <li>
+                            Click on the <q>Save Report</q> button below.
+                        </li>
+                    </ol>
+                </ng-container>
+
+            </ng-template>
+        </div>
+
+        <div>
+            <button mat-button mat-raised-button color="primary" (click)="printReport()">Save Report</button>
+        </div>
+
+    </div>
+
+    <ng-container *ngIf="pageData$ | async as reportData">
+
+        <div class="box" id="report" style="width: fit-content; margin: 0 auto; padding: 0.33in 0.5in 0.34in 0.5in;">
+
+            <!-- This div is printed -->
+            <div class="report-root">
+
+                <div class="report-header">
+                    <div>
+                        <img ngSrc="./app/assets/cinnamon-logo.png" alt="logo" width="120" height="132">
+                    </div>
+                    <div style="display: flex; flex-direction: column; margin: auto">
+                        <h1>Cinnamon Data Report for <q>{{ reportData.mc.projectName }}</q></h1>
+                        <p>Assessment of Resemblance, Utility and Privacy Risks</p>
+                        <p>Report Date: {{ reportDate }}, Creator: {{ reportData.mc.reportCreator ?? 'Unknown' }} </p>
+                    </div>
+                </div>
+
+                <div class="report-chapter">
+
+                    <div class="report-intro-box">
+                        <h2>About this Report</h2>
+
+                        <div class="report-text-block">
+                            This report was created with Cinnamon Version {{ reportData.appConfig.version }} and is
+                            intended to provide a comprehensive assessment of how well the protected data maintains
+                            the analytical value of the original data while mitigating privacy risks.
+                        </div>
+
+                        <div class="report-intro-box-list-header">This report provides:</div>
+
+                        <ul>
+                            <li class="report-intro-box-list-item">
+                                <span class="report-intro-box-list-item-header">Overview of the data protection measures: </span>
+                                <span>This report provides information about the configuration and methods used for anonymization and synthetization for the original dataset.</span>
+                            </li>
+                            <li class="report-intro-box-list-item">
+                                <span class="report-intro-box-list-item-header">Data Resemblance: </span>
+                                <span>
+                                    This report contains an analysis of the quality of the data, by using statistical metrics, describing and comparing the origin dataset and the protected dataset.
+                                    A high resemblance indicates that the protected dataset shares the same statistical properties as the original dataset.
+                                </span>
+                            </li>
+                            <li class="report-intro-box-list-item">
+                                <span class="report-intro-box-list-item-header">Data Utility: </span>
+                                <span>
+                                    This report provides an analysis of the machine learning utility for the original and the protected data as part of the data quality assessment.
+                                    Comparing the usefulness of the original data against the protected data by utilising downstream machine learning tasks.
+                                </span>
+                            </li>
+                            <li class="report-intro-box-list-item">
+                                <span class="report-intro-box-list-item-header">Privacy Risks:</span>
+                                <span>
+                                    This report provides insights on potential privacy risks associated with the original, and the protected data.
+                                    Residual risks might still be present, so the residual privacy risks have to be considered carefully.
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="report-intro-box">
+                        <h2>Disclaimer</h2>
+                        <div class="report-text-block">
+                            The analysis and the conclusions contained herein reflect the assessment of the privacy
+                            risks and utility of the dataset <strong><q>{{ reportData.mc.projectName }}</q></strong>
+                            as analyzed with the Cinnamon tool on {{ reportDate }}. Although this report aims to
+                            provide an informed assessment of privacy implications, it does not constitute a
+                            guarantee against any form of data privacy breach or residual risks. The decision
+                            regarding the use of the data and the associated risks ultimately lies with the user or
+                            the organization. It is recommended to use this report in the context of further
+                            internal controls and evaluation of data quality. The creator of this report and the
+                            developers of Cinnamon assume no liability for direct or indirect damages arising from
+                            the use or interpretation of the information contained in this report.
+                        </div>
+                        <div *ngIf="reportData.mc.contactMail || reportData.mc.contactUrl" class="report-text-block">
+                            <span>In case of questions, please</span>
+                            <span *ngIf="reportData.mc.contactUrl"> visit <a [href]="reportData.mc.contactUrl"
+                                                                             target="_blank">{{ reportData.mc.contactUrl }}</a></span>
+                            <span *ngIf="reportData.mc.contactMail && reportData.mc.contactUrl"> or</span>
+                            <span *ngIf="reportData.mc.contactMail"> reach out via email to <a
+                                [href]="'mailto:' + reportData.mc.contactMail">{{ reportData.mc.contactMail }}</a></span>
+                            <span>.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-chapter">
+                    <div class="report-header report-header-s">
+                        Quality Summary: Data Quality and Privacy Risks
+                    </div>
+
+                    <div class="report-section">
+
+                        <div class="report-header2">Data Protection Strategy</div>
+
+                        <div class="report-subsection report-split-1-1">
+                            <div>
+                                <div
+                                    *ngIf="reportData.datasetInfoAnonymized != null && reportData.pipeline.stages[0].processes[1].externalProcessStatus === ProcessStatus.FINISHED"
+                                    class="report-text-block">
+                                    The Cinnamon Platform applies a two-step data protection by first, anonymizing the
+                                    dataset and then synthesizing the anonymized data.
+                                    <br>
+                                    Overall, <strong>{{ reportData.datasetInfoAnonymized.numberRetainedRows }} of the
+                                    data records</strong> could be retained during the anonymization.
+                                    Then <strong>{{ reportData.datasetInfoProtected.numberRows }} records were
+                                    synthesized.</strong>
+                                </div>
+                                <div
+                                    *ngIf="reportData.datasetInfoAnonymized != null && reportData.pipeline.stages[0].processes[1].externalProcessStatus !== ProcessStatus.FINISHED">
+                                    The Cinnamon Platform applies a one-step data protection by anonymizing the dataset.
+                                    <br>
+                                    Overall, <strong>{{ reportData.datasetInfoAnonymized.numberRetainedRows }} of the
+                                    data records</strong> could be retained during the anonymization.
+                                </div>
+                                <div
+                                    *ngIf="reportData.datasetInfoAnonymized == null && reportData.pipeline.stages[0].processes[1].externalProcessStatus === ProcessStatus.FINISHED">
+                                    The Cinnamon Platform applies a one-step data protection by synthesizing the data.
+                                    <br>
+                                    Overall, <strong>{{ reportData.datasetInfoProtected.numberRows }} records were
+                                    synthesized.</strong>
+                                </div>
+                                <div
+                                    *ngIf="reportData.datasetInfoAnonymized == null && reportData.pipeline.stages[0].processes[1].externalProcessStatus !== ProcessStatus.FINISHED">
+                                    The Cinnamon Platform applies no data protection.
+                                </div>
+                            </div>
+                            <div>
+                                <table class="report-table">
+                                    <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Original</th>
+                                        <th>Protected</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>No. of records (rows)</td>
+                                        <td>{{ reportData.datasetInfoOriginal.numberRows }}</td>
+                                        <td>{{ reportData.datasetInfoProtected.numberRows }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>No. of attributes (columns)</td>
+                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberColumns }}</td>
+                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberColumns }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>No. of numeric attributes</td>
+                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberNumericColumns }}</td>
+                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberNumericColumns }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>No. of nominal attributes</td>
+                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberCategoricalColumns }}</td>
+                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberCategoricalColumns }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>No. of date attributes</td>
+                                        <td>{{ reportData.datasetInfoOriginal.dataConfigurationInfo.numberDateColumns }}</td>
+                                        <td>{{ reportData.datasetInfoProtected.dataConfigurationInfo.numberDateColumns }}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="report-subsection">
+                            <div class="report-header4">Anonymization</div>
+                            <div *ngIf="reportData.reportData['anonymization'] != null; else noAnonymizationOverview"
+                                 class="report-text-block"
+                                 [innerHTML]="reportData.reportData['anonymization'].configDescription">
+                            </div>
+                            <ng-template #noAnonymizationOverview>
+                                <div class="report-text-block">
+                                    No anonymization was performed.
+                                </div>
+                            </ng-template>
+                        </div>
+
+                        <div class="report-subsection">
+                            <div class="report-header4">Synthetization</div>
+                            <div *ngIf="reportData.reportData['synthetization'] != null; else noSynthetizationOverview"
+                                 class="report-text-block"
+                                 [innerHTML]="reportData.reportData['synthetization'].configDescription">
+                            </div>
+                            <ng-template #noSynthetizationOverview>
+                                <div class="report-text-block">
+                                    No synthetization was performed.
+                                </div>
+                            </ng-template>
+                        </div>
+
+                    </div>
+
+                    <div class="report-section">
+
+                        <div class="report-header2">Data Protection Results</div>
+
+                        <div style="text-align: center;">
+
+                            <svg
+                                *ngIf="{utilityScoreO: getUtilityScoreOriginal(reportData.statistics.statistics), utilityScoreP: getUtilityScoreProtected(reportData.statistics.statistics)} as graphData"
+                                [attr.width]="CHART_BAR + (2 * CHART_MARGIN)" xmlns="http://www.w3.org/2000/svg"
+                                [attr.height]="(reportData.risks != null && reportData.risksOriginal != null) ? 255 : 130">
+                                <!-- Gradient definition -->
+                                <defs>
+                                    <linearGradient id="colorGradient" x1="100%" y1="0%" x2="0%" y2="0%">
+                                        <ng-container
+                                            *ngIf="getColors(reportData.mc.metricConfiguration.colorScheme) as colorScheme">
+                                            <ng-container *ngFor="let color of colorScheme; let i = index">
+                                                <stop [attr.offset]="i * (100 / (colorScheme.length - 1)) + '%'"
+                                                      [attr.style]="`stop-color: ${color};`" style="stop-opacity: 1;"/>
+                                            </ng-container>
+                                        </ng-container>
+                                    </linearGradient>
+                                </defs>
+
+                                <!-- Utility Score -->
+                                <rect [attr.x]="CHART_MARGIN" y="65" [attr.width]="CHART_BAR" height="30" fill="url(#colorGradient)"/>
+                                <text x="10" y="25" font-size="18" font-family="Arial" font-weight="bold">
+                                    Utility Score:
+                                </text>
+                                <text x="0" y="85" font-size="14" font-family="Arial">0.0</text>
+                                <text [attr.x]="CHART_MARGIN + CHART_BAR + 5" y="85" font-size="14" font-family="Arial">
+                                    1.0
+                                </text>
+
+                                <polygon fill="gray"
+                                         [attr.points]="`${calculatePos(graphData.utilityScoreO) - 5},55 ${calculatePos(graphData.utilityScoreO) + 5},55 ${calculatePos(graphData.utilityScoreO)},65`"/>
+                                <text [attr.x]="offsetText(graphData.utilityScoreO)" y="47" font-size="14"
+                                      font-family="Arial">
+                                    Original Dataset ({{ graphData.utilityScoreO | number: '1.0-1' }})
+                                </text>
+
+                                <polygon fill="black"
+                                         [attr.points]="`${calculatePos(graphData.utilityScoreP) - 5},105 ${calculatePos(graphData.utilityScoreP) + 5},105 ${calculatePos(graphData.utilityScoreP)},95`"/>
+                                <text [attr.x]="offsetText(graphData.utilityScoreP)" y="120" font-size="14"
+                                      font-family="Arial">
+                                    Protected Dataset ({{ graphData.utilityScoreP | number: '1.0-1' }})
+                                </text>
+
+                                <!-- Privacy Risk Score -->
+                                <ng-container *ngIf="reportData.risks != null && reportData.risksOriginal != null">
+
+                                    <rect [attr.x]="CHART_MARGIN" y="190" width="740" height="30"
+                                          fill="url(#colorGradient)"/>
+                                    <text x="10" y="150" font-size="18" font-family="Arial" font-weight="bold">
+                                        Privacy Score:
+                                    </text>
+                                    <text x="0" y="210" font-size="14" font-family="Arial">0.0</text>
+                                    <text [attr.x]="CHART_MARGIN + CHART_BAR + 5" y="210" font-size="14"
+                                          font-family="Arial">
+                                        1.0
+                                    </text>
+
+                                    <polygon
+                                        [attr.points]="`${calculatePos(1 - reportData.risksOriginal.total_risk_score) - 5},180 ${calculatePos(1 - reportData.risksOriginal.total_risk_score) + 5},180 ${calculatePos(1 - reportData.risksOriginal.total_risk_score)},190`"
+                                        fill="gray"/>
+                                    <text [attr.x]="offsetText(1 - reportData.risksOriginal.total_risk_score)" x="40"
+                                          y="175" font-size="14" font-family="Arial">
+                                        Original Dataset ({{ 1 - reportData.risksOriginal.total_risk_score | formatNumber }})
+                                    </text>
+
+                                    <polygon
+                                        [attr.points]="`${calculatePos(1 - reportData.risks.total_risk_score) - 5},230 ${calculatePos(1 - reportData.risks.total_risk_score) + 5},230 ${calculatePos(1 - reportData.risks.total_risk_score)},220`"
+                                        fill="black"/>
+                                    <text [attr.x]="offsetText(1 - reportData.risks.total_risk_score)" y="245"
+                                          font-size="14" font-family="Arial">
+                                        Protected Dataset ({{ 1 - reportData.risks.total_risk_score | formatNumber }})
+                                    </text>
+
+                                </ng-container>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <div class="report-header2">Data Quality</div>
+
+                        <div class="report-subsection report-text-block">
+                            The data quality is derived from the resemblance of the statistical properties and the
+                            utility of a down-stream machine learning task. Resemblance describes the structural
+                            similarity of the protected dataset to the original dataset. Whereas the utility quantifies
+                            the overall analytical value of the protected dataset. Scores approaching 1.0 indicate high
+                            quality, while scores near 0.0 signify low quality.
+                        </div>
+
+                        <div class="report-subsection report-keep-together report-split-1-2">
+                            <div>
+                                <div class="report-text-block">
+                                    The protected dataset showed over all a
+                                    <strong>{{ reportData.statistics.statistics.Overview.aggregated_metrics.overall_correlation.values.quality | lowercase }}
+                                        quality</strong>, with a <strong>Resemblance Score
+                                    of {{ reportData.statistics.statistics.Overview.aggregated_metrics.overall_resemblance.values.synthetic | number: '1.0-2' }}</strong>,
+                                    and a <strong>Machine Learning Utility Score
+                                    of {{ reportData.statistics.statistics.Overview.aggregated_metrics.overall_utility.values.synthetic | number: '1.0-2' }}</strong>.
+                                </div>
+                                <div class="report-text-block">
+                                    The statistical similarities showed a <strong>difference of
+                                    {{ reportData.numericalAttributes.prop_diff_mean_all | number: '1.0-2' }}%</strong>
+                                    overall for the {{ reportData.numericalAttributes.number_all }} numerical
+                                    attributes.
+                                </div>
+                            </div>
+                            <div>
+                                <div class="report-figure-title">Correlation Patterns</div>
+                                <div class="report-split-1-1">
+                                    <div>
+                                        <div class="report-subfigure-title">Correlations: Original</div>
+                                        <app-chart-correlation #chart
+                                                               [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                               [data]="reportData.statistics.statistics.Overview.aggregated_metrics.overall_correlation.values"
+                                                               originalSeriesLabel="Original"
+                                                               overallCorrelationTarget="real" [showMargins]="false"
+                                                               [showToolbox]="false" [showVisualMap]="false"
+                                                               [simple]="true" syntheticSeriesLabel="Protected">
+                                        </app-chart-correlation>
+                                    </div>
+                                    <div>
+                                        <div class="report-subfigure-title">Correlations: Protected</div>
+                                        <app-chart-correlation #chart
+                                                               [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                               [data]="reportData.statistics.statistics.Overview.aggregated_metrics.overall_correlation.values"
+                                                               originalSeriesLabel="Original"
+                                                               overallCorrelationTarget="synthetic"
+                                                               [showMargins]="false" [showToolbox]="false"
+                                                               [showVisualMap]="false" [simple]="true"
+                                                               syntheticSeriesLabel="Protected">
+                                        </app-chart-correlation>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="report-figure-title">Statistical Similarities</div>
+                            <div>
+                                <table class="report-table">
+                                    <caption>
+                                        Statistical properties of mean (standard deviation), absolute difference and
+                                        proportional difference of the
+                                        first {{ reportData.numericalAttributes.first_attributes.length | numberToText }}
+                                        numerical attributes in the dataset.
+                                    </caption>
+                                    <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Original</th>
+                                        <th>Protected</th>
+                                        <th>Abs. Diff.</th>
+                                        <th>Prop. Diff.</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr *ngFor="let numericAttr of reportData.numericalAttributes.first_attributes">
+                                        <td class="report-word-break">{{ numericAttr.name }}</td>
+                                        <td>{{ numericAttr.original_mean | number: '1.0-2' }}
+                                            ({{ numericAttr.original_std | number: '1.0-2' }})
+                                        </td>
+                                        <td>{{ numericAttr.protected_mean | number: '1.0-2' }}
+                                            ({{ numericAttr.protected_std | number: '1.0-2' }})
+                                        </td>
+                                        <td>{{ numericAttr.abs_diff | number: '1.0-2' }}</td>
+                                        <td>{{ numericAttr.prop_diff | number: '1.0-2' }}%</td>
+                                    </tr>
+                                    <tr *ngIf="reportData.numericalAttributes.first_attributes.length < reportData.numericalAttributes.number_all">
+                                        <td>&middot;&middot;&middot;</td>
+                                        <td>&middot;&middot;&middot;</td>
+                                        <td>&middot;&middot;&middot;</td>
+                                        <td>&middot;&middot;&middot;</td>
+                                        <td>&middot;&middot;&middot;</td>
+                                    </tr>
+                                    <tr style="font-weight: bold">
+                                        <td>Total</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>{{ reportData.numericalAttributes.prop_diff_mean_all | number: '1.0-2' }}%
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <div class="report-header2">Data Privacy Risks</div>
+
+                        <div *ngIf="reportData.reportData['risk_evaluation'] != null; else noRiskOverview"
+                             [innerHTML]="reportData.reportData['risk_evaluation'].configDescription">
+                        </div>
+                        <ng-template #noRiskOverview>
+                            <div class="report-text-block">
+                                No risk evaluation was performed.
+                            </div>
+                        </ng-template>
+                    </div>
+                </div>
+
+                <div class="report-chapter">
+                    <div class="report-header report-header-s">
+                        Attribute Details
+                    </div>
+
+                    <div>
+                        <table class="report-table">
+                            <thead>
+                            <tr>
+                                <th>Index</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Scale</th>
+                                <th>Format</th>
+                                <th>Range</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr *ngFor="let attribute of reportData.dataConfiguration.configurations">
+                                <td>{{ attribute.index }}</td>
+                                <td class="report-word-break">{{ attribute.name }}</td>
+                                <td>{{ attribute.type }}</td>
+                                <td>{{ attribute.scale }}</td>
+                                <td>
+                                    <ng-container *ngFor="let additional of attribute.configurations">
+                                        <ng-container *ngIf="additional | instanceOf:DateFormatConfiguration as dfc">
+                                            {{ dfc.dateFormatter }}
+                                        </ng-container>
+                                        <ng-container
+                                            *ngIf="additional | instanceOf:DateTimeFormatConfiguration as dtfc">
+                                            {{ dtfc.dateTimeFormatter }}
+                                        </ng-container>
+                                        <ng-container *ngIf="additional | instanceOf:StringPatternConfiguration as spc">
+                                            {{ spc.pattern }}
+                                        </ng-container>
+                                    </ng-container>
+                                </td>
+                                <td>
+                                    <ng-container *ngFor="let additional of attribute.configurations">
+                                        <ng-container *ngIf="additional | instanceOf:RangeConfiguration as rc">
+                                            {{ rc.minValue }} - {{ rc.maxValue }}
+                                        </ng-container>
+                                    </ng-container>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div>
+                        <p>
+                            The original dataset contained {{ reportData.datasetInfoOriginal.numberRows }} records, of
+                            which {{ reportData.datasetInfoOriginal.numberInvalidRows | numberToText }} records
+                            contained at least one invalid value.
+                        </p>
+                        <ng-container *ngIf="reportData.datasetInfoOriginal.hasHoldOutSplit">
+                            <p>
+                                During the import, the dataset was split into an anonymization
+                                split containing {{ reportData.datasetInfoOriginal.numberNotHoldOutRows }} records of
+                                which {{ reportData.datasetInfoOriginal.numberInvalidNotHoldOutRows }} records contained
+                                at
+                                least one invalid value and a hold-out split
+                                containing {{ reportData.datasetInfoOriginal.numberHoldOutRows }} records of
+                                which {{ reportData.datasetInfoOriginal.numberInvalidHoldOutRows }} records contained at
+                                least one invalid value.
+                            </p>
+                        </ng-container>
+                        <ng-container *ngIf="!reportData.datasetInfoOriginal.hasHoldOutSplit">
+                            <p>
+                                During the import, the dataset was not split and all records were used for the
+                                anonymization.
+                            </p>
+                        </ng-container>
+                        <p>
+                            Invalid values are removed from the dataset, but the rest of the record remains.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="report-chapter">
+                    <div class="report-header report-header-s">
+                        Anonymization
+                    </div>
+
+                    <div *ngIf="reportData.pipeline.stages[0].processes[0].externalProcessStatus === ProcessStatus.FINISHED; else noAnonymizationDetails">
+
+                        <p>
+                            The anonymization was performed using the following configuration:
+                        </p>
+
+                        <table class="report-table">
+                            <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>Algorithm</td>
+                                <td>{{ reportData.anonymizationConfig.selectedAlgorithm?.display_name }}</td>
+                            </tr>
+                            <ng-container
+                                *ngFor="let group of reportData.anonymizationConfig.algorithmDefinition!.configurations | keyvalue">
+                                <tr *ngFor="let param of group.value.parameters">
+                                    <td> {{ param.label }}</td>
+                                    <td *ngIf="reportData.anonymizationConfig.config[group.key] | isObject as abc">
+                                        {{ abc[param.name] }}
+                                    </td>
+                                </tr>
+                            </ng-container>
+
+                            <tr *ngFor="let param of reportData.anonymizationConfig.algorithmDefinition?.parameters">
+                                <td> {{ param.label }}</td>
+                                <td></td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                        <p>
+                            The following attributes were protected during the anonymization:
+                        </p>
+
+                        <table class="report-table">
+                            <thead>
+                            <tr>
+                                <th>Attribute</th>
+                                <th>Protection</th>
+                                <th>Parameter</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr *ngFor="let attr of reportData.anonymizationConfig.config.attributeConfiguration">
+                                <td class="report-word-break"> {{ attr.name }}</td>
+                                <td> {{ AttributeProtectionMetadata[attr.attributeProtection!].displayName }}</td>
+                                <td> {{ attr.intervalSize }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <ng-template #noAnonymizationDetails>
+                        No anonymization was performed.
+                    </ng-template>
+                </div>
+
+                <div class="report-chapter">
+                    <div class="report-header report-header-s">
+                        Synthetization
+                    </div>
+
+                    <p>
+                        The synthetization was performed using the following configuration:
+                    </p>
+
+                    <div
+                        *ngIf="reportData.pipeline.stages[0].processes[1].externalProcessStatus === ProcessStatus.FINISHED; else noAnonymizationDetails">
+
+                        <table class="report-table">
+                            <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>Algorithm</td>
+                                <td>{{ reportData.synthetizationConfig.selectedAlgorithm?.display_name }}</td>
+                            </tr>
+                            <ng-container
+                                *ngFor="let group of reportData.synthetizationConfig.algorithmDefinition!.configurations | keyvalue">
+                                <tr *ngFor="let param of group.value.parameters">
+                                    <td> {{ param.label }}</td>
+                                    <td *ngIf="reportData.synthetizationConfig.config[group.key] | isObject as nestedGroup">
+                                        {{ nestedGroup[param.name] }}
+                                    </td>
+                                </tr>
+                            </ng-container>
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <ng-template #noAnonymizationDetails>
+                        No synthesis was performed.
+                    </ng-template>
+                </div>
+
+                <div class="report-chapter">
+                    <div class="report-header report-header-s">
+                        Resemblance
+                    </div>
+
+                    <div *ngFor="let attributeStatistics of reportData.statistics.statistics!.resemblance.attributes">
+                        <div class="report-header2 report-word-break">
+                            Attribute: {{ attributeStatistics.attribute_information.name }}
+                        </div>
+
+                        <div class="report-subsection">
+                            <div class="report-header4">Resemblance Analysis</div>
+
+                            <div class="report-keep-together">
+                                <app-data-inspection-metric-table [attributeStatistics]="attributeStatistics"
+                                                                  datasetDisplayName="Protected" [showInfo]="false"
+                                                                  [tableType]="MetricTableType.COMPARISON">
+                                </app-data-inspection-metric-table>
+                            </div>
+                        </div>
+
+                        <div *ngIf="attributeStatistics.plot.histogram" class="report-subsection">
+                            <div class="report-header4">
+                                Histogram
+                            </div>
+                            <app-chart-frequency #chart
+                                                 [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                 [columnConfiguration]="attributeStatistics.attribute_information"
+                                                 [data]="attributeStatistics.plot.histogram!" [limit]="null"
+                                                 [showToolbox]="false" [simple]="false" originalSeriesLabel="Original"
+                                                 syntheticSeriesLabel="Protected">
+                            </app-chart-frequency>
+                        </div>
+                        <div *ngIf="attributeStatistics.plot.visualize_columnwise_correlations" class="report-subsection">
+                            <div class="report-header4">
+                                Correlation
+                            </div>
+                            <app-chart-correlation #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                   [columnConfiguration]="attributeStatistics.attribute_information"
+                                                   [data]="attributeStatistics.plot.visualize_columnwise_correlations!"
+                                                   originalSeriesLabel="Original" [showToolbox]="false"
+                                                   [showVisualMap]="false" [simple]="false"
+                                                   syntheticSeriesLabel="Protected">
+                            </app-chart-correlation>
+                        </div>
+                        <div *ngIf="attributeStatistics.plot.frequency_plot" class="report-subsection">
+                            <div class="report-header4">
+                                Frequency
+                            </div>
+                            <app-chart-frequency #chart
+                                                 [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                                 [columnConfiguration]="attributeStatistics.attribute_information"
+                                                 [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
+                                                 [showToolbox]="false" [simple]="false" originalSeriesLabel="Original"
+                                                 syntheticSeriesLabel="Protected">
+                            </app-chart-frequency>
+                        </div>
+                        <div *ngIf="attributeStatistics.plot.density" class="report-subsection">
+                            <div class="report-header4">
+                                Density
+                            </div>
+                            <app-chart-density #chart [colorScheme]="reportData.mc.metricConfiguration.colorScheme"
+                                               [columnConfiguration]="attributeStatistics.attribute_information"
+                                               [data]="attributeStatistics.plot.density!" originalSeriesLabel="Original"
+                                               [showToolbox]="false" [simple]="false" syntheticSeriesLabel="Protected">
+                            </app-chart-density>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="report-chapter">
+                    <div class="report-header report-header-s">
+                        Machine Learning Utility
+                    </div>
+
+                    <app-data-inspection-utility [metrics]="reportData.statistics.statistics.utility.methods"
+                                                 [showInfo]="false">
+                    </app-data-inspection-utility>
+                </div>
+
+                <div class="report-chapter">
+                    <div class="report-header report-header-s">
+                        Risk Evaluation
+                    </div>
+
+                    <app-data-inspection-risks *ngIf="reportData.risks != null; else noRiskAssessmentDetails"
+                                               [risks]="reportData.risks" [showInfo]="false">
+                    </app-data-inspection-risks>
+                    <ng-template #noRiskAssessmentDetails>
+                        <div class="report-text-block">
+                            No risk evaluation was performed.
+                        </div>
+                    </ng-template>
+                </div>
+
+                <div class="report-chapter" style="page-break-before: always">
+                    <div class="report-header report-header-s">
+                        Glossary
+                    </div>
+
+                    <div *ngFor="let entry of reportData.reportData | keyvalue">
+                        <div *ngIf="entry.value != null && entry.value.glossar != null"
+                             [innerHTML]="entry.value.glossar">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </ng-container>
+</div>
+
+<app-project-export #projectExport></app-project-export>

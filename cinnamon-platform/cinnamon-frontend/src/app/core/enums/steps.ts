@@ -9,6 +9,7 @@ export enum Steps {
     TECHNICAL_EVALUATION = "TECHNICAL_EVALUATION",
     RISK_EVALUATION = "RISK_EVALUATION",
     EVALUATION = "EVALUATION",
+    REPORT = "REPORT",
 }
 
 export interface StepDefinition {
@@ -115,4 +116,13 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
         index: 9,
         stageName: "evaluation",
     },
+    REPORT: {
+        path: "/report",
+        id: "navLinkReport",
+        text: "Report",
+        enum: Steps.REPORT,
+        dependsOn: Steps.EVALUATION,
+        lockedAfter: null,
+        index: 10,
+    }
 };

@@ -1,0 +1,185 @@
+<ng-container *ngIf="pageData$ | async as pageData">
+
+    <div style="display: flex;" class="mb-2 pt-2 border-top border-1">
+        <span style="font-size: 1.2rem; margin-right: 0.2rem;">Privacy Risk Summary</span>
+
+        <button *ngIf="showInfo" mat-flat-button [matMenuTriggerFor]="riskColorLegend"
+                class="flat-mat-form-button ms-auto">
+            Legend
+        </button>
+    </div>
+    <div>
+        <div class="risk-summary">
+            <table class="metric-table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>Overall Risk [0,1]</th>
+                    <th>Risk Confidence Interval</th>
+                    <th>Successful Attacks</th>
+                    <th>Error Rate</th>
+                    <th>Time Taken</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr *ngFor="let row of summary">
+                    <td>{{ row.name }}</td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity"
+                                  [style.background-color]="pageData.colorScheme[row.results.risk_value | riskColorIndex]">
+                            </span>
+                            <span>{{ row.results.risk_value | number:'1.2-2' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity"
+                                  [style.background-color]="pageData.colorScheme[row.results.risk_value | riskColorIndex]">
+                            </span>
+                            <span>{{ row.results.risk_ci | riskConfidenceInterval }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity"
+                                  [style.background-color]="pageData.colorScheme[row.results.attack_rate.value | riskColorIndex]">
+                            </span>
+                            <span>{{ row.results.attack_rate.value | number:'1.2-2' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity"
+                                  [style.background-color]="pageData.colorScheme[row.results.attack_rate.error | riskColorIndex]">
+                            </span>
+                            <span>{{ row.results.attack_rate.error | number:'1.2-2' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity" [style.background-color]="pageData.colorScheme[0]"></span>
+                            <span>{{ row.results.execution_time | number:'1.2-2' }}</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr *ngIf="risks.inference_average_risk != null">
+                    <td>Average Attribute Inference</td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity"
+                                  [style.background-color]="pageData.colorScheme[risks.inference_average_risk.priv_risk | riskColorIndex]">
+                            </span>
+                            <span>{{ risks.inference_average_risk.priv_risk | number:'1.2-2' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <!-- No risk CI for average inference -->
+                        <div class="classifier-cell">
+                            <span class="metric-similarity" [style.background-color]="pageData.colorScheme[0]"></span>
+                            <span>N/A</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity"
+                                  [style.background-color]="pageData.colorScheme[risks.inference_average_risk.attack_rate_success_rate | riskColorIndex]">
+                            </span>
+                            <span>{{ risks.inference_average_risk.attack_rate_success_rate | number:'1.2-2' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity"
+                                  [style.background-color]="pageData.colorScheme[risks.inference_average_risk.attack_rate_error | riskColorIndex]">
+                            </span>
+                            <span>{{ risks.inference_average_risk.attack_rate_error | number:'1.2-2' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity" [style.background-color]="pageData.colorScheme[0]"></span>
+                            <span>{{ risks.inference_average_risk.execution_time | number:'1.2-2' }}</span>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div
+        *ngIf="risks.inference_risk != null && (risks.inference_risk.length ?? 0) > 0 && risks.inference_results != null && (risks.inference_results.length ?? 0) > 0">
+        <div style="display: flex;" class="mb-2 pt-2 border-top border-1">
+            <span style="font-size: 1.2rem; margin-right: 0.2rem;">Attribute Inference (Details)</span>
+        </div>
+        <div class="risk-summary">
+            <table class="metric-table">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>Overall Risk [0,1]</th>
+                    <th>Risk Confidence Interval</th>
+                    <th>Successful Attacks</th>
+                    <th>Error Rate</th>
+                    <th>Time Taken</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr *ngFor="let attribute of risks.inference_risk; let i = index">
+                    <td>
+                        <div class="classifier-cell">{{ attribute.name }}</div>
+                    </td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity"
+                                  [style.background-color]="pageData.colorScheme[attribute.value.risk_value | riskColorIndex]">
+                            </span>
+                            <span>{{ attribute.value.risk_value  | number:'1.2-2' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="classifier-cell">
+                            <span class="metric-similarity"
+                                  [style.background-color]="pageData.colorScheme[attribute.value.risk_value | riskColorIndex]">
+                            </span>
+                            <span>{{ attribute?.value?.risk_ci | riskConfidenceInterval }}</span>
+                        </div>
+                    </td>
+                    <ng-container *ngIf="risks.inference_results[i].value as result">
+                        <td>
+                            <div class="classifier-cell">
+                                <span class="metric-similarity"
+                                      [style.background-color]="pageData.colorScheme[result.attack_rate.value | riskColorIndex]">
+                                </span>
+                                <span>{{ result.attack_rate.value  | number:'1.2-2' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="classifier-cell">
+                                <span class="metric-similarity"
+                                      [style.background-color]="pageData.colorScheme[result.attack_rate.error | riskColorIndex]">
+                                </span>
+                                <span>{{ result.attack_rate.error  | number:'1.2-2' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="classifier-cell">
+                                <span class="metric-similarity"
+                                      [style.background-color]="pageData.colorScheme[0]"></span>
+                                <span>{{ result.execution_time  | number:'1.2-2' }}</span>
+                            </div>
+                        </td>
+                    </ng-container>
+                </tr>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+    <mat-menu #riskColorLegend="matMenu" xPosition="before" yPosition="below">
+        <app-color-legend [goodLabel]="'Low'" [badLabel]="'High'"></app-color-legend>
+    </mat-menu>
+
+</ng-container>

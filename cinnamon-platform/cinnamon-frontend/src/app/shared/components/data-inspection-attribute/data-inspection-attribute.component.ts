@@ -6,10 +6,10 @@ import {
 import { MatDialog } from "@angular/material/dialog";
 import { areEnumValuesEqual } from "src/app/shared/helper/enum-helper";
 import { DataScale } from "src/app/shared/model/data-scale";
-import { AttributeStatistics, GraphType } from "../../model/statistics";
+import { AttributeStatistics, GraphType, StatisticsValueTypes } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
-import { Observable } from "rxjs";
+import { combineLatest, Observable } from "rxjs";
 import { MetricImportance, ProjectSettings } from "../../model/project-settings";
 import { ProjectConfigurationService } from "../../services/project-configuration.service";
 
@@ -26,17 +26,20 @@ export class DataInspectionAttributeComponent implements OnInit {
     @Input() public mainData: 'real' | 'synthetic' = 'real';
     @Input() public processingSteps: string[] = [];
 
+    protected metrics: Array<[string, StatisticsValueTypes]>;
     protected originalDisplayName: string;
     protected syntheticDisplayName: string;
     protected hasSynthetic: boolean = false;
 
     protected graphType: GraphType = 'histogram';
 
-    protected metricConfig$: Observable<ProjectSettings>;
+    protected pageData$: Observable<{
+        projectSettings: ProjectSettings,
+    }>;
 
     constructor(
         private matDialog: MatDialog,
-        protected readonly projectConfigService: ProjectConfigurationService,
+        private readonly projectConfigService: ProjectConfigurationService,
         protected statisticsService: StatisticsService,
     ) {
     }
@@ -44,10 +47,13 @@ export class DataInspectionAttributeComponent implements OnInit {
     ngOnInit() {
         this.graphType = this.isContinuous() ? 'histogram' : 'frequency';
         this.hasSynthetic = this.mainData == 'synthetic';
+        this.metrics = this.projectConfigService.getAllMetrics(this.attributeStatistics);
         this.originalDisplayName = this.statisticsService.getOriginalName(this.sourceDataset);
         this.syntheticDisplayName = this.statisticsService.getSyntheticName(this.processingSteps);
 
-        this.metricConfig$ = this.projectConfigService.projectSettings$;
+        this.pageData$ = combineLatest({
+            projectSettings: this.projectConfigService.projectSettings$,
+        });
     }
 
     protected isContinuous(): boolean {

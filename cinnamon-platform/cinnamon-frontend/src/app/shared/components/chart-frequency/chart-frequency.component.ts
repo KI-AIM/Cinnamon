@@ -17,6 +17,7 @@ export class ChartFrequencyComponent extends ChartComponent {
     @Input() public simple: boolean = false;
     @Input() public limit: number | null = 10;
     @Input() public originalSeriesLabel: string = "Original";
+    @Input() public showToolbox: boolean = true;
     @Input() syntheticSeriesLabel: string = "Synthetic";
 
     protected override createChartOptions(): EChartsCoreOption {
@@ -93,7 +94,7 @@ export class ChartFrequencyComponent extends ChartComponent {
         const chartName = this.createChartName("Frequency", this.data, this.columnConfiguration, dataSetLabels);
 
         const options: EChartsCoreOption = {
-            ...this.graphOptions(this.simple, chartName),
+            ...this.graphOptions(this.simple, chartName, {showToolbox: this.showToolbox}),
             tooltip: {
                 trigger: 'axis',
                 axisPointer: {

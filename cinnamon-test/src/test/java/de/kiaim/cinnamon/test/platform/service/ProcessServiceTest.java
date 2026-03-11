@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.platform.exception.BadStateException;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.entity.*;
+import de.kiaim.cinnamon.platform.repository.ExecutionStepRepository;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.service.*;
 import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
@@ -21,6 +22,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -31,9 +34,13 @@ import static org.mockito.Mockito.mock;
 @WithMockWebServer
 public class ProcessServiceTest extends ContextRequiredTest {
 
+	@Value("${server.ssl.enabled:false}") private boolean sslEnabled;
 	@Value("${server.port}") private int port;
+	@Value("${server.servlet.context-path:}") private String contextPath;
 	@Autowired private SerializationConfig serializationConfig;
 	@Autowired private CinnamonConfiguration cinnamonConfiguration;
+	@Autowired private TaskScheduler taskScheduler;
+	@Autowired private TransactionTemplate transactionTemplate;
 	@Autowired private DataProcessorService dataProcessorService;
 	@Autowired private DataSetService dataSetService;
 	@Autowired private HttpService httpService;
@@ -47,6 +54,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@BeforeEach
 	void setUpMockWebServer() {
 		BackgroundProcessRepository backgroundProcessRepository = mock(BackgroundProcessRepository.class);
+		ExecutionStepRepository executionStepRepository = mock(ExecutionStepRepository.class);
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
@@ -56,10 +64,12 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		cinnamonConfiguration.getExternalServer()
 		                     .get("anonymization-server")
 		                     .setInstanceHostPort(mockBackEnd.getPort());
-		this.processService = new ProcessService(serializationConfig, port, cinnamonConfiguration,
-		                                         backgroundProcessRepository, projectRepository, csvProcessor,
-		                                         databaseService, dataProcessorService, dataSetService,
-		                                         externalServerInstanceService, httpService, stepService);
+		this.processService = new ProcessService(serializationConfig, sslEnabled, port, contextPath,
+		                                         cinnamonConfiguration, taskScheduler, transactionTemplate,
+		                                         backgroundProcessRepository, executionStepRepository,
+		                                         projectRepository, csvProcessor, databaseService, dataProcessorService,
+		                                         dataSetService, externalServerInstanceService, httpService,
+		                                         stepService);
 
 		if (jsonMapper == null) {
 			jsonMapper = serializationConfig.jsonMapper();

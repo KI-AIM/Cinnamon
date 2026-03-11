@@ -9,16 +9,16 @@ import { MetricImportance, MetricImportanceData } from "../model/project-setting
 })
 export class MetricFilterPipe implements PipeTransform {
 
-    transform(value: Array<[string, StatisticsValueTypes, number]>,  filterText: string, importance: MetricImportance | null): Array<[string, StatisticsValueTypes, number]> {
+    transform(value: Array<[string, StatisticsValueTypes, number]>,
+              filterText: string | null | undefined,
+              importance: MetricImportance | null | undefined): Array<[string, StatisticsValueTypes, number]> {
         if (!filterText && !importance) {
             return value;
-        }
-        else if (!importance) {
+        } else if (!importance) {
             return value.filter(val => {
-                return val[1].display_name.toLowerCase().includes(filterText.trim().toLowerCase());
+                return val[1].display_name.toLowerCase().includes(filterText!.trim().toLowerCase());
             });
-        }
-        else if (!filterText) {
+        } else if (!filterText) {
             return value.filter(val => {
                 return val[2] == MetricImportanceData[importance].value;
             });

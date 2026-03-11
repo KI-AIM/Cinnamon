@@ -5,13 +5,28 @@ import {
     AnonymizationAttributeConfigurationService
 } from "@features/anonymization/services/anonymization-attribute-configuration.service";
 import { Algorithm } from "@shared/model/algorithm";
+import {
+    AnonymizationAttributeRowConfiguration,
+    ConfigurationObject
+} from "@shared/model/anonymization-attribute-config";
 import { ConfigurationRegisterData } from "@shared/model/configuration-register-data";
-import { AlgorithmService, ReadConfigResult } from "@shared/services/algorithm.service";
+import { AlgorithmData, AlgorithmService, ReadConfigResult } from "@shared/services/algorithm.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
+import { Observable } from "rxjs";
 
-interface AnonymizationFormConfig {
+/**
+ * Specialized algorithm data containing the specialized anonymization configuration object.
+ */
+export interface AnonymizationAlgorithmData extends AlgorithmData {
+    config:  AnonymizationFormConfig;
+}
+
+/**
+ * Defines the configuration structure of the anonymization.
+ */
+export class AnonymizationFormConfig extends ConfigurationObject {
     modelConfiguration: any; // Specify the type of `modelConfiguration` as needed.
-    [key: string]: any; // This allows the object to have any other properties dynamically.
+    attributeConfiguration: AnonymizationAttributeRowConfiguration[];
 }
 
 @Injectable({
@@ -39,10 +54,10 @@ export class AnonymizationService extends AlgorithmService {
                         name: selectedAlgorithm.name,
                         type: selectedAlgorithm.type,
                         version: selectedAlgorithm.version,
-                        modelConfiguration: arg["modelConfiguration"]
+                        modelConfiguration: arg.modelConfiguration,
                     },
                 ],
-                attributeConfiguration: arg[this.attributeConfigurationService.formGroupName],
+                attributeConfiguration: arg.attributeConfiguration,
             }
         };
     }
@@ -71,5 +86,13 @@ export class AnonymizationService extends AlgorithmService {
         configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);
+    }
+
+    /**
+     * Returns the selected algorithm, its definition and the configuration object for the process.
+     * @returns Observable for the selected algorithm and configuration.
+     */
+    public override getAlgorithmData$(): Observable<AnonymizationAlgorithmData> {
+        return super.getAlgorithmData$() as Observable<AnonymizationAlgorithmData>;
     }
 }

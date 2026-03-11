@@ -9,7 +9,9 @@ import { SortDirection, SortType } from "../model/metric-table-data";
 })
 export class MetricSorterPipe implements PipeTransform {
 
-    transform(value: Array<[string, StatisticsValueTypes, number]>, sortDirection: SortDirection | null, sortType: SortType | null): Array<[string, StatisticsValueTypes, number]> {
+    transform(value: Array<[string, StatisticsValueTypes, number]>,
+              sortDirection: SortDirection | null | undefined,
+              sortType: SortType | null | undefined): Array<[string, StatisticsValueTypes, number]> {
         let sorted: Array<[string, StatisticsValueTypes, number]>;
 
         if (sortDirection === null || sortType === null || sortDirection === 'original') {
@@ -56,4 +58,3 @@ export class MetricSorterPipe implements PipeTransform {
     }
 
 }
-

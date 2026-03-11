@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
+import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
 import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, throwError, toArray } from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { parse, stringify } from 'yaml';
@@ -19,7 +20,7 @@ export class ConfigurationService {
 
     private configurationCache: Record<string, {
         selectedAlgorithm: Algorithm | null,
-        configuration: {[algorithmName: string]: Object},
+        configuration: {[algorithmName: string]: ConfigurationObject},
         processStatus: {[processName: string]: boolean},
     }> = {};
 
@@ -52,7 +53,7 @@ export class ConfigurationService {
      * @param configurationName The configuration name.
      * @param algorithm The algorithm to get the configuration for.
      */
-    public getConfiguration(configurationName: string, algorithm: Algorithm): Object | null {
+    public getConfiguration(configurationName: string, algorithm: Algorithm): ConfigurationObject | null {
         return this.configurationCache[configurationName]?.configuration[algorithm.name] || null;
     }
 
@@ -62,7 +63,7 @@ export class ConfigurationService {
      * @param algorithm The algorithm to cache the configuration for.
      * @param configuration The configuration to cache.
      */
-    public setConfiguration(configurationName: string, algorithm: Algorithm, configuration: Object): void {
+    public setConfiguration(configurationName: string, algorithm: Algorithm, configuration: ConfigurationObject): void {
         this.initCache(configurationName);
         this.configurationCache[configurationName].configuration[algorithm.name] = configuration;
     }
@@ -71,7 +72,7 @@ export class ConfigurationService {
      * Returns the cached configuration for the cached algorithm of the given configuration name.
      * @param configurationName The configuration name.
      */
-    public getSelectedConfiguration(configurationName: string): Object | null {
+    public getSelectedConfiguration(configurationName: string): ConfigurationObject | null {
         const selectedAlgorithm = this.getSelectedAlgorithm(configurationName);
         if (selectedAlgorithm === null) {
             return null;

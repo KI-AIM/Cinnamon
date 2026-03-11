@@ -20,6 +20,7 @@ import { MatTooltip } from "@angular/material/tooltip";
 import { WorkstepBoxComponent } from "@shared/components/workstep-box/workstep-box.component";
 import { WorkstepListComponent } from "@shared/components/workstep-list/workstep-list.component";
 import { ExpansionPanelOverflowDirective } from "@shared/directives/expansion-panel-overflow.directive";
+import { NumberToTextPipe } from "@shared/pipes/number-to-text.pipe";
 import { NgxEchartsModule } from "ngx-echarts";
 import { ChartCorrelationComponent } from "src/app/shared/components/chart-correlation/chart-correlation.component";
 import {
@@ -61,6 +62,14 @@ import {
 import {
     DataInspectionAttributeComponent
 } from './components/data-inspection-attribute/data-inspection-attribute.component';
+import {
+    DataInspectionMetricTableComponent
+} from './components/data-inspection-metric-table/data-inspection-metric-table.component';
+import { DataInspectionRisksComponent } from './components/data-inspection-risks/data-inspection-risks.component';
+import {
+    DataInspectionUtilityTableComponent
+} from './components/data-inspection-utility-table/data-inspection-utility-table.component';
+import { DataInspectionUtilityComponent } from './components/data-inspection-utility/data-inspection-utility.component';
 import { DataInspectionComponent } from './components/data-inspection/data-inspection.component';
 import { DataTableComponent } from "./components/data-table/data-table.component";
 import { FileUploadComponent } from "./components/file-upload/file-upload.component";
@@ -79,9 +88,14 @@ import { WorkstepTitleComponent } from "./components/workstep-title/workstep-tit
 import { WorkstepComponent } from "./components/workstep/workstep.component";
 import { NoSpaceValidatorDirective } from './directives/no-space-validator.directive';
 import { ColumnConfigurationNameFilterPipe } from "./pipes/column-configuration-name-filter.pipe";
+import { FormatNumberPipe } from './pipes/format-number.pipe';
+import { InjectMetricImportancePipe } from './pipes/inject-metric-importance.pipe';
 import { InstanceOfPipe } from "./pipes/instance-of.pipe";
+import { IsObjectPipe } from './pipes/is-object.pipe';
 import { MetricFilterPipe } from './pipes/metric-filter.pipe';
 import { MetricSorterPipe } from './pipes/metric-sorter.pipe';
+import { RiskColorIndexPipe } from './pipes/risk-color-index.pipe';
+import { RiskConfidenceIntervalPipe } from './pipes/risk-confidence-interval.pipe';
 import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
 
 @NgModule({
@@ -105,6 +119,10 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         DataInspectionComponent,
         DataInspectionAttributeComponent,
         DataInspectionAttributeDetailsComponent,
+        DataInspectionMetricTableComponent,
+        DataInspectionRisksComponent,
+        DataInspectionUtilityComponent,
+        DataInspectionUtilityTableComponent,
         DataTableComponent,
         FileUploadComponent,
         InfoCardComponent,
@@ -129,9 +147,15 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         NoSpaceValidatorDirective,
         // Pipes
         ColumnConfigurationNameFilterPipe,
+        FormatNumberPipe,
+        InjectMetricImportancePipe,
         InstanceOfPipe,
+        IsObjectPipe,
         MetricFilterPipe,
         MetricSorterPipe,
+        NumberToTextPipe,
+        RiskColorIndexPipe,
+        RiskConfidenceIntervalPipe,
         StatisticsFilterPipe,
     ],
     imports: [
@@ -162,6 +186,9 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
     ],
     exports: [
         // Components
+        ChartCorrelationComponent,
+        ChartDensityComponent,
+        ChartFrequencyComponent,
         ColorLegendComponent,
         ConfigurationFormComponent,
         ConfigurationInputComponent,
@@ -169,6 +196,10 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         ConfigurationPageComponent,
         DataInspectionComponent,
         DataInspectionAttributeComponent,
+        DataInspectionMetricTableComponent,
+        DataInspectionRisksComponent,
+        DataInspectionUtilityComponent,
+        DataInspectionUtilityTableComponent,
         DataTableComponent,
         FileUploadComponent,
         InfoCardComponent,
@@ -193,6 +224,9 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         NoSpaceValidatorDirective,
         // Pipes
         InstanceOfPipe,
+        IsObjectPipe,
+        NumberToTextPipe,
+        FormatNumberPipe,
     ],
 })
 export class SharedModule {}

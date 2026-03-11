@@ -5,6 +5,8 @@ from data_processing.post_process import (
 )
 from typing import Dict, Any, List, Union, Optional
 
+from .quality_ranges import determine_quality_range
+
 
 def group_metrics_by_visualization_type(overview_metrics):
     """
@@ -208,7 +210,7 @@ def add_value_differences(metrics_dict):
         elif isinstance(real, (int, float)) and isinstance(synthetic, (int, float)):
             abs_diff = abs(real - synthetic)
             is_distance_metric = (real == 0 or real == 0.0) and (0 <= synthetic <= 1)
-            
+
             if is_distance_metric:
                 normalized_diff = synthetic
             else:
@@ -225,9 +227,9 @@ def add_value_differences(metrics_dict):
                 else:
                     denominator = abs(real) + abs(synthetic)
                     normalized_diff = abs_diff / denominator if denominator != 0 else 0.0
-            
+
             pct_diff = normalized_diff * 100
-                
+
             return {
                 'absolute': abs_diff,
                 'percentage': pct_diff,
@@ -239,7 +241,7 @@ def add_value_differences(metrics_dict):
                 'percentage': 100,
                 'color_index': 10
             }
-        
+
     def process_metric(metric_data):
         """Process a single metric."""
         if not isinstance(metric_data, dict):
@@ -560,14 +562,24 @@ def add_resembance_description(enriched_dict, yaml_config):
 
 
 
-def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
+def add_overview_to_config(
+    config_data: Dict[str, Any],
+    correlation_labels: Optional[List[str]] = None,
+    real_correlation_matrix: Optional[List[List[float]]] = None,
+    synthetic_correlation_matrix: Optional[List[List[float]]] = None,
+    correlation_distance: Optional[float] = None
+) -> Dict[str, Any]:
     """
     Processes the config data to add an overview section with resemblance scores
     and utility scores at the same level as "resemblance" in the dictionary.
-    
+
     Args:
         config_data: The configuration data containing metrics information
-        
+        correlation_labels: Optional attribute labels for the correlation matrix.
+        real_correlation_matrix: Optional Phi-K matrix computed on the real dataset.
+        synthetic_correlation_matrix: Optional Phi-K matrix computed on the synthetic dataset.
+        correlation_distance: Optional normalized distance between the real and synthetic correlation matrices.
+
     Returns:
         dict: The modified config data with added Overview section with aggregated_metrics
     """
@@ -575,33 +587,33 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
         capped_diff = min(100, max(0, percentage_diff))
         index = min(10, max(1, int(capped_diff / 10) + 1))
         return index
-    
+
     modified_config = config_data.copy()
-    
+
     if "resemblance" not in modified_config or "attributes" not in modified_config["resemblance"]:
         return modified_config
-        
+
     attributes = modified_config["resemblance"]["attributes"]
     all_attribute_scores: List[float] = []
-    
+
     for i, attr in enumerate(attributes):
         overview = {}
         all_percentages = []
-        
+
         if "important_metrics" in attr:
             for metric_name, metric_data in attr["important_metrics"].items():
                 if "difference" in metric_data and "percentage" in metric_data["difference"]:
                     pct = metric_data["difference"]["percentage"]
                     all_percentages.append(abs(pct))
                     overview[metric_name] = pct
-        
+
         if "details" in attr:
             for metric_name, metric_data in attr["details"].items():
                 if "difference" in metric_data and "percentage" in metric_data["difference"]:
                     pct = metric_data["difference"]["percentage"]
                     all_percentages.append(abs(pct))
                     overview[metric_name] = pct
-        
+
         if all_percentages:
             avg_difference = sum(all_percentages) / len(all_percentages)
             avg_difference = max(0.0, min(100.0, avg_difference))
@@ -611,73 +623,129 @@ def add_overview_to_config(config_data: Dict[str, Any]) -> Dict[str, Any]:
                 "color_index": color_index
             }
             all_attribute_scores.append(avg_difference / 100.0)
-        
+
         if overview:
             modified_config["resemblance"]["attributes"][i]["overview"] = overview
-    
-    real_utility_score = 0.0
-    synthetic_utility_score = 0.0
-    
+
+    real_utility_score: Optional[float] = None
+    synthetic_utility_score: Optional[float] = None
+
     if "utility" in modified_config and "methods" in modified_config["utility"]:
         for method in modified_config["utility"]["methods"]:
             if "machine_learning" in method:
                 ml_method = method["machine_learning"]
-                
+
                 if "real" in ml_method and "predictions" in ml_method["real"]:
                     predictions = ml_method["real"]["predictions"]
-                    
+
                     if "Balanced Accuracy" in predictions:
                         for classifier in predictions["Balanced Accuracy"]:
                             if classifier["classifier"] == "Summary":
                                 real_utility_score = classifier["score"]
                                 break
-                    
+
                     elif "Adjusted R-Squared" in predictions:
                         for classifier in predictions["Adjusted R-Squared"]:
                             if classifier["classifier"] == "Summary":
                                 real_utility_score = classifier["score"]
                                 break
-                
+
                 if "synthetic" in ml_method and "predictions" in ml_method["synthetic"]:
                     predictions = ml_method["synthetic"]["predictions"]
-                    
+
                     if "Balanced Accuracy" in predictions:
                         for classifier in predictions["Balanced Accuracy"]:
                             if classifier["classifier"] == "Summary":
                                 synthetic_utility_score = classifier["score"]
                                 break
-                    
+
                     elif "Adjusted R-Squared" in predictions:
                         for classifier in predictions["Adjusted R-Squared"]:
                             if classifier["classifier"] == "Summary":
                                 synthetic_utility_score = classifier["score"]
                                 break
-    
+
+    overview_items: Dict[str, Any] = {}
+
     if all_attribute_scores:
         overall_resemblance_score = sum(all_attribute_scores) / len(all_attribute_scores)
-        overall_resemblance_score = overall_resemblance_score
-        
+        overall_resemblance_value = 1.0 - overall_resemblance_score
+        overall_resemblance_value = max(0.0, min(1.0, overall_resemblance_value))
+
+        resemblance_values: Dict[str, Union[float, str, None]] = {
+            "real": 1.0,
+            "synthetic": overall_resemblance_value
+        }
+        resemblance_values.update(determine_quality_range("overall_resemblance", overall_resemblance_value))
+
+        utility_values: Dict[str, Union[float, str, None]] = {
+            "real": real_utility_score,
+            "synthetic": synthetic_utility_score
+        }
+        utility_values.update(determine_quality_range("overall_utility", synthetic_utility_score))
+
+        overview_items["overall_resemblance"] = {
+            "description": "This metric quantifies the statistical similarity between synthetic and real data by calculating the normalized differences across all attributes and statistical measures. The aggregated score may not fully capture specific distributional anomalies or outliers in individual metrics. It is strongly recommended to examine the detailed statistical comparisons for a complete understanding of data resemblance.",
+            "values": resemblance_values
+        }
+        overview_items["overall_utility"] = {
+            "description": "This measurement evaluates how effectively synthetic data can substitute real data in machine learning applications using a train-on-synthetic test-on-real approach. For classification tasks this represents the Balanced Accuracy averaged across all classifiers while regression problems use the adjusted R-squared aggregated across all regressors. This consolidated metric provides a general approximation that should be supplemented with individual model performance evaluation.",
+            "values": utility_values
+        }
+
+    matrix_available = (
+        correlation_labels is not None
+        and real_correlation_matrix is not None
+        and synthetic_correlation_matrix is not None
+    )
+
+    if not matrix_available:
+        resemblance_section = modified_config.get("resemblance", {})
+        if isinstance(resemblance_section, dict):
+            fallback_matrix = resemblance_section.get("correlation_matrix")
+            if fallback_matrix:
+                correlation_labels = fallback_matrix.get("labels")
+                real_correlation_matrix = fallback_matrix.get("real")
+                synthetic_correlation_matrix = fallback_matrix.get("synthetic")
+                correlation_distance = fallback_matrix.get("distance", correlation_distance)
+                matrix_available = (
+                    correlation_labels is not None
+                    and real_correlation_matrix is not None
+                    and synthetic_correlation_matrix is not None
+                )
+
+    if matrix_available:
+        correlation_similarity: Optional[float] = None
+        if isinstance(correlation_distance, (int, float)):
+            correlation_distance = float(max(0.0, min(1.0, correlation_distance)))
+            correlation_similarity = 1.0 - correlation_distance
+
+        correlation_values: Dict[str, Any] = {
+            "labels": correlation_labels or [],
+            "real": real_correlation_matrix or [],
+            "synthetic": synthetic_correlation_matrix or [],
+            "distance": correlation_distance
+        }
+
+        if correlation_similarity is not None:
+            correlation_similarity = max(0.0, min(1.0, correlation_similarity))
+            correlation_values["similarity"] = correlation_similarity
+            correlation_values.update(
+                determine_quality_range("overall_correlation", correlation_similarity)
+            )
+        else:
+            correlation_values.update(determine_quality_range("overall_correlation", None))
+
+        overview_items["overall_correlation"] = {
+            "description": "This heatmap compares the complete Phi-K correlation matrices for the real and synthetic datasets. The more closely the color patterns and values align, the more similar the multivariate relationships between attributes.",
+            "values": correlation_values
+        }
+
+    if overview_items:
         modified_config["Overview"] = {
             "display_name": "Summary Overview",
             "description": "This aggregated overview provides a high-level assessment of the similarity between real and synthetic data across resemblance and utility. The metrics presented here serve as general indicators and should be supplemented with detailed evaluation results for comprehensive analysis.",
-            "aggregated_metrics": [
-                {
-                    "overall_resemblance": {
-                        "description": "This metric quantifies the statistical similarity between synthetic and real data by calculating the normalized differences across all attributes and statistical measures. The aggregated score may not fully capture specific distributional anomalies or outliers in individual metrics. It is strongly recommended to examine the detailed statistical comparisons for a complete understanding of data resemblance.",
-                        "values": {
-                            "real": 1.0,  
-                            "synthetic": (1.0 - overall_resemblance_score)
-                        }
-                    },
-                    "overall_utility": {
-                        "description": "This measurement evaluates how effectively synthetic data can substitute real data in machine learning applications using a train-on-synthetic test-on-real approach. For classification tasks this represents the Balanced Accuracy averaged across all classifiers while regression problems use the adjusted R-squared aggregated across all regressors. This consolidated metric provides a general approximation that should be supplemented with individual model performance evaluation.",
-                        "values": {
-                            "real": real_utility_score,
-                            "synthetic": synthetic_utility_score
-                        }
-                    }
-                }
-            ]
+            "aggregated_metrics": overview_items
         }
-    
+
     return modified_config

@@ -1,4 +1,4 @@
-from typing import Dict, Union, Optional, Any, List
+from typing import Dict, Union, Optional, Any, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -1017,6 +1017,173 @@ def calculate_distinct_values(real, synthetic):
         raise ValueError(f"Error calculating distinct values: {str(e)}")
 
 
+def _compute_correlation_matrix(
+    df: pd.DataFrame,
+    dataset_name: str
+) -> Tuple[List[str], List[List[float]]]:
+    """
+    Compute a full Phi-K correlation matrix for the provided dataframe.
+
+    Args:
+        df: Dataset to analyse.
+        dataset_name: Identifier used for warning messages.
+
+    Returns:
+        Tuple containing the ordered column labels and a square matrix of correlation values.
+    """
+    labels: List[str] = list(df.columns)
+    size = len(labels)
+    if size == 0:
+        return labels, []
+
+    constant_cols = [col for col in labels if df[col].nunique(dropna=False) <= 1]
+    varying_cols = [col for col in labels if col not in constant_cols]
+
+    full_matrix = pd.DataFrame()
+    if len(varying_cols) > 1:
+        try:
+            full_matrix = df[varying_cols].phik_matrix()
+        except Exception as e:
+            print(
+                f"Warning: Error calculating full phik_matrix for {dataset_name} data: {e}. "
+                "Falling back to pairwise correlation calculation."
+            )
+            full_matrix = pd.DataFrame()
+
+    correlation_matrix: List[List[float]] = [[0.0 for _ in range(size)] for _ in range(size)]
+
+    for row_idx, current_col in enumerate(labels):
+        for col_idx, other_col in enumerate(labels):
+            if current_col == other_col:
+                value = 1.0
+            elif current_col in constant_cols or other_col in constant_cols:
+                value = 0.0
+            else:
+                value = np.nan
+
+                if (
+                    not full_matrix.empty
+                    and current_col in full_matrix.index
+                    and other_col in full_matrix.columns
+                ):
+                    try:
+                        value = float(full_matrix.loc[current_col, other_col])
+                    except Exception as inner_e:
+                        print(
+                            f"Warning: Could not read correlation for {current_col}-{other_col} "
+                            f"from pre-calculated matrix in {dataset_name}: {inner_e}. Attempting pairwise calculation."
+                        )
+
+                if np.isnan(value):
+                    try:
+                        temp_df = df[[current_col, other_col]]
+                        pair_matrix = temp_df.phik_matrix()
+                        value = float(pair_matrix.loc[current_col, other_col])
+                    except Exception as fallback_e:
+                        print(
+                            f"Warning: Pairwise Phi-K correlation failed for {current_col}-{other_col} "
+                            f"in {dataset_name}: {fallback_e}. Setting correlation to 0.0."
+                        )
+                        value = 0.0
+
+            if isinstance(value, float) and np.isnan(value):
+                value = 0.0
+
+            correlation_matrix[row_idx][col_idx] = float(value)
+
+    return labels, correlation_matrix
+
+
+def _compute_matrix_distance(
+    real_matrix: List[List[float]],
+    synthetic_matrix: List[List[float]]
+) -> Optional[float]:
+    """
+    Calculate the normalized average absolute difference between two correlation matrices.
+
+    Args:
+        real_matrix: Correlation matrix from real data.
+        synthetic_matrix: Correlation matrix from synthetic data.
+
+    Returns:
+        float | None: Distance value between 0 and 1 (0 indicates perfect alignment).
+    """
+    if not real_matrix or not synthetic_matrix:
+        return None
+
+    try:
+        real_array = np.array(real_matrix, dtype=float)
+        synthetic_array = np.array(synthetic_matrix, dtype=float)
+    except (TypeError, ValueError):
+        return None
+
+    if real_array.shape != synthetic_array.shape:
+        raise ValueError("Correlation matrices must share the same shape to compute distance.")
+
+    if real_array.size == 0:
+        return 0.0
+
+    diff = np.abs(real_array - synthetic_array)
+
+    if diff.ndim == 2 and diff.shape[0] == diff.shape[1]:
+        mask = ~np.eye(diff.shape[0], dtype=bool)
+        if mask.sum() == 0:
+            distance = 0.0
+        else:
+            distance = float(diff[mask].mean())
+    else:
+        distance = float(diff.mean())
+
+    if math.isnan(distance):
+        return None
+
+    return float(max(0.0, min(1.0, distance)))
+
+
+def calculate_full_correlation_matrix(
+    processed_real_data: pd.DataFrame,
+    processed_synthetic_data: pd.DataFrame
+) -> Dict[str, Any]:
+    """
+    Calculate the full Phi-K correlation matrix for both real and synthetic processed datasets.
+
+    Args:
+        processed_real_data: Pre-processed real dataset.
+        processed_synthetic_data: Pre-processed synthetic dataset.
+
+    Returns:
+        dict: Mapping containing the ordered column labels and correlation matrices for each dataset.
+    """
+    if not isinstance(processed_real_data, pd.DataFrame) or not isinstance(processed_synthetic_data, pd.DataFrame):
+        raise TypeError("Both processed_real_data and processed_synthetic_data must be pandas DataFrames.")
+
+    real_columns = list(processed_real_data.columns)
+    synthetic_columns = list(processed_synthetic_data.columns)
+
+    if set(real_columns) != set(synthetic_columns):
+        raise ValueError(
+            "Real and synthetic processed datasets must contain the same columns to compute correlation matrices."
+        )
+
+    if real_columns != synthetic_columns:
+        processed_synthetic_data = processed_synthetic_data[real_columns]
+
+    labels_real, real_matrix = _compute_correlation_matrix(processed_real_data, "real")
+    labels_syn, synthetic_matrix = _compute_correlation_matrix(processed_synthetic_data, "synthetic")
+
+    if labels_real != labels_syn:
+        raise ValueError("Column order mismatch detected after alignment when computing correlation matrices.")
+
+    distance_value = _compute_matrix_distance(real_matrix, synthetic_matrix)
+
+    return {
+        "labels": labels_real,
+        "real": real_matrix,
+        "synthetic": synthetic_matrix,
+        "distance": distance_value
+    }
+
+
 def calculate_columnwise_correlations(
     real: pd.DataFrame, synthetic: pd.DataFrame
 ) -> Dict[str, Dict[str, float]]:
@@ -1265,76 +1432,24 @@ def visualize_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFram
     visualization_data = {'real': {}, 'synthetic': {}}
 
     try:
-        for df, df_name in [(real, "real"), (synthetic, "synthetic")]:
-            # Identify constant columns for the current DataFrame
-            constant_cols = [
-                col for col in df.columns if df[col].nunique(dropna=False) <= 1
-            ]
-            varying_cols = [col for col in df.columns if col not in constant_cols]
+        matrix_data = calculate_full_correlation_matrix(real, synthetic)
+        labels = matrix_data.get("labels", [])
+        real_matrix = matrix_data.get("real", [])
+        synthetic_matrix = matrix_data.get("synthetic", [])
 
-            full_phik_matrix = pd.DataFrame()
-            if len(varying_cols) > 1:
-                try:
-                    full_phik_matrix = df[varying_cols].phik_matrix()
-                except Exception as e:
-                    print(
-                        f"Warning: Error calculating phik_matrix for all varying columns in {df_name} data: {e}. "
-                        "Individual column correlations will be calculated or set to 0.0/NaN."
-                    )
-                    full_phik_matrix = pd.DataFrame() # Reset to empty if calculation fails
-
-            for current_col in df.columns:
-                x_values: List[str] = []
-                correlation_values: List[float] = []
-
-                for other_col in df.columns:
-                    x_values.append(other_col)
-
-                    if current_col == other_col:
-                        # Self-correlation: phik typically gives 1.0
-                        correlation_values.append(1.0)
-                    elif current_col in constant_cols or other_col in constant_cols:
-                        # Correlation with a constant column is often considered 0
-                        correlation_values.append(0.0)
-                    elif not full_phik_matrix.empty and current_col in full_phik_matrix.index and other_col in full_phik_matrix.columns:
-                        try:
-                            corr_val = float(full_phik_matrix.loc[current_col, other_col])
-                            correlation_values.append(corr_val)
-                        except Exception as inner_e:
-                            print(
-                                f"Warning: Could not get correlation for {current_col}-{other_col} in {df_name} "
-                                f"from pre-calculated matrix: {inner_e}. Attempting pairwise calculation."
-                            )
-                            try:
-                                temp_df_pair = df[[current_col, other_col]]
-                                pair_corr_matrix = temp_df_pair.phik_matrix()
-                                pair_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
-                                correlation_values.append(pair_corr_val)
-                            except Exception as fallback_e:
-                                print(
-                                    f"Warning: Fallback pairwise correlation calculation failed for {current_col}-{other_col} in {df_name}: {fallback_e}. Setting to NaN."
-                                )
-                                correlation_values.append('NA')
-                    else:
-                        try:
-                            temp_df_pair = df[[current_col, other_col]]
-                            pair_corr_matrix = temp_df_pair.phik_matrix()
-                            pair_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
-                            correlation_values.append(pair_corr_val)
-                        except Exception as fallback_e:
-                            print(
-                                f"Warning: Direct pairwise correlation calculation failed for {current_col}-{other_col} in {df_name}: {fallback_e}. Setting to NaN."
-                            )
-                            correlation_values.append('NA')
-
-                final_correlation_values = [0.0 if np.isnan(val) else val for val in correlation_values]
-
-                visualization_data[df_name][current_col] = {
-                    "x_values": x_values,
-                    "correlation_values": final_correlation_values,
-                    "x_axis": "Attributes",
-                    "y_axis": "Correlation Strength",
-                }
+        for idx, column in enumerate(labels):
+            visualization_data['real'][column] = {
+                "x_values": labels,
+                "correlation_values": real_matrix[idx] if idx < len(real_matrix) else [0.0] * len(labels),
+                "x_axis": "Attributes",
+                "y_axis": "Correlation Strength",
+            }
+            visualization_data['synthetic'][column] = {
+                "x_values": labels,
+                "correlation_values": synthetic_matrix[idx] if idx < len(synthetic_matrix) else [0.0] * len(labels),
+                "x_axis": "Attributes",
+                "y_axis": "Correlation Strength",
+            }
 
         return visualization_data
 

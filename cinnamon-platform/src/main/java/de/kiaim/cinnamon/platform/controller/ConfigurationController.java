@@ -184,7 +184,7 @@ public class ConfigurationController {
 	public String getAlgorithmDefinition(
 			@Valid final AlgorithmDefinitionRequest request,
 			@AuthenticationPrincipal UserEntity requestUser
-	) throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalRequestException {
+	) throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalRequestException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 		return externalConfigurationService.fetchAlgorithmDefinition(project, request.getConfigurationName(),

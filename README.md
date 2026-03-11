@@ -8,13 +8,8 @@
 
 <div align="center">
 
-<a href="https://github.com/KI-AIM/Cinnamon/blob/main/LICENSE">
-  <img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg">
-</a>
-
-<a href="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml">
-  <img alt="Build and Push Docker Images" src="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml/badge.svg">
-</a>
+<a href="https://github.com/KI-AIM/Cinnamon/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"></a>
+<a href="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml"><img alt="Build and Push Docker Images" src="https://github.com/ki-aim/cinnamon/actions/workflows/docker-push.yml/badge.svg"></a>
 
 </div>
 
@@ -74,3 +69,7 @@ Cinnamon is open source published under the [Apache 2.0 license](https://www.apa
 
 ## Acknowledgement
 Supported by BMFTR grant No. 16KISA115K
+
+Funded by the European Union – NextGenerationEU
+
+<img src="/img/EU.png" height="100px" alt="With funding from the: Federal Ministry of Research, Technology and Space"> <img src="/img/BMFTR.png" height="100px" alt="Funded by the European Union – NextGenerationEU">

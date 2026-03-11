@@ -79,6 +79,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String CONFIGURATION_FILE = "14";
 
+	/**
+	 * Error class code for {@link BadAlgorithmException}.
+	 */
+	public static final String ALGORITHM = "15";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

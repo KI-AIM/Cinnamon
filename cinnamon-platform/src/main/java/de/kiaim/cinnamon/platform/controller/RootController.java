@@ -48,7 +48,7 @@ public class RootController {
                          description = "Returns the Cinnamon information.",
                          content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                              schema = @Schema(implementation = CinnamonInfo.class)),
-                                    @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+                                    @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
                                              schema = @Schema(implementation = CinnamonInfo.class))}),
     })
     @ResponseBody

@@ -45,6 +45,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@Autowired private ExecutionStepMapper executionStepMapper;
 	@Autowired private DataProcessorService dataProcessorService;
 	@Autowired private DataSetService dataSetService;
+	@Autowired private ExternalConfigurationService externalConfigurationService;
 	@Autowired private HttpService httpService;
 	@Autowired private StepService stepService = mock(StepService.class);
 
@@ -70,8 +71,8 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		                                         cinnamonConfiguration, taskScheduler, transactionTemplate,
 		                                         backgroundProcessRepository, executionStepRepository,
 		                                         projectRepository, executionStepMapper, csvProcessor, databaseService,
-		                                         dataProcessorService, dataSetService, externalServerInstanceService,
-		                                         httpService, stepService);
+		                                         dataProcessorService, dataSetService, externalConfigurationService,
+		                                         externalServerInstanceService, httpService, stepService);
 
 		if (jsonMapper == null) {
 			jsonMapper = serializationConfig.jsonMapper();

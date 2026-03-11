@@ -17,13 +17,11 @@ import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.StepOutputEncoding;
 import de.kiaim.cinnamon.platform.service.DataSetService;
+import de.kiaim.cinnamon.platform.service.ExternalConfigurationService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
-import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
-import de.kiaim.cinnamon.test.util.DataSetTestHelper;
-import de.kiaim.cinnamon.test.util.ResourceHelper;
-import de.kiaim.cinnamon.test.util.WithMockWebServer;
+import de.kiaim.cinnamon.test.util.*;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
@@ -71,8 +69,22 @@ public class ProcessControllerTest extends ControllerTest {
 	@Autowired private CinnamonConfiguration cinnamonConfiguration;
 
 	@Autowired private DataSetService dataSetService;
+	@Autowired private ExternalConfigurationService externalConfigurationService;
 	@Autowired private UserService userService;
 	@Autowired private ProjectService projectService;
+
+	@BeforeEach
+	public void setup() {
+		externalConfigurationService.setCachedAvailableAlgorithms(ANON_JOB,
+		                                                          AlgorithmTestHelper.generateAvailableAlgorithms());
+		externalConfigurationService.setCachedAlgorithmDefinition(ANON_JOB, "/algorithmA",
+																  AlgorithmTestHelper.generateAlgorithmDefinition());
+
+		externalConfigurationService.setCachedAvailableAlgorithms("synthetization_configuration",
+		                                                          AlgorithmTestHelper.generateAvailableAlgorithms2());
+		externalConfigurationService.setCachedAlgorithmDefinition("synthetization_configuration", "/algorithm/ctgan",
+																  AlgorithmTestHelper.generateAlgorithmDefinition2());
+	}
 
 	@Test
 	public void getPipelineNotStarted() throws Exception {
@@ -107,7 +119,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/config")
 				                .param("configurationName", ANON_JOB)
 				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configuration", "configuration")
+				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 		mockMvc.perform(post("/api/process/configure")
@@ -118,7 +130,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/config")
 				                .param("configurationName", "synthetization_configuration")
 				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configuration", "configuration")
+				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfiguration2())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 		mockMvc.perform(post("/api/process/configure")
@@ -242,7 +254,7 @@ public class ProcessControllerTest extends ControllerTest {
 		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
 		assertNotNull(recordedRequest, "No request has been sent to the server!");
 		assertEquals("POST", recordedRequest.getMethod());
-		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
+		assertEquals("/algorithmA", recordedRequest.getPath());
 
 		// Transform request into ServletRequest so FileUpload can parse it
 		final byte[] body = recordedRequest.getBody().readByteArray();
@@ -269,7 +281,8 @@ public class ProcessControllerTest extends ControllerTest {
 			} else if (fileItem.getFieldName().equals("callback")) {
 				assertEquals(callbackUrl, fileItem.getString(), "Unexpected callback URL!");
 			} else if (fileItem.getFieldName().equals("anonymizationConfig")) {
-				assertEquals("\"configuration\"", fileItem.getString(), "Unexpected anonymization config!");
+				assertEquals(AlgorithmTestHelper.generateAlgorithmConfigurationJson(), fileItem.getString(),
+				             "Unexpected anonymization config!");
 			} else {
 				fail("Unexpected field: " + fileItem.getFieldName());
 			}
@@ -467,11 +480,13 @@ public class ProcessControllerTest extends ControllerTest {
 				Map.entry("original-attribute_config.yaml",
 				          MutablePair.of(false, DataConfigurationTestHelper.generateDataConfigurationAsYaml())),
 				Map.entry("original-dataset.csv", MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
-				Map.entry("anonymization.yaml", MutablePair.of(false, "configuration")),
+				Map.entry("anonymization.yaml",
+				          MutablePair.of(false, AlgorithmTestHelper.generateAlgorithmConfigurationYaml())),
 				Map.entry("anonymization-dataset.csv", MutablePair.of(false, ResourceHelper.loadCsvFileWithErrorsAsString()
 				                                                                   .replace("forty two", ""))),
 				Map.entry("anonymization-additional.txt", MutablePair.of(false, "anon-info")),
-				Map.entry("synthetization_configuration.yaml", MutablePair.of(false, "configuration")),
+				Map.entry("synthetization_configuration.yaml",
+				          MutablePair.of(false, AlgorithmTestHelper.generateAlgorithmConfiguration2())),
 				Map.entry("anonymization-synthetization-dataset.csv",
 				          MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
 				Map.entry("synthetization-additional.txt", MutablePair.of(false, "synth-info"))
@@ -617,7 +632,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .with(httpBasic("test_user_3", "changeme"))
 				                .param("configurationName", ANON_JOB)
 				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configuration", "configuration")
+				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 		mockMvc.perform(post("/api/process/configure")
@@ -630,7 +645,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .with(httpBasic("test_user_3", "changeme"))
 				                .param("configurationName", "synthetization_configuration")
 				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configuration", "configuration")
+				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfiguration2())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 		mockMvc.perform(post("/api/process/configure")
@@ -691,7 +706,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .andExpect(status().isOk());
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("POST", recordedRequest.getMethod());
-		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
+		assertEquals("/algorithmA", recordedRequest.getPath());
 
 		// Test state changes
 		var updateTestProject = getTestProject();
@@ -710,7 +725,7 @@ public class ProcessControllerTest extends ControllerTest {
 		String id = setupAndStartProcess();
 
 		// Send callback request with error JSON
-		ErrorDetails errorDetails = new ErrorDetails("config", null, null);
+		ErrorDetails errorDetails = new ErrorDetails("config", null, null, null);
 		ErrorRequest errorRequest = new ErrorRequest("about:blank", "TEST_123", "Process failed", errorDetails);
 
 		mockMvc.perform(post("/api/process/" + id + "/callback")

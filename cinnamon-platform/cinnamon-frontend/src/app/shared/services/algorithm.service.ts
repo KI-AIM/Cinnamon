@@ -223,7 +223,8 @@ export abstract class AlgorithmService {
     protected fetchAlgorithms(): Observable<string> {
         return this.http.get<string>(this.baseURL + "/algorithms", {
             params: {configurationName: this.getConfigurationName()},
-            responseType: 'text' as 'json'
+            responseType: 'text' as 'json',
+            headers: {'Accept': 'application/yaml'},
         });
     }
 
@@ -242,7 +243,8 @@ export abstract class AlgorithmService {
     protected fetchAlgorithmDefinition(definitionPath: string): Observable<string> {
         return this.http.get<string>(this.baseURL + "/algorithm", {
             params: {configurationName: this.getConfigurationName(), definitionPath: definitionPath},
-            responseType: 'text' as 'json'
+            responseType: 'text' as 'json',
+            headers: {'Accept': 'application/yaml'},
         });
     }
 

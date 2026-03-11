@@ -77,11 +77,11 @@ public class DataController {
 			             description = "Returns the estimated data configuration.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = FileInformation.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = FileInformation.class))}),
 	})
 	@GetMapping(value = "/file",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<FileInformation> getFile(
 			@AuthenticationPrincipal final UserEntity requestUser
 	) {
@@ -98,24 +98,24 @@ public class DataController {
 			             description = "Returns the estimated file configuration.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = FileConfigurationEstimation.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = FileConfigurationEstimation.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The file is not supported or could not be read.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred during the estimation.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@PostMapping(value = "/file/estimation",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public FileConfigurationEstimation estimateFileConfiguration(
 			final MultipartFile file
 	) throws BadFileException, InternalIOException, InternalMissingHandlingException {
@@ -139,24 +139,24 @@ public class DataController {
 			             description = "Successfully stored the file and the file configuration.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = FileInformation.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = FileInformation.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The file is not supported or could not be read or the dataset has already been confirmed.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "The dataset has been stored but not confirmed and could not be deleted.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@PostMapping(value = "/file",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<FileInformation> uploadFile(
 			@ParameterObject @Valid final UploadFileRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
@@ -176,24 +176,24 @@ public class DataController {
 			             description = "Successfully estimated the data configuration. Returns the estimated data configuration.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = DataConfigurationEstimation.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = DataConfigurationEstimation.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The data set has already been confirmed.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@Transactional
 	@GetMapping(value = "/estimation",
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Object> estimateDatatypes(
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
@@ -207,24 +207,24 @@ public class DataController {
 			             description = "Successfully stored the configuration. Returns the id of the data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = Long.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = Long.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The file is not supported or could not be read. The configuration is not valid. The data has already been confirmed.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@PostMapping(value = "/configuration",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Object> storeConfig(
 			@Valid final StoreDataConfigurationRequest request,
 			@AuthenticationPrincipal UserEntity user
@@ -239,25 +239,25 @@ public class DataController {
 			             description = "Successfully stored the data. Returns the id of the data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = Long.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = Long.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The file is not supported or could not be read. The configuration is not valid. The data has already been stored.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@Transactional
 	@PostMapping(value = "",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Object> storeData(
 			@Valid final StoreDataConfigurationRequest request,
 			@AuthenticationPrincipal UserEntity user
@@ -275,18 +275,18 @@ public class DataController {
 			             description = "The data set has not been stored..",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@PostMapping(value = "/confirm",
 	             consumes = MediaType.ALL_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Object> confirmData(
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
@@ -300,23 +300,23 @@ public class DataController {
 			             description = "Successfully found the configuration. Returns the configuration of the data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = DataConfiguration.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = DataConfiguration.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored configuration.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@GetMapping(value = "/configuration",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Object> loadConfig(
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@AuthenticationPrincipal final UserEntity user
@@ -331,23 +331,23 @@ public class DataController {
 			             description = "Returns the general information of the data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = DataSetInfo.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = DataSetInfo.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The data set does not exist.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@GetMapping(value = "/info",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Object> info(
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@AuthenticationPrincipal final UserEntity user
@@ -363,7 +363,7 @@ public class DataController {
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 array = @ArraySchema(schema = @Schema(implementation = DataRow.class)),
 			                                 examples = {@ExampleObject("[" + DataRow.DATA_ROW_EXAMPLE + "]")}),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 array = @ArraySchema(schema = @Schema(implementation = DataRow.class)),
 			                                 examples = {
 					                                 @ExampleObject("""
@@ -379,17 +379,17 @@ public class DataController {
 			             description = "The user has no stored data.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@GetMapping(value = "/data",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Object> loadData(
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@ParameterObject LoadDataRequest request,
@@ -408,17 +408,17 @@ public class DataController {
 			             description = "The data set does not exist.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@PostMapping(value = "/hold-out",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Object> generateHoldOutSplit(
 			@ParameterObject @Valid final HoldOutRequest request,
 			@AuthenticationPrincipal UserEntity requestUser
@@ -436,23 +436,23 @@ public class DataController {
 			             description = "Successfully found the data set. Returns the data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = DataSet.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = DataSet.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@GetMapping(value = "",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Object> loadDataSet(
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@ParameterObject LoadDataRequest request,
@@ -469,24 +469,24 @@ public class DataController {
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = TransformationResult.class)
 			             ),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = TransformationResult.class)
 			                        )}),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored data.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@GetMapping(value = "/transformationResult",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Object> loadTransformationResult(
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@ParameterObject LoadDataRequest request,
@@ -502,24 +502,24 @@ public class DataController {
 			             description = "Successfully returns the page.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = TransformationResultPage.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = TransformationResultPage.class)
 			                        )}),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored data.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))})
 	})
 	@GetMapping(value = "/transformationResult/page",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public TransformationResultPage loadTransformationResultPage(
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@Parameter(description = "Page number starting at 1.")

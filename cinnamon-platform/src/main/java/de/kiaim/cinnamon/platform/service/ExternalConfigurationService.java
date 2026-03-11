@@ -3,6 +3,8 @@ package de.kiaim.cinnamon.platform.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmDefinition;
+import de.kiaim.cinnamon.model.configuration.algorithms.AvailableAlgorithms;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
@@ -12,7 +14,9 @@ import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.*;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +25,9 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service for forwarding request regarding configurations to the external server.
@@ -37,21 +44,35 @@ public class ExternalConfigurationService {
 	private static final String DATA_CONFIGURATION_KEY = "configurations";
 
 	private final ObjectMapper yamlMapper;
+	private final WebClient yamlWebClient;
 
 	private final DatabaseService databaseService;
 	private final ExternalServerInstanceService externalServerInstanceService;
 	private final HttpService httpService;
 	private final StepService stepService;
 
+	private final Map<String, AvailableAlgorithms> cachedAvailableAlgorithms = new ConcurrentHashMap<>();
+	private final Map<String, AlgorithmDefinition> cachedAlgorithmDefinitions = new ConcurrentHashMap<>();
+
 	public ExternalConfigurationService(final SerializationConfig serializationConfig,
+	                                    @Qualifier("multiFormatWebClient") final WebClient yamlWebClient,
 	                                    final DatabaseService databaseService,
 	                                    final ExternalServerInstanceService externalServerInstanceService,
 	                                    final HttpService httpService, final StepService stepService) {
 		this.yamlMapper = serializationConfig.yamlMapper();
+		this.yamlWebClient = yamlWebClient;
 		this.databaseService = databaseService;
 		this.externalServerInstanceService = externalServerInstanceService;
 		this.httpService = httpService;
 		this.stepService = stepService;
+	}
+
+	/**
+	 * Clears the cached algorithms and algorithm definitions.
+	 */
+	public void clearCaches() {
+		cachedAvailableAlgorithms.clear();
+		cachedAlgorithmDefinitions.clear();
 	}
 
 	/**
@@ -102,13 +123,46 @@ public class ExternalConfigurationService {
 
 	/**
 	 * Fetches the available algorithms from the external server associated with the configuration.
+	 * Caches the result after the first request.
 	 *
 	 * @param configurationName The configuration name associated with the external configuration.
 	 * @return A YAML string with the available algorithms.
 	 * @throws BadConfigurationNameException If the configuration name is not valid.
 	 * @throws InternalRequestException      If the request fetching the algorithms failed.
 	 */
-	public String fetchAvailableAlgorithms(final String configurationName)
+	public AvailableAlgorithms fetchAvailableAlgorithms(final String configurationName)
+			throws BadConfigurationNameException, InternalRequestException {
+		AvailableAlgorithms availableAlgorithms = cachedAvailableAlgorithms.get(configurationName);
+		if (availableAlgorithms != null) {
+			return copy(availableAlgorithms, AvailableAlgorithms.class);
+		}
+
+		availableAlgorithms = doFetchAvailableAlgorithms(configurationName);
+		setCachedAvailableAlgorithms(configurationName, availableAlgorithms);
+
+		return availableAlgorithms;
+	}
+
+	/**
+	 * Updates the cached available algorithms for the given configuration name.
+	 *
+	 * @param configurationName   The configuration name for which to update the cached algorithms.
+	 * @param availableAlgorithms The new available algorithms to cache.
+	 */
+	public void setCachedAvailableAlgorithms(final String configurationName,
+	                                         final AvailableAlgorithms availableAlgorithms) {
+		cachedAvailableAlgorithms.put(configurationName, copy(availableAlgorithms, AvailableAlgorithms.class));
+	}
+
+	/**
+	 * Fetches the available algorithms from the external server associated with the configuration.
+	 *
+	 * @param configurationName The configuration name associated with the external configuration.
+	 * @return A YAML string with the available algorithms.
+	 * @throws BadConfigurationNameException If the configuration name is not valid.
+	 * @throws InternalRequestException      If the request fetching the algorithms failed.
+	 */
+	private AvailableAlgorithms doFetchAvailableAlgorithms(final String configurationName)
 			throws BadConfigurationNameException, InternalRequestException {
 		final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(configurationName);
 		final ExternalServer externalServer = externalConfiguration.getExternalServer();
@@ -125,17 +179,20 @@ public class ExternalConfigurationService {
 		final String urlPath = externalConfiguration.getAlgorithmEndpoint();
 
 		try {
-			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
-			return webClient.get()
-			                .uri(urlPath)
-			                .retrieve()
-			                .onStatus(HttpStatusCode::isError,
-			                          errorResponse -> errorResponse.toEntity(String.class)
-			                                                        .map(httpService::buildErrorResponse))
-			                .bodyToMono(String.class)
-			                .block();
+			return yamlWebClient.mutate()
+			                    .baseUrl(serverUrl)
+			                    .build()
+			                    .get()
+			                    .uri(urlPath)
+			                    .accept(MediaType.APPLICATION_JSON, MediaType.APPLICATION_YAML)
+			                    .retrieve()
+			                    .onStatus(HttpStatusCode::isError,
+			                              errorResponse -> errorResponse.toEntity(String.class)
+			                                                            .map(httpService::buildErrorResponse))
+			                    .bodyToMono(AvailableAlgorithms.class)
+			                    .block();
 		} catch (final RequestRuntimeException e) {
-			final String message = httpService.buildError(e, "fetch the status");
+			final String message = httpService.buildError(e, "fetch available algorithms");
 			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
 			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message, errorDetails);
 		} catch (WebClientRequestException e) {
@@ -158,11 +215,12 @@ public class ExternalConfigurationService {
 	 * @throws InternalInvalidStateException       If getting the dataset info failed.
 	 * @throws InternalRequestException            If the request fetching the definition failed.
 	 */
-	public String fetchAlgorithmDefinition(final ProjectEntity project, final String configurationName,
-	                                       final String definitionPath)
+	public AlgorithmDefinition fetchAlgorithmDefinition(final ProjectEntity project, final String configurationName,
+	                                                    final String definitionPath)
 			throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalRequestException {
-		final String configuration = fetchAlgorithmDefinition(configurationName, definitionPath);
-		return injectParameters(project, configuration);
+		final AlgorithmDefinition algorithmDefinition = fetchAlgorithmDefinition(configurationName, definitionPath);
+		injectParameters(project, algorithmDefinition);
+		return algorithmDefinition;
 	}
 
 	/**
@@ -283,15 +341,65 @@ public class ExternalConfigurationService {
 
 	/**
 	 * Fetches the configuration definition from the external server for the given algorithm.
+	 * Caches the result after the first request.
 	 *
 	 * @param configurationName Name of the configuration associated with the external configuration.
 	 * @param definitionPath    The path under which the configuration definition is available.
-	 * @return A YAML string containing the configuration definition.
+	 * @return The configuration definition.
 	 * @throws BadConfigurationNameException If the configuration name is not valid.
 	 * @throws InternalRequestException      If the request fetching the definition failed.
 	 */
-	private String fetchAlgorithmDefinition(final String configurationName,
-	                                        final String definitionPath) throws BadConfigurationNameException, InternalRequestException {
+	public AlgorithmDefinition fetchAlgorithmDefinition(final String configurationName,
+	                                                    final String definitionPath)
+			throws InternalRequestException, BadConfigurationNameException {
+		final String cacheKey = createCacheKey(configurationName, definitionPath);
+
+		AlgorithmDefinition algorithmDefinition = cachedAlgorithmDefinitions.get(cacheKey);
+		if (algorithmDefinition != null) {
+			return copy(algorithmDefinition, AlgorithmDefinition.class);
+		}
+
+		algorithmDefinition = doFetchAlgorithmDefinition(configurationName, definitionPath);
+		setCachedAlgorithmDefinition(configurationName, definitionPath, algorithmDefinition);
+
+		return copy(algorithmDefinition, AlgorithmDefinition.class);
+	}
+
+	/**
+	 * Updates the cached algorithm definition for the given configuration name and algorithm path.
+	 *
+	 * @param configurationName   The configuration name.
+	 * @param definitionPath      The algorithm path.
+	 * @param algorithmDefinition The new algorithm definition.
+	 */
+	public void setCachedAlgorithmDefinition(final String configurationName, final String definitionPath,
+	                                         final AlgorithmDefinition algorithmDefinition) {
+		final String cacheKey = createCacheKey(configurationName, definitionPath);
+		cachedAlgorithmDefinitions.put(cacheKey, copy(algorithmDefinition, AlgorithmDefinition.class));
+	}
+
+	/**
+	 * Creates a cache key for the algorithm definition of the given configuration and algorithm path.
+	 *
+	 * @param configurationName The configuration name.
+	 * @param definitionPath The algorithm path.
+	 * @return The cache key.
+	 */
+	private String createCacheKey(final String configurationName, final String definitionPath) {
+		return configurationName + "::" + definitionPath;
+	}
+
+	/**
+	 * Fetches the configuration definition from the external server for the given algorithm.
+	 *
+	 * @param configurationName Name of the configuration associated with the external configuration.
+	 * @param definitionPath    The path under which the configuration definition is available.
+	 * @return The configuration definition.
+	 * @throws BadConfigurationNameException If the configuration name is not valid.
+	 * @throws InternalRequestException      If the request fetching the definition failed.
+	 */
+	private AlgorithmDefinition doFetchAlgorithmDefinition(final String configurationName, final String definitionPath)
+			throws BadConfigurationNameException, InternalRequestException {
 		final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(configurationName);
 		final ExternalServer externalServer = externalConfiguration.getExternalServer();
 		final ExternalServerInstance instance = externalServerInstanceService.findAvailableExternalServerInstance(
@@ -306,15 +414,18 @@ public class ExternalConfigurationService {
 		final String serverUrl = instance.getUrl();
 
 		try {
-			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
-			return webClient.get()
-			                .uri(definitionPath)
-			                .retrieve()
-			                .onStatus(HttpStatusCode::isError,
-			                          errorResponse -> errorResponse.toEntity(String.class)
-			                                                        .map(httpService::buildErrorResponse))
-			                .bodyToMono(String.class)
-			                .block();
+			return yamlWebClient.mutate()
+			                    .baseUrl(serverUrl)
+			                    .build()
+			                    .get()
+			                    .uri(definitionPath)
+			                    .accept(MediaType.APPLICATION_JSON, MediaType.APPLICATION_YAML, MediaType.APPLICATION_OCTET_STREAM)
+			                    .retrieve()
+			                    .onStatus(HttpStatusCode::isError,
+			                              errorResponse -> errorResponse.toEntity(String.class)
+			                                                            .map(httpService::buildErrorResponse))
+			                    .bodyToMono(AlgorithmDefinition.class)
+			                    .block();
 		} catch (final RequestRuntimeException e) {
 			final String message = httpService.buildError(e, "fetch the status");
 			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
@@ -331,33 +442,75 @@ public class ExternalConfigurationService {
 	}
 
 	/**
-	 * Inject parameters into the config string.
+	 * Inject parameters into the algorithm definition inplace.
 	 *
 	 * @param project       The project for resolving the parameter values.
-	 * @param configuration The configuration string.
-	 * @return The configuration string with containing the injected parameter.
+	 * @param algorithmDefinition The algorithm definition.
 	 * @throws InternalInvalidStateException       If getting the dataset info failed.
 	 * @throws InternalDataSetPersistenceException If retrieving parameters from the database failed.
 	 */
-	private String injectParameters(final ProjectEntity project, final String configuration)
+	private void injectParameters(final ProjectEntity project, final AlgorithmDefinition algorithmDefinition)
 			throws InternalDataSetPersistenceException, InternalInvalidStateException {
-		String result = configuration;
+		for (final var entry : algorithmDefinition.getConfigurationGroupDefinition().entrySet()) {
+			injectParameters(project, entry.getValue());
+		}
+	}
 
-		// Inject parameters for the original data set
-		if (project.getOriginalData().getDataSet() != null) {
-			if (configuration.contains("$dataset.original.numberHoldOutRows")) {
-				final DataSetInfo info;
-				try {
-					info = databaseService.getInfo(project.getOriginalData().getDataSet());
-				} catch (BadStateException e) {
-					throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_DATA_STET, "Failed to get dataset info!", e);
-				}
-				result = result.replace("$dataset.original.numberHoldOutRows",
-				                        String.valueOf(info.getNumberHoldOutRows()));
-			}
+	/**
+	 * See {@link #injectParameters(ProjectEntity, AlgorithmDefinition)}.
+	 */
+	private void injectParameters(final ProjectEntity project, final JsonNode objectNode)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+		if (!objectNode.isObject()) {
+			return;
 		}
 
-		return result;
+		final var fields = objectNode.fields();
+		while (fields.hasNext()) {
+			final var entry = fields.next();
+
+			// Nested groups
+			if (entry.getValue().isObject()) {
+				injectParameters(project, entry.getValue());
+			}
+			if (entry.getValue().isArray()) {
+				for (int i = 0; i < entry.getValue().size(); i++) {
+					injectParameters(project, entry.getValue().get(i));
+				}
+			}
+
+			if (entry.getValue().isTextual()) {
+
+				final var stringValue = entry.getValue().asText();
+
+				// Inject parameters for the original data set
+				if (project.getOriginalData().getDataSet() != null) {
+					if (Objects.equals(stringValue, "$dataset.original.numberHoldOutRows")) {
+						final DataSetInfo info;
+						try {
+							info = databaseService.getInfo(project.getOriginalData().getDataSet());
+						} catch (final BadStateException e) {
+							throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_DATA_STET,
+							                                        "Failed to get dataset info!", e);
+						}
+						entry.setValue(yamlMapper.getNodeFactory().numberNode(info.getNumberHoldOutRows()));
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Creates a deep copy of the given value.
+	 * The value has to be serializable to YAML.
+	 *
+	 * @param value The value to copy.
+	 * @param clazz The class of the value.
+	 * @return The copied value.
+	 * @param <T> The type of the value.
+	 */
+	private <T> T copy(final T value, final Class<T> clazz) {
+		return yamlMapper.convertValue(value, clazz);
 	}
 
 }

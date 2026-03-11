@@ -27,9 +27,16 @@ public class FormatBasedMessageConverter extends AbstractHttpMessageConverter<Ob
 	private final HttpServletRequest request;
 
 	public FormatBasedMessageConverter(final SerializationConfig serializationConfig, HttpServletRequest request) {
-		super(MediaType.APPLICATION_JSON, CustomMediaType.APPLICATION_YAML);
+		super(MediaType.APPLICATION_JSON, CustomMediaType.APPLICATION_X_YAML, MediaType.APPLICATION_YAML,
+		      CustomMediaType.TEXT_YAML);
+
 		supportedMediaTypes.put(MediaType.APPLICATION_JSON, serializationConfig.jsonMapper());
-		supportedMediaTypes.put(CustomMediaType.APPLICATION_YAML, serializationConfig.yamlMapper());
+
+		final ObjectMapper yamlMapper = serializationConfig.yamlMapper();
+		supportedMediaTypes.put(CustomMediaType.APPLICATION_X_YAML, yamlMapper);
+		supportedMediaTypes.put(MediaType.APPLICATION_YAML, yamlMapper);
+		supportedMediaTypes.put(CustomMediaType.TEXT_YAML, yamlMapper);
+
 		this.request = request;
 	}
 
@@ -67,6 +74,6 @@ public class FormatBasedMessageConverter extends AbstractHttpMessageConverter<Ob
 	}
 
 	private ObjectMapper getObjectMapper(final MediaType mediaType) {
-		return supportedMediaTypes.getOrDefault(mediaType, supportedMediaTypes.get(CustomMediaType.APPLICATION_YAML));
+		return supportedMediaTypes.getOrDefault(mediaType, supportedMediaTypes.get(CustomMediaType.APPLICATION_X_YAML));
 	}
 }

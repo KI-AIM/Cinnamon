@@ -1,7 +1,9 @@
 package de.kiaim.cinnamon.platform.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.algorithms.Algorithm;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
@@ -52,6 +54,7 @@ import reactor.netty.http.client.HttpClient;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -95,6 +98,7 @@ public class ProcessService {
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
+	private final ExternalConfigurationService externalConfigurationService;
 	private final ExternalServerInstanceService externalServerInstanceService;
 	private final HttpService httpService;
 	private final StepService stepService;
@@ -112,6 +116,7 @@ public class ProcessService {
 	                      final CsvProcessor csvProcessor,
 	                      final DatabaseService databaseService, final DataProcessorService dataProcessorService,
 	                      final DataSetService dataSetService,
+	                      final ExternalConfigurationService externalConfigurationService,
 	                      final ExternalServerInstanceService externalServerInstanceService,
 	                      final HttpService httpService, final StepService stepService
 
@@ -133,6 +138,7 @@ public class ProcessService {
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
+		this.externalConfigurationService = externalConfigurationService;
 		this.externalServerInstanceService = externalServerInstanceService;
 		this.httpService = httpService;
 		this.stepService = stepService;
@@ -276,6 +282,7 @@ public class ProcessService {
 	 *
 	 * @param project The project the process corresponds to.
 	 * @param stage   The step the process corresponds to.
+	 * @throws BadAlgorithmException                     If the algorithm is not available.
 	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
 	 * @throws BadStateException                         If no original data set exist.
 	 * @throws BadStepNameException                      If the given job is not part of the given stage.
@@ -289,7 +296,10 @@ public class ProcessService {
 	 */
 	@Transactional
 	public ExecutionStepEntity start(final ProjectEntity project, final Stage stage, @Nullable final Job job)
-			throws BadDataSetIdException, BadStateException, BadStepNameException, InternalApplicationConfigurationException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
+			throws BadDataSetIdException, BadStateException, BadStepNameException,
+					       InternalApplicationConfigurationException, InternalDataSetPersistenceException,
+					       InternalInvalidStateException, InternalIOException, InternalMissingHandlingException,
+					       InternalRequestException, BadConfigurationNameException, BadAlgorithmException {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
 		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
@@ -657,6 +667,7 @@ public class ProcessService {
 	 * If no resources are available, the process will be scheduled and started if resources are available.
 	 *
 	 * @param externalProcess The process to be started.
+	 * @throws BadAlgorithmException               If the algorithm is not available.
 	 * @throws BadStateException                   If no original data set exist.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
 	 * @throws InternalInvalidStateException       If no ExternalProcessEntity exists for the given step.
@@ -666,7 +677,9 @@ public class ProcessService {
 	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
 	 */
 	public void startOrScheduleBackendProcess(final BackgroundProcessEntity externalProcess)
-			throws BadStateException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
+			throws BadStateException, InternalDataSetPersistenceException, InternalInvalidStateException,
+					       InternalIOException, InternalMissingHandlingException, InternalRequestException,
+					       BadConfigurationNameException, BadAlgorithmException {
 		// Get configuration
 		final ExternalEndpoint endpoint = cinnamonConfiguration.getExternalServerEndpoints()
 		                                                       .get(externalProcess.getEndpoint());
@@ -685,6 +698,7 @@ public class ProcessService {
 	 * If no resources are available, the process will be scheduled and started if resources are available.
 	 *
 	 * @param externalProcess The process to be started.
+	 * @throws BadAlgorithmException               If the algorithm is not available.
 	 * @throws BadStateException                   If no original data set exist.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
 	 * @throws InternalInvalidStateException       If no ExternalProcessEntity exists for the given step.
@@ -694,7 +708,9 @@ public class ProcessService {
 	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
 	 */
 	private void startOrScheduleProcess(final ExternalProcessEntity externalProcess)
-			throws InternalDataSetPersistenceException, InternalRequestException, InternalIOException, InternalInvalidStateException, BadStateException, InternalMissingHandlingException {
+			throws InternalDataSetPersistenceException, InternalRequestException, InternalIOException,
+					       InternalInvalidStateException, BadStateException, InternalMissingHandlingException,
+					       BadConfigurationNameException, BadAlgorithmException {
 		if (externalProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED ||
 		    externalProcess.getExternalProcessStatus() == ProcessStatus.RUNNING) {
 			return;
@@ -774,6 +790,7 @@ public class ProcessService {
 	 *
 	 * @param executionStep The stage.
 	 * @param job The job to start.
+	 * @throws BadAlgorithmException               If the algorithm is not available.
 	 * @throws BadStateException                   If no original data set exist.
 	 * @throws BadStepNameException                If the given job is not part of the given stage.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
@@ -785,7 +802,9 @@ public class ProcessService {
 	 *
 	 */
 	private void startJob(final ExecutionStepEntity executionStep, final Job job)
-			throws BadStateException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException, InternalInvalidStateException, InternalMissingHandlingException, InternalRequestException  {
+			throws BadStateException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException,
+					       InternalInvalidStateException, InternalMissingHandlingException, InternalRequestException,
+					       BadConfigurationNameException, BadAlgorithmException {
 
 		ExternalProcessEntity process = null;
 		boolean foundNext = false;
@@ -848,6 +867,7 @@ public class ProcessService {
 	 * If the last step is finished, the execution will be finished.
 	 *
 	 * @param executionStep The execution step.
+	 * @throws BadAlgorithmException               If the algorithm is not available.
 	 * @throws BadStateException                   If no original data set exist.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
 	 * @throws InternalInvalidStateException       If no ExternalProcessEntity exists for the given step.
@@ -857,7 +877,9 @@ public class ProcessService {
 	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
 	 */
 	private void startNext(final ExecutionStepEntity executionStep)
-			throws BadStateException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, InternalRequestException {
+			throws BadStateException, InternalDataSetPersistenceException, InternalInvalidStateException,
+					       InternalIOException, InternalMissingHandlingException, InternalRequestException,
+					       BadConfigurationNameException, BadAlgorithmException {
 		// Get the next step
 		Integer nextJob = null;
 		ExternalProcessEntity nextProcess = null;
@@ -1013,6 +1035,7 @@ public class ProcessService {
 	 *
 	 * @param externalProcess The process to be started.
 	 * @param instance        The instance to be used.
+	 * @throws BadAlgorithmException               If the algorithm is not available.
 	 * @throws BadStateException                   If no original data set exist.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 * @throws InternalInvalidStateException       If a finished process does not contain a dataset.
@@ -1021,7 +1044,9 @@ public class ProcessService {
 	 * @throws InternalRequestException            If the request starting the process failed.
 	 */
 	private void doStartBackgroundProcess(final BackgroundProcessEntity externalProcess, final ExternalServerInstance instance)
-			throws InternalDataSetPersistenceException, InternalIOException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
+			throws InternalDataSetPersistenceException, InternalIOException, InternalRequestException,
+					       BadStateException, InternalInvalidStateException, InternalMissingHandlingException,
+					       BadConfigurationNameException, BadAlgorithmException {
 		final var endpoint = cinnamonConfiguration.getExternalServerEndpoints().get(externalProcess.getEndpoint());
 
 		// Prepare body
@@ -1055,8 +1080,9 @@ public class ProcessService {
 		// Do the request
 		try {
 			final String serverUrl = instance.getUrl();
-			String url = endpoint.getProcessEndpoint().isBlank() ? externalProcess.getConfiguration().getProcessUrl()
-			                                                     : endpoint.getProcessEndpoint();
+			String url = endpoint.getProcessEndpoint().isBlank()
+			             ? getProcessUrl(externalProcess.getConfigurationString())
+			             : endpoint.getProcessEndpoint();
 			url = injectUrlParameter(url, externalProcess);
 
 			HttpClient client = HttpClient.create()
@@ -1248,5 +1274,61 @@ public class ProcessService {
 			databaseService.deleteDataSet(dataProcessing.getDataSet());
 			dataProcessing.setDataSet(null);
 		}
+	}
+
+	/**
+	 * Gets the URL for starting the algorithm defined in the given configuration.
+	 *
+	 * @param configuration The configuration.
+	 * @return The URL for starting the algorithm.
+	 * @throws BadAlgorithmException         If the algorithm is not available.
+	 * @throws BadConfigurationNameException If the configuration name is not valid.
+	 * @throws InternalIOException           If the configuration could not be serialized.
+	 * @throws InternalRequestException      If fetching the algorithm failed.
+	 */
+	private String getProcessUrl(final String configuration)
+			throws BadAlgorithmException, BadConfigurationNameException, InternalIOException, InternalRequestException {
+		// 1. Extract the configuration name and algorithm name from the configuration
+		final JsonNode configurationNode;
+		try {
+			configurationNode = yamlMapper.readTree(configuration);
+		} catch (final JsonProcessingException e) {
+			throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
+			                              "Failed to serialize configuration!", e);
+		}
+
+		// TODO remove hardcoded
+		final String configName = configurationNode.fields().next().getKey();
+		final String algorithmName;
+		if (configName.equals("anonymization")) {
+			algorithmName = configurationNode.get(configName).get("privacyModels").get(0).get("name").asText();
+		} else if (configName.equals("synthetization_configuration")) {
+			algorithmName = configurationNode.get(configName).get("algorithm").get("synthesizer").asText();
+		} else if (configName.equals("risk_assessment_configuration")) {
+			algorithmName = "risk_assessment";
+		} else if (configName.equals("evaluation_configuration")) {
+			algorithmName = "evaluation";
+		} else {
+			algorithmName = "";
+		}
+
+		// 2. Get the URL for the algorithm definition
+		var availableAlgorithms =  externalConfigurationService.fetchAvailableAlgorithms(configName);
+
+		String algorithmDefinitionUrl = null;
+		for (final Algorithm algorithm : availableAlgorithms.getAlgorithms()) {
+			if (algorithm.getName().equals(algorithmName)) {
+				algorithmDefinitionUrl = algorithm.getUrl();
+			}
+		}
+
+		if (algorithmDefinitionUrl == null) {
+			throw new BadAlgorithmException(BadAlgorithmException.ALGORITHM_NOT_AVAILABLE,
+			                                MessageFormat.format("No algorithm with name \"{0}\" available!", algorithmName));
+		}
+
+		// 3. Get the URL for starting the algorithm
+		var algorithmDefinition = externalConfigurationService.fetchAlgorithmDefinition(configName, algorithmDefinitionUrl);
+		return algorithmDefinition.getUrl();
 	}
 }

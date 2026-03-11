@@ -61,7 +61,7 @@ public class StatisticsController {
 			@RequestParam(name = "action", required = false) final String action,
 			@AuthenticationPrincipal final UserEntity requestUser
 	)
-			throws InternalIOException, InternalDataSetPersistenceException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException, BadDataSetIdException, BadStepNameException, InternalApplicationConfigurationException {
+			throws InternalIOException, InternalDataSetPersistenceException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException, BadDataSetIdException, BadStepNameException, InternalApplicationConfigurationException, BadConfigurationNameException, BadAlgorithmException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
 

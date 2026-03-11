@@ -24,7 +24,7 @@ public class StepController {
 	}
 
 	@GetMapping(value = "/stage/{stageName}",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
 	public ResponseEntity<Stage> getStage(@PathVariable final String stageName) throws BadStepNameException {
 		return ResponseEntity.ok(stepService.getStageConfiguration(stageName));
 	}

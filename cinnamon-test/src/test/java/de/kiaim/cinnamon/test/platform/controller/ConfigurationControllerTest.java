@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
+import de.kiaim.cinnamon.test.util.AlgorithmTestHelper;
 import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
 import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
@@ -397,16 +398,23 @@ class ConfigurationControllerTest extends ControllerTest {
 		createHoldOut(0.2f);
 
 		mockWebServer.enqueue(new MockResponse.Builder()
-				                      .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                      .addHeader("Content-Type", MediaType.APPLICATION_YAML_VALUE)
 				                      .code(200)
-				                      .body("algorithms $dataset.original.numberHoldOutRows")
+				                      .body(AlgorithmTestHelper.generateAlgorithmDefinitionYaml())
 				                      .build());
 
 		mockMvc.perform(get("/api/config/algorithm")
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .param("configurationName", CONFIGURATION_NAME)
 				                .param("definitionPath", "/algorithm"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string("algorithms 1"));
+		       .andExpect(content().json("""
+		                                 {
+		                                 	modelConfiguration: {
+		                                 		parameters: [{},{max_value: 1}]
+		                                 	}
+		                                 }
+		                                 """));
 	}
 
 	@Test

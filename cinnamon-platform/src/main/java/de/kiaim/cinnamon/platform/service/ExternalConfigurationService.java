@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
@@ -28,6 +29,12 @@ import java.util.Collection;
  */
 @Service
 public class ExternalConfigurationService {
+
+	/**
+	 * Key for the data configuration (see {@link de.kiaim.cinnamon.model.configuration.data.DataConfiguration}).
+	 * Matches the name of the field {@link de.kiaim.cinnamon.model.configuration.data.DataConfiguration#getConfigurations()}.
+	 */
+	private static final String DATA_CONFIGURATION_KEY = "configurations";
 
 	private final ObjectMapper yamlMapper;
 
@@ -217,23 +224,50 @@ public class ExternalConfigurationService {
 				continue;
 			}
 
-			try {
-				stepService.getExternalConfiguration(configName);
-			} catch (final BadConfigurationNameException e) {
-				importSummary.addError(configName, e.getErrorCode());
-				continue;
-			}
+			final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(configName, configEntry.getValue());
 
-			try {
-				final var config = configEntry.getValue();
-				databaseService.storeConfiguration(configName, null, yamlMapper.writeValueAsString(config), project);
-				importSummary.addSuccess(configName);
-			} catch (final BadStateException | BadConfigurationNameException e) {
-				importSummary.addError(configName, e.getErrorCode());
-			} catch (final JsonProcessingException e) {
-				importSummary.addError(configName,
-				                       new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
-				                                               "Failed to serialize configuration!", e).getErrorCode());
+			if (configName.equals(DATA_CONFIGURATION_KEY)) {
+
+				final DataConfiguration dataConfiguration;
+				try {
+					dataConfiguration = yamlMapper.treeToValue(singleConfigNode, DataConfiguration.class);
+				} catch (final JsonProcessingException e) {
+					importSummary.addError(configName,
+					                       new InternalIOException(InternalIOException.DATA_CONFIGURATION_SERIALIZATION,
+					                                               "Failed to serialize data configuration!",
+					                                               e).getErrorCode());
+					continue;
+				}
+
+				try {
+					databaseService.storeOriginalDataConfiguration(dataConfiguration, project);
+					importSummary.addSuccess(configName);
+				} catch (final BadDataConfigurationException | BadDataSetIdException |
+				               InternalDataSetPersistenceException | InternalIOException | BadStateException e) {
+					importSummary.addError(configName, e.getErrorCode());
+				}
+
+			} else {
+
+				try {
+					stepService.getExternalConfiguration(configName);
+				} catch (final BadConfigurationNameException e) {
+					importSummary.addError(configName, e.getErrorCode());
+					continue;
+				}
+
+				try {
+					databaseService.storeConfiguration(configName, null,
+					                                   yamlMapper.writeValueAsString(singleConfigNode), project);
+					importSummary.addSuccess(configName);
+				} catch (final BadStateException | BadConfigurationNameException e) {
+					importSummary.addError(configName, e.getErrorCode());
+				} catch (final JsonProcessingException e) {
+					importSummary.addError(configName,
+					                       new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
+					                                               "Failed to serialize configuration!",
+					                                               e).getErrorCode());
+				}
 			}
 		}
 

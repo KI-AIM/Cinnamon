@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
+import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
 import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
@@ -133,7 +134,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 }
 		                                 """));
 
-		testImportedConfiguration("anonymization", "param1: 42\n");
+		testImportedConfiguration("anonymization", "anonymization:\n  param1: 42\n");
 	}
 
 	@Test
@@ -162,7 +163,35 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 }
 		                                 """));
 
-		testImportedConfiguration("anonymization", "param1: 42\n");
+		testImportedConfiguration("anonymization", "anonymization:\n  param1: 42\n");
+	}
+
+	@Test
+	public void importConfigurationsDataConfiguration() throws Exception {
+		postFile(false, false);
+
+		final var configuration = DataConfigurationTestHelper.generateDataConfigurationAsYaml();
+
+		var file = new MockMultipartFile("configuration", "file.json", "text/json", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries:  [
+		                                 		{configurationName: 'configurations', status: 'SUCCESS', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		var dataset = getTestProject().getOriginalData().getDataSet();
+		assertNotNull(dataset);
+		assertEquals(DataConfigurationTestHelper.generateDataConfiguration(), dataset.getDataConfiguration());
 	}
 
 	@Test
@@ -254,7 +283,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 }
 		                                 """));
 
-		testImportedConfiguration("anonymization", "param1: 42\n");
+		testImportedConfiguration("anonymization", "anonymization:\n  param1: 42\n");
 		testImportedConfiguration("invalid_name", null);
 	}
 
@@ -289,7 +318,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 }
 		                                 """));
 
-		testImportedConfiguration("anonymization", "param1: 42\n");
+		testImportedConfiguration("anonymization", "anonymization:\n  param1: 42\n");
 		testImportedConfiguration("invalid_name", null);
 	}
 

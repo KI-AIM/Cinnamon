@@ -102,7 +102,6 @@ export class EvaluationComponent implements OnInit {
         this.risks$ = this.statisticsService.fetchRisks('RISK_EVALUATION');
         this.risks2$ = this.statisticsService.fetchRisks2();
         this.statistics$ = this.statisticsService.fetchResult();
-        this.evaluationService.fetchStatus();
     }
 
     protected getJobName(name: string): string {

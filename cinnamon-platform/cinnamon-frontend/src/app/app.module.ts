@@ -1,4 +1,6 @@
 import { NgModule } from '@angular/core';
+import { FormsModule } from "@angular/forms";
+import { MatTooltip } from "@angular/material/tooltip";
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -31,12 +33,14 @@ import { TechnicalEvaluationModule } from "./features/technical-evaluation/techn
 import { EvaluationModule } from "./features/evaluation/evaluation.module";
 import { RiskAssessmentModule } from "./features/risk-assessment/risk-assessment.module";
 import { NotFoundComponent } from './core/components/not-found/not-found.component';
+import { NotificationCenterComponent } from './core/components/notification-center/notification-center.component';
 
 @NgModule({
     declarations: [
         AppComponent,
         NavigationComponent,
         NotFoundComponent,
+        NotificationCenterComponent,
     ],
     imports: [
         BrowserModule,
@@ -60,6 +64,8 @@ import { NotFoundComponent } from './core/components/not-found/not-found.compone
         MatFormFieldModule,
         MatOptionModule,
         MatSelectModule,
+        FormsModule,
+        MatTooltip,
     ],
     providers: [
         TitleService,

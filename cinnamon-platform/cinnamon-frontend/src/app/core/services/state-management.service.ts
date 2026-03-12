@@ -44,6 +44,11 @@ export class StateManagementService {
     private _pipelineObserver$: Observable<PipelineInformation>;
     private _pipelineSubscription: Subscription | null = null;
 
+    /**
+     * True if the pipeline was initialized or the request is currently running.
+     */
+    private pipelineInitialized: boolean = false;
+
     constructor(
         private readonly anonymizationService: AnonymizationService,
         private readonly configurationService: ConfigurationService,
@@ -80,6 +85,10 @@ export class StateManagementService {
             tap(value => this.updatePipeline(value)),
         );
 
+        this.userService.logout$().subscribe(() => {
+            this.clearCaches();
+        });
+
         this.initPipeline();
     }
 
@@ -109,11 +118,15 @@ export class StateManagementService {
                 );
             }),
             switchMap(value => {
-                return this.statusService.status$.pipe(
-                    map(status => {
-                        return {currentStep: value.currentStep, p: value.p, status: status};
-                    }),
-                );
+                if (this.userService.isAuthenticated()) {
+                    return this.statusService.status$.pipe(
+                        map(status => {
+                            return {currentStep: value.currentStep, p: value.p, status: status};
+                        }),
+                    );
+                } else {
+                    return of({currentStep: value.currentStep, p: value.p, status: null as Status | null});
+                }
             }),
             map(value =>{
                 const reasons: LockedReason[] = [];
@@ -122,7 +135,7 @@ export class StateManagementService {
                         this.statusService.isStepCompleted(value.currentStep.lockedAfter)) {
                         reasons.push(LockedReason.STEP_CONFIRMED);
                     }
-                    if (value.p.currentStageIndex != null && value.currentStep.enum !== value.status.currentStep) {
+                    if (value.p.currentStageIndex != null && value.status != null && value.currentStep.enum !== value.status.currentStep) {
                         reasons.push(LockedReason.PROCESS_RUNNING);
                     }
                     if (value.currentStep.stageName != null) {
@@ -186,8 +199,19 @@ export class StateManagementService {
      * Fetches the pipeline status from the backend and updates the subject.
      */
     public initPipeline(): void {
-        this.fetchPipelineInformation().subscribe(value => {
-            this.updatePipeline(value);
+        if (this.pipelineInitialized) {
+            return;
+        }
+
+        // Directly set the initialized flag to prevent calls during the request
+        this.pipelineInitialized = true;
+        this.fetchPipelineInformation().subscribe({
+            next: value => {
+                this.updatePipeline(value);
+            },
+            error: error => {
+                this.pipelineInitialized = false;
+            }
         });
     }
 
@@ -290,17 +314,25 @@ export class StateManagementService {
         return this.http.delete<void>(environments.apiUrl + "/api/project/reset", options).pipe(
             tap(() => {
                 this.initPipeline();
-                this.configurationService.invalidateCache();
-                this.fileService.invalidateCache();
-                this.dataSetInfoService.invalidateCache();
-
-                // Delete cached algorithm definitions as they can contain injected parameters
-                this.anonymizationService.invalidateCachedAlgorithmDefinitions();
-                this.riskAssessmentService.invalidateCachedAlgorithmDefinitions();
-                this.synthetizationService.invalidateCachedAlgorithmDefinitions();
-                this.technicalEvaluationService.invalidateCachedAlgorithmDefinitions();
+                this.clearCaches();
             }),
         );
+    }
+
+    /**
+     * Clears all project-related caches.
+     */
+    private clearCaches(): void {
+        this.configurationService.invalidateCache();
+        this.fileService.invalidateCache();
+        this.dataSetInfoService.invalidateCache();
+        this.statusService.invalidateCache();
+
+        // Delete cached algorithm definitions as they can contain injected parameters
+        this.anonymizationService.invalidateCachedAlgorithmDefinitions();
+        this.riskAssessmentService.invalidateCachedAlgorithmDefinitions();
+        this.synthetizationService.invalidateCachedAlgorithmDefinitions();
+        this.technicalEvaluationService.invalidateCachedAlgorithmDefinitions();
     }
 }
 

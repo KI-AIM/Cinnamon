@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
@@ -14,10 +15,10 @@ import de.kiaim.cinnamon.platform.model.configuration.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.platform.model.mapper.ExecutionStepMapper;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
@@ -88,6 +89,8 @@ public class ProcessService {
 	private final ExecutionStepRepository executionStepRepository;
 	private final ProjectRepository projectRepository;
 
+	private final ExecutionStepMapper executionStepMapper;
+
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
@@ -104,7 +107,9 @@ public class ProcessService {
 	                      final TaskScheduler taskScheduler, final TransactionTemplate transactionTemplate,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
 	                      final ExecutionStepRepository executionStepRepository,
-	                      final ProjectRepository projectRepository, final CsvProcessor csvProcessor,
+	                      final ProjectRepository projectRepository,
+	                      final ExecutionStepMapper executionStepMapper,
+	                      final CsvProcessor csvProcessor,
 	                      final DatabaseService databaseService, final DataProcessorService dataProcessorService,
 	                      final DataSetService dataSetService,
 	                      final ExternalServerInstanceService externalServerInstanceService,
@@ -123,6 +128,7 @@ public class ProcessService {
 		this.backgroundProcessRepository = backgroundProcessRepository;
 		this.executionStepRepository = executionStepRepository;
 		this.projectRepository = projectRepository;
+		this.executionStepMapper = executionStepMapper;
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
@@ -304,6 +310,12 @@ public class ProcessService {
 
 				startNext(executionStep);
 			}
+		} catch (final ApiException e) {
+			var stageInfo = executionStepMapper.toDto(executionStep);
+			e.getErrorDetails().setStageInfo(stageInfo);
+
+			setProcessError(executionStep, e.getMessage());
+			throw e;
 		} catch (final Exception e) {
 			setProcessError(executionStep, e.getMessage());
 			throw e;

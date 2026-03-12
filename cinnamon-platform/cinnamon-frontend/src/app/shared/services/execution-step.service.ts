@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { StateManagementService } from "@core/services/state-management.service";
 import { ExecutionStep } from "../model/execution-step";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
 import { ProcessStatus } from "../../core/enums/process-status";
 import { catchError, map, Observable, of, tap } from "rxjs";
@@ -76,8 +76,10 @@ export abstract class ExecutionStepService {
                     this.update(value);
                     this.stateManagementService.startListenToPipeline();
             }),
-            catchError(() => {
-                return this.fetchStatus();
+            catchError((error: HttpErrorResponse) => {
+                const info =  error.error.errorDetails.stageInfo as ExecutionStep;
+                this.update(info);
+                return of(info);
             }),
         );
     }
@@ -148,51 +150,10 @@ export abstract class ExecutionStepService {
     protected abstract getStep(): Steps;
 
     /**
-     * Starts or stops listening to the status based on the given status.
-     * @param status
-     * @private
-     */
-    private setState(status: ProcessStatus): void {
-        if (status === ProcessStatus.SCHEDULED || status === ProcessStatus.RUNNING) {
-        } else {
-        }
-    }
-
-    /**
      * Fetches the stage definition.
      */
     public fetchStageDefinition$(): Observable<StageDefinition> {
         return this.http.get<StageDefinition>(environments.apiUrl + '/api/step/stage/' + this.getStageName());
-    }
-
-    /**
-     * Fetches the status from the server and updates the UI.
-     * @private
-     */
-    public fetchStatus(): Observable<ExecutionStep | null> {
-        return this.getProcess().pipe(
-            tap(value => {
-                this.update(value);
-            }),
-            catchError((error) => {
-                this.errorHandlingService.addError(error, "Failed to update status.");
-                return of(null);
-            }),
-        );
-    }
-
-    /**
-     *
-     * Creates an observable that fetches the status.
-     * @private
-     */
-    private getProcess(): Observable<ExecutionStep> {
-        return this.http.get<ExecutionStep>(this.baseUrl + '/' + this.getStageName()).pipe(
-            // For some reason value is a plain object here
-            map(value => {
-                return plainToInstance(ExecutionStep, value);
-            }),
-        );
     }
 
     private update(executionStep: ExecutionStep) {

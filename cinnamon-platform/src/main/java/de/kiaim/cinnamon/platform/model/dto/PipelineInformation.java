@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
+import de.kiaim.cinnamon.model.dto.ExecutionStepInformation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;

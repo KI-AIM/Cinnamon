@@ -50,6 +50,15 @@ export class ChartComponent implements OnInit, OnChanges {
         return {};
     }
 
+    public get dataUrl(): string | null {
+        return this.chartInstances
+            ? this.chartInstances.getDataURL({
+                type: 'jpeg', pixelRatio: 2,
+                backgroundColor: '#fff',
+            })
+            : null;
+    }
+
     private downloadGraph() {
         const imageUrl = this.chartInstances.getDataURL({
             type: 'jpeg',
@@ -71,21 +80,25 @@ export class ChartComponent implements OnInit, OnChanges {
      *
      * @param simple If the chart should remove space for the axis.
      * @param name   The name of the cart.
+     * @param options Additional options for the chart.
      * @return An object containing the ECharts options.
      * @protected
      */
-    protected graphOptions(simple: boolean, name: string): EChartsCoreOption {
+    protected graphOptions(simple: boolean, name: string, options: ChartOptions = {}): EChartsCoreOption {
+        const margins  = options.showMargins ?? true;
+
         return {
             grid: {
-                left: simple ? 25 : 70,
-                top: 33,
-                right: 30,
-                bottom: simple ? 20 : 50,
+                left: margins ? (simple ? 25 : 70) : 0,
+                top: margins ? 33 : 0,
+                right: margins ? 30 : 0,
+                bottom: margins ? (simple ? 20 : 50) : 0,
                 borderWidth: 1,
                 borderColor: '#ccc',
                 show: true
             },
             toolbox: {
+                show: options.showToolbox ?? true,
                 feature: {
                     saveAsImage: {
                         type: 'png',
@@ -105,7 +118,6 @@ export class ChartComponent implements OnInit, OnChanges {
                 top: 2,
             },
         };
-
     }
 
     protected formatNumber(value: number | string, dataType: DataType | null): string {
@@ -122,7 +134,7 @@ export class ChartComponent implements OnInit, OnChanges {
      * @return The chart name.
      * @protected
      */
-    protected createChartName(chart: string, data: StatisticsData<any>, config: ColumnConfiguration, labels: StatisticsData<string>): string {
+    protected createChartName(chart: string, data: StatisticsData<any>, config: ColumnConfiguration | null, labels: StatisticsData<string>): string {
         let chartName = "";
 
         if (data.real) {
@@ -134,9 +146,25 @@ export class ChartComponent implements OnInit, OnChanges {
             }
             chartName += labels.synthetic + " ";
         }
-        chartName += config.name + " " + chart;
+        if (config) {
+            chartName += config.name + " ";
+        }
+        chartName += chart;
         return chartName;
     }
+}
+
+interface ChartOptions {
+    /**
+     * If the chart should have margins.
+     * Default: true
+     */
+    showMargins?: boolean;
+    /**
+     * If a toolbox should be shown. Contains the download button.
+     * Default: true
+     */
+    showToolbox?: boolean;
 }
 
 // Stolen from https://stackoverflow.com/questions/60141960/typescript-key-value-relation-preserving-object-entries-type

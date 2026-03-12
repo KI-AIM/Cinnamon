@@ -6,6 +6,7 @@ import {
 	RouterStateSnapshot,
 	UrlTree,
 } from "@angular/router";
+import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { Observable } from "rxjs";
 import { UserService } from "src/app/shared/services/user.service";
 
@@ -14,6 +15,7 @@ import { UserService } from "src/app/shared/services/user.service";
 })
 export class AuthGuard implements CanActivate {
 	constructor(
+        private readonly notificationService: NotificationService,
 		private readonly userService: UserService,
 		private readonly router: Router
 	) {}
@@ -27,7 +29,10 @@ export class AuthGuard implements CanActivate {
 		| boolean
 		| UrlTree {
 		if (!this.userService.isAuthenticated()) {
-			this.router.navigate(["open", { mode: "noPermission" }]);
+            this.router.navigate(["open"]).then(() => {
+                const notification = new AppNotification("You must authenticate before accessing this page", "failure");
+                this.notificationService.addNotification(notification);
+            });
 			return false;
 		}
 		return true;

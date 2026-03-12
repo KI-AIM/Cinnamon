@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.repository;
 
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.model.entity.BackgroundProcessEntity;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 

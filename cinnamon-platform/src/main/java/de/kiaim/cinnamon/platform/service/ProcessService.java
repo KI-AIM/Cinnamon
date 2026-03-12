@@ -6,8 +6,8 @@ import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
-import de.kiaim.cinnamon.model.serialization.mapper.YamlMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.exception.*;
@@ -15,13 +15,14 @@ import de.kiaim.cinnamon.platform.model.configuration.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
 import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.platform.model.mapper.ExecutionStepMapper;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
+import de.kiaim.cinnamon.platform.repository.ExecutionStepRepository;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ConnectTimeoutException;
@@ -31,13 +32,14 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.Nullable;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,6 +53,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -64,15 +67,29 @@ public class ProcessService {
 
 	private static final String PROCESS_ID_PLACEHOLDER = "PROCESS_ID";
 
+	/**
+	 * Delay between responding to a finish callback and starting the next process.
+	 * Value is in seconds.
+	 */
+	private static final long DELAY_START_NEXT = 1;
+
+	private final boolean sslEnabled;
 	private final int port;
+	private final String contextPath;
 
 	private final ObjectMapper jsonMapper;
 	private final ObjectMapper yamlMapper;
 
 	private final CinnamonConfiguration cinnamonConfiguration;
 
+	private final TaskScheduler taskScheduler;
+	private final TransactionTemplate transactionTemplate;
+
 	private final BackgroundProcessRepository backgroundProcessRepository;
+	private final ExecutionStepRepository executionStepRepository;
 	private final ProjectRepository projectRepository;
+
+	private final ExecutionStepMapper executionStepMapper;
 
 	private final CsvProcessor csvProcessor;
 	private final DatabaseService databaseService;
@@ -82,22 +99,36 @@ public class ProcessService {
 	private final HttpService httpService;
 	private final StepService stepService;
 
-	public ProcessService(final SerializationConfig serializationConfig, @Value("${server.port}") final int port,
+	public ProcessService(final SerializationConfig serializationConfig,
+	                      @Value("${server.ssl.enabled:false}") final boolean sslEnabled,
+	                      @Value("${server.port}") final int port,
+	                      @Value("${server.servlet.context-path:}") final String contextPath,
 	                      final CinnamonConfiguration cinnamonConfiguration,
+	                      final TaskScheduler taskScheduler, final TransactionTemplate transactionTemplate,
 	                      final BackgroundProcessRepository backgroundProcessRepository,
-	                      final ProjectRepository projectRepository, final CsvProcessor csvProcessor,
+	                      final ExecutionStepRepository executionStepRepository,
+	                      final ProjectRepository projectRepository,
+	                      final ExecutionStepMapper executionStepMapper,
+	                      final CsvProcessor csvProcessor,
 	                      final DatabaseService databaseService, final DataProcessorService dataProcessorService,
 	                      final DataSetService dataSetService,
 	                      final ExternalServerInstanceService externalServerInstanceService,
 	                      final HttpService httpService, final StepService stepService
+
 	) {
 		this.jsonMapper = serializationConfig.jsonMapper();
 		this.yamlMapper = serializationConfig.yamlMapper();
 
+		this.sslEnabled = sslEnabled;
 		this.port = port;
+		this.contextPath = contextPath;
 		this.cinnamonConfiguration = cinnamonConfiguration;
+		this.taskScheduler = taskScheduler;
+		this.transactionTemplate = transactionTemplate;
 		this.backgroundProcessRepository = backgroundProcessRepository;
+		this.executionStepRepository = executionStepRepository;
 		this.projectRepository = projectRepository;
+		this.executionStepMapper = executionStepMapper;
 		this.csvProcessor = csvProcessor;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
@@ -279,6 +310,12 @@ public class ProcessService {
 
 				startNext(executionStep);
 			}
+		} catch (final ApiException e) {
+			var stageInfo = executionStepMapper.toDto(executionStep);
+			e.getErrorDetails().setStageInfo(stageInfo);
+
+			setProcessError(executionStep, e.getMessage());
+			throw e;
 		} catch (final Exception e) {
 			setProcessError(executionStep, e.getMessage());
 			throw e;
@@ -396,15 +433,19 @@ public class ProcessService {
 		final boolean containsError = tryFinishProcess(process, resultFiles, errorRequest);
 
 		if (process instanceof ExternalProcessEntity externalProcess) {
-			// Start the next step of this process
-			if (!containsError) {
-				tryStartNext(externalProcess);
-			}
+			// Create an async task so the callback can be finished, to free up the connection to the external server
+			taskScheduler.schedule(() -> {
+				// Start the next step of this process
+				if (!containsError) {
+					transactionTemplate.executeWithoutResult(
+							status -> tryStartNext(externalProcess.getExecutionStep().getId()));
+				}
 
-			// Start the next process of the same step
-			startScheduledProcess(externalProcess.getJob().getEndpoint(), instance);
+				// Start the next process of the same step
+				transactionTemplate.executeWithoutResult(
+						status -> startScheduledProcess(externalProcess.getJob().getEndpoint(), instance));
+			}, Instant.now().plusSeconds(DELAY_START_NEXT));
 		}
-
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -430,17 +471,13 @@ public class ProcessService {
 		return containsError;
 	}
 
-
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	protected void tryStartNext(final ExternalProcessEntity process) {
+	private void tryStartNext(final Long stageId) {
 		try {
-			startNext(process.getExecutionStep());
+			final ExecutionStepEntity stage = executionStepRepository.findById(stageId).orElseThrow();
+			startNext(stage);
 		} catch (final Exception e) {
 			log.error("Failed to start process!", e);
 		}
-
-		final ProjectEntity project = process.getProject();
-		projectRepository.save(project);
 	}
 
 	/**
@@ -996,7 +1033,7 @@ public class ProcessService {
 		// Add config
 		final String configuration = externalProcess.getConfigurationString();
 		if (configuration != null) {
-			addConfig(configuration, endpoint, bodyBuilder);
+			httpService.addConfig(configuration, endpoint, bodyBuilder);
 		}
 
 		// Generate new UUID
@@ -1005,14 +1042,15 @@ public class ProcessService {
 
 		bodyBuilder.part("session_key", uuid.toString());
 		final String callbackHost = instance.getCallbackHost();
-		final var serverAddress = ServletUriComponentsBuilder.fromCurrentContextPath()
+		final var serverAddress = ServletUriComponentsBuilder.newInstance()
+		                                                     .scheme(this.sslEnabled ? "https" : "http")
 		                                                     .host(callbackHost)
 		                                                     .port(this.port)
+		                                                     .path(this.contextPath)
 		                                                     .build()
 		                                                     .toUriString();
 
-		bodyBuilder.part(endpoint.getCallbackPartName(),
-		                 serverAddress + "/api/process/" + uuid.toString() + "/callback");
+		bodyBuilder.part(endpoint.getCallbackPartName(), serverAddress + "/api/process/" + uuid + "/callback");
 
 		// Do the request
 		try {
@@ -1056,39 +1094,6 @@ public class ProcessService {
 				message += e.getMessage();
 			}
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
-		}
-	}
-
-	private void addConfig(final String configuration, final ExternalEndpoint stepConfiguration,
-	                       final MultipartBodyBuilder bodyBuilder)
-			throws InternalIOException, InternalMissingHandlingException {
-		switch (stepConfiguration.getConfigurationEncoding()) {
-			case FILE -> {
-				bodyBuilder.part(stepConfiguration.getConfigurationPartName(),
-				                 new ByteArrayResource(configuration.getBytes()) {
-					                 @Override
-					                 public String getFilename() {
-						                 return "synthesizer_config.yaml";
-					                 }
-				                 });
-			}
-			case JSON -> {
-				//Convert yaml config to json for anonymization controller
-				try {
-					final String jsonConfig = YamlMapper.toJson(configuration);
-					bodyBuilder.part(stepConfiguration.getConfigurationPartName(), jsonConfig,
-					                 MediaType.APPLICATION_JSON);
-				} catch (JsonProcessingException e) {
-					throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
-					                              "Could not convert configuration from yaml to json!", e);
-				}
-			}
-			default -> {
-				throw new InternalMissingHandlingException(
-						InternalMissingHandlingException.STEP_INPUT_ENCODING,
-						"No handling for adding data set of type '" + stepConfiguration.getConfigurationEncoding() +
-						"'!");
-			}
 		}
 	}
 

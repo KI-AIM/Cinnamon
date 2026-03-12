@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;

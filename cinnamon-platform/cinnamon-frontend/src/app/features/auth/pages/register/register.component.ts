@@ -3,6 +3,7 @@ import { Component, OnInit, TemplateRef } from "@angular/core";
 import { AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { Router } from "@angular/router";
+import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { Observable, tap } from "rxjs";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { AppConfig, AppConfigService, PasswordRequirements } from "src/app/shared/services/app-config.service";
@@ -30,6 +31,7 @@ export class RegisterComponent implements OnInit {
         private readonly appConfigService: AppConfigService,
         private readonly errorHandlingService: ErrorHandlingService,
         private readonly matDialog: MatDialog,
+        private readonly notificationService: NotificationService,
         private readonly router: Router,
         private readonly titleService: TitleService,
         private readonly userService: UserService,
@@ -99,19 +101,24 @@ export class RegisterComponent implements OnInit {
     }
 
     onSubmit(): void {
+        const project = this.registerForm.controls["email"].value;
+
         const result = this.userService.register(
             this.registerForm.value as {
                 email: string; password: string; passwordRepeated: string;
             }
         );
         result.subscribe({
-            next: () => this.handleRegisterSuccess(),
+            next: () => this.handleRegisterSuccess(project),
             error: (e) => this.handleRegisterFailed(e),
         });
     }
 
-    handleRegisterSuccess() {
-        this.router.navigate(['/open', { mode: 'create' }]).then(_ => {
+    handleRegisterSuccess(projectName: string) {
+        this.router.navigate(['/open']).then(_ => {
+            const notification = new AppNotification("Successfully created project", 'success');
+            notification.project = projectName;
+            this.notificationService.addNotification(notification);
         });
     }
 

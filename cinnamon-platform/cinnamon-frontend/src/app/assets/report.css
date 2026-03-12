@@ -1,0 +1,446 @@
+:root {
+    --report-color-header-footer: #8d8290;
+    --report-color-background: #ebeff2;
+    --report-color-foreground: #fff;
+    --report-color-border: #d0d5db;
+    --report-color-primary: #3b7dd8;
+    --report-color-primary-dark: #212a3e;
+    --report-color-error: #e63946;
+    --report-color-warning: #ffa726;
+    --report-color-success: #007e33;
+    --report-color-text: #333f55;
+
+    --report-font-size: 19px;
+
+    --size-header-footer: 12px;
+    --margin-elements: 15px;
+    --margin-text: 0.5rem;
+    --report-margin-title-page: 50px;
+
+    --report-color-header-border: var(--report-color-primary-dark);
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 0.33in 0.5in 0.34in 0.5in; /* Minimum margins for headers and footers */
+
+        @top-center {
+            color: var(--report-color-header-footer);
+            content: "Project: {{project}}";
+            font-size: var(--size-header-footer);
+        }
+        @bottom-center {
+            color: var(--report-color-header-footer);
+            content: "- " counter(page) " -" ;
+            font-size: var(--size-header-footer);
+        }
+        @bottom-left {
+            color: var(--report-color-header-footer);
+            content: "The report was created with Cinnamon v {{version}}";
+            font-size: var(--size-header-footer);
+            margin-left: 10px;
+        }
+        @bottom-right {
+            color: var(--report-color-header-footer);
+            content: "Creator: {{creator}} \A Created: {{now}}";
+            font-size: var(--size-header-footer);
+            margin-right: 10px;
+            white-space: pre-wrap;
+        }
+    }
+
+    @page :first {
+        @top-center {
+            content: "";
+        }
+        @bottom-center {
+            content: "";
+        }
+        @bottom-left {
+            content: "";
+        }
+        @bottom-right {
+            content: "";
+        }
+    }
+
+    /* Watermark, remove if the report is finished */
+    body::before {
+        content: "IN DEVELOPMENT";
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-size: 80px;
+        font-weight: bold;
+        color: rgba(0, 0, 0, 0.1);
+        z-index: 9999;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+}
+
+.report-root {
+    font-family: sans-serif;
+    font-size: var(--report-font-size);
+    line-height: 1.4;
+    color: #333;
+    margin: 0;
+
+    width: 868px;
+    background-color: var(--report-color-foreground);
+}
+
+.report-text-block {
+    text-align: justify;
+    margin-bottom: var(--margin-text);
+}
+.report-text-block > p {
+    margin-top: 0;
+    margin-bottom: var(--margin-text);
+}
+
+.report-header {
+    position: relative;
+    align-items: center;
+    background: linear-gradient(to right, var(--report-color-primary-dark), var(--report-color-primary));
+    color: var(--report-color-foreground);
+    display: flex;
+    padding: 30px;
+    border-radius: 5px;
+    margin-bottom: var(--report-margin-title-page);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+.report-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(45deg, rgba(52, 152, 219, 0.1) 25%, transparent 25%, transparent 50%, rgba(52, 152, 219, 0.1) 50%, rgba(52, 152, 219, 0.1) 75%, transparent 75%, transparent);
+    background-size: 10px 10px;
+    border-radius: 5px;
+    opacity: 0.3;
+}
+.report-header h1 {
+    font-size: 2.6em;
+    margin: 0 0 10px 0;
+    color: var(--report-color-foreground);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    position: relative;
+}
+.report-header p {
+    margin: 5px 0;
+    font-size: 1.1em;
+    opacity: 0.9;
+    position: relative;
+}
+.report-chapter {
+    margin-bottom: 40px;
+}
+.report-section {
+    margin-bottom: 1.5rem;
+    margin-left: 4px;
+    margin-right: 4px;
+}
+.report-subsection {
+    margin-bottom: 1.5rem;
+}
+.report-header-s {
+    border-radius: 2px;
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-bottom: var(--margin-elements);
+    padding: 7px 15px;
+    text-align: left;
+}
+.report-header2 {
+    color: var(--report-color-text);
+    border-left: 4px solid var(--report-color-header-border);
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-bottom: var(--margin-text);
+    margin-left: -4px;
+    padding-bottom: 2px;
+    padding-left: 20px;
+    padding-top: 2px;
+
+    page-break-after: avoid;
+    break-after: avoid;
+}
+.report-header3 {
+    color: var(--report-color-primary);
+
+    page-break-after: avoid;
+    break-after: avoid;
+}
+.report-header4 {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: calc(var(--margin-text) / 3) ;
+}
+.report-metric-card {
+    background-color: var(--report-color-background);
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: var(--margin-elements);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.report-table {
+    font-size: var(--report-font-size);
+    margin-bottom: var(--margin-elements);
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.report-table-title {
+    font-weight: bold;
+}
+
+.report-table-description-continued {
+    font-style: italic;
+}
+.report-table > caption {
+    /* Bootstrap's _reboot.scss sets some of these properties so they have to be defined here for consistency */
+    caption-side: bottom;
+    color: var(--report-color-text);
+    font-size: 0.9rem;
+    line-height: 1.2;
+    padding: .2rem 1.5rem;
+    text-align: center;
+}
+.report-table > thead > tr {
+    background-color: var(--report-color-primary);
+    color: var(--report-color-foreground);
+}
+.report-table > tbody > tr:nth-child(even) {
+    background-color: var(--report-color-foreground);
+}
+.report-table > tbody > tr:nth-child(odd) {
+    background-color: var(--report-color-background);
+}
+.report-table td, .report-table th {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+.report-table td:not(:first-child), .report-table th:not(:first-child) {
+    text-align: center;
+}
+.report-th, .report-td {
+    border: 1px solid var(--report-color-border);
+    padding: 8px 12px;
+    text-align: left;
+}
+.report-th {
+    background-color: var(--report-color-background);
+}
+.report-risk-high {color: var(--report-color-error);}
+.report-risk-medium {color: var(--report-color-warning);}
+.report-risk-low {color: var(--report-color-success);}
+.report-intro-box {
+    background-color: var(--report-color-background);
+    border-left: 4px solid var(--report-color-header-border);
+    padding: 5px 20px;
+    line-height: 1.6;
+    margin-bottom: var(--report-margin-title-page);
+    border-radius: 0 5px 5px 0;
+}
+.report-intro-box h2 {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: var(--margin-text);
+    color: var(--report-color-text);
+}
+.report-intro-box-list-header {
+    font-weight: bold;
+    margin-bottom: var(--margin-text);
+}
+.report-intro-box-list-item {
+    margin-bottom: var(--margin-text);
+}
+.report-intro-box-list-item-header {
+    font-weight: bold;
+}
+.report-audience-block {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin: 20px 0;
+}
+.report-audience-item {
+    flex: 1;
+    min-width: 250px;
+    background-color: var(--report-color-foreground);
+    margin: 10px;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.report-word-break {
+    word-break: break-all;
+}
+.report-keep-together {
+    /* Old syntax */
+    page-break-inside: avoid;
+    /* New syntax */
+    break-inside: avoid;
+}
+.report-page-break-before {
+    page-break-before: always;
+    break-before: page;
+}
+.report-page-break-after {
+    page-break-after: always;
+    break-after: page;
+}
+
+.report-split-1-1 {
+    display: flex;
+    gap: 20px;
+}
+.report-split-1-1 > div {
+    width: 50%;
+}
+
+.report-split-1-2 {
+    display: flex;
+    gap: 20px;
+}
+.report-split-1-2 > div:first-child {
+    width: 33%;
+}
+.report-split-1-2 > div:last-child {
+    width: 66%;
+}
+
+.report-figure-title {
+    font-weight: bold;
+    text-align: center;
+}
+
+.report-subfigure-title {
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.report-glossary-term {
+    margin-bottom: var(--margin-elements);
+}
+.report-glossary-term ol {
+    margin-bottom: 0;
+}
+.report-glossary-term-title {
+    font-weight: bold;
+}
+.report-glossary-term-warning {
+    color: var(--report-color-warning);
+}
+.report-glossary-term-definition:before {
+    content: "Definition:";
+    font-style: italic;
+    display: block;
+}
+.report-glossary-term-interpretation:before {
+    content: "Interpretation:";
+    font-style: italic;
+    display: block;
+}
+.report-glossary-term-definition, .report-glossary-term-interpretation {
+    margin-bottom: var(--margin-text);
+}
+
+/* CSS for metric tables */
+
+.metric-similarity {
+    border-radius: 100%;
+    width: 20px;
+    height: 20px;
+}
+
+.metric-table {
+    width: 100%;
+}
+
+.metric-table > * > tr > th,
+.metric-table > tr > th,
+.metric-table > tr > td {
+    height: 2rem;
+    padding: 0.3rem !important;
+}
+
+.metric-table > tbody > tr:hover,
+.metric-table > tr:not(.no-select):hover {
+    background-color: var(--report-color-background);
+}
+
+.metric-table > * > tr,
+.metric-table > tr {
+    width: 100%;
+}
+
+.metric-table-single > tr > th:first-child,
+.metric-table-comparison > tr > th:nth-child(2) {
+    min-width: 8rem;
+}
+
+.metric-table-comparison > tr > th:first-child {
+    min-width: 6.8rem !important;
+    width: 6.8rem !important;
+}
+
+.information-column {
+    width: 0;
+}
+
+.no-select {
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+}
+
+/* CSS for utility and risks metrics */
+.classifier-cell {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    gap: 0.2rem;
+    height: 2rem;
+    padding: 0.3rem !important;
+}
+
+.classifier-head {
+    font-weight: bold;
+}
+
+.metric-similarity {
+    display: inline-block;
+    border-radius: 100%;
+    height: 20px;
+    width: 20px;
+}
+
+.predictions {
+    margin-top: 1rem;
+}
+
+.predictions > :first-child {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+    margin-bottom: 0.5rem;
+}
+
+.predictions > :first-child > div {
+    border-bottom: 1px solid black;
+    width: 80%;
+    text-align: center;
+}

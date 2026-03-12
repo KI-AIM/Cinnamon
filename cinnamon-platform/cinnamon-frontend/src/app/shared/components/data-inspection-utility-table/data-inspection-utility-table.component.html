@@ -1,0 +1,20 @@
+<div *ngIf="pageData$ | async as pageData"
+     style="display: flex; flex-direction: row; width: 100%; justify-content: space-between;">
+    <div>
+        <div class="classifier-cell classifier-head">Classifier</div>
+        <ng-container *ngFor="let firstClassifier of getFirstElement(predictions)">
+            <div class="classifier-cell">{{ firstClassifier.classifier }}</div>
+        </ng-container>
+    </div>
+
+    <div *ngFor="let classifiers of predictions | keyvalue">
+        <div class="classifier-cell classifier-head">{{ classifiers.key }}</div>
+        <div *ngFor="let classifier of classifiers.value" class="classifier-cell">
+
+            <span class="metric-similarity" [style.background-color]="pageData.colorScheme[classifier.color_index]">
+            </span>
+            <span>{{ classifier.score | formatNumber }}</span>
+        </div>
+
+    </div>
+</div>

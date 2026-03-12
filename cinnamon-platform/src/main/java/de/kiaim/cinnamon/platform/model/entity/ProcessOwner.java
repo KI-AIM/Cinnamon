@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 /**
  * Entity for process owner.
@@ -11,6 +12,7 @@ import jakarta.persistence.*;
 @Entity
 // TODO Without this, negative IDs are generated, this shouldn't be needed
 @SequenceGenerator(name = "process_owner_seq", sequenceName = "process_owner_seq", allocationSize = 1)
+@Getter
 public abstract class ProcessOwner {
 
 	/**

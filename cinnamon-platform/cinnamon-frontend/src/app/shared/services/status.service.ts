@@ -112,10 +112,12 @@ export class StatusService {
         }
     }
 
-    removeCompletedStep(step: Steps): void {
-        if (this.completedSteps.contains(step)) {
-            this.completedSteps.remove(step);
-        }
+    /**
+     * Clears cached information.
+     */
+    public invalidateCache(): void {
+        this.statusSubject = null;
+        this.completedSteps.clear();
     }
 
     /**

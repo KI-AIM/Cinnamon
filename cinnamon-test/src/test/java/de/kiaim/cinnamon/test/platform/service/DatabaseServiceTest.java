@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.data.StringData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
 import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
@@ -14,7 +15,6 @@ import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.service.DatabaseService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.DatabaseTest;
@@ -324,6 +324,8 @@ class DatabaseServiceTest extends DatabaseTest {
 		process21.setExternalProcessStatus(ProcessStatus.SKIPPED);
 		var process22 = stage2.getProcess(1);
 		process22.setExternalProcessStatus(ProcessStatus.FINISHED);
+		var process23 = stage2.getProcess(2);
+		process23.setExternalProcessStatus(ProcessStatus.FINISHED);
 
 		assertDoesNotThrow(() -> databaseService.markProcessOutdated(process12));
 

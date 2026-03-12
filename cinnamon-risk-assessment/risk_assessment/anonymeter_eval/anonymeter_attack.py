@@ -66,10 +66,15 @@ def inference_attack(data_origin, data_processed, attribute_config: AttributeCon
 def singling_out_attack(data_origin, data_processed, config: SinglingOutConfig, data_control=None,
                         mode="univariate"):
     start = time.time()
+
+    max_attempts =  len(data_control.index) * 10 if data_control is not None else 0
+    max_attempts = max(10_000, min(max_attempts, 1_000_000))
+
     evaluator = SinglingOutEvaluator(ori=data_origin,
                                      syn=data_processed,
                                      control=data_control,
-                                     n_attacks=config.n_attacks)
+                                     n_attacks=config.n_attacks,
+                                     max_attempts=max_attempts)
     evaluator.evaluate(mode=mode)
     end = time.time()
     risk = risk_to_dict(evaluator.risk(confidence_level=0.95))

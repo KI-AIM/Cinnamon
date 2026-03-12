@@ -10,6 +10,7 @@ import {
     ViewChildren
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
+import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
 import { DataConfiguration } from "@shared/model/data-configuration";
 import { catchError, Observable, of, tap } from "rxjs";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
@@ -134,7 +135,7 @@ export class ConfigurationFormComponent implements OnInit {
      * Gets the raw JSON of the form.
      * Removes option groups that are not selected.
      */
-    public get formData(): Object {
+    public get formData(): ConfigurationObject {
         return this.removeUncheckedGroups(this.form.getRawValue());
     }
 

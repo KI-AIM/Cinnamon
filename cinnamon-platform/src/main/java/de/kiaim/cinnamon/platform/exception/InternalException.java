@@ -53,7 +53,7 @@ public abstract class InternalException extends ApiException {
 	}
 
 
-	public InternalException(final String exceptionCode, final String message, final Exception cause) {
+	public InternalException(final String exceptionCode, final String message, final Throwable cause) {
 		super(exceptionCode, message, cause);
 	}
 

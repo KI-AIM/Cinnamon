@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.configuration.data.DateFormatConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DateTimeFormatConfiguration;
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalEndpoint;
@@ -14,7 +15,6 @@ import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
 import de.kiaim.cinnamon.platform.model.dto.LoadDataRequest;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSourceSelector;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -310,6 +310,9 @@ public class DataSetService {
 				}
 
 			}
+			case PROTECTED -> {
+				return getProtectedDataSet(project);
+			}
 		}
 
 		return dataSet;
@@ -409,6 +412,11 @@ public class DataSetService {
 		switch (dataSetSelector) {
 			case HOLD_OUT, ORIGINAL -> {
 				result = process.getProject().getOriginalData().getDataSet();
+				if (result == null) {
+					throw new BadStateException(BadStateException.NO_DATA_SET,
+					                            "The project '" + process.getProject().getId() +
+					                            "' does not contain an original data set!");
+				}
 			}
 			case LAST_OR_ORIGINAL -> {
 				if (process instanceof ExternalProcessEntity externalProcess) {
@@ -473,6 +481,35 @@ public class DataSetService {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Returns the protected dataset of the project, i.e., the dataset that has been returned from the last processing job.
+	 *
+	 * @param project The project.
+	 * @return The dataset.
+	 */
+	@Nullable
+	private DataSetEntity getProtectedDataSet(final ProjectEntity project) {
+		final var pipeline = project.getPipelines().get(0);
+
+		final int numberOfStages = pipeline.getStages().size();
+		for (int stageIndex = numberOfStages - 1; stageIndex >= 0; stageIndex--) {
+			final ExecutionStepEntity executionStep = pipeline.getStages().get(stageIndex);
+
+			final int numberOfJobs = executionStep.getProcesses().size();
+
+			for (int jobIndex = numberOfJobs - 1; jobIndex >= 0; jobIndex--) {
+				final ExternalProcessEntity externalProcess = executionStep.getProcess(jobIndex);
+				if (externalProcess instanceof DataProcessingEntity dataProcessing) {
+					if (dataProcessing.getDataSet() != null && dataProcessing.getDataSet().isStoredData()) {
+						return dataProcessing.getDataSet();
+					}
+				}
+			}
+		}
+
+		return null;
 	}
 
 	@Nullable

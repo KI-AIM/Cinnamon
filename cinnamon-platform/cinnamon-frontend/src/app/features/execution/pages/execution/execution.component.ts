@@ -56,7 +56,7 @@ export class ExecutionComponent implements OnInit {
                 tap(value => {
                     // Create an error notification
                     if (this.statusPanels && value && value.status === ProcessStatus.ERROR &&
-                        this.currentStatus !== ProcessStatus.ERROR && this.currentStatus !== null) {
+                        this.currentStatus !== null) {
 
                         let jobIndex = null;
                         for (let i = 0; i < value.processes.length; i++) {

@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.platform.model.enumeration;
+package de.kiaim.cinnamon.model.enumeration;
 
 /**
  * Status enum for processes.

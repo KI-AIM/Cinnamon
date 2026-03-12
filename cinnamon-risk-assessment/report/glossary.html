@@ -1,0 +1,94 @@
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Privacy Risk</div>
+	<div class="report-glossary-term-definition">
+		A privacy risk is the possibility that an attacker could extract information about individuals from a released
+		dataset&mdash;whether original, anonymized, or synthetic.
+		<br>
+		Residual privacy risks remain even after applying anonymization or generating synthetic data. These risks must
+		be assessed through attack models (like singling out, linkability, attribute inference).
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Singling Out</div>
+	<div class="report-glossary-term-definition">
+		Singling out occurs when an attacker can deduce that exactly one individual exists in the original dataset who
+		matches a given combination of attribute values.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Data Linkage / Linkability</div>
+	<div class="report-glossary-term-definition">
+		Linkability is the possibility of linking two or more records&mdash;one dataset or across multiple
+		datasets&mdash;that belong to the same individual or group of individuals. This can lead to re-identification or
+		information gain about these individuals or the group. Data linkage has historically led to full
+		de-anonymization of datasets and is still possible with synthetic data because of statistical similarities to
+		the real data.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Inference / Attribute Inference</div>
+	<div class="report-glossary-term-definition">
+		Inference risk arises when an attacker can confidently guess the value of an unknown or secret attribute of a
+		real individual by exploiting an anonymized or synthetic dataset. This can lead to the disclosure of sensitive
+		information like a diagnosis or to identify specifically vulnerable individuals.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Privacy Score (Composite Privacy Risk Score)</div>
+	<div class="report-glossary-term-definition">
+		A Privacy Score is an aggregation of the three specific privacy risks:
+		<ol>
+			<li>Singling-out Risk</li>
+			<li>Linkability Risk</li>
+			<li>Inference (Attribute) Risk</li>
+		</ol>
+		Each of these is computed via the risk score formula for its corresponding attack.
+		<br>
+		The overall Privacy Score represents a high-level summary of how much the synthetic dataset leaks
+		individual-level information across all key dimensions defined by GDPR and aligned with the Article 29 Working
+		Party. The implementations of the individual risk scores are based on the Anonymeter Framework from Giomi et al.
+	</div>
+	<div class="report-glossary-term-interpretation">
+		<ul>
+			<li>High values mean the synthetic dataset reveals too much about specific individuals.</li>
+			<li>Low values indicate that information leaked is mostly generic population-level information.</li>
+		</ul>
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Privacy Risk Score</div>
+	<div class="report-glossary-term-definition">
+		A Privacy Risk Score represents the estimated specific privacy risk for a given attack type (singling out,
+		linkability, inference). It measures how much more successful an attacker is when targeting training records
+		(which influenced the synthetic data) compared to control records (independent of the synthetic data).
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Risk Confidence Interval</div>
+	<div class="report-glossary-term-definition">
+		A Risk Confidence Interval quantifies the statistical uncertainty of the risk estimate due to the finite number
+		of attack trials.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Successful Attack Rate</div>
+	<div class="report-glossary-term-definition">
+		The Successful Attack Ratio (also referred to as the success rate) is the proportion of attacker guesses that
+		were correct.
+	</div>
+</div>
+
+<div class="report-glossary-term">
+	<div class="report-glossary-term-title">Error Rate</div>
+	<div class="report-glossary-term-definition">
+		In Anonymeter, the Error Rate represents the uncertainty of the success-rate estimate and is expressed as the
+		margin of error from the Wilson score interval.
+	</div>
+</div>

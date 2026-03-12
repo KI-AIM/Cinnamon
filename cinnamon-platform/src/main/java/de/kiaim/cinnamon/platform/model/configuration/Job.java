@@ -28,6 +28,11 @@ public class Job {
 	 */
 	private StepType stepType;
 
+	/**
+	 * If the results of the job should be included in the report.
+	 */
+	private boolean hasReportContent = true;
+
 	//=========================
 	//--- Automatically set ---
 	//=========================

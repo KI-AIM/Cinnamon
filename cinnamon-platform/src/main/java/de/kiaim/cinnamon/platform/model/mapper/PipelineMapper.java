@@ -1,9 +1,9 @@
 package de.kiaim.cinnamon.platform.model.mapper;
 
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.model.dto.PipelineInformation;
 import de.kiaim.cinnamon.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.cinnamon.platform.model.entity.PipelineEntity;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;

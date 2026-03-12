@@ -1,3 +1,4 @@
+import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
@@ -63,7 +64,12 @@ export abstract class AlgorithmService {
             switchMap(value => {
                 // Either all processes are configured or none, so look up if the first is configured
                 if (value.processes[0].configured) {
-                    return this.doFetchConfiguration();
+                    // Ensure algorithms are loaded before fetching the configuration
+                    return this.algorithms.pipe(
+                        switchMap(_ => {
+                            return this.doFetchConfiguration();
+                        }),
+                    );
                 } else {
                     return of({config: {}, selectedAlgorithm: null});
                 }
@@ -72,7 +78,36 @@ export abstract class AlgorithmService {
     }
 
     /**
-     * Sets the configuration form the given data to the UI.
+     * Returns the selected algorithm, its definition and the configuration object for the process.
+     * @returns Observable for the selected algorithm and configuration.
+     */
+    public getAlgorithmData$(): Observable<AlgorithmData> {
+        return this.fetchConfiguration().pipe(
+            switchMap(value => {
+                if (value.selectedAlgorithm === null) {
+                    return of({
+                        config: value.config,
+                        selectedAlgorithm: null,
+                        algorithmDefinition: null,
+                    });
+                } else {
+                    return this.getAlgorithmDefinition(value.selectedAlgorithm).pipe(
+                        map(def => {
+                            return {
+                                config: value.config,
+                                selectedAlgorithm: value.selectedAlgorithm,
+                                algorithmDefinition: def
+                            }
+                        })
+                    );
+                }
+
+            }),
+        );
+    }
+
+    /**
+     * Sets the configuration from the given data to the UI.
      * @param data Data containing the result of the import.
      */
     public setConfig(data: ImportPipeData): void {
@@ -259,11 +294,21 @@ export interface ProcessInfo {
 }
 
 export interface ConfigData {
-    config: Object,
+    config: ConfigurationObject,
     selectedAlgorithm: Algorithm | null
 }
 
 export interface ReadConfigResult {
-    config: Object,
+    config: ConfigurationObject,
     selectedAlgorithm: Algorithm
+}
+
+/**
+ * Contains all information about the selected algorithm and the applied configuration.
+ * Other classes can extend this interface and overwrite the config field with a specialized configuration object.
+ */
+export interface AlgorithmData {
+    config: ConfigurationObject,
+    selectedAlgorithm: Algorithm | null
+    algorithmDefinition: AlgorithmDefinition | null
 }

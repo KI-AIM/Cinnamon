@@ -1,8 +1,8 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServerInstance;
-import de.kiaim.cinnamon.platform.model.enumeration.ProcessStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.lang.Nullable;

@@ -1,8 +1,8 @@
 package de.kiaim.cinnamon.platform.model.mapper;
 
+import de.kiaim.cinnamon.model.dto.ExternalProcessInformation;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
-import de.kiaim.cinnamon.platform.model.dto.ExternalProcessInformation;
 import de.kiaim.cinnamon.platform.model.entity.DataProcessingEntity;
 import de.kiaim.cinnamon.platform.model.entity.EvaluationProcessingEntity;
 import de.kiaim.cinnamon.platform.model.entity.ExternalProcessEntity;

@@ -5,18 +5,22 @@ import re
 import time
 from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Sequence, Tuple
-from urllib.parse import urlparse
 
 import pandas as pd
-import requests
 
 from data_processing.utils import BOOLEAN_MAP, MISSING_BOOLEAN, MISSING_VALUE_STRING, TEXT_PENDING_LLM
+from synthetic_tabular_data_generator.llm import (
+    LlmClient,
+    LlmClientConfig,
+    create_llm_client,
+    load_llm_client_config,
+)
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
 
 
-class OllamaTabularSynthesizer(TabularDataSynthesizer):
+class LlmTabularSynthesizer(TabularDataSynthesizer):
     """
-    LLM-based tabular synthesizer backed by a local Ollama model.
+    LLM-based tabular synthesizer backed by a configurable LLM provider.
     """
 
     NUMERIC_TYPES = {"INTEGER", "DECIMAL", "DATE"}
@@ -29,7 +33,8 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
         super().__init__(attribute_configuration, anonymization_configuration)
         self.attribute_config: Optional[Dict[str, Any]] = None
         self.dataset: Optional[pd.DataFrame] = None
-        self._model_kwargs: Optional[Dict[str, Any]] = None
+        self._llm_config: Optional[LlmClientConfig] = None
+        self._llm_client: Optional[LlmClient] = None
         self._fitting_kwargs: Optional[Dict[str, Any]] = None
         self._sampling: Optional[Dict[str, Any]] = None
         self.synthesizer = None
@@ -44,23 +49,13 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
         Core logic for initializing anonymization configuration.
         """
         algorithm_config = config["synthetization_configuration"]["algorithm"]
-        synth_params = algorithm_config["model_parameter"]
         training_params = algorithm_config["model_fitting"]
-
-        temperature = float(synth_params.get("temperature", 0.3))
-        top_p = float(synth_params.get("top_p", 0.9))
-
-        self._model_kwargs = {
-            "model_name": str(synth_params.get("model_name", "llama3.1:8b")),
-            "ollama_base_url": str(synth_params.get("ollama_base_url", "http://127.0.0.1:11434")).rstrip("/"),
-            "temperature": max(0.0, min(2.0, temperature)),
-            "top_p": max(0.0, min(1.0, top_p)),
-        }
+        self._llm_config = load_llm_client_config(config)
         self._fitting_kwargs = {
             "profile_rows": max(1, int(training_params.get("profile_rows", 1000))),
             "few_shot_rows": max(0, int(training_params.get("few_shot_rows", 20))),
-            "max_retries": max(1, int(training_params.get("max_retries", 3))),
-            "timeout_seconds": max(1, int(training_params.get("timeout_seconds", 120))),
+            "max_retries": self._llm_config.max_retries,
+            "timeout_seconds": self._llm_config.timeout_seconds,
         }
         self._sampling = algorithm_config["sampling"]
 
@@ -85,13 +80,14 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
         """
         Core logic for initializing the synthesizer.
         """
-        if self._model_kwargs is None or self._fitting_kwargs is None:
+        if self._llm_config is None or self._fitting_kwargs is None:
             raise ValueError("Anonymization configuration must be initialized before synthesizer setup.")
 
-        self._check_ollama_reachable()
+        self._llm_client = create_llm_client(self._llm_config)
+        self._llm_client.initialize()
         self.synthesizer = {
-            "backend": "ollama",
-            "model_name": self._model_kwargs["model_name"],
+            "backend": self._llm_config.provider,
+            "model_name": self._llm_config.model_name,
         }
 
     def _fit(self) -> None:
@@ -127,13 +123,13 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
 
     def _sample(self) -> pd.DataFrame:
         """
-        Generate synthetic tabular data via Ollama in exactly one batch.
+        Generate synthetic tabular data via the configured LLM in exactly one batch.
         """
         if self._sampling is None:
             raise ValueError("Sampling configuration is not initialized.")
         if self._fitting_kwargs is None:
             raise ValueError("Anonymization configuration is not initialized.")
-        if self._model_kwargs is None:
+        if self._llm_config is None:
             raise ValueError("Model configuration is not initialized.")
 
         num_samples = int(self._sampling["num_samples"])
@@ -160,12 +156,12 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
         """
         return cloudpickle.dumps(self)
 
-    def _load_model(self, filepath: str) -> "OllamaTabularSynthesizer":
+    def _load_model(self, filepath: str) -> "LlmTabularSynthesizer":
         """
         Core logic for loading a serialized synthesizer instance from a file.
         """
         with open(filepath, "rb") as f:
-            model: "OllamaTabularSynthesizer" = cloudpickle.load(f)
+            model: "LlmTabularSynthesizer" = cloudpickle.load(f)
         return model
 
     def _save_data(self, sample: pd.DataFrame, filename: str) -> None:
@@ -173,69 +169,6 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
         Core logic for saving a data sample to a CSV file.
         """
         sample.to_csv(filename, index=False)
-
-    def _check_ollama_reachable(self) -> None:
-        if self._model_kwargs is None or self._fitting_kwargs is None:
-            raise ValueError("Model and fitting configuration must be initialized first.")
-
-        configured_base_url = str(self._model_kwargs["ollama_base_url"]).rstrip("/")
-        timeout_seconds = self._fitting_kwargs["timeout_seconds"]
-        last_error: Optional[Exception] = None
-
-        for base_url in self._candidate_base_urls(configured_base_url):
-            tags_url = f"{base_url}/api/tags"
-            try:
-                response = requests.get(tags_url, timeout=timeout_seconds)
-                response.raise_for_status()
-
-                self._model_kwargs["ollama_base_url"] = base_url
-                if base_url != configured_base_url:
-                    print(
-                        f"Ollama URL fallback activated: '{configured_base_url}' was unreachable, "
-                        f"using '{base_url}' instead."
-                    )
-
-                body = response.json()
-                available_models = [model.get("name") for model in body.get("models", []) if isinstance(model, dict)]
-                selected_model = self._model_kwargs["model_name"]
-                if available_models and selected_model not in available_models:
-                    print(
-                        f"Model '{selected_model}' is currently not present in local Ollama tags. "
-                        "Ollama may pull it on first generation request."
-                    )
-                return
-            except requests.exceptions.RequestException as exc:
-                last_error = exc
-
-        if last_error is not None:
-            raise last_error
-        raise RuntimeError("Unable to reach Ollama API.")
-
-    def _candidate_base_urls(self, base_url: str) -> List[str]:
-        candidates = [base_url.rstrip("/")]
-        parsed = urlparse(base_url)
-        host = parsed.hostname
-
-        fallback_host: Optional[str] = None
-        if host in {"127.0.0.1", "localhost"}:
-            fallback_host = "host.docker.internal"
-        elif host == "host.docker.internal":
-            fallback_host = "127.0.0.1"
-
-        if fallback_host is not None:
-            fallback_url = self._replace_url_host(base_url, fallback_host)
-            if fallback_url not in candidates:
-                candidates.append(fallback_url)
-
-        return candidates
-
-    @staticmethod
-    def _replace_url_host(base_url: str, new_host: str) -> str:
-        parsed = urlparse(base_url)
-        scheme = parsed.scheme or "http"
-        port_part = f":{parsed.port}" if parsed.port is not None else ""
-        path_part = parsed.path.rstrip("/")
-        return f"{scheme}://{new_host}{port_part}{path_part}"
 
     def _build_column_profile(self, df: pd.DataFrame, column_name: str, column_type: str) -> Dict[str, Any]:
         if column_name not in df.columns:
@@ -303,7 +236,7 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
             coercion_errors = 0
 
             try:
-                content = self._request_rows_from_ollama(remaining)
+                content = self._request_rows_from_llm(remaining)
                 raw_rows = self._extract_rows(content)
                 self._print_llm_raw_output(attempt_index + 1, max_attempts, remaining, content)
 
@@ -329,7 +262,7 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
 
                 accepted_in_attempt = len(accepted_rows) - accepted_before_attempt
                 print(
-                    "[OLLAMA DEBUG] "
+                    "[LLM DEBUG] "
                     f"attempt={attempt_index + 1}/{max_attempts} "
                     f"requested={remaining} "
                     f"raw_rows={len(raw_rows)} "
@@ -341,7 +274,7 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
                 print(
-                    "[OLLAMA DEBUG] "
+                    "[LLM DEBUG] "
                     f"attempt={attempt_index + 1}/{max_attempts} "
                     f"requested={remaining} "
                     f"error={type(exc).__name__}: {exc}"
@@ -352,7 +285,7 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
 
         if len(accepted_rows) < target_rows:
             message = (
-                f"Ollama returned too few valid rows ({len(accepted_rows)}/{target_rows}) "
+                f"LLM returned too few valid rows ({len(accepted_rows)}/{target_rows}) "
                 f"after {max_attempts} attempts."
             )
             if last_error is not None:
@@ -361,37 +294,19 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
 
         return accepted_rows[:target_rows]
 
-    def _request_rows_from_ollama(self, num_rows: int) -> str:
-        if self._model_kwargs is None or self._fitting_kwargs is None:
-            raise ValueError("Model configuration is not initialized.")
+    def _request_rows_from_llm(self, num_rows: int) -> str:
+        if self._llm_client is None:
+            raise ValueError("LLM client is not initialized.")
 
-        payload = {
-            "model": self._model_kwargs["model_name"],
-            "stream": False,
-            "format": "json",
-            "prompt": self._build_generation_prompt(num_rows),
-            "options": {
-                "temperature": self._model_kwargs["temperature"],
-                "top_p": self._model_kwargs["top_p"],
-            },
-        }
-
-        url = f"{self._model_kwargs['ollama_base_url']}/api/generate"
-        response = requests.post(url, json=payload, timeout=self._fitting_kwargs["timeout_seconds"])
-        response.raise_for_status()
-
-        body = response.json()
-        content = body.get("response")
-        if not isinstance(content, str) or not content.strip():
-            raise ValueError("Ollama response is empty or missing the 'response' field.")
-        return content
+        prompt = self._build_generation_prompt(num_rows)
+        return self._llm_client.generate_text(prompt)
 
     @staticmethod
     def _print_llm_raw_output(attempt: int, max_retries: int, requested_rows: int, content: str) -> None:
         max_chars = 8000
         text = content if len(content) <= max_chars else f"{content[:max_chars]}...<truncated>"
         print(
-            "[OLLAMA DEBUG] "
+            "[LLM DEBUG] "
             f"attempt={attempt}/{max_retries} "
             f"requested={requested_rows} "
             f"raw_response={text}"
@@ -469,7 +384,7 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
         if not rows:
             rows = self._extract_rows_from_repeated_rows_blocks(response_content)
         if not rows:
-            raise ValueError("No rows were found in Ollama response.")
+            raise ValueError("No rows were found in the LLM response.")
         return rows
 
     def _parse_json_with_fallback(self, text: str) -> Any:
@@ -485,7 +400,7 @@ class OllamaTabularSynthesizer(TabularDataSynthesizer):
                     return parsed
                 except JSONDecodeError:
                     continue
-            raise ValueError("Ollama did not return valid JSON content.")
+            raise ValueError("The LLM did not return valid JSON content.")
 
     def _rows_from_json(self, parsed_json: Any) -> List[Dict[str, Any]]:
         if isinstance(parsed_json, list):

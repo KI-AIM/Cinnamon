@@ -1,24 +1,47 @@
-name: ollama_tabular
+name: llm_tabular
 version: "0.1"
 type: cross-sectional
-display_name: Ollama LLM Tabular Synthesizer
-description: Generate synthetic tabular data using a local Ollama language model.
-URL: /start_synthetization_process/ollama_tabular
+display_name: LLM Tabular Synthesizer
+description: Generate synthetic tabular data using a configurable Ollama or OpenAI-compatible language model.
+URL: /start_synthetization_process/llm_tabular
 configurations:
   model_parameter:
     display_name: Model Parameters
-    description: Configure the Ollama model endpoint and decoding behavior.
+    description: Configure the LLM provider, endpoint, authentication, and decoding behavior.
     parameters:
+      - name: provider
+        type: string
+        label: Provider
+        description: Select the LLM API type used by the synthesizer.
+        default_value: openai_compatible
+        values:
+          - ollama
+          - openai_compatible
       - name: model_name
         type: string
-        label: Ollama Model
-        description: Name of the local Ollama model used for generation.
-        default_value: llama3.2:1b
-      - name: ollama_base_url
+        label: Model Name
+        description: Name of the model used by the configured LLM server.
+        default_value: Qwen/Qwen3-32B
+      - name: base_url
         type: string
-        label: Ollama Base URL
-        description: Base URL of the Ollama server. Use http://host.docker.internal:11434 when the module runs in Docker.
-        default_value: http://127.0.0.1:11434
+        label: Base URL
+        description: Base URL of the LLM server. 
+        default_value: Enter Endpoint
+      - name: endpoint_path
+        type: string
+        label: Endpoint Path
+        description: Relative generation endpoint. Use /api/generate for Ollama or /v1/chat/completions for OpenAI-compatible servers.
+        default_value: /v1/chat/completions
+      - name: healthcheck_path
+        type: string
+        label: Healthcheck Path
+        description: Relative endpoint used to validate connectivity. Use /api/tags for Ollama or /v1/models for OpenAI-compatible servers.
+        default_value: /v1/models
+      - name: api_key
+        type: string
+        label: API Key
+        description: Optional bearer token for authenticated OpenAI-compatible servers.
+        default_value: ""
       - name: temperature
         type: float
         label: Temperature
@@ -33,6 +56,13 @@ configurations:
         default_value: 0.9
         min_value: 0.0
         max_value: 1.0
+      - name: max_tokens
+        type: integer
+        label: Max Tokens
+        description: Maximum number of output tokens per LLM response. Mainly used for OpenAI-compatible servers.
+        default_value: 1024
+        min_value: 1
+        max_value: 32768
   model_fitting:
     display_name: Prompting and Runtime
     description: Configure profiling, retry, and request behavior.

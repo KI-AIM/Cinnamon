@@ -18,7 +18,7 @@ from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
 from data_processing.utils import TEXT_PENDING_LLM
-from synthetic_tabular_data_generator.text_generation.ollama_text_synthesizer import OllamaTextSynthesizer
+from synthetic_tabular_data_generator.text_generation.llm_text_synthesizer import LlmTextSynthesizer
 
 
 app = Flask(__name__)
@@ -145,11 +145,7 @@ def _is_text_generation_enabled(algorithm_config):
         .get("algorithm", {})
         .get("model_parameter", {})
     )
-    # Keep previous behavior by default: TEXT values remain pending unless explicitly enabled.
-    enabled_value = model_params.get(
-        "enable_text_generation",
-        os.getenv("CINNAMON_TEXT_GENERATION_ENABLED", "false")
-    )
+    enabled_value = model_params.get("enable_text_generation", False)
     return _parse_bool(enabled_value, default=False)
 
 
@@ -162,7 +158,7 @@ def _fill_text_columns_with_pending(samples, text_columns):
 
 def generate_text_columns_if_needed(samples, original_data, attribute_config, algorithm_config):
     """
-    Generate TEXT columns using the internal Ollama text synthesizer if TEXT columns are present.
+    Generate TEXT columns using the internal LLM text synthesizer if TEXT columns are present.
     """
     text_columns = get_text_columns(attribute_config)
     if not text_columns:
@@ -177,7 +173,7 @@ def generate_text_columns_if_needed(samples, original_data, attribute_config, al
 
     context_columns = get_non_text_columns(attribute_config)
     try:
-        text_synthesizer = OllamaTextSynthesizer.from_algorithm_or_env(algorithm_config)
+        text_synthesizer = LlmTextSynthesizer.from_algorithm_config(algorithm_config)
         text_synthesizer.initialize()
         text_synthesizer.fit(original_data, text_columns)
 

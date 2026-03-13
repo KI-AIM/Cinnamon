@@ -66,7 +66,7 @@ def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tup
 
             if column_type == 'TEXT':
                 # TEXT is intentionally replaced in phase 1.
-                # The real text is generated in phase 2 by OllamaTextSynthesizer.
+                # The real text is generated in phase 2 by LlmTextSynthesizer.
                 df[column_name] = TEXT_PENDING_LLM
                 continue
 

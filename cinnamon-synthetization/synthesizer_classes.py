@@ -5,7 +5,7 @@ from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
 from synthetic_tabular_data_generator.algorithms.bayesian_network import BayesianNetworkSynthesizer
 from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomForestsSynthesizer
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
-from synthetic_tabular_data_generator.algorithms.ollama_tabular import OllamaTabularSynthesizer
+from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
 
 synthesizer_classes = {
     'ctgan': {
@@ -64,12 +64,12 @@ synthesizer_classes = {
         'description': 'An implementation of Robust Variational Autoencoder for data generation using beta divergence learning.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/rtvae.yaml'
     },
-    'ollama_tabular': {
+    'llm_tabular': {
         'version': '0.1',
         'type': 'cross-sectional',
-        'class': OllamaTabularSynthesizer,
-        'display_name': 'Ollama LLM Tabular Synthesizer',
-        'description': 'A local LLM-based synthesizer for tabular data generation via Ollama.',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/ollama_tabular.yaml'
+        'class': LlmTabularSynthesizer,
+        'display_name': 'LLM Tabular Synthesizer',
+        'description': 'A configurable LLM-based synthesizer for tabular data generation via Ollama or OpenAI-compatible APIs.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
     }
 }

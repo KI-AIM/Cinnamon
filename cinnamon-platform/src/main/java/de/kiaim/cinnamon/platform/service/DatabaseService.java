@@ -355,15 +355,14 @@ public class DatabaseService {
 	 * If the configuration has changed and is used by processes, marks them as outdated.
 	 *
 	 * @param configName    Identifier for the configuration.
-	 * @param url           The URL for starting the process.
 	 * @param configuration Configuration to store.
 	 * @param project       The project the configuration should be associated with.
 	 * @throws BadConfigurationNameException If the configuration name is not defined.
 	 * @throws BadStateException             If the process is running or scheduled.
 	 */
 	@Transactional
-	public void storeConfiguration(final String configName, @Nullable final String url,
-	                               @Nullable final String configuration, final ProjectEntity project
+	public void storeConfiguration(final String configName, @Nullable final String configuration,
+	                               final ProjectEntity project
 	) throws BadStateException, BadConfigurationNameException {
 		final var configDefinition = stepService.getExternalConfiguration(configName);
 		ConfigurationListEntity configurationList = project.addConfigurationList(configDefinition);
@@ -386,8 +385,7 @@ public class DatabaseService {
 			}
 		}
 
-		if (!Objects.equals(url, config.getProcessUrl()) || !Objects.equals(configuration, config.getConfiguration())) {
-			config.setProcessUrl(url);
+		if (!Objects.equals(configuration, config.getConfiguration())) {
 			config.setConfiguration(configuration);
 
 			for (final BackgroundProcessEntity usage: config.getUsages()) {

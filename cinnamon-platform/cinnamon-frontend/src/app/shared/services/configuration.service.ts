@@ -146,7 +146,7 @@ export class ConfigurationService {
             data.fetchConfig = (configName) => this.loadConfig(configName);
         }
         if (data.storeConfig == null) {
-            data.storeConfig = (configName, yamlConfigString) => this.storeConfig(configName, yamlConfigString, null);
+            data.storeConfig = (configName, yamlConfigString) => this.storeConfig(configName, yamlConfigString);
         }
 
         this.registeredConfigurations.push(data);
@@ -172,16 +172,12 @@ export class ConfigurationService {
      * Stores the given configuration under the given name into the database.
      * @param configurationName Identifier of the configuration to load.
      * @param configuration Configuration to store in form of a string.
-     * @param url Url for starting the process.
      * @returns Observable returning containing the ID of the dataset.
      */
-    public storeConfig(configurationName: String, configuration: String, url: string | null): Observable<void> {
+    public storeConfig(configurationName: String, configuration: String): Observable<void> {
         const formData = new FormData();
         formData.append("configuration", configuration.toString());
         formData.append("configurationName", configurationName.toString());
-        if (url) {
-            formData.append("url", url);
-        }
         return this.httpClient.post<void>(environments.apiUrl + "/api/config", formData);
     }
 

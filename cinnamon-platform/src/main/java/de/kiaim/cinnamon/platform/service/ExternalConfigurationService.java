@@ -315,8 +315,8 @@ public class ExternalConfigurationService {
 				}
 
 				try {
-					databaseService.storeConfiguration(configName, null,
-					                                   yamlMapper.writeValueAsString(singleConfigNode), project);
+					databaseService.storeConfiguration(configName, yamlMapper.writeValueAsString(singleConfigNode),
+					                                   project);
 					importSummary.addSuccess(configName);
 				} catch (final BadStateException | BadConfigurationNameException e) {
 					importSummary.addError(configName, e.getErrorCode());

@@ -245,13 +245,6 @@ public class ProcessService {
 
 			BackgroundProcessConfiguration config = configurationList.getConfigurations().get(0);
 
-			if (config.getProcessUrl() == null || config.getProcessUrl().isBlank()) {
-				throw new BadStateException(BadStateException.CONFIGURATION,
-				                            "No URL for configuration '" +
-				                            job.getEndpoint().getConfiguration().getConfigurationName() + "' for job '" +
-				                            job.getName() + "'!");
-			}
-
 			if (externalProcess.getConfiguration() == null) {
 				externalProcess.setConfiguration(config);
 				markAsOutdated = true;

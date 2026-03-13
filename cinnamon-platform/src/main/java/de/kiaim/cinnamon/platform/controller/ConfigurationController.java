@@ -98,7 +98,7 @@ public class ConfigurationController {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		databaseService.storeConfiguration(configurationRequest.getConfigurationName(), configurationRequest.getUrl(),
+		databaseService.storeConfiguration(configurationRequest.getConfigurationName(),
 		                                   configurationRequest.getConfiguration(), project);
 	}
 

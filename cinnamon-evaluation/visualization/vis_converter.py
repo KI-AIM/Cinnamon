@@ -9,6 +9,9 @@ from .quality_ranges import determine_quality_range
 TEXT_ALLOWED_METRICS = {
     "missing_values_count",
     "distinct_values",
+}
+
+TEXT_EXCLUSIVE_METRICS = {
     "average_text_length",
     "text_length_fifth_percentile",
     "text_length_q1",
@@ -26,8 +29,14 @@ def is_metric_applicable_to_attribute(metric_name: str, attribute_type: Optional
     """
     Returns whether a metric should be attached to a specific attribute type.
     """
-    if (attribute_type or "").upper() == "TEXT":
-        return metric_name in TEXT_ALLOWED_METRICS
+    normalized_type = (attribute_type or "").upper()
+
+    if normalized_type == "TEXT":
+        return metric_name in TEXT_ALLOWED_METRICS or metric_name in TEXT_EXCLUSIVE_METRICS
+
+    if metric_name in TEXT_EXCLUSIVE_METRICS:
+        return False
+
     return True
 
 

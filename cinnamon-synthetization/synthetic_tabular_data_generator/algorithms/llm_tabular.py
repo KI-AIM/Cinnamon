@@ -237,8 +237,8 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
 
             try:
                 content = self._request_rows_from_llm(remaining)
-                raw_rows = self._extract_rows(content)
                 self._print_llm_raw_output(attempt_index + 1, max_attempts, remaining, content)
+                raw_rows = self._extract_rows(content)
 
                 for row in raw_rows:
                     if not isinstance(row, dict):
@@ -270,7 +270,7 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
                     f"non_dict={non_dict_rows} "
                     f"unusable={unusable_rows} "
                     f"coercion_errors={coercion_errors}"
-                )
+                , flush=True)
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
                 print(
@@ -278,7 +278,7 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
                     f"attempt={attempt_index + 1}/{max_attempts} "
                     f"requested={remaining} "
                     f"error={type(exc).__name__}: {exc}"
-                )
+                , flush=True)
 
             if len(accepted_rows) >= target_rows:
                 break
@@ -310,7 +310,7 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
             f"attempt={attempt}/{max_retries} "
             f"requested={requested_rows} "
             f"raw_response={text}"
-        )
+        , flush=True)
 
     def _build_generation_prompt(self, num_rows: int) -> str:
         ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
@@ -669,13 +669,13 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
         elapsed = max(time.time() - self._sample_start_time, 1e-6)
         remaining = max(total - generated, 0)
         if remaining == 0:
-            print("Estimated remaining time: 0s")
+            print("Estimated remaining time: 0s", flush=True)
             return
 
         rows_per_second = generated / elapsed
         if rows_per_second <= 0:
-            print("Estimated remaining time: unknown")
+            print("Estimated remaining time: unknown", flush=True)
             return
 
         remaining_seconds = int(math.ceil(remaining / rows_per_second))
-        print(f"Estimated remaining time: {remaining_seconds}s")
+        print(f"Estimated remaining time: {remaining_seconds}s", flush=True)

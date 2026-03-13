@@ -125,6 +125,7 @@ class InterceptStdOut:
             None
         """
         self.terminal.write(message)
+        self.terminal.flush()
         if "Estimated remaining time:" in message:
             # Extract the remaining time from the message
             remaining_time = message.split("Estimated remaining time:")[1].strip().split(" ")[0]

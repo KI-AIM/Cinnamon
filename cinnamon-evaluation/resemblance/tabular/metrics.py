@@ -35,16 +35,12 @@ def get_declared_columns_by_type(real: pd.DataFrame, synthetic: pd.DataFrame, ta
 
 def get_text_columns(real: pd.DataFrame, synthetic: pd.DataFrame) -> List[str]:
     """
-    Resolve TEXT columns from dataframe metadata if available.
-    Falls back to object/string columns shared by both datasets.
-    """
-    configured_columns = get_declared_columns_by_type(real, synthetic, "TEXT")
-    if configured_columns:
-        return configured_columns
+    Resolve TEXT columns strictly from declared dataframe metadata.
 
-    real_text_like = set(real.select_dtypes(include=["object", "string"]).columns)
-    synthetic_text_like = set(synthetic.select_dtypes(include=["object", "string"]).columns)
-    return sorted(real_text_like.intersection(synthetic_text_like))
+    Falling back to all object/string columns is unsafe because it causes
+    plain STRING attributes to be treated as TEXT whenever metadata is absent.
+    """
+    return get_declared_columns_by_type(real, synthetic, "TEXT")
 
 
 def prepare_text_series(series: pd.Series) -> pd.Series:

@@ -30,6 +30,19 @@ CALLBACK_TIMEOUT_SECONDS = float(os.getenv("CINNAMON_CALLBACK_TIMEOUT_SECONDS", 
 ERROR_CALLBACK_TIMEOUT_SECONDS = float(os.getenv("CINNAMON_ERROR_CALLBACK_TIMEOUT_SECONDS", "5"))
 
 
+def configure_realtime_logging():
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if not callable(reconfigure):
+            continue
+        try:
+            reconfigure(line_buffering=True, write_through=True)
+        except TypeError:
+            reconfigure(line_buffering=True)
+        except Exception:
+            continue
+
+
 def initialize_input_data(synthesizer_name):
     """
     Extract and validate input data from the incoming request.
@@ -205,6 +218,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         dict: Result of the synthesis process.
     """
     try:
+        configure_realtime_logging()
         print('Synthesizer selected:', synthesizer_name)
         init_time = time.time()
 
@@ -425,6 +439,7 @@ def start_synthetization_process(synthesizer_name):
     task_locks[task_id] = stop_event
 
     try:
+        configure_realtime_logging()
         # Initialize input data
         session_key, callback_url, file_path_status, attribute_config, algorithm_config, data = initialize_input_data(
             synthesizer_name)

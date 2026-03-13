@@ -30,15 +30,6 @@ public class BackgroundProcessConfiguration {
 	private Integer configurationIndex;
 
 	/**
-	 * URL to start the process.
-	 * For endpoints where the URL depends on the configuration.
-	 * Only used if the endpoint does not define a process URL.
-	 */
-	@Getter @Setter
-	@Nullable
-	private String processUrl;
-
-	/**
 	 * The configuration for the process.
 	 */
 	@Column(length = Integer.MAX_VALUE)

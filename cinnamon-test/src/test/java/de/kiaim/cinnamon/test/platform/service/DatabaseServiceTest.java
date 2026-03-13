@@ -140,7 +140,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		final UserEntity user = getTestUser();
 		final ProjectEntity project = projectService.getProject(user);
 
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, null, config, project),
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, config, project),
 		                   "The configuration could not be stored!");
 
 		final UserEntity updatedUser = getTestUser();
@@ -159,7 +159,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		final UserEntity user = getTestUser();
 		final ProjectEntity project = projectService.getProject(user);
 		final String updatedConfig = "Updated test config";
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, null, updatedConfig, project),
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, updatedConfig, project),
 		                   "The configuration could not be updated!");
 
 		final UserEntity updatedUser = getTestUser();

@@ -118,7 +118,6 @@ public class ProcessControllerTest extends ControllerTest {
 	public void configure() throws Exception {
 		mockMvc.perform(post("/api/config")
 				                .param("configurationName", ANON_JOB)
-				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -129,7 +128,6 @@ public class ProcessControllerTest extends ControllerTest {
 
 		mockMvc.perform(post("/api/config")
 				                .param("configurationName", "synthetization_configuration")
-				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfiguration2())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -157,7 +155,6 @@ public class ProcessControllerTest extends ControllerTest {
 	public void configureSkipWithConfiguration() throws Exception {
 		mockMvc.perform(post("/api/config")
 				                .param("configurationName", ANON_JOB)
-				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configuration", "configuration")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -177,26 +174,9 @@ public class ProcessControllerTest extends ControllerTest {
 	public void configureMissingConfiguration() throws Exception {
 		mockMvc.perform(post("/api/process/configure")
 				                .param("jobName", ANON_JOB)
-				                .param("url", "/start_synthetization_process/ctgan")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_1_8_5"));
-	}
-
-	@Test
-	public void configureMissingUrl() throws Exception {
-		mockMvc.perform(post("/api/config")
-				                .param("configurationName", ANON_JOB)
-				                .param("configuration", "configuration")
-				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
-		       .andExpect(status().isOk());
-
-		mockMvc.perform(post("/api/process/configure")
-				                .param("jobName", ANON_JOB)
-				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorCode("PLATFORM_1_8_5"))
-		       .andExpect(errorMessage("No URL for configuration 'anonymization' for job 'anonymization'!"));
 	}
 
 	@Test

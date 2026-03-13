@@ -96,7 +96,7 @@ public class DatabaseTest extends ContextRequiredTest {
 		final UserEntity updatedUser = getTestUser();
 		final ProjectEntity project = projectService.getProject(updatedUser);
 
-		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, null, config, project),
+		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, config, project),
 		                   "The configuration could not be stored!");
 		testConfiguration(project, config);
 	}

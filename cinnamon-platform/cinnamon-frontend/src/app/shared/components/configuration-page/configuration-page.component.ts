@@ -343,11 +343,8 @@ export class ConfigurationPageComponent implements OnInit {
                 }
             );
         } else {
-            this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).pipe(
-                switchMap(value => {
-                    const config = this.forms ? this.forms.formData : '';
-                    return this.postConfig(config, value.URL);
-                }),
+            const config = this.forms ? this.forms.formData : '';
+            this.postConfig(config).pipe(
                 switchMap(() => {
                     return this.configureJobs();
                 }),
@@ -363,13 +360,12 @@ export class ConfigurationPageComponent implements OnInit {
     /**
      * Sends the configuration to the backend.
      * @param configuration The configuration object.
-     * @param url The URL to be used for the job.
      * @private
      */
-    private postConfig(configuration: Object, url: string): Observable<void> {
+    private postConfig(configuration: Object): Observable<void> {
         const configurationName = this.algorithmService.getConfigurationName();
         const configurationString = stringify(this.algorithmService.createConfiguration(configuration, this.selection.selectedOption));
-        return this.configurationService.storeConfig(configurationName, configurationString, url);
+        return this.configurationService.storeConfig(configurationName, configurationString);
     }
 
     /**

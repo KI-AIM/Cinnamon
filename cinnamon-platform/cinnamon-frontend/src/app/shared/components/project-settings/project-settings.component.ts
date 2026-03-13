@@ -43,6 +43,11 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
 
     private dialogRef: MatDialogRef<any> | null = null;
 
+    /**
+     * If the password should be hidden by dots.
+     */
+    protected hidePassword: boolean = true;
+
     @ViewChild('projectSettingsDialog') private dialogWrap: TemplateRef<any>;
     @ViewChild('main') private main: ElementRef<HTMLDivElement>;
     @ViewChild('deletionConfirmation') private deletionConfirmation: ElementRef<HTMLDivElement>;

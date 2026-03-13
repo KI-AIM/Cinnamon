@@ -1,15 +1,24 @@
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { HttpClient, HttpErrorResponse, HttpHeaders } from "@angular/common/http";
-import { AppNotification, NotificationService, NotificationType } from "@core/services/notification.service";
-import { Observable, Subject } from "rxjs";
 import { Router } from "@angular/router";
+import { AppNotification, NotificationService, NotificationType } from "@core/services/notification.service";
+import { Observable, Subject, tap } from "rxjs";
+import { environments } from "src/environments/environment";
 import { User } from "../model/user";
-import { environments } from "../../../environments/environment";
 
 @Injectable({
 	providedIn: "root",
 })
 export class UserService {
+    /**
+     * Cached email for the login and register page.
+     */
+    public cachedEmailInput: string | null = null;
+    /**
+     * Cached password for the login and register page.
+     */
+    public cachedPasswordInput: string | null = null;
+
     private readonly baseURL = environments.apiUrl + "/api/user";
 	private readonly USER_KEY = "user";
 	private user: User;
@@ -42,9 +51,8 @@ export class UserService {
     }
 
 	login(
-		credentials: { email: string; password: string },
-		callback: (error: string) => void
-	) {
+		credentials: { email: string; password: string }
+	): Observable<any> {
 		this.user = new User(false, "", "");
 
 		const token = btoa(credentials.email + ":" + credentials.password);
@@ -52,23 +60,14 @@ export class UserService {
 			credentials ? { authorization: "Basic " + token } : {}
 		);
 
-		this.http
-			.get<any>(this.baseURL + "/login", { headers: headers })
-			.subscribe({
-				next: (data: any) => {
-					if (typeof data === "boolean" && data) {
-						this.user = new User(true, credentials.email, token);
-						sessionStorage.setItem(
-							this.USER_KEY,
-							JSON.stringify(this.user)
-						);
-					}
-					return callback && callback("");
-				},
-				error: (e: HttpErrorResponse) => {
-					return callback && callback(e.error);
-				},
-			});
+        return this.http.get<any>(this.baseURL + "/login", {headers: headers}).pipe(
+            tap(data => {
+                if (typeof data === "boolean" && data) {
+                    this.user = new User(true, credentials.email, token);
+                    sessionStorage.setItem(this.USER_KEY, JSON.stringify(this.user));
+                }
+            }),
+        );
 	}
 
 

@@ -17,6 +17,7 @@ from api_utility.status.status_updater import InterceptStdOut
 from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
+from data_processing.utils import TEXT_PENDING_LLM
 from synthetic_tabular_data_generator.text_generation.ollama_text_synthesizer import OllamaTextSynthesizer
 
 
@@ -24,6 +25,9 @@ app = Flask(__name__)
 tasks = {}
 task_locks = {}
 CORS(app)
+
+CALLBACK_TIMEOUT_SECONDS = float(os.getenv("CINNAMON_CALLBACK_TIMEOUT_SECONDS", "30"))
+ERROR_CALLBACK_TIMEOUT_SECONDS = float(os.getenv("CINNAMON_ERROR_CALLBACK_TIMEOUT_SECONDS", "5"))
 
 
 def initialize_input_data(synthesizer_name):
@@ -119,6 +123,43 @@ def get_non_text_columns(attribute_config):
     ]
 
 
+def _parse_bool(value, default=False):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "y", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "n", "off"}:
+            return False
+    return default
+
+
+def _is_text_generation_enabled(algorithm_config):
+    model_params = (
+        algorithm_config.get("synthetization_configuration", {})
+        .get("algorithm", {})
+        .get("model_parameter", {})
+    )
+    # Keep previous behavior by default: TEXT values remain pending unless explicitly enabled.
+    enabled_value = model_params.get(
+        "enable_text_generation",
+        os.getenv("CINNAMON_TEXT_GENERATION_ENABLED", "false")
+    )
+    return _parse_bool(enabled_value, default=False)
+
+
+def _fill_text_columns_with_pending(samples, text_columns):
+    fallback = samples.copy()
+    for text_column in text_columns:
+        fallback[text_column] = TEXT_PENDING_LLM
+    return fallback
+
+
 def generate_text_columns_if_needed(samples, original_data, attribute_config, algorithm_config):
     """
     Generate TEXT columns using the internal Ollama text synthesizer if TEXT columns are present.
@@ -127,14 +168,27 @@ def generate_text_columns_if_needed(samples, original_data, attribute_config, al
     if not text_columns:
         return samples
 
+    if not _is_text_generation_enabled(algorithm_config):
+        print(
+            "TEXT columns detected, but text generation is disabled. "
+            "Keeping placeholder values."
+        )
+        return _fill_text_columns_with_pending(samples, text_columns)
+
     context_columns = get_non_text_columns(attribute_config)
+    try:
+        text_synthesizer = OllamaTextSynthesizer.from_algorithm_or_env(algorithm_config)
+        text_synthesizer.initialize()
+        text_synthesizer.fit(original_data, text_columns)
 
-    text_synthesizer = OllamaTextSynthesizer.from_algorithm_or_env(algorithm_config)
-    text_synthesizer.initialize()
-    text_synthesizer.fit(original_data, text_columns)
-
-    print(f"Generating TEXT columns via LLM: {text_columns}")
-    return text_synthesizer.generate(samples, text_columns=text_columns, context_columns=context_columns)
+        print(f"Generating TEXT columns via LLM: {text_columns}")
+        return text_synthesizer.generate(samples, text_columns=text_columns, context_columns=context_columns)
+    except Exception as exc:
+        print(
+            f"TEXT generation failed ({exc}). "
+            "Falling back to placeholder values."
+        )
+        return _fill_text_columns_with_pending(samples, text_columns)
 
 
 def synthesize_data(synthesizer_name, file_path_status, attribute_config, algorithm_config, data,
@@ -322,7 +376,15 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         # Step 11: Send callback
         try:
             files = prepare_callback_data(samples, synthesizer_model)
-            requests.post(callback_url, files=files, data={'session_key': session_key})
+            print(f"Sending success callback to {callback_url} with session_key={session_key}")
+            response = requests.post(
+                callback_url,
+                files=files,
+                data={'session_key': session_key},
+                timeout=CALLBACK_TIMEOUT_SECONDS
+            )
+            response.raise_for_status()
+            print(f"Success callback completed with status={response.status_code}")
             update_status(file_path_status, 'callback', completed=True)
             return {
                 'message': 'Synthetization Finished, successfully sent callback notification',
@@ -330,6 +392,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 200
             }
         except requests.exceptions.RequestException as e:
+            update_status(file_path_status, 'callback', completed=False)
             error_message = f"Synthetization Finished, failed to send callback notification. {str(e)}"
             send_callback_error(callback_url, session_key, error_message, 500)
             return {
@@ -582,7 +645,12 @@ def send_callback_error(callback_url, session_key, message, status_code):
 
     try:
         print(f"Sending error callback to {callback_url} with data: {data} and files: {files}")
-        response = requests.post(callback_url, files=files, data=data, timeout=5)
+        response = requests.post(
+            callback_url,
+            files=files,
+            data=data,
+            timeout=ERROR_CALLBACK_TIMEOUT_SECONDS
+        )
         print(f"Response status code: {response.status_code}")
         print(f"Response text: {response.text}")
         response.raise_for_status()

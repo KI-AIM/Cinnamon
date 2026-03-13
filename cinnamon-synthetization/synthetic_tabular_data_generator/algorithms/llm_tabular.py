@@ -43,6 +43,7 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
         self._column_profiles: Dict[str, Dict[str, Any]] = {}
         self._few_shot_examples: List[Dict[str, Any]] = []
         self._sample_start_time: Optional[float] = None
+        self._generation_prompt_prefix: Optional[str] = None
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
         """
@@ -121,9 +122,11 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
         else:
             self._few_shot_examples = []
 
+        self._generation_prompt_prefix = self._build_generation_prompt_prefix()
+
     def _sample(self) -> pd.DataFrame:
         """
-        Generate synthetic tabular data via the configured LLM in exactly one batch.
+        Generate synthetic tabular data via the configured LLM using one request per row.
         """
         if self._sampling is None:
             raise ValueError("Sampling configuration is not initialized.")
@@ -139,8 +142,7 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
         max_retries = self._fitting_kwargs["max_retries"]
         self._sample_start_time = time.time()
 
-        generated_rows = self._generate_batch_rows(num_samples, max_retries)
-        self._print_remaining_time(len(generated_rows), num_samples)
+        generated_rows = self._generate_rows_sequentially(num_samples, max_retries)
 
         ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
         generated = pd.DataFrame(generated_rows)
@@ -213,31 +215,35 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
         ]
         return profile
 
-    def _generate_batch_rows(
+    def _generate_rows_sequentially(
         self,
         target_rows: int,
         max_retries: int,
     ) -> List[Dict[str, Any]]:
         accepted_rows: List[Dict[str, Any]] = []
+
+        for row_index in range(target_rows):
+            accepted_rows.append(self._generate_single_row(row_index, target_rows, max_retries))
+            self._print_remaining_time(len(accepted_rows), target_rows)
+
+        return accepted_rows
+
+    def _generate_single_row(
+        self,
+        row_index: int,
+        target_rows: int,
+        max_retries: int,
+    ) -> Dict[str, Any]:
         last_error: Optional[Exception] = None
 
-        # Weak/local models often return only 1-2 valid rows per call even when asked for more.
-        # Use retries per missing row instead of a flat retry cap per batch.
-        max_attempts = max_retries * max(1, target_rows)
-
-        for attempt_index in range(max_attempts):
-            remaining = target_rows - len(accepted_rows)
-            if remaining <= 0:
-                break
-
-            accepted_before_attempt = len(accepted_rows)
+        for attempt_index in range(max_retries):
             non_dict_rows = 0
             unusable_rows = 0
             coercion_errors = 0
 
             try:
-                content = self._request_rows_from_llm(remaining)
-                self._print_llm_raw_output(attempt_index + 1, max_attempts, remaining, content)
+                content = self._request_rows_from_llm(1, row_index, target_rows)
+                self._print_llm_raw_output(attempt_index + 1, max_retries, 1, content, row_index, target_rows)
                 raw_rows = self._extract_rows(content)
 
                 for row in raw_rows:
@@ -252,67 +258,81 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
 
                     try:
                         coerced_row = self._coerce_row(aligned_row)
-                        accepted_rows.append(coerced_row)
-                        if len(accepted_rows) >= target_rows:
-                            break
+                        print(
+                            "[LLM DEBUG] "
+                            f"row={row_index + 1}/{target_rows} "
+                            f"attempt={attempt_index + 1}/{max_retries} "
+                            f"requested=1 "
+                            f"raw_rows={len(raw_rows)} "
+                            f"accepted=1 "
+                            f"non_dict={non_dict_rows} "
+                            f"unusable={unusable_rows} "
+                            f"coercion_errors={coercion_errors}",
+                            flush=True,
+                        )
+                        return coerced_row
                     except Exception:  # noqa: BLE001
-                        # Skip malformed rows and continue processing remaining candidates.
                         coercion_errors += 1
                         continue
 
-                accepted_in_attempt = len(accepted_rows) - accepted_before_attempt
                 print(
                     "[LLM DEBUG] "
-                    f"attempt={attempt_index + 1}/{max_attempts} "
-                    f"requested={remaining} "
+                    f"row={row_index + 1}/{target_rows} "
+                    f"attempt={attempt_index + 1}/{max_retries} "
+                    f"requested=1 "
                     f"raw_rows={len(raw_rows)} "
-                    f"accepted={accepted_in_attempt} "
+                    f"accepted=0 "
                     f"non_dict={non_dict_rows} "
                     f"unusable={unusable_rows} "
-                    f"coercion_errors={coercion_errors}"
-                , flush=True)
+                    f"coercion_errors={coercion_errors}",
+                    flush=True,
+                )
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
                 print(
                     "[LLM DEBUG] "
-                    f"attempt={attempt_index + 1}/{max_attempts} "
-                    f"requested={remaining} "
-                    f"error={type(exc).__name__}: {exc}"
-                , flush=True)
+                    f"row={row_index + 1}/{target_rows} "
+                    f"attempt={attempt_index + 1}/{max_retries} "
+                    f"requested=1 "
+                    f"error={type(exc).__name__}: {exc}",
+                    flush=True,
+                )
 
-            if len(accepted_rows) >= target_rows:
-                break
+        message = (
+            f"LLM returned no valid row for sample {row_index + 1}/{target_rows} "
+            f"after {max_retries} attempts."
+        )
+        if last_error is not None:
+            raise RuntimeError(message) from last_error
+        raise RuntimeError(message)
 
-        if len(accepted_rows) < target_rows:
-            message = (
-                f"LLM returned too few valid rows ({len(accepted_rows)}/{target_rows}) "
-                f"after {max_attempts} attempts."
-            )
-            if last_error is not None:
-                raise RuntimeError(message) from last_error
-            raise RuntimeError(message)
-
-        return accepted_rows[:target_rows]
-
-    def _request_rows_from_llm(self, num_rows: int) -> str:
+    def _request_rows_from_llm(self, num_rows: int, row_index: int, target_rows: int) -> str:
         if self._llm_client is None:
             raise ValueError("LLM client is not initialized.")
 
-        prompt = self._build_generation_prompt(num_rows)
+        prompt = self._build_generation_prompt(num_rows, row_index, target_rows)
         return self._llm_client.generate_text(prompt)
 
     @staticmethod
-    def _print_llm_raw_output(attempt: int, max_retries: int, requested_rows: int, content: str) -> None:
+    def _print_llm_raw_output(
+        attempt: int,
+        max_retries: int,
+        requested_rows: int,
+        content: str,
+        row_index: int,
+        target_rows: int,
+    ) -> None:
         max_chars = 8000
         text = content if len(content) <= max_chars else f"{content[:max_chars]}...<truncated>"
         print(
             "[LLM DEBUG] "
+            f"row={row_index + 1}/{target_rows} "
             f"attempt={attempt}/{max_retries} "
             f"requested={requested_rows} "
             f"raw_response={text}"
         , flush=True)
 
-    def _build_generation_prompt(self, num_rows: int) -> str:
+    def _build_generation_prompt_prefix(self) -> str:
         ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
         column_descriptions = []
 
@@ -336,7 +356,6 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
 
         return (
             "You are generating synthetic tabular rows.\n"
-            f"Generate exactly {num_rows} rows.\n"
             "Return ONLY valid JSON with this exact shape:\n"
             f"{shape_text}\n"
             "Use one top-level key only: rows.\n"
@@ -354,6 +373,16 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
             f"{profile_lines}"
             f"{few_shot_block}\n"
             "Model realistic relationships between columns based on the profiles."
+        )
+
+    def _build_generation_prompt(self, num_rows: int, row_index: int, target_rows: int) -> str:
+        prefix = self._generation_prompt_prefix or self._build_generation_prompt_prefix()
+        return (
+            f"{prefix}\n"
+            "Generation task:\n"
+            f"Generate exactly {num_rows} rows.\n"
+            f"Current request index: {row_index + 1} of {target_rows}.\n"
+            "Return exactly one realistic synthetic row in the rows array."
         )
 
     def _profile_line(self, column_name: str, column_type: str, profile: Dict[str, Any]) -> str:

@@ -87,15 +87,12 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_ollama(monkeypatch
 
         if method == "POST" and url.endswith("/api/generate"):
             call_counter["count"] += 1
-            if call_counter["count"] == 1:
-                rows = [
-                    {"age": 31, "height": 171.5, "risk": True, "group": "A"},
-                    {"age": 47, "height": 183.2, "risk": False, "group": "B"},
-                ]
-            else:
-                rows = [
-                    {"age": 39, "height": 175.0, "risk": True, "group": "C"},
-                ]
+            prompt = kwargs["json"]["prompt"]
+            assert "Generate exactly 1 rows." in prompt
+
+            rows = [
+                {"age": 30 + call_counter["count"], "height": 170.0 + call_counter["count"], "risk": True, "group": "A"},
+            ]
             return _DummyResponse({"response": json.dumps({"rows": rows})})
 
         raise AssertionError(f"Unexpected request: {method} {url}")
@@ -113,23 +110,32 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_ollama(monkeypatch
 
     assert list(sample.columns) == ["age", "height", "risk", "group"]
     assert len(sample) == 3
+    assert call_counter["count"] == 3
     assert sample["age"].between(28, 44).all()
     assert sample["height"].between(168.0, 182.1).all()
     assert sample["risk"].isin([True, False]).all()
 
 
 def test_llm_tabular_synthesizer_generates_requested_rows_via_openai_compatible(monkeypatch):
+    call_counter = {"count": 0}
+
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/v1/models"):
             return _DummyResponse({"data": [{"id": "gpt-test"}]})
 
         if method == "POST" and url.endswith("/v1/chat/completions"):
+            call_counter["count"] += 1
+            prompt = kwargs["json"]["messages"][1]["content"]
+            assert "Generate exactly 1 rows." in prompt
             content = json.dumps(
                 {
                     "rows": [
-                        {"age": 29, "height": 170.5, "risk": False, "group": "A"},
-                        {"age": 36, "height": 177.5, "risk": True, "group": "B"},
-                        {"age": 41, "height": 180.2, "risk": True, "group": "C"},
+                        {
+                            "age": 28 + call_counter["count"],
+                            "height": 169.5 + call_counter["count"],
+                            "risk": call_counter["count"] % 2 == 0,
+                            "group": chr(ord("A") + call_counter["count"] - 1),
+                        },
                     ]
                 }
             )
@@ -149,19 +155,27 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_openai_compatible(
     sample = synthesizer.sample()
 
     assert len(sample) == 3
-    assert sample["age"].tolist() == [29, 36, 41]
+    assert call_counter["count"] == 3
+    assert sample["age"].tolist() == [29, 30, 31]
     assert sample["group"].tolist() == ["A", "B", "C"]
 
 
 def test_llm_tabular_synthesizer_maps_positional_column_names(monkeypatch):
+    call_counter = {"count": 0}
+
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/api/tags"):
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
 
         if method == "POST" and url.endswith("/api/generate"):
+            call_counter["count"] += 1
             rows = [
-                {"column_a": 31, "column_b": 171.5, "column_c": True, "column_d": "A"},
-                {"column_a": 42, "column_b": 178.0, "column_c": False, "column_d": "B"},
+                {
+                    "column_a": 30 + call_counter["count"],
+                    "column_b": 170.5 + call_counter["count"],
+                    "column_c": call_counter["count"] % 2 == 1,
+                    "column_d": chr(ord("A") + call_counter["count"] - 1),
+                },
             ]
             return _DummyResponse({"response": json.dumps({"rows": rows})})
 
@@ -182,5 +196,6 @@ def test_llm_tabular_synthesizer_maps_positional_column_names(monkeypatch):
     sample = synthesizer.sample()
 
     assert len(sample) == 2
-    assert set(sample["age"].tolist()).issubset({31, 42})
-    assert set(sample["group"].tolist()).issubset({"A", "B"})
+    assert call_counter["count"] == 2
+    assert sample["age"].tolist() == [31, 32]
+    assert sample["group"].tolist() == ["A", "B"]

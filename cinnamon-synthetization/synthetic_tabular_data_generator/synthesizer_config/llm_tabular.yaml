@@ -84,7 +84,7 @@ configurations:
       - name: max_retries
         type: integer
         label: Max Retries
-        description: Retry attempts per batch if returned rows are invalid or incomplete.
+        description: Retry attempts per generated row if the returned JSON row is invalid or unusable.
         default_value: 3
         min_value: 1
         max_value: 20

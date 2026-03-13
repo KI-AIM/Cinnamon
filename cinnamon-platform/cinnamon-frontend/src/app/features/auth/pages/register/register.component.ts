@@ -4,6 +4,7 @@ import { AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn,
 import { MatDialog } from "@angular/material/dialog";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
+import { StateManagementService } from "@core/services/state-management.service";
 import { Observable, tap } from "rxjs";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { AppConfig, AppConfigService, PasswordRequirements } from "src/app/shared/services/app-config.service";
@@ -25,7 +26,17 @@ interface RegisterForm {
 export class RegisterComponent implements OnInit {
     registerForm: FormGroup<RegisterForm>;
 
+    /**
+     * If the password should be hidden by dots.
+     */
+    protected hidePassword: boolean = true;
+    /**
+     * If the repeated password should be hidden by dots.
+     */
+    protected hidePasswordRepeated: boolean = true;
+
     protected appConfig$: Observable<AppConfig>;
+
 
     constructor(
         private readonly appConfigService: AppConfigService,
@@ -33,6 +44,7 @@ export class RegisterComponent implements OnInit {
         private readonly matDialog: MatDialog,
         private readonly notificationService: NotificationService,
         private readonly router: Router,
+        private readonly stateManagementService: StateManagementService,
         private readonly titleService: TitleService,
         private readonly userService: UserService,
     ) {
@@ -43,19 +55,23 @@ export class RegisterComponent implements OnInit {
         this.appConfig$ = this.appConfigService.appConfig$.pipe(
             tap(appConfig => {
                 this.registerForm = new FormGroup<RegisterForm>({
-                    email: new FormControl<string>("", {
+                    email: new FormControl<string>(this.userService.cachedEmailInput ?? "", {
                         nonNullable: true,
                         validators: [Validators.required],
                     }),
-                    password: new FormControl<string>("", {
+                    password: new FormControl<string>(this.userService.cachedPasswordInput ?? "", {
                         nonNullable: true,
-                        validators: [this.passwordRequirementsValidator(appConfig.passwordRequirements)],
+                        validators: [Validators.required, this.passwordRequirementsValidator(appConfig.passwordRequirements)],
                     }),
                     passwordRepeated: new FormControl<string>("", {
                         nonNullable: true,
                         validators: [Validators.required],
                     }),
-                });
+                }, {validators: [this.passwordMatchesValidator()]});
+
+                // Reset the cached login inputs
+                this.userService.cachedEmailInput = null;
+                this.userService.cachedPasswordInput = null;
             }),
         );
     }
@@ -103,27 +119,39 @@ export class RegisterComponent implements OnInit {
     onSubmit(): void {
         const project = this.registerForm.controls["email"].value;
 
-        const result = this.userService.register(
-            this.registerForm.value as {
-                email: string; password: string; passwordRepeated: string;
-            }
-        );
-        result.subscribe({
+        const registerData = this.registerForm.value as { email: string; password: string; passwordRepeated: string };
+        this.userService.register(registerData).subscribe({
             next: () => this.handleRegisterSuccess(project),
             error: (e) => this.handleRegisterFailed(e),
         });
     }
 
     handleRegisterSuccess(projectName: string) {
-        this.router.navigate(['/open']).then(_ => {
-            const notification = new AppNotification("Successfully created project", 'success');
-            notification.project = projectName;
-            this.notificationService.addNotification(notification);
+        const loginData = {email: this.registerForm.value.email!, password: this.registerForm.value.password!};
+        this.userService.login(loginData).subscribe({
+            next: () => {
+                const notification = new AppNotification("Successfully created project", 'success');
+                notification.project = projectName;
+                this.notificationService.addNotification(notification);
+
+                this.stateManagementService.fetchAndRouteToCurrentStep();
+            },
+            error: (e) => this.handleRegisterFailed(e),
         });
     }
 
     handleRegisterFailed(error: HttpErrorResponse) {
         this.errorHandlingService.addError(error);
+    }
+
+    /**
+     * Navigates to the login page.
+     * Caches the current email and password inputs.
+     */
+    protected navigateToLogin() {
+        this.userService.cachedEmailInput = this.registerForm.value.email ?? null;
+        this.userService.cachedPasswordInput = this.registerForm.value.password ?? null;
+        this.router.navigate(["/open"]);
     }
 
     /**
@@ -177,6 +205,25 @@ export class RegisterComponent implements OnInit {
             }
 
             return hasLength && hasLowercase && hasDigit && hasSpecialChar && hasUppercase ? null : v;
+        }
+    }
+
+    /**
+     * Validates that the password and passwordRepeated inputs match.
+     */
+    private passwordMatchesValidator(): ValidatorFn {
+        return (control: AbstractControl): ValidationErrors | null => {
+            const passwordRepeatedControl = control.get("passwordRepeated")!;
+
+            const password = control.get("password")!.value;
+            const passwordRepeated = passwordRepeatedControl.value;
+
+            const error = password !== passwordRepeated ? {passwordMatch: true} : null;
+
+            passwordRepeatedControl.setErrors(error);
+            passwordRepeatedControl.markAsTouched({onlySelf: true, emitEvent: false});
+
+            return error;
         }
     }
 

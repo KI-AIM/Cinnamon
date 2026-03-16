@@ -87,6 +87,7 @@ import { WorkstepItemComponent } from './components/workstep-item/workstep-item.
 import { WorkstepTitleComponent } from "./components/workstep-title/workstep-title.component";
 import { WorkstepComponent } from "./components/workstep/workstep.component";
 import { NoSpaceValidatorDirective } from './directives/no-space-validator.directive';
+import { TrimDirective } from './directives/trim.directive';
 import { ColumnConfigurationNameFilterPipe } from "./pipes/column-configuration-name-filter.pipe";
 import { FormatNumberPipe } from './pipes/format-number.pipe';
 import { InjectMetricImportancePipe } from './pipes/inject-metric-importance.pipe';
@@ -145,6 +146,7 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         // Directives
         ExpansionPanelOverflowDirective,
         NoSpaceValidatorDirective,
+        TrimDirective,
         // Pipes
         ColumnConfigurationNameFilterPipe,
         FormatNumberPipe,
@@ -222,6 +224,7 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         // Directives
         ExpansionPanelOverflowDirective,
         NoSpaceValidatorDirective,
+        TrimDirective,
         // Pipes
         InstanceOfPipe,
         IsObjectPipe,

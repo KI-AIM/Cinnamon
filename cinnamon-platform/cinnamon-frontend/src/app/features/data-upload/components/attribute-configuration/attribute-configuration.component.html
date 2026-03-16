@@ -17,8 +17,7 @@
         <mat-form-field>
             <mat-label>Column name</mat-label>
 
-            <input type="text" matInput [id]="'name_' + attrNumber" (blur)="trimValue('name');"
-                   formControlName="name"/>
+            <input type="text" matInput [id]="'name_' + attrNumber" appTrim formControlName="name"/>
 
             <mat-icon matSuffix class="icon-enabled" (click)="nameInfoDialog.handleClick($event)">info</mat-icon>
             <mat-error *ngIf="columnConfigurationForm.controls['name'].hasError('noSpace')">

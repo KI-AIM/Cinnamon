@@ -42,6 +42,9 @@
                 </mat-option>
             </mat-select>
             <mat-icon class="icon-enabled" matSuffix (click)="typeInfoDialog.handleClick($event)">info</mat-icon>
+            <mat-error *ngIf="columnConfigurationForm.controls['type'].hasError('required')">
+                Type must not be empty
+            </mat-error>
             <mat-error *ngIf="columnConfigurationForm.controls['type'].hasError('undefined')">
                 Type must not be 'UNDEFINED'
             </mat-error>
@@ -58,6 +61,9 @@
                 </mat-option>
             </mat-select>
             <mat-icon matSuffix class="icon-enabled" (click)="scaleInfoDialog.handleClick($event)">info</mat-icon>
+            <mat-error *ngIf="columnConfigurationForm.controls['scale'].hasError('required')">
+                Scale must not be empty
+            </mat-error>
             <mat-error *ngIf="columnConfigurationForm.controls['scale'].getError('scale') as scaleError">
                 {{ scaleError.scale }} is not applicable to column type {{ scaleError.type }}
             </mat-error>

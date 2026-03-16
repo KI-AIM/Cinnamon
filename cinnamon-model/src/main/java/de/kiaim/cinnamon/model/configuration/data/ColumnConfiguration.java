@@ -59,7 +59,8 @@ public class ColumnConfiguration {
     DataType type = DataType.UNDEFINED;
 
     /**
-     * The scale of the column
+     * The scale of the column.
+     * Can be null between the upload step and the data configuration step.
      */
     @Schema(description = "Data scale of the column.", example = "INTERVAL")
     @NotNull(message = "The data scale must not be empty!")

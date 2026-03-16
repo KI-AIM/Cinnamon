@@ -129,6 +129,9 @@ export class DataConfigurationComponent implements OnInit {
                             this.attributeConfigurationform = this.createAttributeConfigurationForm(dataConfiguration, value.fileType);
                         }
 
+                        // Show errors on page load
+                        this.attributeConfigurationform.markAllAsTouched();
+
                         this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
                             this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
                         });
@@ -415,10 +418,15 @@ export class DataConfigurationComponent implements OnInit {
      */
     private validateScale(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
+            const typeControl = control.get('type')!;
             const scaleControl = control.get('scale')!;
 
-            const dataType = control.get('type')!.value as DataType;
+            const dataType = typeControl.value as DataType;
             const dataScale = scaleControl.value as DataScale;
+
+            if (dataType == null || dataScale == null) {
+                return null;
+            }
 
             const error = DataScaleMetadata[dataScale].applicableTo.includes(dataType)
                 ? null

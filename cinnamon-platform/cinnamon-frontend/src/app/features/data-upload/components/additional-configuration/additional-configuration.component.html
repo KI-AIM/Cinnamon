@@ -30,6 +30,15 @@
                         info
                     </mat-icon>
                 </mat-form-field>
+
+                @if (form.controls['configurations'].hasError('missingDateFormat')) {
+                    <div class="cinnamon-mat-error">An attribute of type Date must have a Date Format</div>
+                }
+                @if (form.controls['configurations'].hasError('missingDateTimeFormat')) {
+                    <div class="cinnamon-mat-error">
+                        An attribute of type Date & Time must have a Date & Time Format
+                    </div>
+                }
             </div>
 
             <hr />

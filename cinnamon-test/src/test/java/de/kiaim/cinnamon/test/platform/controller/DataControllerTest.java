@@ -240,6 +240,20 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void storeDataMissingDateFormat() throws Exception {
+		var configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		configuration.getConfigurations().get(1).getConfigurations().clear();
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/data").param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
+		       .andExpect(validationError("configuration.configurations[1].configurations",
+		                                  "The format must be provided for Date attributes!"));
+	}
+
+	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void storeDataAndDeleteData() throws Exception {

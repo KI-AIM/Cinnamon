@@ -329,7 +329,7 @@ export class DataConfigurationComponent implements OnInit {
                     validators: [Validators.required]
                 }],
                 configurations: this.formBuilder.array(addConfigs),
-            }, {validators: [this.validateScale()]});
+            }, {validators: [this.validateScale(), this.validateDateFormat()]});
 
             formArray.push(columnGroup);
         });
@@ -436,6 +436,54 @@ export class DataConfigurationComponent implements OnInit {
             scaleControl.markAsTouched();
 
             return error;
+        }
+    }
+
+    private validateDateFormat(): ValidatorFn {
+        return (control: AbstractControl): ValidationErrors | null => {
+            const dataType = control.get('type')!.value as DataType;
+
+            if (dataType == null || dataType === DataType.UNDEFINED) {
+                return null;
+            }
+
+            if (dataType === DataType.DATE) {
+                const additionalConfigurations = control.get('configurations') as FormArray;
+
+                let hasFormat = false;
+                for (const additionalConfiguration of additionalConfigurations.controls) {
+                    const nameControl = additionalConfiguration.get('name')!;
+                    if (nameControl.value === "DateFormatConfiguration") {
+                        hasFormat = true;
+                        break;
+                    }
+                }
+
+                if (!hasFormat) {
+                    const error = {missingDateFormat: true};
+                    additionalConfigurations.setErrors(error)
+                    return error;
+                }
+            } else if (dataType === DataType.DATE_TIME) {
+                const additionalConfigurations = control.get('configurations') as FormArray;
+
+                let hasFormat = false;
+                for (const additionalConfiguration of additionalConfigurations.controls) {
+                    const nameControl = additionalConfiguration.get('name')!;
+                    if (nameControl.value === "DateTimeFormatConfiguration") {
+                        hasFormat = true;
+                        break;
+                    }
+                }
+
+                if (!hasFormat) {
+                    const error = {missingDateTimeFormat: true};
+                    additionalConfigurations.setErrors(error)
+                    return error;
+                }
+            }
+
+            return null;
         }
     }
 

@@ -2,7 +2,6 @@ package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExecutionStepInformation;
-import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.PipelineInformation;
 import de.kiaim.cinnamon.platform.model.entity.PipelineEntity;
@@ -72,12 +71,10 @@ public class ProcessController {
 			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The application is in an invalid state.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))})
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
-	@GetMapping(value = "", produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
+	@GetMapping(value = "", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public PipelineInformation getPipeline(
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws InternalInvalidStateException {
@@ -95,20 +92,16 @@ public class ProcessController {
 			             content = @Content(schema = @Schema())),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid or a process is running.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The application is in an invalid state.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))})
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@PostMapping(value = "/configure",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Void> configureProcess(
 			@Parameter(description = "Step of which the process should be configured.")
 			@ParameterObject @Valid final ConfigureProcessRequest requestData,
@@ -134,20 +127,16 @@ public class ProcessController {
 			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "Starting the execution failed because of a failed request.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))})
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@PostMapping(value = {"/{stageName}/start", "/{stageName}/start/{jobName}"},
 				 consumes = {MediaType.ALL_VALUE},
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ExecutionStepInformation startProcess(
 			@Parameter(description = "The stage to start.")
 			@PathVariable final String stageName,
@@ -178,20 +167,16 @@ public class ProcessController {
 			             content = @Content(schema = @Schema(implementation = ExecutionStepInformation.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The step name is not valid.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The step has not been configured correctly or no corresponding process entity exists.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))})
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@PostMapping(value = "/{stageName}/cancel",
 	             consumes = {MediaType.ALL_VALUE},
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ExecutionStepInformation cancelProcess(
 			@Parameter(description = "Step of which the process should be canceled.")
 			@PathVariable final String stageName,
@@ -215,20 +200,16 @@ public class ProcessController {
 			             content = @Content(schema = @Schema(implementation = Void.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The process ID is not valid or the corresponding process has been canceled by the user.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The response could not be processed.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@PostMapping(value = "/{processId}/callback",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE}
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE}
 	)
 	public ResponseEntity<String> callback(
 			@Parameter(description = "Id of the process to mark as finished.")
@@ -247,20 +228,16 @@ public class ProcessController {
 			             content = @Content(schema = @Schema())),
 			@ApiResponse(responseCode = "400",
 			             description = "The process ID is not valid or the corresponding process has been canceled by the user.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The response could not be processed.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@PostMapping(value = "/{processId}/callback",
 	             consumes = MediaType.APPLICATION_JSON_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE}
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE}
 	)
 	public ResponseEntity<String> callbackJson(
 			@Parameter(description = "Id of the process to mark as finished.")

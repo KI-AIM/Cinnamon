@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.platform.controller;
 
-import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
@@ -47,7 +46,7 @@ public class UserController {
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = Boolean.class),
 			                                 examples = {@ExampleObject("true")}),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
+			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = Boolean.class),
 			                                 examples = {@ExampleObject("true")})}),
 			@ApiResponse(responseCode = "500",
@@ -55,7 +54,7 @@ public class UserController {
 			             content = @Content),
 	})
 	@GetMapping(value = "/login",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public boolean login(
 			@AuthenticationPrincipal UserEntity user
 	) throws InternalApplicationConfigurationException {
@@ -74,12 +73,12 @@ public class UserController {
 			             description = "Invalid request. Email is not available or passwords do not match.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
+			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 	})
 	@PostMapping(value = "/register",
-	             consumes = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE},
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
+	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE},
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> register(
 			@Parameter(description = "Information about the new user.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE),
@@ -100,20 +99,16 @@ public class UserController {
 			             description = "If the user has a project with a running process.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
+			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 			@ApiResponse(responseCode = "403",
 			             description = "The credentials do not match the authenticated user.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "An internal error occurred when deleting the user.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@DeleteMapping(value = "/delete",
 	               consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})

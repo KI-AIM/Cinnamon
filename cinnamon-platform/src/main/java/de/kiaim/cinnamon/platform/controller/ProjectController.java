@@ -66,7 +66,7 @@ public class ProjectController {
 	})
 	@PostMapping(value = "",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public StatusEntity createProject(
 			@Parameter(description = "Mode of the project.", required = true)
 			@RequestParam() final Mode mode,
@@ -85,7 +85,7 @@ public class ProjectController {
 			             content = @Content(schema = @Schema(implementation = StatusEntity.class))),
 	})
 	@GetMapping(value = "/status",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_X_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public StatusEntity getProjectStatus(
 			@AuthenticationPrincipal final UserEntity requestUser
 	) {
@@ -110,16 +110,12 @@ public class ProjectController {
 			             content = @Content(schema = @Schema(implementation = ProjectConfigurationDTO.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The given target is invalid or the project has a running process.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "Resetting the project failed.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@DeleteMapping(value = "/reset")
 	public void resetProject(
@@ -174,16 +170,12 @@ public class ProjectController {
 			                                mediaType = CustomMediaType.APPLICATION_ZIP_VALUE)),
 			@ApiResponse(responseCode = "400",
 			             description = "No data exist.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The ZIP file could not be created.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@GetMapping(value = "/zip",
 	            produces = {CustomMediaType.APPLICATION_ZIP_VALUE})
@@ -220,10 +212,8 @@ public class ProjectController {
 			                                mediaType = MediaType.ALL_VALUE)),
 			@ApiResponse(responseCode = "400",
 			             description = "No the job or the file does not exist.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_X_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@GetMapping(value = "/resultFile", produces = {MediaType.ALL_VALUE})
 	@Transactional(readOnly = true)

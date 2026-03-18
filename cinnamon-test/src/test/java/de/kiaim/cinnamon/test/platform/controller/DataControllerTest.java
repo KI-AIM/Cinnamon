@@ -5,7 +5,6 @@ import de.kiaim.cinnamon.model.configuration.data.RangeConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.StringPatternConfiguration;
 import de.kiaim.cinnamon.model.data.IntegerData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
-import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
@@ -446,7 +445,7 @@ class DataControllerTest extends ControllerTest {
 		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
-		                                      .accept(CustomMediaType.APPLICATION_X_YAML)
+		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(
@@ -494,7 +493,7 @@ class DataControllerTest extends ControllerTest {
 		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
-		                                      .accept(CustomMediaType.APPLICATION_X_YAML)
+		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataAsYaml()));
@@ -522,7 +521,7 @@ class DataControllerTest extends ControllerTest {
 		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
-		                                      .accept(CustomMediaType.APPLICATION_X_YAML)
+		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
@@ -548,7 +547,7 @@ class DataControllerTest extends ControllerTest {
 		final String formatErrorEncoding = ":(";
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
-		                                      .accept(CustomMediaType.APPLICATION_X_YAML)
+		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
@@ -564,7 +563,7 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
-		                                      .accept(CustomMediaType.APPLICATION_X_YAML)
+		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", "$null"))
@@ -580,7 +579,7 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
-		                                      .accept(CustomMediaType.APPLICATION_X_YAML)
+		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", "$value"))
@@ -671,7 +670,7 @@ class DataControllerTest extends ControllerTest {
 		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .accept(CustomMediaType.APPLICATION_X_YAML)
+		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsYaml()));
@@ -710,7 +709,7 @@ class DataControllerTest extends ControllerTest {
 		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .accept(CustomMediaType.APPLICATION_X_YAML)
+		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
@@ -736,7 +735,7 @@ class DataControllerTest extends ControllerTest {
 		final String formatErrorEncoding = ":(";
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
-		                                      .accept(CustomMediaType.APPLICATION_X_YAML)
+		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))

@@ -118,12 +118,17 @@ app-navigation{
     background-color: @color-foreground;
     border: @border-width;
     border-color: @color-gray-border;
-    align-content: center;
-    justify-content: center;
-    margin: 0;
+    position: relative;
     z-index: 1;
     clip-path: inset(0px 0px -10px 0px);
     font-size: 2.5em;
+}
+
+.title-text {
+    margin: auto;
+    // Account for the notification center icon
+    padding-left: 50px;
+    padding-right: 50px;
 }
 
 .page-content {

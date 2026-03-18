@@ -12,7 +12,6 @@ import { Delimiter, LineEnding, QuoteChar } from "@shared/model/csv-file-configu
 import { DataConfigurationEstimation } from "@shared/model/data-configuration";
 import { FileConfiguration, FileType } from "@shared/model/file-configuration";
 import { FileInformation } from "@shared/model/file-information";
-import { ImportPipeData } from "@shared/model/import-pipe-data";
 import { Status } from "@shared/model/status";
 import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
@@ -212,7 +211,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
             this.loadingService.setLoadingStatus(true);
 
             this.fileService.uploadFile(this.dataFile, this.fileConfiguration).subscribe({
-                next: value => {
+                next: () => {
                     this.fileService.invalidateCache();
                     if (this.configurationFile == null) {
                         // Estimate data configuration based on the data set
@@ -224,8 +223,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                         // Use data configuration from the selected file
                         this.configurationService.uploadAllConfigurations(this.configurationFile, [this.dataConfigurationService.CONFIGURATION_NAME]).subscribe(
                             {
-                                next: result => {
-                                    this.handleConfigurationUpload(result);
+                                next: () => {
+                                    this.handleConfigurationUpload();
                                 },
                                 error: err => {
                                     this.handleError(err, "Failed to import data configuration");
@@ -249,8 +248,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
             this.configurationService.uploadAllConfigurations(this.configurationFile, [this.dataConfigurationService.CONFIGURATION_NAME]).subscribe(
                 {
-                    next: result => {
-                        this.handleConfigurationUpload(result);
+                    next: () => {
+                        this.handleConfigurationUpload();
                     },
                     error: err => {
                         this.handleError(err, "Failed to import data configuration");
@@ -275,18 +274,9 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     /**
      * Handles the result of the configuration upload.
      * Redirects to the next step if the upload was successful, handles the errors otherwise.
-     * @param result The result.
      */
-    private handleConfigurationUpload(result: ImportPipeData[] | null) {
-        if (result === null || result.length === 0) {
-            this.handleError("An unexpected error occurred!");
-        } else if (result[0].error !== null) {
-            // Only one configuration is imported as defined when calling the upload
-            this.handleError(result[0].error);
-        } else {
-            // No error occurred
-            this.navigateToNextStep();
-        }
+    private handleConfigurationUpload() {
+        this.navigateToNextStep();
     }
 
     private setFileType(fileExtension: string) {

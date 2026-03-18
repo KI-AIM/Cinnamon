@@ -5,7 +5,6 @@ import { HttpClient } from "@angular/common/http";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
-import { Observable, of } from "rxjs";
 
 @Injectable({
     providedIn: 'root'
@@ -45,12 +44,9 @@ export class TechnicalEvaluationService extends AlgorithmService {
         configReg.availableAfterStep = Steps.TECHNICAL_EVALUATION;
         configReg.lockedAfterStep = null;
         configReg.displayName = "Technical Evaluation Configuration";
-        configReg.fetchConfig = null;
         // TODO fetch from server, user must be logged in for authentication
         configReg.name = "evaluation_configuration";
         configReg.orderNumber = 3;
-        configReg.storeConfig = null;
-        configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);
     }

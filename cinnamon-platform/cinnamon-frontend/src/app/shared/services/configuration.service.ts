@@ -1,10 +1,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
-import { catchError, concatMap, from, map, mergeMap, Observable, of, switchMap, tap, throwError, toArray } from "rxjs";
+import {
+    concatMap,
+    endWith,
+    filter,
+    from,
+    ignoreElements,
+    map,
+    Observable,
+    ReplaySubject,
+    switchMap,
+    tap,
+    throwError,
+} from "rxjs";
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
-import { parse, stringify } from 'yaml';
-import { ImportPipeData, ImportPipeDataIntern } from "../model/import-pipe-data";
+import { parse } from 'yaml';
+import { ConfigurationImportSummary, ConfigurationImportSummaryPart } from "../model/import-pipe-data";
 import { environments } from "src/environments/environment";
 import { Algorithm } from "../model/algorithm";
 
@@ -24,10 +36,23 @@ export class ConfigurationService {
         processStatus: {[processName: string]: boolean},
     }> = {};
 
+    /**
+     * Subject storing all configuration import parts.
+     */
+    private configImportSubject = new ReplaySubject<ConfigurationImportSummaryPart>();
+
     constructor(
         private httpClient: HttpClient,
     ) {
         this.registeredConfigurations = [];
+    }
+
+    /**
+     * Returns an observable for the configuration import summary.
+     * The observable emits the summary part whenever a new part is added to the summary.
+     */
+    public get configImport$(): Observable<ConfigurationImportSummaryPart> {
+        return this.configImportSubject.asObservable();
     }
 
     /**
@@ -122,33 +147,10 @@ export class ConfigurationService {
     }
 
     /**
-     * Returns the registered configuration with the given name if present.
-     * Otherwise, returns null.
-     * @param name Name of the registered configuration to return.
-     * @returns The registered configuration or null.
-     */
-    public getRegisteredConfigurationByName(name: string): ConfigurationRegisterData | null {
-        for (const config of this.registeredConfigurations) {
-            if (config.name === name) {
-                return config;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Registers a new configuration.
      * @param data Metadata of the configuration.
      */
     public registerConfiguration(data: ConfigurationRegisterData) {
-        if (data.fetchConfig === null) {
-            data.fetchConfig = (configName) => this.loadConfig(configName);
-        }
-        if (data.storeConfig == null) {
-            data.storeConfig = (configName, yamlConfigString) => this.storeConfig(configName, yamlConfigString);
-        }
-
         this.registeredConfigurations.push(data);
         this.registeredConfigurations = this.registeredConfigurations.sort((a, b) => a.orderNumber - b.orderNumber);
     }
@@ -181,103 +183,46 @@ export class ConfigurationService {
         return this.httpClient.post<void>(environments.apiUrl + "/api/config", formData);
     }
 
+
     /**
      * Uploads the configurations that are contained in the file and included in the given array.
-     * Uses the setConfigCallback function to update the configuration in the application.
-     * If configured, stores the configuration under the configured name into the database.
+     * The configurations are set to the UI using the configImport$ observable.
+     * Returns a summary containing the status for all configurations contained in the file.
+     *
      * @param file file containing the config to be loaded.
      * @param includedConfigurations Names of the configurations to upload. If null, all configurations will be uploaded.
-     * @return Observable of the import pipeline.
+     * @return Observable of the import result.
      */
-    uploadAllConfigurations(file: Blob, includedConfigurations: Array<string> | null): Observable<ImportPipeData[] | null> {
-        const readBlob = (blob: Blob) => new Observable<string | ArrayBuffer | null>((subscriber) => {
-            const reader = new FileReader();
-            reader.readAsText(blob);
-            reader.onload = () => {
-                subscriber.next(reader.result);
-                subscriber.complete();
-            };
-            reader.onerror = () => subscriber.error(reader.error);
-            return () => reader.abort();
-        });
+    public uploadAllConfigurations(file: Blob, includedConfigurations: Array<string> | null): Observable<ConfigurationImportSummary> {
+        const formData = new FormData();
+        formData.append("configuration", file);
+        formData.append("importParameters", JSON.stringify({configurationsToImport: includedConfigurations}));
 
-        return of(file).pipe(
-            switchMap(currentFile => readBlob(currentFile)),
-            mergeMap((result) => {
-                const configData = result as string;
-                const configurations = parse(configData) as object;
-
-                return from(Object.entries(configurations)).pipe(
-                    map(([name, config]) => {
-                        // Get the data for the configuration
-
-                        const configData = this.getRegisteredConfigurationByName(name);
-
-                        let yamlConfigString = null;
-                        if (configData != null && (includedConfigurations === null || includedConfigurations.includes(configData.name))) {
-                            const yamlConfig: { [a: string]: any } = {};
-                            yamlConfig[name] = config;
-                            yamlConfigString = stringify(yamlConfig);
-                        }
-
-                        const result = new ImportPipeDataIntern();
-                        result.name = name;
-                        result.configData = configData;
-                        result.yamlConfigString = yamlConfigString;
-                        return result;
-                    }),
-                    concatMap((object) => {
-                        // Store the configuration in the backend
-                        const name = object.name;
-                        const yamlConfigString = object.yamlConfigString;
-
-                        let ob;
-                        if (object.configData == null || yamlConfigString === null) {
-                            // If the config is not in the config file, use 0 as a placeholder
-                            ob = of(void 0);
-                        } else {
-                            // Cannot be null after registering
-                            ob = object.configData.storeConfig!(name, yamlConfigString);
-                        }
-
-                        return ob.pipe(
-                            map(() => {
-                                object.success = true;
-                                return object as ImportPipeData;
-                            }),
-                            catchError((error) => {
-                                object.error = error;
-                                object.success = false;
-                                return of(object as ImportPipeData);
-                            }),
-                        );
-                    }),
-                    tap((object) => {
-                        // Set the configuration in the UI
-                        if (object.configData !== null && object.yamlConfigString !== null) {
-                            object.configData.setConfigCallback(object);
-                        }
-                    }),
-                    toArray(),
-                );
-            }),
-            switchMap(result => {
-                if (includedConfigurations !== null) {
-                    // Look if all configurations are present
-                    const missing: string[] = [];
-                    for (const config of includedConfigurations) {
-                        if (!result.some(value => value.name === config)) {
-                            missing.push(config);
-                        }
+        // TODO currently there is always just one configuration imported.
+        //  If multiple configurations are uploaded, handling for PARTIAL_ERROR must be implemented.
+        return this.httpClient
+            .post<ConfigurationImportSummary>(`${environments.apiUrl}/api/config/import`, formData)
+            .pipe(
+                switchMap((summary) => {
+                    if (summary.status === 'ERROR') {
+                        return throwError(() => new Error('Configuration import failed.'));
                     }
 
-                    if (missing.length > 0) {
-                        return throwError(() => "Invalid configuration file! The configuration must contain the following properties: " + missing.map(val => "'" + val + "'").join(", "));
-                    }
-                }
-                return of(result);
-            }),
-        );
+                    return from(summary.configurationImportSummaries).pipe(
+                        filter((part) => part.status === 'SUCCESS'),
+                        concatMap((part) => {
+                            return this.loadConfig(part.configurationName).pipe(
+                                tap((config) => {
+                                    part.configuration = config;
+                                    this.configImportSubject.next(part);
+                                }),
+                            );
+                        }),
+                        ignoreElements(),
+                        endWith(summary),
+                    );
+                }),
+            );
     }
 
     /**

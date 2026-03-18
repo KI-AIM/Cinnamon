@@ -56,12 +56,9 @@ export class RiskAssessmentService extends AlgorithmService {
         configReg.availableAfterStep = Steps.RISK_EVALUATION;
         configReg.lockedAfterStep = null;
         configReg.displayName = "Risk Assessment Configuration";
-        configReg.fetchConfig = null;
         // TODO fetch from server, user must be logged in for authentication
         configReg.name = "risk_assessment_configuration";
         configReg.orderNumber = 4;
-        configReg.storeConfig = null;
-        configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);
     }

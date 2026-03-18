@@ -1,13 +1,9 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmDefinition;
 import de.kiaim.cinnamon.model.configuration.algorithms.AvailableAlgorithms;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
-import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
-import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.exception.*;
@@ -18,12 +14,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -36,12 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 public class ExternalConfigurationService {
-
-	/**
-	 * Key for the data configuration (see {@link de.kiaim.cinnamon.model.configuration.data.DataConfiguration}).
-	 * Matches the name of the field {@link de.kiaim.cinnamon.model.configuration.data.DataConfiguration#getConfigurations()}.
-	 */
-	private static final String DATA_CONFIGURATION_KEY = "configurations";
 
 	private final ObjectMapper yamlMapper;
 	private final WebClient yamlWebClient;
@@ -221,122 +208,6 @@ public class ExternalConfigurationService {
 		final AlgorithmDefinition algorithmDefinition = fetchAlgorithmDefinition(configurationName, definitionPath);
 		injectParameters(project, algorithmDefinition);
 		return algorithmDefinition;
-	}
-
-	/**
-	 * Imports a configuration file into the project.
-	 * The root object of the YAML must be an object with its keys being the configuration names as defined in the cinnamon configuration.
-	 * Invalid configuration names that are not selected for import will not cause errors.
-	 *
-	 * @param project    The project the configurations are imported to.
-	 * @param file       The configuration file.
-	 * @param parameters Parameters for the import.
-	 * @return The summary of the imported configurations.
-	 * @throws BadConfigurationFileException If the file is not a valid YAML file.
-	 * @throws BadFileException              If the file cannot be read.
-	 */
-	@Transactional(rollbackFor = {BadConfigurationFileException.class})
-	public ConfigurationImportSummary importConfigurations(
-			final ProjectEntity project,
-			final MultipartFile file,
-			final ConfigurationImportParameters parameters
-	) throws BadConfigurationFileException, BadFileException {
-		final JsonNode yamlConfig;
-
-		try {
-			yamlConfig = yamlMapper.readTree(file.getInputStream());
-		} catch (JsonProcessingException e) {
-			throw new BadConfigurationFileException(BadConfigurationFileException.INVALID_YAML,
-			                                        "Invalid YAML file format", e);
-		} catch (IOException e) {
-			throw new BadFileException(BadFileException.NOT_READABLE, "File could not be read", e);
-		}
-
-		return importConfigurations(project, yamlConfig, parameters);
-	}
-
-	/**
-	 * See {@link #importConfigurations(ProjectEntity, MultipartFile, ConfigurationImportParameters)}
-	 */
-	private ConfigurationImportSummary importConfigurations(
-			final ProjectEntity project,
-			final JsonNode yamlConfig,
-			final ConfigurationImportParameters parameters
-	) throws BadConfigurationFileException {
-		if (!yamlConfig.isObject()) {
-			throw new BadConfigurationFileException(BadConfigurationFileException.ROOT_NOT_OBJECT,
-			                                        "The root of the configuration file must be an object!");
-		}
-
-		final var importSummary = new ConfigurationImportSummary(parameters);
-
-		final var configItr = yamlConfig.fields();
-
-		while (configItr.hasNext()) {
-			final var configEntry = configItr.next();
-			final var configName = configEntry.getKey();
-
-			if (parameters.getConfigurationsToImport() != null &&
-			    !parameters.getConfigurationsToImport().contains(configName)) {
-				importSummary.addIgnored(configName);
-				continue;
-			}
-
-			final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(configName, configEntry.getValue());
-
-			if (configName.equals(DATA_CONFIGURATION_KEY)) {
-
-				final DataConfiguration dataConfiguration;
-				try {
-					dataConfiguration = yamlMapper.treeToValue(singleConfigNode, DataConfiguration.class);
-				} catch (final JsonProcessingException e) {
-					importSummary.addError(configName,
-					                       new InternalIOException(InternalIOException.DATA_CONFIGURATION_SERIALIZATION,
-					                                               "Failed to serialize data configuration!",
-					                                               e).getErrorCode());
-					continue;
-				}
-
-				try {
-					databaseService.storeOriginalDataConfiguration(dataConfiguration, project);
-					importSummary.addSuccess(configName);
-				} catch (final BadDataConfigurationException | BadDataSetIdException |
-				               InternalDataSetPersistenceException | InternalIOException | BadStateException e) {
-					importSummary.addError(configName, e.getErrorCode());
-				}
-
-			} else {
-
-				try {
-					stepService.getExternalConfiguration(configName);
-				} catch (final BadConfigurationNameException e) {
-					importSummary.addError(configName, e.getErrorCode());
-					continue;
-				}
-
-				try {
-					databaseService.storeConfiguration(configName, yamlMapper.writeValueAsString(singleConfigNode),
-					                                   project);
-					importSummary.addSuccess(configName);
-				} catch (final BadStateException | BadConfigurationNameException e) {
-					importSummary.addError(configName, e.getErrorCode());
-				} catch (final JsonProcessingException e) {
-					importSummary.addError(configName,
-					                       new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
-					                                               "Failed to serialize configuration!",
-					                                               e).getErrorCode());
-				}
-			}
-		}
-
-		if (importSummary.getStatus() == ConfigurationImportSummary.ConfigurationImportStatus.ERROR) {
-			// Throw exception to trigger rollback
-			throw new BadConfigurationFileException(BadConfigurationFileException.IMPORT_FAILED,
-			                                        "Failed to import configurations!",
-			                                        new ErrorDetails().withConfigurationImportSummary(importSummary));
-		}
-
-		return importSummary;
 	}
 
 	/**

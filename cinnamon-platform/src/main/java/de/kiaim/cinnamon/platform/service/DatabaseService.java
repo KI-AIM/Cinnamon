@@ -486,6 +486,26 @@ public class DatabaseService {
 	}
 
 	/**
+	 * Exports the configuration of the original dataset of the given project.
+	 *
+	 * @param project The project of which the configuration should be exported.
+	 * @return The data configuration.
+	 * @throws BadStateException   If the data configuration does not exist.
+	 * @throws InternalIOException If the DataConfiguration could not be deserialized from the stored JSON.
+	 */
+	@Transactional
+	public DataConfiguration exportOriginalDataConfiguration(final ProjectEntity project)
+			throws BadStateException, InternalIOException {
+		if (project.getOriginalData().getDataSet() == null) {
+			throw new BadStateException(BadStateException.NO_ORIGINAL_DATA_CONFIGURATION,
+			                            "No original data configuration available!");
+		}
+
+		final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
+		return getDetachedDataConfiguration(dataSetEntity);
+	}
+
+	/**
 	 * Exports the data set associated with the given project.
 	 *
 	 * @param project         The project of which the data set should be exported.

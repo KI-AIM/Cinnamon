@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
+import de.kiaim.cinnamon.platform.service.ConfigurationService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import de.kiaim.cinnamon.test.util.AlgorithmTestHelper;
@@ -24,8 +25,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Transactional
 @WithMockWebServer
@@ -339,7 +339,19 @@ class ConfigurationControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
 		                                      .param("name", CONFIGURATION_NAME))
 		       .andExpect(status().isOk())
+		       .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE))
 		       .andExpect(content().string(config));
+	}
+
+	@Test
+	void loadDataConfiguration() throws Exception {
+		postData();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
+		                                      .param("name", ConfigurationService.DATA_CONFIGURATION_KEY))
+		       .andExpect(status().isOk())
+		       .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+		       .andExpect(content().string(DataConfigurationTestHelper.generateDataConfigurationAsJson()));
 	}
 
 	@Test

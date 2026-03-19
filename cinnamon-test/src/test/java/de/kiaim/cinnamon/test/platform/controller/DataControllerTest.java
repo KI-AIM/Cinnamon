@@ -1,7 +1,9 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.RangeConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.StringPatternConfiguration;
+import de.kiaim.cinnamon.model.data.IntegerData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
@@ -206,12 +208,7 @@ class DataControllerTest extends ControllerTest {
 		var configuration = DataConfigurationTestHelper.generateDataConfiguration();
 		configuration.getConfigurations().get(0).setType(DataType.UNDEFINED);
 		var string = jsonMapper.writeValueAsString(configuration);
-
-		mockMvc.perform(multipart("/api/data/configuration")
-				                .param("configuration", string))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Request validation failed"))
-		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")));
+		testStoreConfig(string);
 	}
 
 	@Test
@@ -229,6 +226,48 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta[0].source[0]'"))
 		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "9", "3")));
+	}
+
+	@Test
+	void storeDataUndefinedDataType() throws Exception {
+		var configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		configuration.getConfigurations().get(0).setType(DataType.UNDEFINED);
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/data")
+				                .param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")));
+	}
+
+	@Test
+	void storeDataMissingDateFormat() throws Exception {
+		var configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		configuration.getConfigurations().get(1).getConfigurations().clear();
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/data").param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
+		       .andExpect(validationError("configuration.configurations[1].configurations",
+		                                  "The format must be provided for Date attributes!"));
+	}
+
+	@Test
+	void storeDataRangeMismatch() throws Exception {
+		var configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		var range = new RangeConfiguration(new IntegerData(1), new IntegerData(10));
+		configuration.getConfigurations().get(1).getConfigurations().add(range);
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/data").param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
+		       .andExpect(validationError("configuration.configurations[1]",
+		                                  "Could not convert 'minValue' and 'maxValue' of RangeConfiguration because of an invalid format!"));
 	}
 
 	@Test

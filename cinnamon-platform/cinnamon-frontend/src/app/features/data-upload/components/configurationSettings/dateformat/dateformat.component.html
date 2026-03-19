@@ -3,6 +3,10 @@
         <mat-label>Date Format</mat-label>
         <input matInput formControlName="dateFormatter"/>
         <mat-icon matSuffix class="icon-enabled" (click)="dateFormatInfoDialog.handleClick($event)">info</mat-icon>
+
+        <mat-error *ngIf="form.controls['dateFormatter'].hasError('required')">
+            Format must not be empty
+        </mat-error>
     </mat-form-field>
 </div>
 

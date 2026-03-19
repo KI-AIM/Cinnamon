@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.serialization.ColumnConfigurationDeserializer;
 import de.kiaim.cinnamon.model.validation.DataTypeNotUndefined;
+import de.kiaim.cinnamon.model.validation.DateFormatProvidedConstraint;
 import de.kiaim.cinnamon.model.validation.ScaleApplicableToType;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,7 +27,7 @@ import java.util.List;
  * configurations
  */
 @Schema(description = "Configuration of a single column in the data set.")
-@ScaleApplicableToType
+@DateFormatProvidedConstraint @ScaleApplicableToType
 @NoArgsConstructor @AllArgsConstructor
 @Getter @Setter
 @EqualsAndHashCode
@@ -59,7 +60,8 @@ public class ColumnConfiguration {
     DataType type = DataType.UNDEFINED;
 
     /**
-     * The scale of the column
+     * The scale of the column.
+     * Can be null between the upload step and the data configuration step.
      */
     @Schema(description = "Data scale of the column.", example = "INTERVAL")
     @NotNull(message = "The data scale must not be empty!")

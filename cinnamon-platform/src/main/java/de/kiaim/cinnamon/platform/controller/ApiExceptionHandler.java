@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.controller;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.service.ResponseService;
@@ -10,7 +11,9 @@ import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.data.util.Pair;
 import org.springframework.http.*;
+import org.springframework.lang.Nullable;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -91,20 +94,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		Map<String, Set<String>> errors = new HashMap<>();
 		// The order of field errors is not deterministic
 		for (final FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
-			if (errors.containsKey(fieldError.getField())) {
-				errors.get(fieldError.getField()).add(fieldError.getDefaultMessage());
-			} else {
-				Set<String> fieldErrors = new HashSet<>();
-				String message = fieldError.getDefaultMessage();
-
-				// TODO hacked in message for failed conversion
-				if (message.startsWith("Failed to convert property value of type")) {
-					message = "Failed to convert value";
-				}
-
-				fieldErrors.add(message);
-				errors.put(fieldError.getField(), fieldErrors);
-			}
+			final var message = resolveFieldErrorMessage(fieldError);
+			addFieldError(message, errors);
 		}
 
 		final String errorCode = ApiException.assembleErrorCode(ApiException.VALIDATION, VALIDATION_ERROR, "1");
@@ -137,4 +128,100 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return responseService.prepareErrorResponseEntity(headers, request, status, errorCode,
 		                                                  "Invalid parameter: '" + ex.getPropertyName() + "'", null);
 	}
+
+	/**
+	 * Resolves the field path and error message for the given field error.
+	 *
+	 * @param fieldError The field error.
+	 * @return Pair containing the field path and error message.
+	 */
+	private Pair<String, String> resolveFieldErrorMessage(final FieldError fieldError) {
+		if (fieldError.isBindingFailure()) {
+			final var unwrappedMessage = tryExtractOriginalBindingMessage(fieldError);
+			return unwrappedMessage != null
+			       ? unwrappedMessage
+			       : Pair.of(fieldError.getField(), "Failed to convert value");
+		}
+
+		return Pair.of(fieldError.getField(), fieldError.getDefaultMessage());
+	}
+
+	/**
+	 * Tries to extract the original binding message from the given field error.
+	 * Returns null if no original binding message could be extracted.
+	 *
+	 * @param fieldError The field error.
+	 * @return Pair containing the field path and error message.
+	 */
+	@Nullable
+	private Pair<String, String> tryExtractOriginalBindingMessage(final FieldError fieldError) {
+		final List<Class<? extends Throwable>> candidates = List.of(
+				org.springframework.core.convert.ConversionFailedException.class,
+				TypeMismatchException.class,
+				IllegalArgumentException.class
+		);
+
+		for (final Class<? extends Throwable> candidate : candidates) {
+			try {
+				final Throwable exception = fieldError.unwrap(candidate);
+				final var message = extractBestMessage(exception, fieldError.getField());
+				if (message != null) {
+					return message;
+				}
+			} catch (final IllegalArgumentException ignored) {
+				// not available
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Extracts the error message and field path from the given throwable.
+	 *
+	 * @param throwable Cause of the validation error.
+	 * @param fieldName Root of the field path.
+	 * @return Pair containing the field path and error message.
+	 */
+	@Nullable
+	private Pair<String, String> extractBestMessage(final Throwable throwable, final String fieldName) {
+		if (throwable == null) {
+			return null;
+		}
+
+		if (throwable.getCause() instanceof JsonMappingException jsonMappingException) {
+			final var path = jsonMappingException.getPath();
+			var field = fieldName + ".";
+			for (final var segment : path) {
+				if (segment.getFieldName() != null) {
+					field += segment.getFieldName();
+				} else {
+					field += "[" + segment.getIndex() + "]";
+				}
+			}
+
+			final var message = jsonMappingException.getMessage().split("\n at")[0];
+			return Pair.of(field, message);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Adds the given field error to the given errors map.
+	 * The first element of the pair is the field name, the second element is the error message.
+	 *
+	 * @param fieldError The field error to be added.
+	 * @param errors Map containing the errors.
+	 */
+	private void addFieldError(final Pair<String, String> fieldError, final Map<String, Set<String>> errors) {
+		if (errors.containsKey(fieldError.getFirst())) {
+			errors.get(fieldError.getFirst()).add(fieldError.getSecond());
+		} else {
+			final Set<String> fieldErrors = new HashSet<>();
+			fieldErrors.add(fieldError.getSecond());
+			errors.put(fieldError.getFirst(), fieldErrors);
+		}
+	}
+
 }

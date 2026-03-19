@@ -80,6 +80,7 @@ app-navigation{
 
 .content-right {
     flex-direction: column;
+    min-height: 0;
     width: 75vw;
 }
 
@@ -92,6 +93,13 @@ app-navigation{
 .cinnamon-error {
     color: var(--mat-form-field-error-text-color);
     font-size: 12px;
+}
+
+.cinnamon-mat-error {
+    .cinnamon-error;
+
+    margin-top: -22px;
+    margin-left: 16px;
 }
 
 .dialog-title {
@@ -111,22 +119,36 @@ app-navigation{
     background-color: @color-foreground;
     border: @border-width;
     border-color: @color-gray-border;
-    align-content: center;
-    justify-content: center;
-    margin: 0;
-    z-index: 1;
+    position: relative;
+    // Higher z-index than the notification
+    z-index: 11;
     clip-path: inset(0px 0px -10px 0px);
     font-size: 2.5em;
+}
+
+.title-text {
+    margin: auto;
+    // Account for the notification center icon
+    padding-left: 50px;
+    padding-right: 50px;
+}
+
+.page-wrapper {
+    background-color: @color-background;
+    min-height: 0;
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    flex: 1 1 auto;
 }
 
 .page-content {
     margin: 0px;
     border: @border-width;
     border-color: @color-gray-border;
-    background-color: @color-background;
     padding: 40px;
-    position: relative;
-    flex-grow: 1;
+    min-height: 0;
+    flex: 1 1 auto;
     overflow: auto;
 }
 

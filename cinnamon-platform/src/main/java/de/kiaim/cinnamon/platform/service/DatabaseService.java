@@ -1423,10 +1423,12 @@ public class DatabaseService {
 		for (final ColumnConfiguration columnConfiguration : dataConfiguration.getConfigurations()) {
 			numberColumns++;
 
-			switch (columnConfiguration.getScale()) {
-				case DATE -> numberDateColumns++;
-				case NOMINAL -> numberCategoricalColumns++;
-				case ORDINAL, INTERVAL, RATIO -> numberNumericColumns++;
+			if (columnConfiguration.getScale() != null) {
+				switch (columnConfiguration.getScale()) {
+					case DATE -> numberDateColumns++;
+					case NOMINAL -> numberCategoricalColumns++;
+					case ORDINAL, INTERVAL, RATIO -> numberNumericColumns++;
+				}
 			}
 		}
 

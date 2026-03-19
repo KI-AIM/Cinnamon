@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { FormArray, FormGroup } from '@angular/forms';
 import { MatDialog } from "@angular/material/dialog";
 import { FileType } from "@shared/model/file-configuration";
 import { DataScale, DataScaleMetadata } from 'src/app/shared/model/data-scale';
@@ -42,14 +42,43 @@ export class AttributeConfigurationComponent implements AfterViewInit {
                 this.columnConfigurationForm.controls['name'].markAsTouched();
             }
         });
+
+        this.columnConfigurationForm.controls['type'].valueChanges.subscribe((newValue) => {
+            // Clear values of RangeConfiguration when the data type changes
+            const additionalConfigurations = this.columnConfigurationForm.controls['configurations'] as FormArray;
+            for (const config of additionalConfigurations.controls) {
+                const name = config.get('name')?.value;
+                if (name === "RangeConfiguration") {
+                    const oldMinValue = config.get('minValue')?.value;
+                    if (((newValue === DataType.INTEGER || newValue === DataType.DECIMAL) && !this.isNumeric(oldMinValue)) ||
+                        newValue === DataType.DATE || newValue === DataType.DATE_TIME) {
+                        config.get('minValue')?.setValue(null);
+                        config.get('minValue')?.markAsTouched();
+                    }
+
+                    const oldMaxValue = config.get('maxValue')?.value;
+                    if (((newValue === DataType.INTEGER || newValue === DataType.DECIMAL) && !this.isNumeric(oldMaxValue)) ||
+                        newValue === DataType.DATE || newValue === DataType.DATE_TIME) {
+                        config.get('maxValue')?.setValue(null);
+                        config.get('maxValue')?.markAsTouched();
+                    }
+                }
+            }
+        });
     }
 
-    protected trimValue(field: string) {
-        const originalValue = this.columnConfigurationForm.controls[field].value;
-        const trimmedValue = originalValue.trim();
-        if (originalValue !== trimmedValue) {
-            this.columnConfigurationForm.controls[field].patchValue(trimmedValue);
+    /**
+     * Checks if the given value is numeric.
+     * @param value The value to check.
+     * @returns True if the value is numeric, false otherwise.
+     */
+    private isNumeric(value: unknown): boolean {
+        if (typeof value !== 'string') {
+            return false;
         }
+
+        const trimmed = value.trim();
+        return /^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(trimmed);
     }
 
 }

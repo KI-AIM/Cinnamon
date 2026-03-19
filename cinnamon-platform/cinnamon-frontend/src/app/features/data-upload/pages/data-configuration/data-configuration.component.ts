@@ -129,6 +129,9 @@ export class DataConfigurationComponent implements OnInit {
                             this.attributeConfigurationform = this.createAttributeConfigurationForm(dataConfiguration, value.fileType);
                         }
 
+                        // Show errors on page load
+                        this.attributeConfigurationform.markAllAsTouched();
+
                         this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
                             this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
                         });
@@ -326,7 +329,7 @@ export class DataConfigurationComponent implements OnInit {
                     validators: [Validators.required]
                 }],
                 configurations: this.formBuilder.array(addConfigs),
-            }, {validators: [this.validateScale()]});
+            }, {validators: [this.validateScale(), this.validateDateFormat()]});
 
             formArray.push(columnGroup);
         });
@@ -415,10 +418,15 @@ export class DataConfigurationComponent implements OnInit {
      */
     private validateScale(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
+            const typeControl = control.get('type')!;
             const scaleControl = control.get('scale')!;
 
-            const dataType = control.get('type')!.value as DataType;
+            const dataType = typeControl.value as DataType;
             const dataScale = scaleControl.value as DataScale;
+
+            if (dataType == null || dataScale == null) {
+                return null;
+            }
 
             const error = DataScaleMetadata[dataScale].applicableTo.includes(dataType)
                 ? null
@@ -428,6 +436,54 @@ export class DataConfigurationComponent implements OnInit {
             scaleControl.markAsTouched();
 
             return error;
+        }
+    }
+
+    private validateDateFormat(): ValidatorFn {
+        return (control: AbstractControl): ValidationErrors | null => {
+            const dataType = control.get('type')!.value as DataType;
+
+            if (dataType == null || dataType === DataType.UNDEFINED) {
+                return null;
+            }
+
+            if (dataType === DataType.DATE) {
+                const additionalConfigurations = control.get('configurations') as FormArray;
+
+                let hasFormat = false;
+                for (const additionalConfiguration of additionalConfigurations.controls) {
+                    const nameControl = additionalConfiguration.get('name')!;
+                    if (nameControl.value === "DateFormatConfiguration") {
+                        hasFormat = true;
+                        break;
+                    }
+                }
+
+                if (!hasFormat) {
+                    const error = {missingDateFormat: true};
+                    additionalConfigurations.setErrors(error)
+                    return error;
+                }
+            } else if (dataType === DataType.DATE_TIME) {
+                const additionalConfigurations = control.get('configurations') as FormArray;
+
+                let hasFormat = false;
+                for (const additionalConfiguration of additionalConfigurations.controls) {
+                    const nameControl = additionalConfiguration.get('name')!;
+                    if (nameControl.value === "DateTimeFormatConfiguration") {
+                        hasFormat = true;
+                        break;
+                    }
+                }
+
+                if (!hasFormat) {
+                    const error = {missingDateTimeFormat: true};
+                    additionalConfigurations.setErrors(error)
+                    return error;
+                }
+            }
+
+            return null;
         }
     }
 

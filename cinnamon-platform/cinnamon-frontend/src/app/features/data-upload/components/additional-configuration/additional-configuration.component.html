@@ -1,5 +1,8 @@
-<a title="Additional Settings" (click)="openDialog(additionalSettings)">
-    <mat-icon class="icon-enabled" fontIcon="settings"></mat-icon>
+<a title="Additional Settings" class="icon icon-enabled" [class.icon-error]="isInvalid"
+   (click)="openDialog(additionalSettings)">
+    <mat-icon>settings</mat-icon>
+    <div class="icon-error-background"></div>
+    <mat-icon class="icon-error-foreground">error</mat-icon>
 </a>
 
 <ng-template #additionalSettings>
@@ -27,6 +30,15 @@
                         info
                     </mat-icon>
                 </mat-form-field>
+
+                @if (form.controls['configurations'].hasError('missingDateFormat')) {
+                    <div class="cinnamon-mat-error">An attribute of type Date must have a Date Format</div>
+                }
+                @if (form.controls['configurations'].hasError('missingDateTimeFormat')) {
+                    <div class="cinnamon-mat-error">
+                        An attribute of type Date & Time must have a Date & Time Format
+                    </div>
+                }
             </div>
 
             <hr />
@@ -59,7 +71,9 @@
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close type="button" color="primary" (click)="cancel()">Cancel</button>
-        <button mat-raised-button mat-dialog-close type="button" color="primary" [disabled]="disabled">Confirm</button>
+        <button mat-raised-button mat-dialog-close type="button" color="primary" [disabled]="disabled || isInvalid">
+            Confirm
+        </button>
     </mat-dialog-actions>
 </ng-template>
 

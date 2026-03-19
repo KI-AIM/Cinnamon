@@ -3,11 +3,20 @@
         <mat-label>Minimum Value</mat-label>
         <input matInput [type]="getInputType()" formControlName="minValue"/>
         <mat-icon matSuffix class="icon-enabled" (click)="minimumInfoDialog.handleClick($event);">info</mat-icon>
+
+        <mat-error *ngIf="form.controls['minValue'].hasError('required')">
+            Minimum value must not be empty
+        </mat-error>
     </mat-form-field>
+
     <mat-form-field>
         <mat-label>Maximum Value</mat-label>
         <input matInput [type]="getInputType()" #range formControlName="maxValue"/>
         <mat-icon matSuffix class="icon-enabled" (click)="maximumInfoDialog.handleClick($event);">info</mat-icon>
+
+        <mat-error *ngIf="form.controls['maxValue'].hasError('required')">
+            Maximum value must not be empty
+        </mat-error>
     </mat-form-field>
 </div>
 

@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 import java.util.Collection;
 import java.util.Map;
@@ -181,12 +180,12 @@ public class ExternalConfigurationService {
 		} catch (final RequestRuntimeException e) {
 			final String message = httpService.buildError(e, "fetch available algorithms");
 			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
-			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message, errorDetails);
-		} catch (WebClientRequestException e) {
+			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message, errorDetails, e);
+		} catch (final Exception e) {
 			var message = "Failed to fetch available algorithms for configuration '" + configurationName + "'! " +
 			              e.getMessage();
 			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
-			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message, errorDetails);
+			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message, errorDetails, e);
 		}
 	}
 
@@ -301,14 +300,14 @@ public class ExternalConfigurationService {
 			final String message = httpService.buildError(e, "fetch the status");
 			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
 			throw new InternalRequestException(InternalRequestException.CONFIGURATION_DEFINITION, message,
-			                                   errorDetails);
-		} catch (WebClientRequestException e) {
+			                                   errorDetails, e);
+		} catch (final Exception e) {
 			var message = "Failed to fetch algorithms definition for configuration '" + configurationName +
 			              "' and algorithm '" + definitionPath + "'! " + e.getMessage();
 
 			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
 			throw new InternalRequestException(InternalRequestException.CONFIGURATION_DEFINITION, message,
-			                                   errorDetails);
+			                                   errorDetails, e);
 		}
 	}
 

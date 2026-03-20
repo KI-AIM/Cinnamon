@@ -53,6 +53,15 @@ public abstract class ApiException extends Exception {
 		this.exceptionCode = exceptionCode;
 	}
 
+	public ApiException(final String exceptionCode,
+	                    final String message,
+	                    final ErrorDetails errorDetails,
+	                    final Throwable cause) {
+		super(message, cause);
+		this.exceptionCode = exceptionCode;
+		this.errorDetails = errorDetails;
+	}
+
 	public abstract HttpStatusCode getStatus();
 
 	protected abstract String getExceptionTypeCode();

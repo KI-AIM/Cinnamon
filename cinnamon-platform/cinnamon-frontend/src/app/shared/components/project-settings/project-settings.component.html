@@ -27,8 +27,10 @@
                                 Project Display Name
                             </div>
                             <mat-form-field class="w-100 hide-mat-error-gap">
-                                <input matInput formControlName="projectName">
-                                <mat-error *ngIf="projectSettingsForm!.get('projectName')!.hasError('required')">Mist</mat-error>
+                                <input matInput formControlName="projectName" appTrim>
+                                <mat-error *ngIf="projectSettingsForm!.get('projectName')!.hasError('required')">
+                                    Display Name must not be blank
+                                </mat-error>
                             </mat-form-field>
                         </div>
 

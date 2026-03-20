@@ -2,11 +2,11 @@ import { ConfigurationObject } from "@shared/model/anonymization-attribute-confi
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
-import { map, Observable, of, switchMap, tap } from "rxjs";
+import { filter, map, Observable, of, switchMap, tap } from "rxjs";
 import { parse } from "yaml";
 import { plainToInstance } from "class-transformer";
 import { ConfigurationService } from "./configuration.service";
-import { ImportPipeData } from "../model/import-pipe-data";
+import { ConfigurationImportSummaryPart } from "../model/import-pipe-data";
 import { environments } from "src/environments/environment";
 
 export abstract class AlgorithmService {
@@ -15,7 +15,7 @@ export abstract class AlgorithmService {
     private _algorithms: Algorithm[] | null = null;
     private algorithmDefinitions: {[algorithmName: string]: AlgorithmDefinition} = {};
 
-    private _cachedImportPipeData: ImportPipeData | null = null;
+    private _cachedImportPipeData: ConfigurationImportSummaryPart | null = null;
 
     private doSetConfig: (error: string | null) => void = () => { };
 
@@ -23,6 +23,16 @@ export abstract class AlgorithmService {
         private readonly http: HttpClient,
         protected readonly configurationService: ConfigurationService,
     ) {
+        configurationService.configImport$.pipe(
+            filter(value => value.configurationName === this.getConfigurationName()),
+            filter(value => value.configuration !== null),
+        ).subscribe(value => {
+            if (this._algorithms !== null) {
+                this.setConfig(value);
+            } else {
+                this._cachedImportPipeData = value;
+            }
+        });
     }
 
     /**
@@ -110,19 +120,12 @@ export abstract class AlgorithmService {
      * Sets the configuration from the given data to the UI.
      * @param data Data containing the result of the import.
      */
-    public setConfig(data: ImportPipeData): void {
-        let error = null;
-        if (data.success) {
-            if (data.yamlConfigString) {
-                const result = this.readConfiguration(parse(data.yamlConfigString), data.configData.name);
-                this.configurationService.setSelectedAlgorithm(this.getConfigurationName(), result.selectedAlgorithm);
-                this.configurationService.setConfiguration(this.getConfigurationName(), result.selectedAlgorithm, result.config);
-            }
-        } else {
-            error = "Failed to load configuration";
-        }
+    public setConfig(data: ConfigurationImportSummaryPart): void {
+        const result = this.readConfiguration(data.configuration!, data.configurationName);
+        this.configurationService.setSelectedAlgorithm(this.getConfigurationName(), result.selectedAlgorithm);
+        this.configurationService.setConfiguration(this.getConfigurationName(), result.selectedAlgorithm, result.config);
 
-        this.doSetConfig(error);
+        this.doSetConfig(null);
     }
 
     /**
@@ -131,20 +134,6 @@ export abstract class AlgorithmService {
      */
     public setDoSetConfig(func: (error: string | null) => void) {
         this.doSetConfig = func;
-    }
-
-    /**
-     * Sets the configuration if the page is loaded, otherwise caches the result,
-     * so it can be loaded after the page is loaded.
-     * @param value Result of the configuration import.
-     */
-    public setConfigWait(value: ImportPipeData) {
-        this._cachedImportPipeData = value;
-        if (this._algorithms !== null) {
-            this.setConfig(value);
-        } else {
-            this._cachedImportPipeData = value;
-        }
     }
 
     /**
@@ -223,7 +212,8 @@ export abstract class AlgorithmService {
     protected fetchAlgorithms(): Observable<string> {
         return this.http.get<string>(this.baseURL + "/algorithms", {
             params: {configurationName: this.getConfigurationName()},
-            responseType: 'text' as 'json'
+            responseType: 'text' as 'json',
+            headers: {'Accept': 'application/yaml'},
         });
     }
 
@@ -242,7 +232,8 @@ export abstract class AlgorithmService {
     protected fetchAlgorithmDefinition(definitionPath: string): Observable<string> {
         return this.http.get<string>(this.baseURL + "/algorithm", {
             params: {configurationName: this.getConfigurationName(), definitionPath: definitionPath},
-            responseType: 'text' as 'json'
+            responseType: 'text' as 'json',
+            headers: {'Accept': 'application/yaml'},
         });
     }
 
@@ -255,7 +246,7 @@ export abstract class AlgorithmService {
     private doFetchConfiguration(): Observable<ConfigData> {
         return this.configurationService.loadConfig(this.getConfigurationName()).pipe(
             map(value => {
-                return this.readConfiguration(parse(value), this.getConfigurationName());
+                return this.readConfiguration(value, this.getConfigurationName());
             }),
         );
     }

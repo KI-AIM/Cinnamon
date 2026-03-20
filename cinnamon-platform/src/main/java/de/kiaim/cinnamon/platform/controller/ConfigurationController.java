@@ -1,18 +1,15 @@
 package de.kiaim.cinnamon.platform.controller;
 
-import de.kiaim.cinnamon.model.spring.CustomMediaType;
+import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmDefinition;
+import de.kiaim.cinnamon.model.configuration.algorithms.AvailableAlgorithms;
+import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
 import de.kiaim.cinnamon.platform.exception.*;
-import de.kiaim.cinnamon.platform.model.dto.AlgorithmDefinitionRequest;
-import de.kiaim.cinnamon.platform.model.dto.AvailableAlgorithmsRequest;
-import de.kiaim.cinnamon.platform.model.dto.ConfigurationInfo;
-import de.kiaim.cinnamon.platform.model.dto.ConfigurationRequest;
+import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
-import de.kiaim.cinnamon.platform.service.DatabaseService;
-import de.kiaim.cinnamon.platform.service.ExternalConfigurationService;
-import de.kiaim.cinnamon.platform.service.ProjectService;
-import de.kiaim.cinnamon.platform.service.UserService;
+import de.kiaim.cinnamon.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,14 +30,18 @@ import org.springframework.web.bind.annotation.*;
                                          "Configurations are associated with the user of the request.")
 public class ConfigurationController {
 
+	private final ConfigurationService configurationService;
 	private final ExternalConfigurationService externalConfigurationService;
 	private final DatabaseService databaseService;
 	private final ProjectService projectService;
 	private final UserService userService;
 
-	public ConfigurationController(final ExternalConfigurationService externalConfigurationService,
-	                               final DatabaseService databaseService, final ProjectService projectService,
+	public ConfigurationController(final ConfigurationService configurationService,
+	                               final ExternalConfigurationService externalConfigurationService,
+	                               final DatabaseService databaseService,
+	                               final ProjectService projectService,
 	                               final UserService userService) {
+		this.configurationService = configurationService;
 		this.externalConfigurationService = externalConfigurationService;
 		this.databaseService = databaseService;
 		this.projectService = projectService;
@@ -55,16 +57,12 @@ public class ConfigurationController {
 			                                schema = @Schema(implementation = ConfigurationInfo.class))),
 			@ApiResponse(responseCode = "400",
 			             description = "The configuration name is invalid.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The application state is invalid.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping(value = "/info", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ConfigurationInfo info(
@@ -90,7 +88,7 @@ public class ConfigurationController {
 	})
 	@PostMapping(value = "",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, CustomMediaType.APPLICATION_YAML_VALUE})
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public void store(
 			@Valid @ParameterObject ConfigurationRequest configurationRequest,
 			@AuthenticationPrincipal UserEntity requestUser
@@ -98,8 +96,29 @@ public class ConfigurationController {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		databaseService.storeConfiguration(configurationRequest.getConfigurationName(), configurationRequest.getUrl(),
+		databaseService.storeConfiguration(configurationRequest.getConfigurationName(),
 		                                   configurationRequest.getConfiguration(), project);
+	}
+
+	@Operation(summary = "Imports all configurations defined in the given file.",
+	           description = "Imports all configurations defined in the given file.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully imported the configurations.",
+			             content = @Content)
+	})
+	@PostMapping(value = "/import",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	public ConfigurationImportSummary importConfigurations(
+			@Valid @ParameterObject ImportConfigurationRequest importConfigurationRequest,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws BadFileException, BadConfigurationFileException {
+		// Load user from the database because lazy loaded fields cannot be read from the injected user
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+		return configurationService.importConfigurations(project, importConfigurationRequest.getConfiguration(),
+		                                                 importConfigurationRequest.getImportParameters());
 	}
 
 	@Operation(summary = "Loads a previously stored configuration with the given name.",
@@ -107,30 +126,46 @@ public class ConfigurationController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully loaded the configuration. Returns the content of the configuration",
-			             content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
-			                                schema = @Schema(implementation = String.class))),
+			             content = {@Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
+			                                 schema = @Schema(implementation = String.class)),
+			                        @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = DataConfiguration.class))
+			}),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored configurations or no configuration with the give name.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@GetMapping(value = "",
 	            produces = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE,
-	                        CustomMediaType.APPLICATION_YAML_VALUE})
-	public String load(
+	                        MediaType.APPLICATION_YAML_VALUE})
+	public Object load(
 			@Parameter(description = "Name of the configuration to be loaded.",
 			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
 			                              schema = @Schema(implementation = String.class)),
 			           required = true)
 			@RequestParam(name = "name") final String configurationName,
 			@AuthenticationPrincipal UserEntity requestUser
-	) throws BadConfigurationNameException, BadDataSetIdException, BadStepNameException, InternalApplicationConfigurationException {
+	) throws BadStateException, InternalIOException, BadConfigurationNameException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		return databaseService.exportConfiguration(configurationName, project);
+
+		final Object configuration = configurationService.loadConfiguration(configurationName, project);
+
+		if (configuration instanceof DataConfiguration dataConfiguration) {
+			return ResponseEntity.ok()
+			                     .contentType(MediaType.APPLICATION_JSON)
+			                     .body(dataConfiguration);
+		}
+
+		if (configuration instanceof String textConfiguration) {
+			return ResponseEntity.ok()
+			                     .contentType(MediaType.TEXT_PLAIN)
+			                     .body(textConfiguration);
+		}
+
+		return ResponseEntity.ok(configuration);
 	}
 
 	@Operation(summary = "Loads available algorithm from the server corresponding to the given configuration name.",
@@ -138,23 +173,21 @@ public class ConfigurationController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully returns the available algorithms.",
-			             content = @Content(mediaType = CustomMediaType.TEXT_YAML_VALUE,
-			                                schema = @Schema(implementation = String.class))),
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = AvailableAlgorithms.class)),
+			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = AvailableAlgorithms.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The given configuration name is invalid.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The request to the external server failed.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
-	@GetMapping(value = "/algorithms", produces = {CustomMediaType.TEXT_YAML_VALUE})
-	public String getAvailableAlgorithms(
+	@GetMapping(value = "/algorithms", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	public AvailableAlgorithms getAvailableAlgorithms(
 			@Valid final AvailableAlgorithmsRequest request
 	) throws InternalRequestException, BadConfigurationNameException {
 		return externalConfigurationService.fetchAvailableAlgorithms(request.getConfigurationName());
@@ -165,23 +198,22 @@ public class ConfigurationController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully returns the configuration definition.",
-			             content = @Content(mediaType = CustomMediaType.TEXT_YAML_VALUE,
-			                                schema = @Schema(implementation = String.class))),
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = AlgorithmDefinition.class)),
+			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = AlgorithmDefinition.class))
+			}),
 			@ApiResponse(responseCode = "400",
 			             description = "The given configuration name is invalid.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The request to the external server failed.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
-	@GetMapping(value = "/algorithm", produces = {CustomMediaType.TEXT_YAML_VALUE})
-	public String getAlgorithmDefinition(
+	@GetMapping(value = "/algorithm", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	public AlgorithmDefinition getAlgorithmDefinition(
 			@Valid final AlgorithmDefinitionRequest request,
 			@AuthenticationPrincipal UserEntity requestUser
 	) throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalRequestException {

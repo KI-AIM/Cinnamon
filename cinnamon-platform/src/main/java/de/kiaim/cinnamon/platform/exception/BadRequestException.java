@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.exception;
 
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 
@@ -73,8 +74,22 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String DATASET = "13";
 
+	/**
+	 * Error class code for {@link BadConfigurationFileException}.
+	 */
+	public static final String CONFIGURATION_FILE = "14";
+
+	/**
+	 * Error class code for {@link BadAlgorithmException}.
+	 */
+	public static final String ALGORITHM = "15";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
+	}
+
+	public BadRequestException(final String exceptionCode, final String message, final ErrorDetails errorDetails) {
+		super(exceptionCode, message, errorDetails);
 	}
 
 	public BadRequestException(final String exceptionCode, final String message, final Exception cause) {

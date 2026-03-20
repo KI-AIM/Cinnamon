@@ -78,12 +78,9 @@ export class AnonymizationService extends AlgorithmService {
         configReg.availableAfterStep = Steps.ANONYMIZATION;
         configReg.lockedAfterStep = Steps.EXECUTION;
         configReg.displayName = "Anonymization Configuration";
-        configReg.fetchConfig = null;
         // TODO fetch from server, user must be logged in for authentication
         configReg.name = "anonymization";
         configReg.orderNumber = 1;
-        configReg.storeConfig = null;
-        configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);
     }

@@ -49,12 +49,9 @@ export class SynthetizationService extends AlgorithmService {
         configReg.availableAfterStep = Steps.SYNTHETIZATION;
         configReg.lockedAfterStep = Steps.EXECUTION;
         configReg.displayName = "Synthetization Configuration";
-        configReg.fetchConfig = null;
         // TODO fetch from server, user must be logged in for authentication
         configReg.name = "synthetization_configuration";
         configReg.orderNumber = 2;
-        configReg.storeConfig = null;
-        configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);
     }

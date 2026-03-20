@@ -46,8 +46,11 @@ public class InternalRequestException extends InternalException {
 		super(exceptionCode, message);
 	}
 
-	public InternalRequestException(final String exceptionCode, final String message, final ErrorDetails errorDetails) {
-		super(exceptionCode, message, errorDetails);
+	public InternalRequestException(final String exceptionCode,
+	                                final String message,
+	                                final ErrorDetails errorDetails,
+	                                final Throwable cause) {
+		super(exceptionCode, message, errorDetails, cause);
 	}
 
 	@Override

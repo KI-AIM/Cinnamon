@@ -3,6 +3,7 @@ import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular
 import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
+import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { StateManagementService } from "@core/services/state-management.service";
 import { DataConfiguration } from "@shared/model/data-configuration";
 import { Status } from "@shared/model/status";
@@ -96,6 +97,7 @@ export class ConfigurationPageComponent implements OnInit {
         private readonly dataConfigService: DataConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
         private httpClient: HttpClient,
+        private readonly notificationService: NotificationService,
         private readonly router: Router,
         private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
@@ -307,6 +309,9 @@ export class ConfigurationPageComponent implements OnInit {
         const included = [this.algorithmService.getConfigurationName()];
 
         this.configurationService.uploadAllConfigurations(file, included).subscribe({
+            next: () => {
+                this.notificationService.addNotification(new AppNotification("Successfully imported the configuration.", "success"));
+            },
             error: error => {
                 this.errorHandlingService.addError(error, "Could not upload configuration.");
             },
@@ -343,11 +348,8 @@ export class ConfigurationPageComponent implements OnInit {
                 }
             );
         } else {
-            this.algorithmService.getAlgorithmDefinition(this.selection.selectedOption).pipe(
-                switchMap(value => {
-                    const config = this.forms ? this.forms.formData : '';
-                    return this.postConfig(config, value.URL);
-                }),
+            const config = this.forms ? this.forms.formData : '';
+            this.postConfig(config).pipe(
                 switchMap(() => {
                     return this.configureJobs();
                 }),
@@ -363,13 +365,12 @@ export class ConfigurationPageComponent implements OnInit {
     /**
      * Sends the configuration to the backend.
      * @param configuration The configuration object.
-     * @param url The URL to be used for the job.
      * @private
      */
-    private postConfig(configuration: Object, url: string): Observable<void> {
+    private postConfig(configuration: Object): Observable<void> {
         const configurationName = this.algorithmService.getConfigurationName();
         const configurationString = stringify(this.algorithmService.createConfiguration(configuration, this.selection.selectedOption));
-        return this.configurationService.storeConfig(configurationName, configurationString, url);
+        return this.configurationService.storeConfig(configurationName, configurationString);
     }
 
     /**

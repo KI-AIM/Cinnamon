@@ -78,6 +78,26 @@ def _dataset() -> pd.DataFrame:
     )
 
 
+def _attribute_config_with_text() -> dict:
+    return {
+        "configurations": [
+            {"index": 0, "name": "age", "type": "INTEGER"},
+            {"index": 1, "name": "group", "type": "STRING"},
+            {"index": 2, "name": "notes", "type": "TEXT"},
+        ]
+    }
+
+
+def _dataset_with_text() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "age": [28, 35, 44],
+            "group": ["A", "B", "A"],
+            "notes": ["stable patient", "high risk patient", "follow-up needed"],
+        }
+    )
+
+
 def test_llm_tabular_synthesizer_generates_requested_rows_via_ollama(monkeypatch):
     call_counter = {"count": 0}
 
@@ -199,3 +219,47 @@ def test_llm_tabular_synthesizer_maps_positional_column_names(monkeypatch):
     assert call_counter["count"] == 2
     assert sample["age"].tolist() == [31, 32]
     assert sample["group"].tolist() == ["A", "B"]
+
+
+def test_llm_tabular_synthesizer_generates_text_in_single_step(monkeypatch):
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+
+        if method == "POST" and url.endswith("/api/generate"):
+            prompt = kwargs["json"]["prompt"]
+            assert "Generation order constraint (single output step):" in prompt
+            assert "First determine all non-TEXT column values." in prompt
+            assert "Then generate TEXT column values conditioned on those non-TEXT values." in prompt
+            assert "- notes (TEXT): missing_ratio=" in prompt
+            assert "- notes (TEXT): frequent values [" not in prompt
+            return _DummyResponse(
+                {
+                    "response": json.dumps(
+                        {
+                            "rows": [
+                                {"age": 33, "group": "A", "notes": "Patient shows stable recovery."},
+                            ]
+                        }
+                    )
+                }
+            )
+
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    algorithm_config = _algorithm_config(provider="ollama")
+    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
+
+    synthesizer = LlmTabularSynthesizer()
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(_attribute_config_with_text())
+    synthesizer.initialize_dataset(_dataset_with_text())
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    sample = synthesizer.sample()
+
+    assert len(sample) == 1
+    assert sample["notes"].iloc[0] == "Patient shows stable recovery."

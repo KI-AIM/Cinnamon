@@ -68,8 +68,24 @@ synthesizer_classes = {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': LlmTabularSynthesizer,
-        'display_name': 'LLM Tabular Synthesizer',
-        'description': 'A configurable LLM-based synthesizer for tabular data generation via Ollama or OpenAI-compatible APIs.',
+        'display_name': 'LLM Dataset Generator',
+        'description': 'A configurable LLM-based generator that creates fully synthetic datasets from source data via Ollama or OpenAI-compatible APIs.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
+    },
+    'llm_attribute_to_text': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmTabularSynthesizer,
+        'display_name': 'LLM Attribute-to-Text Generator',
+        'description': 'NOT IMPLEMENTED: A LLM-based generator for creating a new TEXT attribute from tabular attributes.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_attribute_to_text.yaml'
+    },
+    'llm_text_de_identification': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmTabularSynthesizer,
+        'display_name': 'LLM Text De-Identification',
+        'description': 'NOT IMPLEMENTED: A LLM-based text de-identification component for removing potential PIIs in TEXT fields.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_de_identification.yaml'
     }
 }

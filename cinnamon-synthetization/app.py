@@ -17,8 +17,6 @@ from api_utility.status.status_updater import InterceptStdOut
 from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
-from data_processing.utils import TEXT_PENDING_LLM
-from synthetic_tabular_data_generator.text_generation.llm_text_synthesizer import LlmTextSynthesizer
 
 
 app = Flask(__name__)
@@ -114,90 +112,8 @@ def prepare_callback_data(samples, synthesizer_model):
     return files
 
 
-def get_text_columns(attribute_config):
-    """
-    Return all TEXT columns defined in the attribute configuration.
-    """
-    return [
-        column_config.get('name')
-        for column_config in attribute_config.get('configurations', [])
-        if str(column_config.get('type', '')).upper() == 'TEXT' and column_config.get('name')
-    ]
-
-
-def get_non_text_columns(attribute_config):
-    """
-    Return all non-TEXT columns defined in the attribute configuration.
-    """
-    return [
-        column_config.get('name')
-        for column_config in attribute_config.get('configurations', [])
-        if str(column_config.get('type', '')).upper() != 'TEXT' and column_config.get('name')
-    ]
-
-
-def _parse_bool(value, default=False):
-    if value is None:
-        return default
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
-        return value != 0
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"1", "true", "yes", "y", "on"}:
-            return True
-        if normalized in {"0", "false", "no", "n", "off"}:
-            return False
-    return default
-
-
-def _is_text_generation_enabled(algorithm_config):
-    model_params = (
-        algorithm_config.get("synthetization_configuration", {})
-        .get("algorithm", {})
-        .get("model_parameter", {})
-    )
-    enabled_value = model_params.get("enable_text_generation", False)
-    return _parse_bool(enabled_value, default=False)
-
-
-def _fill_text_columns_with_pending(samples, text_columns):
-    fallback = samples.copy()
-    for text_column in text_columns:
-        fallback[text_column] = TEXT_PENDING_LLM
-    return fallback
-
-
-def generate_text_columns_if_needed(samples, original_data, attribute_config, algorithm_config):
-    """
-    Generate TEXT columns using the internal LLM text synthesizer if TEXT columns are present.
-    """
-    text_columns = get_text_columns(attribute_config)
-    if not text_columns:
-        return samples
-
-    if not _is_text_generation_enabled(algorithm_config):
-        print(
-            "TEXT columns detected, but text generation is disabled. "
-            "Keeping placeholder values."
-        )
-        return _fill_text_columns_with_pending(samples, text_columns)
-
-    context_columns = get_non_text_columns(attribute_config)
-    try:
-        text_synthesizer = LlmTextSynthesizer.from_algorithm_config(algorithm_config)
-        text_synthesizer.initialize()
-        text_synthesizer.fit(original_data, text_columns)
-
-        print(f"Generating TEXT columns via LLM: {text_columns}")
-        return text_synthesizer.generate(samples, text_columns=text_columns, context_columns=context_columns)
-    except Exception as exc:
-        print(
-            f"TEXT generation failed ({exc}). "
-            "Falling back to placeholder values."
-        )
-        return _fill_text_columns_with_pending(samples, text_columns)
+def is_llm_synthesizer(synthesizer_name: str) -> bool:
+    return synthesizer_name == "llm_tabular"
 
 
 def synthesize_data(synthesizer_name, file_path_status, attribute_config, algorithm_config, data,
@@ -273,8 +189,12 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
 
         # Step 4: Pre-process sampled data
         try:
-            original_data = data.copy()
-            pre_processed_data, all_missing_values_column = pre_process_dataframe(data, attribute_config['configurations'])
+            use_pending_text_placeholder = not is_llm_synthesizer(synthesizer_name)
+            pre_processed_data, all_missing_values_column = pre_process_dataframe(
+                data,
+                attribute_config['configurations'],
+                replace_text_with_pending=use_pending_text_placeholder,
+            )
             print("Dataset preprocessed.")
         except Exception as e:
             error_message = f"Error during pre-processing. {str(e)}"
@@ -351,14 +271,14 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
 
         # Step 9: Post-process sampled data
         try:
-            samples = generate_text_columns_if_needed(
-                samples=samples,
-                original_data=original_data,
-                attribute_config=attribute_config,
-                algorithm_config=algorithm_config,
-            )
             print('Starting Post-processing')
-            samples = post_process_dataframe(samples, attribute_config['configurations'], all_missing_values_column)
+            use_pending_text_placeholder = not is_llm_synthesizer(synthesizer_name)
+            samples = post_process_dataframe(
+                samples,
+                attribute_config['configurations'],
+                all_missing_values_column,
+                fill_text_with_pending=use_pending_text_placeholder,
+            )
             print('Data Post-processed')
         except Exception as e:
             error_message = f"Error during post-processing. {str(e)}"

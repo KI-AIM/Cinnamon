@@ -1,9 +1,9 @@
-name: llm_tabular
+name: llm_text_de_identification
 version: "0.1"
 type: cross-sectional
-display_name: LLM Dataset Generator
-description: Generate fully synthetic datasets from existing source data using a configurable Ollama or OpenAI-compatible language model.
-URL: /start_synthetization_process/llm_tabular
+display_name: LLM Text De-Identification
+description: Detect and remove possible PIIs from TEXT fields using a configurable Ollama or OpenAI-compatible language model.
+URL: /start_synthetization_process/llm_text_de_identification
 configurations:
   model_parameter:
     display_name: Model Parameters
@@ -25,7 +25,7 @@ configurations:
       - name: base_url
         type: string
         label: Base URL
-        description: Base URL of the LLM server. 
+        description: Base URL of the LLM server.
         default_value: Enter Endpoint
       - name: endpoint_path
         type: string
@@ -46,14 +46,14 @@ configurations:
         type: float
         label: Temperature
         description: Sampling temperature for generation. Lower values are more deterministic.
-        default_value: 0.3
+        default_value: 0.0
         min_value: 0.0
         max_value: 2.0
       - name: top_p
         type: float
         label: Top-p
         description: Nucleus sampling value for generation.
-        default_value: 0.9
+        default_value: 1.0
         min_value: 0.0
         max_value: 1.0
       - name: max_tokens
@@ -91,18 +91,18 @@ configurations:
       - name: timeout_seconds
         type: integer
         label: Request Timeout
-        description: HTTP timeout per Ollama request in seconds.
+        description: HTTP timeout per request in seconds.
         default_value: 120
         min_value: 1
         max_value: 3600
   sampling:
     display_name: Sampling
-    description: Define how many synthetic rows are generated.
+    description: Define how many rows are processed.
     parameters:
       - name: num_samples
         type: integer
         label: Number of Samples
-        description: Number of synthetic records to generate.
+        description: Number of records to process.
         default_value: 1000
         min_value: 1
         max_value: 1000000

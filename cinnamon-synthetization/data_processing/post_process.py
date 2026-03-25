@@ -5,7 +5,12 @@ from data_processing.utils import iso_to_strftime, parse_to_date_format, adjust_
 from data_processing.utils import BOOLEAN_MAP, MISSING_VALUE_STRING, MISSING_BOOLEAN, TEXT_PENDING_LLM
 
 
-def post_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]], all_missing_values_column: List[str]) -> pd.DataFrame:
+def post_process_dataframe(
+    df: pd.DataFrame,
+    config: List[Dict[str, Any]],
+    all_missing_values_column: List[str],
+    fill_text_with_pending: bool = True,
+) -> pd.DataFrame:
     """
     Post-process a DataFrame based on the provided configuration.
 
@@ -56,7 +61,8 @@ def post_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]], all_m
 
                 if column_type == 'TEXT':
                     df[column_name] = df[column_name].replace({"": pd.NA, "null": pd.NA, "NULL": pd.NA, "NaN": pd.NA, "nan": pd.NA})
-                    df[column_name] = df[column_name].fillna(TEXT_PENDING_LLM)
+                    if fill_text_with_pending:
+                        df[column_name] = df[column_name].fillna(TEXT_PENDING_LLM)
                     df[column_name] = df[column_name].astype(dtype='string')
                     continue
 

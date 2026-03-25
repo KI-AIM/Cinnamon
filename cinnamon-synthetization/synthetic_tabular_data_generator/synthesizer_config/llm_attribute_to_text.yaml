@@ -1,9 +1,9 @@
-name: llm_tabular
+name: llm_attribute_to_text
 version: "0.1"
 type: cross-sectional
-display_name: LLM Dataset Generator
-description: Generate fully synthetic datasets from existing source data using a configurable Ollama or OpenAI-compatible language model.
-URL: /start_synthetization_process/llm_tabular
+display_name: LLM Attribute-to-Text Generator
+description: Generate a new TEXT attribute from existing tabular attributes using a configurable Ollama or OpenAI-compatible language model.
+URL: /start_synthetization_process/llm_attribute_to_text
 configurations:
   model_parameter:
     display_name: Model Parameters
@@ -25,7 +25,7 @@ configurations:
       - name: base_url
         type: string
         label: Base URL
-        description: Base URL of the LLM server. 
+        description: Base URL of the LLM server.
         default_value: Enter Endpoint
       - name: endpoint_path
         type: string
@@ -91,18 +91,18 @@ configurations:
       - name: timeout_seconds
         type: integer
         label: Request Timeout
-        description: HTTP timeout per Ollama request in seconds.
+        description: HTTP timeout per request in seconds.
         default_value: 120
         min_value: 1
         max_value: 3600
   sampling:
     display_name: Sampling
-    description: Define how many synthetic rows are generated.
+    description: Define how many rows are processed.
     parameters:
       - name: num_samples
         type: integer
         label: Number of Samples
-        description: Number of synthetic records to generate.
+        description: Number of records to process.
         default_value: 1000
         min_value: 1
         max_value: 1000000

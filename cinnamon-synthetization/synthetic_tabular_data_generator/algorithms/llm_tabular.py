@@ -202,6 +202,15 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
             )
             return profile
 
+        if column_type == "TEXT":
+            values = column_series.dropna().astype(str).str.strip()
+            values = values[(values != "") & (values != MISSING_VALUE_STRING) & (values != TEXT_PENDING_LLM)]
+            profile["kind"] = "text"
+            if values.empty:
+                profile["available"] = False
+                profile["reason"] = "no_text_values"
+            return profile
+
         values = column_series.dropna().astype(str)
         if values.empty:
             profile["available"] = False
@@ -362,13 +371,17 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
             "No markdown, no comments, no code fences, no extra keys.\n"
             f"Use exactly these columns: {ordered_columns}\n"
             "Never use generic column names like column_a, column_b, feature_1, field_1.\n"
+            "Generation order constraint (single output step):\n"
+            "- First determine all non-TEXT column values.\n"
+            "- Then generate TEXT column values conditioned on those non-TEXT values.\n"
+            "- Return only the final JSON rows output, no intermediate reasoning.\n"
             "Type rules:\n"
             "- INTEGER: integer number\n"
             "- DECIMAL: decimal number\n"
             "- DATE: UNIX timestamp in seconds as number\n"
             "- BOOLEAN: true or false\n"
             f"- STRING: plain text, use '{MISSING_VALUE_STRING}' for missing\n"
-            f"- TEXT: plain text, use '{TEXT_PENDING_LLM}' if needed\n"
+            f"- TEXT: realistic free text, use '{MISSING_VALUE_STRING}' for missing\n"
             "Column profiles:\n"
             f"{profile_lines}"
             f"{few_shot_block}\n"
@@ -381,7 +394,6 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
             f"{prefix}\n"
             "Generation task:\n"
             f"Generate exactly {num_rows} rows.\n"
-            f"Current request index: {row_index + 1} of {target_rows}.\n"
             "Return exactly one realistic synthetic row in the rows array."
         )
 
@@ -395,6 +407,8 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
                 f"- {column_name} ({column_type}): min={profile.get('min')}, max={profile.get('max')}, "
                 f"mean={profile.get('mean')}, std={profile.get('std')}, missing_ratio={missing_ratio}"
             )
+        if profile.get("kind") == "text":
+            return f"- {column_name} ({column_type}): missing_ratio={missing_ratio}"
 
         top_values = profile.get("top_values", [])
         values_repr = ", ".join(
@@ -586,9 +600,22 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
             return self._coerce_numeric(column_name, column_type, value)
 
         if column_type == "TEXT":
-            return TEXT_PENDING_LLM
+            return self._coerce_text(value)
 
         return self._coerce_string(value)
+
+    def _coerce_text(self, value: Any) -> str:
+        if value is None:
+            return MISSING_VALUE_STRING
+
+        as_string = str(value).strip()
+        if not as_string or as_string.lower() in {"nan", "null", "none", "<na>"}:
+            return MISSING_VALUE_STRING
+
+        if as_string == MISSING_VALUE_STRING:
+            return MISSING_VALUE_STRING
+
+        return as_string
 
     def _coerce_boolean(self, value: Any) -> bool:
         if isinstance(value, bool):

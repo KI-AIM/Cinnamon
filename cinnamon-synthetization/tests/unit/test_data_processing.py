@@ -92,7 +92,7 @@ def test_pre_process_dataframe_integer_non_numeric_raises():
     assert "Error processing column 'age'" in str(exc.value)
 
 
-def test_pre_process_dataframe_sets_text_column_to_pending_llm_placeholder():
+def test_pre_process_dataframe_sets_text_column_to_pending_llm_placeholder_by_default():
     df = pd.DataFrame({"notes": ["Long text", np.nan, "Another value"]})
     config = [{"name": "notes", "type": "TEXT", "index": 0}]
 
@@ -100,6 +100,16 @@ def test_pre_process_dataframe_sets_text_column_to_pending_llm_placeholder():
 
     assert dropped == []
     assert processed["notes"].tolist() == [TEXT_PENDING_LLM, TEXT_PENDING_LLM, TEXT_PENDING_LLM]
+
+
+def test_pre_process_dataframe_keeps_text_when_pending_replacement_disabled():
+    df = pd.DataFrame({"notes": ["Long text", np.nan, "Another value"]})
+    config = [{"name": "notes", "type": "TEXT", "index": 0}]
+
+    processed, dropped = pre_process_dataframe(df, config, replace_text_with_pending=False)
+
+    assert dropped == []
+    assert processed["notes"].tolist() == ["Long text", pd.NA, "Another value"]
 
 
 def test_post_process_dataframe_recreates_columns_casts_and_orders():
@@ -129,7 +139,7 @@ def test_post_process_dataframe_recreates_columns_casts_and_orders():
     assert pd.isna(result["extra_missing"]).all()
 
 
-def test_post_process_dataframe_sets_text_column_to_pending_llm_placeholder():
+def test_post_process_dataframe_sets_missing_text_to_pending_placeholder_by_default():
     df = pd.DataFrame({"notes": ["Generated", pd.NA]})
     config = [{"name": "notes", "type": "TEXT", "index": 0}]
 
@@ -138,6 +148,18 @@ def test_post_process_dataframe_sets_text_column_to_pending_llm_placeholder():
     assert result.columns.tolist() == ["notes"]
     assert str(result["notes"].dtype) == "string"
     assert result["notes"].tolist() == ["Generated", TEXT_PENDING_LLM]
+
+
+def test_post_process_dataframe_keeps_missing_text_na_when_pending_fill_disabled():
+    df = pd.DataFrame({"notes": ["Generated", pd.NA]})
+    config = [{"name": "notes", "type": "TEXT", "index": 0}]
+
+    result = post_process_dataframe(df, config, all_missing_values_column=[], fill_text_with_pending=False)
+
+    assert result.columns.tolist() == ["notes"]
+    assert str(result["notes"].dtype) == "string"
+    assert result["notes"].iloc[0] == "Generated"
+    assert pd.isna(result["notes"].iloc[1])
 
 
 def test_post_process_dataframe_missing_date_format_keeps_column_without_crashing():

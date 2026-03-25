@@ -6,7 +6,11 @@ from data_processing.utils import iso_to_strftime, handle_date_column
 from data_processing.utils import BOOLEAN_MAP, MISSING_VALUE_STRING, MISSING_BOOLEAN, TEXT_PENDING_LLM
 
 
-def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tuple[pd.DataFrame, List[str]]:
+def pre_process_dataframe(
+    df: pd.DataFrame,
+    config: List[Dict[str, Any]],
+    replace_text_with_pending: bool = True,
+) -> Tuple[pd.DataFrame, List[str]]:
     """
     Preprocess a df based on the provided configuration.
 
@@ -65,9 +69,13 @@ def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tup
                 continue
 
             if column_type == 'TEXT':
-                # TEXT is intentionally replaced in phase 1.
-                # The real text is generated in phase 2 by LlmTextSynthesizer.
-                df[column_name] = TEXT_PENDING_LLM
+                if replace_text_with_pending:
+                    df[column_name] = TEXT_PENDING_LLM
+                else:
+                    df[column_name] = df[column_name].astype("string")
+                    df[column_name] = df[column_name].replace(
+                        {"": pd.NA, "null": pd.NA, "NULL": pd.NA, "NaN": pd.NA, "nan": pd.NA}
+                    )
                 continue
 
             if column_type == 'BOOLEAN':

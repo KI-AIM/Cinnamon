@@ -45,7 +45,6 @@ metric_functions_descriptive = {
         'text_length_distribution': calculate_text_length_distribution,
         'text_length_hellinger_distance': calculate_text_length_hellinger_distance,
         'wordcloud': calculate_wordcloud,
-        'wordcloud_independent': calculate_wordcloud_independent,
         'fifth_percentile': calculate_fifth_percentile,
         'median': calculate_median,
         'q1': calculate_q1,

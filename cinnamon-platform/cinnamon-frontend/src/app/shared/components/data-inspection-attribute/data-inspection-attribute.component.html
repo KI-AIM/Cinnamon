@@ -110,6 +110,7 @@
                 </button>
                 <app-chart-select [comparison]="hasSynthetic" [continuous]="isContinuous()"
                                   [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType"
+                                  [showWordcloudIndependent]="!!getWordcloudIndependentPlotData()"
                                   [simple]="true" style="margin-left: auto">
                 </app-chart-select>
             </div>

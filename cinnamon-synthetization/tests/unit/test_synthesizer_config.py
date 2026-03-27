@@ -64,7 +64,9 @@ TOP_LEVEL_KEYS = {
     "URL",
     "configurations",
 }
-CONFIG_SECTIONS = {"model_parameter", "model_fitting", "sampling"}
+CONFIG_REQUIRED_SECTIONS = {"model_parameter", "model_fitting"}
+CONFIG_OPTIONAL_SECTIONS = {"sampling"}
+CONFIG_ALLOWED_SECTIONS = CONFIG_REQUIRED_SECTIONS | CONFIG_OPTIONAL_SECTIONS
 SECTION_KEYS = {"display_name", "description", "parameters"}
 
 PARAM_REQUIRED_KEYS = {"name", "type", "label", "description", "default_value"}
@@ -99,7 +101,9 @@ def test_top_level_structure_and_filename_match():
         assert isinstance(config["URL"], str) and config["URL"]
         assert config["URL"].startswith("/start_synthetization_process/")
         assert config["URL"].endswith(f"/{config['name']}")
-        assert set(config["configurations"].keys()) == CONFIG_SECTIONS
+        section_names = set(config["configurations"].keys())
+        assert CONFIG_REQUIRED_SECTIONS.issubset(section_names)
+        assert section_names <= CONFIG_ALLOWED_SECTIONS
 
 
 def test_configuration_sections_and_parameters():
@@ -107,7 +111,7 @@ def test_configuration_sections_and_parameters():
         config = _load_yaml(path)
 
         for section_name, section in config["configurations"].items():
-            assert section_name in CONFIG_SECTIONS
+            assert section_name in CONFIG_ALLOWED_SECTIONS
             assert set(section.keys()) == SECTION_KEYS
             assert isinstance(section["display_name"], str) and section["display_name"]
             assert isinstance(section["description"], str) and section["description"]

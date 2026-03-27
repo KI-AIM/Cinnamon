@@ -6,6 +6,8 @@ from synthetic_tabular_data_generator.algorithms.bayesian_network import Bayesia
 from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomForestsSynthesizer
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
+from synthetic_tabular_data_generator.algorithms.llm_attribute_to_text import LlmAttributeToTextSynthesizer
+from synthetic_tabular_data_generator.algorithms.llm_de_identification import LlmTextDeIdentificationSynthesizer
 
 synthesizer_classes = {
     'ctgan': {
@@ -75,17 +77,17 @@ synthesizer_classes = {
     'llm_attribute_to_text': {
         'version': '0.1',
         'type': 'cross-sectional',
-        'class': LlmTabularSynthesizer,
+        'class': LlmAttributeToTextSynthesizer,
         'display_name': 'LLM Attribute-to-Text Generator',
-        'description': 'NOT IMPLEMENTED: A LLM-based generator for creating a new TEXT attribute from tabular attributes.',
+        'description': 'A LLM-based generator for creating one new TEXT attribute from immutable tabular attributes.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_attribute_to_text.yaml'
     },
     'llm_text_de_identification': {
         'version': '0.1',
         'type': 'cross-sectional',
-        'class': LlmTabularSynthesizer,
+        'class': LlmTextDeIdentificationSynthesizer,
         'display_name': 'LLM Text De-Identification',
-        'description': 'NOT IMPLEMENTED: A LLM-based text de-identification component for removing potential PIIs in TEXT fields.',
+        'description': 'A LLM-based text de-identification component for removing potential PIIs in TEXT fields.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_de_identification.yaml'
     }
 }

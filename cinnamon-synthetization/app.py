@@ -2,6 +2,7 @@ import io
 import os
 import sys
 import time
+from copy import deepcopy
 from multiprocessing import Process
 from threading import Event
 
@@ -113,7 +114,45 @@ def prepare_callback_data(samples, synthesizer_model):
 
 
 def is_llm_synthesizer(synthesizer_name: str) -> bool:
-    return synthesizer_name == "llm_tabular"
+    return synthesizer_name in {"llm_tabular", "llm_text_de_identification", "llm_attribute_to_text"}
+
+
+def _prepare_attribute_to_text_inputs(attribute_config, algorithm_config, data):
+    prepared_attribute_config = deepcopy(attribute_config)
+    prepared_data = data.copy()
+
+    model_params = (
+        algorithm_config.get("synthetization_configuration", {})
+        .get("algorithm", {})
+        .get("model_parameter", {})
+    )
+    target_text_column = str(model_params.get("target_text_column", "")).strip()
+    if not target_text_column:
+        raise ValueError(
+            "Missing model_parameter.target_text_column for llm_attribute_to_text."
+        )
+
+    if target_text_column not in prepared_data.columns:
+        raise ValueError(
+            f"Target text column '{target_text_column}' must exist in the input dataset for llm_attribute_to_text."
+        )
+
+    configurations = prepared_attribute_config.setdefault("configurations", [])
+    matching_configs = [cfg for cfg in configurations if cfg.get("name") == target_text_column]
+    if not matching_configs:
+        raise ValueError(
+            f"Target text column '{target_text_column}' must exist in attribute configuration for llm_attribute_to_text."
+        )
+    if str(matching_configs[0].get("type", "")).upper() != "TEXT":
+        raise ValueError(
+            f"Target text column '{target_text_column}' must be typed as TEXT in attribute configuration."
+        )
+
+    # Prevent dropping the target TEXT column in pre-processing when the source CSV column is fully empty.
+    if len(prepared_data.index) > 0 and prepared_data[target_text_column].isna().all():
+        prepared_data.at[prepared_data.index[0], target_text_column] = " "
+
+    return prepared_attribute_config, prepared_data
 
 
 def synthesize_data(synthesizer_name, file_path_status, attribute_config, algorithm_config, data,
@@ -173,6 +212,13 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'session_key': session_key,
                 'status_code': 400
             }
+
+        if synthesizer_name == "llm_attribute_to_text":
+            attribute_config, data = _prepare_attribute_to_text_inputs(
+                attribute_config=attribute_config,
+                algorithm_config=algorithm_config,
+                data=data,
+            )
 
         # Step 3: Initialize attribute configuration
         try:

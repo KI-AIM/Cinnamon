@@ -42,6 +42,16 @@ configurations:
         label: API Key
         description: Optional bearer token for authenticated OpenAI-compatible servers.
         default_value: ""
+      - name: target_text_column
+        type: string
+        label: Target TEXT Column
+        description: Name of the TEXT attribute to generate. If missing in input, it will be added.
+        default_value: generated_text
+      - name: user_prompt
+        type: string
+        label: User Prompt
+        description: Writing instruction for text generation, e.g. "Schreibe mir ein Arztbrief basierend auf den Daten."
+        default_value: Schreibe mir ein Arztbrief basierend auf den Daten.
       - name: temperature
         type: float
         label: Temperature
@@ -65,22 +75,8 @@ configurations:
         max_value: 32768
   model_fitting:
     display_name: Prompting and Runtime
-    description: Configure profiling, retry, and request behavior.
+    description: Configure retry and request behavior.
     parameters:
-      - name: profile_rows
-        type: integer
-        label: Profile Rows
-        description: Maximum number of real rows used to estimate prompt statistics.
-        default_value: 1000
-        min_value: 1
-        max_value: 100000
-      - name: few_shot_rows
-        type: integer
-        label: Example Rows
-        description: Number of real rows included as non-copyable structure examples in the prompt.
-        default_value: 20
-        min_value: 0
-        max_value: 200
       - name: max_retries
         type: integer
         label: Max Retries
@@ -95,14 +91,3 @@ configurations:
         default_value: 120
         min_value: 1
         max_value: 3600
-  sampling:
-    display_name: Sampling
-    description: Define how many rows are processed.
-    parameters:
-      - name: num_samples
-        type: integer
-        label: Number of Samples
-        description: Number of records to process.
-        default_value: 1000
-        min_value: 1
-        max_value: 1000000

@@ -105,7 +105,14 @@ public class ConfigurationController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully imported the configurations.",
-			             content = @Content)
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = ConfigurationImportSummary.class)),
+			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = ConfigurationImportSummary.class))}),
+			@ApiResponse(responseCode = "400",
+			             description = "The given configuration file is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@PostMapping(value = "/import",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,

@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.model.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import java.util.Set;
  *
  * @author Daniel Preciado-Marquez
  */
+@Schema(description = "Import summary for all configurations contained in a file.")
 @RequiredArgsConstructor
 @Getter @Setter
 public class ConfigurationImportSummary {
@@ -21,16 +23,19 @@ public class ConfigurationImportSummary {
 	/**
 	 * Parameters used for the import.
 	 */
+	@Schema(description = "Parameters used for the import.")
 	private final ConfigurationImportParameters parameters;
 
 	/**
 	 * If the import was successful.
 	 */
+	@Schema(description = "If the import was successful.")
 	private ConfigurationImportStatus status = ConfigurationImportStatus.SUCCESS;
 
 	/**
 	 * Set containing the import summary for each configuration.
 	 */
+	@Schema(description = "Set containing the import summary for each configuration in the file.")
 	private final Set<ConfigurationImportSummaryPart> configurationImportSummaries = new HashSet<>();
 
 	/**
@@ -122,6 +127,7 @@ public class ConfigurationImportSummary {
 	 *
 	 * @author Daniel Preciado-Marquez
 	 */
+	@Schema(description = "Import summary for a single configuration.")
 	@AllArgsConstructor
 	@Getter @Setter
 	public static class ConfigurationImportSummaryPart {
@@ -129,11 +135,13 @@ public class ConfigurationImportSummary {
 		/**
 		 * The name of the configuration.
 		 */
+		@Schema(description = "The name of the configuration.", example = "anonymization")
 		private String configurationName;
 
 		/**
 		 * Status of the configuration import.
 		 */
+		@Schema(description = "Status of the configuration import.")
 		private ConfigurationImportPartStatus status;
 
 		/**
@@ -141,6 +149,7 @@ public class ConfigurationImportSummary {
 		 * Contains the error code if the import failed.
 		 */
 		@Nullable
+		@Schema(description = "Null if the import was successful or ignored. Contains the error code if the import failed.")
 		private String errorCode;
 	}
 }

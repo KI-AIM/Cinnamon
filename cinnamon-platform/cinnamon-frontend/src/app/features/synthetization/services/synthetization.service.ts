@@ -26,9 +26,10 @@ export class SynthetizationService extends AlgorithmService {
         return {
             synthetization_configuration: {
                 algorithm: {
+                    id: selectedAlgorithm.name,
+                    version: selectedAlgorithm.version,
                     synthesizer: selectedAlgorithm.name,
                     type: selectedAlgorithm.type,
-                    version: selectedAlgorithm.version,
                     ...arg
                 },
             },

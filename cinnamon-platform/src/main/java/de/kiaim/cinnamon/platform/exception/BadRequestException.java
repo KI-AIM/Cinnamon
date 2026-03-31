@@ -92,7 +92,7 @@ public abstract class BadRequestException extends ApiException {
 		super(exceptionCode, message, errorDetails);
 	}
 
-	public BadRequestException(final String exceptionCode, final String message, final Exception cause) {
+	public BadRequestException(final String exceptionCode, final String message, final Throwable cause) {
 		super(exceptionCode, message, cause);
 	}
 

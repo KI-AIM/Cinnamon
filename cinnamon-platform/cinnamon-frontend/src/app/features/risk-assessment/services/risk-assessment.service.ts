@@ -22,9 +22,13 @@ export class RiskAssessmentService extends AlgorithmService {
         return "risk_assessment_configuration";
     }
 
-    public override createConfiguration(arg: Object, _: Algorithm): Object {
+    public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
         return {
             risk_assessment_configuration: {
+                algorithm: {
+                    id: selectedAlgorithm.name,
+                    version: selectedAlgorithm.version,
+                },
                 ...arg,
                 data_format: "cross-sectional",
                 train_fraction: 0.8,

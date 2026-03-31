@@ -3,6 +3,8 @@ package de.kiaim.cinnamon.platform.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.ConfigurationPart;
+import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmSelector;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
@@ -50,6 +52,8 @@ public class ConfigurationService {
 	 * Imports a configuration file into the project.
 	 * The root object of the YAML must be an object with its keys being the configuration names as defined in the cinnamon configuration.
 	 * Invalid configuration names that are not selected for import will not cause errors.
+	 * Configurations of external modules for older versions are updated to be compatible with the current version.
+	 * The content of the configurations is not validated.
 	 *
 	 * @param project    The project the configurations are imported to.
 	 * @param file       The configuration file.
@@ -105,12 +109,12 @@ public class ConfigurationService {
 				continue;
 			}
 
-			final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(configName, configEntry.getValue());
-
 			if (configName.equals(DATA_CONFIGURATION_KEY)) {
 
+				// Convert the tree into a DataConfiguration object
 				final DataConfiguration dataConfiguration;
 				try {
+					final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(configName, configEntry.getValue());
 					dataConfiguration = yamlMapper.treeToValue(singleConfigNode, DataConfiguration.class);
 				} catch (final JsonProcessingException e) {
 					importSummary.addError(configName,
@@ -120,6 +124,7 @@ public class ConfigurationService {
 					continue;
 				}
 
+				// Store the DataConfiguration
 				try {
 					databaseService.storeOriginalDataConfiguration(dataConfiguration, project);
 					importSummary.addSuccess(configName);
@@ -130,6 +135,7 @@ public class ConfigurationService {
 
 			} else {
 
+				// Configuration is for an external module
 				try {
 					stepService.getExternalConfiguration(configName);
 				} catch (final BadConfigurationNameException e) {
@@ -137,7 +143,29 @@ public class ConfigurationService {
 					continue;
 				}
 
+				// Validate the syntax of the configuration
+				final ConfigurationPart part;
 				try {
+					part = yamlMapper.treeToValue(configEntry.getValue(), ConfigurationPart.class);
+				} catch (final JsonProcessingException e) {
+					importSummary.addError(configName,
+					                       new InternalIOException(InternalIOException.CONFIGURATION_DESERIALIZATION,
+					                                               null,
+					                                               e).getErrorCode());
+					continue;
+				}
+
+				if (!validateAlgorithm(configName, part)) {
+					importSummary.addError(configName,
+					                       new BadAlgorithmException(BadAlgorithmException.ALGORITHM_NOT_SELECTED,
+					                                                 null).getErrorCode());
+					continue;
+				}
+
+				// Store the configuration
+				try {
+					final var tree = yamlMapper.valueToTree(part);
+					final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(configName, tree);
 					databaseService.storeConfiguration(configName, yamlMapper.writeValueAsString(singleConfigNode),
 					                                   project);
 					importSummary.addSuccess(configName);
@@ -182,6 +210,56 @@ public class ConfigurationService {
 			return databaseService.exportOriginalDataConfiguration(project);
 		} else {
 			return databaseService.exportConfiguration(configurationName, project);
+		}
+	}
+
+	/**
+	 * Validates if the configuration part contains a valid algorithm definition.
+	 * If the algorithm is defined but not as a standardized algorithm definition,
+	 * the algorithm definition is being set.
+	 *
+	 * @param configName The name of the configuration.
+	 * @param part The configuration part.
+	 * @return True if the algorithm definition is valid, false otherwise.
+	 */
+	private boolean validateAlgorithm(final String configName, final ConfigurationPart part) {
+		if (part.getAlgorithm() != null) {
+			// New standardized algorithm definition
+			if (part.getAlgorithm().getId() != null && part.getAlgorithm().getVersion() != null) {
+				return true;
+			}
+
+			if (part.getAlgorithm().getConfiguration().containsKey("synthesizer") &&
+			    part.getAlgorithm().getVersion() != null) {
+				// Old algorithm definitions of the synthetization module for backwards compatibility
+				part.getAlgorithm().setId(part.getAlgorithm().getConfiguration().get("synthesizer").asText());
+				return true;
+			}
+
+			return false;
+
+		} else {
+			// Old algorithm definitions of the modules for backwards compatibility
+			final AlgorithmSelector selector = new AlgorithmSelector();
+			part.setAlgorithm(selector);
+			switch (configName) {
+				case "anonymization" -> {
+					if (part.getConfiguration().containsKey("privacyModels")) {
+						selector.setId(part.getConfiguration().get("privacyModels").path(0).path("name").asText());
+					}
+					selector.setVersion(("1.0.0"));
+				}
+				case "risk_assessment_configuration" -> {
+					selector.setId("risk_assessment");
+					selector.setVersion(("1.0.0"));
+				}
+				case "evaluation_configuration" -> {
+					selector.setId("evaluation");
+					selector.setVersion(("1.0.0"));
+				}
+			}
+
+			return selector.getId() != null && !selector.getId().isBlank();
 		}
 	}
 

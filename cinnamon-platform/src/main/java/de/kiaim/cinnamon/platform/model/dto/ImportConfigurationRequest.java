@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
+import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -21,7 +22,8 @@ public class ImportConfigurationRequest {
 	 * The configuration YAML file to import.
 	 * The root element must be an object containing the configurations with the configured name as the key.
 	 */
-	@Schema(description = "The configuration YAML file to import. The root element must be an object containing the configurations with the configured name as the key.")
+	@Schema(description = "The configuration YAML file to import. The root element must be an object containing the configurations with the configured name as the key.",
+	        implementation = ConfigurationFile.class)
 	@NotNull
 	private MultipartFile configuration;
 

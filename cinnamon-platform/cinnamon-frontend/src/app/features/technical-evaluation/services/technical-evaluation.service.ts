@@ -25,6 +25,10 @@ export class TechnicalEvaluationService extends AlgorithmService {
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
         return {
             evaluation_configuration: {
+                algorithm: {
+                    id: selectedAlgorithm.name,
+                    version: selectedAlgorithm.version,
+                },
                 data_format: 'cross-sectional',
                 ...arg
             },

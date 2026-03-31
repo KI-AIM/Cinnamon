@@ -1,8 +1,8 @@
 package de.kiaim.cinnamon.platform.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.algorithms.Algorithm;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
@@ -1074,7 +1074,7 @@ public class ProcessService {
 		try {
 			final String serverUrl = instance.getUrl();
 			String url = endpoint.getProcessEndpoint().isBlank()
-			             ? getProcessUrl(externalProcess.getConfigurationString())
+			             ? getProcessUrl(externalProcess.getConfigurationString(), endpoint.getConfigurationName())
 			             : endpoint.getProcessEndpoint();
 			url = injectUrlParameter(url, externalProcess);
 
@@ -1273,37 +1273,24 @@ public class ProcessService {
 	 * Gets the URL for starting the algorithm defined in the given configuration.
 	 *
 	 * @param configuration The configuration.
+	 * @param configName    Name of the configuration.
 	 * @return The URL for starting the algorithm.
 	 * @throws BadAlgorithmException         If the algorithm is not available.
 	 * @throws BadConfigurationNameException If the configuration name is not valid.
 	 * @throws InternalIOException           If the configuration could not be serialized.
 	 * @throws InternalRequestException      If fetching the algorithm failed.
 	 */
-	private String getProcessUrl(final String configuration)
+	private String getProcessUrl(final String configuration, final String configName)
 			throws BadAlgorithmException, BadConfigurationNameException, InternalIOException, InternalRequestException {
 		// 1. Extract the configuration name and algorithm name from the configuration
-		final JsonNode configurationNode;
+		final ConfigurationFile configurationFile;
 		try {
-			configurationNode = yamlMapper.readTree(configuration);
+			configurationFile = yamlMapper.readValue(configuration, ConfigurationFile.class);
 		} catch (final JsonProcessingException e) {
 			throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
 			                              "Failed to serialize configuration!", e);
 		}
-
-		// TODO remove hardcoded
-		final String configName = configurationNode.fields().next().getKey();
-		final String algorithmName;
-		if (configName.equals("anonymization")) {
-			algorithmName = configurationNode.get(configName).get("privacyModels").get(0).get("name").asText();
-		} else if (configName.equals("synthetization_configuration")) {
-			algorithmName = configurationNode.get(configName).get("algorithm").get("synthesizer").asText();
-		} else if (configName.equals("risk_assessment_configuration")) {
-			algorithmName = "risk_assessment";
-		} else if (configName.equals("evaluation_configuration")) {
-			algorithmName = "evaluation";
-		} else {
-			algorithmName = "";
-		}
+		final String algorithmName = configurationFile.getParts().get(configName).getAlgorithm().getId();
 
 		// 2. Get the URL for the algorithm definition
 		var availableAlgorithms =  externalConfigurationService.fetchAvailableAlgorithms(configName);

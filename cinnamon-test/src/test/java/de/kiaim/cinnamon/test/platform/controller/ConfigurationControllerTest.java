@@ -113,7 +113,7 @@ class ConfigurationControllerTest extends ControllerTest {
 	}
 
 	@Test
-	public void importConfigurations() throws Exception {
+	public void importConfigurationsNoAlgorithmSelector() throws Exception {
 		final String configuration = """
 		                             anonymization:
 		                                param1: 42
@@ -128,6 +128,34 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 		allowPartialImport: true,
 		                                 		configurationsToImport: null
 		                                 	},
+		                                 	status: 'PARTIAL_ERROR',
+		                                 	configurationImportSummaries:  [
+		                                 		{configurationName: 'anonymization', status: 'ERROR', errorCode: 'PLATFORM_1_15_2'}
+		                                 	]
+		                                 }
+		                                 """));
+	}
+
+	@Test
+	public void importConfigurations() throws Exception {
+		final String configuration = """
+		                             anonymization:
+		                                algorithm:
+		                                    id: 'tabular'
+		                                    version: '1.0.0'
+		                                param1: 42
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		                                      .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
 		                                 	status: 'SUCCESS',
 		                                 	configurationImportSummaries:  [
 		                                 		{configurationName: 'anonymization', status: 'SUCCESS', errorCode: null}
@@ -135,7 +163,14 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 }
 		                                 """));
 
-		testImportedConfiguration("anonymization", "anonymization:\n  param1: 42\n");
+		var expected = """
+		               anonymization:
+		                 algorithm:
+		                   id: "tabular"
+		                   version: "1.0.0"
+		                 param1: 42
+		               """;
+		testImportedConfiguration("anonymization", expected);
 	}
 
 	@Test
@@ -143,6 +178,10 @@ class ConfigurationControllerTest extends ControllerTest {
 		final String configuration = """
 		                             {
 		                                "anonymization": {
+		                                    "algorithm": {
+		                                        "id": "tabular",
+		                                        "version": "1.0.0"
+		                                    },
 		                                    "param1": 42
 		                                }
 		                             }
@@ -164,7 +203,14 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 }
 		                                 """));
 
-		testImportedConfiguration("anonymization", "anonymization:\n  param1: 42\n");
+		var expected = """
+		               anonymization:
+		                 algorithm:
+		                   id: "tabular"
+		                   version: "1.0.0"
+		                 param1: 42
+		               """;
+		testImportedConfiguration("anonymization", expected);
 	}
 
 	@Test
@@ -262,6 +308,9 @@ class ConfigurationControllerTest extends ControllerTest {
 	public void importConfigurationsSomeInvalid() throws Exception {
 		final String configuration = """
 		                             anonymization:
+		                                algorithm:
+		                                    id: 'tabular'
+		                                    version: '1.0.0'
 		                                param1: 42
 		                             invalid_name:
 		                                param2: 42
@@ -284,7 +333,14 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 }
 		                                 """));
 
-		testImportedConfiguration("anonymization", "anonymization:\n  param1: 42\n");
+		var expected = """
+		               anonymization:
+		                 algorithm:
+		                   id: "tabular"
+		                   version: "1.0.0"
+		                 param1: 42
+		               """;
+		testImportedConfiguration("anonymization", expected);
 		testImportedConfiguration("invalid_name", null);
 	}
 
@@ -292,6 +348,9 @@ class ConfigurationControllerTest extends ControllerTest {
 	public void importConfigurationsSelected() throws Exception {
 		final String configuration = """
 		                             anonymization:
+		                                algorithm:
+		                                    id: 'tabular'
+		                                    version: '1.0.0'
 		                                param1: 42
 		                             invalid_name:
 		                                param2: 42
@@ -319,8 +378,197 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 }
 		                                 """));
 
-		testImportedConfiguration("anonymization", "anonymization:\n  param1: 42\n");
+		var expected = """
+		               anonymization:
+		                 algorithm:
+		                   id: "tabular"
+		                   version: "1.0.0"
+		                 param1: 42
+		               """;
+		testImportedConfiguration("anonymization", expected);
 		testImportedConfiguration("invalid_name", null);
+	}
+
+	@Test
+	public void importConfigurationsOldAnonymization() throws Exception {
+		final String configuration = """
+		                             anonymization:
+		                                privacyModels:
+		                                    - name: anonymization_tabular
+		                                      type: tabular
+		                                attributeConfiguration:
+		                                    - attributeProtection: MICRO_AGGREGATION
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		                                      .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries: [
+		                                 		{configurationName: 'anonymization', status: 'SUCCESS', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		var expected = """
+		               anonymization:
+		                 algorithm:
+		                   id: "anonymization_tabular"
+		                   version: "1.0.0"
+		                 privacyModels:
+		                 - name: "anonymization_tabular"
+		                   type: "tabular"
+		                 attributeConfiguration:
+		                 - attributeProtection: "MICRO_AGGREGATION"
+		               """;
+		testImportedConfiguration("anonymization", expected);
+	}
+
+	@Test
+	public void importConfigurationsOldSynthetization() throws Exception {
+		final String configuration = """
+		                             synthetization_configuration:
+		                                 algorithm:
+		                                     synthesizer: ctgan
+		                                     type: cross-sectional
+		                                     version: "0.1"
+		                                     model_parameter:
+		                                         embedding_dim: 16
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		                                      .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries: [
+		                                 		{configurationName: 'synthetization_configuration', status: 'SUCCESS', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		var expected = """
+		               synthetization_configuration:
+		                 algorithm:
+		                   id: "ctgan"
+		                   version: "0.1"
+		                   synthesizer: "ctgan"
+		                   model_parameter:
+		                     embedding_dim: 16
+		                   type: "cross-sectional"
+		               """;
+		testImportedConfiguration("synthetization_configuration", expected);
+	}
+
+	@Test
+	public void importConfigurationsOldEvaluation() throws Exception {
+		final String configuration = """
+		                             evaluation_configuration:
+		                                 data_format: cross-sectional
+		                                 resemblance:
+		                                     mean: {}
+		                                     standard_deviation: {}
+		                                 utility:
+		                                     machine_learning:
+		                                         trains_size: 0.8
+		                                         target_variable: "target_variable"
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		                                      .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries: [
+		                                 		{configurationName: 'evaluation_configuration', status: 'SUCCESS', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		var expected = """
+		               evaluation_configuration:
+		                 algorithm:
+		                   id: "evaluation"
+		                   version: "1.0.0"
+		                 data_format: "cross-sectional"
+		                 resemblance:
+		                   mean: {}
+		                   standard_deviation: {}
+		                 utility:
+		                   machine_learning:
+		                     trains_size: 0.8
+		                     target_variable: "target_variable"
+		               """;
+		testImportedConfiguration("evaluation_configuration", expected);
+	}
+
+	@Test
+	public void importConfigurationsOldRiskAssessment() throws Exception {
+		final String configuration = """
+		                             risk_assessment_configuration:
+		                                 singlingout_uni:
+		                                     n_attacks: 10
+		                                 attribute_inference:
+		                                     n_attacks: 10
+		                                 linkage:
+		                                     n_attacks: 100
+		                                     available_columns:
+		                                         - "column0_boolean"
+		                                         - "column1_date"
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		                                      .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries: [
+		                                 		{configurationName: 'risk_assessment_configuration', status: 'SUCCESS', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		var expected = """
+		               risk_assessment_configuration:
+		                 algorithm:
+		                   id: "risk_assessment"
+		                   version: "1.0.0"
+		                 attribute_inference:
+		                   n_attacks: 10
+		                 linkage:
+		                   n_attacks: 100
+		                   available_columns:
+		                   - "column0_boolean"
+		                   - "column1_date"
+		                 singlingout_uni:
+		                   n_attacks: 10
+		               """;
+		testImportedConfiguration("risk_assessment_configuration", expected);
 	}
 
 	@Test

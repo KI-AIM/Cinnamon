@@ -67,14 +67,17 @@ public class AlgorithmTestHelper {
 	public static String generateAlgorithmConfigurationYaml() {
 		return """
 		       anonymization:
-		          privacyModels:
-		          - name: algorithmA
+		         algorithm:
+		           id: algorithmA
+		           version: 1.0.1
+		         privacyModels:
+		         - name: algorithmA
 		       """;
 	}
 
 	public static String generateAlgorithmConfigurationJson() {
 		return """
-		       {"anonymization":{"privacyModels":[{"name":"algorithmA"}]}}""";
+		       {"anonymization":{"algorithm":{"id":"algorithmA","version":"1.0.1"},"privacyModels":[{"name":"algorithmA"}]}}""";
 	}
 
 	public static AvailableAlgorithms generateAvailableAlgorithms2() {
@@ -91,6 +94,8 @@ public class AlgorithmTestHelper {
 		return """
 		       synthetization_configuration:
 		          algorithm:
+		              id: ctgan
+		              version: "1.0.1"
 		              synthesizer: ctgan
 		       """;
 	}

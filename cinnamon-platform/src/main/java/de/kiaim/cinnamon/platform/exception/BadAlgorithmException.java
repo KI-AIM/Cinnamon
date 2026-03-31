@@ -12,6 +12,11 @@ public class BadAlgorithmException extends BadRequestException {
 	 */
 	public final static String ALGORITHM_NOT_AVAILABLE = "1";
 
+	/**
+	 * Exception code for providing a configuration without selecting an algorithm.
+	 */
+	public final static String ALGORITHM_NOT_SELECTED = "2";
+
 	public BadAlgorithmException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

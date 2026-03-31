@@ -66,9 +66,9 @@ public class InternalIOException extends InternalException {
 	public static final String XLSX_READING = "12";
 
 	/**
-	 * Exception code for failed algorithm serialization.
+	 * Exception code for failed configuration deserialization.
 	 */
-	public static final String ALGORITHM_SERIALIZATION = "13";
+	public static final String CONFIGURATION_DESERIALIZATION = "13";
 
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);

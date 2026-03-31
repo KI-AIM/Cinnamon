@@ -49,6 +49,10 @@ export class AnonymizationService extends AlgorithmService {
     public override createConfiguration(arg: AnonymizationFormConfig, selectedAlgorithm: Algorithm): Object {
         return {
             anonymization: {
+                algorithm: {
+                    id: selectedAlgorithm.name,
+                    version: selectedAlgorithm.version,
+                },
                 privacyModels: [
                     {
                         name: selectedAlgorithm.name,

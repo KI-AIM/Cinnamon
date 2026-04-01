@@ -1,3 +1,4 @@
+import { ConfigurationImportSummary } from "@shared/model/import-pipe-data";
 import { Type } from "class-transformer";
 
 /**
@@ -18,5 +19,6 @@ export class ErrorResponse {
 
 export class ErrorDetails {
     configurationName: string | null;
+    configurationImportSummary?: ConfigurationImportSummary;
     validationErrors: Record<string, string[]> | null;
 }

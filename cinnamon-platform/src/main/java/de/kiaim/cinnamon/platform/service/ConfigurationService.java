@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashSet;
 
 /**
  * Service class for accessing and managing configurations.
@@ -97,11 +98,16 @@ public class ConfigurationService {
 
 		final var importSummary = new ConfigurationImportSummary(parameters);
 
+		final var seenConfigs = new HashSet<String>();
+
+		// Iterate over all configurations in the file and import those marked for import
 		final var configItr = yamlConfig.fields();
 
 		while (configItr.hasNext()) {
 			final var configEntry = configItr.next();
 			final var configName = configEntry.getKey();
+
+			seenConfigs.add(configName);
 
 			if (parameters.getConfigurationsToImport() != null &&
 			    !parameters.getConfigurationsToImport().contains(configName)) {
@@ -180,6 +186,18 @@ public class ConfigurationService {
 			}
 		}
 
+		// Check if all configurations to import were in the file
+		if (parameters.getConfigurationsToImport() != null) {
+			for (final var configToImport : parameters.getConfigurationsToImport()) {
+				if (!seenConfigs.contains(configToImport)) {
+					importSummary.addError(configToImport, new BadConfigurationNameException(
+							BadConfigurationNameException.NO_CONFIGURATION,
+							"The file does not contain the configuration " + configToImport).getErrorCode());
+				}
+			}
+		}
+
+		// Check if the import failed according to the partial import
 		if (importSummary.getStatus() == ConfigurationImportSummary.ConfigurationImportStatus.ERROR) {
 			// Throw exception to trigger rollback
 			throw new BadConfigurationFileException(BadConfigurationFileException.IMPORT_FAILED,

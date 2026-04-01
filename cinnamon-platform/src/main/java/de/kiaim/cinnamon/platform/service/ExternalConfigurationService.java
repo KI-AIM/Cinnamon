@@ -72,9 +72,12 @@ public class ExternalConfigurationService {
 	 */
 	public ConfigurationInfo getInfo(final String configurationName, final ProjectEntity project)
 			throws BadConfigurationNameException, InternalInvalidStateException {
-		final ConfigurationInfo configurationInfo = new ConfigurationInfo();
 
 		final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(configurationName);
+
+		final var configurationList = project.getConfigurationList(externalConfiguration);
+		final var isAvailable = configurationList != null && !configurationList.getConfigurations().isEmpty();
+		final ConfigurationInfo configurationInfo = new ConfigurationInfo(isAvailable);
 
 		final var jobs = externalConfiguration.getUsages()
 		                                      .stream()

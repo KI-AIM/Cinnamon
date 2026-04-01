@@ -15,6 +15,13 @@ import java.util.List;
 @Schema(description = "General information about a configuration.")
 @Getter @AllArgsConstructor
 public class ConfigurationInfo {
+
+	/**
+	 * If a configuration is available because of a previous import.
+	 */
+	@Schema(description = "If a configuration is available because of a previous import.")
+	private final boolean available;
+
 	@Schema(description = "Information about all processes that use this configuration.")
 	private final List<ProcessInfo> processes = new ArrayList<>();
 }

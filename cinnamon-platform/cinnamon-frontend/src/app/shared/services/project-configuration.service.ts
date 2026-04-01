@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { TechnicalEvaluationService } from "@features/technical-evaluation/services/technical-evaluation.service";
-import { BehaviorSubject, finalize, map, Observable, of, shareReplay, switchMap, tap } from "rxjs";
+import { BehaviorSubject, catchError, finalize, map, Observable, of, shareReplay, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 import {
     ConfigurationGroupDefinition,
@@ -108,45 +108,56 @@ export class ProjectConfigurationService {
      * @private
      */
     private initMetricSettings$(projectSettings: ProjectSettings): Observable<ProjectSettings> {
-        if (projectSettings.metricConfiguration) {
-            return of(projectSettings);
-        } else {
-            return this.doInitMetricSettings$().pipe(
-                map(value1 => {
-                    projectSettings.metricConfiguration = value1;
-                    return projectSettings;
-                }),
-            );
-        }
-    }
-
-    /**
-     * Initializes the metric settings by fetching the definition of all metrics from the technical evaluation
-     * and setting each metric to {@link MetricImportance.IMPORTANT}.
-     *
-     * @return Observable containing the initialized metric settings.
-     * @private
-     */
-    private doInitMetricSettings$(): Observable<MetricSettings> {
-        return this.technicalEvaluationService.algorithms.pipe(
-            switchMap(value1 => {
-                return this.technicalEvaluationService.getAlgorithmDefinition(value1[0]);
+        return of(projectSettings).pipe(
+            tap(value => {
+                if (!value.metricConfiguration) {
+                    const metricSettings = new MetricSettings();
+                    metricSettings.useUserDefinedImportance = false;
+                    metricSettings.userDefinedImportance = {};
+                    value.metricConfiguration = metricSettings;
+                }
             }),
-            map(value1 => {
-                return this.initMetricSettings(value1.configurations);
+            switchMap(value => {
+                // Importance can be missing if the settings were saved while fetching the metrics failed
+                console.log(value);
+               if (value.metricConfiguration.userDefinedImportance &&
+                   Object.keys(value.metricConfiguration.userDefinedImportance).length > 0) {
+                   return of(value);
+               } else {
+                   return this.initMetricImportance$(value);
+               }
             }),
         );
     }
 
-    private initMetricSettings(configurations: ConfigurationGroupDefinitions): MetricSettings {
-        const metricSettings = new MetricSettings();
-        metricSettings.useUserDefinedImportance = false;
-        metricSettings.userDefinedImportance = {};
-        this.createGroups(metricSettings.userDefinedImportance, configurations);
-        return metricSettings;
+    /**
+     * Initializes the metric importance by fetching the definition of all metrics from the technical evaluation
+     * and setting each metric to {@link MetricImportance.IMPORTANT}.
+     *
+     * @param projectSettings The project settings.
+     * @return Observable containing the project settings containing the initialized metric settings.
+     */
+    private initMetricImportance$(projectSettings: ProjectSettings): Observable<ProjectSettings> {
+        return this.technicalEvaluationService.algorithms.pipe(
+            switchMap(value1 => {
+                return this.technicalEvaluationService.getAlgorithmDefinition(value1[0]);
+            }),
+            catchError(_ => {
+                return of(null);
+            }),
+            map(value1 => {
+                this.createGroups(projectSettings.metricConfiguration.userDefinedImportance, value1?.configurations);
+                return projectSettings;
+            }),
+        );
     }
 
-    private createGroups(metricsSettings: MetricImportanceDefinition, configurations: ConfigurationGroupDefinitions) {
+    private createGroups(metricsSettings: MetricImportanceDefinition, configurations?: ConfigurationGroupDefinitions) {
+        // Can be null/undefined if fetching the algorithm definition failed.
+        if (!configurations) {
+            return;
+        }
+
         Object.values(configurations).forEach((groupDefinition) => {
             this.createGroup(metricsSettings, groupDefinition);
         });

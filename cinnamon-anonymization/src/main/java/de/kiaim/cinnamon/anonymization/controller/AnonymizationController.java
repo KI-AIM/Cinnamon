@@ -155,7 +155,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "200", description = "File retrieved successfully.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Error retrieving config file.", content = @Content)
     })
-    @GetMapping(value = "/anon-tabular-privacy-model-config")
+    @GetMapping(value = "/anon-tabular-privacy-model-config", produces = MediaType.APPLICATION_YAML_VALUE)
     @Cacheable("config")
     public ResponseEntity<byte[]> getTabularAnonPrivacyModelConfig() {
         try {
@@ -177,7 +177,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "200", description = "File retrieved successfully.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Error retrieving config file.", content = @Content)
     })
-    @GetMapping(value = "/anon-tabular-attribute-config")
+    @GetMapping(value = "/anon-tabular-attribute-config", produces = MediaType.APPLICATION_YAML_VALUE)
     @Cacheable("config")
     public ResponseEntity<byte[]> getAnonAttributeConfig() {
         try {
@@ -201,7 +201,7 @@ public class AnonymizationController {
             @ApiResponse(responseCode = "200", description = "File retrieved successfully.", content = @Content),
             @ApiResponse(responseCode = "500", description = "Error retrieving config file.", content = @Content)
     })
-    @GetMapping(value = "/algorithms")
+    @GetMapping(value = "/algorithms", produces = MediaType.APPLICATION_YAML_VALUE)
     @Cacheable("algorithms")
     public ResponseEntity<byte[]> getAlgorithms() {
         try {

@@ -16,7 +16,7 @@ public class StoreDataConfigurationRequest {
 	@Parameter(description = "Metadata describing the format of the data as JSON or YAML.",
 	           content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 	                               schema = @Schema(implementation = DataConfiguration.class)),
-	                      @Content(mediaType = "application/x-yaml",
+	                      @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
 	                               schema = @Schema(implementation = DataConfiguration.class)),
 	           })
 	@NotNull(message = "Configuration must be present!")

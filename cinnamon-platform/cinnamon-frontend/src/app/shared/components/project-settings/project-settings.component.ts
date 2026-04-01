@@ -67,34 +67,30 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
             switchMap(_ => {
                return this.projectSettingsService.projectSettings2$;
             }),
-            switchMap(value => {
+            switchMap(settings => {
                 return this.technicalEvaluationService.algorithms.pipe(
                    map(algorithms => {
-                      return {settings: value, algorithms: algorithms};
+                      return {settings: settings, algorithms: algorithms};
                    }),
-                );
-            }),
-            switchMap(value => {
-                return this.technicalEvaluationService.getAlgorithmDefinition(value.algorithms[0]).pipe(
-                    map(algorithmDefinition => {
-                        return {
-                            settings: value.settings,
-                            algorithms: value.algorithms,
-                            algorithmDefinition: algorithmDefinition
-                        };
+                    switchMap(value => {
+                        return this.technicalEvaluationService.getAlgorithmDefinition(value.algorithms[0]).pipe(
+                            map(algorithmDefinition => {
+                                return {
+                                    settings: value.settings,
+                                    algorithms: value.algorithms,
+                                    algorithmDefinition: algorithmDefinition
+                                };
+                            }),
+                        );
                     }),
-                );
-            }),
-            catchError((error: any, value) => {
-                this.errorHandlingService.addError(error, "Failed to load metrics!");
-                return value.pipe(
-                   map(data => {
-                      return {
-                          settings: data.settings,
-                          algorithms: data.algorithms,
-                          algorithmDefinition: new AlgorithmDefinition()
-                      }
-                   }),
+                    catchError(() => {
+                        this.errorHandlingService.addError("Failed to load available metrics. Some settings are not available!");
+                        return of({
+                            settings: settings,
+                            algorithms: [],
+                            algorithmDefinition: new AlgorithmDefinition()
+                        });
+                    }),
                 );
             }),
             tap(value => {

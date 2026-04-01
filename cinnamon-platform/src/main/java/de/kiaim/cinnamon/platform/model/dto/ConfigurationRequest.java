@@ -24,8 +24,4 @@ public class ConfigurationRequest {
 	@Schema(description = "Content of the configuration. Can be any string.")
 	@Nullable
 	private String configuration;
-
-	@Schema(description = "URI to start the algorithm.", example = "/start_synthetization_process/ctgan")
-	@Nullable
-	private String url;
 }

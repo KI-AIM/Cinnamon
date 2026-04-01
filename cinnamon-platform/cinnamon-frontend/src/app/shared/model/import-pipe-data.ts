@@ -1,37 +1,21 @@
-import { ConfigurationRegisterData } from "./configuration-register-data";
-import { HttpErrorResponse } from "@angular/common/http";
+export type ConfigurationImportStatus = "SUCCESS" | "PARTIAL_ERROR" | "ERROR";
+export type ConfigurationImportPartStatus = "SUCCESS" | "IGNORED" | "ERROR";
 
-export class ImportPipeDataIntern {
-    name: string;
-    configData: ConfigurationRegisterData | null;
-    yamlConfigString: string | null;
-    error: HttpErrorResponse | null = null;
-    success: boolean;
+export class ConfigurationImportParameters {
+    allowPartialImport: boolean;
+    configurationsToImport: string[] | null;
 }
 
-export class ImportPipeData {
-    /**
-     * Registered name of the configuration
-     */
-    name: string;
+export class ConfigurationImportSummaryPart {
+    configurationName: string;
+    status: ConfigurationImportPartStatus;
+    errorCode: string | null;
 
-    /**
-     * Registered data of teh configuration
-      */
-    configData: ConfigurationRegisterData;
+    configuration: Object | string | null;
+}
 
-    /**
-     * The configuration as YAML string
-     */
-    yamlConfigString: string;
-
-    /**
-     * Error during the import.
-     */
-    error: HttpErrorResponse | null = null;
-
-    /**
-     * If the import was successful.
-     */
-    success: boolean;
+export class ConfigurationImportSummary {
+    parameters: ConfigurationImportParameters;
+    status: ConfigurationImportStatus;
+    configurationImportSummaries: ConfigurationImportSummaryPart[];
 }

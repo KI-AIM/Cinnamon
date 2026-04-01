@@ -99,7 +99,7 @@ public class ProjectServiceTest extends DatabaseTest {
 				() -> dataProcessor.read(file.getInputStream(), csvFileConfiguration, configuration));
 		assertDoesNotThrow(() -> databaseService.storeFile(project, file, fileConfiguration));
 		databaseService.storeOriginalTransformationResult(transformationResult, project);
-		databaseService.storeConfiguration("anonymization", null, "key = value", project);
+		databaseService.storeConfiguration("anonymization", "key = value", project);
 
 		var pipeline = new PipelineEntity();
 		project.addPipeline(pipeline);

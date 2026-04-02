@@ -91,6 +91,7 @@ export class ConfigurationPageComponent implements OnInit {
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') protected forms: ConfigurationFormComponent;
     @ViewChild('expertFileUpload') protected expertFileUpload: FileUploadComponent;
+    @ViewChild('standardFileUpload') protected standardFileUpload: FileUploadComponent;
 
     constructor(
         protected readonly algorithmService: AlgorithmService,
@@ -291,6 +292,7 @@ export class ConfigurationPageComponent implements OnInit {
         this.configurationService.uploadAllConfigurations(this.configFileCache, included).subscribe({
             next: () => {
                 this.configFileCache = null;
+                this.standardFileUpload.clearFile();
             },
             error: error => {
                 this.errorHandlingService.addError(error, "Could not upload configuration.");

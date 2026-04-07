@@ -117,7 +117,7 @@ export class DataConfigurationComponent implements OnInit {
                     this.setFormEnabled(this.attributeConfigurationform, value.isLocked);
                 }),
             ),
-            status: this.statusService.status$,
+            status: this.statusService.status2$,
         }).pipe(
             switchMap(value => {
                 return this.configuration.dataConfiguration$.pipe(

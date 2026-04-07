@@ -23,6 +23,7 @@ export class UserService {
 	private readonly USER_KEY = "user";
 	private user: User;
 
+    private loginSubject: Subject<void> = new Subject<void>();
     private logoutSubject: Subject<void> = new Subject<void>();
 
 	constructor(
@@ -46,6 +47,13 @@ export class UserService {
 		return this.user.authenticated;
 	}
 
+    /**
+     * Returns an observable that emits when the user logs in.
+     */
+    public login$(): Observable<void> {
+        return this.loginSubject.asObservable();
+    }
+
     public logout$(): Observable<void> {
         return this.logoutSubject.asObservable();
     }
@@ -65,6 +73,7 @@ export class UserService {
                 if (typeof data === "boolean" && data) {
                     this.user = new User(true, credentials.email, token);
                     sessionStorage.setItem(this.USER_KEY, JSON.stringify(this.user));
+                    this.loginSubject.next();
                 }
             }),
         );

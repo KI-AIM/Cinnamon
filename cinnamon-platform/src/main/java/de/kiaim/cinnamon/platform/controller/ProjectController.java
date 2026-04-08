@@ -5,14 +5,13 @@ import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
-import de.kiaim.cinnamon.platform.model.dto.ProjectConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.StatusEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
-import de.kiaim.cinnamon.platform.model.mapper.ProjectConfigurationMapper;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.StepService;
 import de.kiaim.cinnamon.platform.service.UserService;
@@ -46,15 +45,12 @@ public class ProjectController {
 	private final StepService stepService;
 	private final UserService userService;
 
-	private final ProjectConfigurationMapper projectConfigurationMapper;
-
-	public ProjectController(final ProjectService projectService, final StepService stepService,
-	                         final UserService userService,
-	                         final ProjectConfigurationMapper projectConfigurationMapper) {
+	public ProjectController(final ProjectService projectService,
+	                         final StepService stepService,
+	                         final UserService userService) {
 		this.projectService = projectService;
 		this.stepService = stepService;
 		this.userService = userService;
-		this.projectConfigurationMapper = projectConfigurationMapper;
 	}
 
 	@Operation(summary = "Creates a projects with the given mode.",
@@ -140,7 +136,7 @@ public class ProjectController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) {
 		final var project = projectService.getProject(requestUser);
-		return projectConfigurationMapper.toDto(project.getProjectConfiguration());
+		return projectService.exportProjectConfiguration(project);
 	}
 
 	@Operation(summary = "Updates the configuration of the user's project.",
@@ -156,8 +152,7 @@ public class ProjectController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) {
 		final var project = projectService.getProject(requestUser);
-		projectConfigurationMapper.updateEntity(project.getProjectConfiguration(), projectConfigurationDTO);
-		projectService.saveProject(project);
+		projectService.updateProjectConfiguration(project, projectConfigurationDTO);
 	}
 
 

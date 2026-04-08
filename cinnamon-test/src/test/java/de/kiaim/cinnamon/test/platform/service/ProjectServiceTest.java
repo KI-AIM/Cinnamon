@@ -126,6 +126,7 @@ public class ProjectServiceTest extends DatabaseTest {
 		var out = new ByteArrayOutputStream();
 		var parameter = new ProjectExportParameter(false, FileType.CSV, HoldOutSelector.ALL,
 		                                           List.of("pipeline.execution.anonymization.dataset",
+		                                                   "configuration.project",
 		                                                   "configuration.configurations", "original.dataset",
 		                                                   "configuration.anonymization"));
 		assertDoesNotThrow(() -> projectService.createZipFile(project, out, parameter));

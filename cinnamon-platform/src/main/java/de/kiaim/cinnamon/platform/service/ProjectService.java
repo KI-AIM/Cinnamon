@@ -3,6 +3,8 @@ package de.kiaim.cinnamon.platform.service;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
+import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
@@ -15,6 +17,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.platform.model.mapper.ProjectConfigurationMapper;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
@@ -40,21 +43,33 @@ public class ProjectService {
 
 	private final ObjectMapper yamlMapper;
 	private final CinnamonConfiguration cinnamonConfiguration;
+
 	private final ProjectRepository projectRepository;
 	private final UserRepository userRepository;
+
+	private final ProjectConfigurationMapper projectConfigurationMapper;
+
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final ProcessService processService;
 	private final StepService stepService;
 
-	public ProjectService(final ObjectMapper yamlMapper, final CinnamonConfiguration cinnamonConfiguration,
-	                      final ProjectRepository projectRepository, final UserRepository userRepository,
-	                      final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final ProcessService processService, final StepService stepService) {
+	public ProjectService(
+			final ObjectMapper yamlMapper,
+			final CinnamonConfiguration cinnamonConfiguration,
+			final ProjectRepository projectRepository,
+			final UserRepository userRepository,
+			final ProjectConfigurationMapper projectConfigurationMapper,
+			final DatabaseService databaseService,
+			final DataProcessorService dataProcessorService,
+			final ProcessService processService,
+			final StepService stepService
+	) {
 		this.yamlMapper = yamlMapper;
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.projectRepository = projectRepository;
 		this.userRepository = userRepository;
+		this.projectConfigurationMapper = projectConfigurationMapper;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.processService = processService;
@@ -264,6 +279,28 @@ public class ProjectService {
 	}
 
 	/**
+	 * Returns a DTO of the project configuration of the given project.
+	 *
+	 * @param project The project.
+	 * @return The DTO of the project configuration.
+	 */
+	public ProjectConfigurationDTO exportProjectConfiguration(final ProjectEntity project) {
+		return projectConfigurationMapper.toDto(project.getProjectConfiguration());
+	}
+
+	/**
+	 * Updates the project configuration.
+	 *
+	 * @param project       The project to be updated.
+	 * @param configuration The new configuration.
+	 */
+	@Transactional
+	public void updateProjectConfiguration(final ProjectEntity project, final ProjectConfigurationDTO configuration) {
+		projectConfigurationMapper.updateEntity(project.getProjectConfiguration(), configuration);
+		saveProject(project);
+	}
+
+	/**
 	 * Writes a ZIP to the given OutputStream containing the data set and data configuration of the given project and the given configuration.
 	 *
 	 * @param project                The project of the data set.
@@ -455,8 +492,11 @@ public class ProjectService {
 	@Nullable
 	private String getConfigurationString(final ProjectEntity project,
 	                                      final String configName) throws JsonProcessingException, BadConfigurationNameException {
-		// Special case for data configurations
-		if (configName.equals("configurations")) {
+		if (configName.equals(ConfigurationFile.PROJECT_CONFIGURATION_KEY)) {
+			final ProjectConfigurationDTO dto = projectConfigurationMapper.toDto(project.getProjectConfiguration());
+			return yamlMapper.writeValueAsString(dto);
+		} else if (configName.equals(ConfigurationFile.DATA_CONFIGURATION_KEY)) {
+			// Special case for data configurations
 			final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
 
 			if (dataSetEntity == null) {

@@ -1,14 +1,16 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
+import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
+import de.kiaim.cinnamon.model.configuration.project.MetricImportance;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
-import de.kiaim.cinnamon.platform.service.ConfigurationService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import de.kiaim.cinnamon.test.util.AlgorithmTestHelper;
 import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
+import de.kiaim.cinnamon.test.util.ProjectConfigurationTestHelper;
 import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
@@ -239,6 +241,68 @@ class ConfigurationControllerTest extends ControllerTest {
 		var dataset = getTestProject().getOriginalData().getDataSet();
 		assertNotNull(dataset);
 		assertEquals(DataConfigurationTestHelper.generateDataConfiguration(), dataset.getDataConfiguration());
+	}
+
+	@Test
+	public void importConfigurationsProjectConfiguration() throws Exception {
+		final var configuration = ProjectConfigurationTestHelper.generateProjectConfigurationAsYaml();
+		var file = new MockMultipartFile("configuration", "file.json", "text/json", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries:  [
+		                                 		{configurationName: 'project', status: 'SUCCESS', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		var projectConfig = getTestProject().getProjectConfiguration();
+		assertEquals("testProject", projectConfig.getProjectName());
+		assertEquals("contact@example.com", projectConfig.getContactMail());
+		assertNull(projectConfig.getContactUrl());
+		assertNotNull(projectConfig.getMetricConfiguration());
+		assertEquals("Fluffy Unicorn", projectConfig.getMetricConfiguration().getColorScheme());
+		assertTrue(projectConfig.getMetricConfiguration().getUseUserDefinedImportance());
+		assertEquals(MetricImportance.IMPORTANT,
+		             projectConfig.getMetricConfiguration().getUserDefinedImportance().get("MetricA"));
+		assertEquals(MetricImportance.ADDITIONAL,
+		             projectConfig.getMetricConfiguration().getUserDefinedImportance().get("MetricB"));
+		assertEquals(MetricImportance.NOT_RELEVANT,
+		             projectConfig.getMetricConfiguration().getUserDefinedImportance().get("MetricC"));
+	}
+
+	@Test
+	public void importConfigurationsProjectConfigurationInvalid() throws Exception {
+		var configuration = ProjectConfigurationTestHelper.generateProjectConfigurationAsYaml();
+		configuration = configuration.replace("\"testProject\"", "null");
+		var file = new MockMultipartFile("configuration", "file.json", "text/json", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'PARTIAL_ERROR',
+		                                 	configurationImportSummaries: [{
+		                                 		configurationName: 'project',
+		                                 		status: 'ERROR',
+		                                 		errorCode: "PLATFORM_3_2_1",
+		                                 		validationErrors: {
+		                                 			projectName: ["must not be blank"]
+		                                 		}
+		                                 	}]
+		                                 }
+		                                 """));
 	}
 
 	@Test
@@ -592,11 +656,20 @@ class ConfigurationControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void loadProjectConfiguration() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
+		                                      .param("name", ConfigurationFile.PROJECT_CONFIGURATION_KEY))
+		       .andExpect(status().isOk())
+		       .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+		       .andExpect(content().string(ProjectConfigurationTestHelper.generateProjectConfigurationAsJson()));
+	}
+
+	@Test
 	void loadDataConfiguration() throws Exception {
 		postData();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
-		                                      .param("name", ConfigurationService.DATA_CONFIGURATION_KEY))
+		                                      .param("name", ConfigurationFile.DATA_CONFIGURATION_KEY))
 		       .andExpect(status().isOk())
 		       .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(content().string(DataConfigurationTestHelper.generateDataConfigurationAsJson()));

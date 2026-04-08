@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.controller;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmDefinition;
 import de.kiaim.cinnamon.model.configuration.algorithms.AvailableAlgorithms;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.*;
@@ -159,6 +160,12 @@ public class ConfigurationController {
 		final ProjectEntity project = projectService.getProject(user);
 
 		final Object configuration = configurationService.loadConfiguration(configurationName, project);
+
+		if (configuration instanceof ProjectConfigurationDTO projectConfiguration) {
+			return ResponseEntity.ok()
+			                     .contentType(MediaType.APPLICATION_JSON)
+			                     .body(projectConfiguration);
+		}
 
 		if (configuration instanceof DataConfiguration dataConfiguration) {
 			return ResponseEntity.ok()

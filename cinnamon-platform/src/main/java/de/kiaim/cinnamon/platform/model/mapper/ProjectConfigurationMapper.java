@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.model.mapper;
 
-import de.kiaim.cinnamon.platform.model.dto.ProjectConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.platform.model.entity.ProjectConfigurationEntity;
 import org.mapstruct.*;
 

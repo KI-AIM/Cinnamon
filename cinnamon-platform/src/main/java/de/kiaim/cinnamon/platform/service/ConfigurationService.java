@@ -3,21 +3,27 @@ package de.kiaim.cinnamon.platform.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.ConfigurationPart;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmSelector;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
+import de.kiaim.cinnamon.platform.controller.ApiExceptionHandler;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Service class for accessing and managing configurations.
@@ -28,24 +34,25 @@ import java.util.HashSet;
 @Service
 public class ConfigurationService {
 
-	/**
-	 * Key for the data configuration (see {@link de.kiaim.cinnamon.model.configuration.data.DataConfiguration}).
-	 * Matches the name of the field {@link de.kiaim.cinnamon.model.configuration.data.DataConfiguration#getConfigurations()}.
-	 */
-	public static final String DATA_CONFIGURATION_KEY = "configurations";
-
 	private final ObjectMapper yamlMapper;
 
+	private final Validator validator;
+
 	private final DatabaseService databaseService;
+	private final ProjectService projectService;
 	private final StepService stepService;
 
 	public ConfigurationService(
 			final SerializationConfig serializationConfig,
+			final Validator validator,
 			final DatabaseService databaseService,
+			final ProjectService projectService,
 			final StepService stepService
 	) {
 		this.yamlMapper = serializationConfig.yamlMapper();
+		this.validator = validator;
 		this.databaseService = databaseService;
+		this.projectService = projectService;
 		this.stepService = stepService;
 	}
 
@@ -54,7 +61,7 @@ public class ConfigurationService {
 	 * The root object of the YAML must be an object with its keys being the configuration names as defined in the cinnamon configuration.
 	 * Invalid configuration names that are not selected for import will not cause errors.
 	 * Configurations of external modules for older versions are updated to be compatible with the current version.
-	 * The content of the configurations is not validated.
+	 * The content of the data configuration and configurations for external modules is not validated.
 	 *
 	 * @param project    The project the configurations are imported to.
 	 * @param file       The configuration file.
@@ -115,30 +122,10 @@ public class ConfigurationService {
 				continue;
 			}
 
-			if (configName.equals(DATA_CONFIGURATION_KEY)) {
-
-				// Convert the tree into a DataConfiguration object
-				final DataConfiguration dataConfiguration;
-				try {
-					final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(configName, configEntry.getValue());
-					dataConfiguration = yamlMapper.treeToValue(singleConfigNode, DataConfiguration.class);
-				} catch (final JsonProcessingException e) {
-					importSummary.addError(configName,
-					                       new InternalIOException(InternalIOException.DATA_CONFIGURATION_SERIALIZATION,
-					                                               "Failed to serialize data configuration!",
-					                                               e).getErrorCode());
-					continue;
-				}
-
-				// Store the DataConfiguration
-				try {
-					databaseService.storeOriginalDataConfiguration(dataConfiguration, project);
-					importSummary.addSuccess(configName);
-				} catch (final BadDataConfigurationException | BadDataSetIdException |
-				               InternalDataSetPersistenceException | InternalIOException | BadStateException e) {
-					importSummary.addError(configName, e.getErrorCode());
-				}
-
+			if (configName.equals(ConfigurationFile.PROJECT_CONFIGURATION_KEY)) {
+				importProjectConfiguration(project, configEntry.getValue(), importSummary);
+			} else if (configName.equals(ConfigurationFile.DATA_CONFIGURATION_KEY)) {
+				importDataConfiguration(project, configEntry.getValue(), importSummary);
 			} else {
 
 				// Configuration is for an external module
@@ -211,7 +198,7 @@ public class ConfigurationService {
 
 	/**
 	 * Loads the configuration with the given name from the database.
-	 * Also supports the data configuration key {@link #DATA_CONFIGURATION_KEY}.
+	 * Also supports keys defined in {@link ConfigurationFile}.
 	 *
 	 * @param configurationName The name of the configuration.
 	 * @param project           The project.
@@ -224,10 +211,69 @@ public class ConfigurationService {
 			final String configurationName,
 			final ProjectEntity project
 	) throws BadConfigurationNameException, BadStateException, InternalIOException {
-		if (DATA_CONFIGURATION_KEY.equals(configurationName)) {
+		if (ConfigurationFile.PROJECT_CONFIGURATION_KEY.equals(configurationName)) {
+			return projectService.exportProjectConfiguration(project);
+		} else if (ConfigurationFile.DATA_CONFIGURATION_KEY.equals(configurationName)) {
 			return databaseService.exportOriginalDataConfiguration(project);
 		} else {
 			return databaseService.exportConfiguration(configurationName, project);
+		}
+	}
+
+	private void importProjectConfiguration(final ProjectEntity project,
+	                                        final JsonNode config,
+	                                        final ConfigurationImportSummary outImportSummary) {
+		// Convert the tree into a ProjectConfigurationDTO object
+		final ProjectConfigurationDTO projectConfiguration;
+		try {
+			projectConfiguration = yamlMapper.treeToValue(config, ProjectConfigurationDTO.class);
+		} catch (final JsonProcessingException e) {
+			outImportSummary.addError(ConfigurationFile.PROJECT_CONFIGURATION_KEY,
+			                          new InternalIOException(InternalIOException.PROJECT_CONFIGURATION_DESERIALIZATION,
+			                                                  "Failed to serialize project configuration!",
+			                                                  e).getErrorCode());
+			return;
+		}
+
+		// Validate the project configuration
+		final Set<ConstraintViolation<ProjectConfigurationDTO>> violations = validator.validate(projectConfiguration);
+		if (!violations.isEmpty()) {
+			outImportSummary.addError(ConfigurationFile.PROJECT_CONFIGURATION_KEY,
+			                          ApiException.assembleErrorCode(ApiException.VALIDATION,
+			                                                         ApiExceptionHandler.VALIDATION_ERROR, "1"),
+			                          violations);
+			return;
+		}
+
+		// Update the project configuration
+		projectService.updateProjectConfiguration(project, projectConfiguration);
+		outImportSummary.addSuccess(ConfigurationFile.PROJECT_CONFIGURATION_KEY);
+	}
+
+	private void importDataConfiguration(final ProjectEntity project,
+	                                     final JsonNode config,
+	                                     final ConfigurationImportSummary outImportSummary) {
+		// Convert the tree into a DataConfiguration object
+		final DataConfiguration dataConfiguration;
+		try {
+			final JsonNode singleConfigNode = yamlMapper.createObjectNode()
+			                                            .set(ConfigurationFile.DATA_CONFIGURATION_KEY, config);
+			dataConfiguration = yamlMapper.treeToValue(singleConfigNode, DataConfiguration.class);
+		} catch (final JsonProcessingException e) {
+			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY,
+			                          new InternalIOException(InternalIOException.DATA_CONFIGURATION_SERIALIZATION,
+			                                                  "Failed to serialize data configuration!",
+			                                                  e).getErrorCode());
+			return;
+		}
+
+		// Store the DataConfiguration
+		try {
+			databaseService.storeOriginalDataConfiguration(dataConfiguration, project);
+			outImportSummary.addSuccess(ConfigurationFile.DATA_CONFIGURATION_KEY);
+		} catch (final BadDataConfigurationException | BadDataSetIdException |
+		               InternalDataSetPersistenceException | InternalIOException | BadStateException e) {
+			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY, e.getErrorCode());
 		}
 	}
 

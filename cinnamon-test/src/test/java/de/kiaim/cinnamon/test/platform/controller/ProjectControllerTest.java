@@ -1,10 +1,9 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import de.kiaim.cinnamon.platform.model.dto.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
+import de.kiaim.cinnamon.test.util.ProjectConfigurationTestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -18,13 +17,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WithUserDetails("test_user")
 public class ProjectControllerTest extends ControllerTest {
 
-	private static final String ORIGINAL_METRIC_CONFIGURATION = "{\"mean\": \"NOT_RELEVANT\"}";
-	private Object originalMetricConfiguration = null;
-
 	@BeforeEach
-	public void setUpProjectConfiguration() throws JsonProcessingException {
-		originalMetricConfiguration = jsonMapper.readValue(ORIGINAL_METRIC_CONFIGURATION, Object.class);
-		testProject.getProjectConfiguration().setMetricConfiguration(originalMetricConfiguration);
+	public void setUpProjectConfiguration() {
+		testProject.getProjectConfiguration()
+		           .setMetricConfiguration(ProjectConfigurationTestHelper.generateMetricConfiguration());
 		projectService.saveProject(testProject);
 	}
 
@@ -82,13 +78,30 @@ public class ProjectControllerTest extends ControllerTest {
 	public void getProjectConfiguration() throws Exception {
 		mockMvc.perform(get("/api/project/configuration"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("{metricConfiguration: {mean: 'NOT_RELEVANT'}}"));
+		       .andExpect(content().json("""
+		                                 {
+		                                   projectName: 'test_user',
+		                                   contactMail: null,
+		                                   contactUrl: null,
+		                                   reportCreator: null,
+		                                   metricConfiguration: {
+		                                     colorScheme: 'Fluffy Unicorn',
+		                                     useUserDefinedImportance: true,
+		                                     userDefinedImportance: {
+		                                       MetricA: 'IMPORTANT',
+		                                       MetricB: 'ADDITIONAL',
+		                                       MetricC: 'NOT_RELEVANT'
+		                                     }
+		                                   }
+		                                 }
+		                                 """));
 	}
 
 	@Test
 	public void putProjectConfiguration() throws Exception {
-		var metricConfiguration = jsonMapper.readValue("{\"mean\": \"IMPORTANT\"}", Object.class);
-		var dto = new ProjectConfigurationDTO();
+		var dto = ProjectConfigurationTestHelper.generateProjectConfigurationDTO();
+		var metricConfiguration = ProjectConfigurationTestHelper.generateMetricConfiguration();
+		metricConfiguration.setColorScheme("TEST_COLOR_SCHEME");
 		dto.setMetricConfiguration(metricConfiguration);
 
 		mockMvc.perform(put("/api/project/configuration")
@@ -102,7 +115,7 @@ public class ProjectControllerTest extends ControllerTest {
 
 	@Test
 	public void putProjectConfigurationMissing() throws Exception {
-		var dto = new ProjectConfigurationDTO();
+		var dto = ProjectConfigurationTestHelper.generateProjectConfigurationDTO();
 		dto.setMetricConfiguration(null);
 
 		mockMvc.perform(put("/api/project/configuration")
@@ -112,7 +125,8 @@ public class ProjectControllerTest extends ControllerTest {
 		       .andExpect(validationError("metricConfiguration", "The metric configuration must be present!"));
 
 		var project = getTestProject();
-		assertEquals(originalMetricConfiguration, project.getProjectConfiguration().getMetricConfiguration(),
+		assertEquals(ProjectConfigurationTestHelper.generateMetricConfiguration(),
+		             project.getProjectConfiguration().getMetricConfiguration(),
 		             "The metric configuration should not have changed!");
 	}
 

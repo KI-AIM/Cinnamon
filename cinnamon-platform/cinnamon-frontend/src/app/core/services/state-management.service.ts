@@ -237,7 +237,7 @@ export class StateManagementService {
      * Fetches the state from the backend and routes to the current step.
      */
     public fetchAndRouteToCurrentStep() {
-        this.statusService.status2$.pipe(
+        this.statusService.statusNonNull$.pipe(
             take(1),
         ).subscribe({
             next: value => {

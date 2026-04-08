@@ -67,9 +67,9 @@ export class StatusService implements OnDestroy {
      *
      * @returns An observable that emits the current status.
      */
-    public get status2$(): Observable<Status> {
+    public get statusNonNull$(): Observable<Status> {
         return this.statusSubject.asObservable().pipe(
-            filter(status => status !== null),
+            filter((status): status is Status => status !== null),
         );
     }
 

@@ -2,12 +2,12 @@ import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService, NotificationType } from "@core/services/notification.service";
+import { User } from "@shared/model/user";
 import { Observable, Subject, tap } from "rxjs";
 import { environments } from "src/environments/environment";
-import { User } from "../model/user";
 
 @Injectable({
-	providedIn: "root",
+    providedIn: "root",
 })
 export class UserService {
     /**
@@ -20,32 +20,32 @@ export class UserService {
     public cachedPasswordInput: string | null = null;
 
     private readonly baseURL = environments.apiUrl + "/api/user";
-	private readonly USER_KEY = "user";
-	private user: User;
+    private readonly USER_KEY = "user";
+    private user: User;
 
     private loginSubject: Subject<void> = new Subject<void>();
     private logoutSubject: Subject<void> = new Subject<void>();
 
-	constructor(
-		private readonly http: HttpClient,
+    constructor(
+        private readonly http: HttpClient,
         private readonly notificationService: NotificationService,
-		private readonly router: Router,
-	) {
-		const storedUser = sessionStorage.getItem(this.USER_KEY);
-		if (storedUser !== null) {
-			this.user = JSON.parse(storedUser);
-		} else {
-			this.user = new User(false, "", "");
-		}
-	}
+        private readonly router: Router,
+    ) {
+        const storedUser = sessionStorage.getItem(this.USER_KEY);
+        if (storedUser !== null) {
+            this.user = JSON.parse(storedUser);
+        } else {
+            this.user = new User(false, "", "");
+        }
+    }
 
-	getUser(): User {
-		return this.user;
-	}
+    getUser(): User {
+        return this.user;
+    }
 
-	isAuthenticated(): boolean {
-		return this.user.authenticated;
-	}
+    isAuthenticated(): boolean {
+        return this.user.authenticated;
+    }
 
     /**
      * Returns an observable that emits when the user logs in.
@@ -58,15 +58,15 @@ export class UserService {
         return this.logoutSubject.asObservable();
     }
 
-	login(
-		credentials: { email: string; password: string }
-	): Observable<any> {
-		this.user = new User(false, "", "");
+    login(
+        credentials: { email: string; password: string }
+    ): Observable<any> {
+        this.user = new User(false, "", "");
 
-		const token = btoa(credentials.email + ":" + credentials.password);
-		const headers = new HttpHeaders(
-			credentials ? { authorization: "Basic " + token } : {}
-		);
+        const token = btoa(credentials.email + ":" + credentials.password);
+        const headers = new HttpHeaders(
+            credentials ? {authorization: "Basic " + token} : {}
+        );
 
         return this.http.get<any>(this.baseURL + "/login", {headers: headers}).pipe(
             tap(data => {
@@ -77,16 +77,16 @@ export class UserService {
                 }
             }),
         );
-	}
+    }
 
 
-	register(request: {
-		email: string;
-		password: string;
-		passwordRepeated: string;
-	}): Observable<any> {
-		return this.http.post(this.baseURL + "/register", request);
-	}
+    register(request: {
+        email: string;
+        password: string;
+        passwordRepeated: string;
+    }): Observable<any> {
+        return this.http.post(this.baseURL + "/register", request);
+    }
 
     /**
      * Deletes the currently authenticated user.
@@ -102,7 +102,7 @@ export class UserService {
     }
 
     /**
-     * Logs out the user, redirects to the login page and displays a message based on the given mode.
+     * Logs out the user, redirects to the login page, and displays a message based on the given mode.
      * @param mode The mode defining the displayed message.
      */
     public logout(mode: LogoutMode) {
@@ -114,9 +114,16 @@ export class UserService {
         let message = "";
         let type: NotificationType = "success";
         switch (mode) {
-            case "close": message = "Successfully closed project"; break;
-            case "delete": message = "Successfully deleted project"; break;
-            case "expired": message = "Session expired"; type = "failure"; break;
+            case "close":
+                message = "Successfully closed project";
+                break;
+            case "delete":
+                message = "Successfully deleted project";
+                break;
+            case "expired":
+                message = "Session expired";
+                type = "failure";
+                break;
         }
 
         this.logoutSubject.next();

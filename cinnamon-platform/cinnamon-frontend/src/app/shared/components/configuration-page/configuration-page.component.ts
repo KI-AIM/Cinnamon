@@ -133,7 +133,7 @@ export class ConfigurationPageComponent implements OnInit {
             locked: this.stateManagementService.currentStepLocked$.pipe(
                 map(value => value.isLocked),
             ),
-            status: this.statusService.status2$,
+            status: this.statusService.statusNonNull$,
         }).pipe(
             switchMap(pageData => {
                 if (pageData.algorithms.length === 0) {

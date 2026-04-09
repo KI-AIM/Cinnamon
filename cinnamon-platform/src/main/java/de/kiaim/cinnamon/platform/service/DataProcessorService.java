@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.platform.exception.BadFileException;
 import de.kiaim.cinnamon.platform.exception.InternalMissingHandlingException;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;

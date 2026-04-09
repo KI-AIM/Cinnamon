@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import jakarta.persistence.*;
 import lombok.Getter;
 

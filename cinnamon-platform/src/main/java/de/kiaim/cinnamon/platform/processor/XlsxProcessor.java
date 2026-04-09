@@ -13,15 +13,15 @@ import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
-import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import de.kiaim.cinnamon.platform.model.file.XlsxFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.XlsxFileConfiguration;
 import org.dhatim.fastexcel.Workbook;
 import org.dhatim.fastexcel.Worksheet;
 import org.dhatim.fastexcel.reader.Cell;

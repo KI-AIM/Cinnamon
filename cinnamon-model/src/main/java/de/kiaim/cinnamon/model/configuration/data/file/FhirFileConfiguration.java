@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.platform.model.file;
+package de.kiaim.cinnamon.model.configuration.data.file;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;

@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.test.platform.processor;
 
 import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
-import de.kiaim.cinnamon.platform.model.file.FhirFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
 import de.kiaim.cinnamon.platform.processor.FhirProcessor;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
 import de.kiaim.cinnamon.test.util.ResourceHelper;

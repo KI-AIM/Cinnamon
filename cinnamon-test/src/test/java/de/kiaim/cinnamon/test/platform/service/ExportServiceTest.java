@@ -9,7 +9,7 @@ import de.kiaim.cinnamon.platform.model.entity.DataProcessingEntity;
 import de.kiaim.cinnamon.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.cinnamon.platform.model.entity.PipelineEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.service.DataProcessorService;
 import de.kiaim.cinnamon.platform.service.DatabaseService;

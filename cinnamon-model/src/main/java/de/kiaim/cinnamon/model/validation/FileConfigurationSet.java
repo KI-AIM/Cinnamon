@@ -1,6 +1,6 @@
-package de.kiaim.cinnamon.platform.model.validation;
+package de.kiaim.cinnamon.model.validation;
 
-import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 

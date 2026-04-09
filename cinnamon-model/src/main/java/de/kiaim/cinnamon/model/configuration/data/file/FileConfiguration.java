@@ -1,6 +1,6 @@
-package de.kiaim.cinnamon.platform.model.file;
+package de.kiaim.cinnamon.model.configuration.data.file;
 
-import de.kiaim.cinnamon.platform.model.validation.FileConfigurationSet;
+import de.kiaim.cinnamon.model.validation.FileConfigurationSet;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

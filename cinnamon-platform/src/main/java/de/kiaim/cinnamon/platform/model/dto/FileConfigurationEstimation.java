@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
-import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import org.springframework.lang.Nullable;
@@ -24,7 +25,7 @@ public class FileConfigurationEstimation {
 
 	/**
 	 * List the resource types contained in the FHIR bundle,
-	 * if the estimated file configuration has type {@link de.kiaim.cinnamon.platform.model.file.FileType#FHIR}
+	 * if the estimated file configuration has type {@link FileType#FHIR}
 	 * Otherwise the value is null.
 	 */
 	@Schema(description = "Resource types of the FHIR bundle. Null if the file was not a FHIR bundle.",

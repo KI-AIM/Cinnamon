@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import lombok.*;
 
 import java.util.ArrayList;

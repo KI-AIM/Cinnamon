@@ -1,6 +1,9 @@
-package de.kiaim.cinnamon.platform.model.validation;
+package de.kiaim.cinnamon.model.validation;
 
-import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.XlsxFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import jakarta.validation.*;
 import org.springframework.lang.Nullable;
 
@@ -39,9 +42,9 @@ public class FileConfigurationSetValidator implements ConstraintValidator<FileCo
 	 * @param context           The validation context.
 	 * @param missingMessage    The error message in case the given configuration is null.
 	 * @param <T>               A concrete file configuration
-	 *                          {@link de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration},
-	 *                          {@link de.kiaim.cinnamon.platform.model.file.FhirFileConfiguration} or
-	 *                          {@link de.kiaim.cinnamon.platform.model.file.XlsxFileConfiguration}
+	 *                          {@link CsvFileConfiguration},
+	 *                          {@link FhirFileConfiguration} or
+	 *                          {@link XlsxFileConfiguration}
 	 * @return If the configuration is valid.
 	 */
 	private <T> boolean validateFileConfiguration(@Nullable final T fileConfiguration, final String propertyPath,

@@ -1,10 +1,10 @@
 package de.kiaim.cinnamon.test.util;
 
+import de.kiaim.cinnamon.model.configuration.data.file.*;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
-import de.kiaim.cinnamon.platform.model.file.*;
 
 public class FileConfigurationTestHelper {
 	public static FileConfiguration generateFileConfiguration() {

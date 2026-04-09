@@ -118,7 +118,6 @@ public class ProcessControllerTest extends ControllerTest {
 	@Test
 	public void configure() throws Exception {
 		mockMvc.perform(post("/api/config")
-				                .param("configurationName", ANON_JOB)
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -128,7 +127,6 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		mockMvc.perform(post("/api/config")
-				                .param("configurationName", "synthetization_configuration")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfiguration2())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -155,7 +153,6 @@ public class ProcessControllerTest extends ControllerTest {
 	@Test
 	public void configureSkipWithConfiguration() throws Exception {
 		mockMvc.perform(post("/api/config")
-				                .param("configurationName", ANON_JOB)
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -617,8 +614,6 @@ public class ProcessControllerTest extends ControllerTest {
 		postData(false, "test_user_3");
 		mockMvc.perform(post("/api/config")
 				                .with(httpBasic("test_user_3", "changeme"))
-				                .param("configurationName", ANON_JOB)
-				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -630,8 +625,6 @@ public class ProcessControllerTest extends ControllerTest {
 
 		mockMvc.perform(post("/api/config")
 				                .with(httpBasic("test_user_3", "changeme"))
-				                .param("configurationName", "synthetization_configuration")
-				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfiguration2())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());

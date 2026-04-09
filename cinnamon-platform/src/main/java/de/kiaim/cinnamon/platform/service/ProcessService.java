@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.algorithms.Algorithm;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.pipeline.JobConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
@@ -203,6 +205,43 @@ public class ProcessService {
 	}
 
 	/**
+	 * Configures the pipelines of the given project.
+	 * Currently, always uses the first pipeline because multiple pipelines are not supported yet.
+	 * The algorithm configuration is also ignored because only one configuration is supported.
+	 *
+	 * @param project   The project to be configured.
+	 * @param pipelines The configuration of the pipelines.
+	 * @throws BadStepNameException          If a job in the configuration is not part of the pipeline.
+	 * @throws BadStateException             If the pipeline is running or scheduled.
+	 * @throws InternalInvalidStateException If the pipeline was not initialized correctly.
+	 */
+	@Transactional
+	public void configurePipelines(final ProjectEntity project,
+	                               final PipelinesConfigurationDTO pipelines)
+			throws BadStepNameException, BadStateException, InternalInvalidStateException {
+
+		// Currently, always only use the first pipeline because multiple pipelines are not supported yet
+		final Set<JobConfigurationDTO> jobs = pipelines.getPipelines().get(0).getJobs();
+		final Set<String> jobNames = new HashSet<>();
+
+		// Configure jobs from the config
+		for (final JobConfigurationDTO job : jobs) {
+			configureProcess(project, stepService.getStepConfiguration(job.getName()), !job.getEnabled());
+			jobNames.add(job.getName());
+		}
+
+		// Set all other job to be skipped
+		for (final Stage stage : cinnamonConfiguration.getPipeline().getStageList()) {
+			for (final Job job : stage.getJobList()) {
+				if (jobNames.contains(job.getName())) {
+					continue;
+				}
+				configureProcess(project, job, true);
+			}
+		}
+	}
+
+	/**
 	 * Configures the job by setting the configuration and the skip flag.
 	 * Currently, always uses the first configuration for the job.
 	 * If skip is true, errors for missing configurations are ignored.
@@ -218,7 +257,7 @@ public class ProcessService {
 	public void configureProcess(final ProjectEntity project, final Job job, final boolean skip)
 			throws BadStateException, InternalInvalidStateException {
 		// Get process entity
-		final Optional<ExternalProcessEntity> optional = project.getPipelines().get(0).getStageByJob(job);;
+		final Optional<ExternalProcessEntity> optional = project.getPipelines().get(0).getStageByJob(job);
 		if (optional.isEmpty()) {
 			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
 			                                        "No process entity for step '" + job.getName() + "' available!");

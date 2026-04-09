@@ -75,6 +75,11 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String PROJECT_CONFIGURATION_DESERIALIZATION = "14";
 
+	/**
+	 * Exception code for failed pipelines configuration deserialization.
+	 */
+	public static final String PIPELINES_CONFIGURATION_DESERIALIZATION = "15";
+
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

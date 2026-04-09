@@ -295,6 +295,51 @@ class ConfigurationControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void importConfigurationsPipelinesConfiguration() throws Exception {
+		// Configuration must be available before importing the pipeline
+		mockMvc.perform(post("/api/config")
+				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+		       .andExpect(status().isOk());
+
+		final String configuration = """
+		                             pipeline:
+		                               pipelines:
+		                               - jobs:
+		                                 - name: anonymization
+		                                 - name: synthetization
+		                                   enabled: false
+		                             """;
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
+
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		                                      .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries: [
+		                                 		{configurationName: 'pipeline', status: 'SUCCESS', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		var project = getTestProject();
+		var pipeline = project.getPipelines().get(0);
+		var firstStage = pipeline.getStages().get(0);
+		assertFalse(firstStage.getProcesses().get(0).isSkip());
+		assertNotNull(firstStage.getProcesses().get(0).getConfiguration());
+		assertTrue(firstStage.getProcesses().get(1).isSkip());
+		var secondStage = pipeline.getStages().get(1);
+		assertTrue(secondStage.getProcesses().get(0).isSkip());
+		assertTrue(secondStage.getProcesses().get(1).isSkip());
+	}
+
+	@Test
 	public void importConfigurationsInvalid() throws Exception {
 		final String configuration = """
 		                             invalid_name:

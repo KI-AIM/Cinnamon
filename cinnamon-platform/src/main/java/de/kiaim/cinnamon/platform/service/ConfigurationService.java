@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.ConfigurationPart;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmSelector;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
@@ -39,6 +40,7 @@ public class ConfigurationService {
 	private final Validator validator;
 
 	private final DatabaseService databaseService;
+	private final ProcessService processService;
 	private final ProjectService projectService;
 	private final StepService stepService;
 
@@ -46,12 +48,14 @@ public class ConfigurationService {
 			final SerializationConfig serializationConfig,
 			final Validator validator,
 			final DatabaseService databaseService,
+			final ProcessService processService,
 			final ProjectService projectService,
 			final StepService stepService
 	) {
 		this.yamlMapper = serializationConfig.yamlMapper();
 		this.validator = validator;
 		this.databaseService = databaseService;
+		this.processService = processService;
 		this.projectService = projectService;
 		this.stepService = stepService;
 	}
@@ -157,12 +161,14 @@ public class ConfigurationService {
 				continue;
 			}
 
-			if (configName.equals(ConfigurationFile.PROJECT_CONFIGURATION_KEY)) {
-				importProjectConfiguration(project, configEntry.getValue(), importSummary);
-			} else if (configName.equals(ConfigurationFile.DATA_CONFIGURATION_KEY)) {
-				importDataConfiguration(project, configEntry.getValue(), importSummary);
-			} else {
-				importExternalConfiguration(project, configEntry.getValue(), configName, importSummary);
+			switch (configName) {
+				case ConfigurationFile.PROJECT_CONFIGURATION_KEY ->
+						importProjectConfiguration(project, configEntry.getValue(), importSummary);
+				case ConfigurationFile.DATA_CONFIGURATION_KEY ->
+						importDataConfiguration(project, configEntry.getValue(), importSummary);
+				case ConfigurationFile.PIPELINE_CONFIGURATION_KEY ->
+						importPipelinesConfiguration(project, configEntry.getValue(), importSummary);
+				default -> importExternalConfiguration(project, configEntry.getValue(), configName, importSummary);
 			}
 		}
 
@@ -301,6 +307,47 @@ public class ConfigurationService {
 		} catch (final BadDataConfigurationException | BadDataSetIdException |
 		               InternalDataSetPersistenceException | InternalIOException | BadStateException e) {
 			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY, e.getErrorCode());
+		}
+	}
+
+	/**
+	 * Imports the pipelines from the given JsonNode.
+	 *
+	 * @param project          The project to import the pipelines to.
+	 * @param config           The configuration JsonNode.
+	 * @param outImportSummary The import summary to update with the result of the import.
+	 */
+	private void importPipelinesConfiguration(final ProjectEntity project,
+	                                          final JsonNode config,
+	                                          final ConfigurationImportSummary outImportSummary) {
+
+		// Convert the tree into a ProjectConfigurationDTO object
+		final PipelinesConfigurationDTO pipelines;
+		try {
+			pipelines = yamlMapper.treeToValue(config, PipelinesConfigurationDTO.class);
+		} catch (final JsonProcessingException e) {
+			outImportSummary.addError(ConfigurationFile.PIPELINE_CONFIGURATION_KEY,
+			                          new InternalIOException(InternalIOException.PIPELINES_CONFIGURATION_DESERIALIZATION,
+			                                                  "Failed to deserialize pipelines configuration!",
+			                                                  e).getErrorCode());
+			return;
+		}
+
+		// Validate the project configuration
+		final Set<ConstraintViolation<PipelinesConfigurationDTO>> violations = validator.validate(pipelines);
+		if (!violations.isEmpty()) {
+			outImportSummary.addError(ConfigurationFile.PIPELINE_CONFIGURATION_KEY,
+			                          ApiException.assembleErrorCode(ApiException.VALIDATION,
+			                                                         ApiExceptionHandler.VALIDATION_ERROR, "1"),
+			                          violations);
+			return;
+		}
+
+		try {
+			processService.configurePipelines(project, pipelines);
+			outImportSummary.addSuccess(ConfigurationFile.PIPELINE_CONFIGURATION_KEY);
+		} catch (final BadStepNameException | BadStateException | InternalInvalidStateException e) {
+			outImportSummary.addError(ConfigurationFile.PIPELINE_CONFIGURATION_KEY, e.getErrorCode());
 		}
 	}
 

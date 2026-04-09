@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.algorithms.Algorithm;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.pipeline.JobConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.pipeline.PipelineConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;

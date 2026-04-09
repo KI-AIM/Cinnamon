@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.ConfigurationPart;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmSelector;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataBuilder;
 import de.kiaim.cinnamon.model.data.DataRow;

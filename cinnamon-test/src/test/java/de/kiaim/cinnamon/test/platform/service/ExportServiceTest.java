@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.test.platform.service;
 
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;

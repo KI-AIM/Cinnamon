@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.model.configuration.data;
+package de.kiaim.cinnamon.model.configuration.data.attributes;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

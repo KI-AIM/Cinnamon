@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.platform.converter.StepListAttributeConverter;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import io.hypersistence.utils.hibernate.type.json.JsonType;

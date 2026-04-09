@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.test.platform.helper;
 
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.exception.BadDataConfigurationException;
 import de.kiaim.cinnamon.platform.helper.DataschemeGenerator;

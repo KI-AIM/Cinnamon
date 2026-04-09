@@ -1,8 +1,8 @@
 package de.kiaim.cinnamon.model.validation;
 
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.DateFormatConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.DateTimeFormatConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DateFormatConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DateTimeFormatConfiguration;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

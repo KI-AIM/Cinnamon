@@ -1,8 +1,8 @@
 package de.kiaim.cinnamon.test.model.data;
 
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.Configuration;
-import de.kiaim.cinnamon.model.configuration.data.DateFormatConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.Configuration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DateFormatConfiguration;
 import de.kiaim.cinnamon.model.data.DateData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import org.junit.jupiter.api.BeforeEach;

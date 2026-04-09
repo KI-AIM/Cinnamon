@@ -1,8 +1,8 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.RangeConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.StringPatternConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.RangeConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.StringPatternConfiguration;
 import de.kiaim.cinnamon.model.data.IntegerData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.exception.ApiException;

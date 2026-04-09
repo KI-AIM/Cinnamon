@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.test.util;
 
-import de.kiaim.cinnamon.model.configuration.data.*;
+import de.kiaim.cinnamon.model.configuration.data.attributes.*;
 import de.kiaim.cinnamon.model.data.DateData;
 import de.kiaim.cinnamon.model.data.DateTimeData;
 import de.kiaim.cinnamon.model.data.IntegerData;

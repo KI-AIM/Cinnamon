@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.test.platform;
 
-import de.kiaim.cinnamon.model.configuration.data.*;
+import de.kiaim.cinnamon.model.configuration.data.attributes.*;
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;

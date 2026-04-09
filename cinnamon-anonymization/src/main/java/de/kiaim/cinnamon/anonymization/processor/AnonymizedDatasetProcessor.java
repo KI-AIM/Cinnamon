@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.anonymization.processor;
 
 import de.kiaim.cinnamon.anonymization.exception.ResultDatasetProcessingException;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;

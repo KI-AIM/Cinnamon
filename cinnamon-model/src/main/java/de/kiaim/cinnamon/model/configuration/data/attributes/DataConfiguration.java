@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.model.configuration.data;
+package de.kiaim.cinnamon.model.configuration.data.attributes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.cinnamon.model.enumeration.DataType;

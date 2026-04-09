@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.model.validation;
 
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.springframework.lang.Nullable;

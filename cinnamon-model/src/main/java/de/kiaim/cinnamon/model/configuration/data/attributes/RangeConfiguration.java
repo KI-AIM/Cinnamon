@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.model.configuration.data;
+package de.kiaim.cinnamon.model.configuration.data.attributes;
 
 import de.kiaim.cinnamon.model.data.*;
 import io.swagger.v3.oas.annotations.media.Schema;

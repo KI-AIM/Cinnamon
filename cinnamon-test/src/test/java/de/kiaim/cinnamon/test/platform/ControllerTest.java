@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.test.platform;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;

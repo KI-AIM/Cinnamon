@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.processor;
 
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.BadFileException;

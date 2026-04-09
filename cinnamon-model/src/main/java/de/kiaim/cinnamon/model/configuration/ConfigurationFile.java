@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.model.configuration;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import io.swagger.v3.oas.annotations.media.Schema;

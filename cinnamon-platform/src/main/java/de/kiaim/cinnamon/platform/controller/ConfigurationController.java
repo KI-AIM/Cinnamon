@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmDefinition;
 import de.kiaim.cinnamon.model.configuration.algorithms.AvailableAlgorithms;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
 import de.kiaim.cinnamon.platform.exception.*;

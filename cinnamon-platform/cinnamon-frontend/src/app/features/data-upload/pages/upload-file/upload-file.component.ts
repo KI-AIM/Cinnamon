@@ -94,7 +94,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
             appConfig: this.appConfigService.appConfig$,
             fileInfo: this.fileService.fileInfo$,
             locked: this.stateManagementService.currentStepLocked$,
-            status: this.statusService.status$,
+            status: this.statusService.statusNonNull$,
         });
     }
 

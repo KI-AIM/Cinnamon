@@ -29,7 +29,7 @@ export class StartpageComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.status$ = this.statusService.status$;
+        this.status$ = this.statusService.statusNonNull$;
     }
 
     /**

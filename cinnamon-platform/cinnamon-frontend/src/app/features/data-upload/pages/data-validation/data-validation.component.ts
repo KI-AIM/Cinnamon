@@ -45,7 +45,7 @@ export class DataValidationComponent implements OnInit {
         this.pageData$ = combineLatest({
             dataSetInfo: this.dataSetInfoService.getDataSetInfoOriginal$(),
             locked: this.stateManagementService.currentStepLocked$,
-            status: this.statusService.status$,
+            status: this.statusService.statusNonNull$,
         });
     }
 

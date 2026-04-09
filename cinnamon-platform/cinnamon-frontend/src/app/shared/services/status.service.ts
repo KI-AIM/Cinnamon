@@ -1,21 +1,24 @@
-import { Injectable } from '@angular/core';
-import { List } from "../../core/utils/list";
-import { StepConfiguration, Steps } from "../../core/enums/steps";
-import { Status } from "../model/status";
-import { Mode } from "../../core/enums/mode";
 import { HttpClient } from "@angular/common/http";
-import { environments } from "../../../environments/environment";
-import { Observable, ReplaySubject } from "rxjs";
-import { ErrorHandlingService } from "./error-handling.service";
+import { Injectable, OnDestroy } from '@angular/core';
+import { Mode } from "@core/enums/mode";
+import { StepConfiguration, Steps } from "@core/enums/steps";
+import { List } from "@core/utils/list";
+import { Status } from "@shared/model/status";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { UserService } from "@shared/services/user.service";
+import { BehaviorSubject, filter, Observable, of, Subscription } from "rxjs";
+import { environments } from "src/environments/environment";
 
 @Injectable({
     providedIn: 'root'
 })
-export class StatusService {
+export class StatusService implements OnDestroy {
     private readonly baseUrl: string = environments.apiUrl + "/api/project"
 
-    private _status: Status;
-    private statusSubject: ReplaySubject<Status> | null = null;
+    private statusSubject: BehaviorSubject<Status | null> = new BehaviorSubject<Status | null>(null);
+
+    private _loginSubscription: Subscription;
+    private _logoutSubscription: Subscription;
 
     /**
      * List of all completed steps.
@@ -26,30 +29,48 @@ export class StatusService {
     constructor(
         private readonly errorHandlingService: ErrorHandlingService,
         private readonly http: HttpClient,
+        readonly userService: UserService,
     ) {
-    }
+        this._loginSubscription = userService.login$().subscribe({
+            next: () => this.updateStatus(),
+        });
+        this._logoutSubscription = userService.logout$().subscribe({
+            next: () => {
+                this.statusSubject.next(null);
+                this.completedSteps.clear();
+            }
+        });
 
-    public get status$(): Observable<Status> {
-        return this.initializeStatus().asObservable();
-    }
-
-    private initializeStatus(): ReplaySubject<Status> {
-        if (this.statusSubject === null) {
-            this.statusSubject = new ReplaySubject<Status>(1);
-
-            this.http.get<Status>(this.baseUrl + "/status").subscribe({
-                next: (value: Status) => {
-                    this._status = value;
-                    this.setNextStep(value.currentStep);
-                    this.statusSubject?.next(value);
-                },
-                error: err => {
-                  this.errorHandlingService.addError(err, "Failed to fetch project state.");
-                },
-            });
+        if (userService.isAuthenticated()) {
+            this.updateStatus();
         }
+    }
 
-        return this.statusSubject;
+    public ngOnDestroy(): void {
+        this._loginSubscription?.unsubscribe();
+        this._logoutSubscription?.unsubscribe();
+    }
+
+    /**
+     * Creates an observable that emits the current project status.
+     * If no project is available, it will emit null.
+     *
+     * @returns An observable that emits the current status.
+     */
+    public get status$(): Observable<Status | null> {
+        return this.statusSubject.asObservable();
+    }
+
+    /**
+     * Creates an observable that emits the current project status.
+     * Does not emit null.
+     *
+     * @returns An observable that emits the current status.
+     */
+    public get statusNonNull$(): Observable<Status> {
+        return this.statusSubject.asObservable().pipe(
+            filter((status): status is Status => status !== null),
+        );
     }
 
     /**
@@ -57,8 +78,13 @@ export class StatusService {
      * @param mode The selected mode.
      */
     public setMode(mode: Mode): Observable<void> {
-        this._status.mode = mode;
-        this.initializeStatus().next(this._status);
+        const currentStatus = this.statusSubject.value;
+        if (currentStatus == null) {
+            return of();
+        }
+
+        currentStatus.mode = mode;
+        this.statusSubject.next(currentStatus);
 
         const formData = new FormData();
         formData.append("mode", mode.toString());
@@ -70,7 +96,7 @@ export class StatusService {
     }
 
     /**
-     * Sets the given step to the current steps, marks all previous steps as completed and updates the backend.
+     * Sets the given step to the current steps, marks all previous steps as completed, and updates the backend.
      * Steps after the given step will be removed from the list of completed steps.
      *
      * @param step
@@ -86,10 +112,22 @@ export class StatusService {
      *
      * @param step The next step.
      */
-    setNextStep(step: Steps): void {
-        this._status.currentStep = step;
-        this.initializeStatus().next(this._status);
+    private setNextStep(step: Steps) {
+        const currentStatus = this.statusSubject.value;
+        if (currentStatus == null) {
+            return;
+        }
 
+        currentStatus.currentStep = step;
+        this.setCompletedSteps(step);
+        this.statusSubject.next(currentStatus);
+    }
+
+    /**
+     * Marks all steps before the given step as completed and removes all steps after the given step from the list of completed steps.
+     * @param step The step to mark as completed.
+     */
+    private setCompletedSteps(step: Steps) {
         this.completedSteps.clear();
 
         const currentIndex = StepConfiguration[step].index;
@@ -106,18 +144,25 @@ export class StatusService {
         return this.http.post<void>(this.baseUrl + "/step", formData);
     }
 
+    /**
+     * Fetches the current status from the backend and updates the status subject.
+     */
+    private updateStatus() {
+        this.http.get<Status>(this.baseUrl + "/status").subscribe({
+            next: (value: Status) => {
+                this.setCompletedSteps(value.currentStep);
+                this.statusSubject.next(value);
+            },
+            error: err => {
+                this.errorHandlingService.addError(err, "Failed to fetch project state.");
+            },
+        });
+    }
+
     addCompletedStep(step: Steps): void {
         if (!this.completedSteps.contains(step)) {
             this.completedSteps.add(step);
         }
-    }
-
-    /**
-     * Clears cached information.
-     */
-    public invalidateCache(): void {
-        this.statusSubject = null;
-        this.completedSteps.clear();
     }
 
     /**

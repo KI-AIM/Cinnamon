@@ -23,7 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -34,6 +36,12 @@ import java.util.Set;
  */
 @Service
 public class ConfigurationService {
+
+	/**
+	 * Import order for configurations where the order matters.
+	 * Configurations not specified in the import order will be imported before the ones specified in the import order.
+	 */
+	private final static List<String> CONFIGURATION_IMPORT_ORDER = List.of(ConfigurationFile.PIPELINE_CONFIGURATION_KEY);
 
 	private final ObjectMapper yamlMapper;
 
@@ -146,12 +154,20 @@ public class ConfigurationService {
 
 		final var seenConfigs = new HashSet<String>();
 
-		// Iterate over all configurations in the file and import those marked for import
-		final var configItr = yamlConfig.fields();
+		// Extract the configuration names
+		final List<String> fieldNames = new ArrayList<>();
+		yamlConfig.fields().forEachRemaining(field -> fieldNames.add(field.getKey()));
 
-		while (configItr.hasNext()) {
-			final var configEntry = configItr.next();
-			final var configName = configEntry.getKey();
+		// Sort the configuration names by the import order
+		fieldNames.sort((name1, name2) -> {
+			final var order1 = CONFIGURATION_IMPORT_ORDER.indexOf(name1);
+			final var order2 = CONFIGURATION_IMPORT_ORDER.indexOf(name2);
+			return Integer.compare(order1, order2);
+		});
+
+		// Import the configurations
+		for (final String configName : fieldNames) {
+			final var configEntry = yamlConfig.get(configName);
 
 			seenConfigs.add(configName);
 
@@ -163,12 +179,12 @@ public class ConfigurationService {
 
 			switch (configName) {
 				case ConfigurationFile.PROJECT_CONFIGURATION_KEY ->
-						importProjectConfiguration(project, configEntry.getValue(), importSummary);
+						importProjectConfiguration(project, configEntry, importSummary);
 				case ConfigurationFile.DATA_CONFIGURATION_KEY ->
-						importDataConfiguration(project, configEntry.getValue(), importSummary);
+						importDataConfiguration(project, configEntry, importSummary);
 				case ConfigurationFile.PIPELINE_CONFIGURATION_KEY ->
-						importPipelinesConfiguration(project, configEntry.getValue(), importSummary);
-				default -> importExternalConfiguration(project, configEntry.getValue(), configName, importSummary);
+						importPipelinesConfiguration(project, configEntry, importSummary);
+				default -> importExternalConfiguration(project, configEntry, configName, importSummary);
 			}
 		}
 
@@ -449,7 +465,7 @@ public class ConfigurationService {
 					if (part.getConfiguration().containsKey("privacyModels")) {
 						selector.setId(part.getConfiguration().get("privacyModels").path(0).path("name").asText());
 					}
-					selector.setVersion(("0.1.0"));
+					selector.setVersion(("1.0.0"));
 				}
 				case "risk_assessment_configuration" -> {
 					selector.setId("risk_assessment");

@@ -12,14 +12,10 @@ const HIPAA_GDPR_DIRECT_IDENTIFIER_PRESET: LlmRedactionRuleConfiguration[] = [
     {name: "Address", replacement_token: "[ADDRESS]"},
     {name: "Contact Information", replacement_token: "[CONTACT]"},
     {name: "Identification Number", replacement_token: "[IDENTIFIER]"},
-    {name: "Vehicle Identifier", replacement_token: "[VEHICLE_ID]"},
-    {name: "Device Identifier", replacement_token: "[DEVICE_ID]"},
-    {name: "Online Identifier", replacement_token: "[ONLINE_ID]"},
 ];
 
 const INDIRECT_IDENTIFIER_PRESET: LlmRedactionRuleConfiguration[] = [
     {name: "Age", replacement_token: "[AGE]"},
-    {name: "Birthdate", replacement_token: "[BIRTH_DATE]"},
     {name: "Date", replacement_token: "[DATE]"},
     {name: "Gender", replacement_token: "[GENDER]"},
     {name: "Postalcode", replacement_token: "[POSTAL_CODE]"},

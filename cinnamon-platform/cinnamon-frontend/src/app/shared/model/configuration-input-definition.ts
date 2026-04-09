@@ -6,6 +6,7 @@ export class ConfigurationInputDefinition {
     label: string
     description: string
     default_value: string | number | number[]
+    mandatory: boolean = true
     invert: string | null
     min_value: number | null
     max_value: number | null

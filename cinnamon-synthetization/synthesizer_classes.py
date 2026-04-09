@@ -6,7 +6,7 @@ from synthetic_tabular_data_generator.algorithms.bayesian_network import Bayesia
 from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomForestsSynthesizer
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
-from synthetic_tabular_data_generator.algorithms.llm_de_identification import LlmTextDeIdentificationSynthesizer
+from synthetic_tabular_data_generator.algorithms.llm_text_redaction import LlmTextRedactionSynthesizer
 
 synthesizer_classes = {
     'ctgan': {
@@ -76,9 +76,9 @@ synthesizer_classes = {
     'llm_text_de_identification': {
         'version': '0.1',
         'type': 'cross-sectional',
-        'class': LlmTextDeIdentificationSynthesizer,
-        'display_name': 'LLM Text De-Identification',
-        'description': 'A LLM-based text de-identification component for removing potential PIIs in TEXT fields.',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_de_identification.yaml'
+        'class': LlmTextRedactionSynthesizer,
+        'display_name': 'LLM Text Redaction',
+        'description': 'A LLM-based text redaction component for replacing only configured identifier categories in TEXT fields.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_redaction.yaml'
     }
 }

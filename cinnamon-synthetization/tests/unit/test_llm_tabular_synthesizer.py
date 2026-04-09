@@ -23,36 +23,40 @@ def _attribute_config() -> dict:
 
 
 def _algorithm_config(provider: str = "ollama") -> dict:
+    return {
+        "synthetization_configuration": {
+            "algorithm": {
+                "model_parameter": {},
+                "model_fitting": {
+                    "profile_rows": 50,
+                    "few_shot_rows": 2,
+                },
+                "sampling": {
+                    "num_samples": 3,
+                    "temperature": 0.2,
+                    "top_p": 0.8,
+                    "max_tokens": 512,
+                },
+            }
+        }
+    }
+
+
+def _set_shared_llm_env(monkeypatch, provider: str) -> None:
     endpoint_path = "/api/generate" if provider == "ollama" else "/v1/chat/completions"
     healthcheck_path = "/api/tags" if provider == "ollama" else "/v1/models"
     base_url = "http://127.0.0.1:11434" if provider == "ollama" else "http://gpu.example.org:7086"
     model_name = "llama3.1:8b" if provider == "ollama" else "gpt-test"
 
-    return {
-        "synthetization_configuration": {
-            "algorithm": {
-                "model_parameter": {
-                    "provider": provider,
-                    "model_name": model_name,
-                    "base_url": base_url,
-                    "endpoint_path": endpoint_path,
-                    "healthcheck_path": healthcheck_path,
-                    "temperature": 0.2,
-                    "top_p": 0.8,
-                    "max_tokens": 512,
-                },
-                "model_fitting": {
-                    "profile_rows": 50,
-                    "few_shot_rows": 2,
-                    "max_retries": 2,
-                    "timeout_seconds": 5,
-                },
-                "sampling": {
-                    "num_samples": 3,
-                },
-            }
-        }
-    }
+    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", provider)
+    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", model_name)
+    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", base_url)
+    monkeypatch.setenv("CINNAMON_LLM_ENDPOINT_PATH", endpoint_path)
+    monkeypatch.setenv("CINNAMON_LLM_HEALTHCHECK_PATH", healthcheck_path)
+    monkeypatch.setenv("CINNAMON_LLM_API_KEY", "")
+    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "5")
+    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
+    monkeypatch.setenv("CINNAMON_LLM_VERIFY_SSL", "true")
 
 
 class _DummyResponse:
@@ -100,6 +104,7 @@ def _dataset_with_text() -> pd.DataFrame:
 
 def test_llm_tabular_synthesizer_generates_requested_rows_via_ollama(monkeypatch):
     call_counter = {"count": 0}
+    _set_shared_llm_env(monkeypatch, provider="ollama")
 
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/api/tags"):
@@ -138,6 +143,7 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_ollama(monkeypatch
 
 def test_llm_tabular_synthesizer_generates_requested_rows_via_openai_compatible(monkeypatch):
     call_counter = {"count": 0}
+    _set_shared_llm_env(monkeypatch, provider="openai_compatible")
 
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/v1/models"):
@@ -182,6 +188,7 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_openai_compatible(
 
 def test_llm_tabular_synthesizer_maps_positional_column_names(monkeypatch):
     call_counter = {"count": 0}
+    _set_shared_llm_env(monkeypatch, provider="ollama")
 
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/api/tags"):
@@ -222,6 +229,8 @@ def test_llm_tabular_synthesizer_maps_positional_column_names(monkeypatch):
 
 
 def test_llm_tabular_synthesizer_generates_text_in_single_step(monkeypatch):
+    _set_shared_llm_env(monkeypatch, provider="ollama")
+
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/api/tags"):
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})

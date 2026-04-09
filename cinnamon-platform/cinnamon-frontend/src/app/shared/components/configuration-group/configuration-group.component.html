@@ -21,6 +21,20 @@
             </app-configuration-group>
         </mat-expansion-panel>
 
+        <ng-container *ngFor="let additionalConfig of getAdditionalConfigsAfter(groupDefinition.key)">
+            <mat-expansion-panel appExpansionPanelOverflow>
+                <mat-expansion-panel-header>
+                    <mat-panel-title
+                        [class.invalid-group]="formGroup.controls[additionalConfig.formGroupName].invalid">
+                        {{ additionalConfig.title }}
+                    </mat-panel-title>
+                    <mat-panel-description>{{additionalConfig.description}}</mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <ng-container #dynamicComponentContainer></ng-container>
+            </mat-expansion-panel>
+        </ng-container>
+
     </ng-container>
     <ng-container *ngFor="let groupDefinition of group.options | keyvalue">
 
@@ -69,7 +83,7 @@
     </ng-container>
 
     <ng-container *ngIf="additionalConfigs">
-        <ng-container *ngFor="let additionalConfig of additionalConfigs.configs">
+        <ng-container *ngFor="let additionalConfig of getRemainingAdditionalConfigs()">
             <mat-expansion-panel appExpansionPanelOverflow>
                 <mat-expansion-panel-header>
                     <mat-panel-title

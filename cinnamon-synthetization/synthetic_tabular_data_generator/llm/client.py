@@ -1,8 +1,25 @@
+import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 import requests
+
+
+DEFAULT_OPENAI_SYSTEM_PROMPT = "Return only the requested JSON or text content with no extra formatting."
+
+
+LLM_ENV_VARS = {
+    "provider": "CINNAMON_LLM_PROVIDER",
+    "model_name": "CINNAMON_LLM_MODEL_NAME",
+    "base_url": "CINNAMON_LLM_BASE_URL",
+    "endpoint_path": "CINNAMON_LLM_ENDPOINT_PATH",
+    "healthcheck_path": "CINNAMON_LLM_HEALTHCHECK_PATH",
+    "api_key": "CINNAMON_LLM_API_KEY",
+    "timeout_seconds": "CINNAMON_LLM_TIMEOUT_SECONDS",
+    "max_retries": "CINNAMON_LLM_MAX_RETRIES",
+    "verify_ssl": "CINNAMON_LLM_VERIFY_SSL",
+}
 
 
 def _parse_bool(value: Any, default: bool) -> bool:
@@ -44,14 +61,51 @@ def _require_non_empty(config: Dict[str, Any], key: str, section_name: str) -> A
     if value is None:
         raise ValueError(
             f"Missing LLM configuration '{key}' in '{section_name}'. "
-            "LLM settings must be provided via algorithm YAML."
+            "LLM settings must be provided via algorithm configuration."
         )
     if isinstance(value, str) and not value.strip():
         raise ValueError(
             f"Empty LLM configuration '{key}' in '{section_name}'. "
-            "LLM settings must be provided via algorithm YAML."
+            "LLM settings must be provided via algorithm configuration."
         )
     return value
+
+
+def _read_env_value(name: str) -> Optional[str]:
+    value = os.getenv(name)
+    if value is None:
+        return None
+    stripped = value.strip()
+    if not stripped:
+        return None
+    return stripped
+
+
+def _get_env_or_config_value(
+    config: Dict[str, Any],
+    key: str,
+    section_name: str,
+    env_var_name: str,
+) -> Any:
+    value = _first_non_empty(_read_env_value(env_var_name), config.get(key))
+    if value is None:
+        raise ValueError(
+            f"Missing LLM configuration '{key}'. Set environment variable '{env_var_name}' "
+            f"or provide it in '{section_name}'."
+        )
+    return value
+
+
+def _default_endpoint_path(provider: str) -> str:
+    if provider == "ollama":
+        return "/api/generate"
+    return "/v1/chat/completions"
+
+
+def _default_healthcheck_path(provider: str) -> str:
+    if provider == "ollama":
+        return "/api/tags"
+    return "/v1/models"
 
 
 @dataclass
@@ -81,9 +135,17 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
     fitting_params = (
         algorithm_section.get("model_fitting", {})
     )
+    sampling_params = (
+        algorithm_section.get("sampling", {})
+    )
 
     provider = str(
-        _require_non_empty(model_params, "provider", "synthetization_configuration.algorithm.model_parameter")
+        _get_env_or_config_value(
+            model_params,
+            "provider",
+            "synthetization_configuration.algorithm.model_parameter",
+            LLM_ENV_VARS["provider"],
+        )
     ).strip().lower()
 
     if provider not in {"ollama", "openai_compatible"}:
@@ -92,26 +154,40 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
         )
 
     model_name = str(
-        _require_non_empty(model_params, "model_name", "synthetization_configuration.algorithm.model_parameter")
+        _get_env_or_config_value(
+            model_params,
+            "model_name",
+            "synthetization_configuration.algorithm.model_parameter",
+            LLM_ENV_VARS["model_name"],
+        )
     )
     raw_base_url = str(
-        _require_non_empty(model_params, "base_url", "synthetization_configuration.algorithm.model_parameter")
-    ).rstrip("/")
-    explicit_endpoint_path = _require_non_empty(
-        model_params,
-        "endpoint_path",
-        "synthetization_configuration.algorithm.model_parameter",
-    )
-    endpoint_path = str(explicit_endpoint_path)
-    healthcheck_path = str(
-        _require_non_empty(
+        _get_env_or_config_value(
             model_params,
-            "healthcheck_path",
+            "base_url",
             "synthetization_configuration.algorithm.model_parameter",
+            LLM_ENV_VARS["base_url"],
+        )
+    ).rstrip("/")
+    configured_endpoint_path = _first_non_empty(
+        _read_env_value(LLM_ENV_VARS["endpoint_path"]),
+        model_params.get("endpoint_path"),
+    )
+    explicit_endpoint_path_was_provided = configured_endpoint_path is not None
+    endpoint_path = str(configured_endpoint_path or _default_endpoint_path(provider))
+    healthcheck_path = str(
+        _first_non_empty(
+            _read_env_value(LLM_ENV_VARS["healthcheck_path"]),
+            model_params.get("healthcheck_path"),
+            _default_healthcheck_path(provider),
         )
     )
     api_key = str(
-        model_params.get("api_key", "")
+        _first_non_empty(
+            _read_env_value(LLM_ENV_VARS["api_key"]),
+            model_params.get("api_key"),
+            "",
+        )
     )
     temperature = max(
         0.0,
@@ -119,9 +195,9 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
             2.0,
             float(
                 _require_non_empty(
-                    model_params,
+                    sampling_params,
                     "temperature",
-                    "synthetization_configuration.algorithm.model_parameter",
+                    "synthetization_configuration.algorithm.sampling",
                 )
             ),
         ),
@@ -132,9 +208,9 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
             1.0,
             float(
                 _require_non_empty(
-                    model_params,
+                    sampling_params,
                     "top_p",
-                    "synthetization_configuration.algorithm.model_parameter",
+                    "synthetization_configuration.algorithm.sampling",
                 )
             ),
         ),
@@ -143,41 +219,47 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
         1,
         int(
             _require_non_empty(
-                model_params,
+                sampling_params,
                 "max_tokens",
-                "synthetization_configuration.algorithm.model_parameter",
+                "synthetization_configuration.algorithm.sampling",
             )
         ),
     )
     timeout_seconds = max(
         1,
         int(
-            _require_non_empty(
+            _get_env_or_config_value(
                 fitting_params,
                 "timeout_seconds",
                 "synthetization_configuration.algorithm.model_fitting",
+                LLM_ENV_VARS["timeout_seconds"],
             )
         ),
     )
     max_retries = max(
         1,
         int(
-            _require_non_empty(
+            _get_env_or_config_value(
                 fitting_params,
                 "max_retries",
                 "synthetization_configuration.algorithm.model_fitting",
+                LLM_ENV_VARS["max_retries"],
             )
         ),
     )
     verify_ssl = _parse_bool(
-        model_params.get("verify_ssl", True),
+        _first_non_empty(
+            _read_env_value(LLM_ENV_VARS["verify_ssl"]),
+            model_params.get("verify_ssl"),
+            True,
+        ),
         default=True,
     )
 
     base_url, endpoint_path = _normalize_base_url_and_endpoint(
         raw_base_url,
         endpoint_path,
-        explicit_endpoint_path_was_provided=explicit_endpoint_path is not None,
+        explicit_endpoint_path_was_provided=explicit_endpoint_path_was_provided,
     )
 
     return LlmClientConfig(
@@ -252,11 +334,11 @@ class LlmClient:
             raise last_error
         raise RuntimeError("Unable to reach the configured LLM API.")
 
-    def generate_text(self, prompt: str) -> str:
+    def generate_text(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         if self.config.provider == "ollama":
-            return self._generate_ollama(prompt)
+            return self._generate_ollama(prompt, system_prompt=system_prompt)
         if self.config.provider == "openai_compatible":
-            return self._generate_openai_compatible(prompt)
+            return self._generate_openai_compatible(prompt, system_prompt=system_prompt)
         raise ValueError(f"Unsupported LLM provider '{self.config.provider}'.")
 
     def _healthcheck(self, base_url: str) -> None:
@@ -294,7 +376,7 @@ class LlmClient:
                 return
             raise
 
-    def _generate_ollama(self, prompt: str) -> str:
+    def _generate_ollama(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         payload = {
             "model": self.config.model_name,
             "stream": False,
@@ -305,6 +387,8 @@ class LlmClient:
                 "top_p": self.config.top_p,
             },
         }
+        if system_prompt is not None and system_prompt.strip():
+            payload["system"] = system_prompt.strip()
         response = self._request(
             "POST",
             _join_url(self.base_url, self.config.endpoint_path),
@@ -316,13 +400,14 @@ class LlmClient:
             raise ValueError("LLM response is empty or missing the 'response' field.")
         return content
 
-    def _generate_openai_compatible(self, prompt: str) -> str:
+    def _generate_openai_compatible(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        resolved_system_prompt = system_prompt.strip() if isinstance(system_prompt, str) and system_prompt.strip() else DEFAULT_OPENAI_SYSTEM_PROMPT
         payload = {
             "model": self.config.model_name,
             "messages": [
                 {
                     "role": "system",
-                    "content": "Return only the requested JSON or text content with no extra formatting.",
+                    "content": resolved_system_prompt,
                 },
                 {
                     "role": "user",

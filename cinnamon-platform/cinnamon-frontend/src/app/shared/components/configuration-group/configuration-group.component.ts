@@ -15,7 +15,7 @@ import { ConfigurationGroupDefinition, VisualizationType } from "../../model/con
 import { FormGroup } from "@angular/forms";
 import {ConfigurationInputComponent} from "../configuration-input/configuration-input.component";
 import { MatCheckbox, MatCheckboxChange } from "@angular/material/checkbox";
-import { ConfigurationAdditionalConfigs } from "../../model/configuration-additional-configs";
+import { AdditionalConfig, ConfigurationAdditionalConfigs } from "../../model/configuration-additional-configs";
 
 /**
  * Component for a collapsable input group.
@@ -92,7 +92,7 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
     /**
      * Container for the additional configs.
      */
-    @ViewChild('dynamicComponentContainer', {read: ViewContainerRef}) componentContainer: ViewContainerRef;
+    @ViewChildren('dynamicComponentContainer', {read: ViewContainerRef}) componentContainers: QueryList<ViewContainerRef>;
 
     /**
      * Component refs for additional configurations.
@@ -240,9 +240,15 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
      * Also attaches the form to the component
      */
     private loadComponents() {
-        if (this.additionalConfigs !== null) {
-            this.additionalConfigs?.configs.forEach(config => {
-                const componentRef: ComponentRef<AdditionalConfigurationGroup> = this.componentContainer.createComponent(config.component);
+        if (this.additionalConfigs !== null && this.componentContainers) {
+            const configs = this.getRenderedAdditionalConfigs();
+            this.componentContainers.forEach((container, index) => {
+                const config = configs[index];
+                if (!config) {
+                    return;
+                }
+
+                const componentRef: ComponentRef<AdditionalConfigurationGroup> = container.createComponent(config.component);
                 componentRef.setInput('disabled', this.disabled);
                 componentRef.instance.form = this.form;
                 this.instances.push(componentRef);
@@ -259,8 +265,45 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
             return;
         }
 
-        this.additionalConfigs.configs.forEach((config, i) => {
+        this.getRenderedAdditionalConfigs().forEach((config, i) => {
             this.instances[i].instance.patchValue(obj[config.formGroupName]);
         });
+    }
+
+    protected getAdditionalConfigsAfter(groupName: string): AdditionalConfig[] {
+        return this.getRenderedAdditionalConfigs().filter(config => config.insertAfterGroupName === groupName);
+    }
+
+    protected getRemainingAdditionalConfigs(): AdditionalConfig[] {
+        return this.getRenderedAdditionalConfigs().filter(config => config.insertAfterGroupName === null);
+    }
+
+    private getRenderedAdditionalConfigs(): AdditionalConfig[] {
+        if (this.additionalConfigs === null) {
+            return [];
+        }
+
+        const sortedGroupKeys = Object.keys(this.group.configurations ?? {}).sort((a, b) => a.localeCompare(b));
+        const groupKeys = new Set(sortedGroupKeys);
+        const afterGroups: AdditionalConfig[] = [];
+        const remaining: AdditionalConfig[] = [];
+
+        this.additionalConfigs.configs.forEach(config => {
+            if (config.insertAfterGroupName !== null && groupKeys.has(config.insertAfterGroupName)) {
+                afterGroups.push(config);
+            } else {
+                remaining.push(config);
+            }
+        });
+
+        const result: AdditionalConfig[] = [];
+        sortedGroupKeys.forEach(groupKey => {
+            afterGroups
+                .filter(config => config.insertAfterGroupName === groupKey)
+                .forEach(config => result.push(config));
+        });
+
+        remaining.forEach(config => result.push(config));
+        return result;
     }
 }

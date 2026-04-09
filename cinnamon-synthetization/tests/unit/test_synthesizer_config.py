@@ -64,13 +64,13 @@ TOP_LEVEL_KEYS = {
     "URL",
     "configurations",
 }
-CONFIG_REQUIRED_SECTIONS = {"model_parameter", "model_fitting"}
-CONFIG_OPTIONAL_SECTIONS = {"sampling"}
+CONFIG_REQUIRED_SECTIONS = {"model_fitting"}
+CONFIG_OPTIONAL_SECTIONS = {"model_parameter", "sampling"}
 CONFIG_ALLOWED_SECTIONS = CONFIG_REQUIRED_SECTIONS | CONFIG_OPTIONAL_SECTIONS
 SECTION_KEYS = {"display_name", "description", "parameters"}
 
 PARAM_REQUIRED_KEYS = {"name", "type", "label", "description", "default_value"}
-PARAM_OPTIONAL_KEYS = {"min_value", "max_value", "values"}
+PARAM_OPTIONAL_KEYS = {"min_value", "max_value", "values", "mandatory"}
 PARAM_ALLOWED_KEYS = PARAM_REQUIRED_KEYS | PARAM_OPTIONAL_KEYS
 ALLOWED_PARAM_TYPES = {"integer", "float", "string", "list"}
 
@@ -115,7 +115,7 @@ def test_configuration_sections_and_parameters():
             assert set(section.keys()) == SECTION_KEYS
             assert isinstance(section["display_name"], str) and section["display_name"]
             assert isinstance(section["description"], str) and section["description"]
-            assert isinstance(section["parameters"], list) and section["parameters"]
+            assert isinstance(section["parameters"], list)
 
             seen_names = set()
             for param in section["parameters"]:
@@ -145,6 +145,9 @@ def test_configuration_sections_and_parameters():
                 if "values" in param:
                     assert isinstance(param["values"], list) and param["values"]
                     assert default_value in param["values"]
+
+                if "mandatory" in param:
+                    assert isinstance(param["mandatory"], bool)
 
                 if _is_number(default_value):
                     assert "min_value" in param and "max_value" in param

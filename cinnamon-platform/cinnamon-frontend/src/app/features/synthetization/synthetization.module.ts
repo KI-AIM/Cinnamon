@@ -5,12 +5,28 @@ import {
 } from "./pages/synthetization-configuration/synthetization-configuration.component";
 import { SharedModule } from "../../shared/shared.module";
 import { SynthetizationService } from "./services/synthetization.service";
+import { ReactiveFormsModule } from "@angular/forms";
+import { MatButtonModule } from "@angular/material/button";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatIconModule } from "@angular/material/icon";
+import { MatInputModule } from "@angular/material/input";
+import {
+    LlmRedactionRulesConfigurationComponent
+} from "./components/llm-redaction-rules-configuration/llm-redaction-rules-configuration.component";
 
 @NgModule({
-    declarations: [SynthetizationConfigurationComponent],
+    declarations: [
+        SynthetizationConfigurationComponent,
+        LlmRedactionRulesConfigurationComponent,
+    ],
     imports: [
         CommonModule,
-        SharedModule
+        SharedModule,
+        MatButtonModule,
+        MatFormFieldModule,
+        MatIconModule,
+        MatInputModule,
+        ReactiveFormsModule,
     ],
     providers: [
         provideAppInitializer(() => {

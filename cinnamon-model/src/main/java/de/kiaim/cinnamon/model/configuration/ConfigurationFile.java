@@ -3,10 +3,10 @@ package de.kiaim.cinnamon.model.configuration;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -39,6 +39,12 @@ public class ConfigurationFile {
 	public static final String PROJECT_CONFIGURATION_KEY = "project";
 
 	/**
+	 * Key for the pipeline configuration (see {@link PipelinesConfigurationDTO}).
+	 * Matches the name of the field {@link #getPipeline()}.
+	 */
+	public static final String PIPELINE_CONFIGURATION_KEY = "pipeline";
+
+	/**
 	 * Configuration for general project settings.
 	 */
 	@Schema(description = "Configuration for general project settings.")
@@ -53,6 +59,14 @@ public class ConfigurationFile {
 	@Valid
 	@Nullable
 	private DataConfiguration data = null;
+
+	/**
+	 * Configuration for the pipelines.
+	 */
+	@Schema(description = "Configuration for the pipelines.")
+	@Valid
+	@Nullable
+	private PipelinesConfigurationDTO pipeline;
 
 	/**
 	 * Configurations for external modules.

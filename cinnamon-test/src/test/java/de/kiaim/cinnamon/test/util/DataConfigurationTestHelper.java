@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static de.kiaim.cinnamon.test.util.YamlUtil.indentYaml;
+
 public class DataConfigurationTestHelper {
 
 	public static DataConfiguration generateDataConfiguration(final String stringPattern) {
@@ -119,5 +121,19 @@ public class DataConfigurationTestHelper {
 				  - name: "StringPatternConfiguration"
 				    pattern: ".*"
 				""";
+	}
+
+	public static String generateAttributeConfigurationAsYaml() {
+		return """
+		       attributes:
+		       """ + indentYaml(DataConfigurationTestHelper.generateDataConfigurationAsYaml());
+	}
+
+	public static String generateDatasetConfigurationAsYaml() {
+		return """
+		       dataset:
+		         createHoldOutSplit: false
+		         holdOutSplitPercentage: 0.0
+		       """;
 	}
 }

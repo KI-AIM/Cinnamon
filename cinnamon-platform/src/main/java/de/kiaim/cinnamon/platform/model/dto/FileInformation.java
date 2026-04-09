@@ -21,6 +21,5 @@ public class FileInformation {
 	private FileType type;
 
 	@Schema(description = "Number of attributes in the file.", example = "CSV")
-	@Nullable
-	private Integer numberOfAttributes;
+	private int numberOfAttributes;
 }

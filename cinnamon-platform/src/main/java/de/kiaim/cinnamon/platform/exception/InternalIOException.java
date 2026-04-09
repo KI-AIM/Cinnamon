@@ -80,6 +80,16 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String PIPELINES_CONFIGURATION_DESERIALIZATION = "15";
 
+	/**
+	 * Exception code for failed data source configuration deserialization.
+	 */
+	public static final String DATA_SOURCE_CONFIGURATION_DESERIALIZATION = "16";
+
+	/**
+	 * Exception code for failed dataset configuration deserialization.
+	 */
+	public static final String DATASET_CONFIGURATION_DESERIALIZATION = "17";
+
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

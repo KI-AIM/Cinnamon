@@ -37,4 +37,16 @@ public class FileConfigurationTestHelper {
 			case XLSX -> new XlsxFileConfigurationEntity(dto.getXlsxFileConfiguration());
 		};
 	}
+
+	public static String generateFileConfigurationAsYaml() {
+		return """
+		       dataSource:
+		         fileType: "CSV"
+		         csvFileConfiguration:
+		           columnSeparator: ","
+		           lineSeparator: "\\n"
+		           quoteChar: "\\""
+		           hasHeader: true
+		       """;
+	}
 }

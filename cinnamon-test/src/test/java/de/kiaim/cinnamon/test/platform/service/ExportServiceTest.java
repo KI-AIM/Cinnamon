@@ -38,7 +38,7 @@ public class ExportServiceTest extends DatabaseTest {
 	@Autowired ExportService exportService;
 
 	@Test
-	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalApplicationConfigurationException, BadConfigurationNameException, InternalIOException {
+	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalApplicationConfigurationException, InternalIOException {
 		// Preparation
 		final var project = projectService.createProject(System.currentTimeMillis());
 		projectService.updateProjectConfiguration(project, ProjectConfigurationTestHelper.generateProjectConfigurationDTO());
@@ -53,9 +53,11 @@ public class ExportServiceTest extends DatabaseTest {
 		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(csvFileConfiguration.getFileType());
 		final TransformationResult transformationResult = assertDoesNotThrow(
 				() -> dataProcessor.read(file.getInputStream(), csvFileConfiguration, configuration));
-		assertDoesNotThrow(() -> databaseService.storeFile(project, file, fileConfiguration));
-		databaseService.storeOriginalTransformationResult(transformationResult, project);
-		databaseService.storeConfiguration("anonymization", anonymizationConfiguration, project);
+		assertDoesNotThrow(() -> databaseService.storeFileConfiguration(project, fileConfiguration));
+		assertDoesNotThrow(() -> databaseService.storeFile(project, file));
+		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
+		assertDoesNotThrow(
+				() -> databaseService.storeConfiguration("anonymization", anonymizationConfiguration, project));
 
 		var pipeline = new PipelineEntity();
 		project.addPipeline(pipeline);
@@ -83,6 +85,8 @@ public class ExportServiceTest extends DatabaseTest {
 		var parameter = new ProjectExportParameter(false, FileType.CSV, HoldOutSelector.ALL,
 		                                           List.of("pipeline.execution.anonymization.dataset",
 		                                                   "configuration.project",
+														   "configuration.dataSource",
+														   "configuration.dataset",
 		                                                   "configuration.pipeline",
 		                                                   "configuration.configurations", "original.dataset",
 		                                                   "configuration.anonymization"));
@@ -90,7 +94,7 @@ public class ExportServiceTest extends DatabaseTest {
 
 		List<String> expectedFiles = new ArrayList<>(
 				List.of("anonymization-dataset.csv", "configurations.yaml", "original-dataset.csv",
-				        "anonymization.yaml", "project.yaml", "pipeline.yaml"));
+				        "anonymization.yaml", "project.yaml", "dataSource.yaml", "dataset.yaml", "pipeline.yaml"));
 
 		try (final var zipInputStream = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
 
@@ -125,6 +129,12 @@ public class ExportServiceTest extends DatabaseTest {
 					case "project.yaml" ->
 							assertEquals(ProjectConfigurationTestHelper.generateProjectConfigurationAsExport(),
 							             stringBuilder.toString(), "Unexpected project configuration!");
+					case "dataSource.yaml" ->
+							assertEquals(FileConfigurationTestHelper.generateFileConfigurationAsYaml(),
+							             stringBuilder.toString(), "Unexpected data source configuration!");
+					case "dataset.yaml" ->
+							assertEquals(DataConfigurationTestHelper.generateDatasetConfigurationAsYaml(),
+							             stringBuilder.toString(), "Unexpected dataset configuration!");
 					case "pipeline.yaml" ->
 							assertEquals(generatePipelineConfigurationAsYaml(), stringBuilder.toString(),
 							             "Unexpected pipeline configuration!");

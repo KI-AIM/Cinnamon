@@ -45,6 +45,20 @@ public class DataSetEntity extends ProcessOwner {
 	private boolean storedData = false;
 
 	/**
+	 * If the data has hold-out split.
+	 */
+	@Column(nullable = false)
+	@Setter
+	private boolean hasHoldOut = false;
+
+	/**
+	 * Seed that is used for generating the hold-out split.
+	 */
+	@Column(nullable = false)
+	@Setter
+	private double holdOutSeed = 0.0f;
+
+	/**
 	 * If the data has been stored and confirmed.
 	 */
 	@Column(nullable = false)

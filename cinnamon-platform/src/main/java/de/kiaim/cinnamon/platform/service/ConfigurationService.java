@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.ConfigurationPart;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmSelector;
+import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
@@ -15,7 +17,7 @@ import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.controller.ApiExceptionHandler;
 import de.kiaim.cinnamon.platform.exception.*;
-import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
+import de.kiaim.cinnamon.platform.model.entity.*;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
@@ -180,8 +182,12 @@ public class ConfigurationService {
 			switch (configName) {
 				case ConfigurationFile.PROJECT_CONFIGURATION_KEY ->
 						importProjectConfiguration(project, configEntry, importSummary);
+				case ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY ->
+						importDataSourceConfiguration(project, configEntry, importSummary);
 				case ConfigurationFile.DATA_CONFIGURATION_KEY ->
 						importDataConfiguration(project, configEntry, importSummary);
+				case ConfigurationFile.DATASET_CONFIGURATION_KEY ->
+						importDatasetConfiguration(project, configEntry, importSummary);
 				case ConfigurationFile.PIPELINE_CONFIGURATION_KEY ->
 						importPipelinesConfiguration(project, configEntry, importSummary);
 				default -> importExternalConfiguration(project, configEntry, configName, importSummary);
@@ -217,7 +223,9 @@ public class ConfigurationService {
 	 * The returned type is one of the following:
 	 * <ul>
 	 *     <li>{@link ProjectConfigurationDTO}</li>
+	 *     <li>{@link FileConfiguration}</li>
 	 *     <li>{@link DataConfiguration}</li>
+	 *     <li>{@link DatasetConfiguration}</li>
 	 *     <li>{@link PipelinesConfigurationDTO}</li>
 	 *     <li>{@code Map.Entry<String, ConfigurationPart>}</li>
 	 * </ul>
@@ -238,8 +246,14 @@ public class ConfigurationService {
 			case ConfigurationFile.PROJECT_CONFIGURATION_KEY -> {
 				return projectService.exportProjectConfiguration(project);
 			}
+			case ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY -> {
+				return databaseService.exportDataSourceConfiguration(project);
+			}
 			case ConfigurationFile.DATA_CONFIGURATION_KEY -> {
 				return databaseService.exportOriginalDataConfiguration(project);
+			}
+			case ConfigurationFile.DATASET_CONFIGURATION_KEY -> {
+				return databaseService.getDatasetConfiguration(project);
 			}
 			case ConfigurationFile.PIPELINE_CONFIGURATION_KEY -> {
 				return processService.exportPipelinesConfiguration(project);
@@ -311,11 +325,11 @@ public class ConfigurationService {
 	private void importDataConfiguration(final ProjectEntity project,
 	                                     final JsonNode config,
 	                                     final ConfigurationImportSummary outImportSummary) {
-		// Convert the tree into a DataConfiguration object
+		// 1. Convert the tree into a DataConfiguration object
 		final DataConfiguration dataConfiguration;
 		try {
-			final JsonNode singleConfigNode = yamlMapper.createObjectNode()
-			                                            .set(ConfigurationFile.DATA_CONFIGURATION_KEY, config);
+			final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(
+					ConfigurationFile.DATA_CONFIGURATION_KEY, config);
 			dataConfiguration = yamlMapper.treeToValue(singleConfigNode, DataConfiguration.class);
 		} catch (final JsonProcessingException e) {
 			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY,
@@ -325,13 +339,84 @@ public class ConfigurationService {
 			return;
 		}
 
-		// Store the DataConfiguration
+		// 2. No validation to allow manual editing of the attribute configuration
+
+		// 3. Store the DataConfiguration
 		try {
 			databaseService.storeOriginalDataConfiguration(dataConfiguration, project);
 			outImportSummary.addSuccess(ConfigurationFile.DATA_CONFIGURATION_KEY);
-		} catch (final BadDataConfigurationException | BadDataSetIdException |
-		               InternalDataSetPersistenceException | InternalIOException | BadStateException e) {
+		} catch (final ApiException e) {
 			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY, e.getErrorCode());
+		}
+	}
+
+	private void importDataSourceConfiguration(final ProjectEntity project,
+	                                           final JsonNode config,
+	                                           final ConfigurationImportSummary outImportSummary) {
+		// 1. Convert the tree into a FileConfiguration object
+		final FileConfiguration fileConfiguration;
+		try {
+			fileConfiguration = yamlMapper.treeToValue(config, FileConfiguration.class);
+		} catch (final JsonProcessingException e) {
+			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY,
+			                          new InternalIOException(
+					                          InternalIOException.DATA_SOURCE_CONFIGURATION_DESERIALIZATION,
+					                          "Failed to deserialize the data source configuration!",
+					                          e).getErrorCode());
+			return;
+		}
+
+		// 2. Validate the FileConfiguration
+		final Set<ConstraintViolation<FileConfiguration>> violations = validator.validate(fileConfiguration);
+		if (!violations.isEmpty()) {
+			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY,
+			                          ApiException.assembleErrorCode(ApiException.VALIDATION,
+			                                                         ApiExceptionHandler.VALIDATION_ERROR, "1"),
+			                          violations);
+			return;
+		}
+
+		// 3. Import the FileConfiguration
+		try {
+			databaseService.storeFileConfiguration(project, fileConfiguration);
+			outImportSummary.addSuccess(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY);
+		} catch (final ApiException e) {
+			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY, e.getErrorCode());
+		}
+	}
+
+	private void importDatasetConfiguration(final ProjectEntity project,
+	                                        final JsonNode config,
+	                                        final ConfigurationImportSummary outImportSummary) {
+		// 1. Convert the tree into a DatasetConfiguration object
+		final DatasetConfiguration datasetConfiguration;
+		try {
+			datasetConfiguration = yamlMapper.treeToValue(config, DatasetConfiguration.class);
+		} catch (final JsonProcessingException e) {
+			outImportSummary.addError(ConfigurationFile.DATASET_CONFIGURATION_KEY,
+			                          new InternalIOException(
+					                          InternalIOException.DATASET_CONFIGURATION_DESERIALIZATION,
+					                          "Failed to deserialize the dataset configuration!",
+					                          e).getErrorCode());
+			return;
+		}
+
+		// 2. Validate the DatasetConfiguration
+		final Set<ConstraintViolation<DatasetConfiguration>> violations = validator.validate(datasetConfiguration);
+		if (!violations.isEmpty()) {
+			outImportSummary.addError(ConfigurationFile.DATASET_CONFIGURATION_KEY,
+			                          ApiException.assembleErrorCode(ApiException.VALIDATION,
+			                                                         ApiExceptionHandler.VALIDATION_ERROR, "1"),
+			                          violations);
+			return;
+		}
+
+		// 3. Import the DatasetConfiguration
+		try {
+			databaseService.storeDatasetConfiguration(project, datasetConfiguration);
+			outImportSummary.addSuccess(ConfigurationFile.DATASET_CONFIGURATION_KEY);
+		} catch (final ApiException e) {
+			outImportSummary.addError(ConfigurationFile.DATASET_CONFIGURATION_KEY, e.getErrorCode());
 		}
 	}
 

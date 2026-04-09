@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.*;
@@ -13,6 +14,9 @@ import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
+import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
+import de.kiaim.cinnamon.platform.model.mapper.DatasetConfigurationMapper;
+import de.kiaim.cinnamon.platform.model.mapper.FileConfigurationMapper;
 import de.kiaim.cinnamon.platform.processor.FhirProcessor;
 import de.kiaim.cinnamon.platform.repository.DataProcessingRepository;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
@@ -36,7 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.sql.DataSource;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.*;
@@ -63,6 +66,9 @@ public class DatabaseService {
 	private final DataTransformationErrorRepository errorRepository;
 	private final ProjectRepository projectRepository;
 
+	private final DatasetConfigurationMapper datasetConfigurationMapper;
+	private final FileConfigurationMapper fileConfigurationMapper;
+
 	private final DataschemeGenerator dataschemeGenerator;
 	private final ObjectMapper jsonMapper;
 
@@ -75,7 +81,10 @@ public class DatabaseService {
 	public DatabaseService(final DataSource dataSource, final DataProcessingRepository dataProcessingRepository,
 	                       final DataTransformationErrorRepository errorRepository,
 	                       final SerializationConfig serializationConfig, final DataSetRepository dataSetRepository,
-	                       final ProjectRepository projectRepository, final DataschemeGenerator dataschemeGenerator,
+	                       final ProjectRepository projectRepository,
+	                       final DatasetConfigurationMapper datasetConfigurationMapper,
+	                       final FileConfigurationMapper fileConfigurationMapper,
+	                       final DataschemeGenerator dataschemeGenerator,
 	                       final DataSetService dataSetService, final DataProcessorService dataProcessorService,
 	                       final FhirProcessor fhirProcessor, final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
@@ -84,6 +93,8 @@ public class DatabaseService {
 		jsonMapper = serializationConfig.jsonMapper();
 		this.dataSetRepository = dataSetRepository;
 		this.projectRepository = projectRepository;
+		this.datasetConfigurationMapper = datasetConfigurationMapper;
+		this.fileConfigurationMapper = fileConfigurationMapper;
 		this.dataschemeGenerator = dataschemeGenerator;
 		this.dataSetService = dataSetService;
 		this.dataProcessorService = dataProcessorService;
@@ -102,63 +113,167 @@ public class DatabaseService {
 	}
 
 	/**
-	 * Stores the given file.
-	 * If a data set is present and has not been confirmed, the data set will be deleted.
+	 * Stores the given file configuration and associates it with the file of the original data of the given project.
+	 * Update the file entity if the file is already stored.
 	 *
-	 * @param project           The project where the file should be stored.
-	 * @param file              The file to be stored.
+	 * @param project           The project of which the file configuration should be stored.
 	 * @param fileConfiguration The file configuration to be stored.
-	 * @return General information about the file.
-	 * @throws BadDataSetIdException               If the data set has already been confirmed.
-	 * @throws BadFileException                    If the file could not be read.
-	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
-	 * @throws InternalIOException                 If reading the data failed.
-	 * @throws InternalMissingHandlingException    If no processor for the file type of the file could be found.
+	 * @throws BadDataSetIdException            If the dataset is already stored.
+	 * @throws InternalIOException              If reading the dataset file failed.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
 	 */
 	@Transactional
-	public FileInformation storeFile(final ProjectEntity project, final MultipartFile file,
-	                                 final FileConfiguration fileConfiguration
-	) throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
-		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
+	public void storeFileConfiguration(final ProjectEntity project, final FileConfiguration fileConfiguration)
+			throws BadDataSetIdException, InternalIOException, InternalMissingHandlingException {
+		throwIfStored(project.getOriginalData().getDataSet());
+		final FileConfigurationEntity entity = fileConfigurationMapper.toEntity(fileConfiguration);
+		project.getOriginalData().getFile().setFileConfiguration(entity);
+		updateFileEntity(project);
+	}
+
+	/**
+	 * Exports the file configuration of the original data of the given project.
+	 *
+	 * @param project The project of which the file configuration should be exported.
+	 * @return The file configuration of the original data of the given project.
+	 */
+	public FileConfiguration exportDataSourceConfiguration(final ProjectEntity project) {
+		final FileConfigurationEntity entity = project.getOriginalData().getFile().getFileConfiguration();
+		return fileConfigurationMapper.toDto(entity);
+	}
+
+	/**
+	 * Stores the given dataset configuration and associates it with the dataset of the original data of the given project.
+	 * This is only allowed if no dataset is stored.
+	 *
+	 * @param project              The project of which the dataset configuration should be stored.
+	 * @param datasetConfiguration The dataset configuration to be stored.
+	 * @throws BadDataSetIdException If the dataset is already stored.
+	 */
+	@Transactional
+	public void storeDatasetConfiguration(final ProjectEntity project, final DatasetConfiguration datasetConfiguration)
+			throws BadDataSetIdException {
+		throwIfStored(project.getOriginalData().getDataSet());
+		datasetConfigurationMapper.updateEntity(project.getOriginalData().getDatasetConfiguration(),
+		                                        datasetConfiguration);
+	}
+
+	/**
+	 * Updates the dataset configuration of the original data of the given project.
+	 * If the original data is already stored, the hold-out split will be updated according to the new configuration.
+	 *
+	 * @param project              The project of which the dataset configuration should be updated.
+	 * @param datasetConfiguration The dataset configuration to be updated.
+	 * @throws BadArgumentException                If the given dataset configuration is invalid.
+	 * @throws BadDataSetIdException               If the dataset is already confirmed.
+	 * @throws BadStateException                   If the state of the data forbids to create the hold-out split.
+	 * @throws InternalDataSetPersistenceException If updating the hold-out split failed.
+	 */
+	@Transactional
+	public void updateDatasetConfiguration(final ProjectEntity project, final DatasetConfiguration datasetConfiguration)
+			throws BadArgumentException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
+		throwIfConfirmed(project.getOriginalData().getDataSet());
+		datasetConfigurationMapper.updateEntity(project.getOriginalData().getDatasetConfiguration(),
+		                                        datasetConfiguration);
+		updateHoldOutSplit(project);
+	}
+
+	/**
+	 * Creates a DTO for the dataset configuration of the original data of the given project.
+	 *
+	 * @param project The project of which the dataset configuration should be returned.
+	 * @return The dataset configuration of the original data of the given project.
+	 */
+	@Transactional
+	public DatasetConfiguration getDatasetConfiguration(final ProjectEntity project) {
+		final DatasetConfigurationEntity datasetConfigurationEntity = project.getOriginalData().getDatasetConfiguration();
+		return datasetConfigurationMapper.toDto(datasetConfigurationEntity);
+	}
+
+	/**
+	 * Updates the file.
+	 * If the file is or the file configuration is not stored, nothing will be done.
+	 * It does not check if the dataset is confirmed, this has to be done by the caller.
+	 *
+	 * @param project The project to update.
+	 * @throws InternalIOException              If reading the dataset file failed.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
+	 */
+	@Transactional
+	protected void updateFileEntity(final ProjectEntity project)
+			throws InternalIOException, InternalMissingHandlingException {
+		// Check if the file and the file configuration are available
+		final FileEntity fileEntity = project.getOriginalData().getFile();
+		final LobWrapperEntity file = fileEntity.getFile();
+		if (file == null) {
+			return;
+		}
+		final FileConfigurationEntity fileConfiguration = fileEntity.getFileConfiguration();
+		if (fileConfiguration == null) {
+			return;
+		}
+
+		// Update the file-related properties
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
+		final int numberOfAttributes = dataProcessor.getNumberColumns(file.getLobStream(), fileConfiguration);
+		fileEntity.setNumberOfAttributes(numberOfAttributes);
+	}
+
+	/**
+	 * Stores the given file.
+	 * If a dataset is already stored for the original data, an exception will be thrown.
+	 *
+	 * @param project The project where the file should be stored.
+	 * @param file    The file to be stored.
+	 * @return General information about the file.
+	 * @throws BadDataSetIdException            If the data set has already been confirmed.
+	 * @throws BadFileException                 If the file could not be read.
+	 * @throws InternalIOException              If reading the data failed.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
+	 */
+	@Transactional
+	public FileInformation storeFile(final ProjectEntity project, final MultipartFile file)
+			throws BadDataSetIdException, BadFileException, InternalIOException, InternalMissingHandlingException {
+		throwIfStored(project.getOriginalData().getDataSet());
 
 		dataProcessorService.validateFileOrThrow(file);
 
-		final FileConfigurationEntity fileConfigurationEntity = switch (fileConfiguration.getFileType()) {
-			case CSV -> new CsvFileConfigurationEntity(fileConfiguration.getCsvFileConfiguration());
-			case FHIR -> new FhirFileConfigurationEntity(fileConfiguration.getFhirFileConfiguration());
-			case XLSX -> new XlsxFileConfigurationEntity(fileConfiguration.getXlsxFileConfiguration());
-		};
-
-		final FileEntity fileEntity = new FileEntity();
+		final FileEntity fileEntity = project.getOriginalData().getFile();
 		fileEntity.setName(file.getOriginalFilename());
-		fileEntity.setFileConfiguration(fileConfigurationEntity);
 
 		try {
-			fileEntity.setFile(file.getBytes());
+			fileEntity.setFile(new LobWrapperEntity(file.getBytes()));
 		} catch (final IOException e) {
 			throw new BadFileException(BadFileException.NOT_READABLE, "Could not read file");
 		}
 
-		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
-		final int numberOfAttributes = dataProcessor.getNumberColumns(new ByteArrayInputStream(fileEntity.getFile()),
-		                                                              fileConfigurationEntity);
-		fileEntity.setNumberOfAttributes(numberOfAttributes);
-
-		project.getOriginalData().setFile(fileEntity);
-		projectRepository.save(project);
+		updateFileEntity(project);
 
 		return getFileInformation(project);
 	}
 
+	/**
+	 * Creates a DTO for the file information of the original data of the given project.
+	 * If no file is available, the fields will be null or 0.
+	 *
+	 * @param project The project of which the file information should be returned.
+	 * @return The file information of the original data of the given project.
+	 */
 	@Transactional
 	public FileInformation getFileInformation(final ProjectEntity project) {
 		final var fileInformation = new FileInformation();
 
 		final FileEntity file = project.getOriginalData().getFile();
-		if (file != null) {
-			fileInformation.setName(file.getName());
-			fileInformation.setNumberOfAttributes(file.getNumberOfAttributes());
+		fileInformation.setName(file.getName());
+		fileInformation.setNumberOfAttributes(file.getNumberOfAttributes());
+
+		if (file.getFileConfiguration() != null) {
 			fileInformation.setType(file.getFileConfiguration().getFileType());
+		} else if (file.getName() != null) {
+			try {
+				dataProcessorService.getFileTypeByFileName(file.getName());
+			} catch (final BadFileException ignored) {
+			}
 		}
 
 		return fileInformation;
@@ -169,23 +284,107 @@ public class DatabaseService {
 	 *
 	 * @param dataConfiguration The configuration to be stored.
 	 * @param project           The project of the data set the configuration should be associated with.
-	 * @throws BadDataConfigurationException       If the data configuration is not valid.
-	 * @throws BadDataSetIdException               If the data has already been confirmed.
-	 * @throws BadStateException                   If the file for the dataset has not been selected.
-	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
-	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
+	 * @throws BadDataSetIdException If the data has already been confirmed.
 	 */
 	@Transactional
 	public void storeOriginalDataConfiguration(final DataConfiguration dataConfiguration, final ProjectEntity project)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
-		checkFile(project, dataConfiguration);
-		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
+			throws BadDataSetIdException {
+		throwIfStored(project.getOriginalData().getDataSet());
 		doStoreOriginalDataConfiguration(project, dataConfiguration);
 	}
 
 	/**
+	 * Estimates the data configuration for the original data based on the file and the file configuration
+	 * currently stored in the given project.
+	 *
+	 * @param project The project to estimate the data configuration for.
+	 * @return The estimation result.
+	 * @throws BadDataSetIdException            If the dataset is already stored.
+	 * @throws BadStateException                If the file or the file configuration are not available.
+	 * @throws InternalIOException              If reading the file failed.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
+	 */
+	@Transactional
+	public DataConfigurationEstimation estimateOriginalDataConfiguration(final ProjectEntity project)
+			throws BadDataSetIdException, BadStateException, InternalIOException, InternalMissingHandlingException {
+		// Check if the file and the file configuration are available
+		final FileEntity fileEntity = project.getOriginalData().getFile();
+		final LobWrapperEntity file = fileEntity.getFile();
+		if (file == null) {
+			throw new BadStateException(BadStateException.NO_DATASET_FILE,
+			                            "Estimating the data configuration requires the file for the dataset to be selected!");
+		}
+		final FileConfigurationEntity fileConfiguration = fileEntity.getFileConfiguration();
+		if (fileConfiguration == null) {
+			throw new BadStateException(BadStateException.NO_DATASET_FILE_CONFIGURATION,
+			                            "Estimating the data configuration requires the file configuration!");
+		}
+
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
+		DataConfigurationEstimation estimation = dataProcessor.estimateDataConfiguration(file.getLobStream(),
+		                                                                                 fileConfiguration,
+		                                                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+		storeOriginalDataConfiguration(estimation.getDataConfiguration(), project);
+		return estimation;
+	}
+
+	/**
+	 * Update the dataset of the original data with the currently stored configurations and file.
+	 * This is only allowed if the dataset is not confirmed yet.
+	 *
+	 * @param project The project to update.
+	 * @throws BadArgumentException                If the given configurations are invalid.
+	 * @throws BadDataConfigurationException       If the number of attributes does not match with the stored data configuration.
+	 * @throws BadDatasetException                 If the data file could not be converted into a table.
+	 * @throws BadDataSetIdException               If the dataset is already confirmed.
+	 * @throws BadStateException                   If the file or any configuration are not available.
+	 * @throws InternalDataSetPersistenceException If the dataset could not be stored due to an internal error.
+	 * @throws InternalIOException                 If reading the file failed.
+	 * @throws InternalMissingHandlingException    If no processor for the file type of the file could be found.
+	 */
+	@Transactional
+	public Long storeOriginalDataset(final ProjectEntity project)
+			throws BadArgumentException, BadDataConfigurationException, BadDatasetException, BadDataSetIdException,
+					       BadStateException, InternalDataSetPersistenceException, InternalIOException,
+					       InternalMissingHandlingException {
+		// Check if the file and the file configuration are available
+		final FileEntity fileEntity = project.getOriginalData().getFile();
+		final LobWrapperEntity file = fileEntity.getFile();
+		if (file == null) {
+			throw new BadStateException(BadStateException.NO_DATASET_FILE,
+			                            "Storing the dataset requires the file for the dataset to be selected!");
+		}
+		final FileConfigurationEntity fileConfiguration = fileEntity.getFileConfiguration();
+		if (fileConfiguration == null) {
+			throw new BadStateException(BadStateException.NO_DATASET_FILE_CONFIGURATION,
+			                            "Storing the dataset requires the file configuration!");
+		}
+		// Check if the dataset is available
+		final DataSetEntity originalDataSet = project.getOriginalData().getDataSet();
+		if (originalDataSet == null) {
+			throw new BadStateException(BadStateException.NO_ORIGINAL_DATA_CONFIGURATION,
+			                            "Storing the dataset requires the attributes to be configured!");
+		}
+		// Check if the data configuration is available
+		final DataConfiguration configuration = originalDataSet.getDataConfiguration();
+		if (configuration == null) {
+			throw new BadStateException(BadStateException.NO_ORIGINAL_DATA_CONFIGURATION,
+			                            "Storing the dataset requires the attributes to be configured!");
+		}
+
+		// Store the dataset
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
+		final TransformationResult transformationResult = dataProcessor.read(file.getLobStream(), fileConfiguration,
+		                                                                     configuration);
+		final Long id = storeOriginalTransformationResult(transformationResult, project);
+		updateHoldOutSplit(project);
+
+		return id;
+	}
+
+	/**
 	 * Stores the given TransformationResult as the original data by storing the DataSet,
-	 * the DataConfiguration and the transformation errors into the database
+	 * the DataConfiguration, and the transformation errors into the database
 	 * and associates them with the given step in the given project.
 	 * The table for the DataSet will be generated automatically.
 	 * Returns an ID to access the data.
@@ -193,7 +392,7 @@ public class DatabaseService {
 	 * @param transformationResult The transformation result to be stored.
 	 * @param project              The project.
 	 * @return The ID of the data set.
-	 * @throws BadDataConfigurationException       If the number of attributes do not match with the stored data configuration.
+	 * @throws BadDataConfigurationException       If the number of attributes does not match with the stored data configuration.
 	 * @throws BadDataSetIdException               If the data set is already stored.
 	 * @throws BadStateException                   If no file for the original data has been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored.
@@ -224,7 +423,7 @@ public class DatabaseService {
 
 	/**
 	 * Stores the given TransformationResult by storing the DataSet,
-	 * the DataConfiguration and the transformation errors into the database
+	 * the DataConfiguration, and the transformation errors into the database
 	 * and associates them with the given process.
 	 * The table for the DataSet will be generated automatically.
 	 *
@@ -242,13 +441,18 @@ public class DatabaseService {
 	                                      final DataProcessingEntity dataProcessingEntity,
 	                                      final List<Job> processed)
 			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+		final ProjectEntity project = dataProcessingEntity.getExecutionStep().getPipeline().getProject();
+		final DataSet dataSet = transformationResult.getDataSet();
+		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
+
+		// Test configuration
+		checkFile(project, dataConfiguration);
+
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(dataProcessingEntity.getDataSet());
 
 		// Store configuration
-		final ProjectEntity project = dataProcessingEntity.getExecutionStep().getPipeline().getProject();
-		final DataSet dataSet = transformationResult.getDataSet();
-		final DataSetEntity dataSetEntity = doStoreDataConfiguration(project, dataSet.getDataConfiguration(),
+		final DataSetEntity dataSetEntity = doStoreDataConfiguration(dataSet.getDataConfiguration(),
 		                                                             dataProcessingEntity, processed);
 
 		// Store transformation errors
@@ -257,6 +461,61 @@ public class DatabaseService {
 		dataProcessingRepository.save(dataProcessingEntity);
 
 		storeDataSet(dataSet, dataSetEntity);
+	}
+
+	/**
+	 * Updates the hold-out split of the original data set according to the current dataset configuration.
+	 *
+	 * @param project The project to update.
+	 * @throws BadStateException                   If the state of the data forbids to create the hold-out split.
+	 * @throws BadArgumentException                If the given percentage is invalid.
+	 * @throws InternalDataSetPersistenceException If executing the queries failed.
+	 */
+	@Transactional
+	protected void updateHoldOutSplit(final ProjectEntity project)
+			throws BadArgumentException, BadStateException, InternalDataSetPersistenceException {
+		// Check if the dataset is available and if the data was stored before
+		final DataSetEntity originalDataSet = project.getOriginalData().getDataSet();
+		if (originalDataSet == null || !originalDataSet.isStoredData()) {
+			return;
+		}
+
+		final DatasetConfigurationEntity datasetConfiguration = project.getOriginalData().getDatasetConfiguration();
+		if (!datasetConfiguration.isCreateHoldOutSplit() || datasetConfiguration.getHoldOutSplitPercentage() == 0) {
+			removeHoldOutSplit(originalDataSet);
+		} else {
+			createHoldOutSplit(project, datasetConfiguration.getHoldOutSplitPercentage());
+		}
+	}
+
+	/**
+	 * Removes the hold-out split from the given data set.
+	 *
+	 * @param dataSet The data set to remove the hold-out split from.
+	 * @throws InternalDataSetPersistenceException If executing the queries failed.
+	 */
+	@Transactional
+	protected void removeHoldOutSplit(final DataSetEntity dataSet) throws InternalDataSetPersistenceException {
+		if (!dataSet.isHasHoldOut()) {
+			return;
+		}
+
+		final String tableName = getTableName(dataSet.getId());
+		final String resetQuery =
+				"""
+				UPDATE %s
+				SET %s = false;
+				""".formatted(tableName, DataschemeGenerator.HOLD_OUT_FLAG_NAME);
+
+		try {
+			executeStatement(resetQuery);
+		} catch (final SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT,
+			                                              "Failed to reset the hold-out split!", e);
+		}
+
+		dataSet.setHasHoldOut(false);
+		dataSet.setHoldOutSeed(0.0f);
 	}
 
 	/**
@@ -270,14 +529,15 @@ public class DatabaseService {
 	 * @throws InternalDataSetPersistenceException If executing the queries failed.
 	 */
 	@Transactional
-	public void createHoldOutSplit(final ProjectEntity project, final float holdOutPercentage)
+	protected void createHoldOutSplit(final ProjectEntity project, final float holdOutPercentage)
 			throws BadStateException, BadArgumentException, InternalDataSetPersistenceException {
-		if (project.getOriginalData().getDataSet() == null || !project.getOriginalData().getDataSet().isStoredData()) {
+		final DataSetEntity dataset = project.getOriginalData().getDataSet();
+		if (dataset == null || !dataset.isStoredData()) {
 			throw new BadStateException(BadStateException.NO_DATA_SET,
 			                            "Creating the hold-out split requires the original date set to be stored!");
 		}
 
-		if (project.getOriginalData().getDataSet().isConfirmedData()) {
+		if (dataset.isConfirmedData()) {
 			throw new BadStateException(BadStateException.DATE_CONFIRMED,
 			                            "Creating the hold-out split cannot be done after the data has been confirmed!");
 		}
@@ -287,31 +547,13 @@ public class DatabaseService {
 			                               "Hold out percentage must be between 0 and 1!");
 		}
 
-		final String tableName = getTableName(project.getOriginalData().getDataSet().getId());
-
 		// Reset existing hold-out split
-		if (project.getOriginalData().isHasHoldOut()) {
-			final String resetQuery =
-					"""
-					UPDATE %s
-					SET %s = false;
-					""".formatted(tableName, DataschemeGenerator.HOLD_OUT_FLAG_NAME);
-
-			try {
-				executeStatement(resetQuery);
-			} catch (final SQLException e) {
-				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT,
-				                                              "Failed to reset the hold-out split!", e);
-			}
-
-			project.getOriginalData().setHasHoldOut(false);
-		}
-
+		removeHoldOutSplit(project.getOriginalData().getDataSet());
 		projectRepository.save(project);
 
 		// Set the seed
 		final double seed = project.randomDouble(-1, 1);
-		project.getOriginalData().setHoldOutSeed(seed);
+		dataset.setHoldOutSeed(seed);
 
 		final String seedQuery = "SELECT setseed(%s);".formatted(Double.toString(seed));
 
@@ -323,6 +565,7 @@ public class DatabaseService {
 		}
 
 		// Create new hold-out split
+		final String tableName = getTableName(dataset.getId());
 		final String query =
 				"""
 				WITH selected_rows AS (
@@ -344,8 +587,7 @@ public class DatabaseService {
 			                                              "Failed to create the hold-out split!", e);
 		}
 
-		project.getOriginalData().setHasHoldOut(true);
-		project.getOriginalData().setHoldOutPercentage(holdOutPercentage);
+		dataset.setHasHoldOut(true);
 		projectRepository.save(project);
 	}
 
@@ -440,7 +682,7 @@ public class DatabaseService {
 		final int rows = countEntries(dataSetEntity.getId());
 		final int invalidRows = countInvalidRows(dataSetEntity.getId());
 
-		boolean hasHoldOutSplit = false;
+		boolean hasHoldOutSplit = dataSetEntity.isHasHoldOut();
 		float holdOutPercentage = 0.0f;
 
 		int numberHoldOutRows = 0;
@@ -449,8 +691,7 @@ public class DatabaseService {
 		Integer numberRetainedRows = null;
 
 		if (originalData != null) {
-			hasHoldOutSplit = originalData.isHasHoldOut();
-			holdOutPercentage = originalData.getHoldOutPercentage();
+			holdOutPercentage = originalData.getDatasetConfiguration().getHoldOutSplitPercentage();
 
 			if (hasHoldOutSplit) {
 				numberHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ALL, null);
@@ -684,7 +925,7 @@ public class DatabaseService {
 			throws InternalDataSetPersistenceException, BadColumnNameException, InternalIOException {
 		final List<String> columnNames = loadDataRequest != null ? loadDataRequest.getColumnNames() : new ArrayList<>();
 
-		var hasHoldOut = dataSetEntity.getOriginalData() != null && dataSetEntity.getOriginalData().isHasHoldOut();
+		var hasHoldOut = dataSetEntity.isHasHoldOut();
 		var calcRowNumbers = rowSelector != RowSelector.ALL ||
 		                     (hasHoldOut && loadDataRequest.getHoldOutSelector() != HoldOutSelector.ALL);
 
@@ -777,14 +1018,20 @@ public class DatabaseService {
 	 */
 	@Transactional
 	public void deleteOriginalData(final ProjectEntity project) throws InternalDataSetPersistenceException {
-		project.getOriginalData().setFile(null);
-		project.getOriginalData().setHasHoldOut(false);
-		project.getOriginalData().setHoldOutPercentage(0.0f);
-		project.getOriginalData().setHoldOutSeed(0);
+		project.getOriginalData().getFile().setName(null);
+		project.getOriginalData().getFile().setNumberOfAttributes(0);
+		project.getOriginalData().getFile().setFileConfiguration(null);
+		project.getOriginalData().getFile().setFile(null);
 
-		deleteDataSet(project.getOriginalData().getDataSet());
+		project.getOriginalData().getDatasetConfiguration().setCreateHoldOutSplit(false);
+		project.getOriginalData().getDatasetConfiguration().setHoldOutSplitPercentage(0.0f);
 
-		projectRepository.save(project);
+		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
+		if (dataSet != null) {
+			project.getOriginalData().setDataSet(null);
+			deleteDataSet(dataSet);
+			dataSetRepository.delete(dataSet);
+		}
 	}
 
 	/**
@@ -812,13 +1059,10 @@ public class DatabaseService {
 
 		dataSet.getDataTransformationErrors().clear();
 		dataSet.setStoredData(false);
+		dataSet.setHasHoldOut(false);
+		dataSet.setHoldOutSeed(0.0f);
 		dataSet.setConfirmedData(false);
 		dataSet.getStatisticsProcess().reset();
-
-		final OriginalDataEntity original = dataSet.getOriginalData();
-		if (original != null) {
-			original.setHasHoldOut(false);
-		}
 	}
 
 	/**
@@ -1004,13 +1248,9 @@ public class DatabaseService {
 		return project.getOriginalData().getDataSet();
 	}
 
-	private DataSetEntity doStoreDataConfiguration(final ProjectEntity project,
-	                                               final DataConfiguration dataConfiguration,
+	private DataSetEntity doStoreDataConfiguration(final DataConfiguration dataConfiguration,
 	                                               final DataProcessingEntity dataProcessingEntity,
-	                                               final List<Job> processed
-	) throws BadDataConfigurationException, BadStateException, InternalIOException {
-		checkFile(project, dataConfiguration);
-
+	                                               final List<Job> processed)  {
 		final DataSetEntity dataSetEntity;
 
 		if (dataProcessingEntity.getDataSet() == null) {
@@ -1027,26 +1267,33 @@ public class DatabaseService {
 
 	private void checkFile(final ProjectEntity project, final DataConfiguration dataConfiguration
 	) throws BadStateException, BadDataConfigurationException, InternalIOException {
-		final FileEntity file = project.getOriginalData().getFile();
+		// Check if the file and the file configuration are available
+		final FileEntity fileEntity = project.getOriginalData().getFile();
+		final LobWrapperEntity file = fileEntity.getFile();
 		if (file == null) {
 			throw new BadStateException(BadStateException.NO_DATASET_FILE,
-			                            "Saving a data configuration requires the file for the dataset to be selected.");
+			                            "Storing a dataset requires the file for the dataset to be selected!");
+		}
+		final FileConfigurationEntity fileConfiguration = fileEntity.getFileConfiguration();
+		if (fileConfiguration == null) {
+			throw new BadStateException(BadStateException.NO_DATASET_FILE_CONFIGURATION,
+			                            "Storing a dataset requires the file configuration!");
 		}
 
-		if (dataConfiguration.getConfigurations().size() != file.getNumberOfAttributes()) {
+		if (dataConfiguration.getConfigurations().size() != fileEntity.getNumberOfAttributes()) {
 			throw new BadDataConfigurationException(BadDataConfigurationException.INVALID_NUMBER_OF_ATTRIBUTES,
-			                                        "Dataset contains " + file.getNumberOfAttributes() +
+			                                        "Dataset contains " + fileEntity.getNumberOfAttributes() +
 			                                        " attributes, but the data configuration " +
 			                                        dataConfiguration.getConfigurations().size() + " attributes!");
 		}
 
 		// Validate that column names match the paths of the FHIR bundle
-		final FileType fileType = file.getFileConfiguration().getFileType();
+		final FileType fileType = fileConfiguration.getFileType();
 		if (fileType == FileType.FHIR) {
-			final List<String> expectedColumns = fhirProcessor.getAttributeNames(
-					new ByteArrayInputStream(file.getFile()), file.getFileConfiguration());
+			final List<String> expectedColumns = fhirProcessor.getAttributeNames(file.getLobStream(),
+			                                                                     fileConfiguration);
 
-			for (int i = 0; i < file.getNumberOfAttributes(); i++) {
+			for (int i = 0; i < fileEntity.getNumberOfAttributes(); i++) {
 				final String columnName = dataConfiguration.getConfigurations().get(i).getName();
 				final String fhirColumnName = expectedColumns.get(i);
 				if (!columnName.equals(fhirColumnName)) {
@@ -1331,6 +1578,40 @@ public class DatabaseService {
 		}
 
 		return targetConfiguration;
+	}
+
+	/**
+	 * Checks if the dataset is already stored.
+	 * Throws an exception if the dataset is already stored.
+	 *
+	 * @param dataSet The dataset to check.
+	 * @throws BadDataSetIdException If the dataset is already stored.
+	 */
+	private void throwIfStored(@Nullable final DataSetEntity dataSet) throws BadDataSetIdException {
+		if (dataSet == null) {
+			return;
+		}
+
+		if (dataSet.isStoredData()) {
+			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been stored!");
+		}
+	}
+
+	/**
+	 * Checks if the dataset is already stored and confirmed.
+	 *
+	 * @param dataSet The dataset to check.
+	 * @throws BadDataSetIdException If the dataset is confirmed.
+	 */
+	private void throwIfConfirmed(@Nullable final DataSetEntity dataSet) throws BadDataSetIdException {
+		if (dataSet == null) {
+			return;
+		}
+
+		if (dataSet.isConfirmedData()) {
+			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_CONFIRMED,
+			                                "The data has already been confirmed!");
+		}
 	}
 
 	/**

@@ -30,7 +30,17 @@ public class DataProcessorService {
 	 */
 	public FileType getFileType(final MultipartFile file) throws BadFileException {
 		validateFileOrThrow(file);
-		final String fileName = file.getOriginalFilename();
+		return getFileTypeByFileName(file.getOriginalFilename());
+	}
+
+	/**
+	 * Gets the file type of the given file name by analyzing the file extension.
+	 *
+	 * @param fileName The name of the file.
+	 * @return The file type of the file.
+	 * @throws BadFileException If the file extension is not supported.
+	 */
+	public FileType getFileTypeByFileName(final String fileName) throws BadFileException {
 		final String fileExtension = getFileExtension(fileName);
 		return getFileType(fileExtension);
 	}

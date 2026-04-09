@@ -43,8 +43,8 @@ class DatabaseServiceTest extends DatabaseTest {
 	@BeforeEach
 	public void setUp() throws IOException, ApiException {
 		projectService.setMode(testProject, Mode.EXPERT);
-		databaseService.storeFile(testProject, ResourceHelper.loadCsvFile(),
-		                          FileConfigurationTestHelper.generateFileConfiguration());
+		databaseService.storeFileConfiguration(testProject, FileConfigurationTestHelper.generateFileConfiguration());
+		databaseService.storeFile(testProject, ResourceHelper.loadCsvFile());
 	}
 
 	@Test

@@ -1,7 +1,9 @@
 package de.kiaim.cinnamon.model.configuration.data.file;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.kiaim.cinnamon.model.validation.FileConfigurationSet;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Schema(description = "Metadata describing the type of the uploaded data.")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @FileConfigurationSet
 @Getter
 @Setter

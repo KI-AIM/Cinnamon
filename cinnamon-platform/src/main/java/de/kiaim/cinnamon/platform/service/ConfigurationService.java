@@ -218,6 +218,7 @@ public class ConfigurationService {
 	 * <ul>
 	 *     <li>{@link ProjectConfigurationDTO}</li>
 	 *     <li>{@link DataConfiguration}</li>
+	 *     <li>{@link PipelinesConfigurationDTO}</li>
 	 *     <li>{@code Map.Entry<String, ConfigurationPart>}</li>
 	 * </ul>
 	 *
@@ -233,22 +234,30 @@ public class ConfigurationService {
 			final String configurationName,
 			final ProjectEntity project
 	) throws BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException {
-		if (ConfigurationFile.PROJECT_CONFIGURATION_KEY.equals(configurationName)) {
-			return projectService.exportProjectConfiguration(project);
-		} else if (ConfigurationFile.DATA_CONFIGURATION_KEY.equals(configurationName)) {
-			return databaseService.exportOriginalDataConfiguration(project);
-		} else {
-			final var s = databaseService.exportConfiguration(configurationName, project);
-			try {
-				final var a = yamlMapper.readValue(s, ConfigurationFile.class);
-				return a.getParts().entrySet().stream().filter(e -> e.getKey().equals(configurationName)).findFirst()
-				        .orElseThrow(() -> new InternalInvalidStateException(
-						        InternalInvalidStateException.INVALID_CONFIGURATION,
-						        "Configuration key not found: " + configurationName));
-			} catch (final JsonProcessingException e) {
-				throw new InternalInvalidStateException(InternalInvalidStateException.INVALID_CONFIGURATION,
-				                                        "Failed to deserialize configuration from database!",
-				                                        e);
+		switch (configurationName) {
+			case ConfigurationFile.PROJECT_CONFIGURATION_KEY -> {
+				return projectService.exportProjectConfiguration(project);
+			}
+			case ConfigurationFile.DATA_CONFIGURATION_KEY -> {
+				return databaseService.exportOriginalDataConfiguration(project);
+			}
+			case ConfigurationFile.PIPELINE_CONFIGURATION_KEY -> {
+				return processService.exportPipelinesConfiguration(project);
+			}
+			default -> {
+				final var s = databaseService.exportConfiguration(configurationName, project);
+				try {
+					final var a = yamlMapper.readValue(s, ConfigurationFile.class);
+					return a.getParts().entrySet().stream().filter(e -> e.getKey().equals(configurationName))
+					        .findFirst()
+					        .orElseThrow(() -> new InternalInvalidStateException(
+							        InternalInvalidStateException.INVALID_CONFIGURATION,
+							        "Configuration key not found: " + configurationName));
+				} catch (final JsonProcessingException e) {
+					throw new InternalInvalidStateException(InternalInvalidStateException.INVALID_CONFIGURATION,
+					                                        "Failed to deserialize configuration from database!",
+					                                        e);
+				}
 			}
 		}
 	}

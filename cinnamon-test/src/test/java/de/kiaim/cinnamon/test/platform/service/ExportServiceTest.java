@@ -83,11 +83,14 @@ public class ExportServiceTest extends DatabaseTest {
 		var parameter = new ProjectExportParameter(false, FileType.CSV, HoldOutSelector.ALL,
 		                                           List.of("pipeline.execution.anonymization.dataset",
 		                                                   "configuration.project",
+		                                                   "configuration.pipeline",
 		                                                   "configuration.configurations", "original.dataset",
 		                                                   "configuration.anonymization"));
 		assertDoesNotThrow(() -> exportService.createZipFile(project, out, parameter));
 
-		List<String> expectedFiles = new ArrayList<>(List.of("anonymization-dataset.csv", "configurations.yaml", "original-dataset.csv", "anonymization.yaml", "project.yaml"));
+		List<String> expectedFiles = new ArrayList<>(
+				List.of("anonymization-dataset.csv", "configurations.yaml", "original-dataset.csv",
+				        "anonymization.yaml", "project.yaml", "pipeline.yaml"));
 
 		try (final var zipInputStream = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
 
@@ -122,6 +125,9 @@ public class ExportServiceTest extends DatabaseTest {
 					case "project.yaml" ->
 							assertEquals(ProjectConfigurationTestHelper.generateProjectConfigurationAsExport(),
 							             stringBuilder.toString(), "Unexpected project configuration!");
+					case "pipeline.yaml" ->
+							assertEquals(generatePipelineConfigurationAsYaml(), stringBuilder.toString(),
+							             "Unexpected pipeline configuration!");
 					default -> fail("Unexpected ZIP entry: " + zipEntry.getName());
 				}
 
@@ -134,5 +140,27 @@ public class ExportServiceTest extends DatabaseTest {
 		}
 	}
 
+	private String generatePipelineConfigurationAsYaml() {
+		return """
+		       pipeline:
+		         pipelines:
+		         - jobs:
+		           - name: "anonymization"
+		             enabled: true
+		             configuration: 0
+		           - name: "synthetization"
+		             enabled: true
+		             configuration: 0
+		           - name: "technical_evaluation"
+		             enabled: true
+		             configuration: 0
+		           - name: "risk_evaluation"
+		             enabled: true
+		             configuration: 0
+		           - name: "risk_evaluation_o"
+		             enabled: true
+		             configuration: 0
+		       """;
+	}
 
 }

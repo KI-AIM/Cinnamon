@@ -331,7 +331,8 @@ public class ExportService {
 			final String configName
 	) throws JsonProcessingException, BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException {
 		Object config = configurationService.loadConfiguration(configName, project);
-		if (configName.equals(ConfigurationFile.PROJECT_CONFIGURATION_KEY)) {
+		if (configName.equals(ConfigurationFile.PROJECT_CONFIGURATION_KEY) ||
+		    configName.equals(ConfigurationFile.PIPELINE_CONFIGURATION_KEY)) {
 			// Wrap the configuration in a parent
 			final Map<String, Object> parentMap = new HashMap<>();
 			parentMap.put(configName, config);

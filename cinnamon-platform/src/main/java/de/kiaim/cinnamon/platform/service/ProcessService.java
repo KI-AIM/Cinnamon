@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.algorithms.Algorithm;
 import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.pipeline.JobConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.pipeline.PipelineConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
@@ -221,7 +222,7 @@ public class ProcessService {
 			throws BadStepNameException, BadStateException, InternalInvalidStateException {
 
 		// Currently, always only use the first pipeline because multiple pipelines are not supported yet
-		final Set<JobConfigurationDTO> jobs = pipelines.getPipelines().get(0).getJobs();
+		final List<JobConfigurationDTO> jobs = pipelines.getPipelines().get(0).getJobs();
 		final Set<String> jobNames = new HashSet<>();
 
 		// Configure jobs from the config
@@ -306,6 +307,33 @@ public class ProcessService {
 
 		// Save project
 		projectRepository.save(project);
+	}
+
+	/**
+	 * Creates a pipeline configuration from the current state of the project.
+	 *
+	 * @param project The project to create the configuration for.
+	 * @return The pipeline configuration.
+	 */
+	public PipelinesConfigurationDTO exportPipelinesConfiguration(final ProjectEntity project) {
+		final PipelinesConfigurationDTO config = new PipelinesConfigurationDTO();
+
+		// Currently, always only use the first pipeline because multiple pipelines are not supported yet
+		final PipelineEntity pipeline = project.getPipelines().get(0);
+		final PipelineConfigurationDTO pipelineConfig = new PipelineConfigurationDTO();
+
+		for (final ExecutionStepEntity stage : pipeline.getStages()) {
+			for (final ExternalProcessEntity process : stage.getProcesses()) {
+				final JobConfigurationDTO jobConfig = new JobConfigurationDTO();
+				jobConfig.setName(process.getJob().getName());
+				jobConfig.setEnabled(!process.isSkip());
+				pipelineConfig.getJobs().add(jobConfig);
+			}
+		}
+
+		config.getPipelines().add(pipelineConfig);
+
+		return config;
 	}
 
 	/**

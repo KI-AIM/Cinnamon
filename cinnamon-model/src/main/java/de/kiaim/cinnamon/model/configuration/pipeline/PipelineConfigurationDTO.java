@@ -7,8 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Configuration for a pipeline.
@@ -24,9 +24,11 @@ public class PipelineConfigurationDTO {
 	 * Set of jobs to be executed in the pipeline.
 	 * The execution order is defined by the application and not by the pipeline configuration.
 	 * Jobs not included in the set are not executed.
+	 * <br>
+	 * Uses a list for deterministic order during serialization.
 	 */
 	@Schema(description = "Set of jobs to be executed in the pipeline.")
 	@NotNull @Valid
-	private final Set<JobConfigurationDTO> jobs = new HashSet<>();
+	private final List<JobConfigurationDTO> jobs = new ArrayList<>();
 
 }

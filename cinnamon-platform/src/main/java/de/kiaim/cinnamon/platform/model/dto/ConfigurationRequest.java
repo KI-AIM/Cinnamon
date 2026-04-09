@@ -17,10 +17,6 @@ import org.springframework.lang.Nullable;
 @NoArgsConstructor
 public class ConfigurationRequest {
 
-	@Schema(description = "Name under which the configuration should be saved.")
-	@NotBlank
-	private String configurationName;
-
 	@Schema(description = "Content of the configuration. Can be any string.")
 	@Nullable
 	private String configuration;

@@ -8,10 +8,7 @@ import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
-import de.kiaim.cinnamon.test.util.AlgorithmTestHelper;
-import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
-import de.kiaim.cinnamon.test.util.ProjectConfigurationTestHelper;
-import de.kiaim.cinnamon.test.util.WithMockWebServer;
+import de.kiaim.cinnamon.test.util.*;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.Test;
@@ -55,7 +52,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/config")
 				                .param("configurationName", CONFIGURATION_NAME)
 				                .param("url", "/start_synthetization_process/ctgan")
-				                .param("configuration", "configuration")
+				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 		mockMvc.perform(post("/api/process/configure")
@@ -82,18 +79,10 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Test
 	void store() throws Exception {
-		final String config = """
-				configurations:
-				- index: 0
-				  name: "column0_boolean"
-				  type: "BOOLEAN"
-				  scale: "NOMINAL"
-				  configurations: []
-				""";
+		final String config = AlgorithmTestHelper.generateAlgorithmConfigurationYaml();
 
 		mockMvc.perform(post("/api/config")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
-				                .param("configurationName", CONFIGURATION_NAME)
 				                .param("configuration", config))
 		       .andExpect(status().isOk());
 
@@ -458,7 +447,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		final String configuration = """
 		                             anonymization:
 		                                privacyModels:
-		                                    - name: anonymization_tabular
+		                                    - name: algorithmA
 		                                      type: tabular
 		                                attributeConfiguration:
 		                                    - attributeProtection: MICRO_AGGREGATION
@@ -481,17 +470,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 }
 		                                 """));
 
-		var expected = """
-		               anonymization:
-		                 algorithm:
-		                   id: "anonymization_tabular"
-		                   version: "1.0.0"
-		                 privacyModels:
-		                 - name: "anonymization_tabular"
-		                   type: "tabular"
-		                 attributeConfiguration:
-		                 - attributeProtection: "MICRO_AGGREGATION"
-		               """;
+		var expected = AlgorithmTestHelper.generateAlgorithmConfigurationYaml();
 		testImportedConfiguration("anonymization", expected);
 	}
 
@@ -572,7 +551,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		               evaluation_configuration:
 		                 algorithm:
 		                   id: "evaluation"
-		                   version: "1.0.0"
+		                   version: "0.1.0"
 		                 data_format: "cross-sectional"
 		                 resemblance:
 		                   mean: {}
@@ -621,7 +600,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		               risk_assessment_configuration:
 		                 algorithm:
 		                   id: "risk_assessment"
-		                   version: "1.0.0"
+		                   version: "0.1.0"
 		                 attribute_inference:
 		                   n_attacks: 10
 		                 linkage:
@@ -637,21 +616,15 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Test
 	void load() throws Exception {
-		final String config = """
-				configurations:
-				- index: 0
-				  name: "column0_boolean"
-				  type: "BOOLEAN"
-				  scale: "NOMINAL"
-				  configurations: []
-				""";
+		var config = AlgorithmTestHelper.generateAlgorithmConfigurationYaml();
 
 		storeConfiguration(config);
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
+		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("name", CONFIGURATION_NAME))
 		       .andExpect(status().isOk())
-		       .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE))
+		       .andExpect(content().contentType(MediaType.APPLICATION_YAML_VALUE))
 		       .andExpect(content().string(config));
 	}
 

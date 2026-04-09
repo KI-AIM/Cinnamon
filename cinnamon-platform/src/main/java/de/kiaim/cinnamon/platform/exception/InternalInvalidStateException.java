@@ -38,6 +38,11 @@ public class InternalInvalidStateException extends InternalException {
 	 */
 	public static final String NO_SERVER_INSTANCE_SET = "6";
 
+	/**
+	 * Exception code for invalid configurations that should have been validated before.
+	 */
+	public static final String INVALID_CONFIGURATION = "7";
+
 	public InternalInvalidStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

@@ -12,6 +12,7 @@ import de.kiaim.cinnamon.platform.model.entity.StatusEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
+import de.kiaim.cinnamon.platform.service.ExportService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.StepService;
 import de.kiaim.cinnamon.platform.service.UserService;
@@ -41,13 +42,16 @@ import java.time.LocalDate;
 @Tag(name = "/api/project", description = "API for managing projects.")
 public class ProjectController {
 
+	private final ExportService exportService;
 	private final ProjectService projectService;
 	private final StepService stepService;
 	private final UserService userService;
 
-	public ProjectController(final ProjectService projectService,
+	public ProjectController(final ExportService exportService,
+	                         final ProjectService projectService,
 	                         final StepService stepService,
 	                         final UserService userService) {
+		this.exportService = exportService;
 		this.projectService = projectService;
 		this.stepService = stepService;
 		this.userService = userService;
@@ -178,7 +182,7 @@ public class ProjectController {
 			@AuthenticationPrincipal final UserEntity requestUser,
 			@ParameterObject final ProjectExportParameter projectExportParameter,
 			final HttpServletResponse response
-	) throws BadConfigurationNameException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
+	) throws BadConfigurationNameException, BadStateException, BadStepNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
@@ -193,7 +197,7 @@ public class ProjectController {
 			throw new InternalIOException(InternalIOException.ZIP_CREATION, "Could not get Outputstream", e);
 		}
 
-		projectService.createZipFile(project, outputStream, projectExportParameter);
+		exportService.createZipFile(project, outputStream, projectExportParameter);
 
 		return ResponseEntity.ok().build();
 	}

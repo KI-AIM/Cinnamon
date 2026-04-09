@@ -91,6 +91,41 @@ public class ConfigurationService {
 	}
 
 	/**
+	 * Imports a single configuration for an external module.
+	 * Configurations of older versions are updated to be compatible with the current version.
+	 *
+	 * @param project    The project the configuration is imported to.
+	 * @param config     The configuration string.
+	 * @throws BadAlgorithmException         If no algorithm is specified in the configuration.
+	 * @throws BadConfigurationNameException If the configuration name is not valid.
+	 * @throws BadStateException             If the process is running or scheduled.
+	 * @throws InternalIOException           If parsing the JsonNode failed.
+	 */
+	public void importExternalConfiguration(final ProjectEntity project, final String config)
+			throws BadAlgorithmException, BadConfigurationFileException, BadConfigurationNameException, BadStateException, InternalIOException {
+		final ConfigurationPart part;
+		final String configurationName;
+		try {
+			final var a = yamlMapper.readValue(config, ConfigurationFile.class);
+			var entry = a.getParts().entrySet().stream().findFirst();
+
+			if (entry.isEmpty()) {
+				throw new BadConfigurationFileException(BadConfigurationFileException.INVALID_YAML,
+				                                        "No configuration parts found in the file!");
+			}
+
+			configurationName = entry.get().getKey();
+			part = entry.get().getValue();
+		} catch (final JsonProcessingException e) {
+			throw new BadConfigurationFileException(BadConfigurationFileException.INVALID_YAML,
+			                                        "Failed to deserialize the configuration!",
+			                                        e);
+		}
+
+		importExternalConfiguration(project, part, configurationName);
+	}
+
+	/**
 	 * See {@link #importConfigurations(ProjectEntity, MultipartFile, ConfigurationImportParameters)}
 	 */
 	private ConfigurationImportSummary importConfigurations(
@@ -127,49 +162,7 @@ public class ConfigurationService {
 			} else if (configName.equals(ConfigurationFile.DATA_CONFIGURATION_KEY)) {
 				importDataConfiguration(project, configEntry.getValue(), importSummary);
 			} else {
-
-				// Configuration is for an external module
-				try {
-					stepService.getExternalConfiguration(configName);
-				} catch (final BadConfigurationNameException e) {
-					importSummary.addError(configName, e.getErrorCode());
-					continue;
-				}
-
-				// Validate the syntax of the configuration
-				final ConfigurationPart part;
-				try {
-					part = yamlMapper.treeToValue(configEntry.getValue(), ConfigurationPart.class);
-				} catch (final JsonProcessingException e) {
-					importSummary.addError(configName,
-					                       new InternalIOException(InternalIOException.CONFIGURATION_DESERIALIZATION,
-					                                               null,
-					                                               e).getErrorCode());
-					continue;
-				}
-
-				if (!validateAlgorithm(configName, part)) {
-					importSummary.addError(configName,
-					                       new BadAlgorithmException(BadAlgorithmException.ALGORITHM_NOT_SELECTED,
-					                                                 null).getErrorCode());
-					continue;
-				}
-
-				// Store the configuration
-				try {
-					final var tree = yamlMapper.valueToTree(part);
-					final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(configName, tree);
-					databaseService.storeConfiguration(configName, yamlMapper.writeValueAsString(singleConfigNode),
-					                                   project);
-					importSummary.addSuccess(configName);
-				} catch (final BadStateException | BadConfigurationNameException e) {
-					importSummary.addError(configName, e.getErrorCode());
-				} catch (final JsonProcessingException e) {
-					importSummary.addError(configName,
-					                       new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
-					                                               "Failed to serialize configuration!",
-					                                               e).getErrorCode());
-				}
+				importExternalConfiguration(project, configEntry.getValue(), configName, importSummary);
 			}
 		}
 
@@ -199,6 +192,12 @@ public class ConfigurationService {
 	/**
 	 * Loads the configuration with the given name from the database.
 	 * Also supports keys defined in {@link ConfigurationFile}.
+	 * The returned type is one of the following:
+	 * <ul>
+	 *     <li>{@link ProjectConfigurationDTO}</li>
+	 *     <li>{@link DataConfiguration}</li>
+	 *     <li>{@code Map.Entry<String, ConfigurationPart>}</li>
+	 * </ul>
 	 *
 	 * @param configurationName The name of the configuration.
 	 * @param project           The project.
@@ -206,20 +205,40 @@ public class ConfigurationService {
 	 * @throws BadConfigurationNameException If the project does not have a configuration with the given name.
 	 * @throws BadStateException             If the data configuration does not exist.
 	 * @throws InternalIOException           If the DataConfiguration could not be deserialized from the stored JSON.
+	 * @throws InternalInvalidStateException If the configuration is not valid.
 	 */
 	public Object loadConfiguration(
 			final String configurationName,
 			final ProjectEntity project
-	) throws BadConfigurationNameException, BadStateException, InternalIOException {
+	) throws BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException {
 		if (ConfigurationFile.PROJECT_CONFIGURATION_KEY.equals(configurationName)) {
 			return projectService.exportProjectConfiguration(project);
 		} else if (ConfigurationFile.DATA_CONFIGURATION_KEY.equals(configurationName)) {
 			return databaseService.exportOriginalDataConfiguration(project);
 		} else {
-			return databaseService.exportConfiguration(configurationName, project);
+			final var s = databaseService.exportConfiguration(configurationName, project);
+			try {
+				final var a = yamlMapper.readValue(s, ConfigurationFile.class);
+				return a.getParts().entrySet().stream().filter(e -> e.getKey().equals(configurationName)).findFirst()
+				        .orElseThrow(() -> new InternalInvalidStateException(
+						        InternalInvalidStateException.INVALID_CONFIGURATION,
+						        "Configuration key not found: " + configurationName));
+			} catch (final JsonProcessingException e) {
+				throw new InternalInvalidStateException(InternalInvalidStateException.INVALID_CONFIGURATION,
+				                                        "Failed to deserialize configuration from database!",
+				                                        e);
+			}
 		}
 	}
 
+	/**
+	 * Imports the project configuration from the given JsonNode.
+	 * Adds the result to the import summary.
+	 *
+	 * @param project          The project to import the configuration to.
+	 * @param config           The configuration JsonNode.
+	 * @param outImportSummary The import summary to update with the result of the import.
+	 */
 	private void importProjectConfiguration(final ProjectEntity project,
 	                                        final JsonNode config,
 	                                        final ConfigurationImportSummary outImportSummary) {
@@ -250,6 +269,14 @@ public class ConfigurationService {
 		outImportSummary.addSuccess(ConfigurationFile.PROJECT_CONFIGURATION_KEY);
 	}
 
+	/**
+	 * Imports the data configuration from the given JsonNode.
+	 * Adds the result to the import summary.
+	 *
+	 * @param project          The project to import the configuration to.
+	 * @param config           The configuration JsonNode.
+	 * @param outImportSummary The import summary to update with the result of the import.
+	 */
 	private void importDataConfiguration(final ProjectEntity project,
 	                                     final JsonNode config,
 	                                     final ConfigurationImportSummary outImportSummary) {
@@ -278,12 +305,76 @@ public class ConfigurationService {
 	}
 
 	/**
+	 * Imports a single configuration for an external module in the form of a JsonNode.
+	 * Adds the result to the import summary.
+	 * If the import fails, instead of throwing an exception, the error code is added to the import summary.
+	 *
+	 * @param project          The project the configuration is imported to.
+	 * @param config           The configuration JsonNode.
+	 * @param configName       The name of the configuration.
+	 * @param outImportSummary The import summary to update with the result of the import.
+	 */
+	private void importExternalConfiguration(final ProjectEntity project,
+	                                         final JsonNode config,
+	                                         final String configName,
+	                                         final ConfigurationImportSummary outImportSummary) {
+		try {
+			final ConfigurationPart part;
+			try {
+				part = yamlMapper.treeToValue(config, ConfigurationPart.class);
+			} catch (final JsonProcessingException e) {
+				throw new InternalIOException(InternalIOException.CONFIGURATION_DESERIALIZATION,
+				                              "Failed to parse the configuration tree!", e);
+			}
+
+			importExternalConfiguration(project, part, configName);
+			outImportSummary.addSuccess(configName);
+		} catch (final ApiException e) {
+			outImportSummary.addError(configName, e.getErrorCode());
+		}
+	}
+
+	/**
+	 * Imports a single configuration for an external module in the form of a configuration part.
+	 *
+	 * @param project    The project the configuration is imported to.
+	 * @param part       The configuration part.
+	 * @param configName The name of the configuration.
+	 * @throws BadAlgorithmException         If no algorithm is specified in the configuration.
+	 * @throws BadConfigurationNameException If the configuration name is not valid.
+	 * @throws BadStateException             If the process is running or scheduled.
+	 * @throws InternalIOException           If serializing the configuration part failed.
+	 */
+	private void importExternalConfiguration(final ProjectEntity project,
+	                                         final ConfigurationPart part,
+	                                         final String configName
+	) throws BadAlgorithmException, BadConfigurationNameException, BadStateException, InternalIOException {
+		// Configuration is for an external module
+		stepService.getExternalConfiguration(configName);
+
+		// Validate the syntax of the configuration
+		if (!validateAlgorithm(configName, part)) {
+			throw new BadAlgorithmException(BadAlgorithmException.ALGORITHM_NOT_SELECTED, "No algorithm specified!");
+		}
+
+		// Store the configuration
+		try {
+			final var tree = yamlMapper.valueToTree(part);
+			final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(configName, tree);
+			databaseService.storeConfiguration(configName, yamlMapper.writeValueAsString(singleConfigNode), project);
+		} catch (final JsonProcessingException e) {
+			throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
+			                              "Failed to serialize configuration!", e);
+		}
+	}
+
+	/**
 	 * Validates if the configuration part contains a valid algorithm definition.
 	 * If the algorithm is defined but not as a standardized algorithm definition,
 	 * the algorithm definition is being set.
 	 *
 	 * @param configName The name of the configuration.
-	 * @param part The configuration part.
+	 * @param part       The configuration part.
 	 * @return True if the algorithm definition is valid, false otherwise.
 	 */
 	private boolean validateAlgorithm(final String configName, final ConfigurationPart part) {
@@ -311,15 +402,15 @@ public class ConfigurationService {
 					if (part.getConfiguration().containsKey("privacyModels")) {
 						selector.setId(part.getConfiguration().get("privacyModels").path(0).path("name").asText());
 					}
-					selector.setVersion(("1.0.0"));
+					selector.setVersion(("0.1.0"));
 				}
 				case "risk_assessment_configuration" -> {
 					selector.setId("risk_assessment");
-					selector.setVersion(("1.0.0"));
+					selector.setVersion(("0.1.0"));
 				}
 				case "evaluation_configuration" -> {
 					selector.setId("evaluation");
-					selector.setVersion(("1.0.0"));
+					selector.setVersion(("0.1.0"));
 				}
 			}
 

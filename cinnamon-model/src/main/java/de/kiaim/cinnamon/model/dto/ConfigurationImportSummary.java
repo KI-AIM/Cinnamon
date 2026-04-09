@@ -88,9 +88,10 @@ public class ConfigurationImportSummary {
 	public <T> void addError(final String configurationName,
 	                         final String errorCode,
 	                         final Set<ConstraintViolation<T>> validationErrors) {
-		final Map<Path, Set<String>> validationErrorsMap = validationErrors.stream()
+		final Map<String, Set<String>> validationErrorsMap = validationErrors.stream()
 		                                                                     .collect(Collectors.groupingBy(
-				                                                                     ConstraintViolation::getPropertyPath,
+				                                                                     a -> a.getPropertyPath()
+				                                                                           .toString(),
 				                                                                     Collectors.mapping(
 						                                                                     ConstraintViolation::getMessage,
 						                                                                     Collectors.toSet())));
@@ -188,6 +189,6 @@ public class ConfigurationImportSummary {
 		 */
 		@Nullable
 		@Schema(description = "Map containing the paths of values that failed validation and the validation errors. Null if no validation errors occurred.")
-		private Map<Path, Set<String>> validationErrors;
+		private Map<String, Set<String>> validationErrors;
 	}
 }

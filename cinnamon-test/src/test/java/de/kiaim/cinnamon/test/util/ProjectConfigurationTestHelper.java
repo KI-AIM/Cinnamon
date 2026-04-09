@@ -49,4 +49,21 @@ public class ProjectConfigurationTestHelper {
 		       {"projectName":"test_user","contactMail":null,"contactUrl":null,"reportCreator":null,"metricConfiguration":null}""";
 	}
 
+	public static String generateProjectConfigurationAsExport() {
+		return """
+		       project:
+		         projectName: "testProject"
+		         contactMail: null
+		         contactUrl: null
+		         reportCreator: null
+		         metricConfiguration:
+		           colorScheme: "Fluffy Unicorn"
+		           useUserDefinedImportance: true
+		           userDefinedImportance:
+		             MetricA: "IMPORTANT"
+		             MetricC: "NOT_RELEVANT"
+		             MetricB: "ADDITIONAL"
+		       """;
+	}
+
 }

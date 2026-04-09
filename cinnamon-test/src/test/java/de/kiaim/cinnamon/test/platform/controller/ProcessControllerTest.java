@@ -156,7 +156,7 @@ public class ProcessControllerTest extends ControllerTest {
 	public void configureSkipWithConfiguration() throws Exception {
 		mockMvc.perform(post("/api/config")
 				                .param("configurationName", ANON_JOB)
-				                .param("configuration", "configuration")
+				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 		mockMvc.perform(post("/api/process/configure")
@@ -460,7 +460,7 @@ public class ProcessControllerTest extends ControllerTest {
 		                    .andReturn();
 
 		final var expectedEntries = new java.util.HashMap<>(Map.ofEntries(
-				Map.entry("original-attribute_config.yaml",
+				Map.entry("configurations.yaml",
 				          MutablePair.of(false, DataConfigurationTestHelper.generateDataConfigurationAsYaml())),
 				Map.entry("original-dataset.csv", MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
 				Map.entry("anonymization.yaml",

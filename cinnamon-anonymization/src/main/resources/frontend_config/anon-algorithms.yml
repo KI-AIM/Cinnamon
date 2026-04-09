@@ -4,3 +4,4 @@ algorithms:
     display_name: "Anonymization for tabular data."
     URL: "/api/anonymization/anon-tabular-privacy-model-config"
     type: "tabular"
+    version: "1.0"

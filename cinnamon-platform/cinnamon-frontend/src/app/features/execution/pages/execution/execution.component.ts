@@ -50,6 +50,8 @@ export class ExecutionComponent implements OnInit {
     }
 
     ngOnInit() {
+        // Update the pipeline because the status could have been update due to configuration changes
+        this.stateManagementService.updatePipeline();
         this.pageData$ = combineLatest({
             locked: this.stateManagementService.currentStepLocked$.pipe(
                 map(value => value.isLocked),

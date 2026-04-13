@@ -4,6 +4,7 @@ import { MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
 import { HoldOutSelector } from "@core/enums/hold-out-selector";
 import { ProcessStatus } from "@core/enums/process-status";
+import { Steps } from "@core/enums/steps";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
 import { FileService } from "@features/data-upload/services/file.service";
 import { EvaluationService } from "@features/evaluation/services/evaluation.service";
@@ -26,6 +27,7 @@ import { environments } from "src/environments/environment";
 })
 export class ProjectExportComponent implements OnInit, AfterViewInit {
 
+    protected readonly Steps = Steps;
     protected readonly FileType = FileType;
     protected readonly HoldOutSelector = HoldOutSelector;
     protected readonly ProcessStatus = ProcessStatus;

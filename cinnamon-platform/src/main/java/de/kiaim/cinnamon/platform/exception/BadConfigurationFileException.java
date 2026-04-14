@@ -22,6 +22,36 @@ public class BadConfigurationFileException extends BadRequestException {
 	 */
 	public final static String IMPORT_FAILED = "3";
 
+	/**
+	 * Exception code for failed project configuration deserialization.
+	 */
+	public static final String PROJECT_CONFIGURATION_DESERIALIZATION = "4";
+
+	/**
+	 * Exception code for failed pipelines configuration deserialization.
+	 */
+	public static final String PIPELINES_CONFIGURATION_DESERIALIZATION = "5";
+
+	/**
+	 * Exception code for failed data source configuration deserialization.
+	 */
+	public static final String DATA_SOURCE_CONFIGURATION_DESERIALIZATION = "6";
+
+	/**
+	 * Exception code for failed data configuration serialization.
+	 */
+	public static final String DATA_CONFIGURATION_SERIALIZATION = "7";
+
+	/**
+	 * Exception code for failed dataset configuration deserialization.
+	 */
+	public static final String DATASET_CONFIGURATION_DESERIALIZATION = "8";
+
+	/**
+	 * Exception code for failed configuration deserialization.
+	 */
+	public static final String CONFIGURATION_DESERIALIZATION = "9";
+
 	public BadConfigurationFileException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

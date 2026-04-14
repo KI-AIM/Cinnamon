@@ -292,10 +292,9 @@ public class ConfigurationService {
 		try {
 			projectConfiguration = yamlMapper.treeToValue(config, ProjectConfigurationDTO.class);
 		} catch (final JsonProcessingException e) {
-			outImportSummary.addError(ConfigurationFile.PROJECT_CONFIGURATION_KEY,
-			                          new InternalIOException(InternalIOException.PROJECT_CONFIGURATION_DESERIALIZATION,
-			                                                  "Failed to serialize project configuration!",
-			                                                  e).getErrorCode());
+			outImportSummary.addError(ConfigurationFile.PROJECT_CONFIGURATION_KEY, new BadConfigurationFileException(
+					BadConfigurationFileException.PROJECT_CONFIGURATION_DESERIALIZATION,
+					"Failed to serialize project configuration!", e).getErrorCode());
 			return;
 		}
 
@@ -333,9 +332,10 @@ public class ConfigurationService {
 			dataConfiguration = yamlMapper.treeToValue(singleConfigNode, DataConfiguration.class);
 		} catch (final JsonProcessingException e) {
 			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY,
-			                          new InternalIOException(InternalIOException.DATA_CONFIGURATION_SERIALIZATION,
-			                                                  "Failed to serialize data configuration!",
-			                                                  e).getErrorCode());
+			                          new BadConfigurationFileException(
+					                          BadConfigurationFileException.DATA_CONFIGURATION_SERIALIZATION,
+					                          "Failed to serialize data configuration!",
+					                          e).getErrorCode());
 			return;
 		}
 
@@ -359,8 +359,8 @@ public class ConfigurationService {
 			fileConfiguration = yamlMapper.treeToValue(config, FileConfiguration.class);
 		} catch (final JsonProcessingException e) {
 			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY,
-			                          new InternalIOException(
-					                          InternalIOException.DATA_SOURCE_CONFIGURATION_DESERIALIZATION,
+			                          new BadConfigurationFileException(
+					                          BadConfigurationFileException.DATA_SOURCE_CONFIGURATION_DESERIALIZATION,
 					                          "Failed to deserialize the data source configuration!",
 					                          e).getErrorCode());
 			return;
@@ -394,8 +394,8 @@ public class ConfigurationService {
 			datasetConfiguration = yamlMapper.treeToValue(config, DatasetConfiguration.class);
 		} catch (final JsonProcessingException e) {
 			outImportSummary.addError(ConfigurationFile.DATASET_CONFIGURATION_KEY,
-			                          new InternalIOException(
-					                          InternalIOException.DATASET_CONFIGURATION_DESERIALIZATION,
+			                          new BadConfigurationFileException(
+					                          BadConfigurationFileException.DATASET_CONFIGURATION_DESERIALIZATION,
 					                          "Failed to deserialize the dataset configuration!",
 					                          e).getErrorCode());
 			return;
@@ -436,10 +436,9 @@ public class ConfigurationService {
 		try {
 			pipelines = yamlMapper.treeToValue(config, PipelinesConfigurationDTO.class);
 		} catch (final JsonProcessingException e) {
-			outImportSummary.addError(ConfigurationFile.PIPELINE_CONFIGURATION_KEY,
-			                          new InternalIOException(InternalIOException.PIPELINES_CONFIGURATION_DESERIALIZATION,
-			                                                  "Failed to deserialize pipelines configuration!",
-			                                                  e).getErrorCode());
+			outImportSummary.addError(ConfigurationFile.PIPELINE_CONFIGURATION_KEY, new BadConfigurationFileException(
+					BadConfigurationFileException.PIPELINES_CONFIGURATION_DESERIALIZATION,
+					"Failed to deserialize pipelines configuration!", e).getErrorCode());
 			return;
 		}
 
@@ -480,8 +479,8 @@ public class ConfigurationService {
 			try {
 				part = yamlMapper.treeToValue(config, ConfigurationPart.class);
 			} catch (final JsonProcessingException e) {
-				throw new InternalIOException(InternalIOException.CONFIGURATION_DESERIALIZATION,
-				                              "Failed to parse the configuration tree!", e);
+				throw new BadConfigurationFileException(BadConfigurationFileException.CONFIGURATION_DESERIALIZATION,
+				                                        "Failed to parse the configuration tree!", e);
 			}
 
 			importExternalConfiguration(project, part, configName);

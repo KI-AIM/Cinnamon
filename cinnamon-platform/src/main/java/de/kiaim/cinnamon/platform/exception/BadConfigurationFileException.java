@@ -40,7 +40,7 @@ public class BadConfigurationFileException extends BadRequestException {
 	/**
 	 * Exception code for failed data configuration serialization.
 	 */
-	public static final String DATA_CONFIGURATION_SERIALIZATION = "7";
+	public static final String DATA_CONFIGURATION_DESERIALIZATION = "7";
 
 	/**
 	 * Exception code for failed dataset configuration deserialization.

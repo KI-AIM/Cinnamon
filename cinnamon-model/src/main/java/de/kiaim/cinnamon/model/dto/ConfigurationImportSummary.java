@@ -2,7 +2,6 @@ package de.kiaim.cinnamon.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Path;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +49,7 @@ public class ConfigurationImportSummary {
 	public void addSuccess(final String configurationName) {
 		configurationImportSummaries.add(
 				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.SUCCESS, null,
-				                                   null));
+				                                   null, null));
 		updateStatus();
 	}
 
@@ -62,7 +61,7 @@ public class ConfigurationImportSummary {
 	public void addIgnored(final String configurationName) {
 		configurationImportSummaries.add(
 				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.IGNORED, null,
-				                                   null));
+				                                   null, null));
 	}
 
 	/**
@@ -70,11 +69,12 @@ public class ConfigurationImportSummary {
 	 *
 	 * @param configurationName The name of the configuration that caused the error.
 	 * @param errorCode         The cause of the error.
+	 * @param message           Human-readable error message.
 	 */
-	public void addError(final String configurationName, final String errorCode) {
+	public void addError(final String configurationName, final String errorCode, final String message) {
 		configurationImportSummaries.add(
 				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.ERROR, errorCode,
-				                                   null));
+				                                   message, null));
 		updateStatus();
 	}
 
@@ -98,6 +98,7 @@ public class ConfigurationImportSummary {
 
 		configurationImportSummaries.add(
 				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.ERROR, errorCode,
+				                                   "Validation failed. See validation errors for more details.",
 				                                   validationErrorsMap));
 		updateStatus();
 	}
@@ -182,6 +183,14 @@ public class ConfigurationImportSummary {
 		@Nullable
 		@Schema(description = "Null if the import was successful or ignored. Contains the error code if the import failed.")
 		private String errorCode;
+
+		/**
+		 * Human-readable error message.
+		 * Null if the import was successful or ignored.
+		 */
+		@Nullable
+		@Schema(description = "Human-readable error message. Null if the import was successful or ignored.")
+		private String errorMessage;
 
 		/**
 		 * Map containing the paths of values that failed validation and the validation errors.

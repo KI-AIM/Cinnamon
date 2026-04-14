@@ -198,9 +198,10 @@ public class ConfigurationService {
 		if (parameters.getConfigurationsToImport() != null) {
 			for (final var configToImport : parameters.getConfigurationsToImport()) {
 				if (!seenConfigs.contains(configToImport)) {
-					importSummary.addError(configToImport, new BadConfigurationNameException(
-							BadConfigurationNameException.NO_CONFIGURATION,
-							"The file does not contain the configuration " + configToImport).getErrorCode());
+					var e = new BadConfigurationNameException(BadConfigurationNameException.NO_CONFIGURATION,
+					                                          "The file does not contain the configuration " +
+					                                          configToImport);
+					importSummary.addError(configToImport, e.getErrorCode(), e.getMessage());
 				}
 			}
 		}
@@ -292,9 +293,11 @@ public class ConfigurationService {
 		try {
 			projectConfiguration = yamlMapper.treeToValue(config, ProjectConfigurationDTO.class);
 		} catch (final JsonProcessingException e) {
-			outImportSummary.addError(ConfigurationFile.PROJECT_CONFIGURATION_KEY, new BadConfigurationFileException(
+			final ApiException cause = new BadConfigurationFileException(
 					BadConfigurationFileException.PROJECT_CONFIGURATION_DESERIALIZATION,
-					"Failed to serialize project configuration!", e).getErrorCode());
+					"Failed to serialize project configuration!", e);
+			outImportSummary.addError(ConfigurationFile.PROJECT_CONFIGURATION_KEY, cause.getErrorCode(),
+			                          cause.getMessage());
 			return;
 		}
 
@@ -331,11 +334,11 @@ public class ConfigurationService {
 					ConfigurationFile.DATA_CONFIGURATION_KEY, config);
 			dataConfiguration = yamlMapper.treeToValue(singleConfigNode, DataConfiguration.class);
 		} catch (final JsonProcessingException e) {
-			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY,
-			                          new BadConfigurationFileException(
-					                          BadConfigurationFileException.DATA_CONFIGURATION_SERIALIZATION,
-					                          "Failed to serialize data configuration!",
-					                          e).getErrorCode());
+			final ApiException cause = new BadConfigurationFileException(
+					BadConfigurationFileException.DATA_CONFIGURATION_DESERIALIZATION,
+					"Failed to serialize data configuration!", e);
+			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY, cause.getErrorCode(),
+			                          cause.getMessage());
 			return;
 		}
 
@@ -346,7 +349,7 @@ public class ConfigurationService {
 			databaseService.storeOriginalDataConfiguration(dataConfiguration, project);
 			outImportSummary.addSuccess(ConfigurationFile.DATA_CONFIGURATION_KEY);
 		} catch (final ApiException e) {
-			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY, e.getErrorCode());
+			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY, e.getErrorCode(), e.getMessage());
 		}
 	}
 
@@ -358,11 +361,11 @@ public class ConfigurationService {
 		try {
 			fileConfiguration = yamlMapper.treeToValue(config, FileConfiguration.class);
 		} catch (final JsonProcessingException e) {
-			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY,
-			                          new BadConfigurationFileException(
-					                          BadConfigurationFileException.DATA_SOURCE_CONFIGURATION_DESERIALIZATION,
-					                          "Failed to deserialize the data source configuration!",
-					                          e).getErrorCode());
+			final ApiException cause = new BadConfigurationFileException(
+					BadConfigurationFileException.DATA_SOURCE_CONFIGURATION_DESERIALIZATION,
+					"Failed to deserialize the data source configuration!", e);
+			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY, cause.getErrorCode(),
+			                          cause.getMessage());
 			return;
 		}
 
@@ -381,7 +384,8 @@ public class ConfigurationService {
 			databaseService.storeFileConfiguration(project, fileConfiguration);
 			outImportSummary.addSuccess(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY);
 		} catch (final ApiException e) {
-			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY, e.getErrorCode());
+			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY, e.getErrorCode(),
+			                          e.getMessage());
 		}
 	}
 
@@ -393,11 +397,11 @@ public class ConfigurationService {
 		try {
 			datasetConfiguration = yamlMapper.treeToValue(config, DatasetConfiguration.class);
 		} catch (final JsonProcessingException e) {
-			outImportSummary.addError(ConfigurationFile.DATASET_CONFIGURATION_KEY,
-			                          new BadConfigurationFileException(
-					                          BadConfigurationFileException.DATASET_CONFIGURATION_DESERIALIZATION,
-					                          "Failed to deserialize the dataset configuration!",
-					                          e).getErrorCode());
+			final ApiException cause = new BadConfigurationFileException(
+					BadConfigurationFileException.DATASET_CONFIGURATION_DESERIALIZATION,
+					"Failed to deserialize the dataset configuration!", e);
+			outImportSummary.addError(ConfigurationFile.DATASET_CONFIGURATION_KEY, cause.getErrorCode(),
+			                          cause.getMessage());
 			return;
 		}
 
@@ -416,7 +420,7 @@ public class ConfigurationService {
 			databaseService.storeDatasetConfiguration(project, datasetConfiguration);
 			outImportSummary.addSuccess(ConfigurationFile.DATASET_CONFIGURATION_KEY);
 		} catch (final ApiException e) {
-			outImportSummary.addError(ConfigurationFile.DATASET_CONFIGURATION_KEY, e.getErrorCode());
+			outImportSummary.addError(ConfigurationFile.DATASET_CONFIGURATION_KEY, e.getErrorCode(), e.getMessage());
 		}
 	}
 
@@ -436,9 +440,11 @@ public class ConfigurationService {
 		try {
 			pipelines = yamlMapper.treeToValue(config, PipelinesConfigurationDTO.class);
 		} catch (final JsonProcessingException e) {
-			outImportSummary.addError(ConfigurationFile.PIPELINE_CONFIGURATION_KEY, new BadConfigurationFileException(
+			final ApiException cause = new BadConfigurationFileException(
 					BadConfigurationFileException.PIPELINES_CONFIGURATION_DESERIALIZATION,
-					"Failed to deserialize pipelines configuration!", e).getErrorCode());
+					"Failed to deserialize pipelines configuration!", e);
+			outImportSummary.addError(ConfigurationFile.PIPELINE_CONFIGURATION_KEY, cause.getErrorCode(),
+			                          cause.getMessage());
 			return;
 		}
 
@@ -456,7 +462,7 @@ public class ConfigurationService {
 			processService.configurePipelines(project, pipelines);
 			outImportSummary.addSuccess(ConfigurationFile.PIPELINE_CONFIGURATION_KEY);
 		} catch (final BadStepNameException | BadStateException | InternalInvalidStateException e) {
-			outImportSummary.addError(ConfigurationFile.PIPELINE_CONFIGURATION_KEY, e.getErrorCode());
+			outImportSummary.addError(ConfigurationFile.PIPELINE_CONFIGURATION_KEY, e.getErrorCode(), e.getMessage());
 		}
 	}
 
@@ -486,7 +492,7 @@ public class ConfigurationService {
 			importExternalConfiguration(project, part, configName);
 			outImportSummary.addSuccess(configName);
 		} catch (final ApiException e) {
-			outImportSummary.addError(configName, e.getErrorCode());
+			outImportSummary.addError(configName, e.getErrorCode(), e.getMessage());
 		}
 	}
 

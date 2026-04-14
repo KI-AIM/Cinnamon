@@ -383,6 +383,21 @@ public class DatabaseService {
 	}
 
 	/**
+	 * Deletes the original dataset table associated with the given project.
+	 * If the dataset is confirmed, an exception will be thrown.
+	 * If no dataset is stored, nothing will be done.
+	 *
+	 * @param projectEntity The project of which the dataset should be deleted.
+	 * @throws BadDataSetIdException               If the dataset is confirmed.
+	 * @throws InternalDataSetPersistenceException If there is an issue with the dataset persistence.
+	 */
+	@Transactional
+	public void deleteOriginalDataset(final ProjectEntity projectEntity)
+			throws BadDataSetIdException, InternalDataSetPersistenceException {
+		deleteDataSetIfNotConfirmedOrThrow(projectEntity.getOriginalData().getDataSet());
+	}
+
+	/**
 	 * Stores the given TransformationResult as the original data by storing the DataSet,
 	 * the DataConfiguration, and the transformation errors into the database
 	 * and associates them with the given step in the given project.

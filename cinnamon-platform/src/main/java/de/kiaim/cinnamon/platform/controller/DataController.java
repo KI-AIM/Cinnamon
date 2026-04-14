@@ -566,6 +566,9 @@ public class DataController {
 				result = null;
 			}
 			case STORE_DATE_SET -> {
+				// Delete the existing dataset
+				databaseService.deleteOriginalDataset(projectEntity);
+
 				// Store configuration
 				// It is important to validate and store the configuration,
 				// as configurations stored previously from the upload could be invalid

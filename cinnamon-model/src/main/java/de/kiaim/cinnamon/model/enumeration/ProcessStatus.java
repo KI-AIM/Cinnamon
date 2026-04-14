@@ -5,7 +5,6 @@ package de.kiaim.cinnamon.model.enumeration;
  */
 public enum ProcessStatus {
 	ERROR,
-	NOT_REQUIRED,
 	NOT_STARTED,
 	SCHEDULED,
 	RUNNING,

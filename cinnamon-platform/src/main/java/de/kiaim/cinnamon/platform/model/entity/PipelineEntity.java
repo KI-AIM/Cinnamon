@@ -36,6 +36,14 @@ public class PipelineEntity {
 	private Integer pipelineIndex;
 
 	/**
+	 * If true, after finishing the current stage, all following stages will be executed.
+	 * Otherwise, only one stage will be executed at a time.
+	 */
+	@Column(nullable = false)
+	@Getter @Setter
+	private boolean runAllStages = false;
+
+	/**
 	 * Stages of this pipeline.
 	 */
 	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL, mappedBy = "pipeline")

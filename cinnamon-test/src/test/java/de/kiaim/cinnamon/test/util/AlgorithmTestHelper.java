@@ -102,4 +102,24 @@ public class AlgorithmTestHelper {
 		           synthesizer: "ctgan"
 		       """;
 	}
+
+	public static String generateAlgorithmConfiguration3() {
+		return """
+		       evaluation_configuration:
+		         algorithm:
+		           id: "ctgan"
+		           version: "1.0.1"
+		           synthesizer: "ctgan"
+		       """;
+	}
+
+	public static String generateAlgorithmConfiguration4() {
+		return """
+		       risk_assessment_configuration:
+		         algorithm:
+		           id: "ctgan"
+		           version: "1.0.1"
+		           synthesizer: "ctgan"
+		       """;
+	}
 }

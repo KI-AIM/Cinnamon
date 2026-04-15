@@ -51,6 +51,7 @@ public class ProjectConfigurationDTO {
 	 * Metric importance.
 	 */
 	@Schema(description = "Priority of the metrics.")
-	@NotNull(message = "The metric configuration must be present!") @Valid
-	private MetricConfiguration metricConfiguration;
+	@NotNull(message = "The metric configuration must be present!")
+	@Valid
+	private MetricConfiguration metricConfiguration = new MetricConfiguration();
 }

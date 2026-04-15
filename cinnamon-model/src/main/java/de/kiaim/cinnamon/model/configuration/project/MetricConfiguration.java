@@ -30,7 +30,7 @@ public class MetricConfiguration {
 	@Schema(description = "Color scheme to be used for visualizations. Values are defined by the frontend. If null, the default color scheme is used.",
 	        example = "red-blue")
 	@Nullable
-	private String colorScheme;
+	private String colorScheme = null;
 
 	/**
 	 * If the user-defined importance should be used.

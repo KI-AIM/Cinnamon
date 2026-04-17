@@ -156,14 +156,7 @@ def run_stage(context: CinnamonContext, stage_name: str):
 
 def get_results(context: CinnamonContext):
     url = f"{CINNAMON_URL}/project/zip"
-    params = {"resources": [
-        "configuration.anonymization",
-        "configuration.synthetization_configuration",
-        "configuration.evaluation_configuration",
-        "configuration.risk_assessment_configuration",
-        "pipeline.execution.synthetization.dataset",
-    ]}
-    response = requests.get(url, auth=create_auth(context), params=params)
+    response = requests.get(url, auth=create_auth(context))
     with open(context.email +  ".zip", "wb") as handle:
         for data in response.iter_content():
             handle.write(data)

@@ -55,6 +55,78 @@ public class ExportService {
 	}
 
 	/**
+	 * Returns a list of available export resources for the given project.
+	 *
+	 * @param project The project entity for which to retrieve available export resources.
+	 * @return A list of resource identifiers that can be exported.
+	 */
+	public List<String> getAvailableExportResources(final ProjectEntity project) {
+		final List<String> resources = new ArrayList<>();
+
+		// Add platform configurations that are always available
+		resources.add("configuration." + ConfigurationFile.PIPELINE_CONFIGURATION_KEY);
+		resources.add("configuration." + ConfigurationFile.PROJECT_CONFIGURATION_KEY);
+		resources.add("configuration." + ConfigurationFile.DATASET_CONFIGURATION_KEY);
+
+		// Add file-related configurations/ data
+		if (project.getOriginalData().getFile() != null) {
+			if (project.getOriginalData().getFile().getFileConfiguration() != null) {
+				resources.add("configuration." + ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY);
+			}
+			if (project.getOriginalData().getFile().getFile() != null) {
+				resources.add("original.file");
+			}
+		}
+
+		// Add original dataset-related configurations/ data
+		if (project.getOriginalData().getDataSet() != null) {
+			if (project.getOriginalData().getDataSet().getDataConfiguration() != null) {
+				resources.add("configuration." + ConfigurationFile.DATA_CONFIGURATION_KEY);
+			}
+			if (project.getOriginalData().getDataSet().isStoredData()) {
+				resources.add("original.dataset");
+			}
+			if (project.getOriginalData().getDataSet().getStatistics() != null) {
+				resources.add("original.statistics");
+			}
+		}
+
+		// Add module configurations
+		resources.addAll(project.getConfigurations().stream()
+		                        .map(config-> "configuration." + config.getConfiguration().getConfigurationName())
+		                        .toList());
+
+		// Add results
+		if (!project.getPipelines().isEmpty()) {
+			final PipelineEntity pipeline = project.getPipelines().get(0);
+
+			for (final ExecutionStepEntity executionStep : pipeline.getStages()) {
+				final Stage stage = executionStep.getStage();
+
+				for (final ExternalProcessEntity process : executionStep.getProcesses()) {
+					final Job job = process.getJob();
+
+					if (process instanceof DataProcessingEntity dataProcessing) {
+						if (dataProcessing.getDataSet() != null) {
+							resources.add("pipeline." + stage.getStageName() + "." + job.getName() + ".dataset");
+
+							if (dataProcessing.getDataSet().getStatistics() != null) {
+								resources.add("pipeline." + stage.getStageName() + "." + job.getName() + ".statistics");
+							}
+						}
+					}
+
+					if (!process.getResultFiles().isEmpty()) {
+						resources.add("pipeline." + stage.getStageName() + "." + job.getName() + ".other");
+					}
+				}
+			}
+		}
+
+		return resources;
+	}
+
+	/**
 	 * Writes a ZIP to the given OutputStream containing the resources specified in the project export parameter.
 	 *
 	 * @param project                The project to export.
@@ -76,9 +148,14 @@ public class ExportService {
 
 			final Map<String, Integer> zipEntryCounter = new HashMap<>();
 
+			List<String> resources = projectExportParameter.getResources();
+			if (resources == null || resources.isEmpty()) {
+				resources = getAvailableExportResources(project);
+			}
+
 			final List<String> configurationNames = new ArrayList<>();
-			for (final String resources : projectExportParameter.getResources()) {
-				final String[] parts = resources.split("\\.");
+			for (final String resource : resources) {
+				final String[] parts = resource.split("\\.");
 
 				switch (parts[0]) {
 					case "configuration" -> configurationNames.add(parts[1]);

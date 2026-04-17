@@ -35,7 +35,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/project")
@@ -188,13 +189,15 @@ public class ProjectController {
 		final ProjectEntity project = projectService.getProject(user);
 
 		response.setContentType("application/zip");
-		response.setHeader("Content-Disposition", "attachment; filename=\"" + user.getEmail() + "_Cinnamon-export_" + LocalDate.now() + ".zip\"");
+		response.setHeader("Content-Disposition",
+		                   "attachment; filename=\"" + user.getEmail() + "_Cinnamon-export_" +
+		                   LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")) + ".zip\"");
 
 		final OutputStream outputStream;
 		try {
 			outputStream = response.getOutputStream();
 		} catch (final IOException e) {
-			throw new InternalIOException(InternalIOException.ZIP_CREATION, "Could not get Outputstream", e);
+			throw new InternalIOException(InternalIOException.ZIP_CREATION, "Could not get OutputStream", e);
 		}
 
 		exportService.createZipFile(project, outputStream, projectExportParameter);

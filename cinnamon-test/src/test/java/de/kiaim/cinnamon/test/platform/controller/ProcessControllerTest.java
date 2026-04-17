@@ -31,6 +31,7 @@ import org.apache.commons.fileupload2.core.DiskFileItemFactory;
 import org.apache.commons.fileupload2.core.FileItemFactory;
 import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,7 +41,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 
 import java.io.ByteArrayInputStream;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -452,7 +452,8 @@ public class ProcessControllerTest extends ControllerTest {
 		                    )
 		                    .andExpect(status().isOk())
 		                    .andExpect(header().exists("Content-Disposition"))
-		                    .andExpect(header().string("Content-Disposition", "attachment; filename=\"test_user_Cinnamon-export_" + LocalDate.now() + ".zip\""))
+		                    .andExpect(header().string("Content-Disposition", Matchers.matchesPattern(
+				                    "attachment; filename=\"test_user_Cinnamon-export_\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.zip\"")))
 		                    .andExpect(content().contentType("application/zip"))
 		                    .andReturn();
 

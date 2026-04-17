@@ -11,6 +11,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.platform.model.mapper.ProjectConfigurationMapper;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Service class for managing projects.
  */
 @Service
+@Log4j2
 public class ProjectService {
 
 	private final CinnamonConfiguration cinnamonConfiguration;
@@ -96,6 +98,7 @@ public class ProjectService {
 		// TODO change if projects are decoupled form users
 		project.getProjectConfiguration().setProjectName(user.getEmail());
 
+		log.debug("Created project for user '{}'", user.getEmail());
 		return userRepository.save(user).getProject();
 	}
 
@@ -189,6 +192,7 @@ public class ProjectService {
 			final ProjectEntity p = getProject(user);
 			resetEntireProject(p);
 			projectRepository.deleteById(p.getId());
+			log.debug("Deleted project for user '{}'", user.getEmail());
 		}
 	}
 
@@ -230,6 +234,8 @@ public class ProjectService {
 				                               "' is not a valid key!");
 			}
 		}
+
+		log.debug("Reset project to '{}'", target);
 
 		projectRepository.save(project);
 	}

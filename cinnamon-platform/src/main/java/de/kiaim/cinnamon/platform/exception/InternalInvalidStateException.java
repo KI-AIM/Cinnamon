@@ -43,6 +43,11 @@ public class InternalInvalidStateException extends InternalException {
 	 */
 	public static final String INVALID_CONFIGURATION = "7";
 
+	/**
+	 * Exception code for missing process UUIDs that should be present based on the status of the project.
+	 */
+	public static final String MISSING_PROCESS_UUID = "8";
+
 	public InternalInvalidStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

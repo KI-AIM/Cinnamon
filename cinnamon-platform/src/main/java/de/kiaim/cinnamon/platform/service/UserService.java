@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,6 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
+@Log4j2
 public class UserService implements UserDetailsService {
 
 	private final UserRepository userRepository;
@@ -49,6 +51,7 @@ public class UserService implements UserDetailsService {
 		if (user.isEmpty()) {
 			userEntity = new UserEntity();
 			userEntity.setPassword(passwordEncoder.encode(rawPassword));
+			log.debug("Creating new user with email '{}'", email);
 		} else {
 			userEntity = user.get();
 		}
@@ -87,6 +90,7 @@ public class UserService implements UserDetailsService {
 	public void deleteUser(final UserEntity user) throws BadStateException, InternalDataSetPersistenceException {
 		projectService.deleteProject(user);
 		userRepository.delete(user);
+		log.debug("Deleting user with email '{}'", user.getEmail());
 	}
 
 	/**

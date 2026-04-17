@@ -9,6 +9,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -20,11 +21,15 @@ public class SecurityConfig {
 
 	private final PasswordEncoder passwordEncoder;
 	private final UserService userService;
+	private final ProjectLogContextFilter projectLogContextFilter;
 
 	@Autowired
-	public SecurityConfig(final PasswordEncoder passwordEncoder, final UserService userService) {
+	public SecurityConfig(final PasswordEncoder passwordEncoder,
+	                      final UserService userService,
+	                      final ProjectLogContextFilter projectLogContextFilter) {
 		this.passwordEncoder = passwordEncoder;
 		this.userService = userService;
+		this.projectLogContextFilter = projectLogContextFilter;
 	}
 
 	@Bean
@@ -44,7 +49,8 @@ public class SecurityConfig {
 				            .requestMatchers(antMatcher("/**")).permitAll()
 				            .anyRequest().authenticated())
 		            .httpBasic(Customizer.withDefaults())
-                    .authenticationProvider(daoAuthenticationProvider());
+		            .authenticationProvider(daoAuthenticationProvider())
+		            .addFilterAfter(projectLogContextFilter, BasicAuthenticationFilter.class);
 		return httpSecurity.build();
 	}
 

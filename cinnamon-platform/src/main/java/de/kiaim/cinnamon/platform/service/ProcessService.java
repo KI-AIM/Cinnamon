@@ -32,8 +32,9 @@ import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
@@ -68,7 +69,7 @@ import java.util.stream.Collectors;
  * Service class for managing processes.
  */
 @Service
-@Slf4j
+@Log4j2
 public class ProcessService {
 
 	private static final String PROCESS_ID_PLACEHOLDER = "PROCESS_ID";
@@ -304,6 +305,8 @@ public class ProcessService {
 		if (markAsOutdated) {
 			databaseService.markProcessOutdated(externalProcess);
 		}
+
+		log.debug("Configured process for job '{}': Skip is {}", externalProcess.getJob().getName(), skip);
 
 		// Save project
 		projectRepository.save(project);
@@ -547,17 +550,25 @@ public class ProcessService {
 		final boolean containsError = tryFinishProcess(process, resultFiles, errorRequest);
 
 		if (process instanceof ExternalProcessEntity externalProcess) {
+			final Map<String, String> contextMap = MDC.getCopyOfContextMap();
 			// Create an async task so the callback can be finished, to free up the connection to the external server
 			taskScheduler.schedule(() -> {
-				// Start the next step of this process
-				if (!containsError) {
-					transactionTemplate.executeWithoutResult(
-							status -> tryStartNext(externalProcess.getExecutionStep().getId(), process.getJobIndex() + 1));
+				if (contextMap != null) {
+					MDC.setContextMap(contextMap);
 				}
+				try {
+					// Start the next step of this process
+					if (!containsError) {
+						transactionTemplate.executeWithoutResult(
+								status -> tryStartNext(externalProcess.getExecutionStep().getId(), process.getJobIndex() + 1));
+					}
 
-				// Start the next process of the same step
-				transactionTemplate.executeWithoutResult(
-						status -> startScheduledProcess(externalProcess.getJob().getEndpoint(), instance));
+					// Start the next process of the same step
+					transactionTemplate.executeWithoutResult(
+							status -> startScheduledProcess(externalProcess.getJob().getEndpoint(), instance));
+				} finally {
+					MDC.clear();
+				}
 			}, Instant.now().plusSeconds(DELAY_START_NEXT));
 		}
 	}
@@ -734,6 +745,7 @@ public class ProcessService {
 		if (containsError) {
 			setProcessError(process, errorMessage);
 		} else {
+			log.debug("Finished process '{}'", process.getUuid());
 			process.setExternalProcessStatus(ProcessStatus.FINISHED);
 			process.setServerInstance(null);
 		}
@@ -789,6 +801,10 @@ public class ProcessService {
 		final ExternalEndpoint endpoint = cinnamonConfiguration.getExternalServerEndpoints()
 		                                                       .get(externalProcess.getEndpoint());
 		final ExternalServer server = endpoint.getServer();
+
+		// Generate new UUID
+		final UUID uuid = UUID.randomUUID();
+		externalProcess.setUuid(uuid);
 
 		final ExternalServerInstance instance = externalServerInstanceService.findAvailableExternalServerInstance(server, false);
 		if (instance != null) {
@@ -885,6 +901,8 @@ public class ProcessService {
 
 		backgroundProcess.setExternalProcessStatus(ProcessStatus.CANCELED);
 		backgroundProcess.setServerInstance(null);
+		log.debug("Canceled process '{}'", backgroundProcess.getUuid());
+
 		startScheduledProcess(ese, esi);
 
 		backgroundProcessRepository.save(backgroundProcess);
@@ -933,6 +951,7 @@ public class ProcessService {
 				final var stage = pipeline.getStages().get(i);
 
 				stage.setStatus(ProcessStatus.RUNNING);
+				log.debug("Starting next stage '{}'...", stage.getStage().getStageName());
 				startNextJob(stage, 0);
 
 				if (stage.getStatus() == ProcessStatus.RUNNING || stage.getStatus() == ProcessStatus.SCHEDULED) {
@@ -980,6 +999,7 @@ public class ProcessService {
 			final ExternalProcessEntity processCandidate = executionStep.getProcesses().get(i);
 
 			if (processCandidate.isSkip()) {
+				log.debug("Skipped job '{}'", processCandidate.getJob().getName());
 				processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
 			} else {
 				// Check if a hold-out split is required and present.
@@ -998,11 +1018,13 @@ public class ProcessService {
 		}
 
 		if (process !=  null) {
+			log.debug("Starting next job '{}'...", process.getJob().getName());
 			executionStep.setCurrentProcessIndex(process.getJobIndex());
 			startOrScheduleProcess(process);
 		} else {
 			executionStep.setCurrentProcessIndex(null);
 			executionStep.setStatus(ProcessStatus.FINISHED);
+			log.debug("Finished stage '{}'", executionStep.getStage().getStageName());
 		}
 	}
 
@@ -1058,6 +1080,7 @@ public class ProcessService {
 	private void scheduleProcess(final BackgroundProcessEntity externalProcess) {
 		externalProcess.setScheduledTime(Timestamp.valueOf(LocalDateTime.now()));
 		externalProcess.setExternalProcessStatus(ProcessStatus.SCHEDULED);
+		log.debug("Scheduling process '{}'...", externalProcess.getUuid());
 	}
 
 	/**
@@ -1113,6 +1136,11 @@ public class ProcessService {
 			throws InternalDataSetPersistenceException, InternalIOException, InternalRequestException,
 					       BadStateException, InternalInvalidStateException, InternalMissingHandlingException,
 					       BadConfigurationNameException, BadAlgorithmException {
+		if (externalProcess.getUuid() == null) {
+			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_UUID,
+			                                        "The process has no UUID!");
+		}
+
 		final var endpoint = cinnamonConfiguration.getExternalServerEndpoints().get(externalProcess.getEndpoint());
 
 		// Prepare body
@@ -1127,11 +1155,7 @@ public class ProcessService {
 			httpService.addConfig(configuration, endpoint, bodyBuilder);
 		}
 
-		// Generate new UUID
-		final UUID uuid = UUID.randomUUID();
-		externalProcess.setUuid(uuid);
-
-		bodyBuilder.part("session_key", uuid.toString());
+		bodyBuilder.part("session_key", externalProcess.getUuid().toString());
 		final String callbackHost = instance.getCallbackHost();
 		final var serverAddress = ServletUriComponentsBuilder.newInstance()
 		                                                     .scheme(this.sslEnabled ? "https" : "http")
@@ -1141,7 +1165,8 @@ public class ProcessService {
 		                                                     .build()
 		                                                     .toUriString();
 
-		bodyBuilder.part(endpoint.getCallbackPartName(), serverAddress + "/api/process/" + uuid + "/callback");
+		bodyBuilder.part(endpoint.getCallbackPartName(),
+		                 serverAddress + "/api/process/" + externalProcess.getUuid() + "/callback");
 
 		// Do the request
 		try {
@@ -1175,6 +1200,8 @@ public class ProcessService {
 			externalProcess.setExternalId(response.getPid());
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
 			externalProcess.setServerInstance(instance.getId());
+			log.debug("Started process '{}' with external ID '{}' on server instance '{}'!", externalProcess.getUuid(),
+			          response.getPid(), instance.getId());
 		} catch (final RequestRuntimeException e) {
 			final String message = httpService.buildError(e, "start the process");
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
@@ -1268,6 +1295,7 @@ public class ProcessService {
 	}
 
 	public void setProcessError(final BackgroundProcessEntity process, final String message) {
+		log.debug("Aborted process '{}' due to an error", process.getUuid());
 		process.setExternalProcessStatus(ProcessStatus.ERROR);
 		process.setServerInstance(null);
 		process.setScheduledTime(null);

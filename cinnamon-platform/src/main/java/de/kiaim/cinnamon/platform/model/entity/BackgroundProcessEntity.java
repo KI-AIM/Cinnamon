@@ -32,7 +32,7 @@ public class BackgroundProcessEntity {
 
 	/**
 	 * UUID used for the callback URL.
-	 * Null if the process is not running.
+	 * Null if the process is not running or scheduled.
 	 */
 	@Nullable
 	private UUID uuid;

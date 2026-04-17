@@ -30,6 +30,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
+import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
+@Log4j2
 public class DatabaseService {
 
 	private final static Set<ProcessStatus> targetStatus = Set.of(ProcessStatus.SKIPPED, ProcessStatus.FINISHED,
@@ -129,6 +131,8 @@ public class DatabaseService {
 		final FileConfigurationEntity entity = fileConfigurationMapper.toEntity(fileConfiguration);
 		project.getOriginalData().getFile().setFileConfiguration(entity);
 		updateFileEntity(project);
+
+		log.debug("Stored file configuration");
 	}
 
 	/**
@@ -154,8 +158,7 @@ public class DatabaseService {
 	public void storeDatasetConfiguration(final ProjectEntity project, final DatasetConfiguration datasetConfiguration)
 			throws BadDataSetIdException {
 		throwIfStored(project.getOriginalData().getDataSet());
-		datasetConfigurationMapper.updateEntity(project.getOriginalData().getDatasetConfiguration(),
-		                                        datasetConfiguration);
+		doUpdateDatasetConfiguration(project, datasetConfiguration);
 	}
 
 	/**
@@ -173,8 +176,7 @@ public class DatabaseService {
 	public void updateDatasetConfiguration(final ProjectEntity project, final DatasetConfiguration datasetConfiguration)
 			throws BadArgumentException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
 		throwIfConfirmed(project.getOriginalData().getDataSet());
-		datasetConfigurationMapper.updateEntity(project.getOriginalData().getDatasetConfiguration(),
-		                                        datasetConfiguration);
+		doUpdateDatasetConfiguration(project, datasetConfiguration);
 		updateHoldOutSplit(project);
 	}
 
@@ -248,6 +250,8 @@ public class DatabaseService {
 		}
 
 		updateFileEntity(project);
+
+		log.debug("Stored file containing original data '{}'", file.getOriginalFilename());
 
 		return getFileInformation(project);
 	}
@@ -415,7 +419,7 @@ public class DatabaseService {
 	 */
 	@Transactional
 	public Long storeOriginalTransformationResult(final TransformationResult transformationResult,
-	                                              ProjectEntity project)
+	                                              final ProjectEntity project)
 			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
 		final DataSet dataSet = transformationResult.getDataSet();
 		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
@@ -433,6 +437,9 @@ public class DatabaseService {
 		convertTransformationErrors(transformationResult, dataSetEntity);
 
 		dataSetEntity = storeDataSet(dataSet, dataSetEntity);
+
+		log.debug("Stored transformation result for original data");
+
 		return dataSetEntity.getId();
 	}
 
@@ -476,6 +483,8 @@ public class DatabaseService {
 		dataProcessingRepository.save(dataProcessingEntity);
 
 		storeDataSet(dataSet, dataSetEntity);
+
+		log.debug("Stored transformation result for job {}", dataProcessingEntity.getJob().getName());
 	}
 
 	/**
@@ -531,6 +540,8 @@ public class DatabaseService {
 
 		dataSet.setHasHoldOut(false);
 		dataSet.setHoldOutSeed(0.0f);
+
+		log.debug("Removed hold-out split for dataset {}", dataSet.getId());
 	}
 
 	/**
@@ -604,6 +615,8 @@ public class DatabaseService {
 
 		dataset.setHasHoldOut(true);
 		projectRepository.save(project);
+
+		log.debug("Created hold-out split with percentage {} for dataset {}", holdOutPercentage, dataset.getId());
 	}
 
 	/**
@@ -649,6 +662,8 @@ public class DatabaseService {
 				markProcessOutdated(usage);
 			}
 		}
+
+		log.debug("Stored configuration for {}", configName);
 
 		projectRepository.save(project);
 	}
@@ -873,6 +888,9 @@ public class DatabaseService {
 			throw new BadDataSetIdException(BadDataSetIdException.NO_DATA_SET, "The data has not been stored!");
 		}
 		dataSet.get().setConfirmedData(true);
+
+		log.debug("Confirmed original dataset");
+
 		projectRepository.save(project);
 	}
 
@@ -1078,6 +1096,8 @@ public class DatabaseService {
 		dataSet.setHoldOutSeed(0.0f);
 		dataSet.setConfirmedData(false);
 		dataSet.getStatisticsProcess().reset();
+
+		log.debug("Deleted dataset with ID {}", dataSet.getId());
 	}
 
 	/**
@@ -1246,6 +1266,19 @@ public class DatabaseService {
 		return Optional.ofNullable(project.getOriginalData().getDataSet());
 	}
 
+	/**
+	 * Updates the dataset configuration of the given project with the given DTO.
+	 *
+	 * @param project              The project to update.
+	 * @param datasetConfiguration The dataset configuration to set.
+	 */
+	private void doUpdateDatasetConfiguration(final ProjectEntity project,
+	                                          final DatasetConfiguration datasetConfiguration) {
+		datasetConfigurationMapper.updateEntity(project.getOriginalData().getDatasetConfiguration(),
+		                                        datasetConfiguration);
+		log.debug("Stored dataset configuration");
+	}
+
 	private DataSetEntity doStoreOriginalDataConfiguration(ProjectEntity project,
 	                                                       final DataConfiguration dataConfiguration) {
 		final DataSetEntity dataSetEntity;
@@ -1259,6 +1292,8 @@ public class DatabaseService {
 		dataSetEntity.setDataConfiguration(dataConfiguration);
 
 		project = projectRepository.save(project);
+
+		log.debug("Stored original data configuration");
 
 		return project.getOriginalData().getDataSet();
 	}
@@ -1276,6 +1311,8 @@ public class DatabaseService {
 
 		dataSetEntity.setDataConfiguration(dataConfiguration);
 		dataSetEntity.setProcessed(processed);
+
+		log.debug("Stored data configuration for job {}", dataProcessingEntity.getJob().getName());
 
 		return dataSetRepository.save(dataSetEntity);
 	}
@@ -1377,6 +1414,8 @@ public class DatabaseService {
 			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_STORE,
 			                                              "The DataSet could not be persisted!", e);
 		}
+
+		log.debug("Stored dataset with ID {}", dataSetEntity.getId());
 
 		dataSetEntity.setStoredData(true);
 		return dataSetRepository.save(dataSetEntity);

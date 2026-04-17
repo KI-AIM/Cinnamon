@@ -195,6 +195,7 @@ public class ExportService {
 		final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
 		if (dataSetEntity != null) {
 			switch (parts[1]) {
+				case "file" -> handleFileSelector(zipOut, project.getOriginalData().getFile(), "original");
 				case "dataset" -> handleDatasetSelector(projectExportParameter, zipOut, dataSetEntity, "original");
 				case "statistics" -> handleStatisticsSelector(zipOut, dataSetEntity.getStatistics(), "original");
 			}
@@ -271,6 +272,24 @@ public class ExportService {
 				zipOut.write(entry.getValue().getLob());
 				zipOut.closeEntry();
 			}
+		}
+	}
+
+	/**
+	 * Adds the given FileEntity to the ZIP file.
+	 *
+	 * @param zipOut     The ZIP output stream.
+	 * @param fileEntity The FileEntity to add.
+	 * @param name       The name of the source step.
+	 * @throws IOException If adding a resource to the ZIP file failed.
+	 */
+	private void handleFileSelector(final ZipOutputStream zipOut, final FileEntity fileEntity, final String name)
+			throws IOException {
+		if (fileEntity != null && fileEntity.getFile() != null) {
+			final ZipEntry fileEntry = new ZipEntry(name + "-file-" + fileEntity.getName());
+			zipOut.putNextEntry(fileEntry);
+			zipOut.write(fileEntity.getFile().getLob());
+			zipOut.closeEntry();
 		}
 	}
 

@@ -88,13 +88,17 @@ public class ExportServiceTest extends DatabaseTest {
 														   "configuration.dataSource",
 														   "configuration.dataset",
 		                                                   "configuration.pipeline",
-		                                                   "configuration.configurations", "original.dataset",
-		                                                   "configuration.anonymization"));
+		                                                   "configuration.configurations",
+		                                                   "configuration.anonymization",
+		                                                   "original.dataset",
+		                                                   "original.file"
+		                                           ));
 		assertDoesNotThrow(() -> exportService.createZipFile(project, out, parameter));
 
 		List<String> expectedFiles = new ArrayList<>(
-				List.of("anonymization-dataset.csv", "configurations.yaml", "original-dataset.csv",
-				        "anonymization.yaml", "project.yaml", "dataSource.yaml", "dataset.yaml", "pipeline.yaml"));
+				List.of("anonymization-dataset.csv", "configurations.yaml", "original-file-file.csv",
+				        "original-dataset.csv", "anonymization.yaml", "project.yaml", "dataSource.yaml", "dataset.yaml",
+				        "pipeline.yaml"));
 
 		try (final var zipInputStream = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
 
@@ -122,6 +126,9 @@ public class ExportServiceTest extends DatabaseTest {
 					case "original-dataset.csv" ->
 							assertEquals(ResourceHelper.loadCsvFileAsString(), stringBuilder.toString(),
 							             "Unexpected original data!");
+					case "original-file-file.csv" ->
+							assertEquals(ResourceHelper.loadCsvFileAsString(), stringBuilder.toString(),
+							             "Unexpected original file!");
 					case "anonymization.yaml" ->
 							assertEquals(AlgorithmTestHelper.generateAlgorithmConfigurationYaml(),
 							             stringBuilder.toString(),

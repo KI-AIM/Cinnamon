@@ -190,8 +190,8 @@ public class ProjectController {
 
 		response.setContentType("application/zip");
 		response.setHeader("Content-Disposition",
-		                   "attachment; filename=\"" + user.getEmail() + "_Cinnamon-export_" +
-		                   LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")) + ".zip\"");
+		                   "attachment; filename=\"" + user.getEmail() + "_" +
+		                   LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ss")) + "_Cinnamon.zip\"");
 
 		final OutputStream outputStream;
 		try {

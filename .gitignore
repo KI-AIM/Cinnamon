@@ -6,6 +6,7 @@ target/
 
 ### Local files ###
 .env
+scripts/resources/
 
 ### STS ###
 .apt_generated

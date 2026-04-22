@@ -453,7 +453,7 @@ public class ProcessControllerTest extends ControllerTest {
 		                    .andExpect(status().isOk())
 		                    .andExpect(header().exists("Content-Disposition"))
 		                    .andExpect(header().string("Content-Disposition", Matchers.matchesPattern(
-				                    "attachment; filename=\"test_user_Cinnamon-export_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}\\.zip\"")))
+				                    "attachment; filename=\"test_user_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}_Cinnamon\\.zip\"")))
 		                    .andExpect(content().contentType("application/zip"))
 		                    .andReturn();
 

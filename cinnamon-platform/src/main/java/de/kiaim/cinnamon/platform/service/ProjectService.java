@@ -192,6 +192,7 @@ public class ProjectService {
 			final ProjectEntity p = getProject(user);
 			resetEntireProject(p);
 			projectRepository.deleteById(p.getId());
+			user.setProject(null);
 			log.debug("Deleted project for user '{}'", user.getEmail());
 		}
 	}
@@ -277,7 +278,6 @@ public class ProjectService {
 	@Transactional
 	public void updateProjectConfiguration(final ProjectEntity project, final ProjectConfigurationDTO configuration) {
 		projectConfigurationMapper.updateEntity(project.getProjectConfiguration(), configuration);
-		saveProject(project);
 	}
 
 	/**

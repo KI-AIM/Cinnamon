@@ -1168,14 +1168,15 @@ public class ProcessService {
 		bodyBuilder.part(endpoint.getCallbackPartName(),
 		                 serverAddress + "/api/process/" + externalProcess.getUuid() + "/callback");
 
+		// Build the URL
+		final String serverUrl = instance.getUrl();
+		String url = endpoint.getProcessEndpoint().isBlank()
+		             ? getProcessUrl(externalProcess.getConfigurationString(), endpoint.getConfigurationName())
+		             : endpoint.getProcessEndpoint();
+		url = injectUrlParameter(url, externalProcess);
+
 		// Do the request
 		try {
-			final String serverUrl = instance.getUrl();
-			String url = endpoint.getProcessEndpoint().isBlank()
-			             ? getProcessUrl(externalProcess.getConfigurationString(), endpoint.getConfigurationName())
-			             : endpoint.getProcessEndpoint();
-			url = injectUrlParameter(url, externalProcess);
-
 			HttpClient client = HttpClient.create()
 			                              .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
 			                              .responseTimeout(Duration.ofSeconds(10));

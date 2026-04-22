@@ -1,6 +1,10 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
+import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
+import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
+import de.kiaim.cinnamon.platform.model.enumeration.StepOutputEncoding;
 import de.kiaim.cinnamon.platform.service.ExternalConfigurationService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import de.kiaim.cinnamon.test.util.*;
@@ -14,14 +18,14 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WithMockWebServer
 @WithUserDetails("test_user")
@@ -41,6 +45,16 @@ public class WorkflowControllerTest extends ControllerTest {
 		externalConfigurationService.setCachedAvailableAlgorithms("synthetization_configuration",
 		                                                          AlgorithmTestHelper.generateAvailableAlgorithms2());
 		externalConfigurationService.setCachedAlgorithmDefinition("synthetization_configuration", "/algorithm/ctgan",
+		                                                          AlgorithmTestHelper.generateAlgorithmDefinition2());
+
+		externalConfigurationService.setCachedAvailableAlgorithms("evaluation_configuration",
+		                                                          AlgorithmTestHelper.generateAvailableAlgorithms2());
+		externalConfigurationService.setCachedAlgorithmDefinition("evaluation_configuration", "/algorithm/ctgan",
+		                                                          AlgorithmTestHelper.generateAlgorithmDefinition2());
+
+		externalConfigurationService.setCachedAvailableAlgorithms("risk_assessment_configuration",
+		                                                          AlgorithmTestHelper.generateAvailableAlgorithms2());
+		externalConfigurationService.setCachedAlgorithmDefinition("risk_assessment_configuration", "/algorithm/ctgan",
 		                                                          AlgorithmTestHelper.generateAlgorithmDefinition2());
 	}
 
@@ -79,30 +93,154 @@ public class WorkflowControllerTest extends ControllerTest {
 
 		// Prepare responses of external modules
 		enqueueAnonStartResponse();
+		enqueueAnonStatusResponse();
 
 		// Send the request
 		mockMvc.perform(multipart("/api/workflow").file(datafile).file(configurationFile))
-		       .andExpect(status().isOk());
-		verifyWorkflow();
-		finish1();
-		verifyWorkflow();
-		enqueueAnonStartResponse();
-	}
-
-	private void verifyWorkflow() throws Exception {
-		mockMvc.perform(get("/api/workflow"))
-		       .andExpect(status().isOk())
+		       .andExpect(status().isAccepted())
 		       .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(content().json("""
 		                                 {
-		                                 	"status": "RUNNING",
-		                                 	"currentJob": "anonymization",
-		                                 	"progress": 0.25
+		                                   "currentStageIndex":0,
+		                                   "stages":[{
+		                                     "stageName":"execution",
+		                                     "status":"RUNNING",
+		                                     "currentProcessIndex":0,
+		                                     "processes":[{
+		                                       "externalProcessStatus":"RUNNING",
+		                                       "step":"anonymization",
+		                                       "status":"status",
+		                                       "processSteps":null
+		                                       },{
+		                                       "externalProcessStatus":"NOT_STARTED",
+		                                       "step":"synthetization",
+		                                       "status":null,
+		                                       "processSteps":null
+		                                     }]
+		                                     },{
+		                                     "stageName":"evaluation",
+		                                     "status":"NOT_STARTED",
+		                                     "currentProcessIndex":null,
+		                                     "processes":[{
+		                                       "externalProcessStatus":"NOT_STARTED",
+		                                       "step":"technical_evaluation",
+		                                       "status":null,
+		                                       "processSteps":[]
+		                                       },{
+		                                       "externalProcessStatus":"NOT_STARTED",
+		                                       "step":"risk_evaluation",
+		                                       "status":null,
+		                                       "processSteps":[]
+		                                       },{
+		                                       "externalProcessStatus":"NOT_STARTED",
+		                                       "step":"risk_evaluation_o",
+		                                       "status":null,
+		                                       "processSteps":[]
+		                                     }]
+		                                   }]
 		                                 }
 		                                 """));
+		verifyProcessStartRequest("/algorithmA");
+		verifyProcessStatusRequest();
+		verifyWorkflow(0, true);
+		finish(0, 0, "/start_synthetization_process/ctgan");
+		verifyWorkflow(0, true);
+		finish(0, 1, "/start_synthetization_process/ctgan");
+		verifyWorkflow(1, false);
+		finish(1, 0, "");
+		verifyWorkflow(1, false);
+		finish(1, 1, null);
+		verifyWorkflow(null, false);
+	}
+
+	private void verifyWorkflow(Integer expectedCurrentStage, boolean expectedHasStatusRequest) throws Exception {
+		if (expectedHasStatusRequest) {
+			enqueueAnonStatusResponse();
+		}
+		mockMvc.perform(get("/api/workflow"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+		       .andExpect(jsonPath("currentStageIndex").value(expectedCurrentStage));
+		if (expectedHasStatusRequest) {
+			verifyProcessStatusRequest();
+		}
+	}
+
+	private void verifyProcessStartRequest(String algorithm) throws InterruptedException {
+		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
+		assertNotNull(recordedRequest, "No start request has been sent to the server!");
+		assertEquals("POST", recordedRequest.getMethod());
+		if (!algorithm.isEmpty()) {
+			assertEquals(algorithm, recordedRequest.getPath());
+		}
+	}
+
+	private void verifyProcessStatusRequest() throws InterruptedException {
+		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
+		assertNotNull(recordedRequest, "No status request has been sent to the server!");
+		assertEquals("GET", recordedRequest.getMethod());
 	}
 
 	private void enqueueAnonStartResponse() {
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body("""
+				                          {
+				                            "message": "Stated process"
+				                          }
+				                          """)
+				                    .build());
+	}
+
+	private void finish(int stageIndex, int processIndex, String nextAlgorithm) throws Exception {
+		var updateTestProject = getTestProject();
+
+		var process = updateTestProject.getPipelines().get(0).getStageByIndex(stageIndex).getProcess(processIndex);
+		String id = process.getUuid().toString();
+
+		final ExternalProcessResponse response = new ExternalProcessResponse();
+		response.setPid("123");
+
+		// Enqueue responses of external modules
+		boolean isFixStatus = process.getJob().isFixStatus()
+		                      && !process.getJob().getEndpoint().getStatusEndpoint().isEmpty();
+		if (isFixStatus) {
+			enqueueSynthStatusResponse();
+		}
+		if (nextAlgorithm != null) {
+			mockBackEnd.enqueue(new MockResponse.Builder()
+					                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+					                    .code(200)
+					                    .body(jsonMapper.writeValueAsString(response))
+					                    .build());
+		}
+
+		// Send callback request
+		var r = multipart("/api/process/" + id + "/callback");
+		for (var abc : process.getJob().getEndpoint().getOutputs()) {
+			if (abc.getEncoding() == StepOutputEncoding.DATA_SET) {
+				var anonymizationResult = new MockMultipartFile(abc.getPartName(), "additional.json",
+				                                                MediaType.APPLICATION_JSON_VALUE,
+				                                                DataSetTestHelper.generateDataSetAsJson().getBytes());
+				r.file(anonymizationResult);
+			} else if (abc.getEncoding() == StepOutputEncoding.DATA) {
+				r.file(ResourceHelper.loadCsvFile(abc.getPartName()));
+			}
+		}
+
+		mockMvc.perform(r).andExpect(status().isOk());
+
+		// Verify requests from the platform to external modules
+		if (isFixStatus) {
+			verifyProcessStatusRequest();
+		}
+		if (nextAlgorithm != null) {
+			verifyProcessStartRequest(nextAlgorithm);
+		}
+	}
+
+	private void enqueueAnonStatusResponse() {
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 				                    .code(200)
@@ -110,38 +248,18 @@ public class WorkflowControllerTest extends ControllerTest {
 				                    .build());
 	}
 
-	private void finish1() throws Exception {
-		var updateTestProject = getTestProject();
-
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
-		String id = process.getUuid().toString();
-
-		final ExternalProcessResponse response = new ExternalProcessResponse();
-		response.setPid("123");
-
-		// Send callback request
-		var anonymizationResult = new MockMultipartFile("anonymized_dataset", "additional.txt",
-		                                                MediaType.TEXT_PLAIN_VALUE,
-		                                                DataSetTestHelper.generateDataSetAsJson().getBytes());
-
-		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
-		                                                                 MediaType.TEXT_PLAIN_VALUE,
-		                                                                 "anon-info".getBytes());
+	private void enqueueSynthStatusResponse() throws JsonProcessingException {
+		var synthStatus = new SynthetizationStatus();
+		var synthStepStatus = new SynthetizationStepStatus();
+		synthStepStatus.setStep("callback");
+		synthStepStatus.setCompleted("False");
+		synthStatus.setStatus(List.of(synthStepStatus));
 		mockBackEnd.enqueue(new MockResponse.Builder()
 				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 				                    .code(200)
-				                    .body(jsonMapper.writeValueAsString(response))
+				                    .body(jsonMapper.writeValueAsString(synthStatus))
 				                    .build());
-		mockMvc.perform(multipart("/api/process/" + id + "/callback")
-				                .file(anonymizationResult)
-				                .file(resultAdditional)
-		       )
-		       .andExpect(status().isOk());
-
-		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
-		assertNotNull(recordedRequest, "No request has been sent to the server!");
-		assertEquals("POST", recordedRequest.getMethod());
-		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
 	}
+
 
 }

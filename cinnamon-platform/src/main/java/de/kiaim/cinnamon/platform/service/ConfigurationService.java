@@ -82,23 +82,31 @@ public class ConfigurationService {
 	 * @param parameters Parameters for the import.
 	 * @return The summary of the imported configurations.
 	 * @throws BadConfigurationFileException If the file is not a valid YAML file.
-	 * @throws BadFileException              If the file cannot be read.
 	 */
 	@Transactional(rollbackFor = {BadConfigurationFileException.class})
 	public ConfigurationImportSummary importConfigurations(
 			final ProjectEntity project,
 			final MultipartFile file,
 			final ConfigurationImportParameters parameters
-	) throws BadConfigurationFileException, BadFileException {
-		final JsonNode yamlConfig;
+	) throws BadConfigurationFileException {
+		if (file == null) {
+			throw new BadConfigurationFileException(BadConfigurationFileException.MISSING,
+			                                        "The configuration file is missing");
+		}
+		if (file.isEmpty()) {
+			throw new BadConfigurationFileException(BadConfigurationFileException.EMPTY,
+			                                        "The configuration file is empty");
+		}
 
+		final JsonNode yamlConfig;
 		try {
 			yamlConfig = yamlMapper.readTree(file.getInputStream());
-		} catch (JsonProcessingException e) {
+		} catch (final JsonProcessingException e) {
 			throw new BadConfigurationFileException(BadConfigurationFileException.INVALID_YAML,
 			                                        "Invalid YAML file format", e);
-		} catch (IOException e) {
-			throw new BadFileException(BadFileException.NOT_READABLE, "File could not be read", e);
+		} catch (final IOException e) {
+			throw new BadConfigurationFileException(BadConfigurationFileException.NOT_READABLE,
+			                                        "File could not be read", e);
 		}
 
 		return importConfigurations(project, yamlConfig, parameters);

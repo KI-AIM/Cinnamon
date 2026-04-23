@@ -17,6 +17,7 @@ GAP = 0
 class CinnamonContext:
     email: str
     password: str
+    workflow_id: str
 
 
 def print_info(context: CinnamonContext, message: Any):
@@ -49,9 +50,33 @@ def delete_user(context: CinnamonContext):
         print_info(context, f"User deleted: {context.email}")
 
 
-def get_results(context: CinnamonContext):
-    url = f"{CINNAMON_URL}/project/zip"
+def post_start_workflow(context: CinnamonContext):
+    url = f"{CINNAMON_URL}/workflow"
+
+    with open(DATA_FILE, "rb") as data_file:
+        with open(CONFIG_FILE, "rb") as config_file:
+            files = {"data": ('heart.csv', data_file, 'multipart/form-data'),
+                     "configuration": ("config.yaml", config_file, 'multipart/form-data')}
+            response = requests.post(url, auth=create_auth(context), files=files)
+
+    if response.status_code != 202:
+        print_info(context, response.json())
+        return None
+    else:
+        response_body = response.json()
+        context.workflow_id = response_body['workflowId']
+        return response_body
+
+
+def get_workflow_status(context: CinnamonContext):
+    url = f"{CINNAMON_URL}/workflow/{context.workflow_id}"
     response = requests.get(url, auth=create_auth(context))
+    return response.json()
+
+
+def delete_workflow(context: CinnamonContext):
+    url = f"{CINNAMON_URL}/workflow/{context.workflow_id}"
+    response = requests.delete(url, auth=create_auth(context))
 
     filename = f"{context.email}.zip"
     content_disposition = response.headers.get('Content-Disposition')
@@ -64,48 +89,26 @@ def get_results(context: CinnamonContext):
         for data in response.iter_content():
             handle.write(data)
 
-
-def post_start_workflow(context: CinnamonContext):
-    url = f"{CINNAMON_URL}/workflow"
-
-    with open(DATA_FILE, "rb") as data_file:
-        with open(CONFIG_FILE, "rb") as config_file:
-            files = {"data": ('heart.csv', data_file, 'multipart/form-data'),
-                     "configuration": ("config.yaml", config_file, 'multipart/form-data')}
-            response = requests.post(url, auth=create_auth(context), files=files)
-
-    if response.status_code != 200:
-        print_info(context, response.json())
-        return None
-    else:
-        return response.json()
-
-
-def get_workflow_status(context: CinnamonContext):
-    url = f"{CINNAMON_URL}/workflow"
-    response = requests.get(url, auth=create_auth(context))
-    return response.json()
+    return response.status_code == 200
 
 
 def workflow(context: CinnamonContext):
+    delete_user(context)
     if not login(context):
         register_user(context)
         login(context)
-
-    status = get_workflow_status(context)
-    print_info(context, status)
 
     status = post_start_workflow(context)
     if status is None:
         return
     print_info(context, status)
 
-    while status['currentStageIndex'] is not None:
+    while status['pipeline']['currentStageIndex'] is not None:
         time.sleep(10)
         status = get_workflow_status(context)
         print_info(context, status)
 
-    get_results(context)
+    delete_workflow(context)
 
 
 def main():

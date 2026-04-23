@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.platform.exception.BadStateException;
 import de.kiaim.cinnamon.platform.exception.BadUserConfirmationException;
+import de.kiaim.cinnamon.platform.exception.BadUserException;
 import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -39,6 +40,11 @@ public class UserService implements UserDetailsService {
 	@Nullable
 	public UserEntity getUserByEmail(final String email) {
 		return userRepository.findById(email).orElse(null);
+	}
+
+	public UserEntity getUserByEmailOrThrow(final String email) throws BadUserException {
+		return userRepository.findById(email).orElseThrow(
+				() -> new BadUserException(BadUserException.NOT_FOUND, "User with email " + email + " not found"));
 	}
 
 	public boolean doesUserWithEmailExist(final String email) {
@@ -89,6 +95,7 @@ public class UserService implements UserDetailsService {
 	@Transactional
 	public void deleteUser(final UserEntity user) throws BadStateException, InternalDataSetPersistenceException {
 		projectService.deleteProject(user);
+		deleteWorkflows(user);
 		userRepository.delete(user);
 		log.debug("Deleting user with email '{}'", user.getEmail());
 	}
@@ -104,6 +111,19 @@ public class UserService implements UserDetailsService {
 		final var users = userRepository.findAll();
 		for (final var user : users) {
 			deleteUser(user);
+		}
+	}
+
+	/**
+	 * Deletes all workflows of the given user.
+	 *
+	 * @param user The user.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 */
+	private void deleteWorkflows(final UserEntity user) throws BadStateException, InternalDataSetPersistenceException {
+		for (final var workflow : user.getWorkflows()) {
+			projectService.resetEntireProject(workflow.getProject());
 		}
 	}
 

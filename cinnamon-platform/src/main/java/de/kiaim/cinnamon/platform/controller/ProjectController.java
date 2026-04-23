@@ -33,11 +33,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
 @RestController
 @RequestMapping("/api/project")
 @Tag(name = "/api/project", description = "API for managing projects.")
@@ -188,21 +183,7 @@ public class ProjectController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		response.setContentType("application/zip");
-		response.setHeader("Content-Disposition",
-		                   "attachment; filename=\"" + user.getEmail() + "_" +
-		                   LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ss")) + "_Cinnamon.zip\"");
-
-		final OutputStream outputStream;
-		try {
-			outputStream = response.getOutputStream();
-		} catch (final IOException e) {
-			throw new InternalIOException(InternalIOException.ZIP_CREATION, "Could not get OutputStream", e);
-		}
-
-		exportService.createZipFile(project, outputStream, projectExportParameter);
-
-		return ResponseEntity.ok().build();
+		return exportService.createZipFile(project, response, projectExportParameter);
 	}
 
 	@Operation(summary = "Returns a file of the result of the specified job.",

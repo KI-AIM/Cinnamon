@@ -73,12 +73,18 @@ public class DataProcessorService {
 
 	/**
 	 * Validates the given file.
+	 * Checks if the file is not null, not empty and has a valid file name.
+	 *
 	 * @param file File to be validated.
 	 * @throws BadFileException If the file is not valid.
 	 */
 	public void validateFileOrThrow(@Nullable final MultipartFile file) throws BadFileException {
 		if (file == null) {
 			throw new BadFileException(BadFileException.MISSING_FILE, "Missing file");
+		}
+
+		if (file.isEmpty()) {
+			throw new BadFileException(BadFileException.EMPTY_FILE, "The file is empty");
 		}
 
 		final String fileName = file.getOriginalFilename();

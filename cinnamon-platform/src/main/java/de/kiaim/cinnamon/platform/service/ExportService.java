@@ -12,11 +12,16 @@ import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -127,12 +132,54 @@ public class ExportService {
 	}
 
 	/**
+	 * Exports the project to a ZIP file and writes it to the given response.
+	 *
+	 * @param project The project to export.
+	 * @param response The response to write the ZIP file to.
+	 * @param projectExportParameter Parameter specifying what should be exported.
+	 * @return The response entity containing the ZIP file.
+	 * @throws BadConfigurationNameException       If the name of a configuration to export is unknown.
+	 * @throws BadStateException                   If the project state is invalid for export.
+	 * @throws BadStepNameException                If a resource from an unknown step is requested.
+	 * @throws InternalDataSetPersistenceException If a dataset could not be exported due to an internal error.
+	 * @throws InternalInvalidStateException       If a requested configuration is not valid, i.e., the validation during the import failed.
+	 * @throws InternalIOException                 If the dataset could not be serialized.
+	 *                                             If adding a resource to the ZIP file failed.
+	 * @throws InternalMissingHandlingException    If no data processor for the target file type could be found.
+	 */
+	@Transactional
+	public ResponseEntity<StreamingResponseBody> createZipFile(final ProjectEntity project,
+	                                                           final HttpServletResponse response,
+	                                                           final ProjectExportParameter projectExportParameter)
+			throws BadConfigurationNameException, BadStateException, BadStepNameException,
+					       InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException,
+					       InternalMissingHandlingException {
+
+		response.setContentType("application/zip");
+		response.setHeader("Content-Disposition",
+		                   "attachment; filename=\"" + project.getProjectConfiguration().getProjectName() + "_" +
+		                   LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ss")) + "_Cinnamon.zip\"");
+
+		final OutputStream outputStream;
+		try {
+			outputStream = response.getOutputStream();
+		} catch (final IOException e) {
+			throw new InternalIOException(InternalIOException.ZIP_CREATION, "Could not get OutputStream", e);
+		}
+
+		createZipFile(project, outputStream, projectExportParameter);
+
+		return ResponseEntity.ok().build();
+	}
+
+	/**
 	 * Writes a ZIP to the given OutputStream containing the resources specified in the project export parameter.
 	 *
 	 * @param project                The project to export.
 	 * @param outputStream           The OutputStream to write to.
 	 * @param projectExportParameter Parameter specifying what should be exported.
 	 * @throws BadConfigurationNameException       If the name of a configuration to export is unknown.
+	 * @throws BadStateException                   If the project state is invalid for export.
 	 * @throws BadStepNameException                If a resource from an unknown step is requested.
 	 * @throws InternalDataSetPersistenceException If a dataset could not be exported due to an internal error.
 	 * @throws InternalInvalidStateException       If a requested configuration is not valid, i.e., the validation during the import failed.
@@ -143,7 +190,9 @@ public class ExportService {
 	@Transactional
 	public void createZipFile(final ProjectEntity project, final OutputStream outputStream,
 	                          final ProjectExportParameter projectExportParameter)
-			throws BadConfigurationNameException, BadStateException, BadStepNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException {
+			throws BadConfigurationNameException, BadStateException, BadStepNameException,
+					       InternalDataSetPersistenceException, InternalInvalidStateException,
+					       InternalIOException, InternalMissingHandlingException {
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
 
 			final Map<String, Integer> zipEntryCounter = new HashMap<>();

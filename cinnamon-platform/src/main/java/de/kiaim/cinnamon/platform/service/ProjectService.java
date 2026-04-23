@@ -191,7 +191,6 @@ public class ProjectService {
 		if (hasProject(user)) {
 			final ProjectEntity p = getProject(user);
 			resetEntireProject(p);
-			projectRepository.deleteById(p.getId());
 			user.setProject(null);
 			log.debug("Deleted project for user '{}'", user.getEmail());
 		}
@@ -287,7 +286,8 @@ public class ProjectService {
 	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
 	 */
-	private void resetEntireProject(final ProjectEntity project)
+	@Transactional
+	public void resetEntireProject(final ProjectEntity project)
 			throws BadStateException, InternalDataSetPersistenceException {
 		databaseService.deleteOriginalData(project);
 		processService.deletePipeline(project);

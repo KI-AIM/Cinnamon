@@ -117,6 +117,6 @@ public class UserController {
 			@AuthenticationPrincipal final UserEntity user)
 			throws BadDataSetIdException, BadStateException, BadUserConfirmationException, InternalDataSetPersistenceException {
 		userService.confirmUser(confirmUserRequest, user);
-		userService.deleteUser(user);
+		userService.deleteUser(userService.getUserByEmail(user.getEmail()));
 	}
 }

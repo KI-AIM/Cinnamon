@@ -52,6 +52,21 @@ public class BadConfigurationFileException extends BadRequestException {
 	 */
 	public static final String CONFIGURATION_DESERIALIZATION = "9";
 
+	/**
+	 * Exception code for files that could not be read.
+	 */
+	public static final String NOT_READABLE = "10";
+
+	/**
+	 * Exception code for requests that should, but do not contain a configuration file.
+	 */
+	public static final String MISSING = "11";
+
+	/**
+	 * Exception code for empty configuration files.
+	 */
+	public static final String EMPTY = "12";
+
 	public BadConfigurationFileException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

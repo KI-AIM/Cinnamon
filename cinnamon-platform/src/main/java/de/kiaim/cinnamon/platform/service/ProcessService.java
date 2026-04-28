@@ -12,6 +12,7 @@ import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
@@ -162,7 +163,7 @@ public class ProcessService {
 		final PipelineEntity pipeline = project.getPipelines().get(0);
 
 		for (final ExecutionStepEntity stage : pipeline.getStages()) {
-			if (stage.getStatus() == ProcessStatus.RUNNING) {
+			if (stage.getStatus() == StageStatus.RUNNING) {
 				getStatus(project, stage.getStage());
 				break;
 			}
@@ -185,7 +186,7 @@ public class ProcessService {
 	public ExecutionStepEntity getStatus(final ProjectEntity project, final Stage stage) throws InternalInvalidStateException {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
-		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
+		if (executionStep.getStatus() == StageStatus.RUNNING) {
 			final var process = executionStep.getCurrentProcess();
 
 			try {
@@ -366,7 +367,7 @@ public class ProcessService {
 		final var pipeline = project.getPipelines().get(0);
 		final var executionStep = pipeline.getStageByStep(stage);
 
-		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
+		if (executionStep.getStatus() == StageStatus.RUNNING) {
 			return executionStep;
 		}
 
@@ -449,37 +450,42 @@ public class ProcessService {
 	 * @param project The project.
 	 * @param stage   The step.
 	 * @return The updated execution entity.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalInvalidStateException If the process has no server instance.
+	 * @throws InternalInvalidStateException If the process to be canceled has no server instance assigned.
 	 */
 	@Transactional
 	public ExecutionStepEntity cancel(final ProjectEntity project, final Stage stage)
-			throws InternalApplicationConfigurationException, InternalInvalidStateException {
+			throws InternalInvalidStateException {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
-
-		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
-			// Cancel the current process
-			cancelProcess(executionStep.getCurrentProcess());
-
-			// Update
-			executionStep.setStatus(ProcessStatus.CANCELED);
-			executionStep.setCurrentProcessIndex(null);
-
-			projectRepository.save(project);
-		}
-
+		cancelStage(executionStep);
 		return executionStep;
+	}
+
+	/**
+	 * Cancels the pipeline by canceling all running processes.
+	 *
+	 * @param pipeline The pipeline to cancel.
+	 * @throws InternalInvalidStateException If the process to be canceled has no server instance assigned.
+	 */
+	@Transactional
+	public void cancel(final PipelineEntity pipeline) throws InternalInvalidStateException {
+		for (final ExecutionStepEntity stage : pipeline.getStages()) {
+			if (stage.getStatus() == StageStatus.RUNNING) {
+				cancel(pipeline.getProject(), stage.getStage());
+				break;
+			}
+		}
 	}
 
 	/**
 	 * Deletes the pipeline of the given project by deleting all stages.
 	 *
 	 * @param project The project.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
+	@Transactional
 	public void deletePipeline(final ProjectEntity project)
-			throws InternalDataSetPersistenceException, BadStateException {
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		final PipelineEntity pipeline = project.getPipelines().get(0);
 		for (final ExecutionStepEntity stage : pipeline.getStages()) {
 			deleteStage(stage);
@@ -492,13 +498,12 @@ public class ProcessService {
 	 *
 	 * @param project The project.
 	 * @param stage   The step.
-	 * @return The updated execution entity.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
 	@Transactional
-	public ExecutionStepEntity deleteStage(final ProjectEntity project, final Stage stage)
-			throws BadStateException, InternalDataSetPersistenceException {
+	public void deleteStage(final ProjectEntity project, final Stage stage)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		// Check if the pipeline contains the given stage.
 		final ExecutionStepEntity executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
@@ -510,7 +515,22 @@ public class ProcessService {
 		}
 
 		projectRepository.save(project);
-		return executionStep;
+	}
+
+	/**
+	 * Checks if the given pipeline is running.
+	 *
+	 * @param pipeline The pipeline to check.
+	 * @return True if the pipeline is running, false otherwise.
+	 */
+	public boolean isPipelineRunning(final PipelineEntity pipeline) {
+		for (final var stage : pipeline.getStages()) {
+			if (stage.getStatus() == StageStatus.RUNNING) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -934,27 +954,27 @@ public class ProcessService {
 		// Check if previous stages are finished
 		for (int i = 0; i < targetStage; i++) {
 			final var stage = pipeline.getStages().get(i);
-			if (stage.getStatus() != ProcessStatus.FINISHED && stage.getStatus() != ProcessStatus.SKIPPED) {
+			if (stage.getStatus() != StageStatus.FINISHED) {
 				throw new BadStateException(BadStateException.PRECEDING_STAGE_NOT_FINISHED,
 				                            "The preceding stage '" + stage.getStage().getStageName() +
-				                            "' is not finished or skipped!");
+				                            "' is not finished!");
 			}
 		}
 
 		// Start the next job
-		executionStep.setStatus(ProcessStatus.RUNNING);
+		executionStep.setStatus(StageStatus.RUNNING);
 		startNextJob(executionStep, jobIndex);
 
 		// Search for job in next stages
-		if (executionStep.getStatus() == ProcessStatus.FINISHED && pipeline.isRunAllStages()) {
+		if (executionStep.getStatus() == StageStatus.FINISHED && pipeline.isRunAllStages()) {
 			for (int i = targetStage + 1; i < pipeline.getStages().size(); i++) {
 				final var stage = pipeline.getStages().get(i);
 
-				stage.setStatus(ProcessStatus.RUNNING);
+				stage.setStatus(StageStatus.RUNNING);
 				log.debug("Starting next stage '{}'...", stage.getStage().getStageName());
 				startNextJob(stage, 0);
 
-				if (stage.getStatus() == ProcessStatus.RUNNING || stage.getStatus() == ProcessStatus.SCHEDULED) {
+				if (stage.getStatus() == StageStatus.RUNNING) {
 					break;
 				}
 			}
@@ -1023,7 +1043,7 @@ public class ProcessService {
 			startOrScheduleProcess(process);
 		} else {
 			executionStep.setCurrentProcessIndex(null);
-			executionStep.setStatus(ProcessStatus.FINISHED);
+			executionStep.setStatus(StageStatus.FINISHED);
 			log.debug("Finished stage '{}'", executionStep.getStage().getStageName());
 		}
 	}
@@ -1306,7 +1326,7 @@ public class ProcessService {
 			externalProcess.setStatus(message);
 
 			final ExecutionStepEntity executionStep = externalProcess.getExecutionStep();
-			executionStep.setStatus(ProcessStatus.ERROR);
+			executionStep.setStatus(StageStatus.ERROR);
 			executionStep.setCurrentProcessIndex(null);
 		}
 	}
@@ -1321,7 +1341,7 @@ public class ProcessService {
 			currentProcess.setStatus(message);
 		}
 
-		executionStep.setStatus(ProcessStatus.ERROR);
+		executionStep.setStatus(StageStatus.ERROR);
 		executionStep.setCurrentProcessIndex(null);
 	}
 
@@ -1331,18 +1351,17 @@ public class ProcessService {
 
 	/**
 	 * Deletes all results and configurations of the given stage.
+	 * If the stage is running, the process is aborted.
 	 *
 	 * @param executionStep Stage to delete.
-	 * @return The updated execution entity.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
-	private ExecutionStepEntity deleteStage(final ExecutionStepEntity executionStep)
-			throws BadStateException, InternalDataSetPersistenceException {
-		if (executionStep.getStatus() == ProcessStatus.RUNNING ||
-		    executionStep.getStatus() == ProcessStatus.SCHEDULED) {
-			throw new BadStateException(BadStateException.PROCESS_STARTED,
-			                            "Stage cannot be deleted because processes are running");
+	@Transactional
+	protected void deleteStage(final ExecutionStepEntity executionStep)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+		if (executionStep.getStatus() == StageStatus.RUNNING) {
+			cancelStage(executionStep);
 		}
 
 		for (final ExternalProcessEntity externalProcessEntity : executionStep.getProcesses()) {
@@ -1351,9 +1370,21 @@ public class ProcessService {
 		}
 
 		executionStep.setCurrentProcessIndex(null);
-		executionStep.setStatus(ProcessStatus.NOT_STARTED);
+		executionStep.setStatus(StageStatus.NOT_STARTED);
+	}
 
-		return executionStep;
+	@Transactional
+	protected void cancelStage(final ExecutionStepEntity executionStep) throws InternalInvalidStateException {
+		if (executionStep.getStatus() != StageStatus.RUNNING) {
+			return;
+		}
+
+		// Cancel the current process
+		cancelProcess(executionStep.getCurrentProcess());
+
+		// Update
+		executionStep.setStatus(StageStatus.CANCELED);
+		executionStep.setCurrentProcessIndex(null);
 	}
 
 	/**
@@ -1366,14 +1397,13 @@ public class ProcessService {
 	 */
 	private void resetStage(final ExecutionStepEntity executionStep)
 			throws BadStateException, InternalDataSetPersistenceException {
-		if (executionStep.getStatus() == ProcessStatus.RUNNING ||
-		    executionStep.getStatus() == ProcessStatus.SCHEDULED) {
+		if (executionStep.getStatus() == StageStatus.RUNNING) {
 			throw new BadStateException(BadStateException.PROCESS_STARTED,
 			                            "Stage cannot be reset because processes are running");
 		}
 
 		executionStep.setCurrentProcessIndex(null);
-		executionStep.setStatus(ProcessStatus.NOT_STARTED);
+		executionStep.setStatus(StageStatus.NOT_STARTED);
 
 		for (final ExternalProcessEntity externalProcessEntity : executionStep.getProcesses()) {
 			resetProcess(externalProcessEntity);

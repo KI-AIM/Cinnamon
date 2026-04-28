@@ -1,9 +1,6 @@
 package de.kiaim.cinnamon.platform.service;
 
-import de.kiaim.cinnamon.platform.exception.BadStateException;
-import de.kiaim.cinnamon.platform.exception.BadUserConfirmationException;
-import de.kiaim.cinnamon.platform.exception.BadUserException;
-import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
@@ -89,11 +86,12 @@ public class UserService implements UserDetailsService {
 	 * Deletes the given user.
 	 *
 	 * @param user The user.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If a running process has no server instance assigned.
 	 */
 	@Transactional
-	public void deleteUser(final UserEntity user) throws BadStateException, InternalDataSetPersistenceException {
+	public void deleteUser(final UserEntity user)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		projectService.deleteProject(user);
 		deleteWorkflows(user);
 		userRepository.delete(user);
@@ -103,11 +101,11 @@ public class UserService implements UserDetailsService {
 	/**
 	 * Deletes all users.
 	 *
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If a running process has no server instance assigned.
 	 */
 	@Transactional
-	public void deleteAllUsers() throws BadStateException, InternalDataSetPersistenceException {
+	public void deleteAllUsers() throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		final var users = userRepository.findAll();
 		for (final var user : users) {
 			deleteUser(user);
@@ -115,13 +113,14 @@ public class UserService implements UserDetailsService {
 	}
 
 	/**
-	 * Deletes all workflows of the given user.
+	 * Cancels and deletes all workflows of the given user.
 	 *
 	 * @param user The user.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
-	private void deleteWorkflows(final UserEntity user) throws BadStateException, InternalDataSetPersistenceException {
+	private void deleteWorkflows(final UserEntity user)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		for (final var workflow : user.getWorkflows()) {
 			projectService.resetEntireProject(workflow.getProject());
 		}

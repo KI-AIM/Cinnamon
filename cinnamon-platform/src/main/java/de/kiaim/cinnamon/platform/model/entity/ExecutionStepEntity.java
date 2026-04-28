@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
-import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.converter.StageAttributeConverter;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
@@ -36,7 +36,7 @@ public class ExecutionStepEntity extends ProcessOwner {
 	 */
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
-	private ProcessStatus status = ProcessStatus.NOT_STARTED;
+	private StageStatus status = StageStatus.NOT_STARTED;
 
 	/**
 	 * Index of the current job.
@@ -129,14 +129,14 @@ public class ExecutionStepEntity extends ProcessOwner {
 	}
 
 	/**
-	 * Validates the status matches the rest of the stages state.
+	 * Validates the status matches the rest of the stage's state.
 	 */
 	@PrePersist @PreUpdate
 	private void validateStatus() {
-		if (this.status == ProcessStatus.RUNNING && this.currentProcessIndex == null) {
+		if (this.status == StageStatus.RUNNING && this.currentProcessIndex == null) {
 			throw new IllegalStateException("The stage is running but the current job is not set.");
 		}
-		if (this.status != ProcessStatus.RUNNING && this.currentProcessIndex != null) {
+		if (this.status != StageStatus.RUNNING && this.currentProcessIndex != null) {
 			throw new IllegalStateException("The current job is set but the stage is not running.");
 		}
 	}

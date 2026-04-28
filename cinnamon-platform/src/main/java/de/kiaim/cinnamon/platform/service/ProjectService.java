@@ -180,14 +180,15 @@ public class ProjectService {
 
 	/**
 	 * Deletes the project of the given user.
+	 * If a pipeline in the project is running, the process is stopped.
 	 *
 	 * @param user The user.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
 	@Transactional
 	public void deleteProject(final UserEntity user)
-			throws BadStateException, InternalDataSetPersistenceException {
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		if (hasProject(user)) {
 			final ProjectEntity p = getProject(user);
 			resetEntireProject(p);
@@ -203,13 +204,20 @@ public class ProjectService {
 	 *
 	 * @param project The project.
 	 * @param target  The target.
+	 * @throws BadArgumentException                If the target is invalid.
 	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws BadStepNameException                If no configuration could be found.
 	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 * @throws InternalInvalidStateException       If a process is running and the check for running processes failed.
 	 */
 	@Transactional
 	public void resetProject(final ProjectEntity project, @Nullable final String target)
-			throws BadStateException, BadStepNameException, InternalDataSetPersistenceException, BadArgumentException {
+			throws BadArgumentException, BadStateException, BadStepNameException, InternalDataSetPersistenceException,
+					       InternalInvalidStateException {
+		if (processService.isPipelineRunning(project.getPipelines().get(0))) {
+			throw new BadStateException(BadStateException.PROCESS_STARTED,
+			                            "Cannot reset project while pipeline is running");
+		}
 
 		if (target == null || target.isBlank()) {
 			resetEntireProject(project);
@@ -281,15 +289,16 @@ public class ProjectService {
 
 	/**
 	 * Resets all data inside the given project.
+	 * If a pipeline in the project is running, the process is stopped.
 	 *
 	 * @param project The project to reset.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
 	@Transactional
 	public void resetEntireProject(final ProjectEntity project)
-			throws BadStateException, InternalDataSetPersistenceException {
-		databaseService.deleteOriginalData(project);
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		processService.deletePipeline(project);
+		databaseService.deleteOriginalData(project);
 	}
 }

@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationComponentStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
@@ -692,7 +693,7 @@ public class ProcessControllerTest extends ControllerTest {
 		// Test state changes
 		var updateTestProject = getTestProject();
 		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
-		assertEquals(ProcessStatus.ERROR, process.getExecutionStep().getStatus());
+		assertEquals(StageStatus.ERROR, process.getExecutionStep().getStatus());
 		assertEquals(ProcessStatus.ERROR, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 		assertNull(process.getServerInstance(), "Server instance has not been reset!");

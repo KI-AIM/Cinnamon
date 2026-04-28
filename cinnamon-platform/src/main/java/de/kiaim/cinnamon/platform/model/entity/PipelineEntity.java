@@ -6,7 +6,6 @@ import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;

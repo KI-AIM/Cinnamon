@@ -118,7 +118,8 @@ public class ProjectController {
 			@Parameter(description = "Target identifier to reset. If missing or empty, the entire project is reset.")
 			@RequestParam(required = false) final String target,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws BadArgumentException, BadStateException, BadStepNameException, InternalDataSetPersistenceException {
+	) throws BadArgumentException, BadStateException, BadStepNameException, InternalDataSetPersistenceException,
+			         InternalInvalidStateException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 		projectService.resetProject(project, target);

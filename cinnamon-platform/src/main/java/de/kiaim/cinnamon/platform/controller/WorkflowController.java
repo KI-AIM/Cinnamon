@@ -33,6 +33,7 @@ import java.util.UUID;
  * This returns the {@code workflowId} of the started workflow together with the current status.
  * The client can observe the current status of the workflow by polling the {@code /api/workflow/{workflowId}} endpoint.
  * The results can be downloaded by deleting the workflow with {@code DELETE /api/workflow/{workflowId}}.
+ * If the user does not delete the workflow, it will be automatically deleted after {@value WorkflowService#DEFAULT_EXPIRATION_DAYS} days.
  *
  * @author Daniel Preciado-Marquez
  */

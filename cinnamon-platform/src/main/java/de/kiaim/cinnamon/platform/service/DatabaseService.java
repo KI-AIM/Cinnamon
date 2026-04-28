@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
@@ -59,6 +60,8 @@ public class DatabaseService {
 
 	private final static Set<ProcessStatus> targetStatus = Set.of(ProcessStatus.SKIPPED, ProcessStatus.FINISHED,
 	                                                              ProcessStatus.ERROR, ProcessStatus.CANCELED);
+	private final static Set<StageStatus> targetStageStatus = Set.of(StageStatus.FINISHED, StageStatus.ERROR,
+	                                                                 StageStatus.CANCELED);
 
 	private final Logger LOGGER = LoggerFactory.getLogger(DatabaseService.class);
 
@@ -1233,12 +1236,12 @@ public class DatabaseService {
 	 * @throws BadStateException If the stage is running or scheduled.
 	 */
 	private void markStageOutdated(final ExecutionStepEntity stage, final int startJobIndex) throws BadStateException {
-		if (stage.getStatus() == ProcessStatus.RUNNING || stage.getStatus() == ProcessStatus.SCHEDULED) {
+		if (stage.getStatus() == StageStatus.RUNNING) {
 			throw new BadStateException(BadStateException.PROCESS_STARTED,
 			                            "Process cannot be configured if the it is scheduled or started!");
 		}
 
-		if (stage.getStatus() == ProcessStatus.NOT_STARTED) {
+		if (stage.getStatus() == StageStatus.NOT_STARTED) {
 			return;
 		}
 
@@ -1257,8 +1260,8 @@ public class DatabaseService {
 			}
 		}
 
-		if ((startJobIndex >= 0 || outdateProcess) && targetStatus.contains(stage.getStatus())) {
-			stage.setStatus(ProcessStatus.OUTDATED);
+		if ((startJobIndex >= 0 || outdateProcess) && targetStageStatus.contains(stage.getStatus())) {
+			stage.setStatus(StageStatus.OUTDATED);
 		}
 	}
 

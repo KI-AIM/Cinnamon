@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.model.dto;
 
-import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +16,7 @@ public class ExecutionStepInformation {
 	private String stageName;
 
 	@Schema(description = "The status of the external processing.", example = "RUNNING")
-	private ProcessStatus status = ProcessStatus.NOT_STARTED;
+	private StageStatus status = StageStatus.NOT_STARTED;
 
 	@Schema(description = "The index of the current process.", example = "0")
 	private Integer currentProcessIndex;

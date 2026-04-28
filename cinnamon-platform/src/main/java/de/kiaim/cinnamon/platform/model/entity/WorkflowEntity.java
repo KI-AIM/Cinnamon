@@ -3,7 +3,9 @@ package de.kiaim.cinnamon.platform.model.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.lang.Nullable;
 
+import java.sql.Timestamp;
 import java.util.UUID;
 
 /**
@@ -27,6 +29,12 @@ public class WorkflowEntity {
 	 */
 	@Column(nullable = false, unique = true)
 	private UUID workflowId;
+
+	/**
+	 * Timestamp when the workflow is marked for deletion.
+	 */
+	@Nullable
+	private Timestamp expirationDate;
 
 	/**
 	 * User owning the workflow.

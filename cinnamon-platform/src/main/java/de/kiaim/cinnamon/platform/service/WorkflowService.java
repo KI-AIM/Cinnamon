@@ -19,7 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.sql.Timestamp;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Service for managing workflows.
@@ -29,6 +32,9 @@ import java.util.UUID;
 @Service
 @Log4j2
 public class WorkflowService {
+
+	public static final long DEFAULT_EXPIRATION_DAYS = 2L;
+	public static final int GEN_WORKFLOW_ID_MAX_RETRIES = 10;
 
 	private final WorkflowRepository workflowRepository;
 
@@ -106,6 +112,8 @@ public class WorkflowService {
 		// 1. Create a new workflow
 		final WorkflowEntity workflow = new WorkflowEntity();
 		workflow.setWorkflowId(generateUUID());
+		workflow.setExpirationDate(
+				new Timestamp(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(DEFAULT_EXPIRATION_DAYS)));
 		final ProjectEntity project = projectService.createProject(System.currentTimeMillis());
 		workflow.setProject(project);
 		user.addWorkflow(workflow);
@@ -200,12 +208,35 @@ public class WorkflowService {
 				workflow.getProject(), response, new ProjectExportParameter());
 
 		// Delete the workflow
+		deleteWorkflow(workflow);
+
+		return exportResponse;
+	}
+
+	/**
+	 * Deletes the given workflow.
+	 *
+	 * @param workflow The workflow to delete.
+	 * @throws InternalDataSetPersistenceException If the dataset could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If the process to be canceled has no server instance assigned.
+	 */
+	@Transactional
+	public void deleteWorkflow(final WorkflowEntity workflow)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		final UserEntity user = workflow.getUser();
 		projectService.resetEntireProject(workflow.getProject());
 		user.removeWorkflow(workflow);
-		log.debug("Deleted workflow with ID {} for user {}", workflowId, userEmail);
+		log.debug("Deleted workflow with ID {} for user {}", workflow.getWorkflowId(), user.getEmail());
+	}
 
-		return exportResponse;
+	/**
+	 * Returns all workflows that have expired.
+	 *
+	 * @return List of expired workflows.
+	 */
+	public List<WorkflowEntity> getExpiredWorkflows() {
+		final Timestamp expirationDate = new Timestamp(System.currentTimeMillis());
+		return workflowRepository.findAllByExpirationDateBefore(expirationDate);
 	}
 
 	/**
@@ -254,10 +285,8 @@ public class WorkflowService {
 	 * @throws InternalErrorException If the ID could not be generated after 10 retries.
 	 */
 	private UUID generateUUID() throws InternalErrorException {
-		final int maxTries = 10;
-
 		UUID uuid;
-		for (int i = 0; i < maxTries; i++) {
+		for (int i = 0; i < GEN_WORKFLOW_ID_MAX_RETRIES; i++) {
 			uuid = UUID.randomUUID();
 
 			if (workflowRepository.countByWorkflowId(uuid) == 0) {
@@ -266,8 +295,8 @@ public class WorkflowService {
 		}
 
 		throw new InternalErrorException(InternalErrorException.GEN_WORKFLOW_ID_MAX_RETRIES,
-		                                 "Failed to generate a unique workflow ID after " + maxTries +
-		                                 " retries! Please try again later.");
+		                                 "Failed to generate a unique workflow ID after " +
+		                                 GEN_WORKFLOW_ID_MAX_RETRIES + " retries! Please try again later.");
 	}
 
 }

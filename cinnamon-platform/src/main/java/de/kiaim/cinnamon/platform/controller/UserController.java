@@ -115,7 +115,8 @@ public class UserController {
 	public void delete(
 			@ParameterObject @Valid final ConfirmUserRequest confirmUserRequest,
 			@AuthenticationPrincipal final UserEntity user)
-			throws BadDataSetIdException, BadStateException, BadUserConfirmationException, InternalDataSetPersistenceException {
+			throws BadDataSetIdException, BadStateException, BadUserConfirmationException,
+					       InternalDataSetPersistenceException, InternalInvalidStateException {
 		userService.confirmUser(confirmUserRequest, user);
 		userService.deleteUser(userService.getUserByEmail(user.getEmail()));
 	}

@@ -6,10 +6,13 @@ import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.*;
+import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.enumeration.StageStatus;
+import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.*;
+import de.kiaim.cinnamon.platform.helper.StringMultipartFile;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.model.dto.*;
@@ -80,6 +83,7 @@ public class DatabaseService {
 	private final DataSetService dataSetService;
 	private final DataProcessorService dataProcessorService;
 	private final FhirProcessor fhirProcessor;
+	private final FhirServerService fhirServerService;
 	private final StepService stepService;
 
 	@Autowired
@@ -91,7 +95,9 @@ public class DatabaseService {
 	                       final FileConfigurationMapper fileConfigurationMapper,
 	                       final DataschemeGenerator dataschemeGenerator,
 	                       final DataSetService dataSetService, final DataProcessorService dataProcessorService,
-	                       final FhirProcessor fhirProcessor, final StepService stepService) {
+	                       final FhirProcessor fhirProcessor,
+	                       final FhirServerService fhirServerService,
+	                       final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		this.dataProcessingRepository = dataProcessingRepository;
 		this.errorRepository = errorRepository;
@@ -104,6 +110,7 @@ public class DatabaseService {
 		this.dataSetService = dataSetService;
 		this.dataProcessorService = dataProcessorService;
 		this.fhirProcessor = fhirProcessor;
+		this.fhirServerService = fhirServerService;
 		this.stepService = stepService;
 	}
 
@@ -222,6 +229,35 @@ public class DatabaseService {
 		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
 		final int numberOfAttributes = dataProcessor.getNumberColumns(file.getLobStream(), fileConfiguration);
 		fileEntity.setNumberOfAttributes(numberOfAttributes);
+	}
+
+	/**
+	 * Retrieves the file for the original data of the given project.
+	 * If the configuration is not available or the local file should be used, the local given file is returned.
+	 *
+	 * @param project The project to retrieve the file for.
+	 * @param localFile The local file to be used if the file is not available on the server.
+	 * @return The file to be used for the project.
+	 * @throws BadStateException If no file configuration is available for the project.
+	 * @throws InternalRequestException If the request retrieving the file from the server failed.
+	 */
+	@Nullable
+	public MultipartFile retrieveFile(final ProjectEntity project, @Nullable final MultipartFile localFile)
+			throws BadStateException, InternalRequestException {
+		var config = project.getOriginalData().getFile().getFileConfiguration();
+
+		if (config == null) {
+			throw new BadStateException(BadStateException.NO_DATASET_FILE_CONFIGURATION,
+			                            "Retrieving the file requires the file configuration!");
+		}
+
+		if (config.getDataSourceType() != DataSourceType.SERVER || config.getServer() == null) {
+			return localFile;
+		}
+
+		// TODO currently only for FHIR. Could add more abstractions for different servers/ databases
+		final String bundle = fhirServerService.getFhirBundle(config.getServer());
+		return new StringMultipartFile(bundle, "fhir_bundle.json", CustomMediaType.APPLICATION_FHIR_JSON);
 	}
 
 	/**

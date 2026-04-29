@@ -77,7 +77,8 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	@Override
 	public int getNumberColumns(final InputStream data,
 	                            final FileConfigurationEntity fileConfiguration) throws InternalIOException {
-		return getFirstRow(data, fileConfiguration).size();
+		final List<String> firstRow = getFirstRow(data, fileConfiguration);
+		return firstRow.size();
 	}
 
 	/**
@@ -178,6 +179,9 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	public List<String> getFirstRow(final InputStream data,
 	                                final FileConfigurationEntity fileConfiguration) throws InternalIOException {
 		final Iterator<CSVRecord> recordIterator = getRecords(data, fileConfiguration);
+		if (!recordIterator.hasNext()) {
+			return Collections.emptyList();
+		}
 		return recordIterator.next().toList();
 	}
 

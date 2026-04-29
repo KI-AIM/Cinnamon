@@ -8,8 +8,18 @@ from requests.auth import HTTPBasicAuth
 
 # CINNAMON_URL = "https://cinnamon-demo.uni-muenster.de/api"
 CINNAMON_URL = "http://localhost:8080/api"
-DATA_FILE = "./resources/heart.csv"
-CONFIG_FILE = "./resources/config.yaml"
+
+# Heart
+#DATA_FILE = "./resources/heart.csv"
+#CONFIG_FILE = "./resources/config.yaml"
+
+# FHIR bundle
+#DATA_FILE = "./resources/example-bundle.json"
+#CONFIG_FILE = "./resources/config-FHIR-bundle.yaml"
+
+# FHIR Server
+DATA_FILE = None
+CONFIG_FILE = "./resources/config-FHIR-server.yaml"
 
 NUMBER_PROJECTS = 1
 GAP = 0
@@ -32,14 +42,21 @@ def register_user(context: CinnamonContext):
     url = f"{CINNAMON_URL}/user/register"
     form_data = {"email": context.email, "password": context.password, "passwordRepeated": context.password}
     response = requests.post(url, json=form_data)
-    return response.status_code == 200
+    if response.status_code == 200:
+        print_info(context, f"User created: {context.email}")
+    else:
+        print_info(context, f"Failed to create user: {response.json()}")
 
 
 def login(context: CinnamonContext) -> bool:
     url = f"{CINNAMON_URL}/user/login"
     response = requests.get(url, auth=create_auth(context))
-    print_info(context, response.status_code)
-    return response.status_code == 200
+    if response.status_code == 200:
+        print_info(context, f"Login successful: {context.email}")
+        return True
+    else:
+        print_info(context, f"Failed to login: {response.json()}")
+        return False
 
 
 def delete_user(context: CinnamonContext):
@@ -48,16 +65,23 @@ def delete_user(context: CinnamonContext):
     response = requests.delete(url, auth=create_auth(context), files=files)
     if response.status_code == 200:
         print_info(context, f"User deleted: {context.email}")
+    else:
+        print_info(context, f"Failed to delete user: {response.json()}")
 
 
 def post_start_workflow(context: CinnamonContext):
     url = f"{CINNAMON_URL}/workflow"
 
-    with open(DATA_FILE, "rb") as data_file:
+    if DATA_FILE is None:
         with open(CONFIG_FILE, "rb") as config_file:
-            files = {"data": ('heart.csv', data_file, 'multipart/form-data'),
-                     "configuration": ("config.yaml", config_file, 'multipart/form-data')}
+            files = {"configuration": ("config.yaml", config_file, 'multipart/form-data')}
             response = requests.post(url, auth=create_auth(context), files=files)
+    else:
+        with open(DATA_FILE, "rb") as data_file:
+            with open(CONFIG_FILE, "rb") as config_file:
+                files = {"data": ('heart.csv', data_file, 'multipart/form-data'),
+                         "configuration": ("config.yaml", config_file, 'multipart/form-data')}
+                response = requests.post(url, auth=create_auth(context), files=files)
 
     if response.status_code != 202:
         print_info(context, response.json())
@@ -94,9 +118,7 @@ def delete_workflow(context: CinnamonContext):
 
 def workflow(context: CinnamonContext):
     delete_user(context)
-    if not login(context):
-        register_user(context)
-        login(context)
+    register_user(context)
 
     status = post_start_workflow(context)
     if status is None:

@@ -19,9 +19,9 @@ public class WorkflowRequest {
 
 	/**
 	 * File containing the data to be anonymized.
+	 * Allowed to be null if the data is fetched from a server.
 	 */
 	@Schema(description = "File containing the data to be anonymized.", requiredMode = Schema.RequiredMode.REQUIRED)
-	@NotNull(message = "Data file is required!")
 	private MultipartFile data;
 
 	/**

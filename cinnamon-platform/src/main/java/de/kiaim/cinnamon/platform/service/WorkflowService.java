@@ -99,7 +99,7 @@ public class WorkflowService {
 	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 */
 	@Transactional
-	public UUID startWorkflow(final String userEmail, final MultipartFile dataFile,
+	public UUID startWorkflow(final String userEmail, MultipartFile dataFile,
 	                          final MultipartFile configurationFile)
 			throws BadAlgorithmException, BadArgumentException, BadConfigurationFileException,
 					       BadConfigurationNameException, BadDataConfigurationException, BadDatasetException,
@@ -125,6 +125,7 @@ public class WorkflowService {
 		configurationService.importConfigurations(project, configurationFile, parameters);
 
 		// 3. Import the data
+		dataFile = databaseService.retrieveFile(project, dataFile);
 		databaseService.storeFile(project, dataFile);
 		databaseService.storeOriginalDataset(project);
 		databaseService.confirmDataSet(project);

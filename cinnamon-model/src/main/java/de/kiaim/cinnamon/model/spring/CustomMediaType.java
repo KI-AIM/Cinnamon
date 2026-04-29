@@ -8,6 +8,17 @@ import org.springframework.http.MediaType;
  * @author Daniel Preciado-Marquez
  */
 public abstract class CustomMediaType {
+
+	/**
+	 * Custom media type value for FHIR JSON.
+	 */
+	public static final String APPLICATION_FHIR_JSON_VALUE = "application/fhir+json";
+
+	/**
+	 * Custom media type for FHIR JSON.
+	 */
+	public static final MediaType APPLICATION_FHIR_JSON = MediaType.parseMediaType(APPLICATION_FHIR_JSON_VALUE);
+
 	/**
 	 * Custom media type value for YAML.
 	 */

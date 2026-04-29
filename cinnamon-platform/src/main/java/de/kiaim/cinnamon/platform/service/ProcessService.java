@@ -490,7 +490,6 @@ public class ProcessService {
 		for (final ExecutionStepEntity stage : pipeline.getStages()) {
 			deleteStage(stage);
 		}
-		projectRepository.save(project);
 	}
 
 	/**
@@ -1128,12 +1127,10 @@ public class ProcessService {
 			try {
 				doStartBackgroundProcess(externalProcess, instance);
 				externalProcess.setScheduledTime(null);
-				projectRepository.save(externalProcess.getProject());
 				break;
 			} catch (final ApiException e) {
 				log.warn("Failed to start scheduled process!", e);
 				setProcessError(externalProcess, e.getMessage());
-				projectRepository.save(externalProcess.getProject());
 			}
 		}
 	}

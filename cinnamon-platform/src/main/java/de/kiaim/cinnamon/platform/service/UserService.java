@@ -124,6 +124,7 @@ public class UserService implements UserDetailsService {
 		for (final var workflow : user.getWorkflows()) {
 			projectService.resetEntireProject(workflow.getProject());
 		}
+		user.getWorkflows().clear();
 	}
 
 	//==============================

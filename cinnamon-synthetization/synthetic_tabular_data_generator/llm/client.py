@@ -19,6 +19,9 @@ LLM_ENV_VARS = {
     "timeout_seconds": "CINNAMON_LLM_TIMEOUT_SECONDS",
     "max_retries": "CINNAMON_LLM_MAX_RETRIES",
     "verify_ssl": "CINNAMON_LLM_VERIFY_SSL",
+    "temperature": "CINNAMON_LLM_TEMPERATURE",
+    "top_p": "CINNAMON_LLM_TOP_P",
+    "max_tokens": "CINNAMON_LLM_MAX_TOKENS",
 }
 
 
@@ -189,42 +192,51 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
             "",
         )
     )
-    temperature = max(
-        0.0,
-        min(
-            2.0,
-            float(
-                _require_non_empty(
-                    sampling_params,
-                    "temperature",
-                    "synthetization_configuration.algorithm.sampling",
-                )
+    try:
+        temperature = max(
+            0.0,
+            min(
+                2.0,
+                float(
+                    _get_env_or_config_value(
+                        sampling_params,
+                        "temperature",
+                        "synthetization_configuration.algorithm.sampling",
+                        LLM_ENV_VARS["temperature"],
+                    )
+                ),
             ),
-        ),
-    )
-    top_p = max(
-        0.0,
-        min(
-            1.0,
-            float(
-                _require_non_empty(
-                    sampling_params,
-                    "top_p",
-                    "synthetization_configuration.algorithm.sampling",
-                )
+        )
+        top_p = max(
+            0.0,
+            min(
+                1.0,
+                float(
+                    _get_env_or_config_value(
+                        sampling_params,
+                        "top_p",
+                        "synthetization_configuration.algorithm.sampling",
+                        LLM_ENV_VARS["top_p"],
+                    )
+                ),
             ),
-        ),
-    )
-    max_tokens = max(
-        1,
-        int(
-            _require_non_empty(
-                sampling_params,
-                "max_tokens",
-                "synthetization_configuration.algorithm.sampling",
+        )
+        env_max_tokens = _read_env_value(LLM_ENV_VARS["max_tokens"])
+        if env_max_tokens is None:
+            raise ValueError(
+                f"Missing LLM configuration 'max_tokens'. Set environment variable "
+                f"'{LLM_ENV_VARS['max_tokens']}'."
             )
-        ),
-    )
+        max_tokens = max(
+            1,
+            int(env_max_tokens),
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "Invalid LLM decoding configuration. Set valid numeric values via "
+            f"'{LLM_ENV_VARS['temperature']}', '{LLM_ENV_VARS['top_p']}', '{LLM_ENV_VARS['max_tokens']}' "
+            "or provide them in 'synthetization_configuration.algorithm.sampling'."
+        ) from exc
     timeout_seconds = max(
         1,
         int(

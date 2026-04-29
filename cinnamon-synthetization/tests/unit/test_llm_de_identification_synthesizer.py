@@ -28,21 +28,13 @@ def _algorithm_config() -> dict:
         "synthetization_configuration": {
             "algorithm": {
                 "model_fitting": {
-                    "system_prompt": (
-                        "You are a strict clinical text redaction assistant. "
-                        "Replace only configured identifier spans and return only the redacted text."
-                    ),
                     "user_prompt_domain_context": "Hospital discharge documentation in German.",
-                },
-                "sampling": {
-                    "temperature": 0.0,
-                    "top_p": 1.0,
-                    "max_tokens": 512,
                 },
                 "redaction_rules": [
                     {
                         "name": "Age",
                         "replacement_token": "[AGE]",
+                        "description": "Includes ages in years and explicit birth-year references.",
                     },
                     {
                         "name": "Name",
@@ -71,6 +63,9 @@ def _set_shared_llm_env(monkeypatch, provider: str = "ollama") -> None:
     monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "5")
     monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
     monkeypatch.setenv("CINNAMON_LLM_VERIFY_SSL", "true")
+    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.0")
+    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "1.0")
+    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "4096")
 
 
 class _DummyResponse:
@@ -108,13 +103,13 @@ def test_llm_text_de_identification_changes_only_text_and_keeps_row_count(monkey
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
             assert kwargs["json"]["system"] == (
-                "You are a strict clinical text redaction assistant. "
-                "Replace only configured identifier spans and return only the redacted text."
+                "You are a text redaction assistant. Replace only text spans that match configured redaction "
+                "rules. Keep all other content unchanged and return only the redacted text."
             )
             assert "Target TEXT column: notes" in prompt
             assert "Domain context: Hospital discharge documentation in German." in prompt
             assert "Custom redaction rules: treat each rule name as a semantic category or concept." in prompt
-            assert "- Age -> [AGE]" in prompt
+            assert "- Age -> [AGE] (guidance: Includes ages in years and explicit birth-year references.)" in prompt
             assert "- Name -> [NAME]" in prompt
             assert "Only replace or remove identifiers that match the configured redaction rules listed below." in prompt
             assert "The configured identifier categories are: Age, Name." in prompt
@@ -201,7 +196,7 @@ def test_llm_text_de_identification_retries_when_output_is_over_edited(monkeypat
     ]
 
 
-def test_llm_text_de_identification_uses_custom_system_prompt_for_openai_compatible(monkeypatch):
+def test_llm_text_de_identification_uses_default_system_prompt_for_openai_compatible(monkeypatch):
     _set_shared_llm_env(monkeypatch, provider="openai_compatible")
 
     def fake_request(method, url, **kwargs):
@@ -212,8 +207,8 @@ def test_llm_text_de_identification_uses_custom_system_prompt_for_openai_compati
             messages = kwargs["json"]["messages"]
             assert messages[0]["role"] == "system"
             assert messages[0]["content"] == (
-                "You are a strict clinical text redaction assistant. "
-                "Replace only configured identifier spans and return only the redacted text."
+                "You are a text redaction assistant. Replace only text spans that match configured redaction "
+                "rules. Keep all other content unchanged and return only the redacted text."
             )
             assert messages[1]["role"] == "user"
             assert "Replace each matching span with the exact replacement token defined by the matching redaction rule." in messages[1]["content"]

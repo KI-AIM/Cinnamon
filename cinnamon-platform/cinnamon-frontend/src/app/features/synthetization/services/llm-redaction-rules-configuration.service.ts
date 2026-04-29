@@ -5,23 +5,24 @@ import { ConfigurationObject } from "@shared/model/anonymization-attribute-confi
 export interface LlmRedactionRuleConfiguration extends ConfigurationObject {
     name: string;
     replacement_token: string;
+    description: string;
 }
 
 const HIPAA_GDPR_DIRECT_IDENTIFIER_PRESET: LlmRedactionRuleConfiguration[] = [
-    {name: "Name", replacement_token: "[NAME]"},
-    {name: "Address", replacement_token: "[ADDRESS]"},
-    {name: "Contact Information", replacement_token: "[CONTACT]"},
-    {name: "Identification Number", replacement_token: "[IDENTIFIER]"},
+    {name: "Name", replacement_token: "[NAME]", description: ""},
+    {name: "Address", replacement_token: "[ADDRESS]", description: ""},
+    {name: "Contact Information", replacement_token: "[CONTACT]", description: ""},
+    {name: "Identification Number", replacement_token: "[IDENTIFIER]", description: ""},
 ];
 
 const INDIRECT_IDENTIFIER_PRESET: LlmRedactionRuleConfiguration[] = [
-    {name: "Age", replacement_token: "[AGE]"},
-    {name: "Date", replacement_token: "[DATE]"},
-    {name: "Gender", replacement_token: "[GENDER]"},
-    {name: "Postalcode", replacement_token: "[POSTAL_CODE]"},
-    {name: "City", replacement_token: "[CITY]"},
-    {name: "Institution", replacement_token: "[INSTITUTION]"},
-    {name: "Occupation", replacement_token: "[OCCUPATION]"},
+    {name: "Age", replacement_token: "[AGE]", description: ""},
+    {name: "Date", replacement_token: "[DATE]", description: ""},
+    {name: "Gender", replacement_token: "[GENDER]", description: ""},
+    {name: "Postalcode", replacement_token: "[POSTAL_CODE]", description: ""},
+    {name: "City", replacement_token: "[CITY]", description: ""},
+    {name: "Institution", replacement_token: "[INSTITUTION]", description: ""},
+    {name: "Occupation", replacement_token: "[OCCUPATION]", description: ""},
 ];
 
 const STANDARD_IDENTIFIER_PRESET: LlmRedactionRuleConfiguration[] = [
@@ -54,10 +55,24 @@ export class LlmRedactionRulesConfigurationService {
     }
 
     public createRuleGroup(config: Partial<LlmRedactionRuleConfiguration> | null, disabled: boolean): FormGroup {
-        return this.formBuilder.group({
+        const group = this.formBuilder.group({
             name: [{value: config?.name ?? '', disabled}, [Validators.required]],
             replacement_token: [{value: config?.replacement_token ?? '[REDACTED]', disabled}, [Validators.required]],
+            description: [{value: config?.description ?? '', disabled}],
         });
+
+        const nameControl = group.controls["name"];
+        const tokenControl = group.controls["replacement_token"];
+
+        nameControl.valueChanges.subscribe((value) => {
+            const autoToken = this.buildReplacementToken(value);
+            if (!autoToken) {
+                return;
+            }
+            tokenControl.setValue(autoToken, { emitEvent: false });
+        });
+
+        return group;
     }
 
     public getStandardIdentifierPreset(): LlmRedactionRuleConfiguration[] {
@@ -84,5 +99,23 @@ export class LlmRedactionRulesConfigurationService {
 
     private normalizeRuleName(name: string): string {
         return name.trim().toLowerCase();
+    }
+
+    private buildReplacementToken(value: unknown): string | null {
+        const raw = String(value ?? "").trim();
+        if (!raw) {
+            return null;
+        }
+
+        const normalized = raw
+            .toUpperCase()
+            .replace(/[^A-Z0-9]+/g, "_")
+            .replace(/^_+|_+$/g, "");
+
+        if (!normalized) {
+            return null;
+        }
+
+        return `[${normalized}]`;
     }
 }

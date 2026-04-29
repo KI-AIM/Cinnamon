@@ -44,20 +44,25 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
         self._few_shot_examples: List[Dict[str, Any]] = []
         self._sample_start_time: Optional[float] = None
         self._generation_prompt_prefix: Optional[str] = None
+        self._user_prompt_domain_context: str = ""
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
         """
         Core logic for initializing anonymization configuration.
         """
         algorithm_config = config["synthetization_configuration"]["algorithm"]
-        training_params = algorithm_config["model_fitting"]
+        model_params = algorithm_config.get("model_parameter", {})
+        training_params = algorithm_config.get("model_fitting", {})
         self._llm_config = load_llm_client_config(config)
+        profile_rows = model_params.get("profile_rows", training_params.get("profile_rows", 1000))
+        few_shot_rows = model_params.get("few_shot_rows", training_params.get("few_shot_rows", 20))
         self._fitting_kwargs = {
-            "profile_rows": max(1, int(training_params.get("profile_rows", 1000))),
-            "few_shot_rows": max(0, int(training_params.get("few_shot_rows", 20))),
+            "profile_rows": max(1, int(profile_rows)),
+            "few_shot_rows": max(0, int(few_shot_rows)),
             "max_retries": self._llm_config.max_retries,
             "timeout_seconds": self._llm_config.timeout_seconds,
         }
+        self._user_prompt_domain_context = str(training_params.get("user_prompt_domain_context", "")).strip()
         self._sampling = algorithm_config["sampling"]
 
     def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
@@ -362,9 +367,13 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
 
         shape_example = {column_name: "<value>" for column_name in ordered_columns}
         shape_text = json.dumps({"rows": [shape_example]}, ensure_ascii=True)
+        domain_context_block = ""
+        if self._user_prompt_domain_context:
+            domain_context_block = f"Domain context: {self._user_prompt_domain_context}\n"
 
         return (
             "You are generating synthetic tabular rows.\n"
+            f"{domain_context_block}"
             "Return ONLY valid JSON with this exact shape:\n"
             f"{shape_text}\n"
             "Use one top-level key only: rows.\n"

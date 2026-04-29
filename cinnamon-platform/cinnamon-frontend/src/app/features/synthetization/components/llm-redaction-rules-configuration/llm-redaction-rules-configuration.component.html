@@ -34,6 +34,11 @@
                 </mat-error>
             </mat-form-field>
 
+            <mat-form-field class="me-2 w-100">
+                <mat-label>LLM Guidance (optional)</mat-label>
+                <input matInput formControlName="description" placeholder="e.g., ages in years or birth-year references">
+            </mat-form-field>
+
             <button type="button" mat-icon-button [disabled]="disabled" (click)="removeRule(i)" title="Remove rule">
                 <mat-icon fontIcon="delete_forever"></mat-icon>
             </button>

@@ -113,7 +113,7 @@ def prepare_callback_data(samples, synthesizer_model):
 
 
 def is_llm_synthesizer(synthesizer_name: str) -> bool:
-    return synthesizer_name in {"llm_tabular", "llm_text_de_identification"}
+    return synthesizer_name in {"llm_tabular", "llm_text_redaction"}
 
 
 def synthesize_data(synthesizer_name, file_path_status, attribute_config, algorithm_config, data,

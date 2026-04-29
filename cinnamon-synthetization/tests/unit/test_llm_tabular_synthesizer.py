@@ -33,9 +33,6 @@ def _algorithm_config(provider: str = "ollama") -> dict:
                 },
                 "sampling": {
                     "num_samples": 3,
-                    "temperature": 0.2,
-                    "top_p": 0.8,
-                    "max_tokens": 512,
                 },
             }
         }
@@ -57,6 +54,9 @@ def _set_shared_llm_env(monkeypatch, provider: str) -> None:
     monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "5")
     monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
     monkeypatch.setenv("CINNAMON_LLM_VERIFY_SSL", "true")
+    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.3")
+    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
+    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "1024")
 
 
 class _DummyResponse:
@@ -237,6 +237,7 @@ def test_llm_tabular_synthesizer_generates_text_in_single_step(monkeypatch):
 
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
+            assert "Domain context: Hospital discharge documentation in German." in prompt
             assert "Generation order constraint (single output step):" in prompt
             assert "First determine all non-TEXT column values." in prompt
             assert "Then generate TEXT column values conditioned on those non-TEXT values." in prompt
@@ -259,6 +260,9 @@ def test_llm_tabular_synthesizer_generates_text_in_single_step(monkeypatch):
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
 
     algorithm_config = _algorithm_config(provider="ollama")
+    algorithm_config["synthetization_configuration"]["algorithm"]["model_fitting"]["user_prompt_domain_context"] = (
+        "Hospital discharge documentation in German."
+    )
     algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
 
     synthesizer = LlmTabularSynthesizer()
@@ -272,3 +276,33 @@ def test_llm_tabular_synthesizer_generates_text_in_single_step(monkeypatch):
 
     assert len(sample) == 1
     assert sample["notes"].iloc[0] == "Patient shows stable recovery."
+
+
+def test_llm_tabular_prefers_model_parameter_for_profile_and_few_shot(monkeypatch):
+    _set_shared_llm_env(monkeypatch, provider="ollama")
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        if method == "POST" and url.endswith("/api/generate"):
+            return _DummyResponse({"response": json.dumps({"rows": [{"age": 30, "height": 170.0, "risk": True, "group": "A"}]})})
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    algorithm_config = _algorithm_config(provider="ollama")
+    algorithm = algorithm_config["synthetization_configuration"]["algorithm"]
+    algorithm["model_parameter"] = {"profile_rows": 2, "few_shot_rows": 1}
+    algorithm["model_fitting"]["profile_rows"] = 999
+    algorithm["model_fitting"]["few_shot_rows"] = 999
+    algorithm["sampling"]["num_samples"] = 1
+
+    synthesizer = LlmTabularSynthesizer()
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(_dataset())
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    assert synthesizer._fitting_kwargs["profile_rows"] == 2
+    assert synthesizer._fitting_kwargs["few_shot_rows"] == 1

@@ -73,7 +73,7 @@ synthesizer_classes = {
         'description': 'A configurable LLM-based generator that creates fully synthetic datasets from source data via Ollama or OpenAI-compatible APIs.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
     },
-    'llm_text_de_identification': {
+    'llm_text_redaction': {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': LlmTextRedactionSynthesizer,

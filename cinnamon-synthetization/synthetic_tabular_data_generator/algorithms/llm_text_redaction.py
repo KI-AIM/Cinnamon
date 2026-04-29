@@ -65,10 +65,7 @@ class LlmTextRedactionSynthesizer(TabularDataSynthesizer):
             "max_retries": self._llm_config.max_retries,
             "timeout_seconds": self._llm_config.timeout_seconds,
         }
-        self._system_prompt = self._normalized_text(
-            fitting_params.get("system_prompt"),
-            default=self.DEFAULT_SYSTEM_PROMPT,
-        )
+        self._system_prompt = self.DEFAULT_SYSTEM_PROMPT
         self._user_prompt_domain_context = self._normalized_text(fitting_params.get("user_prompt_domain_context"))
         self._redaction_rules = self._load_redaction_rules(algorithm_config.get("redaction_rules"))
         self._allowed_replacement_tokens = {rule["replacement_token"] for rule in self._redaction_rules}
@@ -202,7 +199,14 @@ class LlmTextRedactionSynthesizer(TabularDataSynthesizer):
                 "If the rule applies, use the exact configured replacement token."
             )
             for rule in self._redaction_rules:
-                lines.append(f"- {rule['name']} -> {rule['replacement_token']}")
+                description = self._normalized_text(rule.get("description"))
+                if description:
+                    lines.append(
+                        f"- {rule['name']} -> {rule['replacement_token']} "
+                        f"(guidance: {description})"
+                    )
+                else:
+                    lines.append(f"- {rule['name']} -> {rule['replacement_token']}")
 
         lines.extend(
             [
@@ -323,12 +327,14 @@ class LlmTextRedactionSynthesizer(TabularDataSynthesizer):
 
             name = cls._normalized_text(item.get("name"))
             replacement_token = cls._normalized_text(item.get("replacement_token"))
+            description = cls._normalized_text(item.get("description"))
             if not name or not replacement_token:
                 continue
 
             rules.append({
                 "name": name,
                 "replacement_token": replacement_token,
+                "description": description,
             })
 
         return rules

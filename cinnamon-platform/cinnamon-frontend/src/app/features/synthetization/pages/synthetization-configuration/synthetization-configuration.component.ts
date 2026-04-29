@@ -56,7 +56,7 @@ export class SynthetizationConfigurationComponent implements OnInit {
                 (form: FormGroup, configs: ConfigurationObject[] | null, disabled: boolean) => {
                     this.llmRedactionRulesConfigurationService.initForm(form, configs as LlmRedactionRuleConfiguration[] | null, disabled);
                 },
-                ["llm_text_de_identification"],
+                ["llm_text_redaction"],
                 "model_fitting",
             ),
         );

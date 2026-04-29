@@ -127,16 +127,23 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
         }).subscribe({
             next: response => {
                 const contentType = response.headers.get("Content-Type");
-                let fileName = response.headers.get("Content-Disposition");
+                const contentDisposition = response.headers.get("Content-Disposition");
+                let fileName = this.extractFileNameFromContentDisposition(contentDisposition);
 
                 const blob = new Blob([response.body!], {
                     type: contentType!,
                 });
 
-                if (fileName != null) {
-                    fileName = fileName.split("\"")[1];
-                } else {
-                    fileName = this.userService.getUser().email + "_Cinnamon-export_" + new Date().toISOString().slice(0, 10) + ".zip";
+                if (!fileName) {
+                    const now = new Date();
+                    const year = now.getFullYear().toString().padStart(4, '0');
+                    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+                    const day = now.getDate().toString().padStart(2, '0');
+                    const hours = now.getHours().toString().padStart(2, '0');
+                    const minutes = now.getMinutes().toString().padStart(2, '0');
+                    const seconds = now.getSeconds().toString().padStart(2, '0');
+                    const localDateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+                    fileName = this.userService.getUser().email + "_" + localDateTime + "_Cinnamon.zip";
                 }
 
                 const element = document.createElement('a');
@@ -146,6 +153,31 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
                 element.click();
             }
         });
+    }
+
+    /**
+     * Extracts the file name from the Content-Disposition header.
+     * @param contentDisposition The Content-Disposition header value.
+     * @returns The extracted file name, or null if extraction fails.
+     */
+    private extractFileNameFromContentDisposition(contentDisposition: string | null): string | null {
+        if (!contentDisposition) {
+            return null;
+        }
+
+        // Try to match filename*= (RFC 5987) first
+        let match = contentDisposition.match(/filename\*=(?:UTF-8'')?(?:"([^"]+)"|([^;,\s]+))/i);
+        if (match) {
+            return decodeURIComponent(match[1] || match[2]);
+        }
+
+        // Fall back to filename= (RFC 2183)
+        match = contentDisposition.match(/filename=(?:"([^"]+)"|([^;,\s]+))/i);
+        if (match) {
+            return match[1] || match[2];
+        }
+
+        return null;
     }
 
     /**

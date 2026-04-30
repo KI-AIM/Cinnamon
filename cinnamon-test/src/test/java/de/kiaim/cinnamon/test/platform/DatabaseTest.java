@@ -3,25 +3,30 @@ package de.kiaim.cinnamon.test.platform;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
 import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.cinnamon.platform.exception.InternalInvalidStateException;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalConfiguration;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.repository.DataTransformationErrorRepository;
-import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
 import de.kiaim.cinnamon.platform.service.DatabaseService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.StepService;
+import de.kiaim.cinnamon.platform.service.UserService;
+import de.kiaim.cinnamon.test.util.TestDatabaseExtension;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,11 +42,14 @@ public class DatabaseTest extends ContextRequiredTest {
 	private Connection connection;
 
 	@Autowired
+	private JdbcTemplate jdbcTemplate;
+	@Autowired
+	private TransactionTemplate transactionTemplate;
+
+	@Autowired
 	protected DataTransformationErrorRepository dataTransformationErrorRepository;
 	@Autowired
 	DataSetRepository dataSetRepository;
-	@Autowired
-	ProjectRepository projectRepository;
 	@Autowired
 	UserRepository userRepository;
 
@@ -51,6 +59,8 @@ public class DatabaseTest extends ContextRequiredTest {
 	protected ProjectService projectService;
 	@Autowired
 	private StepService stepService;
+	@Autowired
+	private UserService userService;
 
 	protected UserEntity testUser;
 	protected ProjectEntity testProject;
@@ -68,28 +78,34 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	@BeforeEach
-	@Transactional
 	void setUpDatabase() {
-		if (connection == null) {
-			connection = DataSourceUtils.getConnection(dataSource);
-			// Clean database to prevent issues with canceled tests
-			doCleanDatabase();
-		}
+		transactionTemplate.executeWithoutResult(status -> {
+			if (connection == null) {
+				connection = DataSourceUtils.getConnection(dataSource);
 
-		this.testUser = getTestUser();
-		try {
-			this.testProject = projectService.createProject(testUser, PROJECT_SEED);
-		} catch (InternalApplicationConfigurationException e) {
-			fail(e);
-		}
+				if (activeDatabase == TestDatabaseExtension.TestDatabase.POSTGRES_CUSTOM) {
+					// Clean database to prevent issues with canceled tests
+					doCleanDatabase();
+				}
+			}
+
+			this.testUser = getTestUser();
+			try {
+				this.testProject = projectService.createProject(testUser, PROJECT_SEED);
+			} catch (InternalApplicationConfigurationException e) {
+				fail(e);
+			}
+		});
 	}
 
 	@AfterEach
-	@Transactional
 	protected void cleanDatabase() {
-		doCleanDatabase();
-		DataSourceUtils.releaseConnection(connection, dataSource);
-		connection = null;
+		try {
+			transactionTemplate.executeWithoutResult(status -> doCleanDatabase());
+		} finally {
+			DataSourceUtils.releaseConnection(connection, dataSource);
+			connection = null;
+		}
 	}
 
 	protected void storeConfiguration(final String config) {
@@ -138,30 +154,86 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	private void doCleanDatabase() {
+		for (final UserEntity user : userRepository.findAll()) {
+			try {
+				userService.deleteUserData(user);
+			} catch (final InternalDataSetPersistenceException | InternalInvalidStateException e) {
+				fail(e);
+			}
+		}
+
+		cleanupDatabase();
+	}
+
+	private void cleanupDatabase() {
 		try {
-			projectRepository.deleteAll();
-			dataTransformationErrorRepository.deleteAll();
-			databaseService.executeStatement("SELECT setval('project_entity_seq', 1, true)");
-			databaseService.executeStatement(
-					"""
-							DO
-							$do$
-							DECLARE
-							   _tbl text;
-							BEGIN
-							FOR _tbl  IN
-							    SELECT quote_ident(table_schema) || '.' || quote_ident(table_name)
-							    FROM   information_schema.tables
-							    WHERE  table_name LIKE 'dataset_' || '%'
-							    AND    table_schema NOT LIKE 'pg\\_%'
-							LOOP
-							    EXECUTE 'DROP TABLE ' || _tbl;
-							END LOOP;
-							END
-							$do$;
-							""");
+			if (isH2()) {
+				resetProjectSequenceH2();
+			} else if (isPostgres()) {
+				resetProjectSequencePostgres();
+			} else {
+				throw new IllegalStateException("Unsupported test database");
+			}
+
+			dropDatasetTables();
 		} catch (SQLException e) {
 			fail(e);
+		}
+	}
+
+	private void resetProjectSequencePostgres() throws SQLException {
+		databaseService.executeStatement("SELECT setval('project_entity_seq', 1, true)");
+	}
+
+	private void resetProjectSequenceH2() throws SQLException {
+		databaseService.executeStatement("ALTER SEQUENCE project_entity_seq RESTART WITH 2");
+	}
+
+	private void dropDatasetTables() {
+		final List<TableName> tableNames = jdbcTemplate.query(
+				"""
+						SELECT table_schema, table_name
+						FROM information_schema.tables
+						WHERE lower(table_name) LIKE 'dataset_%'
+						AND lower(table_schema) NOT LIKE 'pg_%'
+						AND lower(table_schema) <> 'information_schema'
+						""",
+				(rs, rowNum) -> new TableName(
+						rs.getString("table_schema"),
+						rs.getString("table_name")
+				)
+		);
+
+		for (final TableName tableName : tableNames) {
+			jdbcTemplate.execute(
+					"DROP TABLE IF EXISTS " +
+					quoteIdentifier(tableName.schema()) +
+					"." +
+					quoteIdentifier(tableName.name())
+			);
+		}
+
+		if (!tableNames.isEmpty()) {
+			fail("Not all dataset tables have been dropped! In production, this would lead to orphaned data!");
+		}
+	}
+
+	private String quoteIdentifier(final String identifier) {
+		return "\"" + identifier.replace("\"", "\"\"") + "\"";
+	}
+
+	private record TableName(String schema, String name) {
+	}
+
+	private boolean isH2() throws SQLException {
+		try (Connection connection = dataSource.getConnection()) {
+			return "H2".equalsIgnoreCase(connection.getMetaData().getDatabaseProductName());
+		}
+	}
+
+	private boolean isPostgres() throws SQLException {
+		try (Connection connection = dataSource.getConnection()) {
+			return connection.getMetaData().getDatabaseProductName().toLowerCase().contains("postgresql");
 		}
 	}
 

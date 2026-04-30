@@ -27,6 +27,7 @@ public class UserEntity implements UserDetails {
 	private String password;
 
 	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
 	private final UserRole userRole = UserRole.ROLE_USER;
 
 	@Nullable

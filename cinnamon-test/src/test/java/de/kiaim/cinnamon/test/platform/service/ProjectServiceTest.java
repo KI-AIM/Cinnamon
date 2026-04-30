@@ -60,7 +60,7 @@ public class ProjectServiceTest extends DatabaseTest {
 	@Test
 	public void getExistingProject() {
 		final UserEntity user = getTestUser();
-		ProjectEntity initialProject = new ProjectEntity();
+		ProjectEntity initialProject = assertDoesNotThrow(() -> projectService.createProject(0L));
 		initialProject.getStatus().setCurrentStep(Step.VALIDATION);
 		user.setProject(initialProject);
 		initialProject = userRepository.save(user).getProject();

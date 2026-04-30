@@ -40,7 +40,7 @@ public class ExportServiceTest extends DatabaseTest {
 	@Test
 	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalApplicationConfigurationException, InternalIOException {
 		// Preparation
-		final var project = projectService.createProject(System.currentTimeMillis());
+		final var project = projectService.createProject(getTestUser());
 		projectService.updateProjectConfiguration(project, ProjectConfigurationTestHelper.generateProjectConfigurationDTO());
 
 		final var stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
@@ -51,11 +51,10 @@ public class ExportServiceTest extends DatabaseTest {
 		final String anonymizationConfiguration = AlgorithmTestHelper.generateAlgorithmConfigurationYaml();
 
 		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(csvFileConfiguration.getFileType());
-		final TransformationResult transformationResult = assertDoesNotThrow(
-				() -> dataProcessor.read(file.getInputStream(), csvFileConfiguration, configuration));
 		assertDoesNotThrow(() -> databaseService.storeFileConfiguration(project, fileConfiguration));
 		assertDoesNotThrow(() -> databaseService.storeFile(project, file));
-		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
+		assertDoesNotThrow(() -> databaseService.storeOriginalDataConfiguration(configuration, project));
+		assertDoesNotThrow(() -> databaseService.storeOriginalDataset(project));
 		assertDoesNotThrow(
 				() -> databaseService.storeConfiguration("anonymization", anonymizationConfiguration, project));
 
@@ -124,10 +123,12 @@ public class ExportServiceTest extends DatabaseTest {
 							assertEquals(DataConfigurationTestHelper.generateDataConfigurationAsYaml(),
 							             stringBuilder.toString(), "Unexpected data configuration!");
 					case "original-dataset.csv" ->
-							assertEquals(ResourceHelper.loadCsvFileAsString(), stringBuilder.toString(),
+							assertEquals(ResourceHelper.loadCsvFileAsString(),
+							             ResourceHelper.unifyLineEndings(stringBuilder.toString()),
 							             "Unexpected original data!");
 					case "original-file-file.csv" ->
-							assertEquals(ResourceHelper.loadCsvFileAsString(), stringBuilder.toString(),
+							assertEquals(ResourceHelper.loadCsvFileAsString(),
+							             ResourceHelper.unifyLineEndings(stringBuilder.toString()),
 							             "Unexpected original file!");
 					case "anonymization.yaml" ->
 							assertEquals(AlgorithmTestHelper.generateAlgorithmConfigurationYaml(),

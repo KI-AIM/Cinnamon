@@ -1197,17 +1197,49 @@ public class DatabaseService {
 	 * @return True if the table exists, false if not.
 	 * @throws InternalDataSetPersistenceException If the SQL statement could not be executed.
 	 */
+//	public boolean existsTable(final long dataSetId) throws InternalDataSetPersistenceException {
+//		final String existsQuery = "SELECT 1 FROM pg_class WHERE relname = ? AND relkind = 'r'";
+//		try (final PreparedStatement existTableQuery = connection.prepareStatement(existsQuery)) {
+//			existTableQuery.setString(1, getTableName(dataSetId));
+//			try (final ResultSet resultSet = existTableQuery.executeQuery()) {
+//				return resultSet.next();
+//			}
+//		} catch (SQLException e) {
+//			LOGGER.error("The Configuration could not be stored!", e);
+//			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.TABLE_CHECk,
+//			                                              "The Configuration could not be stored!", e);
+//		}
+//	}
+
 	public boolean existsTable(final long dataSetId) throws InternalDataSetPersistenceException {
-		final String existsQuery = "SELECT 1 FROM pg_class WHERE relname = ? AND relkind = 'r'";
-		try (final PreparedStatement existTableQuery = connection.prepareStatement(existsQuery)) {
-			existTableQuery.setString(1, getTableName(dataSetId));
-			try (final ResultSet resultSet = existTableQuery.executeQuery()) {
-				return resultSet.next();
-			}
-		} catch (SQLException e) {
-			LOGGER.error("The Configuration could not be stored!", e);
+		final String tableName = getTableName(dataSetId);
+
+		try {
+			return existsTable(tableName);
+		} catch (final SQLException e) {
+			LOGGER.error("The table could not be checked!", e);
 			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.TABLE_CHECk,
-			                                              "The Configuration could not be stored!", e);
+			                                              "The table could not be checked!", e);
+		}
+	}
+
+	private boolean existsTable(final String tableName) throws SQLException {
+		final var metaData = connection.getMetaData();
+
+		try (final ResultSet resultSet = metaData.getTables(null, null, tableName, new String[]{"TABLE"})) {
+			if (resultSet.next()) {
+				return true;
+			}
+		}
+
+		try (final ResultSet resultSet = metaData.getTables(null, null, tableName.toUpperCase(), new String[]{"TABLE"})) {
+			if (resultSet.next()) {
+				return true;
+			}
+		}
+
+		try (final ResultSet resultSet = metaData.getTables(null, null, tableName.toLowerCase(), new String[]{"TABLE"})) {
+			return resultSet.next();
 		}
 	}
 

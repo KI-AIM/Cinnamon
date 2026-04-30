@@ -92,10 +92,23 @@ public class UserService implements UserDetailsService {
 	@Transactional
 	public void deleteUser(final UserEntity user)
 			throws InternalDataSetPersistenceException, InternalInvalidStateException {
-		projectService.deleteProject(user);
-		deleteWorkflows(user);
+		deleteUserData(user);
 		userRepository.delete(user);
 		log.debug("Deleting user with email '{}'", user.getEmail());
+	}
+
+	/**
+	 * Deletes all projects of the given user.
+	 *
+	 * @param user The user.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If a running process has no server instance assigned.
+	 */
+	@Transactional
+	public void deleteUserData(final UserEntity user)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+		projectService.deleteProject(user);
+		deleteWorkflows(user);
 	}
 
 	/**

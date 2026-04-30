@@ -41,6 +41,8 @@ public class DataTransformationErrorEntity {
 	/**
 	 * The error type of this transformation error.
 	 */
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
 	@Setter
 	private TransformationErrorType errorType;
 

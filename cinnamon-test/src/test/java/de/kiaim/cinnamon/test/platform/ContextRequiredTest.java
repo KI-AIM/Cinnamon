@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.platform.PlatformApplication;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.service.ExternalConfigurationService;
+import de.kiaim.cinnamon.test.util.TestDatabaseExtension;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.UUID;
 
+@ExtendWith(TestDatabaseExtension.class)
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = PlatformApplication.class)
 @ActiveProfiles("test")
@@ -23,6 +25,8 @@ import java.util.UUID;
 public abstract class ContextRequiredTest {
 
 	@Autowired private ExternalConfigurationService externalConfigurationService;
+
+	protected TestDatabaseExtension.TestDatabase activeDatabase;
 
 	@AfterEach
 	public void tearDown() {

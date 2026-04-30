@@ -10,3 +10,5 @@ logging.level.de.kiaim.cinnamon.platform=debug
 
 management.endpoint.health.show-components=always
 management.endpoint.health.show-details=always
+
+spring.datasource.password=${PG_PASSWORD}

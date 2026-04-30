@@ -9,6 +9,8 @@ services:
         image: postgres:16.2-alpine
         container_name: cinnamon-db
         restart: unless-stopped
+        ports:
+            - "127.0.0.1:5432:5432"
         networks:
             - data-management-network
         environment:

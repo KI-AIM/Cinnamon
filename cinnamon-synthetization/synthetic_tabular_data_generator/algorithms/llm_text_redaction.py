@@ -33,6 +33,7 @@ class LlmTextRedactionSynthesizer(TabularDataSynthesizer):
     )
     RESPONSE_TEXT_KEY = "text"
     TOKEN_PATTERN = re.compile(r"\[[^\[\]\s]+\]|[A-Za-z0-9_]+|[^\w\s]", re.UNICODE)
+    REPLACEMENT_TOKEN_PATTERN = re.compile(r"\[[^\[\]\s]+\]")
 
     def __init__(
         self,
@@ -230,32 +231,48 @@ class LlmTextRedactionSynthesizer(TabularDataSynthesizer):
         return "\n".join(lines)
 
     def _parse_text_response(self, content: str) -> Optional[str]:
+        parsed = self._parse_json_with_fallback(content)
+        return self._extract_text_candidate(parsed)
+
+    def _parse_json_with_fallback(self, content: str) -> Optional[Any]:
         try:
-            parsed = json.loads(content)
+            return json.loads(content)
         except JSONDecodeError:
+            decoder = json.JSONDecoder()
+            for index, char in enumerate(content):
+                if char != "{":
+                    continue
+                try:
+                    parsed, _ = decoder.raw_decode(content[index:])
+                    return parsed
+                except JSONDecodeError:
+                    continue
             return None
 
+    def _extract_text_candidate(self, parsed: Any) -> Optional[str]:
         if not isinstance(parsed, dict):
             return None
 
-        if set(parsed.keys()) != {self.RESPONSE_TEXT_KEY}:
-            return None
-
         text_value = parsed.get(self.RESPONSE_TEXT_KEY)
-        if not isinstance(text_value, str):
-            return None
+        if isinstance(text_value, str):
+            candidate_text = text_value.strip()
+            return candidate_text or None
 
-        candidate_text = text_value.strip()
-        if not candidate_text:
-            return None
+        rows = parsed.get("rows")
+        if isinstance(rows, list):
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                row_text = row.get(self.RESPONSE_TEXT_KEY)
+                if isinstance(row_text, str) and row_text.strip():
+                    return row_text.strip()
 
-        return candidate_text
+        return None
 
     def _contains_only_allowed_new_tokens(self, original_text: str, candidate_text: str) -> bool:
-        original_tokens = set(self.TOKEN_PATTERN.findall(original_text))
-        candidate_tokens = set(self.TOKEN_PATTERN.findall(candidate_text))
+        original_tokens = set(self.REPLACEMENT_TOKEN_PATTERN.findall(original_text))
+        candidate_tokens = set(self.REPLACEMENT_TOKEN_PATTERN.findall(candidate_text))
         introduced_tokens = candidate_tokens - original_tokens
-
         return introduced_tokens.issubset(self._allowed_replacement_tokens)
 
     @staticmethod

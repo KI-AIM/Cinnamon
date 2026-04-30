@@ -322,3 +322,115 @@ def test_llm_text_de_identification_rejects_unconfigured_replacement_tokens(monk
 
     assert post_call_count["value"] == 2
     assert result["notes"].tolist() == ["Patient [NAME], age [AGE]."]
+
+
+def test_llm_text_de_identification_accepts_json_with_prefix_and_suffix(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+
+        if method == "POST" and url.endswith("/api/generate"):
+            return _DummyResponse(
+                {"response": '```json\n{"text":"Patient [NAME], age [AGE]."}\n```\nextra'}
+            )
+
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    source = pd.DataFrame(
+        {
+            "age": [80],
+            "gender": ["F"],
+            "notes": ["Patient Jane Doe, age 78."],
+        }
+    )
+    synthesizer = LlmTextRedactionSynthesizer()
+    synthesizer.initialize_anonymization_configuration(_algorithm_config())
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(source)
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    result = synthesizer.sample()
+
+    assert result["notes"].tolist() == ["Patient [NAME], age [AGE]."]
+
+
+def test_llm_text_de_identification_allows_small_non_placeholder_token_changes(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+
+        if method == "POST" and url.endswith("/api/generate"):
+            return _DummyResponse(
+                {"response": json.dumps({"text": "Patient [NAME], age [AGE], phone 555-1234 ."})}
+            )
+
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    source = pd.DataFrame(
+        {
+            "age": [65],
+            "gender": ["M"],
+            "notes": ["Patient John Smith, age 64, phone 555-1234."],
+        }
+    )
+    synthesizer = LlmTextRedactionSynthesizer()
+    synthesizer.initialize_anonymization_configuration(_algorithm_config())
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(source)
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    result = synthesizer.sample()
+
+    assert result["notes"].tolist() == ["Patient [NAME], age [AGE], phone 555-1234 ."]
+
+
+def test_llm_text_de_identification_accepts_response_with_additional_keys(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+
+        if method == "POST" and url.endswith("/api/generate"):
+            return _DummyResponse(
+                {
+                    "response": json.dumps(
+                        {
+                            "text": "Patient [NAME], age [AGE].",
+                            "meta": {"model": "debug"},
+                        }
+                    )
+                }
+            )
+
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    source = pd.DataFrame(
+        {
+            "age": [80],
+            "gender": ["F"],
+            "notes": ["Patient Jane Doe, age 78."],
+        }
+    )
+    synthesizer = LlmTextRedactionSynthesizer()
+    synthesizer.initialize_anonymization_configuration(_algorithm_config())
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(source)
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    result = synthesizer.sample()
+
+    assert result["notes"].tolist() == ["Patient [NAME], age [AGE]."]

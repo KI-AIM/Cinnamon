@@ -1,0 +1,60 @@
+import sys
+import types
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+
+if "synthesizer_classes" not in sys.modules:
+    stub_module = types.ModuleType("synthesizer_classes")
+    stub_module.synthesizer_classes = {}
+    sys.modules["synthesizer_classes"] = stub_module
+
+
+if "flask_cors" not in sys.modules:
+    cors_stub = types.ModuleType("flask_cors")
+
+    def _cors(app, *args, **kwargs):
+        return app
+
+    cors_stub.CORS = _cors
+    sys.modules["flask_cors"] = cors_stub
+
+
+import app as app_module
+
+
+def test_start_synthetization_process_returns_400_when_session_key_is_missing():
+    app_module.tasks.clear()
+    app_module.task_locks.clear()
+    client = app_module.app.test_client()
+
+    response = client.post(
+        "/start_synthetization_process/llm_tabular",
+        data={},
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert payload["message"] == "No session key provided"
+
+
+def test_start_synthetization_process_returns_400_when_callback_is_missing():
+    app_module.tasks.clear()
+    app_module.task_locks.clear()
+    client = app_module.app.test_client()
+
+    response = client.post(
+        "/start_synthetization_process/llm_tabular",
+        data={"session_key": "session-without-callback"},
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert payload["message"] == "No callback URL provided"
+    assert payload["session_key"] == "session-without-callback"
+    assert "session-without-callback" not in app_module.task_locks

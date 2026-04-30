@@ -41,7 +41,7 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
 
         self._ordered_column_configs: List[Dict[str, Any]] = []
         self._column_profiles: Dict[str, Dict[str, Any]] = {}
-        self._few_shot_examples: List[Dict[str, Any]] = []
+        self._few_shot_source_df: Optional[pd.DataFrame] = None
         self._sample_start_time: Optional[float] = None
         self._generation_prompt_prefix: Optional[str] = None
         self._user_prompt_domain_context: str = ""
@@ -121,11 +121,9 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
 
         few_shot_rows = self._fitting_kwargs["few_shot_rows"]
         if few_shot_rows > 0 and not profile_df.empty:
-            n_examples = min(few_shot_rows, len(profile_df))
-            examples = profile_df.sample(n=n_examples).to_dict(orient="records")
-            self._few_shot_examples = [self._serialize_row_values(example) for example in examples]
+            self._few_shot_source_df = profile_df.copy()
         else:
-            self._few_shot_examples = []
+            self._few_shot_source_df = None
 
         self._generation_prompt_prefix = self._build_generation_prompt_prefix()
 
@@ -357,14 +355,6 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
             column_descriptions.append(self._profile_line(name, column_type, profile))
 
         profile_lines = "\n".join(column_descriptions)
-        few_shot_block = ""
-        if self._few_shot_examples:
-            few_shot_json = json.dumps(self._few_shot_examples, ensure_ascii=True)
-            few_shot_block = (
-                "\nReference examples (learn structure only, do not copy rows):\n"
-                f"{few_shot_json}"
-            )
-
         shape_example = {column_name: "<value>" for column_name in ordered_columns}
         shape_text = json.dumps({"rows": [shape_example]}, ensure_ascii=True)
         domain_context_block = ""
@@ -393,18 +383,42 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
             f"- TEXT: realistic free text, use '{MISSING_VALUE_STRING}' for missing\n"
             "Column profiles:\n"
             f"{profile_lines}"
-            f"{few_shot_block}\n"
-            "Model realistic relationships between columns based on the profiles."
+            "\nModel realistic relationships between columns based on the profiles."
         )
 
     def _build_generation_prompt(self, num_rows: int, row_index: int, target_rows: int) -> str:
         prefix = self._generation_prompt_prefix or self._build_generation_prompt_prefix()
+        few_shot_block = self._build_few_shot_block()
         return (
             f"{prefix}\n"
+            f"{few_shot_block}"
             "Generation task:\n"
             f"Generate exactly {num_rows} rows.\n"
             "Return exactly one realistic synthetic row in the rows array."
         )
+
+    def _build_few_shot_block(self) -> str:
+        examples = self._draw_few_shot_examples()
+        if not examples:
+            return ""
+
+        few_shot_json = json.dumps(examples, ensure_ascii=True)
+        return (
+            "\nReference examples (learn structure only, do not copy rows):\n"
+            f"{few_shot_json}\n"
+        )
+
+    def _draw_few_shot_examples(self) -> List[Dict[str, Any]]:
+        if self._fitting_kwargs is None:
+            return []
+
+        few_shot_rows = self._fitting_kwargs.get("few_shot_rows", 0)
+        if few_shot_rows <= 0 or self._few_shot_source_df is None or self._few_shot_source_df.empty:
+            return []
+
+        n_examples = min(few_shot_rows, len(self._few_shot_source_df))
+        examples = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
+        return [self._serialize_row_values(example) for example in examples]
 
     def _profile_line(self, column_name: str, column_type: str, profile: Dict[str, Any]) -> str:
         if not profile or not profile.get("available", False):

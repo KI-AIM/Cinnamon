@@ -306,3 +306,62 @@ def test_llm_tabular_prefers_model_parameter_for_profile_and_few_shot(monkeypatc
 
     assert synthesizer._fitting_kwargs["profile_rows"] == 2
     assert synthesizer._fitting_kwargs["few_shot_rows"] == 1
+
+
+def test_llm_tabular_draws_new_few_shot_examples_for_each_prompt(monkeypatch):
+    call_counter = {"count": 0}
+    _set_shared_llm_env(monkeypatch, provider="ollama")
+
+    prompts = []
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+
+        if method == "POST" and url.endswith("/api/generate"):
+            call_counter["count"] += 1
+            prompt = kwargs["json"]["prompt"]
+            prompts.append(prompt)
+            return _DummyResponse(
+                {
+                    "response": json.dumps(
+                        {
+                            "rows": [
+                                {"age": 30 + call_counter["count"], "height": 170.0, "risk": True, "group": "A"},
+                            ]
+                        }
+                    )
+                }
+            )
+
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    algorithm_config = _algorithm_config(provider="ollama")
+    algorithm_config["synthetization_configuration"]["algorithm"]["model_parameter"]["few_shot_rows"] = 1
+    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 3
+
+    synthesizer = LlmTabularSynthesizer()
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(_dataset())
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    draw_counter = {"count": 0}
+
+    def fake_draw_examples():
+        draw_counter["count"] += 1
+        return [{"age": 100 + draw_counter["count"], "height": 171.0, "risk": True, "group": "X"}]
+
+    synthesizer._draw_few_shot_examples = fake_draw_examples  # type: ignore[assignment]
+
+    sample = synthesizer.sample()
+
+    assert len(sample) == 3
+    assert call_counter["count"] == 3
+    assert draw_counter["count"] == 3
+    assert '"age": 101' in prompts[0]
+    assert '"age": 102' in prompts[1]
+    assert '"age": 103' in prompts[2]

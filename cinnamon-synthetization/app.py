@@ -62,7 +62,7 @@ def initialize_input_data(synthesizer_name):
         print('No attribute_config file provided')
         return 'No attribute_config file provided', 400
     if 'algorithm_config' not in request.files:
-        print('No attribute_config file provided')
+        print('No algorithm_config file provided')
         return 'No algorithm_config file provided', 400
 
     if 'data' not in request.files:
@@ -353,16 +353,28 @@ def start_synthetization_process(synthesizer_name):
     Returns:
         JSON: Response indicating task start status.
     """
-    # Initialize Task
-    task_id = request.form['session_key']
+    task_id = request.form.get('session_key')
+    if not task_id:
+        return jsonify({'message': 'No session key provided'}), 400
+
     stop_event = Event()
     task_locks[task_id] = stop_event
 
     try:
         configure_realtime_logging()
         # Initialize input data
-        session_key, callback_url, file_path_status, attribute_config, algorithm_config, data = initialize_input_data(
-            synthesizer_name)
+        input_data = initialize_input_data(synthesizer_name)
+        if (
+            isinstance(input_data, tuple)
+            and len(input_data) == 2
+            and isinstance(input_data[0], str)
+            and isinstance(input_data[1], int)
+        ):
+            if task_id in task_locks:
+                del task_locks[task_id]
+            return jsonify({'message': input_data[0], 'session_key': task_id}), input_data[1]
+
+        session_key, callback_url, file_path_status, attribute_config, algorithm_config, data = input_data
         print('Data successfully loaded')
 
         # Create and start the process

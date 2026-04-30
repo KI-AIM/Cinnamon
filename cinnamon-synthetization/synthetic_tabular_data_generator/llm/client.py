@@ -193,49 +193,43 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
         )
     )
     try:
-        temperature = max(
-            0.0,
-            min(
-                2.0,
-                float(
-                    _get_env_or_config_value(
-                        sampling_params,
-                        "temperature",
-                        "synthetization_configuration.algorithm.sampling",
-                        LLM_ENV_VARS["temperature"],
-                    )
-                ),
-            ),
+        raw_temperature = _first_non_empty(
+            _read_env_value(LLM_ENV_VARS["temperature"]),
+            sampling_params.get("temperature"),
         )
-        top_p = max(
-            0.0,
-            min(
-                1.0,
-                float(
-                    _get_env_or_config_value(
-                        sampling_params,
-                        "top_p",
-                        "synthetization_configuration.algorithm.sampling",
-                        LLM_ENV_VARS["top_p"],
-                    )
-                ),
-            ),
-        )
-        env_max_tokens = _read_env_value(LLM_ENV_VARS["max_tokens"])
-        if env_max_tokens is None:
+        if raw_temperature is None:
             raise ValueError(
-                f"Missing LLM configuration 'max_tokens'. Set environment variable "
+                "Missing LLM configuration 'temperature'. Set environment variable "
+                f"'{LLM_ENV_VARS['temperature']}' or provide it in "
+                "'synthetization_configuration.algorithm.sampling'."
+            )
+        temperature = max(0.0, min(2.0, float(raw_temperature)))
+
+        raw_top_p = _first_non_empty(
+            _read_env_value(LLM_ENV_VARS["top_p"]),
+            sampling_params.get("top_p"),
+        )
+        if raw_top_p is None:
+            raise ValueError(
+                "Missing LLM configuration 'top_p'. Set environment variable "
+                f"'{LLM_ENV_VARS['top_p']}' or provide it in "
+                "'synthetization_configuration.algorithm.sampling'."
+            )
+        top_p = max(0.0, min(1.0, float(raw_top_p)))
+
+        raw_max_tokens = _read_env_value(LLM_ENV_VARS["max_tokens"])
+        if raw_max_tokens is None:
+            raise ValueError(
+                "Missing LLM configuration 'max_tokens'. Set environment variable "
                 f"'{LLM_ENV_VARS['max_tokens']}'."
             )
-        max_tokens = max(
-            1,
-            int(env_max_tokens),
-        )
+        max_tokens = max(1, int(raw_max_tokens))
     except (TypeError, ValueError) as exc:
         raise ValueError(
             "Invalid LLM decoding configuration. Set valid numeric values via "
-            f"'{LLM_ENV_VARS['temperature']}', '{LLM_ENV_VARS['top_p']}', '{LLM_ENV_VARS['max_tokens']}' "
-            "or provide them in 'synthetization_configuration.algorithm.sampling'."
+            f"'{LLM_ENV_VARS['temperature']}', '{LLM_ENV_VARS['top_p']}' "
+            "(or provide them in 'synthetization_configuration.algorithm.sampling') "
+            f"and set '{LLM_ENV_VARS['max_tokens']}'."
         ) from exc
     timeout_seconds = max(
         1,

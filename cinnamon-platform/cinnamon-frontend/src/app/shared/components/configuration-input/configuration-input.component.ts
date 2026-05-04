@@ -158,4 +158,9 @@ export class ConfigurationInputComponent implements OnInit, OnDestroy {
             this.form.controls[this.configurationInputDefinition.name].setValue(this.configurationInputDefinition.default_value);
         }
     }
+
+    protected isMultilineStringInput(): boolean {
+        return this.configurationInputDefinition.type === ConfigurationInputType.STRING
+            && this.configurationInputDefinition.multiline === true;
+    }
 }

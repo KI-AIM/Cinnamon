@@ -29,6 +29,8 @@ configurations:
     parameters:
       - name: user_prompt_domain_context
         type: string
+        multiline: true
+        rows: 5
         label: Domain Context
         description: Optional domain-specific context that helps the model better interpret the dataset semantics, for example clinical documentation, claims data, lab records, registries, or other specialized tabular domains.
         default_value: ""

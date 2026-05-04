@@ -7,6 +7,8 @@ export class ConfigurationInputDefinition {
     description: string
     default_value: string | number | number[]
     mandatory: boolean = true
+    multiline?: boolean
+    rows?: number
     invert: string | null
     min_value: number | null
     max_value: number | null

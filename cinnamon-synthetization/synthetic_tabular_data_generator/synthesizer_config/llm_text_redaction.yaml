@@ -11,6 +11,8 @@ configurations:
     parameters:
       - name: user_prompt_domain_context
         type: string
+        multiline: true
+        rows: 5
         label: Domain Context
         description: Provide domain-specific context that helps the model interpret the text correctly, for example discharge summaries, physician letters, nursing notes, radiology reports, pathology reports, operative reports, emergency department notes, or other medical free-text documents.
         default_value: ""

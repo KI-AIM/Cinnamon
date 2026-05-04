@@ -70,7 +70,7 @@ CONFIG_ALLOWED_SECTIONS = CONFIG_REQUIRED_SECTIONS | CONFIG_OPTIONAL_SECTIONS
 SECTION_KEYS = {"display_name", "description", "parameters"}
 
 PARAM_REQUIRED_KEYS = {"name", "type", "label", "description", "default_value"}
-PARAM_OPTIONAL_KEYS = {"min_value", "max_value", "values", "mandatory"}
+PARAM_OPTIONAL_KEYS = {"min_value", "max_value", "values", "mandatory", "multiline", "rows"}
 PARAM_ALLOWED_KEYS = PARAM_REQUIRED_KEYS | PARAM_OPTIONAL_KEYS
 ALLOWED_PARAM_TYPES = {"integer", "float", "string", "list"}
 
@@ -148,6 +148,12 @@ def test_configuration_sections_and_parameters():
 
                 if "mandatory" in param:
                     assert isinstance(param["mandatory"], bool)
+
+                if "multiline" in param:
+                    assert isinstance(param["multiline"], bool)
+
+                if "rows" in param:
+                    assert isinstance(param["rows"], int) and param["rows"] > 0
 
                 if _is_number(default_value):
                     assert "min_value" in param and "max_value" in param

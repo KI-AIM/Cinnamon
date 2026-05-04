@@ -68,6 +68,10 @@ def initialize_input_data(synthesizer_name):
     if 'data' not in request.files:
         return 'No data file provided', 400
 
+    requires_original_data = synthesizer_name == "llm_text_synthesis"
+    if requires_original_data and 'original_data' not in request.files:
+        return "No original_data file provided for llm_text_synthesis", 400
+
     session_key = request.form['session_key']
     callback_url = request.form['callback']
 
@@ -79,13 +83,16 @@ def initialize_input_data(synthesizer_name):
     attribute_config = request.files['attribute_config']
     algorithm_config = request.files['algorithm_config']
     data = request.files['data']
+    original_data = request.files['original_data'] if requires_original_data else None
 
     # Read the content of the files
     attribute_config = yaml.safe_load(attribute_config.read())
     algorithm_config = yaml.safe_load(algorithm_config.read())
     data = pd.read_csv(io.StringIO(data.read().decode('utf-8')))
+    if original_data is not None:
+        original_data = pd.read_csv(io.StringIO(original_data.read().decode('utf-8')))
 
-    return session_key, callback_url, file_path_status, attribute_config, algorithm_config, data
+    return session_key, callback_url, file_path_status, attribute_config, algorithm_config, data, original_data
 
 
 def prepare_callback_data(samples, synthesizer_model):
@@ -113,10 +120,11 @@ def prepare_callback_data(samples, synthesizer_model):
 
 
 def is_llm_synthesizer(synthesizer_name: str) -> bool:
-    return synthesizer_name in {"llm_tabular", "llm_text_redaction"}
+    return synthesizer_name in {"llm_tabular", "llm_text_redaction", "llm_text_synthesis"}
 
 
 def synthesize_data(synthesizer_name, file_path_status, attribute_config, algorithm_config, data,
+                    original_data,
                     callback_url, session_key):
     """
     Orchestrates the entire data synthesis process and sends error messages to the callback API.
@@ -137,6 +145,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         configure_realtime_logging()
         print('Synthesizer selected:', synthesizer_name)
         init_time = time.time()
+        pre_processed_original_data = None
 
         # Step 0: Check if the synthesizer exists
         if synthesizer_name not in synthesizer_classes:
@@ -195,6 +204,13 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 attribute_config['configurations'],
                 replace_text_with_pending=use_pending_text_placeholder,
             )
+            pre_processed_original_data = None
+            if original_data is not None:
+                pre_processed_original_data, _ = pre_process_dataframe(
+                    original_data,
+                    attribute_config['configurations'],
+                    replace_text_with_pending=False,
+                )
             print("Dataset preprocessed.")
         except Exception as e:
             error_message = f"Error during pre-processing. {str(e)}"
@@ -208,6 +224,12 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         # Step 5: Initialize dataset
         try:
             synthesizer_class.initialize_dataset(pre_processed_data)
+            if pre_processed_original_data is not None:
+                if not hasattr(synthesizer_class, "initialize_reference_dataset"):
+                    raise RuntimeError(
+                        "Synthesizer does not support original reference dataset initialization."
+                    )
+                synthesizer_class.initialize_reference_dataset(pre_processed_original_data)
             print('Dataset initialized.')
         except RuntimeError as e:
             print("Error in Dataset Initialoization")
@@ -374,14 +396,14 @@ def start_synthetization_process(synthesizer_name):
                 del task_locks[task_id]
             return jsonify({'message': input_data[0], 'session_key': task_id}), input_data[1]
 
-        session_key, callback_url, file_path_status, attribute_config, algorithm_config, data = input_data
+        session_key, callback_url, file_path_status, attribute_config, algorithm_config, data, original_data = input_data
         print('Data successfully loaded')
 
         # Create and start the process
         task_process = Process(
             target=synthesize_data,
             args=(synthesizer_name, file_path_status, attribute_config, algorithm_config,
-                  data.copy(), callback_url, session_key)  # Note the data.copy()
+                  data.copy(), original_data.copy() if original_data is not None else None, callback_url, session_key)  # Note the data.copy()
         )
 
         tasks[task_id] = task_process

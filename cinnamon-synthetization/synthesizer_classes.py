@@ -7,6 +7,7 @@ from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomFor
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
 from synthetic_tabular_data_generator.algorithms.llm_text_redaction import LlmTextRedactionSynthesizer
+from synthetic_tabular_data_generator.algorithms.llm_text_synthesis import LlmTextSynthesisSynthesizer
 
 synthesizer_classes = {
     'ctgan': {
@@ -80,5 +81,13 @@ synthesizer_classes = {
         'display_name': 'LLM Text Redaction',
         'description': 'A LLM-based text redaction component for replacing only configured identifier categories in TEXT fields.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_redaction.yaml'
+    },
+    'llm_text_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmTextSynthesisSynthesizer,
+        'display_name': 'LLM Text Synthesis with Structured Consistency',
+        'description': 'A LLM-based synthesizer that generates TEXT fields from synthetic tabular rows using original data as semantic context and may minimally correct inconsistent structured values.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_synthesis.yaml'
     }
 }

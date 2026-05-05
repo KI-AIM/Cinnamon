@@ -4,6 +4,9 @@ type: cross-sectional
 display_name: LLM Text Synthesis with Structured Consistency
 description: Generate TEXT fields for synthetic tabular rows using original data as semantic context and allow minimal structured corrections when combinations are implausible.
 URL: /start_synthetization_process/llm_text_synthesis
+processing_capabilities:
+  supports_structured_data: false
+  supports_free_text_data: true
 configurations:
   model_parameter:
     display_name: Dataset Generation Parameters
@@ -29,6 +32,8 @@ configurations:
     parameters:
       - name: user_prompt_domain_context
         type: string
+        multiline: true
+        rows: 5
         label: Domain Context
         description: Optional domain context to guide realistic text generation, for example clinical notes, registry data, or claims narratives.
         default_value: ""
@@ -41,15 +46,8 @@ configurations:
         values: ["true", "false"]
   sampling:
     display_name: Sampling
-    description: Configure how many synthetic tabular input rows are processed and the LLM decoding behavior.
+    description: Configure LLM decoding behavior. The number of processed rows is always derived from the input dataset.
     parameters:
-      - name: num_samples
-        type: integer
-        label: Number of Rows to Enrich
-        description: Number of synthetic tabular input rows to enrich. Must not exceed the number of provided synthetic rows.
-        default_value: 1000
-        min_value: 1
-        max_value: 1000000
       - name: temperature
         type: float
         label: Temperature
@@ -64,3 +62,4 @@ configurations:
         default_value: 0.9
         min_value: 0.0
         max_value: 1.0
+

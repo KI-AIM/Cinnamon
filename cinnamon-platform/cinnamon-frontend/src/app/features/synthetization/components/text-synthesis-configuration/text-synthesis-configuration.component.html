@@ -1,0 +1,104 @@
+<div [formGroup]="form">
+    <div [formGroupName]="textSynthesisConfigurationService.formGroupName">
+        <div formGroupName="synthetization_configuration">
+            <div formGroupName="algorithm">
+                <mat-accordion>
+                    <mat-expansion-panel appExpansionPanelOverflow>
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>
+                                Synthesizer Selection
+                            </mat-panel-title>
+                            <mat-panel-description>
+                                Choose the free-text synthesizer.
+                            </mat-panel-description>
+                        </mat-expansion-panel-header>
+
+                        <mat-form-field class="w-100">
+                            <mat-label>Free-Text Synthesizer</mat-label>
+                            <mat-select formControlName="synthesizer">
+                                <mat-option *ngFor="let item of textSynthesizerAlgorithms$ | async" [value]="item.name">
+                                    {{ item.display_name }}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="textConfigGroup.get('synthetization_configuration.algorithm.synthesizer')?.hasError('required')">
+                                Please select a free-text synthesizer.
+                            </mat-error>
+                        </mat-form-field>
+                    </mat-expansion-panel>
+
+                    <mat-expansion-panel appExpansionPanelOverflow>
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>
+                                Model Parameters
+                            </mat-panel-title>
+                            <mat-panel-description>
+                                Configure prompt profiling and examples.
+                            </mat-panel-description>
+                        </mat-expansion-panel-header>
+
+                        <div formGroupName="model_parameter">
+                            <mat-form-field class="w-100">
+                                <mat-label>Profile Rows</mat-label>
+                                <input matInput type="number" formControlName="profile_rows">
+                            </mat-form-field>
+
+                            <mat-form-field class="w-100">
+                                <mat-label>Few-Shot Rows</mat-label>
+                                <input matInput type="number" formControlName="few_shot_rows">
+                            </mat-form-field>
+                        </div>
+                    </mat-expansion-panel>
+
+                    <mat-expansion-panel appExpansionPanelOverflow>
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>
+                                Training Parameters
+                            </mat-panel-title>
+                            <mat-panel-description>
+                                Configure context and correction behavior.
+                            </mat-panel-description>
+                        </mat-expansion-panel-header>
+
+                        <div formGroupName="model_fitting">
+                            <mat-form-field class="w-100">
+                                <mat-label>Domain Context</mat-label>
+                                <textarea matInput rows="4" formControlName="user_prompt_domain_context"></textarea>
+                            </mat-form-field>
+
+                            <mat-form-field class="w-100">
+                                <mat-label>Allow Structured Corrections</mat-label>
+                                <mat-select formControlName="allow_structured_corrections">
+                                    <mat-option [value]="true">true</mat-option>
+                                    <mat-option [value]="false">false</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </mat-expansion-panel>
+
+                    <mat-expansion-panel appExpansionPanelOverflow>
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>
+                                Sampling
+                            </mat-panel-title>
+                            <mat-panel-description>
+                                Configure decoding parameters.
+                            </mat-panel-description>
+                        </mat-expansion-panel-header>
+
+                        <div formGroupName="sampling">
+                            <mat-form-field class="w-100">
+                                <mat-label>Temperature</mat-label>
+                                <input matInput type="number" step="0.1" formControlName="temperature">
+                            </mat-form-field>
+
+                            <mat-form-field class="w-100">
+                                <mat-label>Top-p</mat-label>
+                                <input matInput type="number" step="0.1" formControlName="top_p">
+                            </mat-form-field>
+                        </div>
+                    </mat-expansion-panel>
+                </mat-accordion>
+            </div>
+        </div>
+    </div>
+</div>

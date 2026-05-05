@@ -4,6 +4,9 @@ type: cross-sectional
 display_name: Tabular Variational Autoencoder
 description: Is a VAE for synthesizing cross-sectional data.
 URL: /start_synthetization_process/tvae
+processing_capabilities:
+  supports_structured_data: true
+  supports_free_text_data: false
 configurations:
   model_parameter:
     display_name: Model Architecture
@@ -55,3 +58,4 @@ configurations:
         default_value: 1000
         min_value: 1
         max_value: 1000000
+

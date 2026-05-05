@@ -4,6 +4,9 @@ type: cross-sectional
 display_name: TabDDPM (Denoising Diffusion)
 description: Diffusion model for synthesizing tabular data (synthcity TabDDPM).
 URL: /start_synthetization_process/ddpm
+processing_capabilities:
+  supports_structured_data: true
+  supports_free_text_data: false
 configurations:
   model_parameter:
     display_name: Model Parameters
@@ -96,3 +99,4 @@ configurations:
         default_value: 500
         min_value: 1
         max_value: 10000
+

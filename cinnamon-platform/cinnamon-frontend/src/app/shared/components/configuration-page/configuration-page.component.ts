@@ -1,5 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { FormGroup } from "@angular/forms";
 import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
@@ -11,6 +12,7 @@ import { catchError, combineLatest, from, map, mergeMap, Observable, of, switchM
 import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
 import { Algorithm } from "../../model/algorithm";
+import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
 import { AlgorithmService, ConfigData, ConfigurationInfo } from "../../services/algorithm.service";
 
@@ -102,6 +104,93 @@ export class ConfigurationPageComponent implements OnInit {
     ) {
     }
 
+    protected get isSynthetizationConfiguration(): boolean {
+        return this.algorithmService.getConfigurationName() === "synthetization_configuration";
+    }
+
+    protected get numberSteps(): number {
+        return this.isSynthetizationConfiguration ? 6 : 4;
+    }
+
+    protected get hasFreeTextConfiguration(): boolean {
+        return this.forms?.form?.get("text_synthesis_configuration") != null;
+    }
+
+    protected get structuredConfigurationInvalid(): boolean {
+        if (!this.isSynthetizationConfiguration) {
+            return !this.formValid;
+        }
+
+        const form = this.forms?.form;
+        if (!form) {
+            return true;
+        }
+
+        return Object.entries(form.controls).some(([name, control]) => {
+            if (name === "text_synthesis_configuration") {
+                return false;
+            }
+            return control.invalid;
+        });
+    }
+
+    protected get freeTextSelectionInvalid(): boolean {
+        const control = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.synthesizer");
+        return control == null || control.invalid;
+    }
+
+    protected get freeTextConfigurationInvalid(): boolean {
+        const modelParameter = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.model_parameter");
+        const modelFitting = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.model_fitting");
+        const sampling = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.sampling");
+
+        if (modelParameter == null || modelFitting == null || sampling == null) {
+            return true;
+        }
+
+        return modelParameter.invalid || modelFitting.invalid || sampling.invalid;
+    }
+
+    protected getFreeTextAlgorithmGroup(): FormGroup | null {
+        return this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm") as FormGroup | null;
+    }
+
+    protected getStructuredAlgorithms(algorithms: Algorithm[]): Algorithm[] {
+        if (!this.isSynthetizationConfiguration) {
+            return algorithms;
+        }
+
+        return algorithms.filter(item => this.supportsStructuredData(item) && !this.isTextOnlySynthesizer(item));
+    }
+
+    protected getFreeTextAlgorithms(algorithms: Algorithm[]): Algorithm[] {
+        return algorithms.filter(item => this.supportsFreeTextData(item) && this.isTextOnlySynthesizer(item));
+    }
+
+    protected getFreeTextAlgorithmDefinition(algorithms: Algorithm[]): Observable<AlgorithmDefinition | null> {
+        const selectedName = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.synthesizer")?.value;
+        const selectedAlgorithm = this.getFreeTextAlgorithms(algorithms).find(item => item.name === selectedName);
+        if (selectedAlgorithm == null) {
+            return of(null);
+        }
+
+        return this.algorithmService.getAlgorithmDefinition(selectedAlgorithm);
+    }
+
+    protected get selectionStepHeader(): string {
+        if (this.isSynthetizationConfiguration) {
+            return "Select the structured synthesizer";
+        }
+        return "Select the algorithm to be executed";
+    }
+
+    protected get configurationStepHeader(): string {
+        if (this.isSynthetizationConfiguration) {
+            return "Configure the structured synthesizer";
+        }
+        return "Configure the algorithm";
+    }
+
     ngOnInit() {
         for (const process of this.configurationInfo.processes) {
             const cachedStatus = this.configurationService.getProcessStatus(this.algorithmService.getConfigurationName(), process.job);
@@ -114,7 +203,7 @@ export class ConfigurationPageComponent implements OnInit {
         this.pageData$ = combineLatest({
             algorithms: this.algorithmService.algorithms.pipe(
                 tap(algorithms => {
-                    this.hasAlgorithmSelection = algorithms.length > 1;
+                    this.hasAlgorithmSelection = this.getStructuredAlgorithms(algorithms).length > 1;
                 }),
                 catchError(err => {
                     // Disable all processes
@@ -143,14 +232,17 @@ export class ConfigurationPageComponent implements OnInit {
 
                 return this.algorithmService.fetchConfiguration().pipe(
                     tap(value => {
+                        const structuredAlgorithms = this.getStructuredAlgorithms(pageData.algorithms);
 
-                        this.selectedAlgorithm = value.selectedAlgorithm
-                        if (value.selectedAlgorithm != null) {
+                        if (value.selectedAlgorithm != null && structuredAlgorithms.some(item => item.name === value.selectedAlgorithm!.name)) {
+                            this.selectedAlgorithm = value.selectedAlgorithm
                             this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
-                        } else if (!this.hasAlgorithmSelection && pageData.algorithms.length > 0) {
-                            this.selectedAlgorithm = pageData.algorithms[0];
-                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), pageData.algorithms[0]);
+                        } else if (!this.hasAlgorithmSelection && structuredAlgorithms.length > 0) {
+                            this.selectedAlgorithm = structuredAlgorithms[0];
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), structuredAlgorithms[0]);
                             value.selectedAlgorithm = this.selectedAlgorithm;
+                        } else {
+                            this.selectedAlgorithm = null;
                         }
                     }),
                     map(value => ({
@@ -160,10 +252,11 @@ export class ConfigurationPageComponent implements OnInit {
                     catchError(error => {
                         this.errorHandlingService.addError(error);
                         const value: ConfigData = {config: {}, selectedAlgorithm: null};
+                        const structuredAlgorithms = this.getStructuredAlgorithms(pageData.algorithms);
 
-                        if (!this.hasAlgorithmSelection && pageData.algorithms.length > 0) {
-                            this.selectedAlgorithm = pageData.algorithms[0];
-                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), pageData.algorithms[0]);
+                        if (!this.hasAlgorithmSelection && structuredAlgorithms.length > 0) {
+                            this.selectedAlgorithm = structuredAlgorithms[0];
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), structuredAlgorithms[0]);
                             value.selectedAlgorithm = this.selectedAlgorithm;
                         }
 
@@ -243,7 +336,9 @@ export class ConfigurationPageComponent implements OnInit {
      * @protected
      */
     protected updateSelectCache(): void {
-        this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.selection.selectedOption);
+        if (this.selection?.selectedOption) {
+            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.selection.selectedOption);
+        }
     }
 
     /**
@@ -436,5 +531,32 @@ export class ConfigurationPageComponent implements OnInit {
         if (!this.statusService.isStepCompleted(nextStep)) {
             this.statusService.updateNextStep(nextStep).subscribe();
         }
+    }
+
+    private supportsStructuredData(algorithm: Algorithm): boolean {
+        const supportsStructured = algorithm.processing_capabilities?.supports_structured_data;
+        if (supportsStructured === undefined) {
+            return !algorithm.name.includes("text");
+        }
+        return supportsStructured;
+    }
+
+    private supportsFreeTextData(algorithm: Algorithm): boolean {
+        const supportsFreeText = algorithm.processing_capabilities?.supports_free_text_data;
+        if (supportsFreeText === undefined) {
+            return algorithm.name.includes("text");
+        }
+        return supportsFreeText;
+    }
+
+    private isTextOnlySynthesizer(algorithm: Algorithm): boolean {
+        const supportsStructured = algorithm.processing_capabilities?.supports_structured_data;
+        const supportsFreeText = algorithm.processing_capabilities?.supports_free_text_data;
+
+        if (supportsStructured !== undefined || supportsFreeText !== undefined) {
+            return supportsStructured === false && supportsFreeText === true;
+        }
+
+        return algorithm.name.includes("text");
     }
 }

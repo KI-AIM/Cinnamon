@@ -291,7 +291,7 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
         this.additionalConfigs.configs.forEach(config => {
             if (config.insertAfterGroupName !== null && groupKeys.has(config.insertAfterGroupName)) {
                 afterGroups.push(config);
-            } else {
+            } else if (config.insertAfterGroupName === null) {
                 remaining.push(config);
             }
         });

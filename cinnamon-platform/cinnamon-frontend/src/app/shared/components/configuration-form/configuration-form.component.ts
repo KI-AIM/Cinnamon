@@ -70,7 +70,7 @@ export class ConfigurationFormComponent implements OnInit {
      * Dynamically created form for the configuration.
      * @protected
      */
-    protected form: FormGroup;
+    public form: FormGroup;
 
     /**
      * Observable that loads the configurations and creates the form group.

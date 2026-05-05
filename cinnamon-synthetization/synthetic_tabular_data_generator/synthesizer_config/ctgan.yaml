@@ -4,6 +4,9 @@ type: cross-sectional
 display_name: Conditional Tabular GAN
 description: Is a GAN for synthesizing cross-sectional data.
 URL: /start_synthetization_process/ctgan
+processing_capabilities:
+  supports_structured_data: true
+  supports_free_text_data: false
 configurations:
   model_parameter:
     display_name: Model Architecture

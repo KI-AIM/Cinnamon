@@ -1,9 +1,15 @@
+# NOTE: This configuration is kept only for transition purposes.
+# llm_text_redaction is no longer registered in the synthetization module
+# and will be integrated into the anonymization module.
 name: llm_text_redaction
 version: "0.1"
 type: cross-sectional
 display_name: LLM Text Redaction
 description: Redact only user-configured identifier categories from TEXT fields using a large language model.
 URL: /start_synthetization_process/llm_text_redaction
+processing_capabilities:
+  supports_structured_data: false
+  supports_free_text_data: true
 configurations:
   model_fitting:
     display_name: Prompt Configuration
@@ -35,3 +41,4 @@ configurations:
         default_value: 1.0
         min_value: 0.0
         max_value: 1.0
+

@@ -138,9 +138,16 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
         if self._llm_config is None:
             raise ValueError("Model configuration is not initialized.")
 
-        num_samples = int(self._sampling["num_samples"])
-        if num_samples <= 0:
-            raise ValueError("num_samples must be greater than 0.")
+        if self.dataset is None:
+            raise ValueError("Dataset is not initialized.")
+
+        configured_num_samples = self._sampling.get("num_samples")
+        if configured_num_samples is None:
+            num_samples = len(self.dataset)
+        else:
+            num_samples = int(configured_num_samples)
+            if num_samples <= 0:
+                raise ValueError("num_samples must be greater than 0.")
 
         max_retries = self._fitting_kwargs["max_retries"]
         self._sample_start_time = time.time()

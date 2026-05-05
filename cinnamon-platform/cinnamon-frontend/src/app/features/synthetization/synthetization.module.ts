@@ -13,11 +13,17 @@ import { MatInputModule } from "@angular/material/input";
 import {
     LlmRedactionRulesConfigurationComponent
 } from "./components/llm-redaction-rules-configuration/llm-redaction-rules-configuration.component";
+import { MatSelectModule } from "@angular/material/select";
+import {
+    TextSynthesisConfigurationComponent
+} from "./components/text-synthesis-configuration/text-synthesis-configuration.component";
+import { MatExpansionModule } from "@angular/material/expansion";
 
 @NgModule({
     declarations: [
         SynthetizationConfigurationComponent,
         LlmRedactionRulesConfigurationComponent,
+        TextSynthesisConfigurationComponent,
     ],
     imports: [
         CommonModule,
@@ -26,6 +32,8 @@ import {
         MatFormFieldModule,
         MatIconModule,
         MatInputModule,
+        MatExpansionModule,
+        MatSelectModule,
         ReactiveFormsModule,
     ],
     providers: [

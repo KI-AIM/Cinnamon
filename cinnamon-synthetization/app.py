@@ -2,6 +2,8 @@ import io
 import os
 import sys
 import time
+from copy import deepcopy
+from functools import lru_cache
 from multiprocessing import Process
 from threading import Event
 
@@ -17,6 +19,7 @@ from api_utility.status.status_updater import InterceptStdOut
 from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
+from data_processing.utils import TEXT_PENDING_LLM
 
 
 app = Flask(__name__)
@@ -24,8 +27,13 @@ tasks = {}
 task_locks = {}
 CORS(app)
 
-CALLBACK_TIMEOUT_SECONDS = float(os.getenv("CINNAMON_CALLBACK_TIMEOUT_SECONDS", "30"))
-ERROR_CALLBACK_TIMEOUT_SECONDS = float(os.getenv("CINNAMON_ERROR_CALLBACK_TIMEOUT_SECONDS", "5"))
+CALLBACK_TIMEOUT_SECONDS = 30.0
+ERROR_CALLBACK_TIMEOUT_SECONDS = 5.0
+SYNTHESIZER_CONFIG_DIR = os.path.join(
+    os.path.dirname(__file__),
+    "synthetic_tabular_data_generator",
+    "synthesizer_config",
+)
 
 
 def configure_realtime_logging():
@@ -68,10 +76,6 @@ def initialize_input_data(synthesizer_name):
     if 'data' not in request.files:
         return 'No data file provided', 400
 
-    requires_original_data = synthesizer_name == "llm_text_synthesis"
-    if requires_original_data and 'original_data' not in request.files:
-        return "No original_data file provided for llm_text_synthesis", 400
-
     session_key = request.form['session_key']
     callback_url = request.form['callback']
 
@@ -83,7 +87,7 @@ def initialize_input_data(synthesizer_name):
     attribute_config = request.files['attribute_config']
     algorithm_config = request.files['algorithm_config']
     data = request.files['data']
-    original_data = request.files['original_data'] if requires_original_data else None
+    original_data = request.files.get('original_data')
 
     # Read the content of the files
     attribute_config = yaml.safe_load(attribute_config.read())
@@ -119,8 +123,232 @@ def prepare_callback_data(samples, synthesizer_model):
     return files
 
 
+def _to_bool(value, default):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "y", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "n", "off"}:
+            return False
+    return default
+
+
+@lru_cache(maxsize=None)
+def load_synthesizer_config(synthesizer_name):
+    config_file = os.path.join(SYNTHESIZER_CONFIG_DIR, f"{synthesizer_name}.yaml")
+    with open(config_file, "r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle) or {}
+
+
+def get_processing_capabilities(synthesizer_name):
+    config = load_synthesizer_config(synthesizer_name)
+    capabilities = config.get("processing_capabilities", {})
+    supports_structured = _to_bool(capabilities.get("supports_structured_data"), True)
+    supports_free_text = _to_bool(capabilities.get("supports_free_text_data"), False)
+    return supports_structured, supports_free_text
+
+
 def is_llm_synthesizer(synthesizer_name: str) -> bool:
-    return synthesizer_name in {"llm_tabular", "llm_text_redaction", "llm_text_synthesis"}
+    _, supports_free_text = get_processing_capabilities(synthesizer_name)
+    return supports_free_text
+
+
+@lru_cache(maxsize=1)
+def get_text_synthesizer_name():
+    candidates = []
+    for name in synthesizer_classes:
+        supports_structured, supports_free_text = get_processing_capabilities(name)
+        if not supports_structured and supports_free_text:
+            candidates.append(name)
+
+    if not candidates:
+        raise RuntimeError(
+            "No text-only synthesizer found. Expected one synthesizer_config with "
+            "supports_structured_data=false and supports_free_text_data=true."
+        )
+    if len(candidates) > 1:
+        raise RuntimeError(
+            f"Ambiguous text-only synthesizers found: {candidates}. "
+            "Please keep exactly one text-only synthesizer in the registry."
+        )
+    return candidates[0]
+
+
+def split_attribute_configurations(attribute_config):
+    all_configurations = attribute_config.get("configurations", [])
+    structured = []
+    text = []
+    for column_config in all_configurations:
+        if str(column_config.get("type", "")).upper() == "TEXT":
+            text.append(column_config)
+        else:
+            structured.append(column_config)
+    return structured, text
+
+
+def build_attribute_config(column_configurations):
+    return {"configurations": column_configurations}
+
+
+def order_dataframe_by_config(df, column_configurations):
+    ordered = sorted(column_configurations, key=lambda item: item.get("index", float("inf")))
+    ordered_names = [item["name"] for item in ordered if "name" in item]
+    for column_name in ordered_names:
+        if column_name not in df.columns:
+            df[column_name] = pd.NA
+    return df[ordered_names] if ordered_names else df
+
+
+def create_text_synthesis_input(dataframe, full_attribute_config):
+    text_input = dataframe.copy()
+    for column_config in full_attribute_config.get("configurations", []):
+        column_name = column_config.get("name")
+        if str(column_config.get("type", "")).upper() != "TEXT":
+            continue
+        text_input[column_name] = TEXT_PENDING_LLM
+    return order_dataframe_by_config(text_input, full_attribute_config.get("configurations", []))
+
+
+@lru_cache(maxsize=None)
+def load_text_synthesis_defaults(text_synthesizer_name):
+    synthesizer_config = load_synthesizer_config(text_synthesizer_name)
+    defaults = {
+        "model_parameter": {},
+        "model_fitting": {},
+        "sampling": {},
+    }
+    sections = synthesizer_config.get("configurations", {})
+    for section_name in defaults:
+        parameters = sections.get(section_name, {}).get("parameters", [])
+        for parameter in parameters:
+            parameter_name = parameter.get("name")
+            if not parameter_name or "default_value" not in parameter:
+                continue
+            defaults[section_name][parameter_name] = parameter.get("default_value")
+
+    return defaults
+
+
+def build_text_synthesis_algorithm_config(algorithm_config, synthesizer_name, text_synthesizer_name, num_samples):
+    if synthesizer_name == text_synthesizer_name:
+        config = deepcopy(algorithm_config)
+    else:
+        config = deepcopy(algorithm_config.get("text_synthesis_configuration", {}))
+
+    if not config:
+        config = {}
+
+    algorithm_section = config.setdefault("synthetization_configuration", {}).setdefault("algorithm", {})
+    algorithm_section.setdefault("synthesizer", text_synthesizer_name)
+    algorithm_section.setdefault("model_parameter", {})
+    algorithm_section.setdefault("model_fitting", {})
+    algorithm_section.setdefault("sampling", {})
+
+    defaults = load_text_synthesis_defaults(text_synthesizer_name)
+
+    model_parameter = algorithm_section["model_parameter"]
+    for key, value in defaults.get("model_parameter", {}).items():
+        model_parameter.setdefault(key, value)
+
+    model_fitting = algorithm_section["model_fitting"]
+    for key, value in defaults.get("model_fitting", {}).items():
+        model_fitting.setdefault(key, value)
+
+    sampling = algorithm_section["sampling"]
+    for key, value in defaults.get("sampling", {}).items():
+        sampling.setdefault(key, value)
+    sampling["num_samples"] = num_samples
+
+    return config
+
+
+def run_synthesizer_stage(
+    stage_label,
+    synthesizer_name,
+    stage_attribute_config,
+    stage_algorithm_config,
+    input_data,
+    file_path_status,
+    reference_data=None,
+    replace_text_with_pending=True,
+    fill_text_with_pending=True,
+):
+    stage_init_time = time.time()
+
+    synthesizer_class = synthesizer_classes[synthesizer_name]['class']()
+    print(f"[{stage_label}] Synthesizer class initialized: {synthesizer_name}")
+
+    synthesizer_class.initialize_anonymization_configuration(stage_algorithm_config)
+    print(f"[{stage_label}] Anonymization configuration initialized.")
+
+    synthesizer_class.initialize_attribute_configuration(stage_attribute_config)
+    print(f"[{stage_label}] Attribute configuration initialized.")
+
+    pre_processed_data, all_missing_values_column = pre_process_dataframe(
+        input_data.copy(),
+        stage_attribute_config['configurations'],
+        replace_text_with_pending=replace_text_with_pending,
+    )
+    print(f"[{stage_label}] Input data preprocessed.")
+
+    pre_processed_reference_data = None
+    if reference_data is not None:
+        pre_processed_reference_data, _ = pre_process_dataframe(
+            reference_data.copy(),
+            stage_attribute_config['configurations'],
+            replace_text_with_pending=False,
+        )
+        print(f"[{stage_label}] Reference data preprocessed.")
+
+    synthesizer_class.initialize_dataset(pre_processed_data)
+    if pre_processed_reference_data is not None:
+        if not hasattr(synthesizer_class, "initialize_reference_dataset"):
+            raise RuntimeError("Synthesizer does not support reference dataset initialization.")
+        synthesizer_class.initialize_reference_dataset(pre_processed_reference_data)
+    print(f"[{stage_label}] Dataset initialized.")
+
+    synthesizer_class.initialize_synthesizer()
+    print(f"[{stage_label}] Synthesizer initialized.")
+    stage_init_duration = time.time() - stage_init_time
+
+    fit_time = time.time()
+    original_stdout = sys.stdout
+    try:
+        sys.stdout = InterceptStdOut(file_path_status, 'fitting')
+        synthesizer_class.fit()
+    finally:
+        sys.stdout = original_stdout
+    fit_duration = time.time() - fit_time
+    print(f"[{stage_label}] Synthesizer fitted.")
+
+    sample_time = time.time()
+    original_stdout = sys.stdout
+    try:
+        sys.stdout = InterceptStdOut(file_path_status, 'sampling')
+        samples = synthesizer_class.sample()
+    finally:
+        sys.stdout = original_stdout
+    sample_duration = time.time() - sample_time
+    print(f"[{stage_label}] Data sampled.")
+
+    samples = post_process_dataframe(
+        samples,
+        stage_attribute_config['configurations'],
+        all_missing_values_column,
+        fill_text_with_pending=fill_text_with_pending,
+    )
+    print(f"[{stage_label}] Data post-processed.")
+
+    synthesizer_model = synthesizer_class.get_model()
+    print(f"[{stage_label}] Model retrieved.")
+
+    return samples, synthesizer_model, stage_init_duration, fit_duration, sample_duration
 
 
 def synthesize_data(synthesizer_name, file_path_status, attribute_config, algorithm_config, data,
@@ -144,190 +372,145 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
     try:
         configure_realtime_logging()
         print('Synthesizer selected:', synthesizer_name)
-        init_time = time.time()
-        pre_processed_original_data = None
 
-        # Step 0: Check if the synthesizer exists
         if synthesizer_name not in synthesizer_classes:
             error_message = f"Error: Synthesizer '{synthesizer_name}' not found"
             send_callback_error(callback_url, session_key, error_message, 400)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 400
-            }
+            return {'message': error_message, 'session_key': session_key, 'status_code': 400}
 
-        # Step 1: Initialize the synthesizer
-        try:
-            synthesizer_class = synthesizer_classes[synthesizer_name]['class']()
-            print('Synthesizer class initialized:', synthesizer_name)
-        except RuntimeError as e:
-            error_message = f"Error during initialization of synthesizer. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 400)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 400
-            }
+        text_synthesizer_name = get_text_synthesizer_name()
+        if text_synthesizer_name not in synthesizer_classes:
+            error_message = f"Error: Required text synthesizer '{text_synthesizer_name}' not found"
+            send_callback_error(callback_url, session_key, error_message, 500)
+            return {'message': error_message, 'session_key': session_key, 'status_code': 500}
 
-        # Step 2: Initialize anonymization configuration
-        try:
-            synthesizer_class.initialize_anonymization_configuration(algorithm_config)
-            print('Anonymization configuration initialized.')
-        except RuntimeError as e:
-            error_message = f"Error during initialization of anonymization configuration. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 400)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 400
-            }
+        structured_configs, text_configs = split_attribute_configurations(attribute_config)
+        supports_structured, supports_free_text = get_processing_capabilities(synthesizer_name)
 
-        # Step 3: Initialize attribute configuration
-        try:
-            synthesizer_class.initialize_attribute_configuration(attribute_config)
-            print('Attribute configuration initialized.')
-        except RuntimeError as e:
-            error_message = f"Error during attribute configuration. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 400)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 400
-            }
+        print(
+            "Processing capabilities resolved: "
+            f"supports_structured={supports_structured}, supports_free_text={supports_free_text}, "
+            f"structured_columns={len(structured_configs)}, text_columns={len(text_configs)}"
+        )
 
-        # Step 4: Pre-process sampled data
-        try:
-            use_pending_text_placeholder = not is_llm_synthesizer(synthesizer_name)
-            pre_processed_data, all_missing_values_column = pre_process_dataframe(
-                data,
-                attribute_config['configurations'],
-                replace_text_with_pending=use_pending_text_placeholder,
+        total_init_duration = 0.0
+        total_fit_duration = 0.0
+        total_sample_duration = 0.0
+
+        final_samples = None
+        final_model = None
+
+        # 1) Standalone text synthesis (no structured synthesis).
+        if synthesizer_name == text_synthesizer_name:
+            print("Pipeline mode: text-only synthesis.")
+            text_input = create_text_synthesis_input(data, attribute_config)
+            text_algorithm_config = build_text_synthesis_algorithm_config(
+                algorithm_config,
+                synthesizer_name,
+                text_synthesizer_name,
+                len(text_input),
             )
-            pre_processed_original_data = None
-            if original_data is not None:
-                pre_processed_original_data, _ = pre_process_dataframe(
-                    original_data,
-                    attribute_config['configurations'],
-                    replace_text_with_pending=False,
+
+            final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
+                stage_label="TEXT_SYNTHESIS",
+                synthesizer_name=text_synthesizer_name,
+                stage_attribute_config=attribute_config,
+                stage_algorithm_config=text_algorithm_config,
+                input_data=text_input,
+                reference_data=data,
+                file_path_status=file_path_status,
+                replace_text_with_pending=False,
+                fill_text_with_pending=False,
+            )
+            total_init_duration += init_duration
+            total_fit_duration += fit_duration
+            total_sample_duration += sample_duration
+
+        # 2) Selected synthesizer does not support free text:
+        #    first synthesize structured columns, then synthesize text via llm_text_synthesis.
+        elif text_configs and not supports_free_text:
+            print("Pipeline mode: two-stage (structured -> text synthesis).")
+
+            structured_base = None
+            structured_model = None
+
+            if structured_configs and supports_structured:
+                structured_attribute_config = build_attribute_config(structured_configs)
+                structured_base, structured_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
+                    stage_label="STRUCTURED_SYNTHESIS",
+                    synthesizer_name=synthesizer_name,
+                    stage_attribute_config=structured_attribute_config,
+                    stage_algorithm_config=algorithm_config,
+                    input_data=data[ [cfg["name"] for cfg in structured_configs] ].copy(),
+                    reference_data=None,
+                    file_path_status=file_path_status,
+                    replace_text_with_pending=True,
+                    fill_text_with_pending=True,
                 )
-            print("Dataset preprocessed.")
-        except Exception as e:
-            error_message = f"Error during pre-processing. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 500)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 500
-            }
+                total_init_duration += init_duration
+                total_fit_duration += fit_duration
+                total_sample_duration += sample_duration
 
-        # Step 5: Initialize dataset
-        try:
-            synthesizer_class.initialize_dataset(pre_processed_data)
-            if pre_processed_original_data is not None:
-                if not hasattr(synthesizer_class, "initialize_reference_dataset"):
-                    raise RuntimeError(
-                        "Synthesizer does not support original reference dataset initialization."
-                    )
-                synthesizer_class.initialize_reference_dataset(pre_processed_original_data)
-            print('Dataset initialized.')
-        except RuntimeError as e:
-            print("Error in Dataset Initialoization")
-            error_message = f"Error during dataset initialization. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 400)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 400
-            }
+            if structured_base is None:
+                print("No structured synthesis executed. Using input dataset as base for text synthesis.")
+                structured_base = data.copy()
+                structured_model = None
 
-        # Step 6: Initialize synthesizer
-        try:
-            synthesizer_class.initialize_synthesizer()
-            print('Synthesizer initialized.')
-            init_time = time.time() - init_time
-            update_status(file_path_status, step='initialization', duration=init_time, completed=True)
-        except RuntimeError as e:
-            error_message = f"Error during synthesizer initialization. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 500)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 500
-            }
-
-        # Step 7: Fit the synthesizer
-        try:
-            fit_time = time.time()
-            sys.stdout = InterceptStdOut(file_path_status, 'fitting')
-            synthesizer_class.fit()
-            fit_time = time.time() - fit_time
-            update_status(file_path_status, 'fitting', duration=fit_time, completed=True, remaining_time="0")
-            print('Synthesizer fitted.')
-        except RuntimeError as e:
-            error_message = f"Error during synthesizer fitting. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 500)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 500
-            }
-
-        # Step 8: Sample data
-        try:
-            sample_time = time.time()
-            sys.stdout = sys.__stdout__
-            sys.stdout = InterceptStdOut(file_path_status, 'sampling')
-            samples = synthesizer_class.sample()
-            sample_time = time.time() - sample_time
-            update_status(file_path_status, 'sampling', duration=sample_time, completed=True, remaining_time="0")
-            print('Data sampled.')
-        except RuntimeError as e:
-            error_message = f"Error during data sampling. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 500)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 500
-            }
-
-        # Step 9: Post-process sampled data
-        try:
-            print('Starting Post-processing')
-            use_pending_text_placeholder = not is_llm_synthesizer(synthesizer_name)
-            samples = post_process_dataframe(
-                samples,
-                attribute_config['configurations'],
-                all_missing_values_column,
-                fill_text_with_pending=use_pending_text_placeholder,
+            text_input = create_text_synthesis_input(structured_base, attribute_config)
+            text_algorithm_config = build_text_synthesis_algorithm_config(
+                algorithm_config,
+                synthesizer_name,
+                text_synthesizer_name,
+                len(text_input),
             )
-            print('Data Post-processed')
-        except Exception as e:
-            error_message = f"Error during post-processing. {str(e)}"
-            print(error_message)
-            send_callback_error(callback_url, session_key, error_message, 500)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 500
-            }
 
-        # Step 10: Retrieve the model
-        try:
-            synthesizer_model = synthesizer_class.get_model()
-            print('Model retrieved.')
-        except RuntimeError as e:
-            error_message = f"Error during model retrieval. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 500)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 500
-            }
+            final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
+                stage_label="TEXT_SYNTHESIS",
+                synthesizer_name=text_synthesizer_name,
+                stage_attribute_config=attribute_config,
+                stage_algorithm_config=text_algorithm_config,
+                input_data=text_input,
+                reference_data=data,
+                file_path_status=file_path_status,
+                replace_text_with_pending=False,
+                fill_text_with_pending=False,
+            )
+            total_init_duration += init_duration
+            total_fit_duration += fit_duration
+            total_sample_duration += sample_duration
 
-        # Step 11: Send callback
+            if final_model is None:
+                final_model = structured_model
+
+        # 3) Selected synthesizer can handle target data directly (single-stage).
+        else:
+            print("Pipeline mode: single-stage synthesis.")
+            final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
+                stage_label="SINGLE_STAGE",
+                synthesizer_name=synthesizer_name,
+                stage_attribute_config=attribute_config,
+                stage_algorithm_config=algorithm_config,
+                input_data=data,
+                reference_data=None,
+                file_path_status=file_path_status,
+                replace_text_with_pending=not is_llm_synthesizer(synthesizer_name),
+                fill_text_with_pending=not is_llm_synthesizer(synthesizer_name),
+            )
+            total_init_duration += init_duration
+            total_fit_duration += fit_duration
+            total_sample_duration += sample_duration
+
+        if final_samples is None or final_model is None:
+            raise RuntimeError("Pipeline did not produce synthetic data and model output.")
+
+        final_samples = order_dataframe_by_config(final_samples, attribute_config.get("configurations", []))
+
+        update_status(file_path_status, step='initialization', duration=total_init_duration, completed=True)
+        update_status(file_path_status, 'fitting', duration=total_fit_duration, completed=True, remaining_time="0")
+        update_status(file_path_status, 'sampling', duration=total_sample_duration, completed=True, remaining_time="0")
+
         try:
-            files = prepare_callback_data(samples, synthesizer_model)
+            files = prepare_callback_data(final_samples, final_model)
             print(f"Sending success callback to {callback_url} with session_key={session_key}")
             response = requests.post(
                 callback_url,
@@ -347,21 +530,12 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             update_status(file_path_status, 'callback', completed=False)
             error_message = f"Synthetization Finished, failed to send callback notification. {str(e)}"
             send_callback_error(callback_url, session_key, error_message, 500)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 500
-            }
+            return {'message': error_message, 'session_key': session_key, 'status_code': 500}
 
     except Exception as e:
-        # Catch any unexpected errors
         error_message = f"Unexpected error occurred: {str(e)}"
         send_callback_error(callback_url, session_key, error_message, 500)
-        return {
-            'message': error_message,
-            'session_key': session_key,
-            'status_code': 500
-        }
+        return {'message': error_message, 'session_key': session_key, 'status_code': 500}
 
 
 @app.route('/start_synthetization_process/<string:synthesizer_name>', methods=['POST'])

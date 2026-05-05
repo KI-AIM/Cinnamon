@@ -6,7 +6,6 @@ from synthetic_tabular_data_generator.algorithms.bayesian_network import Bayesia
 from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomForestsSynthesizer
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
-from synthetic_tabular_data_generator.algorithms.llm_text_redaction import LlmTextRedactionSynthesizer
 from synthetic_tabular_data_generator.algorithms.llm_text_synthesis import LlmTextSynthesisSynthesizer
 
 synthesizer_classes = {
@@ -73,14 +72,6 @@ synthesizer_classes = {
         'display_name': 'LLM Dataset Generator',
         'description': 'A configurable LLM-based generator that creates fully synthetic datasets from source data via Ollama or OpenAI-compatible APIs.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
-    },
-    'llm_text_redaction': {
-        'version': '0.1',
-        'type': 'cross-sectional',
-        'class': LlmTextRedactionSynthesizer,
-        'display_name': 'LLM Text Redaction',
-        'description': 'A LLM-based text redaction component for replacing only configured identifier categories in TEXT fields.',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_redaction.yaml'
     },
     'llm_text_synthesis': {
         'version': '0.1',

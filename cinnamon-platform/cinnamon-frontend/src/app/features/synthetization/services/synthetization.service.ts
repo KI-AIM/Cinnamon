@@ -23,24 +23,39 @@ export class SynthetizationService extends AlgorithmService {
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
-        return {
+        const formData = {...(arg as any)};
+        const textSynthesisConfiguration = formData["text_synthesis_configuration"];
+        delete formData["text_synthesis_configuration"];
+
+        const config: any = {
             synthetization_configuration: {
                 algorithm: {
                     synthesizer: selectedAlgorithm.name,
                     type: selectedAlgorithm.type,
                     version: selectedAlgorithm.version,
-                    ...arg
+                    ...formData
                 },
             },
         };
+
+        if (textSynthesisConfiguration) {
+            config["text_synthesis_configuration"] = textSynthesisConfiguration;
+        }
+
+        return config;
     }
 
     public override readConfiguration(arg: any, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName(arg[configurationName]["algorithm"]["synthesizer"]);
-        const config = arg[configurationName]["algorithm"];
+        const config = {...arg[configurationName]["algorithm"]};
         delete config["synthesizer"];
         delete config["type"];
         delete config["version"];
+
+        if (arg["text_synthesis_configuration"] != null) {
+            config["text_synthesis_configuration"] = arg["text_synthesis_configuration"];
+        }
+
         return {config, selectedAlgorithm};
     }
 

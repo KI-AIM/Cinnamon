@@ -4,6 +4,9 @@ type: cross-sectional
 display_name: LLM Dataset Generator
 description: Generate fully synthetic datasets from existing source data using a configurable Ollama or OpenAI-compatible language model.
 URL: /start_synthetization_process/llm_tabular
+processing_capabilities:
+  supports_structured_data: true
+  supports_free_text_data: true
 configurations:
   model_parameter:
     display_name: Dataset Generation Parameters
@@ -37,12 +40,12 @@ configurations:
         mandatory: false
   sampling:
     display_name: Sampling
-    description: Configure generation size and decoding behavior of the language model.
+    description: Configure row count and decoding behavior of the language model.
     parameters:
       - name: num_samples
         type: integer
         label: Number of Samples
-        description: Number of synthetic records to generate.
+        description: Number of synthetic rows to generate.
         default_value: 1000
         min_value: 1
         max_value: 1000000
@@ -60,3 +63,4 @@ configurations:
         default_value: 0.9
         min_value: 0.0
         max_value: 1.0
+

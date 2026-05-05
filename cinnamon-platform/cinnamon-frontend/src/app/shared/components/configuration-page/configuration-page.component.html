@@ -1,7 +1,7 @@
 <ng-container *ngIf="pageData$ | async as data">
     <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
-        <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="4"
+        <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="numberSteps"
                            [step]="step" [invalid]="(oneEnabled && (!formValid || selectedAlgorithm == null))"
                            (confirm)="submit()">
             <!-- Activation -->
@@ -21,18 +21,18 @@
             </app-workstep-item>
 
             <!-- Algorithm Selection -->
-            <app-workstep-item header="Select the algorithm to be executed" [locked]="data.locked"
+            <app-workstep-item [header]="selectionStepHeader" [locked]="data.locked"
                                [skip]="!hasAlgorithmSelection" [stepIndex]="2" [invalid]="selectedAlgorithm == null">
-                <app-configuration-selection #selection [algorithms]="data.algorithms"
+                <app-configuration-selection #selection [algorithms]="getStructuredAlgorithms(data.algorithms)"
                                              [disabled]="data.locked || !oneEnabled"
                                              [initialValue]="data.configurationData.selectedAlgorithm"
                                              (change)="onSelectionChange($event)">
                 </app-configuration-selection>
             </app-workstep-item>
 
-            <!-- Algorithm Configuration -->
-            <app-workstep-item header="Configure the algorithm" [locked]="data.locked"
-                               [stepIndex]="3" [invalid]="!formValid">
+            <!-- Structured Configuration -->
+            <app-workstep-item [header]="configurationStepHeader" [locked]="data.locked"
+                               [stepIndex]="3" [invalid]="structuredConfigurationInvalid">
                 <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                     <div class="ms-auto me-auto" style="width: fit-content">
                         <ng-container *ngIf="hasAlgorithmSelection; else noAlgorithmSelection">
@@ -44,7 +44,7 @@
                     </div>
                 </div>
                 <ng-template #configurationForms>
-                    <div *ngFor="let item of data.algorithms" [id]="item">
+                    <div *ngFor="let item of getStructuredAlgorithms(data.algorithms)" [id]="item">
                         <ng-container *ngIf="selectedAlgorithm != null && selectedAlgorithm.name === item.name">
                             <app-configuration-form #form [algorithm]="item"
                                                     [dataConfiguration]="data.dataConfiguration"
@@ -57,6 +57,46 @@
                     </div>
                 </ng-template>
             </app-workstep-item>
+
+            <ng-container *ngIf="isSynthetizationConfiguration">
+                <!-- Free-text Selection -->
+                <app-workstep-item header="Select the free-text synthesizer" [locked]="data.locked"
+                                   [stepIndex]="4" [skip]="!hasFreeTextConfiguration"
+                                   [invalid]="freeTextSelectionInvalid">
+                    <ng-container *ngIf="forms?.form as rootForm">
+                        <div [formGroup]="rootForm">
+                            <div formGroupName="text_synthesis_configuration">
+                                <div formGroupName="synthetization_configuration">
+                                    <div formGroupName="algorithm">
+                                        <mat-form-field class="w-100">
+                                            <mat-label>Free-Text Synthesizer</mat-label>
+                                            <mat-select formControlName="synthesizer">
+                                                <mat-option *ngFor="let item of getFreeTextAlgorithms(data.algorithms)" [value]="item.name">
+                                                    {{ item.display_name }}
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </ng-container>
+                </app-workstep-item>
+
+                <!-- Free-text Configuration -->
+                <app-workstep-item header="Configure the free-text synthesizer" [locked]="data.locked"
+                                   [stepIndex]="5" [skip]="!hasFreeTextConfiguration"
+                                   [invalid]="freeTextConfigurationInvalid">
+                    <ng-container *ngIf="getFreeTextAlgorithmGroup() as freeTextAlgorithmForm">
+                        <ng-container *ngIf="getFreeTextAlgorithmDefinition(data.algorithms) | async as freeTextDefinition">
+                            <app-configuration-group [form]="freeTextAlgorithmForm" [fromGroupName]="''"
+                                                     [group]="freeTextDefinition" [disabled]="data.locked || !oneEnabled"
+                                                     [isOption]="false">
+                            </app-configuration-group>
+                        </ng-container>
+                    </ng-container>
+                </app-workstep-item>
+            </ng-container>
 
         </app-workstep-list>
 
@@ -74,15 +114,15 @@
                              (input)="uploadConfiguration($event)"></app-file-upload>
         </app-workstep-box>
 
-        <app-workstep-box header="Algorithm Selection" [class.d-none]="!hasAlgorithmSelection">
-            <app-configuration-selection #selection [algorithms]="data.algorithms"
+        <app-workstep-box [header]="selectionStepHeader" [class.d-none]="!hasAlgorithmSelection">
+            <app-configuration-selection #selection [algorithms]="getStructuredAlgorithms(data.algorithms)"
                                          [initialValue]="data.configurationData.selectedAlgorithm"
                                          [disabled]="data.locked || !oneEnabled"
                                          (change)="onSelectionChange($event)">
             </app-configuration-selection>
         </app-workstep-box>
 
-        <app-workstep-box header="Algorithm Configuration" [invalid]="selectedAlgorithm !== null && !formValid">
+        <app-workstep-box [header]="configurationStepHeader" [invalid]="selectedAlgorithm !== null && structuredConfigurationInvalid">
             <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
                 <div class="ms-auto me-auto" style="width: fit-content">
                     <ng-container *ngIf="hasAlgorithmSelection; else noAlgorithmSelection">
@@ -94,7 +134,7 @@
                 </div>
             </div>
             <ng-template #configurationForms>
-                <div *ngFor="let item of data.algorithms" [id]="item">
+                <div *ngFor="let item of getStructuredAlgorithms(data.algorithms)" [id]="item">
                     <ng-container *ngIf="selectedAlgorithm!.name === item.name">
                         <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
                                                 [dataConfiguration]="data.dataConfiguration"
@@ -106,6 +146,38 @@
                 </div>
             </ng-template>
         </app-workstep-box>
+
+        <ng-container *ngIf="isSynthetizationConfiguration && hasFreeTextConfiguration && forms?.form as rootForm">
+            <app-workstep-box header="Free-Text Synthesizer Selection" [invalid]="freeTextSelectionInvalid">
+                <div [formGroup]="rootForm">
+                    <div formGroupName="text_synthesis_configuration">
+                        <div formGroupName="synthetization_configuration">
+                            <div formGroupName="algorithm">
+                                <mat-form-field class="w-100">
+                                    <mat-label>Free-Text Synthesizer</mat-label>
+                                    <mat-select formControlName="synthesizer">
+                                        <mat-option *ngFor="let item of getFreeTextAlgorithms(data.algorithms)" [value]="item.name">
+                                            {{ item.display_name }}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </app-workstep-box>
+
+            <app-workstep-box header="Free-Text Synthesizer Configuration" [invalid]="freeTextConfigurationInvalid">
+                <ng-container *ngIf="getFreeTextAlgorithmGroup() as freeTextAlgorithmForm">
+                    <ng-container *ngIf="getFreeTextAlgorithmDefinition(data.algorithms) | async as freeTextDefinition">
+                        <app-configuration-group [form]="freeTextAlgorithmForm" [fromGroupName]="''"
+                                                 [group]="freeTextDefinition" [disabled]="data.locked || !oneEnabled"
+                                                 [isOption]="false">
+                        </app-configuration-group>
+                    </ng-container>
+                </ng-container>
+            </app-workstep-box>
+        </ng-container>
 
         <app-workstep-box header="Confirm your configuration">
             <button type="submit" mat-raised-button color="primary"

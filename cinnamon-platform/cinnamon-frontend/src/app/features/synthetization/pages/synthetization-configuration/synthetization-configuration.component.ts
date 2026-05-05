@@ -17,6 +17,12 @@ import {
     LlmRedactionRulesConfigurationService
 } from "../../services/llm-redaction-rules-configuration.service";
 import { ConfigurationObject } from "../../../../shared/model/anonymization-attribute-config";
+import {
+    TextSynthesisConfigurationService
+} from "../../services/text-synthesis-configuration.service";
+import {
+    TextSynthesisConfigurationComponent
+} from "../../components/text-synthesis-configuration/text-synthesis-configuration.component";
 
 @Component({
     selector: 'app-synthetization-configuration',
@@ -39,6 +45,7 @@ export class SynthetizationConfigurationComponent implements OnInit {
     constructor(
         private readonly synthService: SynthetizationService,
         private readonly llmRedactionRulesConfigurationService: LlmRedactionRulesConfigurationService,
+        private readonly textSynthesisConfigurationService: TextSynthesisConfigurationService,
         private titleService: TitleService,
     ) {
         this.titleService.setPageTitle("Synthetization");
@@ -58,6 +65,17 @@ export class SynthetizationConfigurationComponent implements OnInit {
                 },
                 ["llm_text_redaction"],
                 "model_fitting",
+            ),
+            new AdditionalConfig(
+                TextSynthesisConfigurationComponent,
+                "Free-Text Synthesizer",
+                "Choose and configure the free-text synthesizer that enriches TEXT columns after structured synthesis.",
+                this.textSynthesisConfigurationService.formGroupName,
+                (form: FormGroup, config: any, disabled: boolean) => {
+                    this.textSynthesisConfigurationService.initForm(form, config as ConfigurationObject | null, disabled);
+                },
+                ["ctgan", "tvae", "bayesian_network", "arf", "ddpm", "rtvae"],
+                "__external_step__",
             ),
         );
         this.additionalConfigs = new ConfigurationAdditionalConfigs(configs);

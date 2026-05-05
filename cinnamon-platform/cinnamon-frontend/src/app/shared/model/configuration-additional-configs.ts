@@ -1,5 +1,4 @@
 import { FormGroup } from "@angular/forms";
-import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
 
 export class ConfigurationAdditionalConfigs {
     configs: AdditionalConfig[];
@@ -16,14 +15,14 @@ export class AdditionalConfig {
     formGroupName: string;
     applicableAlgorithmNames: string[] | null;
     insertAfterGroupName: string | null;
-    initializeForm: (formGroup: FormGroup, configs: ConfigurationObject[] | null, disabled: boolean) => void;
+    initializeForm: (formGroup: FormGroup, configs: any, disabled: boolean) => void;
 
     constructor(
         component: any,
         title: string,
         description: string,
         formGroupName: string,
-        initializeForm: (formGroup: FormGroup, configs: ConfigurationObject[] | null, disabled: boolean) => void,
+        initializeForm: (formGroup: FormGroup, configs: any, disabled: boolean) => void,
         applicableAlgorithmNames: string[] | null = null,
         insertAfterGroupName: string | null = null,
     ) {

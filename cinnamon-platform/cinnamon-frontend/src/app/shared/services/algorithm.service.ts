@@ -73,7 +73,7 @@ export abstract class AlgorithmService {
         return this.fetchInfo().pipe(
             switchMap(value => {
                 // Either all processes are configured or none, so look up if the first is configured
-                if (value.processes[0].configured) {
+                if (value.available) {
                     // Ensure algorithms are loaded before fetching the configuration
                     return this.algorithms.pipe(
                         switchMap(_ => {
@@ -256,6 +256,10 @@ export abstract class AlgorithmService {
  * Information for the configuration page.
  */
 export interface ConfigurationInfo {
+    /**
+     * If a configuration is available because of a previous import.
+     */
+    available: boolean
     /**
      * Processes to be configured by this configuration page.
      */

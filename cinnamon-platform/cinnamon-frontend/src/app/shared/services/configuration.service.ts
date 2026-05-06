@@ -196,7 +196,10 @@ export class ConfigurationService {
     public uploadAllConfigurations(file: Blob, includedConfigurations: Array<string> | null): Observable<ConfigurationImportSummary> {
         const formData = new FormData();
         formData.append("configuration", file);
-        formData.append("importParameters", JSON.stringify({configurationsToImport: includedConfigurations}));
+        formData.append("importParameters", JSON.stringify({
+            configurationsToImport: includedConfigurations,
+            allowPartialImport: false,
+        }));
 
         // TODO currently there is always just one configuration imported.
         //  If multiple configurations are uploaded, handling for PARTIAL_ERROR must be implemented.

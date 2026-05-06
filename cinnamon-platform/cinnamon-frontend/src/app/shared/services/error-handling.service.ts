@@ -1,8 +1,9 @@
+import { HttpErrorResponse } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { AppNotification, NotificationService } from "@core/services/notification.service";
-import { HttpErrorResponse } from "@angular/common/http";
-import { ErrorDetails, ErrorResponse } from "../model/error-response";
+import { ConfigurationImportSummary } from "@shared/model/import-pipe-data";
 import { plainToInstance } from "class-transformer";
+import { ErrorDetails, ErrorResponse } from "../model/error-response";
 import { UserService } from "./user.service";
 
 /**
@@ -75,7 +76,7 @@ export class ErrorHandlingService {
         if (this.isJsonString(response.error)) {
             const errorResponse = plainToInstance(ErrorResponse, JSON.parse(response.error));
             return this.handleErrorResponse(errorResponse);
-        } else if(typeof response.error === 'object') {
+        } else if (typeof response.error === 'object') {
             const errorResponse = plainToInstance(ErrorResponse, response.error);
             return this.handleErrorResponse(errorResponse);
         } else {
@@ -86,7 +87,18 @@ export class ErrorHandlingService {
     private handleErrorResponse(error: ErrorResponse): string {
         let errorMessage = "";
 
-        if (error.errorCode === 'PLATFORM_3_2_1') {
+        if (error.errorCode === "PLATFORM_1_14_3") {
+            const summary = error.errorDetails?.configurationImportSummary as ConfigurationImportSummary;
+            const target = summary.parameters.configurationsToImport![0];
+            const part = summary.configurationImportSummaries.find(p => p.configurationName === target);
+
+            if (part != null) {
+                if (part.errorCode === "PLATFORM_1_2_2") {
+                    return `Failed to import configuration: The file does not contain a configuration for "${part.configurationName}"!`;
+                }
+            }
+
+        } else if (error.errorCode === 'PLATFORM_3_2_1') {
             if (error.errorDetails?.validationErrors == null) {
                 console.error("Validation error details are null!");
                 return "Request validation failed.";

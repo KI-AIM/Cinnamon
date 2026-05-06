@@ -1,7 +1,6 @@
 from synthetic_tabular_data_generator.algorithms.ctgan import CtganSynthesizer
 from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
-#from synthetic_longitudinal_data_generator.algorithms.par import ParSynthesizer
 from synthetic_tabular_data_generator.algorithms.bayesian_network import BayesianNetworkSynthesizer
 from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomForestsSynthesizer
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
@@ -25,14 +24,6 @@ synthesizer_classes = {
         'description': 'Tabular Variational Autoencoder (TVAE) are a specialized type of generative model designed to create realistic synthetic tabular data, mimicking the statistical properties of original datasets. Leveraging an encoder-decoder architecture, TVAEs learn compressed latent representations of your data and generate new rows by sampling from this latent space, enabling the creation of synthetic datasets that preserve privacy while retaining key analytical insights. TVAE is especially effective for controlled simulations and what-if analysis where smooth plausible data variations are explored.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/tvae.yaml'
     },
-    # 'par': {
-    #     'version': '0.1',
-    #     'type': 'longitudinal',
-    #     'class': ParSynthesizer,
-    #     'display_name': 'Probabilistic Auto-Regressive Model',
-    #     'description': 'PAR is a model that can generate synthetic longitudinal data.',
-    #     'URL': '/synthetic_longitudinal_data_generator/synthesizer_config/par.yaml'
-    # },
     'bayesian_network': {
         'version': '0.1',
         'type': 'cross-sectional',

@@ -8,6 +8,17 @@ processing_capabilities:
   supports_structured_data: false
   supports_free_text_data: true
 configurations:
+  llm_profile:
+    display_name: LLM Profile
+    description: Select which configured LLM instance should be used.
+    parameters:
+      - name: llm_profile
+        type: string
+        label: LLM Profile
+        description: Select the configured LLM profile (model endpoint and credentials).
+        default_value: ""
+        values: []
+        mandatory: false
   model_parameter:
     display_name: Dataset Generation Parameters
     description: Configure how many original rows are profiled and how many examples are used as semantic guidance for text generation.

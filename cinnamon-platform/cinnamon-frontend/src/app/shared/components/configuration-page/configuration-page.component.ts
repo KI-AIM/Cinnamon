@@ -8,7 +8,7 @@ import { StateManagementService } from "@core/services/state-management.service"
 import { DataConfiguration } from "@shared/model/data-configuration";
 import { Status } from "@shared/model/status";
 import { DataConfigurationService } from "@shared/services/data-configuration.service";
-import { catchError, combineLatest, from, map, mergeMap, Observable, of, switchMap, tap } from "rxjs";
+import { catchError, combineLatest, from, map, mergeMap, Observable, of, shareReplay, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
 import { Algorithm } from "../../model/algorithm";
@@ -87,6 +87,7 @@ export class ConfigurationPageComponent implements OnInit {
     protected oneEnabled = false;
 
     protected selectedAlgorithm: Algorithm | null = null;
+    private freeTextDefinitionCache: Map<string, Observable<AlgorithmDefinition>> = new Map<string, Observable<AlgorithmDefinition>>();
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') protected forms: ConfigurationFormComponent;
@@ -174,7 +175,16 @@ export class ConfigurationPageComponent implements OnInit {
             return of(null);
         }
 
-        return this.algorithmService.getAlgorithmDefinition(selectedAlgorithm);
+        const cached = this.freeTextDefinitionCache.get(selectedAlgorithm.name);
+        if (cached) {
+            return cached;
+        }
+
+        const definition$ = this.algorithmService.getAlgorithmDefinition(selectedAlgorithm).pipe(
+            shareReplay(1),
+        );
+        this.freeTextDefinitionCache.set(selectedAlgorithm.name, definition$);
+        return definition$;
     }
 
     protected get selectionStepHeader(): string {
@@ -233,10 +243,14 @@ export class ConfigurationPageComponent implements OnInit {
                 return this.algorithmService.fetchConfiguration().pipe(
                     tap(value => {
                         const structuredAlgorithms = this.getStructuredAlgorithms(pageData.algorithms);
+                        const hasCurrentSelection = this.selectedAlgorithm != null
+                            && structuredAlgorithms.some(item => item.name === this.selectedAlgorithm!.name);
 
                         if (value.selectedAlgorithm != null && structuredAlgorithms.some(item => item.name === value.selectedAlgorithm!.name)) {
                             this.selectedAlgorithm = value.selectedAlgorithm
                             this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
+                        } else if (hasCurrentSelection) {
+                            value.selectedAlgorithm = this.selectedAlgorithm;
                         } else if (!this.hasAlgorithmSelection && structuredAlgorithms.length > 0) {
                             this.selectedAlgorithm = structuredAlgorithms[0];
                             this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), structuredAlgorithms[0]);
@@ -253,8 +267,12 @@ export class ConfigurationPageComponent implements OnInit {
                         this.errorHandlingService.addError(error);
                         const value: ConfigData = {config: {}, selectedAlgorithm: null};
                         const structuredAlgorithms = this.getStructuredAlgorithms(pageData.algorithms);
+                        const hasCurrentSelection = this.selectedAlgorithm != null
+                            && structuredAlgorithms.some(item => item.name === this.selectedAlgorithm!.name);
 
-                        if (!this.hasAlgorithmSelection && structuredAlgorithms.length > 0) {
+                        if (hasCurrentSelection) {
+                            value.selectedAlgorithm = this.selectedAlgorithm;
+                        } else if (!this.hasAlgorithmSelection && structuredAlgorithms.length > 0) {
                             this.selectedAlgorithm = structuredAlgorithms[0];
                             this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), structuredAlgorithms[0]);
                             value.selectedAlgorithm = this.selectedAlgorithm;

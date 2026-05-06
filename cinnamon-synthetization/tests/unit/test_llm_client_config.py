@@ -66,3 +66,59 @@ def test_load_llm_client_config_requires_explicit_decoding_values(monkeypatch):
         assert "CINNAMON_LLM_TEMPERATURE" in message
         assert "CINNAMON_LLM_TOP_P" in message
         assert "CINNAMON_LLM_MAX_TOKENS" in message
+
+
+def test_load_llm_client_config_uses_selected_profile(monkeypatch):
+    monkeypatch.delenv("CINNAMON_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("CINNAMON_LLM_MODEL_NAME", raising=False)
+    monkeypatch.delenv("CINNAMON_LLM_BASE_URL", raising=False)
+    monkeypatch.delenv("CINNAMON_LLM_ENDPOINT_PATH", raising=False)
+    monkeypatch.delenv("CINNAMON_LLM_HEALTHCHECK_PATH", raising=False)
+    monkeypatch.delenv("CINNAMON_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("CINNAMON_LLM_TIMEOUT_SECONDS", raising=False)
+    monkeypatch.delenv("CINNAMON_LLM_MAX_RETRIES", raising=False)
+    monkeypatch.delenv("CINNAMON_LLM_VERIFY_SSL", raising=False)
+    monkeypatch.delenv("CINNAMON_LLM_MAX_TOKENS", raising=False)
+
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_IDS", "p1,p2")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_NAME", "Profile A")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_MODEL_NAME", "model-a")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_BASE_URL", "http://profile-a.example.org:8000")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_ENDPOINT_PATH", "/v1/chat/completions")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_HEALTHCHECK_PATH", "/v1/models")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_API_KEY", "")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_TIMEOUT_SECONDS", "33")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_MAX_RETRIES", "4")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_VERIFY_SSL", "false")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_MAX_TOKENS", "1500")
+
+    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.4")
+    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.8")
+
+    algorithm_config = {
+        "synthetization_configuration": {
+            "algorithm": {
+                "model_parameter": {
+                    "llm_profile": "Profile A",
+                },
+                "model_fitting": {},
+                "sampling": {
+                    "temperature": 0.4,
+                    "top_p": 0.8,
+                },
+            }
+        }
+    }
+
+    config = load_llm_client_config(algorithm_config)
+
+    assert config.provider == "openai_compatible"
+    assert config.model_name == "model-a"
+    assert config.base_url == "http://profile-a.example.org:8000"
+    assert config.endpoint_path == "/v1/chat/completions"
+    assert config.healthcheck_path == "/v1/models"
+    assert config.timeout_seconds == 33
+    assert config.max_retries == 4
+    assert config.verify_ssl is False
+    assert config.max_tokens == 1500

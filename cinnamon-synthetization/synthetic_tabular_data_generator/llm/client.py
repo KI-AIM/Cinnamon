@@ -1,4 +1,5 @@
 import os
+import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
@@ -7,6 +8,8 @@ import requests
 
 
 DEFAULT_OPENAI_SYSTEM_PROMPT = "Return only the requested JSON or text content with no extra formatting."
+LLM_PROFILE_IDS_ENV_VAR = "CINNAMON_LLM_PROFILE_IDS"
+LLM_PROFILE_VAR_PREFIX = "CINNAMON_LLM_PROFILE_"
 
 
 LLM_ENV_VARS = {
@@ -22,6 +25,19 @@ LLM_ENV_VARS = {
     "temperature": "CINNAMON_LLM_TEMPERATURE",
     "top_p": "CINNAMON_LLM_TOP_P",
     "max_tokens": "CINNAMON_LLM_MAX_TOKENS",
+}
+
+LLM_PROFILE_FIELDS = {
+    "provider": "PROVIDER",
+    "model_name": "MODEL_NAME",
+    "base_url": "BASE_URL",
+    "endpoint_path": "ENDPOINT_PATH",
+    "healthcheck_path": "HEALTHCHECK_PATH",
+    "api_key": "API_KEY",
+    "timeout_seconds": "TIMEOUT_SECONDS",
+    "max_retries": "MAX_RETRIES",
+    "verify_ssl": "VERIFY_SSL",
+    "max_tokens": "MAX_TOKENS",
 }
 
 
@@ -84,6 +100,45 @@ def _read_env_value(name: str) -> Optional[str]:
     return stripped
 
 
+def _to_env_token(raw_value: str) -> str:
+    normalized = re.sub(r"[^A-Za-z0-9]+", "_", raw_value.strip()).strip("_")
+    return normalized.upper()
+
+
+def load_llm_profiles_from_env() -> Dict[str, Dict[str, Any]]:
+    raw_ids = _read_env_value(LLM_PROFILE_IDS_ENV_VAR)
+    if raw_ids is None:
+        return {}
+
+    profiles: Dict[str, Dict[str, Any]] = {}
+    for raw_profile_id in raw_ids.split(","):
+        profile_id = raw_profile_id.strip()
+        if not profile_id:
+            continue
+
+        env_token = _to_env_token(profile_id)
+        profile_name = _read_env_value(f"{LLM_PROFILE_VAR_PREFIX}{env_token}_NAME") or profile_id
+
+        profile_config: Dict[str, Any] = {}
+        for field_name, field_env_suffix in LLM_PROFILE_FIELDS.items():
+            value = _read_env_value(f"{LLM_PROFILE_VAR_PREFIX}{env_token}_{field_env_suffix}")
+            if value is not None:
+                profile_config[field_name] = value
+
+        required = {"provider", "model_name", "base_url"}
+        if not required.issubset(profile_config.keys()):
+            continue
+
+        if profile_name not in profiles:
+            profiles[profile_name] = profile_config
+
+    return profiles
+
+
+def get_llm_profile_names() -> List[str]:
+    return list(load_llm_profiles_from_env().keys())
+
+
 def _get_env_or_config_value(
     config: Dict[str, Any],
     key: str,
@@ -135,44 +190,60 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
     model_params = (
         algorithm_section.get("model_parameter", {})
     )
+    llm_profile_params = (
+        algorithm_section.get("llm_profile", {})
+    )
     fitting_params = (
         algorithm_section.get("model_fitting", {})
     )
     sampling_params = (
         algorithm_section.get("sampling", {})
     )
-
-    provider = str(
-        _get_env_or_config_value(
-            model_params,
-            "provider",
-            "synthetization_configuration.algorithm.model_parameter",
-            LLM_ENV_VARS["provider"],
+    selected_profile_raw = _first_non_empty(
+        llm_profile_params.get("llm_profile"),
+        model_params.get("llm_profile"),
+        "",
+    )
+    selected_profile_name = "" if selected_profile_raw is None else str(selected_profile_raw).strip()
+    llm_profiles = load_llm_profiles_from_env()
+    if selected_profile_name and selected_profile_name not in llm_profiles:
+        available = ", ".join(sorted(llm_profiles.keys())) or "none"
+        raise ValueError(
+            f"Unknown llm_profile '{selected_profile_name}'. Available profiles: {available}."
         )
-    ).strip().lower()
+    selected_profile = llm_profiles.get(selected_profile_name, {})
+
+    def resolve_profile_model_or_env(field_name: str) -> Any:
+        if field_name in selected_profile:
+            return selected_profile[field_name]
+        return _get_env_or_config_value(
+            model_params,
+            field_name,
+            "synthetization_configuration.algorithm.model_parameter",
+            LLM_ENV_VARS[field_name],
+        )
+
+    def resolve_profile_fitting_or_env(field_name: str) -> Any:
+        if field_name in selected_profile:
+            return selected_profile[field_name]
+        return _get_env_or_config_value(
+            fitting_params,
+            field_name,
+            "synthetization_configuration.algorithm.model_fitting",
+            LLM_ENV_VARS[field_name],
+        )
+
+    provider = str(resolve_profile_model_or_env("provider")).strip().lower()
 
     if provider not in {"ollama", "openai_compatible"}:
         raise ValueError(
             f"Unsupported LLM provider '{provider}'. Supported values are 'ollama' and 'openai_compatible'."
         )
 
-    model_name = str(
-        _get_env_or_config_value(
-            model_params,
-            "model_name",
-            "synthetization_configuration.algorithm.model_parameter",
-            LLM_ENV_VARS["model_name"],
-        )
-    )
-    raw_base_url = str(
-        _get_env_or_config_value(
-            model_params,
-            "base_url",
-            "synthetization_configuration.algorithm.model_parameter",
-            LLM_ENV_VARS["base_url"],
-        )
-    ).rstrip("/")
+    model_name = str(resolve_profile_model_or_env("model_name"))
+    raw_base_url = str(resolve_profile_model_or_env("base_url")).rstrip("/")
     configured_endpoint_path = _first_non_empty(
+        selected_profile.get("endpoint_path"),
         _read_env_value(LLM_ENV_VARS["endpoint_path"]),
         model_params.get("endpoint_path"),
     )
@@ -180,6 +251,7 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
     endpoint_path = str(configured_endpoint_path or _default_endpoint_path(provider))
     healthcheck_path = str(
         _first_non_empty(
+            selected_profile.get("healthcheck_path"),
             _read_env_value(LLM_ENV_VARS["healthcheck_path"]),
             model_params.get("healthcheck_path"),
             _default_healthcheck_path(provider),
@@ -187,6 +259,7 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
     )
     api_key = str(
         _first_non_empty(
+            selected_profile.get("api_key"),
             _read_env_value(LLM_ENV_VARS["api_key"]),
             model_params.get("api_key"),
             "",
@@ -217,7 +290,10 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
             )
         top_p = max(0.0, min(1.0, float(raw_top_p)))
 
-        raw_max_tokens = _read_env_value(LLM_ENV_VARS["max_tokens"])
+        raw_max_tokens = _first_non_empty(
+            selected_profile.get("max_tokens"),
+            _read_env_value(LLM_ENV_VARS["max_tokens"]),
+        )
         if raw_max_tokens is None:
             raise ValueError(
                 "Missing LLM configuration 'max_tokens'. Set environment variable "
@@ -235,7 +311,7 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
         1,
         int(
             _get_env_or_config_value(
-                fitting_params,
+                {"timeout_seconds": resolve_profile_fitting_or_env("timeout_seconds")},
                 "timeout_seconds",
                 "synthetization_configuration.algorithm.model_fitting",
                 LLM_ENV_VARS["timeout_seconds"],
@@ -246,7 +322,7 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
         1,
         int(
             _get_env_or_config_value(
-                fitting_params,
+                {"max_retries": resolve_profile_fitting_or_env("max_retries")},
                 "max_retries",
                 "synthetization_configuration.algorithm.model_fitting",
                 LLM_ENV_VARS["max_retries"],
@@ -255,6 +331,7 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
     )
     verify_ssl = _parse_bool(
         _first_non_empty(
+            selected_profile.get("verify_ssl"),
             _read_env_value(LLM_ENV_VARS["verify_ssl"]),
             model_params.get("verify_ssl"),
             True,

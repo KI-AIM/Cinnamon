@@ -20,6 +20,7 @@ export class TextSynthesisConfigurationService {
 
     public createGroup(config: any, disabled: boolean): FormGroup {
         const algorithm = config?.synthetization_configuration?.algorithm ?? {};
+        const llmProfile = algorithm.llm_profile ?? {};
         const modelParameter = algorithm.model_parameter ?? {};
         const modelFitting = algorithm.model_fitting ?? {};
         const sampling = algorithm.sampling ?? {};
@@ -28,6 +29,9 @@ export class TextSynthesisConfigurationService {
             synthetization_configuration: this.formBuilder.group({
                 algorithm: this.formBuilder.group({
                     synthesizer: new FormControl({value: algorithm.synthesizer ?? "llm_text_synthesis", disabled}, [Validators.required]),
+                    llm_profile: this.formBuilder.group({
+                        llm_profile: new FormControl({value: llmProfile.llm_profile ?? "", disabled}),
+                    }),
                     model_parameter: this.formBuilder.group({
                         profile_rows: new FormControl({value: modelParameter.profile_rows ?? 1000, disabled}, [Validators.required, Validators.min(1)]),
                         few_shot_rows: new FormControl({value: modelParameter.few_shot_rows ?? 20, disabled}, [Validators.required, Validators.min(0)]),

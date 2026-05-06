@@ -20,6 +20,7 @@ from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
 from data_processing.utils import TEXT_PENDING_LLM
+from synthetic_tabular_data_generator.llm import get_llm_profile_names
 
 
 app = Flask(__name__)
@@ -215,10 +216,62 @@ def create_text_synthesis_input(dataframe, full_attribute_config):
     return order_dataframe_by_config(text_input, full_attribute_config.get("configurations", []))
 
 
+def inject_llm_profile_parameter(config_content):
+    profile_names = get_llm_profile_names()
+    if not profile_names:
+        return config_content
+
+    configurations = config_content.setdefault("configurations", {})
+    llm_profile_group = configurations.setdefault(
+        "llm_profile",
+        {
+            "display_name": "LLM Profile",
+            "description": "Select which configured LLM instance should be used.",
+            "parameters": [],
+        },
+    )
+    parameters = llm_profile_group.get("parameters", [])
+    if not isinstance(parameters, list):
+        return config_content
+
+    llm_profile_parameter = None
+    for parameter in parameters:
+        if parameter.get("name") == "llm_profile":
+            llm_profile_parameter = parameter
+            break
+
+    if llm_profile_parameter is None:
+        llm_profile_parameter = {
+            "name": "llm_profile",
+            "type": "string",
+            "label": "LLM Profile",
+            "description": "Select the configured LLM profile (model endpoint and credentials).",
+            "default_value": profile_names[0],
+            "values": profile_names,
+            "mandatory": False,
+        }
+        parameters.append(llm_profile_parameter)
+    else:
+        llm_profile_parameter["values"] = profile_names
+        if not llm_profile_parameter.get("default_value"):
+            llm_profile_parameter["default_value"] = profile_names[0]
+
+    # Backward compatibility: remove misplaced llm_profile from model_parameter if present.
+    model_parameter = configurations.get("model_parameter", {})
+    model_parameters = model_parameter.get("parameters", [])
+    if isinstance(model_parameters, list):
+        model_parameter["parameters"] = [
+            parameter for parameter in model_parameters if parameter.get("name") != "llm_profile"
+        ]
+
+    return config_content
+
+
 @lru_cache(maxsize=None)
 def load_text_synthesis_defaults(text_synthesizer_name):
     synthesizer_config = load_synthesizer_config(text_synthesizer_name)
     defaults = {
+        "llm_profile": {},
         "model_parameter": {},
         "model_fitting": {},
         "sampling": {},
@@ -246,11 +299,16 @@ def build_text_synthesis_algorithm_config(algorithm_config, synthesizer_name, te
 
     algorithm_section = config.setdefault("synthetization_configuration", {}).setdefault("algorithm", {})
     algorithm_section.setdefault("synthesizer", text_synthesizer_name)
+    algorithm_section.setdefault("llm_profile", {})
     algorithm_section.setdefault("model_parameter", {})
     algorithm_section.setdefault("model_fitting", {})
     algorithm_section.setdefault("sampling", {})
 
     defaults = load_text_synthesis_defaults(text_synthesizer_name)
+
+    llm_profile = algorithm_section["llm_profile"]
+    for key, value in defaults.get("llm_profile", {}).items():
+        llm_profile.setdefault(key, value)
 
     model_parameter = algorithm_section["model_parameter"]
     for key, value in defaults.get("model_parameter", {}).items():
@@ -626,7 +684,17 @@ def get_synthesizer_config(module_name, filename):
             error_message = 'Invalid file path. Access to files outside the allowed directory is not allowed.'
             return jsonify({'error': error_message}), 403
 
-        return send_from_directory(config_directory, filename)
+        is_dynamic_llm_definition = (
+            module_name == "synthetic_tabular_data_generator"
+            and filename.lower() in {"llm_tabular.yaml", "llm_text_synthesis.yaml"}
+        )
+        if not is_dynamic_llm_definition:
+            return send_from_directory(config_directory, filename)
+
+        with open(config_path, "r", encoding="utf-8") as file:
+            config_content = yaml.safe_load(file) or {}
+        config_content = inject_llm_profile_parameter(config_content)
+        return Response(yaml.safe_dump(config_content, sort_keys=False), mimetype='text/yaml')
     except FileNotFoundError:
         error_message = 'The requested file was not found. Please check the filename and try again.'
         return jsonify({'error': error_message}), 404

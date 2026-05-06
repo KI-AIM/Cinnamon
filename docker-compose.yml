@@ -80,6 +80,8 @@ services:
             - "127.0.0.1:5000:5000"
         networks:
             - synthetization-network
+        env_file:
+            - .env
         environment:
             CINNAMON_LLM_PROVIDER: ${CINNAMON_LLM_PROVIDER:-}
             CINNAMON_LLM_MODEL_NAME: ${CINNAMON_LLM_MODEL_NAME:-}

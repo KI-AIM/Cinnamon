@@ -1,14 +1,15 @@
 import cloudpickle
 import pandas as pd
-from typing import Dict, Any, Optional, List
+from pathlib import Path
+from typing import Dict, Any, Optional
 
+from synthcity.plugins import Plugins
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
-from synthetic_tabular_data_generator.ctgan import TVAE
 
 
 class TvaeSynthesizer(TabularDataSynthesizer):
     """
-    Model wrapping `TVAE` model for synthetic data generation.
+    Wrapper for synthcity's TVAE plugin for tabular data generation.
     """
 
     def __init__(
@@ -25,7 +26,6 @@ class TvaeSynthesizer(TabularDataSynthesizer):
         """
         super().__init__(attribute_configuration, anonymization_configuration)
         self.attribute_config: Optional[Dict[str, Any]] = None
-        self.discrete_columns: Optional[List[str]] = None
         self.dataset: Optional[pd.DataFrame] = None
         self._model_kwargs: Optional[Dict[str, Any]] = None
         self.synthesizer = None
@@ -37,15 +37,24 @@ class TvaeSynthesizer(TabularDataSynthesizer):
         """
         synth_params = config['synthetization_configuration']['algorithm']['model_parameter']
         training_params = config['synthetization_configuration']['algorithm']['model_fitting']
+        embedding_dim = int(synth_params['embedding_dim'])
+        hidden_layers = int(synth_params['number_of_layers'])
+        hidden_units = int(synth_params['number_of_units_in_layers'])
 
         self._model_kwargs = {
-            'embedding_dim': synth_params['embedding_dim'],
-            'compress_dims': synth_params['compress_dims'],
-            'decompress_dims': synth_params['decompress_dims'],
-            'l2scale': float(1e-5),
-            'loss_factor': float(2),
-            'batch_size': training_params['batch_size'],
-            'epochs': training_params['epochs'],
+            'n_units_embedding': embedding_dim,
+            'encoder_n_layers_hidden': hidden_layers,
+            'encoder_n_units_hidden': hidden_units,
+            'decoder_n_layers_hidden': hidden_layers,
+            'decoder_n_units_hidden': hidden_units,
+            'n_iter': int(training_params['epochs']),
+            'batch_size': int(training_params['batch_size']),
+            'lr': float(1e-3),
+            'weight_decay': float(1e-5),
+            'loss_factor': int(2),
+            'workspace': Path('workspace'),
+            'compress_dataset': False,
+            'sampling_patience': 500,
         }
         self._sampling = config['synthetization_configuration']['algorithm']['sampling']
 
@@ -59,33 +68,26 @@ class TvaeSynthesizer(TabularDataSynthesizer):
         """
         Core logic for initializing the dataset.
         """
-        config = self.attribute_config['configurations']
-
-        self.discrete_columns = []  
-        for column_config in config:  
-            if column_config['type'] in ['STRING', 'TEXT', 'BOOLEAN']:
-                self.discrete_columns.append(column_config['name'])
-
         self.dataset = df
 
     def _initialize_synthesizer(self) -> None:
         """
         Core logic for initializing the synthesizer.
         """
-        self.synthesizer = TVAE(**self._model_kwargs)
+        self.synthesizer = Plugins().get("tvae", **self._model_kwargs)
 
     def _fit(self) -> None:
         """
         Core logic for fitting the synthesizer.
         """
-        self.synthesizer.fit(self.dataset, self.discrete_columns)
+        self.synthesizer.fit(self.dataset)
 
     def _sample(self) -> pd.DataFrame:
         """
         Core logic for sampling data from the synthesizer.
         """
         num_samples: int = self._sampling['num_samples']
-        return self.synthesizer.sample(num_samples)
+        return self.synthesizer.generate(num_samples).dataframe()
 
     def _get_model(self) -> bytes:
         """

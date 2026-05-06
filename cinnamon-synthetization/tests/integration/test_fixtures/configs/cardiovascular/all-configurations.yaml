@@ -100,12 +100,8 @@ synthetization_configuration:
     version: '0.1'
     model_parameter:
       embedding_dim: 32
-      compress_dims:
-      - 128
-      - 64
-      decompress_dims:
-      - 64
-      - 128
+      number_of_layers: 2
+      number_of_units_in_layers: 128
     model_fitting:
       batch_size: 256
       epochs: 400

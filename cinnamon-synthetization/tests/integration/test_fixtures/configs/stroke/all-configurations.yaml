@@ -94,13 +94,8 @@ synthetization_configuration:
     type: cross-sectional
     version: '0.1'
     model_parameter:
-      embedding_dim: 64
-      generator_dim:
-      - 64
-      - 64
-      discriminator_dim:
-      - 64
-      - 64
+      number_of_layers: 2
+      number_of_units_in_layers: 64
     model_fitting:
       batch_size: 128
       epochs: 150

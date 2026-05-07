@@ -51,7 +51,6 @@ class CtganSynthesizer(TabularDataSynthesizer):
             'weight_decay': float(1e-6),
             'batch_size': batch_size,
             'discriminator_n_iter': 1,
-            'verbose': True,
             'workspace': Path('workspace'),
             'compress_dataset': False,
             'sampling_patience': 500,

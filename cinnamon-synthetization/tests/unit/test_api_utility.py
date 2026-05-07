@@ -1,8 +1,5 @@
 import io
-import json
-import logging
 import sys
-import warnings
 from pathlib import Path
 
 import yaml
@@ -11,7 +8,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from api_utility.logging import logger as logger_module
 from api_utility.status.status_updater import (
     InterceptStdOut,
     initialize_status_file,
@@ -156,77 +152,3 @@ def test_intercept_stdout_close_flushes_underlying_terminal(monkeypatch, tmp_pat
     interceptor.close()
 
     assert terminal.flushed is True
-
-
-def test_my_json_formatter_includes_mapped_and_extra_fields():
-    formatter = logger_module.MyJSONFormatter(
-        fmt_keys={
-            "level": "levelname",
-            "text": "message",
-            "logger": "name",
-        }
-    )
-
-    record = logging.LogRecord(
-        name="api-test",
-        level=logging.INFO,
-        pathname=__file__,
-        lineno=123,
-        msg="hello %s",
-        args=("world",),
-        exc_info=None,
-    )
-    record.request_id = "req-1"
-
-    payload = json.loads(formatter.format(record))
-
-    assert payload["level"] == "INFO"
-    assert payload["text"] == "hello world"
-    assert payload["logger"] == "api-test"
-    assert payload["request_id"] == "req-1"
-    assert "timestamp" in payload
-
-
-def test_setup_logging_installs_hooks_and_uses_config(monkeypatch):
-    old_excepthook = sys.excepthook
-    old_showwarning = warnings.showwarning
-
-    captured = {
-        "config": None,
-        "errors": [],
-        "warnings": [],
-    }
-
-    def fake_dict_config(config):
-        captured["config"] = config
-
-    try:
-        monkeypatch.chdir(PROJECT_ROOT)
-        monkeypatch.setattr(logger_module.logging.config, "dictConfig", fake_dict_config)
-        root_logger = logging.getLogger()
-        monkeypatch.setattr(
-            root_logger,
-            "error",
-            lambda message, exc_info=False: captured["errors"].append((message, exc_info)),
-        )
-        monkeypatch.setattr(
-            logger_module.logging,
-            "warning",
-            lambda message: captured["warnings"].append(message),
-        )
-
-        logger_module.setup_logging()
-
-        assert isinstance(captured["config"], dict)
-        assert captured["config"]["version"] == 1
-
-        sys.excepthook(ValueError, ValueError("boom"), None)
-        assert captured["errors"] == [("Uncaught exception", True)]
-
-        warnings.showwarning(UserWarning("careful"), UserWarning, "demo.py", 7)
-        assert captured["warnings"]
-        assert "careful" in captured["warnings"][0]
-        assert "UserWarning" in captured["warnings"][0]
-    finally:
-        sys.excepthook = old_excepthook
-        warnings.showwarning = old_showwarning

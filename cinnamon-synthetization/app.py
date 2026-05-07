@@ -14,8 +14,8 @@ from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 
 from api_utility.status.status_updater import initialize_status_file
+from api_utility.status.status_updater import intercept_standard_streams
 from api_utility.status.status_updater import update_status
-from api_utility.status.status_updater import InterceptStdOut
 from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
@@ -377,28 +377,14 @@ def run_synthesizer_stage(
     update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True)
 
     fit_time = time.time()
-    original_stdout = sys.stdout
-    original_stderr = sys.stderr
-    try:
-        sys.stdout = InterceptStdOut(file_path_status, 'fitting', terminal=original_stdout)
-        sys.stderr = InterceptStdOut(file_path_status, 'fitting', terminal=original_stderr)
+    with intercept_standard_streams(file_path_status, "fitting"):
         synthesizer_class.fit()
-    finally:
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
     fit_duration = time.time() - fit_time
     print(f"[{stage_label}] Synthesizer fitted.")
 
     sample_time = time.time()
-    original_stdout = sys.stdout
-    original_stderr = sys.stderr
-    try:
-        sys.stdout = InterceptStdOut(file_path_status, 'sampling', terminal=original_stdout)
-        sys.stderr = InterceptStdOut(file_path_status, 'sampling', terminal=original_stderr)
+    with intercept_standard_streams(file_path_status, "sampling"):
         samples = synthesizer_class.sample()
-    finally:
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
     sample_duration = time.time() - sample_time
     print(f"[{stage_label}] Data sampled.")
 

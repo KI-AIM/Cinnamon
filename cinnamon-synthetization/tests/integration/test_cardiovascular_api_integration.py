@@ -100,23 +100,6 @@ class MockCardiovascularSynthesizer(TabularDataSynthesizer):
         return None
 
 
-class SilentInterceptStdOut:
-    """Capture-safe replacement used only in integration tests."""
-
-    def __init__(self, file_name, process_stage):
-        self.file_name = file_name
-        self.process_stage = process_stage
-
-    def write(self, message):
-        return len(message)
-
-    def flush(self):
-        return None
-
-    def close(self):
-        return None
-
-
 def _load_yaml(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as handle:
         return yaml.safe_load(handle)
@@ -182,7 +165,8 @@ def test_cardiovascular_api_generates_synthetic_dataset(monkeypatch):
         "Process",
         InlineProcess,
     )
-    monkeypatch.setattr(app_module, "InterceptStdOut", SilentInterceptStdOut)
+    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "dummy_text_synth")
+    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (True, False))
     monkeypatch.setattr(app_module.requests, "post", fake_requests_post)
     monkeypatch.setitem(
         app_module.synthesizer_classes,
@@ -193,6 +177,18 @@ def test_cardiovascular_api_generates_synthetic_dataset(monkeypatch):
             "class": MockCardiovascularSynthesizer,
             "display_name": "Cardiovascular Mock",
             "description": "Fast mock synthesizer for integration testing",
+            "URL": "/synthetic_tabular_data_generator/synthesizer_config/mock.yaml",
+        },
+    )
+    monkeypatch.setitem(
+        app_module.synthesizer_classes,
+        "dummy_text_synth",
+        {
+            "version": "0.1",
+            "type": "cross-sectional",
+            "class": MockCardiovascularSynthesizer,
+            "display_name": "Dummy Text Synth",
+            "description": "Unused placeholder for text synthesizer lookup",
             "URL": "/synthetic_tabular_data_generator/synthesizer_config/mock.yaml",
         },
     )
@@ -248,6 +244,6 @@ def test_cardiovascular_api_generates_synthetic_dataset(monkeypatch):
     status_path = Path(app_module.__file__).resolve().parent / "outputs" / "status" / f"{session_key}.yaml"
     assert status_path.exists()
     status = _load_yaml(status_path)
-    assert _status_step(status, "callback")["completed"] == "True"
+    assert _status_step(status, "callback")["completed"] is True
 
     status_path.unlink(missing_ok=True)

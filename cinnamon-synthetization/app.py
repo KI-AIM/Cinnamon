@@ -374,24 +374,31 @@ def run_synthesizer_stage(
     synthesizer_class.initialize_synthesizer()
     print(f"[{stage_label}] Synthesizer initialized.")
     stage_init_duration = time.time() - stage_init_time
+    update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True)
 
     fit_time = time.time()
     original_stdout = sys.stdout
+    original_stderr = sys.stderr
     try:
-        sys.stdout = InterceptStdOut(file_path_status, 'fitting')
+        sys.stdout = InterceptStdOut(file_path_status, 'fitting', terminal=original_stdout)
+        sys.stderr = InterceptStdOut(file_path_status, 'fitting', terminal=original_stderr)
         synthesizer_class.fit()
     finally:
         sys.stdout = original_stdout
+        sys.stderr = original_stderr
     fit_duration = time.time() - fit_time
     print(f"[{stage_label}] Synthesizer fitted.")
 
     sample_time = time.time()
     original_stdout = sys.stdout
+    original_stderr = sys.stderr
     try:
-        sys.stdout = InterceptStdOut(file_path_status, 'sampling')
+        sys.stdout = InterceptStdOut(file_path_status, 'sampling', terminal=original_stdout)
+        sys.stderr = InterceptStdOut(file_path_status, 'sampling', terminal=original_stderr)
         samples = synthesizer_class.sample()
     finally:
         sys.stdout = original_stdout
+        sys.stderr = original_stderr
     sample_duration = time.time() - sample_time
     print(f"[{stage_label}] Data sampled.")
 

@@ -18,6 +18,14 @@ class TabularDataSynthesizer(ABC):
     def __init__(self, attribute_configuration, anonymization_configuration):
         self.attribute_configuration = attribute_configuration
         self.anonymization_configuration = anonymization_configuration
+        self._progress_callback = None
+
+    def set_progress_callback(self, callback: Callable[[str, Any], None] | None) -> None:
+        self._progress_callback = callback
+
+    def _report_remaining_time(self, stage: str, remaining_time: Any) -> None:
+        if callable(self._progress_callback):
+            self._progress_callback(stage, remaining_time)
     
     @staticmethod
     def error_handler(method_name: str) -> Callable:

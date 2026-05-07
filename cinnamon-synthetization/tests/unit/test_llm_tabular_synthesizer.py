@@ -365,3 +365,32 @@ def test_llm_tabular_draws_new_few_shot_examples_for_each_prompt(monkeypatch):
     assert '"age": 101' in prompts[0]
     assert '"age": 102' in prompts[1]
     assert '"age": 103' in prompts[2]
+
+
+def test_llm_tabular_reports_sampling_remaining_time_via_callback(monkeypatch):
+    _set_shared_llm_env(monkeypatch, provider="ollama")
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        if method == "POST" and url.endswith("/api/generate"):
+            return _DummyResponse({"response": json.dumps({"rows": [{"age": 30, "height": 170.0, "risk": True, "group": "A"}]})})
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    algorithm_config = _algorithm_config(provider="ollama")
+    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
+
+    synthesizer = LlmTabularSynthesizer()
+    updates = []
+    synthesizer.set_progress_callback(lambda step, remaining_time: updates.append((step, remaining_time)))
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(_dataset())
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    synthesizer.sample()
+
+    assert updates[-1] == ("sampling", 0)

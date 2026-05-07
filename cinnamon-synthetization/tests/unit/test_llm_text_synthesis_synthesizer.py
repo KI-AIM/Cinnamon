@@ -162,3 +162,33 @@ def test_llm_text_synthesis_falls_back_to_base_row_after_invalid_responses(monke
     assert sample["age"].tolist() == [999, 50]
     assert sample["group"].tolist() == ["A", "B"]
     assert sample["notes"].tolist() == [MISSING_VALUE_STRING, MISSING_VALUE_STRING]
+
+
+def test_llm_text_synthesis_reports_sampling_remaining_time_via_callback(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        if method == "POST" and url.endswith("/api/generate"):
+            return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": "Stable clinical status."}})})
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    algorithm_config = _algorithm_config()
+    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
+
+    synthesizer = LlmTextSynthesisSynthesizer()
+    updates = []
+    synthesizer.set_progress_callback(lambda step, remaining_time: updates.append((step, remaining_time)))
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(_synthetic_input())
+    synthesizer.initialize_reference_dataset(_original_input())
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    synthesizer.sample()
+
+    assert updates[-1] == ("sampling", 0)

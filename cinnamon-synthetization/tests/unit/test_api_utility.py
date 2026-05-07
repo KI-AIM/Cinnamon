@@ -117,6 +117,35 @@ def test_intercept_stdout_updates_remaining_time_when_message_matches(monkeypatc
     assert "Estimated remaining time: 12.5 seconds" in fake_terminal.getvalue()
 
 
+def test_intercept_stdout_updates_remaining_time_from_tqdm_output(monkeypatch, tmp_path):
+    status_path = tmp_path / "outputs" / "status" / "run_tqdm.yaml"
+    initialize_status_file(str(status_path), session_key="run_tqdm", synthesizer_name="ctgan")
+
+    fake_terminal = io.StringIO()
+    monkeypatch.setattr(sys, "stdout", fake_terminal)
+    interceptor = InterceptStdOut(str(status_path), "fitting")
+
+    interceptor.write("\r 21%|██        | 21/100 [00:09<01:50,  1.40s/it]")
+
+    data = _read_status(status_path)
+    assert _get_step(data, "fitting")["remaining_time"] == "110"
+
+
+def test_intercept_stdout_updates_remaining_time_from_split_tqdm_output(monkeypatch, tmp_path):
+    status_path = tmp_path / "outputs" / "status" / "run_tqdm_split.yaml"
+    initialize_status_file(str(status_path), session_key="run_tqdm_split", synthesizer_name="ctgan")
+
+    fake_terminal = io.StringIO()
+    monkeypatch.setattr(sys, "stdout", fake_terminal)
+    interceptor = InterceptStdOut(str(status_path), "fitting")
+
+    interceptor.write("\r 21%|██        | 21/100 [00:09<01")
+    interceptor.write(":50,  1.40s/it]")
+
+    data = _read_status(status_path)
+    assert _get_step(data, "fitting")["remaining_time"] == "110"
+
+
 def test_intercept_stdout_ignores_messages_without_estimate(monkeypatch, tmp_path):
     status_path = tmp_path / "outputs" / "status" / "run2.yaml"
     initialize_status_file(str(status_path), session_key="run2", synthesizer_name="arf")

@@ -1,4 +1,5 @@
 import os
+import re
 import yaml
 import sys
 
@@ -106,10 +107,15 @@ class InterceptStdOut:
         process_stage (str): The name of the process stage being monitored
         (e.g., "fitting" or "sampling").
     """
-    def __init__(self, file_name, process_stage):
-        self.terminal = sys.stdout
+    _ESTIMATED_REMAINING_TIME_PATTERN = re.compile(r"Estimated remaining time:\s*([0-9]+(?:\.[0-9]+)?)")
+    _TQDM_REMAINING_TIME_PATTERN = re.compile(r"<(?P<remaining>\d{1,2}:\d{2}(?::\d{2})?)")
+
+    def __init__(self, file_name, process_stage, terminal=None):
+        self.terminal = sys.stdout if terminal is None else terminal
         self.file_name = file_name
         self.process_stage = process_stage  # 'fitting' or 'sampling'
+        self._message_buffer = ""
+        self._last_remaining_time = None
 
     def write(self, message):
         """
@@ -126,9 +132,11 @@ class InterceptStdOut:
         """
         self.terminal.write(message)
         self.terminal.flush()
-        if "Estimated remaining time:" in message:
-            # Extract the remaining time from the message
-            remaining_time = message.split("Estimated remaining time:")[1].strip().split(" ")[0]
+        self._message_buffer = (self._message_buffer + message)[-2048:]
+
+        remaining_time = self._extract_remaining_time(self._message_buffer)
+        if remaining_time is not None and remaining_time != self._last_remaining_time:
+            self._last_remaining_time = remaining_time
             self.update_yaml_file(remaining_time)
 
     def flush(self):
@@ -168,6 +176,30 @@ class InterceptStdOut:
         # Write the updated data back to the file
         with open(self.file_name, 'w') as f:
             yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+
+    @classmethod
+    def _extract_remaining_time(cls, message):
+        estimated_match = cls._ESTIMATED_REMAINING_TIME_PATTERN.search(message)
+        if estimated_match is not None:
+            return estimated_match.group(1)
+
+        tqdm_matches = list(cls._TQDM_REMAINING_TIME_PATTERN.finditer(message))
+        if not tqdm_matches:
+            return None
+
+        remaining_text = tqdm_matches[-1].group("remaining")
+        return str(cls._duration_to_seconds(remaining_text))
+
+    @staticmethod
+    def _duration_to_seconds(duration_text):
+        parts = [int(part) for part in duration_text.split(":")]
+        if len(parts) == 2:
+            minutes, seconds = parts
+            return minutes * 60 + seconds
+        if len(parts) == 3:
+            hours, minutes, seconds = parts
+            return hours * 3600 + minutes * 60 + seconds
+        raise ValueError(f"Unsupported duration format: {duration_text}")
 
     def close(self):
         """

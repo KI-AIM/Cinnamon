@@ -509,13 +509,16 @@ class LlmTextSynthesisSynthesizer(TabularDataSynthesizer):
         elapsed = max(time.time() - self._sample_start_time, 1e-6)
         remaining = max(total - generated, 0)
         if remaining == 0:
+            self._report_remaining_time("sampling", 0)
             print("Estimated remaining time: 0s", flush=True)
             return
         rows_per_second = generated / elapsed
         if rows_per_second <= 0:
+            self._report_remaining_time("sampling", None)
             print("Estimated remaining time: unknown", flush=True)
             return
         remaining_seconds = int(math.ceil(remaining / rows_per_second))
+        self._report_remaining_time("sampling", remaining_seconds)
         print(f"Estimated remaining time: {remaining_seconds}s", flush=True)
 
     def _get_model(self) -> bytes:

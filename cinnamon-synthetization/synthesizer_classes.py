@@ -40,12 +40,12 @@ synthesizer_classes = {
         'description': 'Adversarial Random Forests (ARF) are a specialized type of generative model designed to create realistic synthetic tabular data, mimicking the statistical properties of original datasets. Leveraging an ensemble of decision trees trained within an adversarial framework, ARF learns fine-grained relationships in your data and generates new rows through iterative refinement, enabling the creation of synthetic datasets that preserve privacy while retaining key analytical insights. ARF works well for capturing complex, non-linear interactions with modest tuning effort and serves as a robust baseline for benchmarking synthetic data quality.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/arf.yaml'
     },
-    'ddpm': {
+       'ddpm': {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': DdpmSynthesizer,
         'display_name': 'TabDDPM (Denoising Diffusion Probablistic Models)',
-        'description': 'A diffusion-based model for high-fidelity tabular data generation (synthcity TabDDPM).',
+        'description': 'TabDDPM is a diffusion-based generative model designed to create high-fidelity synthetic tabular data by gradually denoising random noise into realistic data samples. Leveraging denoising diffusion probabilistic modeling, it learns complex feature distributions and dependencies in the original dataset, enabling the generation of synthetic rows that closely resemble real-world data patterns. This approach is particularly useful for datasets with intricate relationships between numerical and categorical variables. TabDDPM can be a strong choice when synthetic data quality and distributional similarity are prioritized over training speed.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/ddpm.yaml'
     },
     'rtvae': {
@@ -53,7 +53,7 @@ synthesizer_classes = {
         'type': 'cross-sectional',
         'class': RtvaeSynthesizer,
         'display_name': 'Robust Tabular Variational Autoencoder',
-        'description': 'An implementation of Robust Variational Autoencoder for data generation using beta divergence learning.',
+        'description': 'Robust Tabular Variational Autoencoder (RTVAE) is a generative model designed to create realistic synthetic tabular data while being more resilient to noise and outliers in the original dataset. Leveraging a variational autoencoder architecture with beta divergence learning, RTVAE learns robust latent representations and generates new rows by sampling from this learned latent space. This makes the model especially useful for datasets that contain imperfect, noisy, or partially inconsistent records. RTVAE helps preserve important statistical structures while reducing the influence of extreme or unreliable observations.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/rtvae.yaml'
     },
     'llm_tabular': {
@@ -61,7 +61,7 @@ synthesizer_classes = {
         'type': 'cross-sectional',
         'class': LlmTabularSynthesizer,
         'display_name': 'LLM Dataset Generator',
-        'description': 'A configurable LLM-based generator that creates fully synthetic datasets from source data via Ollama or OpenAI-compatible APIs.',
+        'description': 'The LLM Dataset Generator is a configurable language-model-based synthesizer designed to create fully synthetic tabular datasets from source data using Ollama or OpenAI-compatible APIs. Leveraging the reasoning and pattern-completion capabilities of large language models, it can generate new rows that follow the structure, semantics, and value patterns of the original dataset. This approach is particularly useful when domain-specific context, textual meaning, or flexible generation rules are important. It also allows synthetic data generation to be guided through prompts and configuration settings rather than relying only on statistical model training.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
     },
     'llm_text_synthesis': {
@@ -69,7 +69,7 @@ synthesizer_classes = {
         'type': 'cross-sectional',
         'class': LlmTextSynthesisSynthesizer,
         'display_name': 'LLM Text Synthesis with Structured Consistency',
-        'description': 'A LLM-based synthesizer that generates TEXT fields from synthetic tabular rows using original data as semantic context and may minimally correct inconsistent structured values.',
+        'description': 'LLM Text Synthesis with Structured Consistency is a language-model-based synthesizer designed to generate realistic text fields for synthetic tabular rows while using original data as semantic context. Leveraging large language models, it creates text values that align with the surrounding structured columns and can correct inconsistent structured values when necessary. This approach is especially useful for datasets that combine tabular attributes with free-text descriptions, comments, reports, or notes. It helps maintain semantic coherence between generated text and structured data, improving the usability of synthetic datasets for downstream analysis or testing. The structured data is not created by this model',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_synthesis.yaml'
     }
 }

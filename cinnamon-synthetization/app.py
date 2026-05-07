@@ -749,7 +749,8 @@ def get_algorithms():
                 'type': value['type'],
                 'class': str(value['class']),
                 'description': value['description'],
-                'URL': value['URL']
+                'URL': value['URL'],
+                'processing_capabilities': load_synthesizer_config(key).get('processing_capabilities', {})
             }
             for key, value in synthesizer_classes.items()
         ]

@@ -8,6 +8,10 @@ import {
     AdditionalConfig,
     ConfigurationAdditionalConfigs
 } from "../../../../shared/model/configuration-additional-configs";
+import {
+    supportsFreeTextData,
+    supportsStructuredData
+} from "../../../../shared/model/algorithm";
 import { FormGroup } from "@angular/forms";
 import {
     LlmRedactionRulesConfigurationComponent
@@ -23,6 +27,7 @@ import {
 import {
     TextSynthesisConfigurationComponent
 } from "../../components/text-synthesis-configuration/text-synthesis-configuration.component";
+import { hasTextColumns } from "../../../../shared/model/data-configuration";
 
 @Component({
     selector: 'app-synthetization-configuration',
@@ -74,8 +79,13 @@ export class SynthetizationConfigurationComponent implements OnInit {
                 (form: FormGroup, config: any, disabled: boolean) => {
                     this.textSynthesisConfigurationService.initForm(form, config as ConfigurationObject | null, disabled);
                 },
-                ["ctgan", "tvae", "bayesian_network", "arf", "ddpm", "rtvae"],
+                null,
                 "__external_step__",
+                (algorithm, dataConfiguration) => {
+                    return hasTextColumns(dataConfiguration)
+                        && supportsStructuredData(algorithm)
+                        && !supportsFreeTextData(algorithm);
+                },
             ),
         );
         this.additionalConfigs = new ConfigurationAdditionalConfigs(configs);

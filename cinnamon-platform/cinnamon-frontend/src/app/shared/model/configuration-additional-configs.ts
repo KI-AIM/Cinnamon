@@ -1,4 +1,6 @@
 import { FormGroup } from "@angular/forms";
+import { Algorithm } from "./algorithm";
+import { DataConfiguration } from "./data-configuration";
 
 export class ConfigurationAdditionalConfigs {
     configs: AdditionalConfig[];
@@ -16,6 +18,7 @@ export class AdditionalConfig {
     applicableAlgorithmNames: string[] | null;
     insertAfterGroupName: string | null;
     initializeForm: (formGroup: FormGroup, configs: any, disabled: boolean) => void;
+    predicate: ((algorithm: Algorithm, dataConfiguration: DataConfiguration) => boolean) | null;
 
     constructor(
         component: any,
@@ -25,6 +28,7 @@ export class AdditionalConfig {
         initializeForm: (formGroup: FormGroup, configs: any, disabled: boolean) => void,
         applicableAlgorithmNames: string[] | null = null,
         insertAfterGroupName: string | null = null,
+        predicate: ((algorithm: Algorithm, dataConfiguration: DataConfiguration) => boolean) | null = null,
     ) {
         this.component = component;
         this.title = title;
@@ -33,5 +37,6 @@ export class AdditionalConfig {
         this.applicableAlgorithmNames = applicableAlgorithmNames;
         this.insertAfterGroupName = insertAfterGroupName;
         this.initializeForm = initializeForm;
+        this.predicate = predicate;
     }
 }

@@ -1,7 +1,7 @@
 <ng-container *ngIf="pageData$ | async as data">
     <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
-        <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="numberSteps"
+        <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="getNumberSteps(data.dataConfiguration)"
                            [step]="step" [invalid]="(oneEnabled && (!formValid || selectedAlgorithm == null))"
                            (confirm)="submit()">
             <!-- Activation -->
@@ -58,7 +58,7 @@
                 </ng-template>
             </app-workstep-item>
 
-            <ng-container *ngIf="isSynthetizationConfiguration">
+            <ng-container *ngIf="shouldShowFreeTextSteps(data.dataConfiguration)">
                 <!-- Free-text Selection -->
                 <app-workstep-item header="Select the free-text synthesizer" [locked]="data.locked"
                                    [stepIndex]="4" [skip]="!hasFreeTextConfiguration"
@@ -147,7 +147,7 @@
             </ng-template>
         </app-workstep-box>
 
-        <ng-container *ngIf="isSynthetizationConfiguration && hasFreeTextConfiguration && forms?.form as rootForm">
+        <ng-container *ngIf="shouldShowFreeTextSteps(data.dataConfiguration) && hasFreeTextConfiguration && forms?.form as rootForm">
             <app-workstep-box header="Free-Text Synthesizer Selection" [invalid]="freeTextSelectionInvalid">
                 <div [formGroup]="rootForm">
                     <div formGroupName="text_synthesis_configuration">

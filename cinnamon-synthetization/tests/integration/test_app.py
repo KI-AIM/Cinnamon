@@ -58,3 +58,29 @@ def test_start_synthetization_process_returns_400_when_callback_is_missing():
     assert payload["message"] == "No callback URL provided"
     assert payload["session_key"] == "session-without-callback"
     assert "session-without-callback" not in app_module.task_locks
+
+
+def test_get_algorithms_includes_processing_capabilities(monkeypatch):
+    monkeypatch.setattr(
+        app_module,
+        "synthesizer_classes",
+        {
+            "ctgan": {
+                "display_name": "CTGAN",
+                "version": "1.0",
+                "type": "generative_model",
+                "class": object,
+                "description": "Test synthesizer",
+                "URL": "/synthetic_tabular_data_generator/synthesizer_config/ctgan.yaml",
+            }
+        },
+    )
+
+    client = app_module.app.test_client()
+    response = client.get("/get_algorithms")
+
+    assert response.status_code == 200
+    payload = response.get_data(as_text=True)
+    assert "processing_capabilities:" in payload
+    assert "supports_structured_data: true" in payload
+    assert "supports_free_text_data: false" in payload

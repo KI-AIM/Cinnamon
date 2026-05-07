@@ -320,7 +320,12 @@ export class ConfigurationFormComponent implements OnInit {
         }
 
         const configs = additionalConfigs.configs.filter(config => {
-            return config.applicableAlgorithmNames === null || config.applicableAlgorithmNames.includes(this.algorithm.name);
+            const matchesAlgorithmName = config.applicableAlgorithmNames === null
+                || config.applicableAlgorithmNames.includes(this.algorithm.name);
+            const matchesPredicate = config.predicate == null
+                || config.predicate(this.algorithm, this.dataConfiguration);
+
+            return matchesAlgorithmName && matchesPredicate;
         });
 
         if (configs.length === 0) {

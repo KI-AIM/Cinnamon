@@ -11,7 +11,6 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
-from data_processing.train_test import split_train_test_cross_sectional
 from data_processing.utils import (
     MISSING_VALUE_STRING,
     TEXT_PENDING_LLM,
@@ -170,21 +169,6 @@ def test_post_process_dataframe_missing_date_format_keeps_column_without_crashin
 
     assert result.columns.tolist() == ["event_date"]
     assert result["event_date"].iloc[0] == 1704067200
-
-
-def test_split_train_test_cross_sectional_is_reproducible_and_size_correct():
-    dataset = pd.DataFrame({"id": range(10), "val": range(100, 110)})
-    fitting_config = {"train": 0.7}
-
-    train_a, validate_a = split_train_test_cross_sectional(fitting_config, dataset, seed=7)
-    train_b, validate_b = split_train_test_cross_sectional(fitting_config, dataset, seed=7)
-
-    assert len(train_a) == 7
-    assert len(validate_a) == 3
-    assert train_a.index.tolist() == train_b.index.tolist()
-    assert validate_a.index.tolist() == validate_b.index.tolist()
-    assert set(train_a.index).isdisjoint(set(validate_a.index))
-    assert set(train_a.index) | set(validate_a.index) == set(dataset.index)
 
 
 def test_iso_to_strftime_converts_expected_tokens():

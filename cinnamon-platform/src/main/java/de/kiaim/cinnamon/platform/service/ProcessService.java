@@ -903,18 +903,30 @@ public class ProcessService {
 			formData.add("pid", backgroundProcess.getExternalId());
 
 			// Do the request
-			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
+			final HttpClient client = HttpClient.create()
+			                                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+			                                            cinnamonConfiguration.getRequestsCancelConnectionTimeout())
+			                                    .responseTimeout(Duration.ofMillis(
+			                                            cinnamonConfiguration.getRequestsCancelResponseTimeout()));
+			final WebClient webClient = WebClient.builder()
+			                                     .clientConnector(new ReactorClientHttpConnector(client))
+			                                     .baseUrl(serverUrl)
+			                                     .build();
 			webClient.method(ese.getCancelHttpMethod().asHttpMethod())
 			         .uri(cancelEndpoint)
 			         .body(BodyInserters.fromFormData(formData))
 			         .retrieve()
 			         .onStatus(HttpStatusCode::isError,
 			                   b -> {
-				                   log.warn("Failed to cancel the process! Got status of {}", b.statusCode());
+				                   log.warn("Failed to cancel the process on the external module! Got status of {}",
+				                            b.statusCode());
 				                   return null;
 			                   })
 			         .toBodilessEntity()
-			         .onErrorComplete()
+			         .onErrorComplete(throwable -> {
+						 log.warn("Failed to cancel the process on the external module!", throwable);
+				         return true;
+			         })
 			         .block();
 		}
 

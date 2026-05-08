@@ -949,7 +949,7 @@ class DataControllerTest extends ControllerTest {
 				                .param("formatErrorEncoding", "$value"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
-				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':1,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[0,2],'page':1,'perPage':10,total:2,'totalPages':1}"));
+				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':[0,1],'page':1,'perPage':10,total:2,'totalPages':1}"));
 	}
 
 	private String wrapInQuotes(final String value) {

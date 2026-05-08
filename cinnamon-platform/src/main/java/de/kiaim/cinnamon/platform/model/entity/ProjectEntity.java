@@ -181,16 +181,14 @@ public class ProjectEntity {
 	}
 
 	/**
-	 * Creates a random double using the seed of the project.
+	 * Creates a random integer using the seed of the project.
 	 *
-	 * @param origin The min value (inclusive).
-	 * @param bound  The max value (exclusive).
-	 * @return The random double.
+	 * @return The random integer.
 	 */
-	public double randomDouble(final double origin, final double bound) {
+	public int randomInt() {
 		Random random = prepareRandom();
 		randomCalls++;
-		return random.nextDouble(origin, bound);
+		return random.nextInt();
 	}
 
 	private Random prepareRandom() {

@@ -564,21 +564,16 @@ public class DatabaseService {
 		}
 
 		final String tableName = getTableName(dataSet.getId());
-		final String resetQuery =
-				"""
-				UPDATE %s
-				SET %s = false;
-				""".formatted(tableName, DataschemeGenerator.HOLD_OUT_FLAG_NAME);
 
 		try {
-			executeStatement(resetQuery);
+			setAllHoldOutRows(tableName, false);
 		} catch (final SQLException e) {
 			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT,
 			                                              "Failed to reset the hold-out split!", e);
 		}
 
 		dataSet.setHasHoldOut(false);
-		dataSet.setHoldOutSeed(0.0f);
+		dataSet.setHoldOutSeed(0);
 
 		log.debug("Removed hold-out split for dataset {}", dataSet.getId());
 	}
@@ -617,36 +612,12 @@ public class DatabaseService {
 		projectRepository.save(project);
 
 		// Set the seed
-		final double seed = project.randomDouble(-1, 1);
+		final int seed = project.randomInt();
 		dataset.setHoldOutSeed(seed);
 
-		final String seedQuery = "SELECT setseed(%s);".formatted(Double.toString(seed));
-
-		try {
-			executeStatement(seedQuery);
-		} catch (final SQLException e) {
-			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT,
-			                                              "Failed to set the seed!", e);
-		}
-
 		// Create new hold-out split
-		final String tableName = getTableName(dataset.getId());
-		final String query =
-				"""
-				WITH selected_rows AS (
-				  SELECT ctid
-				  FROM %s
-				  ORDER BY random()
-				  LIMIT (SELECT round(count(*) * %s) FROM %s)
-				)
-				UPDATE %s
-				SET %s = true
-				WHERE ctid IN (SELECT ctid FROM selected_rows);
-				""".formatted(tableName, Float.toString(holdOutPercentage), tableName, tableName,
-				              DataschemeGenerator.HOLD_OUT_FLAG_NAME);
-
 		try {
-			executeStatement(query);
+			createHoldOutSplit(dataset, holdOutPercentage, seed);
 		} catch (final SQLException e) {
 			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.HOLD_OUT,
 			                                              "Failed to create the hold-out split!", e);
@@ -656,6 +627,143 @@ public class DatabaseService {
 		projectRepository.save(project);
 
 		log.debug("Created hold-out split with percentage {} for dataset {}", holdOutPercentage, dataset.getId());
+	}
+
+	/**
+	 * Creates the hold-out split for the given dataset.
+	 *
+	 * @param dataset           The dataset for which the hold-out split should be created.
+	 * @param holdOutPercentage The percentage of rows that should be added to the hold-out split. Must be between 0 and 1.
+	 * @param seed              The seed for the random number generator used to create the hold-out split.
+	 * @throws InternalDataSetPersistenceException If the number of rows could not be retrieved.
+	 * @throws SQLException                        If an error occurs while interacting with the database.
+	 */
+	private void createHoldOutSplit(final DataSetEntity dataset, final float holdOutPercentage, final int seed)
+			throws InternalDataSetPersistenceException, SQLException {
+		final String tableName = getTableName(dataset.getId());
+
+		final int rowCount = countEntries(dataset.getId());
+		final int holdOutRows = Math.round(rowCount * holdOutPercentage);
+
+		if (holdOutRows <= 0) {
+			return;
+		}
+
+		if (holdOutRows >= rowCount) {
+			setAllHoldOutRows(tableName, true);
+			return;
+		}
+
+		/*
+		 * For large percentages, it is cheaper to mark all rows as hold-out
+		 * and then mark only the smaller non-hold-out sample back to false.
+		 */
+		if (holdOutRows <= rowCount / 2) {
+			final Set<Integer> selectedRows = sampleRowNumbers(rowCount, holdOutRows, seed);
+			updateHoldOutRowsChunked(tableName, selectedRows, true);
+		} else {
+			setAllHoldOutRows(tableName, true);
+
+			final int nonHoldOutRows = rowCount - holdOutRows;
+			final Set<Integer> selectedRows = sampleRowNumbers(rowCount, nonHoldOutRows, seed);
+			updateHoldOutRowsChunked(tableName, selectedRows, false);
+		}
+	}
+
+	/**
+	 * Samples the given number of row numbers from the given row count.
+	 *
+	 * @param rowCount   The total number of rows.
+	 * @param sampleSize The number of rows that should be sampled.
+	 * @param seed       The seed for the random number generator.
+	 * @return Set of row numbers that were sampled.
+	 */
+	private Set<Integer> sampleRowNumbers(final int rowCount, final int sampleSize, final int seed) {
+		final Random random = new Random(seed);
+		final Set<Integer> selectedRows = new HashSet<>(sampleSize);
+
+		for (int i = rowCount - sampleSize; i < rowCount; i++) {
+			final int candidate = random.nextInt(i + 1);
+
+			if (!selectedRows.add(candidate)) {
+				selectedRows.add(i);
+			}
+		}
+
+		return selectedRows;
+	}
+
+	/**
+	 * Sets the hold-out flag for all rows in the given table to the given value.
+	 *
+	 * @param tableName The name of the table.
+	 * @param holdOut   Flag value.
+	 * @throws SQLException If setting the hold-out flag failed.
+	 */
+	private void setAllHoldOutRows(final String tableName, final boolean holdOut) throws SQLException {
+		final String query =
+				"UPDATE " + tableName +
+				" SET " + DataschemeGenerator.HOLD_OUT_FLAG_NAME + " = ?";
+
+		try (final PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setQueryTimeout(20);
+			statement.setBoolean(1, holdOut);
+			statement.executeUpdate();
+		}
+	}
+
+	/**
+	 * Sets the hold-out flag for the given row numbers in the given table to the given value.
+	 * Uses chunking to avoid issues with too many parameters in the query for large data sets.
+	 *
+	 * @param tableName  The name of the table.
+	 * @param rowNumbers The row numbers to update.
+	 * @param holdOut    Flag value.
+	 * @throws SQLException If updating the hold-out flag failed.
+	 */
+	private void updateHoldOutRowsChunked(final String tableName, final Collection<Integer> rowNumbers,
+	                                      final boolean holdOut)
+			throws SQLException {
+		final int chunkSize = 500;
+		final List<Integer> rowNumberList = new ArrayList<>(rowNumbers);
+
+		for (int start = 0; start < rowNumberList.size(); start += chunkSize) {
+			final int end = Math.min(start + chunkSize, rowNumberList.size());
+			updateHoldOutRows(tableName, rowNumberList.subList(start, end), holdOut);
+		}
+	}
+
+	/**
+	 * Updates the hold-out flag for the given row numbers in the given table.
+	 * Prefer using {@link #updateHoldOutRowsChunked(String, Collection, boolean)} for better performance with large datasets.
+	 *
+	 * @param tableName  The name of the table.
+	 * @param rowNumbers The row numbers to update.
+	 * @param holdOut    Flag value.
+	 * @throws SQLException If updating the hold-out flag failed.
+	 */
+	private void updateHoldOutRows(final String tableName, final List<Integer> rowNumbers, final boolean holdOut)
+			throws SQLException {
+		if (rowNumbers.isEmpty()) {
+			return;
+		}
+
+		final String placeholders = String.join(",", Collections.nCopies(rowNumbers.size(), "?"));
+		final String query =
+				"UPDATE " + tableName +
+				" SET " + DataschemeGenerator.HOLD_OUT_FLAG_NAME + " = ?" +
+				" WHERE " + DataschemeGenerator.ROW_INDEX_NAME + " IN (" + placeholders + ")";
+
+		try (final PreparedStatement statement = connection.prepareStatement(query)) {
+			statement.setQueryTimeout(20);
+			statement.setBoolean(1, holdOut);
+
+			for (int i = 0; i < rowNumbers.size(); i++) {
+				statement.setInt(i + 2, rowNumbers.get(i));
+			}
+
+			statement.executeUpdate();
+		}
 	}
 
 	/**
@@ -1132,7 +1240,7 @@ public class DatabaseService {
 		dataSet.getDataTransformationErrors().clear();
 		dataSet.setStoredData(false);
 		dataSet.setHasHoldOut(false);
-		dataSet.setHoldOutSeed(0.0f);
+		dataSet.setHoldOutSeed(0);
 		dataSet.setConfirmedData(false);
 		dataSet.getStatisticsProcess().reset();
 
@@ -1169,7 +1277,9 @@ public class DatabaseService {
 		countQuery += ";";
 
 		try (final Statement countStatement = connection.createStatement()) {
-			try (ResultSet resultSet = countStatement.executeQuery(countQuery)) {
+			countStatement.setQueryTimeout(20);
+
+			try (final ResultSet resultSet = countStatement.executeQuery(countQuery)) {
 				resultSet.next();
 				return resultSet.getInt(1);
 			}
@@ -1197,20 +1307,6 @@ public class DatabaseService {
 	 * @return True if the table exists, false if not.
 	 * @throws InternalDataSetPersistenceException If the SQL statement could not be executed.
 	 */
-//	public boolean existsTable(final long dataSetId) throws InternalDataSetPersistenceException {
-//		final String existsQuery = "SELECT 1 FROM pg_class WHERE relname = ? AND relkind = 'r'";
-//		try (final PreparedStatement existTableQuery = connection.prepareStatement(existsQuery)) {
-//			existTableQuery.setString(1, getTableName(dataSetId));
-//			try (final ResultSet resultSet = existTableQuery.executeQuery()) {
-//				return resultSet.next();
-//			}
-//		} catch (SQLException e) {
-//			LOGGER.error("The Configuration could not be stored!", e);
-//			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.TABLE_CHECk,
-//			                                              "The Configuration could not be stored!", e);
-//		}
-//	}
-
 	public boolean existsTable(final long dataSetId) throws InternalDataSetPersistenceException {
 		final String tableName = getTableName(dataSetId);
 
@@ -1223,6 +1319,13 @@ public class DatabaseService {
 		}
 	}
 
+	/**
+	 * Checks if a table with the given name exists.
+	 *
+	 * @param tableName Name of the table to check.
+	 * @return True if the table exists, false if not.
+	 * @throws SQLException If the SQL statement could not be executed.
+	 */
 	private boolean existsTable(final String tableName) throws SQLException {
 		final var metaData = connection.getMetaData();
 
@@ -1232,13 +1335,15 @@ public class DatabaseService {
 			}
 		}
 
-		try (final ResultSet resultSet = metaData.getTables(null, null, tableName.toUpperCase(), new String[]{"TABLE"})) {
+		try (final ResultSet resultSet = metaData.getTables(null, null, tableName.toUpperCase(),
+		                                                    new String[]{"TABLE"})) {
 			if (resultSet.next()) {
 				return true;
 			}
 		}
 
-		try (final ResultSet resultSet = metaData.getTables(null, null, tableName.toLowerCase(), new String[]{"TABLE"})) {
+		try (final ResultSet resultSet = metaData.getTables(null, null, tableName.toLowerCase(),
+		                                                    new String[]{"TABLE"})) {
 			return resultSet.next();
 		}
 	}

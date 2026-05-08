@@ -56,7 +56,7 @@ public class DataSetEntity extends ProcessOwner {
 	 */
 	@Column(nullable = false)
 	@Setter
-	private double holdOutSeed = 0.0f;
+	private int holdOutSeed = 0;
 
 	/**
 	 * If the data has been stored and confirmed.

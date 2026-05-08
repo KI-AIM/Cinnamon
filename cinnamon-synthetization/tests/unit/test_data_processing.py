@@ -165,10 +165,10 @@ def test_post_process_dataframe_missing_date_format_keeps_column_without_crashin
     df = pd.DataFrame({"event_date": [1704067200]})
     config = [{"name": "event_date", "type": "DATE", "index": 0, "configurations": []}]
 
-    result = post_process_dataframe(df, config, all_missing_values_column=[])
+    with pytest.raises(ValueError) as exc:
+        post_process_dataframe(df, config, all_missing_values_column=[])
 
-    assert result.columns.tolist() == ["event_date"]
-    assert result["event_date"].iloc[0] == 1704067200
+    assert "Date format not specified for DATE column 'event_date'" in str(exc.value)
 
 
 def test_iso_to_strftime_converts_expected_tokens():

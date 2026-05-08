@@ -19,7 +19,10 @@ from api_utility.status.status_updater import update_status
 from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
-from data_processing.utils import TEXT_PENDING_LLM
+from data_processing.utils import (
+    order_dataframe_by_config,
+    set_text_columns_to_pending,
+)
 from synthetic_tabular_data_generator.llm import get_llm_profile_names
 
 
@@ -197,22 +200,8 @@ def build_attribute_config(column_configurations):
     return {"configurations": column_configurations}
 
 
-def order_dataframe_by_config(df, column_configurations):
-    ordered = sorted(column_configurations, key=lambda item: item.get("index", float("inf")))
-    ordered_names = [item["name"] for item in ordered if "name" in item]
-    for column_name in ordered_names:
-        if column_name not in df.columns:
-            df[column_name] = pd.NA
-    return df[ordered_names] if ordered_names else df
-
-
 def create_text_synthesis_input(dataframe, full_attribute_config):
-    text_input = dataframe.copy()
-    for column_config in full_attribute_config.get("configurations", []):
-        column_name = column_config.get("name")
-        if str(column_config.get("type", "")).upper() != "TEXT":
-            continue
-        text_input[column_name] = TEXT_PENDING_LLM
+    text_input = set_text_columns_to_pending(dataframe, full_attribute_config.get("configurations", []))
     return order_dataframe_by_config(text_input, full_attribute_config.get("configurations", []))
 
 

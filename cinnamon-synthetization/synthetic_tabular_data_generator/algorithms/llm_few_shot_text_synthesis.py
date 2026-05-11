@@ -43,7 +43,9 @@ class LlmFewShotTextSynthesisSynthesizer(TabularDataSynthesizer):
         self._ordered_column_configs: List[Dict[str, Any]] = []
         self._text_columns: List[str] = []
         self._column_profiles: Dict[str, Dict[str, Any]] = {}
+        self._few_shot_source_df: Optional[pd.DataFrame] = None
         self._few_shot_examples: List[Dict[str, Any]] = []
+        self._similarity_strategy: str = "random"
         self._user_prompt_domain_context: str = ""
         self._sample_start_time: Optional[float] = None
         self._allow_structured_corrections: bool = True
@@ -60,6 +62,7 @@ class LlmFewShotTextSynthesisSynthesizer(TabularDataSynthesizer):
             "few_shot_rows": max(0, int(few_shot_rows)),
             "max_retries": self._llm_config.max_retries,
         }
+        self._similarity_strategy = str(model_params.get("similarity_strategy", "random")).strip().lower() or "random"
         self._sampling = algorithm_config.get("sampling", {})
         self._allow_structured_corrections = self._parse_bool_like(
             training_params.get("allow_structured_corrections", True)
@@ -120,10 +123,12 @@ class LlmFewShotTextSynthesisSynthesizer(TabularDataSynthesizer):
 
         few_shot_rows = self._fitting_kwargs["few_shot_rows"]
         if few_shot_rows > 0 and not profile_df.empty:
+            self._few_shot_source_df = profile_df.copy()
             n_examples = min(few_shot_rows, len(profile_df))
             sampled = profile_df.sample(n=n_examples).to_dict(orient="records")
             self._few_shot_examples = [self._serialize_row_values(row) for row in sampled]
         else:
+            self._few_shot_source_df = None
             self._few_shot_examples = []
 
     def _sample(self) -> pd.DataFrame:
@@ -224,13 +229,6 @@ class LlmFewShotTextSynthesisSynthesizer(TabularDataSynthesizer):
             col_type = str(config.get("type", "STRING")).upper()
             profile_lines.append(self._profile_line(name, col_type, self._column_profiles.get(name, {})))
 
-        few_shot_block = ""
-        if self._few_shot_examples:
-            few_shot_block = (
-                "Reference rows from original data (learn semantics and writing style, never copy):\n"
-                f"{json.dumps({'rows': self._few_shot_examples}, ensure_ascii=True)}\n"
-            )
-
         domain_context = ""
         if self._user_prompt_domain_context:
             domain_context = f"Domain context: {self._user_prompt_domain_context}\n"
@@ -252,10 +250,31 @@ class LlmFewShotTextSynthesisSynthesizer(TabularDataSynthesizer):
             "- DATE values must be UNIX timestamps in seconds.\n"
             "Column profiles derived from original data:\n"
             f"{chr(10).join(profile_lines)}\n"
-            f"{few_shot_block}"
+            f"{self._build_few_shot_block(base_row)}"
             "Current synthetic row:\n"
             f"{json.dumps({'row': self._serialize_row_values(base_row)}, ensure_ascii=True)}"
         )
+
+    def _build_few_shot_block(self, base_row: Dict[str, Any]) -> str:
+        examples = self._draw_few_shot_examples(base_row)
+        if not examples:
+            return ""
+
+        return (
+            "Reference rows from original data (learn semantics and writing style, never copy):\n"
+            f"{json.dumps({'rows': examples}, ensure_ascii=True)}\n"
+        )
+
+    def _draw_few_shot_examples(self, base_row: Dict[str, Any]) -> List[Dict[str, Any]]:
+        del base_row
+        if self._similarity_strategy != "random":
+            print(
+                "[LLM TEXT SYNTH] "
+                f"similarity_strategy='{self._similarity_strategy}' is not implemented yet; "
+                "falling back to random few-shot selection.",
+                flush=True,
+            )
+        return list(self._few_shot_examples)
 
     def _build_column_profile(self, df: pd.DataFrame, column_name: str, column_type: str) -> Dict[str, Any]:
         if column_name not in df.columns:

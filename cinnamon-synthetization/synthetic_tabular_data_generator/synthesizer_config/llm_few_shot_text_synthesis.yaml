@@ -20,8 +20,8 @@ configurations:
         values: []
         mandatory: false
   model_parameter:
-    display_name: Knowledge Grounding Parameters
-    description: Configure how many original rows are profiled and how many examples are used as semantic guidance for text generation.
+    display_name: Dataset Generation Parameters
+    description: Configure how much original data is profiled and how few-shot reference examples are selected for text generation.
     parameters:
       - name: profile_rows
         type: integer
@@ -33,10 +33,16 @@ configurations:
       - name: few_shot_rows
         type: integer
         label: Example Rows
-        description: Number of original rows included as semantic examples in the prompt.
+        description: Number of original rows injected into the prompt as few-shot reference examples.
         default_value: 20
         min_value: 0
         max_value: 200
+      - name: similarity_strategy
+        type: string
+        label: Similarity Strategy
+        description: Strategy for selecting few-shot reference rows. Currently only random is implemented. The values structured_attributes, embedding, and hybrid are reserved for future extensions and currently fall back to random selection.
+        default_value: random
+        values: ["structured_attributes", "random", "embedding", "hybrid"]
   model_fitting:
     display_name: Prompt Configuration
     description: Configure domain context and whether structured values may be minimally corrected for consistency.
@@ -73,4 +79,3 @@ configurations:
         default_value: 0.9
         min_value: 0.0
         max_value: 1.0
-

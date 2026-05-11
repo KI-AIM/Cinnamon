@@ -679,8 +679,6 @@ def get_synthesizer_config(module_name, filename):
             and filename.lower() in {
                 "llm_tabular.yaml",
                 "llm_few_shot_text_synthesis.yaml",
-                "llm_nearest_neighbor_few_shot_text_synthesis.yaml",
-                "llm_knowledge_grounded_text_synthesis.yaml",
                 "llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml",
             }
         )

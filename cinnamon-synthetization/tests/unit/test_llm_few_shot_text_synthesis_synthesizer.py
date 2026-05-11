@@ -31,6 +31,7 @@ def _algorithm_config() -> dict:
                 "model_parameter": {
                     "profile_rows": 1000,
                     "few_shot_rows": 2,
+                    "similarity_strategy": "random",
                 },
                 "model_fitting": {
                     "user_prompt_domain_context": "German clinical discharge summaries.",
@@ -194,3 +195,33 @@ def test_llm_few_shot_text_synthesis_reports_sampling_remaining_time_via_callbac
     synthesizer.sample()
 
     assert updates[-1] == ("sampling", 0)
+
+
+def test_llm_few_shot_text_synthesis_falls_back_to_random_for_unimplemented_similarity_strategy(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        if method == "POST" and url.endswith("/api/generate"):
+            return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": "Stable clinical status."}})})
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    algorithm_config = _algorithm_config()
+    algorithm_config["synthetization_configuration"]["algorithm"]["model_parameter"]["similarity_strategy"] = "structured_attributes"
+    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
+
+    synthesizer = LlmFewShotTextSynthesisSynthesizer()
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(_synthetic_input())
+    synthesizer.initialize_reference_dataset(_original_input())
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    sample = synthesizer.sample()
+
+    assert len(sample) == 1
+    assert sample["notes"].iloc[0] == "Stable clinical status."

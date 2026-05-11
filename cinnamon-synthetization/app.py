@@ -163,8 +163,16 @@ def is_llm_synthesizer(synthesizer_name: str) -> bool:
     return supports_free_text
 
 
+DEFAULT_TEXT_SYNTHESIZER_NAME = "llm_few_shot_text_synthesis"
+
+
 @lru_cache(maxsize=1)
 def get_text_synthesizer_name():
+    if DEFAULT_TEXT_SYNTHESIZER_NAME in synthesizer_classes:
+        supports_structured, supports_free_text = get_processing_capabilities(DEFAULT_TEXT_SYNTHESIZER_NAME)
+        if not supports_structured and supports_free_text:
+            return DEFAULT_TEXT_SYNTHESIZER_NAME
+
     candidates = []
     for name in synthesizer_classes:
         supports_structured, supports_free_text = get_processing_capabilities(name)
@@ -467,7 +475,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             total_sample_duration += sample_duration
 
         # 2) Selected synthesizer does not support free text:
-        #    first synthesize structured columns, then synthesize text via llm_text_synthesis.
+        #    first synthesize structured columns, then synthesize text via the default few-shot text synthesizer.
         elif text_configs and not supports_free_text:
             print("Pipeline mode: two-stage (structured -> text synthesis).")
 
@@ -668,7 +676,13 @@ def get_synthesizer_config(module_name, filename):
 
         is_dynamic_llm_definition = (
             module_name == "synthetic_tabular_data_generator"
-            and filename.lower() in {"llm_tabular.yaml", "llm_text_synthesis.yaml"}
+            and filename.lower() in {
+                "llm_tabular.yaml",
+                "llm_few_shot_text_synthesis.yaml",
+                "llm_nearest_neighbor_few_shot_text_synthesis.yaml",
+                "llm_knowledge_grounded_text_synthesis.yaml",
+                "llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml",
+            }
         )
         if not is_dynamic_llm_definition:
             return send_from_directory(config_directory, filename)

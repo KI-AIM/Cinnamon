@@ -1,11 +1,22 @@
-from synthetic_tabular_data_generator.algorithms.ctgan import CtganSynthesizer
-from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
-from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
-from synthetic_tabular_data_generator.algorithms.bayesian_network import BayesianNetworkSynthesizer
 from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomForestsSynthesizer
-from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
+from synthetic_tabular_data_generator.algorithms.bayesian_network import BayesianNetworkSynthesizer
+from synthetic_tabular_data_generator.algorithms.ctgan import CtganSynthesizer
+from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
+from synthetic_tabular_data_generator.algorithms.llm_few_shot_text_synthesis import (
+    LlmFewShotTextSynthesisSynthesizer,
+)
+from synthetic_tabular_data_generator.algorithms.llm_knowledge_grounded_text_synthesis import (
+    LlmKnowledgeGroundedTextSynthesisSynthesizer,
+)
+from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_few_shot_text_synthesis import (
+    LlmNearestNeighborFewShotTextSynthesisSynthesizer,
+)
+from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_knowledge_grounded_text_synthesis import (
+    LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer,
+)
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
-from synthetic_tabular_data_generator.algorithms.llm_text_synthesis import LlmTextSynthesisSynthesizer
+from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
+from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
 
 synthesizer_classes = {
     'ctgan': {
@@ -64,12 +75,36 @@ synthesizer_classes = {
         'description': 'The LLM Dataset Generator is a configurable language-model-based synthesizer designed to create fully synthetic tabular datasets from source data using Ollama or OpenAI-compatible APIs. Leveraging the reasoning and pattern-completion capabilities of large language models, it can generate new rows that follow the structure, semantics, and value patterns of the original dataset. This approach is particularly useful when domain-specific context, textual meaning, or flexible generation rules are important. It also allows synthetic data generation to be guided through prompts and configuration settings rather than relying only on statistical model training.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
     },
-    'llm_text_synthesis': {
+    'llm_few_shot_text_synthesis': {
         'version': '0.1',
         'type': 'cross-sectional',
-        'class': LlmTextSynthesisSynthesizer,
-        'display_name': 'LLM Text Synthesis with Structured Consistency',
-        'description': 'LLM Text Synthesis with Structured Consistency is a language-model-based synthesizer designed to generate realistic text fields for synthetic tabular rows while using original data as semantic context. Leveraging large language models, it creates text values that align with the surrounding structured columns and can correct inconsistent structured values when necessary. This approach is especially useful for datasets that combine tabular attributes with free-text descriptions, comments, reports, or notes. It helps maintain semantic coherence between generated text and structured data, improving the usability of synthetic datasets for downstream analysis or testing. The structured data is not created by this model',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_synthesis.yaml'
+        'class': LlmFewShotTextSynthesisSynthesizer,
+        'display_name': 'LLM Few-shot Text Synthesis',
+        'description': 'LLM Few-shot Text Synthesis is a language-model-based synthesizer designed to generate realistic text fields for synthetic tabular rows while using original data as semantic context. Leveraging large language models, it creates text values that align with the surrounding structured columns and can correct inconsistent structured values when necessary. This approach is especially useful for datasets that combine tabular attributes with free-text descriptions, comments, reports, or notes. It helps maintain semantic coherence between generated text and structured data, improving the usability of synthetic datasets for downstream analysis or testing. The structured data is not created by this model',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_few_shot_text_synthesis.yaml'
+    },
+    'llm_nearest_neighbor_few_shot_text_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmNearestNeighborFewShotTextSynthesisSynthesizer,
+        'display_name': 'LLM Nearest-neighbor Few-shot Text Synthesis',
+        'description': 'Generate synthetic medical free-text fields using an LLM and dynamically selected original examples that are most similar to each synthetic structured row. Similarity may be based on structured attributes such as diagnosis, age, gender, BMI class, department, or embedding similarity. This is a prompt-based method without fine-tuning.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml'
+    },
+    'llm_knowledge_grounded_text_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmKnowledgeGroundedTextSynthesisSynthesizer,
+        'display_name': 'LLM Knowledge-grounded Text Synthesis',
+        'description': 'Generate synthetic medical free-text fields using an LLM grounded with external or local medical knowledge sources such as ICD, SNOMED CT, UMLS, ontologies, taxonomies, guidelines, or local terminologies. This is a prompt-based retrieval- or knowledge-grounded method without fine-tuning.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_knowledge_grounded_text_synthesis.yaml'
+    },
+    'llm_nearest_neighbor_knowledge_grounded_text_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer,
+        'display_name': 'LLM Nearest-neighbor Knowledge-grounded Text Synthesis',
+        'description': 'Generate synthetic medical free-text fields using an LLM with both dynamically selected similar original examples and medical knowledge grounding. The method combines nearest-neighbor few-shot prompting with retrieval- or ontology-based medical context. This is a prompt-based method without fine-tuning.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml'
     }
 }

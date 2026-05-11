@@ -17,7 +17,7 @@ from synthetic_tabular_data_generator.llm import (
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
 
 
-class LlmTextSynthesisSynthesizer(TabularDataSynthesizer):
+class LlmFewShotTextSynthesisSynthesizer(TabularDataSynthesizer):
     """
     LLM-based synthesizer that enriches synthetic tabular rows by generating TEXT values.
     Structured values are preserved by default but may be adjusted by the LLM when needed.
@@ -524,9 +524,9 @@ class LlmTextSynthesisSynthesizer(TabularDataSynthesizer):
     def _get_model(self) -> bytes:
         return cloudpickle.dumps(self)
 
-    def _load_model(self, filepath: str) -> "LlmTextSynthesisSynthesizer":
+    def _load_model(self, filepath: str) -> "LlmFewShotTextSynthesisSynthesizer":
         with open(filepath, "rb") as file:
-            model: "LlmTextSynthesisSynthesizer" = cloudpickle.load(file)
+            model: "LlmFewShotTextSynthesisSynthesizer" = cloudpickle.load(file)
         return model
 
     def _save_data(self, sample: pd.DataFrame, filename: str) -> None:

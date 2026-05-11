@@ -1,0 +1,81 @@
+name: llm_nearest_neighbor_few_shot_text_synthesis
+version: "0.1"
+type: cross-sectional
+display_name: LLM Nearest-neighbor Few-shot Text Synthesis
+description: Generate synthetic medical free-text fields using an LLM and dynamically selected original examples that are most similar to each synthetic structured row. Similarity may be based on structured attributes such as diagnosis, age, gender, BMI class, department, or embedding similarity. This is a prompt-based method without fine-tuning.
+URL: /start_synthetization_process/llm_nearest_neighbor_few_shot_text_synthesis
+processing_capabilities:
+  supports_structured_data: false
+  supports_free_text_data: true
+configurations:
+  llm_profile:
+    display_name: LLM Profile
+    description: Select which configured LLM instance should be used.
+    parameters:
+      - name: llm_profile
+        type: string
+        label: LLM Profile
+        description: Select the configured LLM profile (model endpoint and credentials).
+        default_value: ""
+        values: []
+        mandatory: false
+  model_parameter:
+    display_name: Similarity and Example Selection Parameters
+    description: Configure how many rows are profiled and how nearest-neighbor examples are selected for each synthetic structured row.
+    parameters:
+      - name: profile_rows
+        type: integer
+        label: Profile Rows
+        description: Maximum number of original rows used to estimate prompt statistics and candidate example pools.
+        default_value: 1000
+        min_value: 1
+        max_value: 100000
+      - name: few_shot_rows
+        type: integer
+        label: Example Rows
+        description: Number of nearest-neighbor original rows to include as in-context examples for each synthetic row.
+        default_value: 5
+        min_value: 0
+        max_value: 200
+      - name: similarity_strategy
+        type: string
+        label: Similarity Strategy
+        description: Strategy used to identify the most similar original rows for each synthetic row.
+        default_value: structured_attributes
+        values: ["structured_attributes", "embedding", "hybrid"]
+  model_fitting:
+    display_name: Prompt Configuration
+    description: Configure domain context and whether structured values may be minimally corrected for consistency.
+    parameters:
+      - name: user_prompt_domain_context
+        type: string
+        multiline: true
+        rows: 5
+        label: Domain Context
+        description: Optional domain context to guide realistic text generation, for example clinical notes, registry data, or claims narratives.
+        default_value: ""
+        mandatory: false
+      - name: allow_structured_corrections
+        type: string
+        label: Allow Structured Corrections
+        description: If true, the model may minimally adjust non-TEXT values when combinations are implausible.
+        default_value: "true"
+        values: ["true", "false"]
+  sampling:
+    display_name: Sampling
+    description: Configure LLM decoding behavior for nearest-neighbor few-shot text generation.
+    parameters:
+      - name: temperature
+        type: float
+        label: Temperature
+        description: Controls randomness of token sampling. Lower values are more deterministic.
+        default_value: 0.3
+        min_value: 0.0
+        max_value: 2.0
+      - name: top_p
+        type: float
+        label: Top-p
+        description: Controls nucleus sampling by limiting candidate tokens to a probability mass.
+        default_value: 0.9
+        min_value: 0.0
+        max_value: 1.0

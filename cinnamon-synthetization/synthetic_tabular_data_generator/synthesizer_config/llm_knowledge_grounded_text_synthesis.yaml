@@ -1,9 +1,9 @@
-name: llm_text_synthesis
+name: llm_knowledge_grounded_text_synthesis
 version: "0.1"
 type: cross-sectional
-display_name: LLM Text Synthesis with Structured Consistency
-description: Generate TEXT fields for synthetic tabular rows using original data as semantic context and allow minimal structured corrections when combinations are implausible.
-URL: /start_synthetization_process/llm_text_synthesis
+display_name: LLM Knowledge-grounded Text Synthesis
+description: Generate synthetic medical free-text fields using an LLM grounded with external or local medical knowledge sources such as ICD, SNOMED CT, UMLS, ontologies, taxonomies, guidelines, or local terminologies. This is a prompt-based retrieval- or knowledge-grounded method without fine-tuning.
+URL: /start_synthetization_process/llm_knowledge_grounded_text_synthesis
 processing_capabilities:
   supports_structured_data: false
   supports_free_text_data: true
@@ -20,13 +20,13 @@ configurations:
         values: []
         mandatory: false
   model_parameter:
-    display_name: Dataset Generation Parameters
-    description: Configure how many original rows are profiled and how many examples are used as semantic guidance for text generation.
+    display_name: Knowledge Grounding Parameters
+    description: Configure how much source data is profiled and which medical knowledge source should be used for grounding.
     parameters:
       - name: profile_rows
         type: integer
         label: Profile Rows
-        description: Maximum number of original rows used to estimate prompt statistics and plausibility bounds.
+        description: Maximum number of original rows used to estimate prompt statistics and reference characteristics.
         default_value: 1000
         min_value: 1
         max_value: 100000
@@ -37,6 +37,19 @@ configurations:
         default_value: 20
         min_value: 0
         max_value: 200
+      - name: knowledge_source_type
+        type: string
+        label: Knowledge Source Type
+        description: Type of medical knowledge source used to ground the LLM prompt.
+        default_value: none
+        values: ["none", "ontology", "taxonomy", "guideline", "local_terminology", "rag_index"]
+      - name: max_knowledge_chunks
+        type: integer
+        label: Max Knowledge Chunks
+        description: Maximum number of retrieved or selected knowledge snippets to inject into the prompt.
+        default_value: 5
+        min_value: 0
+        max_value: 100
   model_fitting:
     display_name: Prompt Configuration
     description: Configure domain context and whether structured values may be minimally corrected for consistency.
@@ -57,7 +70,7 @@ configurations:
         values: ["true", "false"]
   sampling:
     display_name: Sampling
-    description: Configure LLM decoding behavior. The number of processed rows is always derived from the input dataset.
+    description: Configure LLM decoding behavior for knowledge-grounded text generation.
     parameters:
       - name: temperature
         type: float
@@ -73,4 +86,3 @@ configurations:
         default_value: 0.9
         min_value: 0.0
         max_value: 1.0
-

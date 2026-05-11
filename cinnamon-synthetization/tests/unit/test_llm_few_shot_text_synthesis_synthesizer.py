@@ -9,7 +9,9 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from data_processing.utils import MISSING_VALUE_STRING
-from synthetic_tabular_data_generator.algorithms.llm_text_synthesis import LlmTextSynthesisSynthesizer
+from synthetic_tabular_data_generator.algorithms.llm_few_shot_text_synthesis import (
+    LlmFewShotTextSynthesisSynthesizer,
+)
 
 
 def _attribute_config() -> dict:
@@ -95,7 +97,7 @@ def _original_input() -> pd.DataFrame:
     )
 
 
-def test_llm_text_synthesis_generates_text_and_can_correct_structured_values(monkeypatch):
+def test_llm_few_shot_text_synthesis_generates_text_and_can_correct_structured_values(monkeypatch):
     call_count = {"post": 0}
     _set_shared_llm_env(monkeypatch)
 
@@ -116,7 +118,7 @@ def test_llm_text_synthesis_generates_text_and_can_correct_structured_values(mon
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
 
-    synthesizer = LlmTextSynthesisSynthesizer()
+    synthesizer = LlmFewShotTextSynthesisSynthesizer()
     synthesizer.initialize_anonymization_configuration(_algorithm_config())
     synthesizer.initialize_attribute_configuration(_attribute_config())
     synthesizer.initialize_dataset(_synthetic_input())
@@ -135,7 +137,7 @@ def test_llm_text_synthesis_generates_text_and_can_correct_structured_values(mon
     assert sample["group"].tolist() == ["A", "B"]
 
 
-def test_llm_text_synthesis_falls_back_to_base_row_after_invalid_responses(monkeypatch):
+def test_llm_few_shot_text_synthesis_falls_back_to_base_row_after_invalid_responses(monkeypatch):
     _set_shared_llm_env(monkeypatch)
 
     def fake_request(method, url, **kwargs):
@@ -149,7 +151,7 @@ def test_llm_text_synthesis_falls_back_to_base_row_after_invalid_responses(monke
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
 
-    synthesizer = LlmTextSynthesisSynthesizer()
+    synthesizer = LlmFewShotTextSynthesisSynthesizer()
     synthesizer.initialize_anonymization_configuration(_algorithm_config())
     synthesizer.initialize_attribute_configuration(_attribute_config())
     synthesizer.initialize_dataset(_synthetic_input())
@@ -164,7 +166,7 @@ def test_llm_text_synthesis_falls_back_to_base_row_after_invalid_responses(monke
     assert sample["notes"].tolist() == [MISSING_VALUE_STRING, MISSING_VALUE_STRING]
 
 
-def test_llm_text_synthesis_reports_sampling_remaining_time_via_callback(monkeypatch):
+def test_llm_few_shot_text_synthesis_reports_sampling_remaining_time_via_callback(monkeypatch):
     _set_shared_llm_env(monkeypatch)
 
     def fake_request(method, url, **kwargs):
@@ -179,7 +181,7 @@ def test_llm_text_synthesis_reports_sampling_remaining_time_via_callback(monkeyp
     algorithm_config = _algorithm_config()
     algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
 
-    synthesizer = LlmTextSynthesisSynthesizer()
+    synthesizer = LlmFewShotTextSynthesisSynthesizer()
     updates = []
     synthesizer.set_progress_callback(lambda step, remaining_time: updates.append((step, remaining_time)))
     synthesizer.initialize_anonymization_configuration(algorithm_config)

@@ -46,6 +46,16 @@
                                 <mat-label>Few-Shot Rows</mat-label>
                                 <input matInput type="number" formControlName="few_shot_rows">
                             </mat-form-field>
+
+                            <mat-form-field class="w-100">
+                                <mat-label>Similarity Strategy</mat-label>
+                                <mat-select formControlName="similarity_strategy">
+                                    <mat-option value="random">random</mat-option>
+                                    <mat-option value="structured_attributes">structured_attributes</mat-option>
+                                    <mat-option value="embedding">embedding</mat-option>
+                                    <mat-option value="hybrid">hybrid</mat-option>
+                                </mat-select>
+                            </mat-form-field>
                         </div>
                     </mat-expansion-panel>
 

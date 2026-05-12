@@ -214,11 +214,11 @@ def create_text_synthesis_input(dataframe, full_attribute_config):
 
 
 def inject_llm_profile_parameter(config_content):
+    configurations = config_content.setdefault("configurations", {})
     profile_names = get_llm_profile_names()
     if not profile_names:
         return config_content
 
-    configurations = config_content.setdefault("configurations", {})
     llm_profile_group = configurations.setdefault(
         "llm_profile",
         {
@@ -252,14 +252,6 @@ def inject_llm_profile_parameter(config_content):
         llm_profile_parameter["values"] = profile_names
         if not llm_profile_parameter.get("default_value"):
             llm_profile_parameter["default_value"] = profile_names[0]
-
-    # Backward compatibility: remove misplaced llm_profile from model_parameter if present.
-    model_parameter = configurations.get("model_parameter", {})
-    model_parameters = model_parameter.get("parameters", [])
-    if isinstance(model_parameters, list):
-        model_parameter["parameters"] = [
-            parameter for parameter in model_parameters if parameter.get("name") != "llm_profile"
-        ]
 
     return config_content
 
@@ -666,7 +658,8 @@ def get_synthesizer_config(module_name, filename):
             error_message = 'Invalid file type. Only YAML files are allowed.'
             return jsonify({'error': error_message}), 400
 
-        config_directory = os.path.join(module_name, 'synthesizer_config')
+        module_directory = os.path.join(os.path.dirname(__file__), module_name)
+        config_directory = os.path.join(module_directory, 'synthesizer_config')
         config_path = os.path.join(config_directory, filename)
         print(config_path)
 

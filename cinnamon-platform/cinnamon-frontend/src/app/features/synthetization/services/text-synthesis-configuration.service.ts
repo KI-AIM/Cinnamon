@@ -41,7 +41,7 @@ export class TextSynthesisConfigurationService {
                     }),
                     model_fitting: this.formBuilder.group({
                         user_prompt_domain_context: new FormControl({value: modelFitting.user_prompt_domain_context ?? "", disabled}),
-                        allow_structured_corrections: new FormControl({value: modelFitting.allow_structured_corrections ?? true, disabled}, [Validators.required]),
+                        allow_structured_corrections: new FormControl({value: modelFitting.allow_structured_corrections ?? true, disabled}),
                     }),
                     sampling: this.formBuilder.group({
                         temperature: new FormControl({value: sampling.temperature ?? 0.3, disabled}, [Validators.required, Validators.min(0), Validators.max(2)]),

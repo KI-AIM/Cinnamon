@@ -284,7 +284,7 @@ export class ConfigurationFormComponent implements OnInit {
                 } else {
                     // Add validators of the input
                     const validators: ValidatorFn[] = [];
-                    if (mandatory) {
+                    if (mandatory && inputDefinition.type !== ConfigurationInputType.BOOLEAN) {
                         validators.push(Validators.required);
                     }
                     if (inputDefinition.min_value !== null) {

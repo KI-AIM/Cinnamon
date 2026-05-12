@@ -92,13 +92,9 @@
                                 <textarea matInput rows="4" formControlName="user_prompt_domain_context"></textarea>
                             </mat-form-field>
 
-                            <mat-form-field class="w-100">
-                                <mat-label>Allow Structured Corrections</mat-label>
-                                <mat-select formControlName="allow_structured_corrections">
-                                    <mat-option [value]="true">true</mat-option>
-                                    <mat-option [value]="false">false</mat-option>
-                                </mat-select>
-                            </mat-form-field>
+                            <mat-checkbox color="primary" formControlName="allow_structured_corrections">
+                                Allow Structured Corrections
+                            </mat-checkbox>
                         </div>
                     </mat-expansion-panel>
 

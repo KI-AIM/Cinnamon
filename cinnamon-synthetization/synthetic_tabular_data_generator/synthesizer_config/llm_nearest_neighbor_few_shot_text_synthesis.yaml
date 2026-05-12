@@ -56,11 +56,10 @@ configurations:
         default_value: ""
         mandatory: false
       - name: allow_structured_corrections
-        type: string
+        type: boolean
         label: Allow Structured Corrections
         description: If true, the model may minimally adjust non-TEXT values when combinations are implausible.
-        default_value: "true"
-        values: ["true", "false"]
+        default_value: true
   sampling:
     display_name: Sampling
     description: Configure LLM decoding behavior. The number of processed rows is always derived from the input dataset.

@@ -73,7 +73,7 @@ SECTION_KEYS = {"display_name", "description", "parameters"}
 PARAM_REQUIRED_KEYS = {"name", "type", "label", "description", "default_value"}
 PARAM_OPTIONAL_KEYS = {"min_value", "max_value", "values", "mandatory", "multiline", "rows"}
 PARAM_ALLOWED_KEYS = PARAM_REQUIRED_KEYS | PARAM_OPTIONAL_KEYS
-ALLOWED_PARAM_TYPES = {"integer", "float", "string", "list"}
+ALLOWED_PARAM_TYPES = {"integer", "float", "string", "list", "boolean"}
 
 
 def _load_yaml(path: Path) -> dict:
@@ -143,6 +143,8 @@ def test_configuration_sections_and_parameters():
                     assert isinstance(default_value, str)
                 elif param_type == "list":
                     assert isinstance(default_value, list)
+                elif param_type == "boolean":
+                    assert isinstance(default_value, bool)
 
                 if "values" in param:
                     assert isinstance(param["values"], list)

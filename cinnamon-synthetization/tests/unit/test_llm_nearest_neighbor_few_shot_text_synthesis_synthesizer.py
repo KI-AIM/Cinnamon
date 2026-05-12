@@ -35,7 +35,7 @@ def _algorithm_config() -> dict:
                 },
                 "model_fitting": {
                     "user_prompt_domain_context": "German clinical discharge summaries.",
-                    "allow_structured_corrections": "true",
+                    "allow_structured_corrections": True,
                 },
                 "sampling": {
                     "num_samples": 2,

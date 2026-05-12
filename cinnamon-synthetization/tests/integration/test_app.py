@@ -92,7 +92,7 @@ def test_get_synthesizer_config_normalizes_llm_profile_into_model_parameter(monk
     monkeypatch.setattr(app_module, "get_llm_profile_names", lambda: ["profile-a", "profile-b"])
 
     client = app_module.app.test_client()
-    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_few_shot_text_synthesis.yaml")
+    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml")
 
     assert response.status_code == 200
 
@@ -110,7 +110,7 @@ def test_get_synthesizer_config_omits_llm_profile_when_no_profiles_exist(monkeyp
     monkeypatch.setattr(app_module, "get_llm_profile_names", lambda: [])
 
     client = app_module.app.test_client()
-    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_few_shot_text_synthesis.yaml")
+    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml")
 
     assert response.status_code == 200
 

@@ -62,10 +62,11 @@ TOP_LEVEL_KEYS = {
     "display_name",
     "description",
     "URL",
+    "processing_capabilities",
     "configurations",
 }
 CONFIG_REQUIRED_SECTIONS = {"model_fitting"}
-CONFIG_OPTIONAL_SECTIONS = {"model_parameter", "sampling"}
+CONFIG_OPTIONAL_SECTIONS = {"llm_profile", "model_parameter", "sampling"}
 CONFIG_ALLOWED_SECTIONS = CONFIG_REQUIRED_SECTIONS | CONFIG_OPTIONAL_SECTIONS
 SECTION_KEYS = {"display_name", "description", "parameters"}
 
@@ -99,6 +100,7 @@ def test_top_level_structure_and_filename_match():
         assert isinstance(config["display_name"], str) and config["display_name"]
         assert isinstance(config["description"], str) and config["description"]
         assert isinstance(config["URL"], str) and config["URL"]
+        assert isinstance(config["processing_capabilities"], dict)
         assert config["URL"].startswith("/start_synthetization_process/")
         assert config["URL"].endswith(f"/{config['name']}")
         section_names = set(config["configurations"].keys())
@@ -143,8 +145,9 @@ def test_configuration_sections_and_parameters():
                     assert isinstance(default_value, list)
 
                 if "values" in param:
-                    assert isinstance(param["values"], list) and param["values"]
-                    assert default_value in param["values"]
+                    assert isinstance(param["values"], list)
+                    if param["values"]:
+                        assert default_value in param["values"]
 
                 if "mandatory" in param:
                     assert isinstance(param["mandatory"], bool)

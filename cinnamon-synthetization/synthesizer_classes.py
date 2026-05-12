@@ -2,8 +2,8 @@ from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomFor
 from synthetic_tabular_data_generator.algorithms.bayesian_network import BayesianNetworkSynthesizer
 from synthetic_tabular_data_generator.algorithms.ctgan import CtganSynthesizer
 from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
-from synthetic_tabular_data_generator.algorithms.llm_few_shot_text_synthesis import (
-    LlmFewShotTextSynthesisSynthesizer,
+from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_few_shot_text_synthesis import (
+    LlmNearestNeighborFewShotTextSynthesisSynthesizer,
 )
 from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_knowledge_grounded_text_synthesis import (
     LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer,
@@ -69,13 +69,13 @@ synthesizer_classes = {
         'description': 'The LLM Dataset Generator is a configurable language-model-based synthesizer designed to create fully synthetic tabular datasets from source data using Ollama or OpenAI-compatible APIs. Leveraging the reasoning and pattern-completion capabilities of large language models, it can generate new rows that follow the structure, semantics, and value patterns of the original dataset. This approach is particularly useful when domain-specific context, textual meaning, or flexible generation rules are important. It also allows synthetic data generation to be guided through prompts and configuration settings rather than relying only on statistical model training.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
     },
-    'llm_few_shot_text_synthesis': {
+    'llm_nearest_neighbor_few_shot_text_synthesis': {
         'version': '0.1',
         'type': 'cross-sectional',
-        'class': LlmFewShotTextSynthesisSynthesizer,
-        'display_name': 'LLM Few-shot Text Synthesis',
-        'description': 'LLM Few-shot Text Synthesis is a language-model-based synthesizer designed to generate realistic text fields for synthetic tabular rows while using original data as semantic context. Leveraging large language models, it creates text values that align with the surrounding structured columns and can correct inconsistent structured values when necessary. This approach is especially useful for datasets that combine tabular attributes with free-text descriptions, comments, reports, or notes. It helps maintain semantic coherence between generated text and structured data, improving the usability of synthetic datasets for downstream analysis or testing. The structured data is not created by this model',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_few_shot_text_synthesis.yaml'
+        'class': LlmNearestNeighborFewShotTextSynthesisSynthesizer,
+        'display_name': 'LLM Nearest-neighbor Few-shot Text Synthesis',
+        'description': 'LLM Nearest-neighbor Few-shot Text Synthesis is a language-model-based synthesizer designed to generate realistic text fields for synthetic tabular rows while using original data as semantic context. Leveraging large language models, it creates text values that align with the surrounding structured columns and can correct inconsistent structured values when necessary. This approach is especially useful for datasets that combine tabular attributes with free-text descriptions, comments, reports, or notes. It helps maintain semantic coherence between generated text and structured data, improving the usability of synthetic datasets for downstream analysis or testing. The structured data is not created by this model',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml'
     },
     'llm_nearest_neighbor_knowledge_grounded_text_synthesis': {
         'version': '0.1',

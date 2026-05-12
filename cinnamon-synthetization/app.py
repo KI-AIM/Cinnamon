@@ -163,7 +163,7 @@ def is_llm_synthesizer(synthesizer_name: str) -> bool:
     return supports_free_text
 
 
-DEFAULT_TEXT_SYNTHESIZER_NAME = "llm_few_shot_text_synthesis"
+DEFAULT_TEXT_SYNTHESIZER_NAME = "llm_nearest_neighbor_few_shot_text_synthesis"
 
 
 @lru_cache(maxsize=1)
@@ -671,7 +671,7 @@ def get_synthesizer_config(module_name, filename):
             module_name == "synthetic_tabular_data_generator"
             and filename.lower() in {
                 "llm_tabular.yaml",
-                "llm_few_shot_text_synthesis.yaml",
+                "llm_nearest_neighbor_few_shot_text_synthesis.yaml",
                 "llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml",
             }
         )

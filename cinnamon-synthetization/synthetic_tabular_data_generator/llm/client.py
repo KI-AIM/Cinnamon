@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
@@ -10,6 +11,7 @@ import requests
 DEFAULT_OPENAI_SYSTEM_PROMPT = "Return only the requested JSON or text content with no extra formatting."
 LLM_PROFILE_IDS_ENV_VAR = "CINNAMON_LLM_PROFILE_IDS"
 LLM_PROFILE_VAR_PREFIX = "CINNAMON_LLM_PROFILE_"
+RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 
 
 LLM_ENV_VARS = {
@@ -75,21 +77,6 @@ def _join_url(base_url: str, path: str) -> str:
     return f"{trimmed_base}/{trimmed_path.lstrip('/')}"
 
 
-def _require_non_empty(config: Dict[str, Any], key: str, section_name: str) -> Any:
-    value = config.get(key)
-    if value is None:
-        raise ValueError(
-            f"Missing LLM configuration '{key}' in '{section_name}'. "
-            "LLM settings must be provided via algorithm configuration."
-        )
-    if isinstance(value, str) and not value.strip():
-        raise ValueError(
-            f"Empty LLM configuration '{key}' in '{section_name}'. "
-            "LLM settings must be provided via algorithm configuration."
-        )
-    return value
-
-
 def _read_env_value(name: str) -> Optional[str]:
     value = os.getenv(name)
     if value is None:
@@ -139,19 +126,39 @@ def get_llm_profile_names() -> List[str]:
     return list(load_llm_profiles_from_env().keys())
 
 
-def _get_env_or_config_value(
-    config: Dict[str, Any],
-    key: str,
-    section_name: str,
+def _resolve_value(
+    *,
+    field_name: str,
     env_var_name: str,
+    selected_profile: Dict[str, Any],
+    config_sections: List[Dict[str, Any]],
+    section_names: List[str],
+    default: Any = None,
+    required: bool = False,
 ) -> Any:
-    value = _first_non_empty(_read_env_value(env_var_name), config.get(key))
-    if value is None:
+    if field_name in selected_profile:
+        return selected_profile[field_name]
+
+    for section in config_sections:
+        value = _first_non_empty(section.get(field_name))
+        if value is not None:
+            return value
+
+    env_value = _read_env_value(env_var_name)
+    if env_value is not None:
+        return env_value
+
+    if default is not None:
+        return default
+
+    if required:
+        joined_sections = ", ".join(section_names)
         raise ValueError(
-            f"Missing LLM configuration '{key}'. Set environment variable '{env_var_name}' "
-            f"or provide it in '{section_name}'."
+            f"Missing LLM configuration '{field_name}'. Set environment variable '{env_var_name}' "
+            f"or provide it in one of: {joined_sections}."
         )
-    return value
+
+    return None
 
 
 def _default_endpoint_path(provider: str) -> str:
@@ -213,128 +220,152 @@ def load_llm_client_config(algorithm_config: Dict[str, Any]) -> LlmClientConfig:
         )
     selected_profile = llm_profiles.get(selected_profile_name, {})
 
-    def resolve_profile_model_or_env(field_name: str) -> Any:
-        if field_name in selected_profile:
-            return selected_profile[field_name]
-        return _get_env_or_config_value(
-            model_params,
-            field_name,
-            "synthetization_configuration.algorithm.model_parameter",
-            LLM_ENV_VARS[field_name],
+    provider = str(
+        _resolve_value(
+            field_name="provider",
+            env_var_name=LLM_ENV_VARS["provider"],
+            selected_profile=selected_profile,
+            config_sections=[model_params],
+            section_names=["synthetization_configuration.algorithm.model_parameter"],
+            required=True,
         )
-
-    def resolve_profile_fitting_or_env(field_name: str) -> Any:
-        if field_name in selected_profile:
-            return selected_profile[field_name]
-        return _get_env_or_config_value(
-            fitting_params,
-            field_name,
-            "synthetization_configuration.algorithm.model_fitting",
-            LLM_ENV_VARS[field_name],
-        )
-
-    provider = str(resolve_profile_model_or_env("provider")).strip().lower()
+    ).strip().lower()
 
     if provider not in {"ollama", "openai_compatible"}:
         raise ValueError(
             f"Unsupported LLM provider '{provider}'. Supported values are 'ollama' and 'openai_compatible'."
         )
 
-    model_name = str(resolve_profile_model_or_env("model_name"))
-    raw_base_url = str(resolve_profile_model_or_env("base_url")).rstrip("/")
-    configured_endpoint_path = _first_non_empty(
-        selected_profile.get("endpoint_path"),
-        _read_env_value(LLM_ENV_VARS["endpoint_path"]),
-        model_params.get("endpoint_path"),
+    model_name = str(
+        _resolve_value(
+            field_name="model_name",
+            env_var_name=LLM_ENV_VARS["model_name"],
+            selected_profile=selected_profile,
+            config_sections=[model_params],
+            section_names=["synthetization_configuration.algorithm.model_parameter"],
+            required=True,
+        )
     )
-    explicit_endpoint_path_was_provided = configured_endpoint_path is not None
-    endpoint_path = str(configured_endpoint_path or _default_endpoint_path(provider))
+    raw_base_url = str(
+        _resolve_value(
+            field_name="base_url",
+            env_var_name=LLM_ENV_VARS["base_url"],
+            selected_profile=selected_profile,
+            config_sections=[model_params],
+            section_names=["synthetization_configuration.algorithm.model_parameter"],
+            required=True,
+        )
+    ).rstrip("/")
+    explicit_endpoint_path = _resolve_value(
+        field_name="endpoint_path",
+        env_var_name=LLM_ENV_VARS["endpoint_path"],
+        selected_profile=selected_profile,
+        config_sections=[model_params],
+        section_names=["synthetization_configuration.algorithm.model_parameter"],
+    )
+    explicit_endpoint_path_was_provided = explicit_endpoint_path is not None
+    endpoint_path = str(explicit_endpoint_path or _default_endpoint_path(provider))
     healthcheck_path = str(
-        _first_non_empty(
-            selected_profile.get("healthcheck_path"),
-            _read_env_value(LLM_ENV_VARS["healthcheck_path"]),
-            model_params.get("healthcheck_path"),
-            _default_healthcheck_path(provider),
+        _resolve_value(
+            field_name="healthcheck_path",
+            env_var_name=LLM_ENV_VARS["healthcheck_path"],
+            selected_profile=selected_profile,
+            config_sections=[model_params],
+            section_names=["synthetization_configuration.algorithm.model_parameter"],
+            default=_default_healthcheck_path(provider),
         )
     )
     api_key = str(
-        _first_non_empty(
-            selected_profile.get("api_key"),
-            _read_env_value(LLM_ENV_VARS["api_key"]),
-            model_params.get("api_key"),
-            "",
+        _resolve_value(
+            field_name="api_key",
+            env_var_name=LLM_ENV_VARS["api_key"],
+            selected_profile=selected_profile,
+            config_sections=[model_params],
+            section_names=["synthetization_configuration.algorithm.model_parameter"],
+            default="",
         )
     )
     try:
-        raw_temperature = _first_non_empty(
-            _read_env_value(LLM_ENV_VARS["temperature"]),
-            sampling_params.get("temperature"),
+        raw_temperature = _resolve_value(
+            field_name="temperature",
+            env_var_name=LLM_ENV_VARS["temperature"],
+            selected_profile=selected_profile,
+            config_sections=[sampling_params],
+            section_names=["synthetization_configuration.algorithm.sampling"],
+            required=True,
         )
-        if raw_temperature is None:
-            raise ValueError(
-                "Missing LLM configuration 'temperature'. Set environment variable "
-                f"'{LLM_ENV_VARS['temperature']}' or provide it in "
-                "'synthetization_configuration.algorithm.sampling'."
-            )
         temperature = max(0.0, min(2.0, float(raw_temperature)))
 
-        raw_top_p = _first_non_empty(
-            _read_env_value(LLM_ENV_VARS["top_p"]),
-            sampling_params.get("top_p"),
+        raw_top_p = _resolve_value(
+            field_name="top_p",
+            env_var_name=LLM_ENV_VARS["top_p"],
+            selected_profile=selected_profile,
+            config_sections=[sampling_params],
+            section_names=["synthetization_configuration.algorithm.sampling"],
+            required=True,
         )
-        if raw_top_p is None:
-            raise ValueError(
-                "Missing LLM configuration 'top_p'. Set environment variable "
-                f"'{LLM_ENV_VARS['top_p']}' or provide it in "
-                "'synthetization_configuration.algorithm.sampling'."
-            )
         top_p = max(0.0, min(1.0, float(raw_top_p)))
 
-        raw_max_tokens = _first_non_empty(
-            selected_profile.get("max_tokens"),
-            _read_env_value(LLM_ENV_VARS["max_tokens"]),
+        raw_max_tokens = _resolve_value(
+            field_name="max_tokens",
+            env_var_name=LLM_ENV_VARS["max_tokens"],
+            selected_profile=selected_profile,
+            config_sections=[sampling_params, model_params],
+            section_names=[
+                "synthetization_configuration.algorithm.sampling",
+                "synthetization_configuration.algorithm.model_parameter",
+            ],
+            required=True,
         )
-        if raw_max_tokens is None:
-            raise ValueError(
-                "Missing LLM configuration 'max_tokens'. Set environment variable "
-                f"'{LLM_ENV_VARS['max_tokens']}'."
-            )
         max_tokens = max(1, int(raw_max_tokens))
     except (TypeError, ValueError) as exc:
         raise ValueError(
             "Invalid LLM decoding configuration. Set valid numeric values via "
             f"'{LLM_ENV_VARS['temperature']}', '{LLM_ENV_VARS['top_p']}' "
             "(or provide them in 'synthetization_configuration.algorithm.sampling') "
-            f"and set '{LLM_ENV_VARS['max_tokens']}'."
+            f"and set '{LLM_ENV_VARS['max_tokens']}' or provide 'max_tokens' in "
+            "'synthetization_configuration.algorithm.sampling'."
         ) from exc
     timeout_seconds = max(
         1,
         int(
-            _get_env_or_config_value(
-                {"timeout_seconds": resolve_profile_fitting_or_env("timeout_seconds")},
-                "timeout_seconds",
-                "synthetization_configuration.algorithm.model_fitting",
-                LLM_ENV_VARS["timeout_seconds"],
+            _resolve_value(
+                field_name="timeout_seconds",
+                env_var_name=LLM_ENV_VARS["timeout_seconds"],
+                selected_profile=selected_profile,
+                config_sections=[fitting_params, model_params],
+                section_names=[
+                    "synthetization_configuration.algorithm.model_fitting",
+                    "synthetization_configuration.algorithm.model_parameter",
+                ],
+                required=True,
             )
         ),
     )
     max_retries = max(
         1,
         int(
-            _get_env_or_config_value(
-                {"max_retries": resolve_profile_fitting_or_env("max_retries")},
-                "max_retries",
-                "synthetization_configuration.algorithm.model_fitting",
-                LLM_ENV_VARS["max_retries"],
+            _resolve_value(
+                field_name="max_retries",
+                env_var_name=LLM_ENV_VARS["max_retries"],
+                selected_profile=selected_profile,
+                config_sections=[fitting_params, model_params],
+                section_names=[
+                    "synthetization_configuration.algorithm.model_fitting",
+                    "synthetization_configuration.algorithm.model_parameter",
+                ],
+                required=True,
             )
         ),
     )
     verify_ssl = _parse_bool(
-        _first_non_empty(
-            selected_profile.get("verify_ssl"),
-            _read_env_value(LLM_ENV_VARS["verify_ssl"]),
-            model_params.get("verify_ssl"),
-            True,
+        _resolve_value(
+            field_name="verify_ssl",
+            env_var_name=LLM_ENV_VARS["verify_ssl"],
+            selected_profile=selected_profile,
+            config_sections=[model_params],
+            section_names=["synthetization_configuration.algorithm.model_parameter"],
+            default=True,
         ),
         default=True,
     )
@@ -533,16 +564,41 @@ class LlmClient:
         if self.config.api_key:
             headers["Authorization"] = f"Bearer {self.config.api_key}"
 
-        response = requests.request(
-            method,
-            url,
-            headers=headers,
-            json=json,
-            timeout=self.config.timeout_seconds,
-            verify=self.config.verify_ssl,
-        )
-        response.raise_for_status()
-        return response
+        last_error: Optional[Exception] = None
+        max_attempts = max(1, self.config.max_retries)
+
+        for attempt in range(max_attempts):
+            try:
+                response = requests.request(
+                    method,
+                    url,
+                    headers=headers,
+                    json=json,
+                    timeout=self.config.timeout_seconds,
+                    verify=self.config.verify_ssl,
+                )
+                response.raise_for_status()
+                return response
+            except requests.exceptions.HTTPError as exc:
+                last_error = exc
+                status_code = exc.response.status_code if exc.response is not None else None
+                if status_code not in RETRYABLE_STATUS_CODES or attempt == max_attempts - 1:
+                    raise
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
+                last_error = exc
+                if attempt == max_attempts - 1:
+                    raise
+
+            self._sleep_before_retry(attempt)
+
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError("LLM request failed without a captured exception.")
+
+    @staticmethod
+    def _sleep_before_retry(attempt: int) -> None:
+        delay_seconds = min(2.0, 0.25 * (2 ** attempt))
+        time.sleep(delay_seconds)
 
     @staticmethod
     def _normalize_openai_content(content: Any) -> str:

@@ -3,22 +3,23 @@ import json
 import math
 import re
 import time
-from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import pandas as pd
 
-from data_processing.utils import BOOLEAN_MAP, MISSING_BOOLEAN, MISSING_VALUE_STRING, TEXT_PENDING_LLM
+from data_processing.utils import MISSING_VALUE_STRING, TEXT_PENDING_LLM
 from synthetic_tabular_data_generator.llm import (
+    ColumnProfileOptions,
     LlmClient,
     LlmClientConfig,
+    LlmSynthesizerSupport,
     create_llm_client,
     load_llm_client_config,
 )
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
 
 
-class LlmTabularSynthesizer(TabularDataSynthesizer):
+class LlmTabularSynthesizer(TabularDataSynthesizer, LlmSynthesizerSupport):
     """
     LLM-based tabular synthesizer backed by a configurable LLM provider.
     """
@@ -183,56 +184,16 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
         sample.to_csv(filename, index=False)
 
     def _build_column_profile(self, df: pd.DataFrame, column_name: str, column_type: str) -> Dict[str, Any]:
-        if column_name not in df.columns:
-            return {"type": column_type, "available": False, "reason": "column_missing"}
-
-        column_series = df[column_name]
-        missing_ratio = float(column_series.isna().mean()) if len(column_series) else 1.0
-        profile: Dict[str, Any] = {
-            "type": column_type,
-            "available": True,
-            "missing_ratio": round(missing_ratio, 4),
-        }
-
-        if column_type in self.NUMERIC_TYPES:
-            numeric = pd.to_numeric(column_series, errors="coerce").dropna()
-            if numeric.empty:
-                profile["available"] = False
-                profile["reason"] = "no_numeric_values"
-                return profile
-
-            profile.update(
-                {
-                    "kind": "numeric",
-                    "min": float(numeric.min()),
-                    "max": float(numeric.max()),
-                    "mean": float(numeric.mean()),
-                    "std": float(numeric.std(ddof=0)) if len(numeric) > 1 else 0.0,
-                }
-            )
-            return profile
-
-        if column_type == "TEXT":
-            values = column_series.dropna().astype(str).str.strip()
-            values = values[(values != "") & (values != MISSING_VALUE_STRING) & (values != TEXT_PENDING_LLM)]
-            profile["kind"] = "text"
-            if values.empty:
-                profile["available"] = False
-                profile["reason"] = "no_text_values"
-            return profile
-
-        values = column_series.dropna().astype(str)
-        if values.empty:
-            profile["available"] = False
-            profile["reason"] = "no_categorical_values"
-            return profile
-
-        value_distribution = values.value_counts(normalize=True).head(15)
-        profile["kind"] = "categorical"
-        profile["top_values"] = [
-            {"value": str(value), "ratio": round(float(ratio), 4)} for value, ratio in value_distribution.items()
-        ]
-        return profile
+        return self.build_column_profile(
+            df,
+            column_name,
+            column_type,
+            options=ColumnProfileOptions(
+                categorical_top_k=15,
+                include_text_examples=False,
+                excluded_text_values=(MISSING_VALUE_STRING, TEXT_PENDING_LLM),
+            ),
+        )
 
     def _generate_rows_sequentially(
         self,
@@ -262,7 +223,6 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
 
             try:
                 content = self._request_rows_from_llm(1, row_index, target_rows)
-                self._print_llm_raw_output(attempt_index + 1, max_retries, 1, content, row_index, target_rows)
                 raw_rows = self._extract_rows(content)
 
                 for row in raw_rows:
@@ -276,46 +236,12 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
                         continue
 
                     try:
-                        coerced_row = self._coerce_row(aligned_row)
-                        print(
-                            "[LLM DEBUG] "
-                            f"row={row_index + 1}/{target_rows} "
-                            f"attempt={attempt_index + 1}/{max_retries} "
-                            f"requested=1 "
-                            f"raw_rows={len(raw_rows)} "
-                            f"accepted=1 "
-                            f"non_dict={non_dict_rows} "
-                            f"unusable={unusable_rows} "
-                            f"coercion_errors={coercion_errors}",
-                            flush=True,
-                        )
-                        return coerced_row
+                        return self._coerce_row(aligned_row)
                     except Exception:  # noqa: BLE001
                         coercion_errors += 1
                         continue
-
-                print(
-                    "[LLM DEBUG] "
-                    f"row={row_index + 1}/{target_rows} "
-                    f"attempt={attempt_index + 1}/{max_retries} "
-                    f"requested=1 "
-                    f"raw_rows={len(raw_rows)} "
-                    f"accepted=0 "
-                    f"non_dict={non_dict_rows} "
-                    f"unusable={unusable_rows} "
-                    f"coercion_errors={coercion_errors}",
-                    flush=True,
-                )
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
-                print(
-                    "[LLM DEBUG] "
-                    f"row={row_index + 1}/{target_rows} "
-                    f"attempt={attempt_index + 1}/{max_retries} "
-                    f"requested=1 "
-                    f"error={type(exc).__name__}: {exc}",
-                    flush=True,
-                )
 
         message = (
             f"LLM returned no valid row for sample {row_index + 1}/{target_rows} "
@@ -331,25 +257,6 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
 
         prompt = self._build_generation_prompt(num_rows, row_index, target_rows)
         return self._llm_client.generate_text(prompt)
-
-    @staticmethod
-    def _print_llm_raw_output(
-        attempt: int,
-        max_retries: int,
-        requested_rows: int,
-        content: str,
-        row_index: int,
-        target_rows: int,
-    ) -> None:
-        max_chars = 8000
-        text = content if len(content) <= max_chars else f"{content[:max_chars]}...<truncated>"
-        print(
-            "[LLM DEBUG] "
-            f"row={row_index + 1}/{target_rows} "
-            f"attempt={attempt}/{max_retries} "
-            f"requested={requested_rows} "
-            f"raw_response={text}"
-        , flush=True)
 
     def _build_generation_prompt_prefix(self) -> str:
         ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
@@ -428,66 +335,19 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
         return [self._serialize_row_values(example) for example in examples]
 
     def _profile_line(self, column_name: str, column_type: str, profile: Dict[str, Any]) -> str:
-        if not profile or not profile.get("available", False):
-            return f"- {column_name} ({column_type}): no observed training values."
-
-        missing_ratio = profile.get("missing_ratio", 0.0)
-        if profile.get("kind") == "numeric":
-            return (
-                f"- {column_name} ({column_type}): min={profile.get('min')}, max={profile.get('max')}, "
-                f"mean={profile.get('mean')}, std={profile.get('std')}, missing_ratio={missing_ratio}"
-            )
-        if profile.get("kind") == "text":
-            return f"- {column_name} ({column_type}): missing_ratio={missing_ratio}"
-
-        top_values = profile.get("top_values", [])
-        values_repr = ", ".join(
-            f"{entry.get('value')} ({entry.get('ratio')})"
-            for entry in top_values[:10]
-            if isinstance(entry, dict)
-        )
-        return (
-            f"- {column_name} ({column_type}): frequent values [{values_repr}], "
-            f"missing_ratio={missing_ratio}"
-        )
+        line = self.build_profile_line(column_name, column_type, profile)
+        line = line.replace("no observed values.", "no observed training values.")
+        line = line.replace("frequent_values=", "frequent values ")
+        return line
 
     def _extract_rows(self, response_content: str) -> List[Dict[str, Any]]:
-        parsed_json = self._parse_json_with_fallback(response_content)
-        rows = self._rows_from_json(parsed_json)
+        parsed_json = self.parse_json_with_fallback(response_content)
+        rows = self.rows_from_json(parsed_json)
         if not rows:
             rows = self._extract_rows_from_repeated_rows_blocks(response_content)
         if not rows:
             raise ValueError("No rows were found in the LLM response.")
         return rows
-
-    def _parse_json_with_fallback(self, text: str) -> Any:
-        try:
-            return json.loads(text)
-        except JSONDecodeError:
-            decoder = json.JSONDecoder()
-            for index, char in enumerate(text):
-                if char not in ("{", "["):
-                    continue
-                try:
-                    parsed, _ = decoder.raw_decode(text[index:])
-                    return parsed
-                except JSONDecodeError:
-                    continue
-            raise ValueError("The LLM did not return valid JSON content.")
-
-    def _rows_from_json(self, parsed_json: Any) -> List[Dict[str, Any]]:
-        if isinstance(parsed_json, list):
-            return [row for row in parsed_json if isinstance(row, dict)]
-
-        if isinstance(parsed_json, dict):
-            if isinstance(parsed_json.get("rows"), list):
-                return [row for row in parsed_json["rows"] if isinstance(row, dict)]
-
-            for value in parsed_json.values():
-                if isinstance(value, list):
-                    return [row for row in value if isinstance(row, dict)]
-
-        return []
 
     def _extract_rows_from_repeated_rows_blocks(self, content: str) -> List[Dict[str, Any]]:
         extracted_rows: List[Dict[str, Any]] = []
@@ -501,7 +361,7 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
             candidate = content[array_start : array_end + 1]
             try:
                 parsed = json.loads(candidate)
-            except JSONDecodeError:
+            except json.JSONDecodeError:
                 continue
 
             if isinstance(parsed, list):
@@ -635,136 +495,23 @@ class LlmTabularSynthesizer(TabularDataSynthesizer):
         return self._coerce_string(value)
 
     def _coerce_text(self, value: Any) -> str:
-        if value is None:
-            return MISSING_VALUE_STRING
-
-        as_string = str(value).strip()
-        if not as_string or as_string.lower() in {"nan", "null", "none", "<na>"}:
-            return MISSING_VALUE_STRING
-
-        if as_string == MISSING_VALUE_STRING:
-            return MISSING_VALUE_STRING
-
-        return as_string
+        return self.coerce_text(value)
 
     def _coerce_boolean(self, value: Any) -> bool:
-        if isinstance(value, bool):
-            return value
-
-        if isinstance(value, (dict, list, tuple, set)):
-            return MISSING_BOOLEAN
-
-        if value is None or (isinstance(value, float) and math.isnan(value)):
-            return MISSING_BOOLEAN
-
-        try:
-            if value in BOOLEAN_MAP:
-                return bool(BOOLEAN_MAP[value])
-        except TypeError:
-            return MISSING_BOOLEAN
-
-        as_string = str(value).strip()
-        if as_string in BOOLEAN_MAP:
-            return bool(BOOLEAN_MAP[as_string])
-
-        lower = as_string.lower()
-        if lower in BOOLEAN_MAP:
-            return bool(BOOLEAN_MAP[lower])
-
-        return MISSING_BOOLEAN
+        return self.coerce_boolean(value)
 
     def _coerce_numeric(self, column_name: str, column_type: str, value: Any) -> Any:
-        profile = self._column_profiles.get(column_name, {})
-
-        numeric_value = self._to_float(value)
-        if numeric_value is None:
-            numeric_value = self._default_numeric_value(column_name, column_type)
-
-        if profile.get("kind") == "numeric" and profile.get("available"):
-            min_value = profile.get("min")
-            max_value = profile.get("max")
-            if isinstance(min_value, (int, float)):
-                numeric_value = max(numeric_value, float(min_value))
-            if isinstance(max_value, (int, float)):
-                numeric_value = min(numeric_value, float(max_value))
-
-        if column_type in {"INTEGER", "DATE"}:
-            return int(round(numeric_value))
-
-        return float(numeric_value)
+        return self.coerce_numeric(column_name, column_type, value, self._column_profiles)
 
     def _default_numeric_value(self, column_name: str, column_type: str) -> float:
-        profile = self._column_profiles.get(column_name, {})
-        if profile.get("kind") == "numeric" and profile.get("available"):
-            mean = profile.get("mean")
-            if isinstance(mean, (int, float)):
-                return float(mean)
-
-        return 0.0 if column_type == "DECIMAL" else 0.0
+        del column_type
+        return self.default_numeric_value(column_name, self._column_profiles)
 
     def _coerce_string(self, value: Any) -> str:
-        if value is None:
-            return MISSING_VALUE_STRING
-
-        as_string = str(value).strip()
-        if not as_string or as_string.lower() in {"nan", "null", "none", "<na>"}:
-            return MISSING_VALUE_STRING
-
-        return as_string
-
-    @staticmethod
-    def _to_float(value: Any) -> Optional[float]:
-        if isinstance(value, bool):
-            return float(int(value))
-
-        if isinstance(value, (int, float)):
-            if isinstance(value, float) and math.isnan(value):
-                return None
-            return float(value)
-
-        if value is None:
-            return None
-
-        try:
-            normalized = str(value).strip().replace(",", ".")
-            if not normalized or normalized.lower() in {"nan", "null", "none", "<na>"}:
-                return None
-            return float(normalized)
-        except (TypeError, ValueError):
-            return None
-
-    @staticmethod
-    def _serialize_value(value: Any) -> Any:
-        if isinstance(value, bool):
-            return value
-        if isinstance(value, (int, float, str)) or value is None:
-            if isinstance(value, float) and math.isnan(value):
-                return None
-            return value
-        if pd.isna(value):
-            return None
-        return str(value)
+        return self.coerce_string(value)
 
     def _serialize_row_values(self, row: Dict[str, Any]) -> Dict[str, Any]:
-        return {key: self._serialize_value(value) for key, value in row.items()}
+        return self.serialize_row_values(row)
 
     def _print_remaining_time(self, generated: int, total: int) -> None:
-        if self._sample_start_time is None:
-            return
-
-        elapsed = max(time.time() - self._sample_start_time, 1e-6)
-        remaining = max(total - generated, 0)
-        if remaining == 0:
-            self._report_remaining_time("sampling", 0)
-            print("Estimated remaining time: 0s", flush=True)
-            return
-
-        rows_per_second = generated / elapsed
-        if rows_per_second <= 0:
-            self._report_remaining_time("sampling", None)
-            print("Estimated remaining time: unknown", flush=True)
-            return
-
-        remaining_seconds = int(math.ceil(remaining / rows_per_second))
-        self._report_remaining_time("sampling", remaining_seconds)
-        print(f"Estimated remaining time: {remaining_seconds}s", flush=True)
+        self.report_remaining_time(self._sample_start_time, generated, total)

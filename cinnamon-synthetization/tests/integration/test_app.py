@@ -121,3 +121,26 @@ def test_get_synthesizer_config_omits_llm_profile_when_no_profiles_exist(monkeyp
     llm_profile_parameters = configurations["llm_profile"]["parameters"]
     assert len(llm_profile_parameters) == 1
     assert llm_profile_parameters[0]["values"] == []
+
+
+def test_format_synthesis_exception_message_classifies_llm_configuration_errors():
+    message = app_module._format_synthesis_exception_message(
+        ValueError("Unknown llm_profile 'missing-profile'. Available profiles: none.")
+    )
+
+    assert message.startswith("LLM configuration error:")
+    assert "Unknown llm_profile" in message
+
+
+def test_format_synthesis_exception_message_classifies_llm_connection_errors():
+    message = app_module._format_synthesis_exception_message(
+        RuntimeError("Unable to reach the configured LLM API.")
+    )
+
+    assert message == "LLM connection error: Unable to reach the configured LLM API."
+
+
+def test_format_synthesis_exception_message_falls_back_to_unexpected_error():
+    message = app_module._format_synthesis_exception_message(RuntimeError("Pipeline did not produce output"))
+
+    assert message == "Unexpected error occurred: Pipeline did not produce output"

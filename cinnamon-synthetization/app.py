@@ -315,6 +315,24 @@ def build_text_synthesis_algorithm_config(algorithm_config, synthesizer_name, te
     return config
 
 
+def _format_synthesis_exception_message(exc):
+    message = str(exc).strip() or exc.__class__.__name__
+    lowered_message = message.lower()
+
+    if "llm configuration" in lowered_message or "llm profile" in lowered_message or "llm_profile" in lowered_message:
+        return f"LLM configuration error: {message}"
+    if "unsupported llm provider" in lowered_message:
+        return f"LLM configuration error: {message}"
+    if "llm client is not initialized" in lowered_message:
+        return f"LLM initialization error: {message}"
+    if "unable to reach the configured llm api" in lowered_message:
+        return f"LLM connection error: {message}"
+    if "llm response" in lowered_message or "llm did not return valid json" in lowered_message:
+        return f"LLM response error: {message}"
+
+    return f"Unexpected error occurred: {message}"
+
+
 def run_synthesizer_stage(
     stage_label,
     synthesizer_name,
@@ -573,7 +591,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             return {'message': error_message, 'session_key': session_key, 'status_code': 500}
 
     except Exception as e:
-        error_message = f"Unexpected error occurred: {str(e)}"
+        error_message = _format_synthesis_exception_message(e)
         send_callback_error(callback_url, session_key, error_message, 500)
         return {'message': error_message, 'session_key': session_key, 'status_code': 500}
 

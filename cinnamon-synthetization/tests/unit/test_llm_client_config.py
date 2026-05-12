@@ -1,14 +1,16 @@
 import sys
 from pathlib import Path
 
+import requests
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from synthetic_tabular_data_generator.llm.client import load_llm_client_config
+from synthetic_tabular_data_generator.llm.client import LlmClient, load_llm_client_config
 
 
-def test_load_llm_client_config_reads_max_tokens_from_env(monkeypatch):
+def test_load_llm_client_config_prefers_sampling_max_tokens_over_env(monkeypatch):
     monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "2048")
     monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "openai_compatible")
     monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "gpt-test")
@@ -27,6 +29,34 @@ def test_load_llm_client_config_reads_max_tokens_from_env(monkeypatch):
                     "temperature": 0.2,
                     "top_p": 0.9,
                     "max_tokens": 999999,
+                },
+            }
+        }
+    }
+
+    config = load_llm_client_config(algorithm_config)
+
+    assert config.max_tokens == 999999
+
+
+def test_load_llm_client_config_uses_env_max_tokens_as_fallback(monkeypatch):
+    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "2048")
+    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "gpt-test")
+    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://gpu.example.org:7086")
+    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "10")
+    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
+    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.2")
+    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
+
+    algorithm_config = {
+        "synthetization_configuration": {
+            "algorithm": {
+                "model_parameter": {},
+                "model_fitting": {},
+                "sampling": {
+                    "temperature": 0.2,
+                    "top_p": 0.9,
                 },
             }
         }
@@ -122,3 +152,105 @@ def test_load_llm_client_config_uses_selected_profile(monkeypatch):
     assert config.max_retries == 4
     assert config.verify_ssl is False
     assert config.max_tokens == 1500
+
+
+class _DummyRetryResponse:
+    def __init__(self, status_code: int, payload: dict):
+        self.status_code = status_code
+        self._payload = payload
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            error = requests.exceptions.HTTPError(f"HTTP {self.status_code}")
+            error.response = self
+            raise error
+
+    def json(self):
+        return self._payload
+
+
+def test_llm_client_retries_on_retryable_http_status(monkeypatch):
+    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "gpt-test")
+    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://gpu.example.org:7086")
+    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "10")
+    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "3")
+    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.2")
+    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
+    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "512")
+
+    config = load_llm_client_config(
+        {
+            "synthetization_configuration": {
+                "algorithm": {
+                    "model_parameter": {},
+                    "model_fitting": {},
+                    "sampling": {"temperature": 0.2, "top_p": 0.9},
+                }
+            }
+        }
+    )
+    client = LlmClient(config)
+
+    call_counter = {"count": 0}
+    sleep_calls = []
+
+    def fake_request(method, url, **kwargs):
+        del method, url, kwargs
+        call_counter["count"] += 1
+        if call_counter["count"] < 3:
+            return _DummyRetryResponse(503, {})
+        return _DummyRetryResponse(200, {"ok": True})
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.time.sleep", lambda seconds: sleep_calls.append(seconds))
+
+    response = client._request("GET", "http://gpu.example.org:7086/v1/models")
+
+    assert response.status_code == 200
+    assert call_counter["count"] == 3
+    assert len(sleep_calls) == 2
+
+
+def test_llm_client_does_not_retry_on_non_retryable_http_status(monkeypatch):
+    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "gpt-test")
+    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://gpu.example.org:7086")
+    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "10")
+    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "3")
+    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.2")
+    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
+    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "512")
+
+    config = load_llm_client_config(
+        {
+            "synthetization_configuration": {
+                "algorithm": {
+                    "model_parameter": {},
+                    "model_fitting": {},
+                    "sampling": {"temperature": 0.2, "top_p": 0.9},
+                }
+            }
+        }
+    )
+    client = LlmClient(config)
+
+    call_counter = {"count": 0}
+    sleep_calls = []
+
+    def fake_request(method, url, **kwargs):
+        del method, url, kwargs
+        call_counter["count"] += 1
+        return _DummyRetryResponse(400, {})
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.time.sleep", lambda seconds: sleep_calls.append(seconds))
+
+    try:
+        client._request("GET", "http://gpu.example.org:7086/v1/models")
+        assert False, "Expected HTTPError for non-retryable response"
+    except requests.exceptions.HTTPError:
+        pass
+
+    assert call_counter["count"] == 1
+    assert sleep_calls == []
